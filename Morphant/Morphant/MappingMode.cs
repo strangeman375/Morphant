@@ -13,5 +13,9 @@ public enum MappingMode
 
     Project = 1 << 2,
 
+    MapNewAndProject = MapNew | Project,
+
+    MapExistingAndProject = MapExisting | Project,
+
     MapAndProject = Map | Project
 }

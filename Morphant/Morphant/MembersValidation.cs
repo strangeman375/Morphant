@@ -2,9 +2,9 @@ namespace Morphant;
 
 public enum MembersValidation
 {
-    Default = 0, // Auto
+    Default = 0, // None
 
-    Auto, // обычный режим = варнинги только по required destination свойствам
+    None, // обычный режим = варнинги только по required destination свойствам
 
     Source, // все свойства source должны участвовать, варнинги по всем unmapped source свойствам + required destination свойствам
 
