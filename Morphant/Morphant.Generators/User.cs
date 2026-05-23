@@ -1,5 +1,19 @@
 namespace Morphant.Generators;
 
+public class Address
+{
+    public string StreetName { get; set; } = null!;
+
+    public int HouseNumber { get; set; }
+}
+
+public class AddressModel
+{
+    public string StreetName { get; set; } = null!;
+
+    public int HouseNumber { get; set; }
+}
+
 public class User
 {
     public int Id { get; set; }
@@ -15,6 +29,8 @@ public class User
     public DateTime? LastLoginAt { get; set; }
 
     public string? InternalNote { get; set; }
+
+    public Address? Address { get; set; }
 }
 
 public class UserModel
@@ -48,6 +64,8 @@ public class UserModel
     public bool IsActive { get; set; }
 
     public string? DisplayName { get; set; } = null!;
+
+    public AddressModel? AddressDto { get; set; }
 }
 
 public sealed record UserModelMorphantTemplateConstructorMembers
@@ -74,7 +92,8 @@ public sealed record UserModelMorphantTemplate
     {
     }
 
-    public UserModelMorphantTemplate(ConstructorMember<Guid> id, ConstructorMember<string?> displayName, ConstructorMember<bool> isActive)
+    /// <param name="isActive">Default value: true</param>
+    public UserModelMorphantTemplate(ConstructorMember<Guid> id, ConstructorMember<string?> displayName, ConstructorMember<bool>? isActive = null)
     {
     }
 
@@ -91,4 +110,6 @@ public sealed record UserModelMorphantTemplate
     public Member<bool> IsActive { get; set; }
 
     public Member<string?> DisplayName { get; set; }
+
+    public Member<AddressModel?> AddressDto { get; set; }
 }

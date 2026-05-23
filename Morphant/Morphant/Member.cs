@@ -22,6 +22,12 @@ public abstract class ConstructorMember<T>
 
     public static implicit operator ConstructorMember<T>(IgnoreMarker<T> marker) =>
         throw new RuntimeInvocationNotSupportedException();
+
+    public static implicit operator ConstructorMember<T>(MapMarker marker) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    public static implicit operator ConstructorMember<T>(MapMarker<T> marker) =>
+        throw new RuntimeInvocationNotSupportedException();
 }
 
 public abstract class Member<T>
@@ -43,5 +49,11 @@ public abstract class Member<T>
         throw new RuntimeInvocationNotSupportedException();
 
     public static implicit operator Member<T>(IgnoreMarker<T> marker) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    public static implicit operator Member<T>(MapMarker marker) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    public static implicit operator Member<T>(MapMarker<T> marker) =>
         throw new RuntimeInvocationNotSupportedException();
 }

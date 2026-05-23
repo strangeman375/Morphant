@@ -30,6 +30,20 @@ public abstract class IgnoreMarker<T>
     }
 }
 
+public abstract class MapMarker
+{
+    private MapMarker()
+    {
+    }
+}
+
+public abstract class MapMarker<T>
+{
+    private MapMarker()
+    {
+    }
+}
+
 public abstract class ConstructorMarker
 {
     private ConstructorMarker()

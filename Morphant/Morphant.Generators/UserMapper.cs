@@ -12,7 +12,9 @@ public partial class UserMapper : TypeMapper
             {
                 FullName = s.FirstName + " " + s.LastName,
                 IsActive = true,
-                DisplayName = Ignore()
+                DisplayName = Ignore(),
+                LastLoginAt = Auto(),
+                AddressDto = Map(s.Address)
             });
     }
 }
@@ -28,12 +30,13 @@ public partial class UserMapper : ITypeMapper<User, UserModel>
             Email = source.Email,
             CreatedAt = source.CreatedAt,
             LastLoginAt = source.LastLoginAt,
-            IsActive = true
+            IsActive = true,
+            AddressDto = null // todo mapper
         };
     }
 }
 
-public static class UserMapperExtensions
+public static class UserMapperMorphantExtensions
 {
     public static MapperBuilder<User, UserModel> Template(this MapperBuilder<User, UserModel> builder, Func<User, UserModelMorphantTemplate> templateFunc) =>
         throw new RuntimeInvocationNotSupportedException();
