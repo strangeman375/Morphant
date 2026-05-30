@@ -1,5 +1,3 @@
-#nullable disable annotations
-
 namespace Morphant;
 
 public interface IMapper
@@ -11,8 +9,11 @@ public interface IMapper
 
 public sealed class Mapper : IMapper
 {
-    public TDestination Map<TSource, TDestination>(TSource source) =>
-        Map<TSource, TDestination>(source, default);
+    public TDestination Map<TSource, TDestination>(TSource source)
+    {
+        // todo: get type mapper from DI and map
+        throw new NotImplementedException();
+    }
 
     public TDestination Map<TSource, TDestination>(TSource source, TDestination destination)
     {

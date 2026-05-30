@@ -2,12 +2,12 @@ using Morphant.Exceptions;
 
 namespace Morphant;
 
-#nullable disable annotations
 public interface ITypeMapper<in TSource, TDestination>
 {
-    TDestination Map(TSource source, TDestination destination);
+    TDestination Map(TSource source, MappingContext context);
+
+    TDestination Map(TSource source, TDestination destination, MappingContext context);
 }
-#nullable enable annotations
 
 public abstract class TypeMapper
 {

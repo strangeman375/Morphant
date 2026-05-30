@@ -92,7 +92,6 @@ public sealed record UserModelMorphantTemplate
     {
     }
 
-    /// <param name="isActive">Default value: true</param>
     public UserModelMorphantTemplate(ConstructorMember<Guid> id, ConstructorMember<string?> displayName, ConstructorMember<bool>? isActive = null)
     {
     }

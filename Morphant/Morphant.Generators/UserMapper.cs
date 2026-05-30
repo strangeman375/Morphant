@@ -21,7 +21,7 @@ public partial class UserMapper : TypeMapper
 
 public partial class UserMapper : ITypeMapper<User, UserModel>
 {
-    public UserModel Map(User source, UserModel destination)
+    public UserModel Map(User source, MappingContext context)
     {
         return new UserModel()
         {
@@ -31,8 +31,21 @@ public partial class UserMapper : ITypeMapper<User, UserModel>
             CreatedAt = source.CreatedAt,
             LastLoginAt = source.LastLoginAt,
             IsActive = true,
-            AddressDto = null // todo mapper
+            AddressDto = context.Mapper.Map<Address?, AddressModel?>(source.Address)
         };
+    }
+
+    public UserModel Map(User source, UserModel destination, MappingContext context)
+    {
+        destination.Id = source.Id;
+        destination.FullName = source.FirstName + " " + source.LastName;
+        destination.Email = source.Email;
+        destination.CreatedAt = source.CreatedAt;
+        destination.LastLoginAt = source.LastLoginAt;
+        destination.IsActive = true;
+        destination.AddressDto = context.Mapper.Map<Address?, AddressModel?>(source.Address);
+
+        return destination;
     }
 }
 
