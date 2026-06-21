@@ -1,3 +1,6 @@
+using Morphant.Markers;
+using Morphant.Members;
+
 namespace Morphant.Generators;
 
 public class Address
@@ -13,6 +16,8 @@ public class AddressModel
 
     public int HouseNumber { get; set; }
 }
+
+public class AddressModelNew : AddressModel;
 
 public class User
 {
@@ -68,6 +73,8 @@ public class UserModel
     public AddressModel? AddressDto { get; set; }
 }
 
+public class UserModelNew : UserModel;
+
 public sealed record UserModelMorphantTemplateConstructorMembers
 {
     public ConstructorMember<int> idInt;
@@ -80,7 +87,11 @@ public sealed record UserModelMorphantTemplateConstructorMembers
 
 public sealed record UserModelMorphantTemplate
 {
-    public UserModelMorphantTemplate(ConstructorMarker marker, UserModelMorphantTemplateConstructorMembers? members = null)
+    public UserModelMorphantTemplate(ByConventionMarker marker, UserModelMorphantTemplateConstructorMembers? members = null)
+    {
+    }
+
+    public UserModelMorphantTemplate(IByFactoryMarker<UserModel> marker)
     {
     }
 

@@ -9,13 +9,5 @@ public enum MappingMode
 
     MapExisting = 1 << 1,
 
-    Map = MapNew | MapExisting,
-
-    Project = 1 << 2,
-
-    MapNewAndProject = MapNew | Project,
-
-    MapExistingAndProject = MapExisting | Project,
-
-    MapAndProject = Map | Project
+    MapNewAndExisting = MapNew | MapExisting
 }

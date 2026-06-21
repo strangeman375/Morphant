@@ -1,4 +1,5 @@
 using Morphant.Exceptions;
+using Morphant.Markers;
 
 namespace Morphant;
 
@@ -12,6 +13,12 @@ public interface ITypeMapper<in TSource, TDestination>
 public abstract class TypeMapper
 {
     protected abstract void Configure(MapperBuilder builder);
+
+    protected static ByConventionMarker ByConvention() =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    protected static ByFactoryMarker<TDestination> ByFactory<TDestination>(Func<TDestination> factory) =>
+        throw new RuntimeInvocationNotSupportedException();
 
     protected static AutoMarker Auto() =>
         throw new RuntimeInvocationNotSupportedException();

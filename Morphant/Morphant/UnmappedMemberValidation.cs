@@ -1,6 +1,6 @@
 namespace Morphant;
 
-public enum MembersValidation
+public enum UnmappedMemberValidation
 {
     Default = 0, // None
 

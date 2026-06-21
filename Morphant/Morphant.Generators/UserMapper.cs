@@ -8,7 +8,7 @@ public partial class UserMapper : TypeMapper
     {
         builder
             .Map<User, UserModel>()
-            .Template(s => new(Auto())
+            .Template(s => new(ByFactory(() => new UserModelNew()))
             {
                 FullName = s.FirstName + " " + s.LastName,
                 IsActive = true,

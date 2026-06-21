@@ -15,19 +15,16 @@ public abstract class MapperBuilderBase<T>
     public T NullDestinationHandling(NullDestinationHandling nullDestinationHandling) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T NotNullableMembersValidation(NotNullableMembersValidation notNullableMembersValidation) =>
-        throw new RuntimeInvocationNotSupportedException();
-
-    public T IgnoreNullSourceValues(bool value = true) =>
+    public T NullabilityMismatchValidation(NullabilityMismatchValidation nullabilityMismatchValidation) =>
         throw new RuntimeInvocationNotSupportedException();
 
     public T ConstructorSelection(ConstructorSelection constructorSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T MembersSelection(MembersSelection membersSelection) =>
+    public T MemberMatching(MemberMatching memberMatching) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T MembersValidation(MembersValidation membersValidation) =>
+    public T UnmappedMemberValidation(UnmappedMemberValidation unmappedMemberValidation) =>
         throw new RuntimeInvocationNotSupportedException();
 }
 
@@ -49,7 +46,4 @@ public abstract class MapperBuilder<TSource, TDestination> : MapperBuilderBase<M
     private MapperBuilder()
     {
     }
-
-    public MapperBuilder<TSource, TDestination> IncludeMembers(Func<TSource, object?> membersFunc) =>
-        throw new RuntimeInvocationNotSupportedException();
 }
