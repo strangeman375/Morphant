@@ -2,7 +2,7 @@ namespace Morphant;
 
 public enum ConstructorSelection
 {
-    Default = 0, // Greediest
+    Default = 0, // Unambiguous
 
     Explicit, // явно задаём конструктор
 
@@ -10,7 +10,7 @@ public enum ConstructorSelection
 
     Single, // единственный конструктор
 
-    SingleParameterized, // единственный с параметрами или без параметров
+    Unambiguous, // единственный с параметрами или без параметров
 
     Greediest, // наибольшее количество параметров, которые можно смаппить
 
