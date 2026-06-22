@@ -32,9 +32,15 @@ public abstract class TypeMapper
     protected static IgnoreMarker<T> Ignore<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
-    protected static MapMarker Map(object? value) =>
+    protected static MapMarker Map(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    protected static MapMarker<T> Map<T>(object? value) =>
+    protected static MapMarker Map(object? source, object? destination) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    protected static MapMarker<T> Map<T>(object? source) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    protected static MapMarker<T> Map<T>(object? source, T? destination) =>
         throw new RuntimeInvocationNotSupportedException();
 }

@@ -15,9 +15,6 @@ public abstract class MapperBuilderBase<T>
     public T NullDestinationHandling(NullDestinationHandling nullDestinationHandling) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T NullabilityMismatchValidation(NullabilityMismatchValidation nullabilityMismatchValidation) =>
-        throw new RuntimeInvocationNotSupportedException();
-
     public T ConstructorSelection(ConstructorSelection constructorSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -25,6 +22,9 @@ public abstract class MapperBuilderBase<T>
         throw new RuntimeInvocationNotSupportedException();
 
     public T UnmappedMemberValidation(UnmappedMemberValidation unmappedMemberValidation) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    public T NullabilityMismatchValidation(NullabilityMismatchValidation nullabilityMismatchValidation) =>
         throw new RuntimeInvocationNotSupportedException();
 }
 
