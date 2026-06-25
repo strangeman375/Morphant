@@ -31,4 +31,18 @@ public partial class UserMapper : ITypeMapper<User, UserModel>
 
         return destination;
     }
+
+    public IQueryable<UserModel> Project(IQueryable<User> queryable)
+    {
+        return queryable.Select(s => new UserModel()
+        {
+            Id = s.Id,
+            FullName = s.FirstName + " " + s.LastName,
+            Email = s.Email,
+            CreatedAt = s.CreatedAt,
+            LastLoginAt = s.LastLoginAt,
+            IsActive = true,
+            // AddressDto = inline sub projection
+        });
+    }
 }
