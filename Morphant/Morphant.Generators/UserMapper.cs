@@ -31,7 +31,7 @@ public partial class UserMapper : ITypeMapper<User, UserModel>
             CreatedAt = source.CreatedAt,
             LastLoginAt = source.LastLoginAt,
             IsActive = true,
-            AddressDto = context.Mapper.Map<Address?, AddressModel?>(source.Address)
+            AddressDto = context.Mapper.Map<Address?, AddressModel?>(source.Address, context)
         };
     }
 
@@ -43,7 +43,7 @@ public partial class UserMapper : ITypeMapper<User, UserModel>
         destination.CreatedAt = source.CreatedAt;
         destination.LastLoginAt = source.LastLoginAt;
         destination.IsActive = true;
-        destination.AddressDto = context.Mapper.Map<Address?, AddressModel?>(source.Address);
+        destination.AddressDto = context.Mapper.Map<Address?, AddressModel?>(source.Address, context);
 
         return destination;
     }

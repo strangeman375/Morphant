@@ -6,5 +6,5 @@ public abstract class MappingContext
     {
     }
 
-    public IMapper Mapper { get; internal set; } = null!;
+    public IContextualMapper Mapper { get; internal set; } = null!;
 }
