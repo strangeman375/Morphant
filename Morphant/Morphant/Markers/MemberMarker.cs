@@ -1,3 +1,5 @@
+using Morphant.Exceptions;
+
 namespace Morphant.Markers;
 
 public abstract class MemberMarker
@@ -19,6 +21,9 @@ public abstract class AutoMarker<T> : MemberMarker
     private AutoMarker()
     {
     }
+
+    public static implicit operator AutoMarker<T>(T value) =>
+        throw new RuntimeInvocationNotSupportedException();
 }
 
 public abstract class IgnoreMarker : MemberMarker
@@ -33,6 +38,9 @@ public abstract class IgnoreMarker<T> : MemberMarker
     private IgnoreMarker()
     {
     }
+
+    public static implicit operator IgnoreMarker<T>(T value) =>
+        throw new RuntimeInvocationNotSupportedException();
 }
 
 public abstract class MapMarker : MemberMarker
@@ -47,4 +55,7 @@ public abstract class MapMarker<T> : MemberMarker
     private MapMarker()
     {
     }
+
+    public static implicit operator MapMarker<T>(T value) =>
+        throw new RuntimeInvocationNotSupportedException();
 }

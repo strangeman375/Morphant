@@ -1,5 +1,3 @@
-using Morphant.Exceptions;
-
 namespace Morphant.Generators;
 
 public partial class UserMapper : TypeMapper
@@ -8,7 +6,7 @@ public partial class UserMapper : TypeMapper
     {
         builder
             .Map<User, UserModel>()
-            .Template(s => new(ByFactory<UserModel>(() => new UserModelNew()))
+            .Template(s => new(ByConvention())
             {
                 FullName = s.FirstName + " " + s.LastName,
                 IsActive = true,
@@ -19,41 +17,59 @@ public partial class UserMapper : TypeMapper
     }
 }
 
-public partial class UserMapper : ITypeMapper<User, UserModel>
-{
-    public UserModel Map(User source, MappingContext context)
-    {
-        return new UserModel()
-        {
-            Id = source.Id,
-            FullName = source.FirstName + " " + source.LastName,
-            Email = source.Email,
-            CreatedAt = source.CreatedAt,
-            LastLoginAt = source.LastLoginAt,
-            IsActive = true,
-            AddressDto = context.Mapper.Map<Address?, AddressModel?>(source.Address, context)
-        };
-    }
+/*
 
-    public UserModel Map(User source, UserModel destination, MappingContext context)
-    {
-        destination.Id = source.Id;
-        destination.FullName = source.FirstName + " " + source.LastName;
-        destination.Email = source.Email;
-        destination.CreatedAt = source.CreatedAt;
-        destination.LastLoginAt = source.LastLoginAt;
-        destination.IsActive = true;
-        destination.AddressDto = context.Mapper.Map<Address?, AddressModel?>(source.Address, context);
+        builder
+            .Map<User, UserModel>()
+            .Template(s => new(ByFactory(() => new UserModel()))
+            {
+                FullName = s.FirstName + " " + s.LastName,
+                IsActive = true,
+                DisplayName = Ignore(),
+                LastLoginAt = Auto(),
+                AddressDto = Map(s.Address)
+            });
 
-        return destination;
-    }
-}
 
-public static class UserMapperMorphantExtensions
-{
-    public static MapperBuilder<User, UserModel> Template(this MapperBuilder<User, UserModel> builder, Func<User, UserModelMorphantTemplate> templateFunc) =>
-        throw new RuntimeInvocationNotSupportedException();
 
-    public static MapperBuilder<User, UserModel> Template(this MapperBuilder<User, UserModel> builder, Func<User, UserModel, UserModelMorphantTemplate> templateFunc) =>
-        throw new RuntimeInvocationNotSupportedException();
-}
+        builder
+            .Map<User, UserModel>()
+            .Template(s =>
+            {
+                var result = s.LastLoginAt is not null
+                    ? new UserModelMorphantTemplate(s.Id, s.FirstName, s.LastName)
+                    : new UserModelMorphantTemplate(ByFactory(() => new UserModel()));
+
+                return result with
+                {
+                    FullName = s.FirstName + " " + s.LastName,
+                    IsActive = true,
+                    DisplayName = Ignore(),
+                    LastLoginAt = Auto(),
+                    AddressDto = Map(s.Address)
+                };
+            });
+
+
+        builder
+            .Map<User, UserModel>()
+            .Template(s =>
+            {
+                var result = s.LastLoginAt is not null
+                    ? new UserModelMorphantTemplate(s.Id, s.FirstName, s.LastName)
+                    : new UserModelMorphantTemplate(ByFactory(() => new UserModel()));
+
+                var displayName = s.Address is null
+                    ? s.FirstName
+                    : Ignore<string?>();
+
+                return result with
+                {
+                    FullName = s.FirstName + " " + s.LastName,
+                    IsActive = true,
+                    DisplayName = displayName,
+                    LastLoginAt = Auto(),
+                    AddressDto = Map(s.Address)
+                };
+            });
+*/

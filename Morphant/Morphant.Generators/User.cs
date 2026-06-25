@@ -17,8 +17,6 @@ public class AddressModel
     public int HouseNumber { get; set; }
 }
 
-public class AddressModelNew : AddressModel;
-
 public class User
 {
     public int Id { get; set; }
@@ -73,53 +71,4 @@ public class UserModel
     public AddressModel? AddressDto { get; set; }
 }
 
-public class UserModelNew : UserModel;
 
-public sealed record UserModelMorphantTemplateConstructorMembers
-{
-    public ConstructorMember<int> idInt;
-    public ConstructorMember<string> firstName;
-    public ConstructorMember<string> lastName;
-    public ConstructorMember<Guid> idGuid;
-    public ConstructorMember<string?> displayName;
-    public ConstructorMember<bool> isActive;
-}
-
-public sealed record UserModelMorphantTemplate
-{
-    public UserModelMorphantTemplate(ByConventionMarker marker, UserModelMorphantTemplateConstructorMembers? members = null)
-    {
-    }
-
-    public UserModelMorphantTemplate(ByFactoryMarker<UserModel> marker)
-    {
-    }
-
-    public UserModelMorphantTemplate()
-    {
-    }
-
-    public UserModelMorphantTemplate(ConstructorMember<int> id, ConstructorMember<string> firstName, ConstructorMember<string> lastName)
-    {
-    }
-
-    public UserModelMorphantTemplate(ConstructorMember<Guid> id, ConstructorMember<string?> displayName, ConstructorMember<bool>? isActive = null)
-    {
-    }
-
-    public Member<int> Id { get; set; }
-
-    public Member<string> FullName { get; set; }
-
-    public Member<string?> Email { get; set; }
-
-    public Member<DateTime> CreatedAt { get; set; }
-
-    public Member<DateTime?> LastLoginAt { get; set; }
-
-    public Member<bool> IsActive { get; set; }
-
-    public Member<string?> DisplayName { get; set; }
-
-    public Member<AddressModel?> AddressDto { get; set; }
-}
