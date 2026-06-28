@@ -1,4 +1,4 @@
-namespace Morphant.Generators;
+namespace Morphant.Generator;
 
 public partial class UserMapper : TypeMapper
 {

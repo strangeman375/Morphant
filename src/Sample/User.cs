@@ -1,7 +1,7 @@
 using Morphant.Markers;
 using Morphant.Members;
 
-namespace Morphant.Generators;
+namespace Morphant.Generator;
 
 public class Address
 {

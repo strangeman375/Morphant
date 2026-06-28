@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Morphant.Generators;
+namespace Morphant.Generator;
 
 [CompilerGenerated]
 public partial class UserMapper : ITypeMapper<User, UserModel>

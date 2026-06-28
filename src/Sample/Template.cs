@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using Morphant.Markers;
 using Morphant.Members;
 
-namespace Morphant.Generators;
+namespace Morphant.Generator;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 

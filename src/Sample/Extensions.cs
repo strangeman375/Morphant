@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Morphant.Exceptions;
 
-namespace Morphant.Generators;
+namespace Morphant.Generator;
 
 [CompilerGenerated]
 public static class UserMapperMorphantExtensions

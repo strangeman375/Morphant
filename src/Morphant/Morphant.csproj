@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+
+        <IsPackable>true</IsPackable>
+        <EnablePackageValidation>true</EnablePackageValidation>
+
+        <Version>0.1.0</Version>
+
+        <PackageId>Morphant</PackageId>
+        <Title>Morphant</Title>
+        <Description>Compile-time object-to-object mapper for C# powered by source generators.</Description>
+
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/strangeman375/Morphant</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/strangeman375/Morphant</PackageProjectUrl>
+
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageTags>mapper;mapping;object-mapper;source-generator;roslyn;csharp</PackageTags>
+
+        <Authors>strangeman375</Authors>
+        <Copyright>Copyright (c) strangeman375 2026</Copyright>
+
+        <PackageIcon>logo.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+
+        <PackageOutputPath>..\..\artifacts\packages</PackageOutputPath>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Morphant.Generator\Morphant.Generator.csproj"
+                          ReferenceOutputAssembly="false"
+                          PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\logo.png"
+              Pack="true"
+              PackagePath="\"
+              Visible="false" />
+
+        <None Include="..\..\README.md"
+              Pack="true"
+              PackagePath="\"
+              Visible="false" />
+
+        <None Include="..\Morphant.Generator\bin\$(Configuration)\netstandard2.0\Morphant.Generator.dll"
+              Pack="true"
+              PackagePath="analyzers/dotnet/cs/"
+              Visible="false" />
+
+        <None Include="build\Morphant.props"
+              Pack="true"
+              PackagePath="buildTransitive\Morphant.props"
+              Visible="false" />
+    </ItemGroup>
+
+</Project>

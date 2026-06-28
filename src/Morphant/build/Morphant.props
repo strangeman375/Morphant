@@ -1,0 +1,11 @@
+<Project>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="MorphantMappingMode" />
+    <CompilerVisibleProperty Include="MorphantNullSourceHandling" />
+    <CompilerVisibleProperty Include="MorphantNullDestinationHandling" />
+    <CompilerVisibleProperty Include="MorphantConstructorSelection" />
+    <CompilerVisibleProperty Include="MorphantMemberMatching" />
+    <CompilerVisibleProperty Include="MorphantUnmappedMemberValidation" />
+    <CompilerVisibleProperty Include="MorphantNullabilityMismatchValidation" />
+  </ItemGroup>
+</Project>

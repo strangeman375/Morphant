@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/.sln/">
+    <File Path="../.gitignore" />
+    <File Path="../logo.png" />
+    <File Path="../README.md" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Project Path="Morphant.Generator/Morphant.Generator.csproj" />
+  <Project Path="Morphant/Morphant.csproj" />
+  <Project Path="Sample/Sample.csproj" />
+</Solution>
