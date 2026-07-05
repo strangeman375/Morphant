@@ -17,8 +17,7 @@ internal static class TypeMapperConfigurePipeline
         return candidates
             .Combine(compilationContext)
             .Select(TryBuild)
-            .Where(static x => x.HasValue)
-            .Select(static (x, _) => x!.Value)
+            .WhereHasValue()
             .WithTrackingName(MorphantGeneratorStageNames.BuildTypeMapperConfigureInfos);
     }
 

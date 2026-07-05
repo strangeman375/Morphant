@@ -1,34 +1,34 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Morphant.Generator.TemplateSurface.TemplateExtension;
-using Morphant.Generator.TemplateSurface.TemplateType;
 using Morphant.Generator.TypeMapperConfigure;
 
 namespace Morphant.Generator.TemplateSurface;
 
-internal static class TemplateSurfacePipeline
+internal static class TemplateDestinationTypePipeline
 {
-    public static void Register(
-        IncrementalGeneratorInitializationContext context,
+    public static IncrementalValuesProvider<TemplateDestinationTypeInfo> Build(
         IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValuesProvider<TypeMapperConfigureInfo> configureInfos)
     {
-        var mapUsages = configureInfos
+        var destinationTypes = configureInfos
             .Combine(compilationContext)
             .SelectMany(static (x, cancellationToken) =>
             {
                 var (configureInfo, compilationContext) = x;
 
-                return BuildMapUsages(
+                return BuildDestinationTypes(
                     configureInfo,
                     compilationContext,
                     cancellationToken);
             })
             .WithTrackingName(MorphantGeneratorStageNames.BuildMapperBuilderMapInfos);
 
-        TemplateTypePipeline.Register(context, compilationContext, mapUsages);
-        TemplateExtensionPipeline.Register(context, compilationContext, mapUsages);
+        return destinationTypes
+            .Collect()
+            .SelectMany(static (destinationTypesInfos, cancellationToken) =>
+                DeduplicateAndSort(destinationTypesInfos, cancellationToken))
+            .WithTrackingName("MorphantGeneratorStageNames.CollectMapperBuilderMapInfos");
     }
 
     private static bool IsMapInvocationCandidate(SyntaxNode node)
@@ -47,7 +47,7 @@ internal static class TemplateSurfacePipeline
         };
     }
 
-    private static ImmutableArray<MapperBuilderMapInfo> BuildMapUsages(
+    private static ImmutableArray<TemplateDestinationTypeInfo> BuildDestinationTypes(
         TypeMapperConfigureInfo configureInfo,
         CompilationContext context,
         CancellationToken cancellationToken)
@@ -58,23 +58,23 @@ internal static class TemplateSurfacePipeline
 
         var semanticModel = context.Compilation.GetSemanticModel(configureInfo.Syntax.SyntaxTree);
 
-        var builder = ImmutableArray.CreateBuilder<MapperBuilderMapInfo>();
+        var builder = ImmutableArray.CreateBuilder<TemplateDestinationTypeInfo>();
         foreach (var invocation in invocations)
         {
-            if (TryBuildMapUsage(
+            if (TryGetDestinationType(
                     (InvocationExpressionSyntax)invocation,
                     semanticModel,
                     context.KnownSymbols,
-                    cancellationToken) is { } usage)
+                    cancellationToken) is { } destinationType)
             {
-                builder.Add(usage);
+                builder.Add(destinationType);
             }
         }
 
         return builder.ToImmutable();
     }
 
-    private static MapperBuilderMapInfo? TryBuildMapUsage(
+    private static TemplateDestinationTypeInfo? TryGetDestinationType(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
         KnownSymbols knownSymbols,
@@ -103,17 +103,11 @@ internal static class TemplateSurfacePipeline
             return null;
         }
 
-        var sourceTypeName = sourceType.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat);
-
-        var destinationTypeReference = BuildDestinationTypeReference(namedDestinationType);
-
-        return new MapperBuilderMapInfo(
-            sourceTypeName,
-            destinationTypeReference);
+        var destinationTypeReference = BuildDestinationTypeInfo(namedDestinationType);
+        return destinationTypeReference;
     }
 
-    private static DestinationTypeReference BuildDestinationTypeReference(
+    private static TemplateDestinationTypeInfo BuildDestinationTypeInfo(
         INamedTypeSymbol destinationType)
     {
         var metadataName = SymbolNameHelper.GetFullMetadataName(destinationType);
@@ -134,12 +128,35 @@ internal static class TemplateSurfacePipeline
         var templateTypeFullyQualifiedName =
             "global::" + templateNamespace + "." + templateTypeName;
 
-        return new DestinationTypeReference(
+        return new TemplateDestinationTypeInfo(
             metadataName,
             fullyQualifiedName,
             templateNamespace,
             templateTypeName,
             templateTypeFullyQualifiedName);
+    }
+
+    private static IEnumerable<TemplateDestinationTypeInfo> DeduplicateAndSort(
+        ImmutableArray<TemplateDestinationTypeInfo> destinationTypes,
+        CancellationToken cancellationToken)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var result = new List<TemplateDestinationTypeInfo>();
+
+        foreach (var destinationType in destinationTypes)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (seen.Add(destinationType.MetadataName))
+            {
+                result.Add(destinationType);
+            }
+        }
+
+        result.Sort(static (x, y) =>
+            StringComparer.Ordinal.Compare(x.MetadataName, y.MetadataName));
+
+        return result;
     }
 
     private static bool IsMapperBuilderMapMethod(

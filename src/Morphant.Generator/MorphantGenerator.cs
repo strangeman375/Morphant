@@ -1,5 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Morphant.Generator.TemplateSurface;
+using Morphant.Generator.TemplateSurface.TemplateExtension;
+using Morphant.Generator.TemplateSurface.TemplateType;
 using Morphant.Generator.TypeMapperConfigure;
 
 namespace Morphant.Generator;
@@ -11,7 +13,9 @@ public sealed class MorphantGenerator : IIncrementalGenerator
     {
         var compilationContext = CompilationContextPipeline.Build(context);
         var typeMapperConfigureInfos = TypeMapperConfigurePipeline.Build(context, compilationContext);
+        var destinationTypeInfos = TemplateDestinationTypePipeline.Build(compilationContext, typeMapperConfigureInfos);
 
-        TemplateSurfacePipeline.Register(context, compilationContext, typeMapperConfigureInfos);
+        TemplateTypePipeline.Register(context, compilationContext, destinationTypeInfos);
+        TemplateExtensionPipeline.Register(context, destinationTypeInfos);
     }
 }

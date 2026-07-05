@@ -1,6 +1,6 @@
 namespace Morphant.Generator.TemplateSurface;
 
-public readonly record struct DestinationTypeReference
+public readonly record struct TemplateDestinationTypeInfo
 (
     string MetadataName,
     string FullyQualifiedName,
