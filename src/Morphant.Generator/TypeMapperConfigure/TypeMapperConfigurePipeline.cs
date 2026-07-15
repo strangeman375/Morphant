@@ -60,7 +60,7 @@ internal static class TypeMapperConfigurePipeline
         }
 
         var current = method;
-        while ((current = current.OverriddenMethod) is not null)
+        while ((current = current!.OverriddenMethod) is not null)
         {
             if (SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, knownSymbols.TypeMapperConfigure.OriginalDefinition))
             {

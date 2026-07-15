@@ -5,6 +5,9 @@
     <File Path="../README.md" />
     <File Path="Directory.Build.props" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj" />
+  </Folder>
   <Project Path="Morphant.Generator/Morphant.Generator.csproj" />
   <Project Path="Morphant/Morphant.csproj" />
   <Project Path="Sample/Sample.csproj" />

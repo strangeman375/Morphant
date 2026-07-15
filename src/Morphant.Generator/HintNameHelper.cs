@@ -13,9 +13,6 @@ public static class HintNameHelper
             builder.Append(char.IsLetterOrDigit(ch) ? ch : '_');
         }
 
-        builder.Append('_');
-        builder.Append(GetStableHash(value));
-
         return builder.ToString();
     }
 
