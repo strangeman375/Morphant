@@ -171,8 +171,11 @@ internal static class TemplateTypePipeline
             builder.Append("    public global::Morphant.Members.Member<");
             builder.Append(typeName);
             builder.Append("> @");
-            builder.Append(member.Name);
-            builder.AppendLine(" { get => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException(); init => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException(); }");
+            builder.AppendLine(member.Name);
+            builder.AppendLine("        {");
+            builder.AppendLine("            get => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();");
+            builder.AppendLine("            set => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();");
+            builder.AppendLine("        }");
         }
 
         return builder.ToString().TrimEnd();

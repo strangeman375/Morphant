@@ -7,13 +7,16 @@ namespace Morphant.Generator.UnitTests.TestUtils;
 
 internal sealed class TemplateTypeGeneratorTest : CSharpSourceGeneratorTest<TestTemplateTypeGenerator, DefaultVerifier>
 {
-    public TemplateTypeGeneratorTest()
+    private readonly LanguageVersion _languageVersion;
+
+    public TemplateTypeGeneratorTest(LanguageVersion languageVersion)
     {
+        _languageVersion = languageVersion;
         TestState.AdditionalReferences.Add(typeof(TypeMapper).Assembly);
     }
 
     protected override ParseOptions CreateParseOptions()
     {
-        return new CSharpParseOptions(LanguageVersion.CSharp9, DocumentationMode.Diagnose);
+        return new CSharpParseOptions(_languageVersion, DocumentationMode.Diagnose);
     }
 }
