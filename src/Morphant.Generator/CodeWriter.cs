@@ -4,6 +4,8 @@ namespace Morphant.Generator;
 
 internal sealed class CodeWriter
 {
+    private const string NewLine = "\r\n";
+
     private readonly StringBuilder _builder = new();
     private int _indent;
 
@@ -15,7 +17,7 @@ internal sealed class CodeWriter
             _builder.Append(value);
         }
 
-        _builder.AppendLine();
+        _builder.Append(NewLine);
     }
 
     public void OpenBlock(string declaration)

@@ -13,6 +13,7 @@ internal sealed class TemplateTypeGeneratorTest : CSharpSourceGeneratorTest<Test
     {
         _languageVersion = languageVersion;
         TestState.AdditionalReferences.Add(typeof(TypeMapper).Assembly);
+        CompilerDiagnostics = CompilerDiagnostics.Warnings;
     }
 
     protected override ParseOptions CreateParseOptions()

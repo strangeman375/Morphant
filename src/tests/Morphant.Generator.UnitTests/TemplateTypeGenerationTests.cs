@@ -14,6 +14,8 @@ internal sealed class TemplateTypeGenerationTests
 """
 using Morphant;
 
+#pragma warning disable CS1591
+
 namespace TestCase
 {
     public sealed class Source
