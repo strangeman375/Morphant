@@ -44,7 +44,11 @@ namespace TestCase.Morphant.Generated
 {
     internal sealed record DestinationMorphantTemplate
     {
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker _)
+        public DestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination> marker)
         {
         }
 

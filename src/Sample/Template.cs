@@ -6,8 +6,7 @@ namespace Morphant.Generator;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
-[CompilerGenerated]
-public sealed record UserModelMorphantTemplateConstructorMembers
+public sealed class UserModelMorphantTemplateConstructorMembers
 {
     public ConstructorMember<int> idInt;
     public ConstructorMember<string> firstName;
@@ -17,7 +16,6 @@ public sealed record UserModelMorphantTemplateConstructorMembers
     public ConstructorMember<bool> isActive;
 }
 
-[CompilerGenerated]
 public sealed record UserModelMorphantTemplate
 {
     public UserModelMorphantTemplate(
@@ -63,4 +61,12 @@ public sealed record UserModelMorphantTemplate
     public Member<string?> DisplayName { get; set; }
 
     public Member<AddressModel?> AddressDto { get; set; }
+
+    public override string ToString() => string.Empty;
+
+    public override int GetHashCode() => 0;
+
+    public bool Equals(UserModelMorphantTemplate? other) => false;
+
+    private bool PrintMembers(StringBuilder builder) => false;
 }
