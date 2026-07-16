@@ -85,12 +85,19 @@ internal static class TemplateTypePipeline
 
                  namespace {{templateDestinationTypeInfo.TemplateNamespace}}
                  {
-
                      internal sealed record {{templateDestinationTypeInfo.TemplateTypeName}}
                      {
                      {{constructors}}
 
                      {{members}}
+
+                         public override string ToString() => string.Empty;
+
+                         public override int GetHashCode() => 0;
+
+                         public bool Equals({{templateDestinationTypeInfo.TemplateTypeName}}? other) => false;
+
+                         private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
                      }
                  }
 
@@ -106,7 +113,8 @@ internal static class TemplateTypePipeline
         var builder = new StringBuilder();
 
         builder.AppendLine($"    public {templateDestinationTypeInfo.TemplateTypeName}(global::Morphant.Markers.ByConventionMarker _)");
-        builder.AppendLine("            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();");
+        builder.AppendLine("        {");
+        builder.AppendLine("        }");
         builder.AppendLine();
 
         foreach (var constructor in destinationType.InstanceConstructors)
@@ -123,7 +131,8 @@ internal static class TemplateTypePipeline
             if (parameters.Length == 0)
             {
                 builder.AppendLine($"        public {templateDestinationTypeInfo.TemplateTypeName}()");
-                builder.AppendLine("            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();");
+                builder.AppendLine("        {");
+                builder.AppendLine("        }");
                 builder.AppendLine();
                 continue;
             }
@@ -142,12 +151,13 @@ internal static class TemplateTypePipeline
 
                 builder.Append("global::Morphant.Members.ConstructorMember<");
                 builder.Append(typeName);
-                builder.Append("> @");
+                builder.Append("> ");
                 builder.Append(parameter.Name);
             }
 
             builder.AppendLine(")");
-            builder.AppendLine("            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();");
+            builder.AppendLine("         {");
+            builder.AppendLine("         }");
             builder.AppendLine();
         }
 
@@ -170,11 +180,11 @@ internal static class TemplateTypePipeline
 
             builder.Append("    public global::Morphant.Members.Member<");
             builder.Append(typeName);
-            builder.Append("> @");
+            builder.Append("> ");
             builder.AppendLine(member.Name);
             builder.AppendLine("        {");
-            builder.AppendLine("            get => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();");
-            builder.AppendLine("            set => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();");
+            builder.AppendLine("            get => default!;");
+            builder.AppendLine("            set { }");
             builder.AppendLine("        }");
         }
 

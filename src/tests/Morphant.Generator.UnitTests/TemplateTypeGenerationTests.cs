@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests;
@@ -41,20 +42,29 @@ namespace TestCase
 
 namespace TestCase.Morphant.Generated
 {
-
     internal sealed record DestinationMorphantTemplate
     {
         public DestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker _)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+        {
+        }
 
         public DestinationMorphantTemplate()
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        public global::Morphant.Members.Member<int> @Id
         {
-            get => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-            set => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
         }
+
+        public global::Morphant.Members.Member<int> Id
+        {
+            get => default!;
+            set { }
+        }
+
+        public override string ToString() => string.Empty;
+
+        public override int GetHashCode() => 0;
+
+        public bool Equals(DestinationMorphantTemplate? other) => false;
+
+        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
     }
 }
 
