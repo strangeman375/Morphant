@@ -56,8 +56,7 @@ internal static class TemplateTypeEmitter
                 "constructor argument.");
 
             writer.Line(
-                $"public global::Morphant.Members.ConstructorMember<{field.TypeName}> " +
-                $"{Identifier(field.Name)};");
+                $"public global::Morphant.Members.ConstructorMember<{field.TypeName}> {Identifier(field.Name)} = default!;");
 
             if (i < model.ConstructorFields.Length - 1)
             {
