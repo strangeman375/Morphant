@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.ComponentModel;
+using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
@@ -44,20 +45,37 @@ namespace TestCase
 
 namespace TestCase.Morphant.Generated
 {
+    /// <summary>
+    /// Represents the Morphant mapping template for <see cref="global::TestCase.Destination"/>.
+    /// </summary>
     internal sealed record DestinationMorphantTemplate
     {
+        /// <summary>
+        /// Creates a destination instance using convention-based mapping.
+        /// </summary>
+        /// <param name="marker">Selects convention-based mapping.</param>
         public DestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
         {
         }
 
+        /// <summary>
+        /// Creates a destination instance using factory-based destination construction.
+        /// </summary>
+        /// <param name="marker">Selects factory-based construction.</param>
         public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination> marker)
         {
         }
 
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
         public DestinationMorphantTemplate()
         {
         }
 
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.Id"/>.
+        /// </summary>
         public global::Morphant.Members.Member<int> Id
         {
             get => default!;

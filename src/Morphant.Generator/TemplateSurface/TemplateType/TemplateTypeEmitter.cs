@@ -33,15 +33,36 @@ internal static class TemplateTypeEmitter
         CodeWriter writer,
         TemplateTypeModel model)
     {
+        var destinationCref = XmlAttribute(
+            model.DestinationDocumentation.Cref);
+
+        WriteSummary(
+            writer,
+            "Contains mappings for constructor arguments of " +
+            $"<see cref=\"{destinationCref}\"/>.");
+
         writer.OpenBlock(
             $"{TypeAccessibility} sealed class " +
             Identifier(model.ConstructorMembersTypeName));
 
-        foreach (var field in model.ConstructorFields)
+        for (var i = 0; i < model.ConstructorFields.Length; i++)
         {
+            var field = model.ConstructorFields[i];
+
+            WriteSummary(
+                writer,
+                "Configures the " +
+                $"<c>{XmlText(field.ParameterName)}</c> " +
+                "constructor argument.");
+
             writer.Line(
                 $"public global::Morphant.Members.ConstructorMember<{field.TypeName}> " +
                 $"{Identifier(field.Name)};");
+
+            if (i < model.ConstructorFields.Length - 1)
+            {
+                writer.Line();
+            }
         }
 
         writer.CloseBlock();
@@ -53,24 +74,29 @@ internal static class TemplateTypeEmitter
     {
         var templateTypeName = Identifier(model.TemplateTypeName);
 
+        WriteTemplateTypeDocumentation(writer, model);
+
         writer.OpenBlock(
             $"{TypeAccessibility} sealed record {templateTypeName}");
 
-        WriteByConventionConstructor(writer, model, templateTypeName);
+        WriteByConventionConstructor(
+            writer,
+            model,
+            templateTypeName);
+
         writer.Line();
 
-        WriteConstructor(
+        WriteByFactoryConstructor(
             writer,
-            templateTypeName,
-            new[]
-            {
-                $"global::Morphant.Markers.ByFactoryMarker<{model.DestinationTypeName}> marker"
-            });
+            model,
+            templateTypeName);
 
         writer.Line();
 
         foreach (var constructor in model.Constructors)
         {
+            WriteDestinationConstructorDocumentation(writer, constructor);
+
             var parameters = new string[constructor.Parameters.Length];
 
             for (var i = 0; i < constructor.Parameters.Length; i++)
@@ -79,12 +105,20 @@ internal static class TemplateTypeEmitter
                     constructor.Parameters[i]);
             }
 
-            WriteConstructor(writer, templateTypeName, parameters);
+            WriteConstructor(
+                writer,
+                templateTypeName,
+                parameters);
+
             writer.Line();
         }
 
         foreach (var member in model.Members)
         {
+            WriteTemplateMemberDocumentation(
+                writer,
+                member);
+
             writer.OpenBlock(
                 $"public global::Morphant.Members.Member<{member.TypeName}> " +
                 Identifier(member.Name));
@@ -120,6 +154,15 @@ internal static class TemplateTypeEmitter
         TemplateTypeModel model,
         string templateTypeName)
     {
+        WriteSummary(
+            writer,
+            "Creates a destination instance using convention-based mapping.");
+
+        WriteParameterDocumentation(
+            writer,
+            "marker",
+            "Selects convention-based mapping.");
+
         if (model.ConstructorFields.IsEmpty)
         {
             WriteConstructor(
@@ -133,6 +176,11 @@ internal static class TemplateTypeEmitter
             return;
         }
 
+        WriteParameterDocumentation(
+            writer,
+            "members",
+            "Specifies optional mappings for constructor arguments.");
+
         WriteConstructor(
             writer,
             templateTypeName,
@@ -141,6 +189,123 @@ internal static class TemplateTypeEmitter
                 "global::Morphant.Markers.ByConventionMarker marker",
                 $"{Identifier(model.ConstructorMembersTypeName)}? members = null"
             });
+    }
+
+    private static void WriteByFactoryConstructor(
+        CodeWriter writer,
+        TemplateTypeModel model,
+        string templateTypeName)
+    {
+        WriteSummary(
+            writer,
+            "Creates a destination instance using factory-based destination construction.");
+
+        WriteParameterDocumentation(
+            writer,
+            "marker",
+            "Selects factory-based construction.");
+
+        WriteConstructor(
+            writer,
+            templateTypeName,
+            new[]
+            {
+                $"global::Morphant.Markers.ByFactoryMarker<{model.DestinationTypeName}> marker"
+            });
+    }
+
+    private static void WriteTemplateTypeDocumentation(
+        CodeWriter writer,
+        TemplateTypeModel model)
+    {
+        var documentation = model.DestinationDocumentation;
+        var cref = XmlAttribute(documentation.Cref);
+
+        if (documentation.HasDocumentation)
+        {
+            writer.Line(
+                $"/// <inheritdoc cref=\"{cref}\"/>");
+
+            return;
+        }
+
+        WriteSummary(
+            writer,
+            "Represents the Morphant mapping template for " +
+            $"<see cref=\"{cref}\"/>.");
+    }
+
+    private static void WriteTemplateMemberDocumentation(
+        CodeWriter writer,
+        TemplateMemberModel member)
+    {
+        var documentation = member.Documentation;
+        var cref = XmlAttribute(documentation.Cref);
+
+        if (documentation.HasDocumentation)
+        {
+            writer.Line(
+                $"/// <inheritdoc cref=\"{cref}\"/>");
+
+            return;
+        }
+
+        WriteSummary(
+            writer,
+            $"Configures mapping for <see cref=\"{cref}\"/>.");
+    }
+
+    private static void WriteDestinationConstructorDocumentation(
+        CodeWriter writer,
+        TemplateConstructorModel constructor)
+    {
+        WriteSummary(
+            writer,
+            "Creates a destination instance using a corresponding constructor.");
+
+        foreach (var parameter in constructor.Parameters)
+        {
+            WriteParameterDocumentation(
+                writer,
+                parameter.Name,
+                "Configures the " +
+                $"<c>{XmlText(parameter.Name)}</c> " +
+                "constructor argument.");
+        }
+    }
+
+    private static void WriteSummary(
+        CodeWriter writer,
+        string summary)
+    {
+        writer.Line("/// <summary>");
+        writer.Line($"/// {summary}");
+        writer.Line("/// </summary>");
+    }
+
+    private static void WriteParameterDocumentation(
+        CodeWriter writer,
+        string parameterName,
+        string description)
+    {
+        writer.Line(
+            $"/// <param name=\"{XmlAttribute(parameterName)}\">" +
+            $"{description}</param>");
+    }
+
+    private static string XmlAttribute(string value)
+    {
+        return XmlText(value)
+            .Replace("\"", "&quot;")
+            .Replace("'", "&apos;");
+    }
+
+    private static string XmlText(string value)
+    {
+        return value
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;");
     }
 
     private static string FormatParameter(

@@ -7,6 +7,13 @@ namespace Morphant.Generator.TemplateSurface.TemplateType;
 
 internal static class TemplateTypeModelBuilder
 {
+    private static readonly SymbolDisplayFormat DocumentationCrefFormat = new(
+        globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
+        memberOptions: SymbolDisplayMemberOptions.IncludeContainingType,
+        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers);
+
     public static TemplateTypeModel Build(
         INamedTypeSymbol destinationType,
         TemplateDestinationTypeInfo destinationTypeInfo,
@@ -21,14 +28,11 @@ internal static class TemplateTypeModelBuilder
         return new TemplateTypeModel(
             destinationTypeInfo.TemplateNamespace,
             destinationTypeInfo.TemplateTypeName,
-            destinationType.ToDisplayString(
-                SymbolDisplayFormats.FullyQualifiedNullable),
+            destinationType.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable),
+            BuildDocumentation(destinationType, cancellationToken),
             constructors,
             BuildConstructorFields(constructors),
-            BuildMembers(
-                destinationType,
-                compilation,
-                cancellationToken));
+            BuildMembers(destinationType, compilation, cancellationToken));
     }
 
     private static ImmutableArray<TemplateConstructorModel> BuildConstructors(
@@ -125,6 +129,7 @@ internal static class TemplateTypeModelBuilder
             result.Add(
                 new TemplateConstructorFieldModel(
                     fieldName,
+                    parameter.Name,
                     parameter.TypeName));
         }
 
@@ -157,8 +162,8 @@ internal static class TemplateTypeModelBuilder
                 result.Add(
                     new TemplateMemberModel(
                         property.Name,
-                        property.Type.ToDisplayString(
-                            SymbolDisplayFormats.FullyQualifiedNullable)));
+                        property.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable),
+                        BuildDocumentation(property, cancellationToken)));
 
                 continue;
             }
@@ -177,12 +182,26 @@ internal static class TemplateTypeModelBuilder
                 result.Add(
                     new TemplateMemberModel(
                         field.Name,
-                        field.Type.ToDisplayString(
-                            SymbolDisplayFormats.FullyQualifiedNullable)));
+                        field.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable),
+                        BuildDocumentation(field, cancellationToken)));
             }
         }
 
         return result.ToImmutable();
+    }
+
+    private static TemplateDocumentationModel BuildDocumentation(
+        ISymbol symbol,
+        CancellationToken cancellationToken)
+    {
+        var xml = symbol.GetDocumentationCommentXml(
+            preferredCulture: CultureInfo.InvariantCulture,
+            expandIncludes: false,
+            cancellationToken: cancellationToken);
+
+        return new TemplateDocumentationModel(
+            symbol.ToDisplayString(DocumentationCrefFormat),
+            !string.IsNullOrWhiteSpace(xml));
     }
 
     private static bool IsAccessible(
