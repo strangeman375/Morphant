@@ -5,7 +5,7 @@ using Morphant.Generator.TypeMapperConfigure;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
 
-public sealed class TestTemplateTypeGenerator : IIncrementalGenerator
+internal sealed class TestTemplateTypeGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {

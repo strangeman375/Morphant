@@ -131,7 +131,7 @@ internal static class TemplateTypeEmitter
         }
 
         writer.Line(
-            "public override string ToString() => string.Empty;");
+            $"public bool Equals({templateTypeName}? other) => false;");
         writer.Line();
 
         writer.Line(
@@ -139,12 +139,11 @@ internal static class TemplateTypeEmitter
         writer.Line();
 
         writer.Line(
-            $"public bool Equals({templateTypeName}? other) => false;");
+            "public override string ToString() => string.Empty;");
         writer.Line();
 
         writer.Line(
-            "private bool PrintMembers(" +
-            "global::System.Text.StringBuilder builder) => false;");
+            "private bool PrintMembers(global::System.Text.StringBuilder builder) => false;");
 
         writer.CloseBlock();
     }
