@@ -266,10 +266,26 @@ internal static class TemplateTypeEmitter
             WriteParameterDocumentation(
                 writer,
                 parameter.Name,
-                "Configures the " +
-                $"<c>{XmlText(parameter.Name)}</c> " +
-                "constructor argument.");
+                BuildConstructorParameterDescription(parameter));
         }
+    }
+
+    private static string BuildConstructorParameterDescription(
+        TemplateConstructorParameterModel parameter)
+    {
+        var description =
+            "Configures the " +
+            $"<c>{XmlText(parameter.Name)}</c> " +
+            "constructor argument.";
+
+        if (parameter.DefaultValueDisplay is not { } defaultValue)
+        {
+            return description;
+        }
+
+        return description +
+               " If omitted, the destination constructor default value " +
+               $"<c>{XmlText(defaultValue)}</c> is used.";
     }
 
     private static void WriteSummary(

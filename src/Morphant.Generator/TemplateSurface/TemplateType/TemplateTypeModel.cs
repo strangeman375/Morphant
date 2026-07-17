@@ -26,7 +26,8 @@ internal sealed record TemplateConstructorParameterModel(
     string Name,
     string TypeName,
     string TypeSuffix,
-    bool IsOptional);
+    bool IsOptional,
+    string? DefaultValueDisplay);
 
 internal sealed record TemplateConstructorFieldModel(
     string Name,

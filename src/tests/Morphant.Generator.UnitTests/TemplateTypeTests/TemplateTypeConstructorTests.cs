@@ -108,8 +108,8 @@ internal sealed class TemplateTypeConstructorTests
         /// <param name="id">Configures the <c>id</c> constructor argument.</param>
         /// <param name="displayName">Configures the <c>displayName</c> constructor argument.</param>
         /// <param name="createdAt">Configures the <c>createdAt</c> constructor argument.</param>
-        /// <param name="enabled">Configures the <c>enabled</c> constructor argument.</param>
-        /// <param name="mode">Configures the <c>mode</c> constructor argument.</param>
+        /// <param name="enabled">Configures the <c>enabled</c> constructor argument. If omitted, the destination constructor default value <c>true</c> is used.</param>
+        /// <param name="mode">Configures the <c>mode</c> constructor argument. If omitted, the destination constructor default value <c>"default"</c> is used.</param>
         public DestinationMorphantTemplate(
             global::Morphant.Members.ConstructorMember<int> id,
             global::Morphant.Members.ConstructorMember<string?> displayName,

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Morphant.Generator.TemplateSurface.TemplateType;
 
@@ -74,7 +75,8 @@ internal static class TemplateTypeModelBuilder
                         parameter.Type.ToDisplayString(
                             SymbolDisplayFormats.FullyQualifiedNullable),
                         BuildTypeSuffix(parameter.Type),
-                        parameter.IsOptional || parameter.IsParams));
+                        parameter.IsOptional || parameter.IsParams,
+                        BuildDefaultValueDisplay(parameter)));
             }
 
             result.Add(new TemplateConstructorModel(parameters.ToImmutable()));
@@ -292,5 +294,91 @@ internal static class TemplateTypeModelBuilder
         return result.Length == 0
             ? "Value"
             : result.ToString();
+    }
+
+    private static string? BuildDefaultValueDisplay(
+        IParameterSymbol parameter)
+    {
+        if (!parameter.HasExplicitDefaultValue)
+        {
+            return null;
+        }
+
+        var value = parameter.ExplicitDefaultValue;
+
+        if (value is null)
+        {
+            return CanRepresentNull(parameter.Type)
+                ? "null"
+                : "default";
+        }
+
+        if (parameter.Type is INamedTypeSymbol
+            {
+                TypeKind: TypeKind.Enum
+            } enumType)
+        {
+            return BuildEnumDefaultValueDisplay(enumType, value);
+        }
+
+        return SymbolDisplay.FormatPrimitive(
+                   value,
+                   quoteStrings: true,
+                   useHexadecimalNumbers: false)
+               ?? Convert.ToString(
+                   value,
+                   CultureInfo.InvariantCulture);
+    }
+
+    private static string BuildEnumDefaultValueDisplay(
+        INamedTypeSymbol enumType,
+        object value)
+    {
+        foreach (var member in enumType
+                     .GetMembers()
+                     .OfType<IFieldSymbol>())
+        {
+            if (member.HasConstantValue &&
+                object.Equals(member.ConstantValue, value))
+            {
+                return enumType.ToDisplayString(
+                           SymbolDisplayFormat.MinimallyQualifiedFormat) +
+                       "." +
+                       EscapeIdentifier(member.Name);
+            }
+        }
+
+        var numericValue =
+            SymbolDisplay.FormatPrimitive(
+                value,
+                quoteStrings: true,
+                useHexadecimalNumbers: false)
+            ?? Convert.ToString(
+                value,
+                CultureInfo.InvariantCulture)
+            ?? "0";
+
+        return
+            $"({enumType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)})" +
+            numericValue;
+    }
+
+    private static bool CanRepresentNull(ITypeSymbol type)
+    {
+        return type.IsReferenceType ||
+               type is IPointerTypeSymbol ||
+               type is INamedTypeSymbol
+               {
+                   OriginalDefinition.SpecialType:
+                       SpecialType.System_Nullable_T
+               };
+    }
+
+    private static string EscapeIdentifier(string value)
+    {
+        return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
+            ? "@" + value
+            : value;
     }
 }
