@@ -12,8 +12,8 @@ public sealed class MorphantGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var compilationContext = CompilationContextPipeline.Build(context);
-        var typeMapperConfigureInfos = TypeMapperConfigurePipeline.Build(context, compilationContext);
-        var destinationTypeInfos = TemplateDestinationTypePipeline.Build(compilationContext, typeMapperConfigureInfos);
+        var configureInfos = TypeMapperConfigurePipeline.Build(context, compilationContext);
+        var destinationTypeInfos = TemplateDestinationTypePipeline.Build(compilationContext, configureInfos);
 
         TemplateTypePipeline.Register(context, compilationContext, destinationTypeInfos);
         TemplateExtensionPipeline.Register(context, destinationTypeInfos);

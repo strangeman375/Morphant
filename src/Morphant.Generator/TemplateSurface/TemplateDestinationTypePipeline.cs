@@ -13,27 +13,75 @@ internal static class TemplateDestinationTypePipeline
     {
         var destinationTypes = configureInfos
             .Combine(compilationContext)
-            .SelectMany(static (x, cancellationToken) =>
+            .SelectMany(static (source, cancellationToken) =>
             {
-                var (configureInfo, compilationContext) = x;
+                var (configureInfo, context) = source;
 
                 return BuildDestinationTypes(
                     configureInfo,
-                    compilationContext,
+                    context,
                     cancellationToken);
             })
-            .WithTrackingName(MorphantGeneratorStageNames.BuildMapperBuilderMapInfos);
+            .WithTrackingName(
+                MorphantGeneratorStageNames
+                    .BuildTemplateDestinationTypeInfos);
 
         return destinationTypes
             .Collect()
-            .SelectMany(static (destinationTypesInfos, cancellationToken) =>
-                DeduplicateAndSort(destinationTypesInfos, cancellationToken))
-            .WithTrackingName("MorphantGeneratorStageNames.CollectMapperBuilderMapInfos");
+            .SelectMany(static (destinationTypes, cancellationToken) =>
+                DeduplicateAndSort(
+                    destinationTypes,
+                    cancellationToken))
+            .WithTrackingName(
+                MorphantGeneratorStageNames
+                    .CollectTemplateDestinationTypeInfos);
     }
 
-    private static bool IsMapInvocationCandidate(SyntaxNode node)
+    private static ImmutableArray<TemplateDestinationTypeInfo>
+        BuildDestinationTypes(
+            TypeMapperConfigureInfo configureInfo,
+            CompilationContext context,
+            CancellationToken cancellationToken)
     {
-        return node is InvocationExpressionSyntax
+        if (context.KnownSymbols is not { } knownSymbols)
+        {
+            return ImmutableArray<TemplateDestinationTypeInfo>.Empty;
+        }
+
+        var semanticModel = context.Compilation.GetSemanticModel(
+            configureInfo.Syntax.SyntaxTree);
+
+        var result =
+            ImmutableArray.CreateBuilder<TemplateDestinationTypeInfo>();
+
+        foreach (var invocation in configureInfo.Syntax
+                     .DescendantNodes()
+                     .OfType<InvocationExpressionSyntax>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!IsMapInvocationCandidate(invocation))
+            {
+                continue;
+            }
+
+            if (TryGetDestinationType(
+                    invocation,
+                    semanticModel,
+                    knownSymbols,
+                    cancellationToken) is { } destinationType)
+            {
+                result.Add(destinationType);
+            }
+        }
+
+        return result.ToImmutable();
+    }
+
+    private static bool IsMapInvocationCandidate(
+        InvocationExpressionSyntax invocation)
+    {
+        return invocation is
         {
             ArgumentList.Arguments.Count: <= 1,
             Expression: MemberAccessExpressionSyntax
@@ -47,33 +95,6 @@ internal static class TemplateDestinationTypePipeline
         };
     }
 
-    private static ImmutableArray<TemplateDestinationTypeInfo> BuildDestinationTypes(
-        TypeMapperConfigureInfo configureInfo,
-        CompilationContext context,
-        CancellationToken cancellationToken)
-    {
-        var invocations = configureInfo.Syntax
-            .DescendantNodes()
-            .Where(IsMapInvocationCandidate);
-
-        var semanticModel = context.Compilation.GetSemanticModel(configureInfo.Syntax.SyntaxTree);
-
-        var builder = ImmutableArray.CreateBuilder<TemplateDestinationTypeInfo>();
-        foreach (var invocation in invocations)
-        {
-            if (TryGetDestinationType(
-                    (InvocationExpressionSyntax)invocation,
-                    semanticModel,
-                    context.KnownSymbols,
-                    cancellationToken) is { } destinationType)
-            {
-                builder.Add(destinationType);
-            }
-        }
-
-        return builder.ToImmutable();
-    }
-
     private static TemplateDestinationTypeInfo? TryGetDestinationType(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
@@ -84,49 +105,53 @@ internal static class TemplateDestinationTypePipeline
             invocation,
             cancellationToken);
 
-        if (symbolInfo.Symbol is not IMethodSymbol method)
+        if (symbolInfo.Symbol is not IMethodSymbol method ||
+            !IsMapperBuilderMapMethod(method, knownSymbols))
         {
             return null;
         }
 
-        if (!IsMapperBuilderMapMethod(method, knownSymbols))
+        var destinationType = method.TypeArguments[1]
+            .WithNullableAnnotation(
+                NullableAnnotation.NotAnnotated);
+
+        if (destinationType is not INamedTypeSymbol namedDestinationType ||
+            !IsSupportedDestinationType(namedDestinationType))
         {
             return null;
         }
 
-        var sourceType = method.TypeArguments[0];
-        var destinationType = NormalizeDestinationType(method.TypeArguments[1]);
-
-        if (destinationType is not INamedTypeSymbol namedDestinationType
-            || !IsSupportedDestinationType(destinationType))
-        {
-            return null;
-        }
-
-        var destinationTypeReference = BuildDestinationTypeInfo(namedDestinationType);
-        return destinationTypeReference;
+        return BuildDestinationTypeInfo(
+            namedDestinationType);
     }
 
     private static TemplateDestinationTypeInfo BuildDestinationTypeInfo(
         INamedTypeSymbol destinationType)
     {
-        var metadataName = SymbolNameHelper.GetFullMetadataName(destinationType);
+        var metadataName =
+            SymbolNameHelper.GetFullMetadataName(destinationType);
 
         var fullyQualifiedName = destinationType.ToDisplayString(
             SymbolDisplayFormat.FullyQualifiedFormat);
 
-        var destinationNamespace = destinationType.ContainingNamespace.IsGlobalNamespace
-            ? string.Empty
-            : destinationType.ContainingNamespace.ToDisplayString();
+        var destinationNamespace =
+            destinationType.ContainingNamespace.IsGlobalNamespace
+                ? string.Empty
+                : destinationType.ContainingNamespace.ToDisplayString();
 
-        var templateNamespace = string.IsNullOrEmpty(destinationNamespace)
-            ? "Morphant.Generated"
-            : destinationNamespace + ".Morphant.Generated";
+        var templateNamespace =
+            string.IsNullOrEmpty(destinationNamespace)
+                ? "Morphant.Generated"
+                : destinationNamespace + ".Morphant.Generated";
 
-        var templateTypeName = destinationType.Name + "MorphantTemplate";
+        var templateTypeName =
+            destinationType.Name + "MorphantTemplate";
 
         var templateTypeFullyQualifiedName =
-            "global::" + templateNamespace + "." + templateTypeName;
+            "global::" +
+            templateNamespace +
+            "." +
+            templateTypeName;
 
         return new TemplateDestinationTypeInfo(
             metadataName,
@@ -136,9 +161,10 @@ internal static class TemplateDestinationTypePipeline
             templateTypeFullyQualifiedName);
     }
 
-    private static IEnumerable<TemplateDestinationTypeInfo> DeduplicateAndSort(
-        ImmutableArray<TemplateDestinationTypeInfo> destinationTypes,
-        CancellationToken cancellationToken)
+    private static ImmutableArray<TemplateDestinationTypeInfo>
+        DeduplicateAndSort(
+            ImmutableArray<TemplateDestinationTypeInfo> destinationTypes,
+            CancellationToken cancellationToken)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var result = new List<TemplateDestinationTypeInfo>();
@@ -153,80 +179,40 @@ internal static class TemplateDestinationTypePipeline
             }
         }
 
-        result.Sort(static (x, y) =>
-            StringComparer.Ordinal.Compare(x.MetadataName, y.MetadataName));
+        result.Sort(static (left, right) =>
+            StringComparer.Ordinal.Compare(
+                left.MetadataName,
+                right.MetadataName));
 
-        return result;
+        return result.ToImmutableArray();
     }
 
     private static bool IsMapperBuilderMapMethod(
         IMethodSymbol method,
         KnownSymbols knownSymbols)
     {
-        return method.Name == "Map"
-               && method.MethodKind == MethodKind.Ordinary
-               && !method.IsStatic
-               && method.Parameters.Length == 1
-               && method.TypeArguments.Length == 2
-               && SymbolEqualityComparer.Default.Equals(method.ContainingType, knownSymbols.MapperBuilder);
+        return method.Name == "Map" &&
+               method.MethodKind == MethodKind.Ordinary &&
+               !method.IsStatic &&
+               method.Parameters.Length == 1 &&
+               method.TypeArguments.Length == 2 &&
+               SymbolEqualityComparer.Default.Equals(
+                   method.ContainingType,
+                   knownSymbols.MapperBuilder);
     }
 
-    private static ITypeSymbol NormalizeDestinationType(ITypeSymbol destinationType) =>
-        destinationType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-
-    private static bool IsSupportedDestinationType(ITypeSymbol destinationType)
+    private static bool IsSupportedDestinationType(
+        INamedTypeSymbol destinationType)
     {
-        if (destinationType is not INamedTypeSymbol namedType)
+        if (destinationType.IsGenericType ||
+            destinationType.IsTupleType)
         {
             return false;
         }
 
-        // Пока не поддерживаем generic destination types:
-        // ApiResponse<UserModel>, List<UserModel>, etc.
-        if (namedType.IsGenericType)
-        {
-            return false;
-        }
-
-        // Пока не поддерживаем tuple destination types.
-        if (namedType.IsTupleType)
-        {
-            return false;
-        }
-
-        // Пока не поддерживаем массивы и прочие спец. формы.
-        // Массивы обычно не INamedTypeSymbol, но оставляем намерение явно.
-        return destinationType.TypeKind is TypeKind.Class
-            or TypeKind.Struct
-            or TypeKind.Interface;
-    }
-
-    private static string GetContainingNamespace(
-        SyntaxNode node,
-        SemanticModel semanticModel,
-        CancellationToken cancellationToken)
-    {
-        var typeDeclaration = node
-            .Ancestors()
-            .OfType<TypeDeclarationSyntax>()
-            .FirstOrDefault();
-
-        if (typeDeclaration is null)
-        {
-            return string.Empty;
-        }
-
-        var typeSymbol = semanticModel.GetDeclaredSymbol(
-            typeDeclaration,
-            cancellationToken);
-
-        var namespaceSymbol = typeSymbol?.ContainingNamespace;
-
-        if (namespaceSymbol is null || namespaceSymbol.IsGlobalNamespace)
-        {
-            return string.Empty;
-        }
-
-        return namespaceSymbol.ToDisplayString();
+        return destinationType.TypeKind is
+            TypeKind.Class or
+            TypeKind.Struct or
+            TypeKind.Interface;
     }
 }

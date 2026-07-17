@@ -9,11 +9,16 @@ internal static class CompilationContextPipeline
     {
         return context.CompilationProvider
             .Combine(context.ParseOptionsProvider)
-            .Select(static (x, _) =>
+            .Select(static (source, _) =>
             {
-                var (compilation, parseOptions) = x;
-                return new CompilationContext((CSharpCompilation)compilation, ((CSharpParseOptions)parseOptions).LanguageVersion, new KnownSymbols(compilation));
+                var (compilation, parseOptions) = source;
+
+                return new CompilationContext(
+                    (CSharpCompilation)compilation,
+                    ((CSharpParseOptions)parseOptions).LanguageVersion,
+                    KnownSymbols.TryCreate(compilation));
             })
-            .WithTrackingName(MorphantGeneratorStageNames.BuildCompilationContext);
+            .WithTrackingName(
+                MorphantGeneratorStageNames.BuildCompilationContext);
     }
 }

@@ -10,59 +10,135 @@ internal static class TypeMapperConfigurePipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext)
     {
-        var candidates = context.SyntaxProvider
-            .CreateSyntaxProvider(IsCandidate, static (syntaxContext, _) => (MethodDeclarationSyntax)syntaxContext.Node)
-            .WithTrackingName(MorphantGeneratorStageNames.FindTypeMapperConfigureCandidates);
+        var mapperDeclarations = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
+                MetadataNames.MorphantMapperAttribute,
+                static (node, _) =>
+                    node is ClassDeclarationSyntax,
+                static (attributeContext, _) =>
+                    (ClassDeclarationSyntax)attributeContext.TargetNode)
+            .WithTrackingName(
+                MorphantGeneratorStageNames.FindMorphantMapperDeclarations);
 
-        return candidates
+        return mapperDeclarations
             .Combine(compilationContext)
-            .Select(TryBuild)
+            .Select(static (source, cancellationToken) =>
+                TryBuild(source, cancellationToken))
             .WhereHasValue()
-            .WithTrackingName(MorphantGeneratorStageNames.BuildTypeMapperConfigureInfos);
+            .WithTrackingName(
+                MorphantGeneratorStageNames.BuildTypeMapperConfigureInfos);
     }
 
-    private static bool IsCandidate(SyntaxNode node, CancellationToken _) =>
-        node is MethodDeclarationSyntax method
-        && method.Identifier.ValueText == "Configure"
-        && method.ParameterList.Parameters.Count == 1
-        && method.TypeParameterList is null
-        && method.ReturnType is PredefinedTypeSyntax returnType
-        && returnType.Keyword.IsKind(SyntaxKind.VoidKeyword)
-        && method.Modifiers.Any(SyntaxKind.OverrideKeyword)
-        && (method.Body is not null || method.ExpressionBody is not null);
-
     private static TypeMapperConfigureInfo? TryBuild(
-        (MethodDeclarationSyntax candidate, CompilationContext context) source,
+        (
+            ClassDeclarationSyntax MapperDeclaration,
+            CompilationContext Context
+        ) source,
         CancellationToken cancellationToken)
     {
-        var (candidate, context) = source;
+        cancellationToken.ThrowIfCancellationRequested();
 
-        var semanticModel = context.Compilation.GetSemanticModel(candidate.SyntaxTree);
-        var method = semanticModel.GetDeclaredSymbol(candidate, cancellationToken);
+        var (mapperDeclaration, context) = source;
 
-        if (method is null
-            || !IsTypeMapperConfigureOverride(method, context.KnownSymbols))
+        if (context.KnownSymbols is not { } knownSymbols)
         {
             return null;
         }
 
-        return new TypeMapperConfigureInfo(candidate, method);
+        var semanticModel = context.Compilation.GetSemanticModel(
+            mapperDeclaration.SyntaxTree);
+
+        if (semanticModel.GetDeclaredSymbol(
+                mapperDeclaration,
+                cancellationToken) is not INamedTypeSymbol mapperType)
+        {
+            return null;
+        }
+
+        var configureMethod = FindConfigureOverride(
+            mapperType,
+            knownSymbols,
+            cancellationToken);
+
+        if (configureMethod is null)
+        {
+            return null;
+        }
+
+        foreach (var syntaxReference
+                 in configureMethod.DeclaringSyntaxReferences)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (syntaxReference.GetSyntax(cancellationToken)
+                    is MethodDeclarationSyntax
+                    {
+                        Body: not null
+                    } configureSyntax)
+            {
+                return new TypeMapperConfigureInfo(
+                    configureSyntax);
+            }
+
+            if (syntaxReference.GetSyntax(cancellationToken)
+                    is MethodDeclarationSyntax
+                    {
+                        ExpressionBody: not null
+                    } expressionBodiedSyntax)
+            {
+                return new TypeMapperConfigureInfo(
+                    expressionBodiedSyntax);
+            }
+        }
+
+        return null;
+    }
+
+    private static IMethodSymbol? FindConfigureOverride(
+        INamedTypeSymbol mapperType,
+        KnownSymbols knownSymbols,
+        CancellationToken cancellationToken)
+    {
+        foreach (var method in mapperType
+                     .GetMembers("Configure")
+                     .OfType<IMethodSymbol>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsTypeMapperConfigureOverride(
+                    method,
+                    knownSymbols))
+            {
+                return method;
+            }
+        }
+
+        return null;
     }
 
     private static bool IsTypeMapperConfigureOverride(
         IMethodSymbol method,
         KnownSymbols knownSymbols)
     {
-        var parameter = method.Parameters[0];
-        if (!SymbolEqualityComparer.Default.Equals(parameter.Type, knownSymbols.MapperBuilder))
+        if (!method.IsOverride ||
+            method.IsStatic ||
+            !method.ReturnsVoid ||
+            method.TypeParameters.Length != 0 ||
+            method.Parameters.Length != 1 ||
+            !SymbolEqualityComparer.Default.Equals(
+                method.Parameters[0].Type,
+                knownSymbols.MapperBuilder))
         {
             return false;
         }
 
-        var current = method;
-        while ((current = current!.OverriddenMethod) is not null)
+        for (var overridden = method.OverriddenMethod;
+             overridden is not null;
+             overridden = overridden.OverriddenMethod)
         {
-            if (SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, knownSymbols.TypeMapperConfigure.OriginalDefinition))
+            if (SymbolEqualityComparer.Default.Equals(
+                    overridden.OriginalDefinition,
+                    knownSymbols.TypeMapperConfigure.OriginalDefinition))
             {
                 return true;
             }

@@ -6,5 +6,5 @@ internal sealed record CompilationContext
 (
     CSharpCompilation Compilation,
     LanguageVersion LanguageVersion,
-    KnownSymbols KnownSymbols
+    KnownSymbols? KnownSymbols
 );

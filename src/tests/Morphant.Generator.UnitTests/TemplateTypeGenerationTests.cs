@@ -28,6 +28,7 @@ namespace TestCase
         public int Id { get; set; }
     }
 
+    [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
