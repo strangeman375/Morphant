@@ -222,6 +222,47 @@ internal sealed class TemplateTypeConstructorMembersTests
     }
 
     [Test]
+    public async Task Escapes_keyword_constructor_member_name()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public Destination(int @event)
+        {
+        }
+""";
+
+        // lang=c#
+        const string constructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>event</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<int> @event = null!;
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="event">Configures the <c>event</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> @event)
+        {
+        }
+""";
+
+        await RunAndAssert(constructors, constructorMembers, expectedConstructors);
+    }
+
+    [Test]
     public async Task Builds_distinct_field_names_for_array_ranks()
     {
         // lang=c#
