@@ -29,7 +29,7 @@ internal sealed class TemplateTypeConstructorTests
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = default!;
+        public global::Morphant.Members.ConstructorMember<int> id = null!;
     }
 """;
 
@@ -75,27 +75,27 @@ internal sealed class TemplateTypeConstructorTests
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = default!;
+        public global::Morphant.Members.ConstructorMember<int> id = null!;
 
         /// <summary>
         /// Configures the <c>displayName</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?> displayName = default!;
+        public global::Morphant.Members.ConstructorMember<string?> displayName = null!;
 
         /// <summary>
         /// Configures the <c>createdAt</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<global::System.DateTime?> createdAt = default!;
+        public global::Morphant.Members.ConstructorMember<global::System.DateTime?> createdAt = null!;
 
         /// <summary>
         /// Configures the <c>enabled</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<bool> enabled = default!;
+        public global::Morphant.Members.ConstructorMember<bool> enabled = null!;
 
         /// <summary>
         /// Configures the <c>mode</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> mode = default!;
+        public global::Morphant.Members.ConstructorMember<string> mode = null!;
     }
 """;
 
@@ -153,12 +153,12 @@ internal sealed class TemplateTypeConstructorTests
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> name = default!;
+        public global::Morphant.Members.ConstructorMember<string> name = null!;
 
         /// <summary>
         /// Configures the <c>enabled</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<bool> enabled = default!;
+        public global::Morphant.Members.ConstructorMember<bool> enabled = null!;
     }
 """;
 
@@ -216,12 +216,12 @@ internal sealed class TemplateTypeConstructorTests
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = default!;
+        public global::Morphant.Members.ConstructorMember<int> id = null!;
 
         /// <summary>
         /// Configures the <c>tags</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string[]> tags = default!;
+        public global::Morphant.Members.ConstructorMember<string[]> tags = null!;
     }
 """;
 
@@ -288,7 +288,7 @@ internal sealed class TemplateTypeConstructorTests
         /// <summary>
         /// Configures the <c>event</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> @event = default!;
+        public global::Morphant.Members.ConstructorMember<int> @event = null!;
     }
 """;
 
