@@ -217,7 +217,7 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
     }
 
     [Test]
-    public async Task Skips_constructor_with_byref_like_parameter_without_affecting_supported_constructors()
+    public async Task Skips_constructor_with_ref_like_parameter_without_affecting_supported_constructors()
     {
         // lang=c#
         const string constructors =

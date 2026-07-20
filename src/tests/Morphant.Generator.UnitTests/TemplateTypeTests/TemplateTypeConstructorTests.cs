@@ -148,7 +148,7 @@ internal sealed class TemplateTypeConstructorTests
             constructors: string.Empty,
             constructorMembers: string.Empty,
             expectedConstructors: expectedConstructors,
-            usage: additionalSource,
+            additionalSource: additionalSource,
             destinationDeclaration:
                 "public sealed class Destination : DestinationBase");
     }

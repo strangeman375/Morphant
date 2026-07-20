@@ -9,14 +9,14 @@ internal static class TemplateTypeConstructorTestHarness
         string constructors,
         string constructorMembers,
         string expectedConstructors,
-        string usage = "",
+        string additionalSource = "",
         string destinationDeclaration = "public sealed class Destination")
     {
         return TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             BuildSource(
                 constructors,
-                usage,
+                additionalSource,
                 destinationDeclaration),
             "Morphant.TemplateType.TestCase_Destination.g.cs",
             BuildExpectedSource(
@@ -26,12 +26,12 @@ internal static class TemplateTypeConstructorTestHarness
 
     private static string BuildSource(
         string constructors,
-        string usage,
+        string additionalSource,
         string destinationDeclaration)
     {
         return SourceTemplate
             .Replace(ConstructorPlaceholder, constructors)
-            .Replace(UsagePlaceholder, usage)
+            .Replace(AdditionalSourcePlaceholder, additionalSource)
             .Replace(
                 DestinationDeclarationPlaceholder,
                 destinationDeclaration);
@@ -76,8 +76,8 @@ internal static class TemplateTypeConstructorTestHarness
     private const string ConstructorPlaceholder =
         "__DESTINATION_CONSTRUCTORS__";
 
-    private const string UsagePlaceholder =
-        "__USAGE__";
+    private const string AdditionalSourcePlaceholder =
+        "__ADDITIONAL_SOURCE__";
 
     private const string DestinationDeclarationPlaceholder =
         "__DESTINATION_DECLARATION__";
@@ -114,7 +114,7 @@ __DESTINATION_CONSTRUCTORS__
         }
     }
 
-__USAGE__
+__ADDITIONAL_SOURCE__
 }
 """;
 
