@@ -4,9 +4,12 @@ namespace Morphant.Generator;
 
 public static class HintNameHelper
 {
+    private const ulong Fnv1A64OffsetBasis = 14695981039346656037UL;
+    private const ulong Fnv1A64Prime = 1099511628211UL;
+
     public static string ToHintNamePart(string value)
     {
-        var builder = new StringBuilder(value.Length + 10);
+        var builder = new StringBuilder(value.Length + 18);
         var requiresDisambiguation = false;
 
         foreach (var character in value)
@@ -40,15 +43,15 @@ public static class HintNameHelper
     {
         unchecked
         {
-            uint hash = 2166136261;
+            var hash = Fnv1A64OffsetBasis;
 
             foreach (var character in value)
             {
                 hash ^= character;
-                hash *= 16777619;
+                hash *= Fnv1A64Prime;
             }
 
-            return hash.ToString("x8");
+            return hash.ToString("x16");
         }
     }
 }

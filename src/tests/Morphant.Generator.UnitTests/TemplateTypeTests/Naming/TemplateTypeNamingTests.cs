@@ -131,7 +131,7 @@ namespace TestCase
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "TestCase_Container_Destination__a83cf1bb",
+                "TestCase_Container_Destination__ed07600340fa8c3b",
                 "TestCase.Morphant.Generated.ContainerScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.Container.Destination"));
@@ -189,12 +189,12 @@ namespace TestCase
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "TestCase_First_Destination__05950b0a",
+                "TestCase_First_Destination__2836210ee2ea978a",
                 "TestCase.Morphant.Generated.FirstScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.First.Destination"),
             ExpectedTemplate(
-                "TestCase_Second_Destination__91d027ee",
+                "TestCase_Second_Destination__a43439fdb43fe60e",
                 "TestCase.Morphant.Generated.SecondScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.Second.Destination"));
@@ -244,7 +244,7 @@ namespace TestCase
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "TestCase_Outer_Middle_Destination__2ee20113",
+                "TestCase_Outer_Middle_Destination__3130940fbd323f13",
                 "TestCase.Morphant.Generated.OuterScope.MiddleScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.Outer.Middle.Destination"));
@@ -288,7 +288,7 @@ public partial class TestMapper : TypeMapper
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "Container_Destination__81648483",
+                "Container_Destination__d13a8b79fbc90443",
                 "Morphant.Generated.ContainerScope",
                 "DestinationMorphantTemplate",
                 "global::Container.Destination"));
@@ -335,7 +335,7 @@ namespace TestCase
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "TestCase_namespace_Destination__722f2b63",
+                "TestCase_namespace_Destination__b1d50cce1ebc1363",
                 "TestCase.Morphant.Generated.namespaceScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.@namespace.Destination"));
@@ -494,15 +494,322 @@ public partial class TestMapper : TypeMapper
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "A_B_C__185d251e",
+                "A_B_C__dcf052f10671af9e",
                 "A.Morphant.Generated",
                 "B_CMorphantTemplate",
                 "global::A.B_C"),
             ExpectedTemplate(
-                "A_B_C__20b1220a",
+                "A_B_C__a143b4740e1429ca",
                 "A_B.Morphant.Generated",
                 "CMorphantTemplate",
                 "global::A_B.C"));
+    }
+
+    [Test]
+    public async Task Distinguishes_nested_and_top_level_metadata_names_with_same_sanitized_form()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+public sealed class Source
+{
+}
+
+public static class A_B
+{
+    /// <summary>
+    /// Represents a nested destination model.
+    /// </summary>
+    public sealed class Destination
+    {
+    }
+}
+
+namespace A.B
+{
+    /// <summary>
+    /// Represents a top-level destination model.
+    /// </summary>
+    public sealed class Destination
+    {
+    }
+}
+
+[MorphantMapper]
+public partial class TestMapper : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        builder.Map<Source, A_B.Destination>();
+        builder.Map<Source, A.B.Destination>();
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "A_B_Destination",
+                "A.B.Morphant.Generated",
+                "DestinationMorphantTemplate",
+                "global::A.B.Destination"),
+            ExpectedTemplate(
+                "A_B_Destination__1ab147f89ef927d2",
+                "Morphant.Generated.A_BScope",
+                "DestinationMorphantTemplate",
+                "global::A_B.Destination"));
+    }
+
+    [Test]
+    public async Task Keeps_disambiguated_hint_names_stable_across_mapping_order()
+    {
+        // lang=c#
+        const string firstOrderSource =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+public sealed class Source
+{
+}
+
+namespace A
+{
+    /// <summary>
+    /// Represents the first destination model.
+    /// </summary>
+    public sealed class B_C
+    {
+    }
+}
+
+namespace A_B
+{
+    /// <summary>
+    /// Represents the second destination model.
+    /// </summary>
+    public sealed class C
+    {
+    }
+}
+
+[MorphantMapper]
+public partial class TestMapper : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        builder.Map<Source, A.B_C>();
+        builder.Map<Source, A_B.C>();
+    }
+}
+""";
+
+        // lang=c#
+        const string secondOrderSource =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+public sealed class Source
+{
+}
+
+namespace A_B
+{
+    /// <summary>
+    /// Represents the second destination model.
+    /// </summary>
+    public sealed class C
+    {
+    }
+}
+
+namespace A
+{
+    /// <summary>
+    /// Represents the first destination model.
+    /// </summary>
+    public sealed class B_C
+    {
+    }
+}
+
+[MorphantMapper]
+public partial class TestMapper : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        builder.Map<Source, A_B.C>();
+        builder.Map<Source, A.B_C>();
+    }
+}
+""";
+
+        var expectedTemplates = new[]
+        {
+            ExpectedTemplate(
+                "A_B_C__dcf052f10671af9e",
+                "A.Morphant.Generated",
+                "B_CMorphantTemplate",
+                "global::A.B_C"),
+            ExpectedTemplate(
+                "A_B_C__a143b4740e1429ca",
+                "A_B.Morphant.Generated",
+                "CMorphantTemplate",
+                "global::A_B.C")
+        };
+
+        await RunAndAssert(firstOrderSource, expectedTemplates);
+        await RunAndAssert(secondOrderSource, expectedTemplates);
+    }
+
+    [Test]
+    public async Task Generates_one_template_for_destination_mapped_from_multiple_source_types()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class FirstSource
+    {
+    }
+
+    public sealed class SecondSource
+    {
+    }
+
+    /// <summary>
+    /// Represents a destination model.
+    /// </summary>
+    public sealed class Destination
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<FirstSource, Destination>();
+            builder.Map<SecondSource, Destination>();
+        }
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "TestCase_Destination",
+                "TestCase.Morphant.Generated",
+                "DestinationMorphantTemplate",
+                "global::TestCase.Destination"));
+    }
+
+    [Test]
+    public async Task Generates_one_template_for_nullable_and_non_nullable_destination_references()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    /// <summary>
+    /// Represents a destination model.
+    /// </summary>
+    public sealed class Destination
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>();
+            builder.Map<Source, Destination?>();
+        }
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "TestCase_Destination",
+                "TestCase.Morphant.Generated",
+                "DestinationMorphantTemplate",
+                "global::TestCase.Destination"));
+    }
+
+    [Test]
+    public async Task Generates_one_template_for_aliased_and_direct_destination_references()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+using DestinationAlias = TestCase.Destination;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    /// <summary>
+    /// Represents a destination model.
+    /// </summary>
+    public sealed class Destination
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>();
+            builder.Map<Source, DestinationAlias>();
+        }
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "TestCase_Destination",
+                "TestCase.Morphant.Generated",
+                "DestinationMorphantTemplate",
+                "global::TestCase.Destination"));
     }
 
     [Test]
