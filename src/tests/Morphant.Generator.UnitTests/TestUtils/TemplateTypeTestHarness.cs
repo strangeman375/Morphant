@@ -17,10 +17,11 @@ internal static class TemplateTypeTestHarness
         string destinationDocumentation = DefaultDestinationDocumentation,
         string expectedTemplateTypeDocumentation = DefaultExpectedTemplateTypeDocumentation,
         string? expectedByConventionConstructor = null,
-        string? expectedByFactoryConstructor = null)
+        string? expectedByFactoryConstructor = null,
+        LanguageVersion languageVersion = LanguageVersion.CSharp9)
     {
         return TemplateTypeGeneratorTest.RunAndAssert(
-            LanguageVersion.CSharp9,
+            languageVersion,
             BuildSource(
                 constructors,
                 additionalSource,

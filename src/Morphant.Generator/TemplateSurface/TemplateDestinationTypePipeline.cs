@@ -116,7 +116,9 @@ internal static class TemplateDestinationTypePipeline
                 NullableAnnotation.NotAnnotated);
 
         if (destinationType is not INamedTypeSymbol namedDestinationType ||
-            !IsSupportedDestinationType(namedDestinationType))
+            !IsSupportedDestinationType(
+                namedDestinationType,
+                semanticModel.Compilation))
         {
             return null;
         }
@@ -227,10 +229,16 @@ internal static class TemplateDestinationTypePipeline
     }
 
     private static bool IsSupportedDestinationType(
-        INamedTypeSymbol destinationType)
+        INamedTypeSymbol destinationType,
+        Compilation compilation)
     {
         if (destinationType.IsGenericType ||
-            destinationType.IsTupleType)
+            destinationType.IsTupleType ||
+            destinationType.IsRefLikeType ||
+            destinationType.IsFileLocal ||
+            !compilation.IsSymbolAccessibleWithin(
+                destinationType,
+                compilation.Assembly))
         {
             return false;
         }
