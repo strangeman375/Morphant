@@ -101,7 +101,7 @@ internal static class TemplateTypeTestHarness
     // lang=c#
     private const string SourceTemplate =
 """
-#pragma warning disable CS0169, CS0414, CS0649, CS1591
+#pragma warning disable CS1591
 #nullable enable
 
 using System;

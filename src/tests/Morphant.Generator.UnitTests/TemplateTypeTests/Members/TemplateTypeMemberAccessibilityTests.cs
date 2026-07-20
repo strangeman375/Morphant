@@ -34,6 +34,9 @@ internal sealed class TemplateTypeMemberAccessibilityTests
         protected int ProtectedField = 0;
 
         private protected int PrivateProtectedField = 0;
+
+        private int InaccessibleFieldsSum =>
+            PrivateField + ProtectedField + PrivateProtectedField;
 """;
 
         // lang=c#
