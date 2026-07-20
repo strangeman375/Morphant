@@ -153,52 +153,158 @@ internal static class TemplateTypeModelBuilder
         CancellationToken cancellationToken)
     {
         var result = ImmutableArray.CreateBuilder<TemplateMemberModel>();
+        var hiddenMemberNames =
+            new HashSet<string>(StringComparer.Ordinal);
 
-        // GetMembers сохраняет естественный порядок объявления.
-        foreach (var member in destinationType.GetMembers())
+        if (destinationType.TypeKind == TypeKind.Interface)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (member is IPropertySymbol property)
+            AddInterfaceMembers(
+                destinationType,
+                compilation,
+                hiddenMemberNames,
+                result,
+                cancellationToken);
+        }
+        else
+        {
+            for (var currentType = destinationType;
+                 currentType is not null;
+                 currentType = currentType.BaseType)
             {
-                if (property.IsStatic ||
-                    property.IsIndexer ||
-                    property.SetMethod is not { } setter ||
-                    !IsAccessible(property, compilation) ||
-                    !IsAccessible(setter, compilation))
-                {
-                    continue;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
 
-                result.Add(
-                    new TemplateMemberModel(
-                        property.Name,
-                        property.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable),
-                        BuildDocumentation(property, cancellationToken)));
-
-                continue;
-            }
-
-            if (member is IFieldSymbol field)
-            {
-                if (field.IsStatic ||
-                    field.IsConst ||
-                    field.IsReadOnly ||
-                    field.IsImplicitlyDeclared ||
-                    !IsAccessible(field, compilation))
-                {
-                    continue;
-                }
-
-                result.Add(
-                    new TemplateMemberModel(
-                        field.Name,
-                        field.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable),
-                        BuildDocumentation(field, cancellationToken)));
+                AddDeclaredMembers(
+                    currentType,
+                    compilation,
+                    hiddenMemberNames,
+                    result,
+                    cancellationToken);
             }
         }
 
         return result.ToImmutable();
+    }
+
+    private static void AddInterfaceMembers(
+        INamedTypeSymbol destinationType,
+        Compilation compilation,
+        HashSet<string> hiddenMemberNames,
+        ImmutableArray<TemplateMemberModel>.Builder result,
+        CancellationToken cancellationToken)
+    {
+        var pendingInterfaces = new Queue<INamedTypeSymbol>();
+        var visitedInterfaces =
+            new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+
+        pendingInterfaces.Enqueue(destinationType);
+
+        while (pendingInterfaces.Count > 0)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var currentInterface = pendingInterfaces.Dequeue();
+
+            if (!visitedInterfaces.Add(currentInterface))
+            {
+                continue;
+            }
+
+            AddDeclaredMembers(
+                currentInterface,
+                compilation,
+                hiddenMemberNames,
+                result,
+                cancellationToken);
+
+            foreach (var baseInterface in currentInterface.Interfaces)
+            {
+                pendingInterfaces.Enqueue(baseInterface);
+            }
+        }
+    }
+
+    private static void AddDeclaredMembers(
+        INamedTypeSymbol declaringType,
+        Compilation compilation,
+        HashSet<string> hiddenMemberNames,
+        ImmutableArray<TemplateMemberModel>.Builder result,
+        CancellationToken cancellationToken)
+    {
+        var declaredMembers = declaringType.GetMembers();
+
+        foreach (var member in declaredMembers)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (hiddenMemberNames.Contains(member.Name))
+            {
+                continue;
+            }
+
+            if (TryBuildMemberModel(
+                    member,
+                    compilation,
+                    cancellationToken) is { } memberModel)
+            {
+                result.Add(memberModel);
+            }
+        }
+
+        // Любое объявление в производном типе скрывает одноимённые
+        // мемберы базового типа, даже если само объявление недоступно
+        // или не может участвовать в маппинге.
+        foreach (var member in declaredMembers)
+        {
+            hiddenMemberNames.Add(member.Name);
+        }
+    }
+
+    private static TemplateMemberModel? TryBuildMemberModel(
+        ISymbol member,
+        Compilation compilation,
+        CancellationToken cancellationToken)
+    {
+        if (member is IPropertySymbol property)
+        {
+            if (property.IsStatic ||
+                property.IsIndexer ||
+                property.SetMethod is not { } setter ||
+                !IsAccessible(property, compilation) ||
+                !IsAccessible(setter, compilation))
+            {
+                return null;
+            }
+
+            return new TemplateMemberModel(
+                property.Name,
+                property.Type.ToDisplayString(
+                    SymbolDisplayFormats.FullyQualifiedNullable),
+                BuildDocumentation(
+                    property,
+                    cancellationToken));
+        }
+
+        if (member is IFieldSymbol field)
+        {
+            if (field.IsStatic ||
+                field.IsConst ||
+                field.IsReadOnly ||
+                field.IsImplicitlyDeclared ||
+                !IsAccessible(field, compilation))
+            {
+                return null;
+            }
+
+            return new TemplateMemberModel(
+                field.Name,
+                field.Type.ToDisplayString(
+                    SymbolDisplayFormats.FullyQualifiedNullable),
+                BuildDocumentation(
+                    field,
+                    cancellationToken));
+        }
+
+        return null;
     }
 
     private static TemplateDocumentationModel BuildDocumentation(
