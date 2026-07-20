@@ -98,18 +98,14 @@ namespace TestCase.Morphant.Generated
         {
         }
 
-        /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.Destination.Id"/>.
-        /// </summary>
+        /// <inheritdoc cref="global::TestCase.Destination.Id"/>
         public global::Morphant.Members.Member<int> Id
         {
             get => null!;
             set { }
         }
 
-        /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.Destination.Name"/>.
-        /// </summary>
+        /// <inheritdoc cref="global::TestCase.Destination.Name"/>
         public global::Morphant.Members.Member<string> Name
         {
             get => null!;
