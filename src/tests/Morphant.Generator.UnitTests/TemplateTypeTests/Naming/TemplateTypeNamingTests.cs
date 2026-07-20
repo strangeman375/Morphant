@@ -91,7 +91,7 @@ public partial class TestMapper : TypeMapper
     }
 
     [Test]
-    public async Task Uses_nested_destination_identity_in_generated_references()
+    public async Task Places_nested_template_in_containing_type_scope()
     {
         // lang=c#
         const string source =
@@ -132,9 +132,213 @@ namespace TestCase
             source,
             ExpectedTemplate(
                 "TestCase_Container_Destination__a83cf1bb",
-                "TestCase.Morphant.Generated",
+                "TestCase.Morphant.Generated.ContainerScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.Container.Destination"));
+    }
+
+    [Test]
+    public async Task Generates_same_named_nested_templates_in_distinct_containing_type_scopes()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public static class First
+    {
+        /// <summary>
+        /// Represents the first nested destination model.
+        /// </summary>
+        public sealed class Destination
+        {
+        }
+    }
+
+    public static class Second
+    {
+        /// <summary>
+        /// Represents the second nested destination model.
+        /// </summary>
+        public sealed class Destination
+        {
+        }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, First.Destination>();
+            builder.Map<Source, Second.Destination>();
+        }
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "TestCase_First_Destination__05950b0a",
+                "TestCase.Morphant.Generated.FirstScope",
+                "DestinationMorphantTemplate",
+                "global::TestCase.First.Destination"),
+            ExpectedTemplate(
+                "TestCase_Second_Destination__91d027ee",
+                "TestCase.Morphant.Generated.SecondScope",
+                "DestinationMorphantTemplate",
+                "global::TestCase.Second.Destination"));
+    }
+
+    [Test]
+    public async Task Preserves_entire_containing_type_chain_in_template_namespace()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public static class Outer
+    {
+        public static class Middle
+        {
+            /// <summary>
+            /// Represents a deeply nested destination model.
+            /// </summary>
+            public sealed class Destination
+            {
+            }
+        }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Outer.Middle.Destination>();
+        }
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "TestCase_Outer_Middle_Destination__2ee20113",
+                "TestCase.Morphant.Generated.OuterScope.MiddleScope",
+                "DestinationMorphantTemplate",
+                "global::TestCase.Outer.Middle.Destination"));
+    }
+
+    [Test]
+    public async Task Places_global_namespace_nested_template_in_generated_scope()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+public sealed class Source
+{
+}
+
+public static class Container
+{
+    /// <summary>
+    /// Represents a nested destination model.
+    /// </summary>
+    public sealed class Destination
+    {
+    }
+}
+
+[MorphantMapper]
+public partial class TestMapper : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        builder.Map<Source, Container.Destination>();
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "Container_Destination__81648483",
+                "Morphant.Generated.ContainerScope",
+                "DestinationMorphantTemplate",
+                "global::Container.Destination"));
+    }
+
+    [Test]
+    public async Task Creates_valid_scope_for_keyword_containing_type()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public static class @namespace
+    {
+        /// <summary>
+        /// Represents a nested destination model.
+        /// </summary>
+        public sealed class Destination
+        {
+        }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, @namespace.Destination>();
+        }
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "TestCase_namespace_Destination__722f2b63",
+                "TestCase.Morphant.Generated.namespaceScope",
+                "DestinationMorphantTemplate",
+                "global::TestCase.@namespace.Destination"));
     }
 
     [Test]

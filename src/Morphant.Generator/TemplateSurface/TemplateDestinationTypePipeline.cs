@@ -134,15 +134,8 @@ internal static class TemplateDestinationTypePipeline
         var fullyQualifiedName = destinationType.ToDisplayString(
             SymbolDisplayFormat.FullyQualifiedFormat);
 
-        var destinationNamespace =
-            destinationType.ContainingNamespace.IsGlobalNamespace
-                ? string.Empty
-                : destinationType.ContainingNamespace.ToDisplayString();
-
         var templateNamespace =
-            string.IsNullOrEmpty(destinationNamespace)
-                ? "Morphant.Generated"
-                : destinationNamespace + ".Morphant.Generated";
+            BuildTemplateNamespace(destinationType);
 
         var templateTypeName =
             destinationType.Name + "MorphantTemplate";
@@ -159,6 +152,38 @@ internal static class TemplateDestinationTypePipeline
             templateNamespace,
             templateTypeName,
             templateTypeFullyQualifiedName);
+    }
+
+    private static string BuildTemplateNamespace(
+        INamedTypeSymbol destinationType)
+    {
+        var destinationNamespace =
+            destinationType.ContainingNamespace.IsGlobalNamespace
+                ? string.Empty
+                : destinationType.ContainingNamespace.ToDisplayString();
+
+        var templateNamespace =
+            string.IsNullOrEmpty(destinationNamespace)
+                ? "Morphant.Generated"
+                : destinationNamespace + ".Morphant.Generated";
+
+        if (destinationType.ContainingType is null)
+        {
+            return templateNamespace;
+        }
+
+        var containingTypeScopes = new Stack<string>();
+
+        for (var containingType = destinationType.ContainingType;
+             containingType is not null;
+             containingType = containingType.ContainingType)
+        {
+            containingTypeScopes.Push(
+                containingType.Name + "Scope");
+        }
+
+        return templateNamespace + "." +
+               string.Join(".", containingTypeScopes);
     }
 
     private static ImmutableArray<TemplateDestinationTypeInfo>
