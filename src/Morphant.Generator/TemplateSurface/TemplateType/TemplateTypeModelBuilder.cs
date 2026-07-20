@@ -710,13 +710,17 @@ internal static class TemplateTypeModelBuilder
         ISymbol symbol,
         CancellationToken cancellationToken)
     {
-        var xml = symbol.GetDocumentationCommentXml(
+        // cref does not support closed generic constructions. Documentation
+        // belongs to the original definition, for example Base<T>.Value.
+        var documentationSymbol = symbol.OriginalDefinition;
+
+        var xml = documentationSymbol.GetDocumentationCommentXml(
             preferredCulture: CultureInfo.InvariantCulture,
             expandIncludes: false,
             cancellationToken: cancellationToken);
 
         return new TemplateDocumentationModel(
-            symbol.ToDisplayString(DocumentationCrefFormat),
+            documentationSymbol.ToDisplayString(DocumentationCrefFormat),
             !string.IsNullOrWhiteSpace(xml));
     }
 

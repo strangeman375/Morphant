@@ -214,7 +214,7 @@ internal sealed class TemplateMemberDocumentationTests
     }
 
     [Test]
-    public async Task Escapes_generic_declaring_type_in_member_cref()
+    public async Task Uses_open_generic_definition_in_member_cref()
     {
         // lang=c#
         const string additionalSource =
@@ -235,7 +235,7 @@ internal sealed class TemplateMemberDocumentationTests
         // lang=c#
         const string expectedMembers =
 """
-        /// <inheritdoc cref="global::TestCase.BaseDestination&lt;global::TestCase.Payload&gt;.Value"/>
+        /// <inheritdoc cref="global::TestCase.BaseDestination&lt;T&gt;.Value"/>
         public global::Morphant.Members.Member<global::TestCase.Payload> Value
         {
             get => null!;
