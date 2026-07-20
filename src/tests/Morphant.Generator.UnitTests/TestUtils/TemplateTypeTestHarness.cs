@@ -15,7 +15,9 @@ internal static class TemplateTypeTestHarness
         string expectedMembers = "",
         bool canConstructDestination = true,
         string destinationDocumentation = DefaultDestinationDocumentation,
-        string expectedTemplateTypeDocumentation = DefaultExpectedTemplateTypeDocumentation)
+        string expectedTemplateTypeDocumentation = DefaultExpectedTemplateTypeDocumentation,
+        string? expectedByConventionConstructor = null,
+        string? expectedByFactoryConstructor = null)
     {
         return TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
@@ -31,7 +33,9 @@ internal static class TemplateTypeTestHarness
                 expectedConstructors,
                 expectedMembers,
                 canConstructDestination,
-                expectedTemplateTypeDocumentation));
+                expectedTemplateTypeDocumentation,
+                expectedByConventionConstructor,
+                expectedByFactoryConstructor));
     }
 
     private static string BuildSource(
@@ -58,7 +62,9 @@ internal static class TemplateTypeTestHarness
         string destinationConstructors,
         string expectedMembers,
         bool canConstructDestination,
-        string expectedTemplateTypeDocumentation)
+        string expectedTemplateTypeDocumentation,
+        string? expectedByConventionConstructor,
+        string? expectedByFactoryConstructor)
     {
         var hasConstructorMembers =
             !string.IsNullOrEmpty(constructorMembers);
@@ -75,7 +81,7 @@ internal static class TemplateTypeTestHarness
         builder.AppendLine(expectedTemplateTypeDocumentation);
         builder.AppendLine(ExpectedTemplateTypeStart);
 
-        var expectedByConventionConstructor =
+        expectedByConventionConstructor ??=
             !canConstructDestination
                 ? ExpectedByConventionConstructorWithoutDestinationConstructor
                 : hasConstructorMembers
@@ -84,7 +90,9 @@ internal static class TemplateTypeTestHarness
 
         builder.AppendLine(expectedByConventionConstructor);
         builder.AppendLine();
-        builder.AppendLine(ExpectedByFactoryConstructor);
+        builder.AppendLine(
+            expectedByFactoryConstructor ??
+            ExpectedByFactoryConstructor);
 
         if (!string.IsNullOrEmpty(destinationConstructors))
         {
