@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TemplateTypeTests;
+namespace Morphant.Generator.UnitTests.TemplateTypeTests.Constructors;
 
 [TestFixture]
 internal sealed class TemplateTypeConstructorDestinationKindTests

@@ -3,34 +3,40 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
 
-internal static class TemplateTypeConstructorTestHarness
+internal static class TemplateTypeTestHarness
 {
     public static Task RunAndAssert(
         string constructors,
         string constructorMembers,
         string expectedConstructors,
         string additionalSource = "",
-        string destinationDeclaration = "public sealed class Destination")
+        string destinationDeclaration = "public sealed class Destination",
+        string destinationMembers = "",
+        string expectedMembers = "")
     {
         return TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             BuildSource(
                 constructors,
                 additionalSource,
-                destinationDeclaration),
+                destinationDeclaration,
+                destinationMembers),
             "Morphant.TemplateType.TestCase_Destination.g.cs",
             BuildExpectedSource(
                 constructorMembers,
-                expectedConstructors));
+                expectedConstructors,
+                expectedMembers));
     }
 
     private static string BuildSource(
         string constructors,
         string additionalSource,
-        string destinationDeclaration)
+        string destinationDeclaration,
+        string destinationMembers)
     {
         return SourceTemplate
             .Replace(ConstructorPlaceholder, constructors)
+            .Replace(DestinationMembersPlaceholder, destinationMembers)
             .Replace(AdditionalSourcePlaceholder, additionalSource)
             .Replace(
                 DestinationDeclarationPlaceholder,
@@ -39,7 +45,8 @@ internal static class TemplateTypeConstructorTestHarness
 
     private static string BuildExpectedSource(
         string constructorMembers,
-        string destinationConstructors)
+        string destinationConstructors,
+        string expectedMembers)
     {
         var hasConstructorMembers =
             !string.IsNullOrEmpty(constructorMembers);
@@ -67,6 +74,12 @@ internal static class TemplateTypeConstructorTestHarness
             builder.AppendLine(destinationConstructors);
         }
 
+        if (!string.IsNullOrEmpty(expectedMembers))
+        {
+            builder.AppendLine();
+            builder.AppendLine(expectedMembers);
+        }
+
         builder.AppendLine();
         builder.AppendLine(ExpectedTemplateTypeEnd);
 
@@ -75,6 +88,9 @@ internal static class TemplateTypeConstructorTestHarness
 
     private const string ConstructorPlaceholder =
         "__DESTINATION_CONSTRUCTORS__";
+
+    private const string DestinationMembersPlaceholder =
+        "__DESTINATION_MEMBERS__";
 
     private const string AdditionalSourcePlaceholder =
         "__ADDITIONAL_SOURCE__";
@@ -85,7 +101,7 @@ internal static class TemplateTypeConstructorTestHarness
     // lang=c#
     private const string SourceTemplate =
 """
-#pragma warning disable CS1591
+#pragma warning disable CS0169, CS0414, CS0649, CS1591
 #nullable enable
 
 using System;
@@ -103,6 +119,8 @@ namespace TestCase
     __DESTINATION_DECLARATION__
     {
 __DESTINATION_CONSTRUCTORS__
+
+__DESTINATION_MEMBERS__
     }
 
     [MorphantMapper]

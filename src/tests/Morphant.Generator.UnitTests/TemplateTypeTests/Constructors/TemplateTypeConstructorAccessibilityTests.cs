@@ -1,6 +1,6 @@
-using static Morphant.Generator.UnitTests.TestUtils.TemplateTypeConstructorTestHarness;
+using static Morphant.Generator.UnitTests.TestUtils.TemplateTypeTestHarness;
 
-namespace Morphant.Generator.UnitTests.TemplateTypeTests;
+namespace Morphant.Generator.UnitTests.TemplateTypeTests.Constructors;
 
 [TestFixture]
 internal sealed class TemplateTypeConstructorAccessibilityTests
