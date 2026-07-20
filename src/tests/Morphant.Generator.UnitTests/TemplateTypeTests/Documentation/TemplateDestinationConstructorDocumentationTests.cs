@@ -140,6 +140,125 @@ internal sealed class TemplateDestinationConstructorDocumentationTests
     }
 
     [Test]
+    public async Task Documents_null_and_default_optional_values()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public Destination(
+            string? name = null,
+            DateTime createdAt = default)
+        {
+        }
+""";
+
+        // lang=c#
+        const string constructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>name</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<string?> name = null!;
+
+        /// <summary>
+        /// Configures the <c>createdAt</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<global::System.DateTime> createdAt = null!;
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="name">Configures the <c>name</c> constructor argument. If omitted, the destination constructor default value <c>null</c> is used.</param>
+        /// <param name="createdAt">Configures the <c>createdAt</c> constructor argument. If omitted, the destination constructor default value <c>default</c> is used.</param>
+        public DestinationMorphantTemplate(
+            global::Morphant.Members.ConstructorMember<string?>? name = null,
+            global::Morphant.Members.ConstructorMember<global::System.DateTime>? createdAt = null)
+        {
+        }
+""";
+
+        await RunAndAssert(
+            constructors,
+            constructorMembers,
+            expectedConstructors);
+    }
+
+    [Test]
+    public async Task Documents_named_and_unnamed_enum_default_values()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public Destination(
+            Status status = Status.Active,
+            Status fallback = (Status)42)
+        {
+        }
+""";
+
+        // lang=c#
+        const string additionalSource =
+"""
+    public enum Status
+    {
+        Unknown,
+        Active
+    }
+""";
+
+        // lang=c#
+        const string constructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>status</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<global::TestCase.Status> status = null!;
+
+        /// <summary>
+        /// Configures the <c>fallback</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<global::TestCase.Status> fallback = null!;
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="status">Configures the <c>status</c> constructor argument. If omitted, the destination constructor default value <c>Status.Active</c> is used.</param>
+        /// <param name="fallback">Configures the <c>fallback</c> constructor argument. If omitted, the destination constructor default value <c>(Status)42</c> is used.</param>
+        public DestinationMorphantTemplate(
+            global::Morphant.Members.ConstructorMember<global::TestCase.Status>? status = null,
+            global::Morphant.Members.ConstructorMember<global::TestCase.Status>? fallback = null)
+        {
+        }
+""";
+
+        await RunAndAssert(
+            constructors,
+            constructorMembers,
+            expectedConstructors,
+            additionalSource);
+    }
+
+    [Test]
     public async Task Documents_params_parameter_without_claiming_a_default_value()
     {
         // lang=c#

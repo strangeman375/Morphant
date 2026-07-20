@@ -8,16 +8,21 @@ internal static class TemplateTypeDocumentationTestHarness
         string additionalSource = "",
         string destinationDeclaration = "public sealed class Destination",
         string destinationDocumentation = DefaultDestinationDocumentation,
-        string expectedTemplateTypeDocumentation = DefaultExpectedTemplateTypeDocumentation)
+        string expectedTemplateTypeDocumentation = DefaultExpectedTemplateTypeDocumentation,
+        string constructors = ParameterlessDestinationConstructor,
+        string constructorMembers = "",
+        string expectedConstructors = ExpectedParameterlessTemplateConstructor,
+        bool canConstructDestination = true)
     {
         return TemplateTypeTestHarness.RunAndAssert(
-            ParameterlessDestinationConstructor,
-            string.Empty,
-            ExpectedParameterlessTemplateConstructor,
+            constructors,
+            constructorMembers,
+            expectedConstructors,
             additionalSource,
             destinationDeclaration,
             destinationMembers,
             expectedMembers,
+            canConstructDestination,
             destinationDocumentation: destinationDocumentation,
             expectedTemplateTypeDocumentation:
                 expectedTemplateTypeDocumentation);
