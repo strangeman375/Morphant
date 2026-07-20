@@ -8,6 +8,15 @@ namespace Morphant.Generator.TemplateSurface.TemplateType;
 
 internal static class TemplateTypeModelBuilder
 {
+    private const string AllowNullAttributeMetadataName =
+        "System.Diagnostics.CodeAnalysis.AllowNullAttribute";
+
+    private const string DisallowNullAttributeMetadataName =
+        "System.Diagnostics.CodeAnalysis.DisallowNullAttribute";
+
+    private const string ObsoleteAttributeMetadataName =
+        "System.ObsoleteAttribute";
+
     private static readonly SymbolDisplayFormat DocumentationCrefFormat = new(
         globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
         typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
@@ -40,7 +49,11 @@ internal static class TemplateTypeModelBuilder
             BuildDocumentation(destinationType, cancellationToken),
             constructors,
             BuildConstructorFields(constructors),
-            BuildMembers(destinationType, compilation, cancellationToken));
+            BuildMembers(
+                destinationType,
+                destinationTypeInfo.TemplateTypeName,
+                compilation,
+                cancellationToken));
     }
 
     private static ImmutableArray<TemplateConstructorModel> BuildConstructors(
@@ -149,87 +162,79 @@ internal static class TemplateTypeModelBuilder
 
     private static ImmutableArray<TemplateMemberModel> BuildMembers(
         INamedTypeSymbol destinationType,
+        string templateTypeName,
         Compilation compilation,
         CancellationToken cancellationToken)
     {
         var result = ImmutableArray.CreateBuilder<TemplateMemberModel>();
-        var hiddenMemberNames =
-            new HashSet<string>(StringComparer.Ordinal);
 
         if (destinationType.TypeKind == TypeKind.Interface)
         {
             AddInterfaceMembers(
                 destinationType,
+                templateTypeName,
                 compilation,
-                hiddenMemberNames,
                 result,
                 cancellationToken);
         }
         else
         {
-            for (var currentType = destinationType;
-                 currentType is not null;
-                 currentType = currentType.BaseType)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                AddDeclaredMembers(
-                    currentType,
-                    compilation,
-                    hiddenMemberNames,
-                    result,
-                    cancellationToken);
-            }
+            AddClassMembers(
+                destinationType,
+                templateTypeName,
+                compilation,
+                result,
+                cancellationToken);
         }
 
         return result.ToImmutable();
     }
 
-    private static void AddInterfaceMembers(
+    private static void AddClassMembers(
         INamedTypeSymbol destinationType,
+        string templateTypeName,
         Compilation compilation,
-        HashSet<string> hiddenMemberNames,
         ImmutableArray<TemplateMemberModel>.Builder result,
         CancellationToken cancellationToken)
     {
-        var pendingInterfaces = new Queue<INamedTypeSymbol>();
-        var visitedInterfaces =
-            new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var hiddenMemberNames =
+            new HashSet<string>(StringComparer.Ordinal);
 
-        pendingInterfaces.Enqueue(destinationType);
+        var memberGroups =
+            new List<ImmutableArray<TemplateMemberModel>>();
 
-        while (pendingInterfaces.Count > 0)
+        // Сначала обходим и разрешаем скрытие от производного типа к
+        // базовому, затем выводим получившиеся группы в обратном порядке.
+        // Так most-derived семантика сочетается с base-first выводом.
+        for (var currentType = destinationType;
+             currentType is not null;
+             currentType = currentType.BaseType)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var currentInterface = pendingInterfaces.Dequeue();
+            memberGroups.Add(
+                BuildDeclaredMembers(
+                    currentType,
+                    templateTypeName,
+                    compilation,
+                    hiddenMemberNames,
+                    cancellationToken));
+        }
 
-            if (!visitedInterfaces.Add(currentInterface))
-            {
-                continue;
-            }
-
-            AddDeclaredMembers(
-                currentInterface,
-                compilation,
-                hiddenMemberNames,
-                result,
-                cancellationToken);
-
-            foreach (var baseInterface in currentInterface.Interfaces)
-            {
-                pendingInterfaces.Enqueue(baseInterface);
-            }
+        for (var i = memberGroups.Count - 1; i >= 0; i--)
+        {
+            result.AddRange(memberGroups[i]);
         }
     }
 
-    private static void AddDeclaredMembers(
+    private static ImmutableArray<TemplateMemberModel> BuildDeclaredMembers(
         INamedTypeSymbol declaringType,
+        string templateTypeName,
         Compilation compilation,
         HashSet<string> hiddenMemberNames,
-        ImmutableArray<TemplateMemberModel>.Builder result,
         CancellationToken cancellationToken)
     {
+        var result = ImmutableArray.CreateBuilder<TemplateMemberModel>();
         var declaredMembers = declaringType.GetMembers();
 
         foreach (var member in declaredMembers)
@@ -243,6 +248,7 @@ internal static class TemplateTypeModelBuilder
 
             if (TryBuildMemberModel(
                     member,
+                    templateTypeName,
                     compilation,
                     cancellationToken) is { } memberModel)
             {
@@ -257,31 +263,266 @@ internal static class TemplateTypeModelBuilder
         {
             hiddenMemberNames.Add(member.Name);
         }
+
+        return result.ToImmutable();
+    }
+
+    private static void AddInterfaceMembers(
+        INamedTypeSymbol destinationType,
+        string templateTypeName,
+        Compilation compilation,
+        ImmutableArray<TemplateMemberModel>.Builder result,
+        CancellationToken cancellationToken)
+    {
+        var interfaces = BuildBaseFirstInterfaceOrder(
+            destinationType,
+            cancellationToken);
+
+        var winningDeclarations = BuildWinningInterfaceDeclarations(
+            interfaces,
+            cancellationToken);
+
+        var emittedMemberNames =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var currentInterface in interfaces)
+        {
+            foreach (var member in currentInterface.GetMembers())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (!winningDeclarations.TryGetValue(
+                        member.Name,
+                        out var winningInterface) ||
+                    !SymbolEqualityComparer.Default.Equals(
+                        currentInterface,
+                        winningInterface) ||
+                    emittedMemberNames.Contains(member.Name))
+                {
+                    continue;
+                }
+
+                if (TryBuildMemberModel(
+                        member,
+                        templateTypeName,
+                        compilation,
+                        cancellationToken) is not { } memberModel)
+                {
+                    continue;
+                }
+
+                result.Add(memberModel);
+                emittedMemberNames.Add(member.Name);
+            }
+        }
+    }
+
+    private static ImmutableArray<INamedTypeSymbol>
+        BuildBaseFirstInterfaceOrder(
+            INamedTypeSymbol destinationType,
+            CancellationToken cancellationToken)
+    {
+        var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+        var visitedInterfaces =
+            new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+
+        AddInterfaceBaseFirst(
+            destinationType,
+            visitedInterfaces,
+            result,
+            cancellationToken);
+
+        return result.ToImmutable();
+    }
+
+    private static void AddInterfaceBaseFirst(
+        INamedTypeSymbol currentInterface,
+        HashSet<ISymbol> visitedInterfaces,
+        ImmutableArray<INamedTypeSymbol>.Builder result,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!visitedInterfaces.Add(currentInterface))
+        {
+            return;
+        }
+
+        foreach (var baseInterface in currentInterface.Interfaces)
+        {
+            AddInterfaceBaseFirst(
+                baseInterface,
+                visitedInterfaces,
+                result,
+                cancellationToken);
+        }
+
+        result.Add(currentInterface);
+    }
+
+    private static Dictionary<string, INamedTypeSymbol>
+        BuildWinningInterfaceDeclarations(
+            ImmutableArray<INamedTypeSymbol> interfaces,
+            CancellationToken cancellationToken)
+    {
+        var declarations =
+            new Dictionary<string, List<INamedTypeSymbol>>(
+                StringComparer.Ordinal);
+
+        foreach (var currentInterface in interfaces)
+        {
+            foreach (var member in currentInterface.GetMembers())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (!declarations.TryGetValue(
+                        member.Name,
+                        out var declaringInterfaces))
+                {
+                    declaringInterfaces = new List<INamedTypeSymbol>();
+                    declarations.Add(member.Name, declaringInterfaces);
+                }
+
+                if (!ContainsSymbol(
+                        declaringInterfaces,
+                        currentInterface))
+                {
+                    declaringInterfaces.Add(currentInterface);
+                }
+            }
+        }
+
+        var result =
+            new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
+
+        foreach (var declaration in declarations)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (FindUniqueMostDerivedInterface(
+                    declaration.Value,
+                    cancellationToken) is { } winningInterface)
+            {
+                result.Add(declaration.Key, winningInterface);
+            }
+        }
+
+        return result;
+    }
+
+    private static INamedTypeSymbol? FindUniqueMostDerivedInterface(
+        List<INamedTypeSymbol> declaringInterfaces,
+        CancellationToken cancellationToken)
+    {
+        INamedTypeSymbol? result = null;
+
+        foreach (var candidate in declaringInterfaces)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var isHiddenByDerivedDeclaration = false;
+
+            foreach (var other in declaringInterfaces)
+            {
+                if (!SymbolEqualityComparer.Default.Equals(candidate, other) &&
+                    InheritsFromInterface(other, candidate))
+                {
+                    isHiddenByDerivedDeclaration = true;
+                    break;
+                }
+            }
+
+            if (isHiddenByDerivedDeclaration)
+            {
+                continue;
+            }
+
+            // Несколько unrelated most-derived объявлений делают имя
+            // неоднозначным для плоской template surface.
+            if (result is not null)
+            {
+                return null;
+            }
+
+            result = candidate;
+        }
+
+        return result;
+    }
+
+    private static bool InheritsFromInterface(
+        INamedTypeSymbol derivedInterface,
+        INamedTypeSymbol baseInterface)
+    {
+        foreach (var inheritedInterface in derivedInterface.AllInterfaces)
+        {
+            if (SymbolEqualityComparer.Default.Equals(
+                    inheritedInterface,
+                    baseInterface))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsSymbol(
+        List<INamedTypeSymbol> symbols,
+        INamedTypeSymbol candidate)
+    {
+        foreach (var symbol in symbols)
+        {
+            if (SymbolEqualityComparer.Default.Equals(symbol, candidate))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static TemplateMemberModel? TryBuildMemberModel(
         ISymbol member,
+        string templateTypeName,
         Compilation compilation,
         CancellationToken cancellationToken)
     {
+        if (IsTemplateRecordMemberName(member.Name, templateTypeName))
+        {
+            return null;
+        }
+
         if (member is IPropertySymbol property)
         {
             if (property.IsStatic ||
                 property.IsIndexer ||
                 property.SetMethod is not { } setter ||
                 !IsAccessible(property, compilation) ||
-                !IsAccessible(setter, compilation))
+                !IsAccessible(setter, compilation) ||
+                !IsSupportedMemberType(property.Type))
             {
                 return null;
             }
 
+            var setterParameter =
+                setter.Parameters[setter.Parameters.Length - 1];
+
+            var typeName = BuildMemberTypeName(
+                property.Type,
+                setterParameter.NullableAnnotation,
+                property,
+                setterParameter,
+                out var requiresNullableAnnotationsDisabled);
+
             return new TemplateMemberModel(
                 property.Name,
-                property.Type.ToDisplayString(
-                    SymbolDisplayFormats.FullyQualifiedNullable),
+                typeName,
                 BuildDocumentation(
                     property,
-                    cancellationToken));
+                    cancellationToken),
+                requiresNullableAnnotationsDisabled,
+                BuildObsoleteAttributeSource(property));
         }
 
         if (member is IFieldSymbol field)
@@ -290,21 +531,179 @@ internal static class TemplateTypeModelBuilder
                 field.IsConst ||
                 field.IsReadOnly ||
                 field.IsImplicitlyDeclared ||
-                !IsAccessible(field, compilation))
+                !IsAccessible(field, compilation) ||
+                !IsSupportedMemberType(field.Type))
             {
                 return null;
             }
 
+            var typeName = BuildMemberTypeName(
+                field.Type,
+                field.NullableAnnotation,
+                field,
+                null,
+                out var requiresNullableAnnotationsDisabled);
+
             return new TemplateMemberModel(
                 field.Name,
-                field.Type.ToDisplayString(
-                    SymbolDisplayFormats.FullyQualifiedNullable),
+                typeName,
                 BuildDocumentation(
                     field,
-                    cancellationToken));
+                    cancellationToken),
+                requiresNullableAnnotationsDisabled,
+                BuildObsoleteAttributeSource(field));
         }
 
         return null;
+    }
+
+    private static string BuildMemberTypeName(
+        ITypeSymbol type,
+        NullableAnnotation nullableAnnotation,
+        ISymbol member,
+        ISymbol? inputSymbol,
+        out bool requiresNullableAnnotationsDisabled)
+    {
+        if (CanApplyNullableAnnotation(type))
+        {
+            if (HasAttribute(
+                    member,
+                    DisallowNullAttributeMetadataName) ||
+                HasAttribute(
+                    inputSymbol,
+                    DisallowNullAttributeMetadataName))
+            {
+                nullableAnnotation = NullableAnnotation.NotAnnotated;
+            }
+            else if (HasAttribute(
+                         member,
+                         AllowNullAttributeMetadataName) ||
+                     HasAttribute(
+                         inputSymbol,
+                         AllowNullAttributeMetadataName))
+            {
+                nullableAnnotation = NullableAnnotation.Annotated;
+            }
+        }
+
+        requiresNullableAnnotationsDisabled =
+            nullableAnnotation == NullableAnnotation.None &&
+            CanApplyNullableAnnotation(type);
+
+        return type
+            .WithNullableAnnotation(nullableAnnotation)
+            .ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable);
+    }
+
+    private static bool CanApplyNullableAnnotation(ITypeSymbol type)
+    {
+        return type.IsReferenceType ||
+               type.TypeKind == TypeKind.TypeParameter;
+    }
+
+    private static bool IsSupportedMemberType(ITypeSymbol type)
+    {
+        return !type.IsRefLikeType &&
+               type.TypeKind != TypeKind.Pointer &&
+               type.TypeKind != TypeKind.FunctionPointer &&
+               type.TypeKind != TypeKind.Error;
+    }
+
+    private static bool IsTemplateRecordMemberName(
+        string memberName,
+        string templateTypeName)
+    {
+        return memberName == templateTypeName ||
+               memberName == "Clone" ||
+               memberName == "EqualityContract" ||
+               memberName == "Equals" ||
+               memberName == "GetHashCode" ||
+               memberName == "PrintMembers" ||
+               memberName == "ToString";
+    }
+
+    private static bool HasAttribute(
+        ISymbol? symbol,
+        string attributeMetadataName)
+    {
+        if (symbol is null)
+        {
+            return false;
+        }
+
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (HasMetadataName(
+                    attribute.AttributeClass,
+                    attributeMetadataName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string? BuildObsoleteAttributeSource(ISymbol symbol)
+    {
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (!HasMetadataName(
+                    attribute.AttributeClass,
+                    ObsoleteAttributeMetadataName))
+            {
+                continue;
+            }
+
+            var arguments = new List<string>();
+
+            foreach (var argument in attribute.ConstructorArguments)
+            {
+                arguments.Add(FormatAttributeArgument(argument));
+            }
+
+            foreach (var argument in attribute.NamedArguments)
+            {
+                arguments.Add(
+                    EscapeIdentifier(argument.Key) +
+                    " = " +
+                    FormatAttributeArgument(argument.Value));
+            }
+
+            const string attributeTypeName =
+                "global::System.ObsoleteAttribute";
+
+            return arguments.Count == 0
+                ? attributeTypeName
+                : attributeTypeName +
+                  "(" +
+                  string.Join(", ", arguments) +
+                  ")";
+        }
+
+        return null;
+    }
+
+    private static string FormatAttributeArgument(TypedConstant argument)
+    {
+        if (argument.IsNull)
+        {
+            return "null";
+        }
+
+        return SymbolDisplay.FormatPrimitive(
+                   argument.Value!,
+                   quoteStrings: true,
+                   useHexadecimalNumbers: false)
+               ?? "default";
+    }
+
+    private static bool HasMetadataName(
+        INamedTypeSymbol? type,
+        string metadataName)
+    {
+        return type is not null &&
+               SymbolNameHelper.GetFullMetadataName(type) == metadataName;
     }
 
     private static TemplateDocumentationModel BuildDocumentation(

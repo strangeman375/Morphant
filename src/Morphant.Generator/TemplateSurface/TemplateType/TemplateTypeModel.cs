@@ -38,4 +38,6 @@ internal sealed record TemplateConstructorFieldModel(
 internal sealed record TemplateMemberModel(
     string Name,
     string TypeName,
-    TemplateDocumentationModel Documentation);
+    TemplateDocumentationModel Documentation,
+    bool RequiresNullableAnnotationsDisabled = false,
+    string? ObsoleteAttributeSource = null);

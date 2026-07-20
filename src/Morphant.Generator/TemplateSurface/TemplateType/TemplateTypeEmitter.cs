@@ -112,22 +112,7 @@ internal static class TemplateTypeEmitter
             writer.Line();
         }
 
-        foreach (var member in model.Members)
-        {
-            WriteTemplateMemberDocumentation(
-                writer,
-                member);
-
-            writer.OpenBlock(
-                $"public global::Morphant.Members.Member<{member.TypeName}> " +
-                Identifier(member.Name));
-
-            writer.Line("get => null!;");
-            writer.Line("set { }");
-
-            writer.CloseBlock();
-            writer.Line();
-        }
+        WriteTemplateMembers(writer, model.Members);
 
         writer.Line(
             $"public bool Equals({templateTypeName}? other) => false;");
@@ -145,6 +130,53 @@ internal static class TemplateTypeEmitter
             "private bool PrintMembers(global::System.Text.StringBuilder builder) => false;");
 
         writer.CloseBlock();
+    }
+
+    private static void WriteTemplateMembers(
+        CodeWriter writer,
+        IReadOnlyList<TemplateMemberModel> members)
+    {
+        for (var i = 0; i < members.Count; i++)
+        {
+            var member = members[i];
+
+            if (member.RequiresNullableAnnotationsDisabled &&
+                (i == 0 ||
+                 !members[i - 1].RequiresNullableAnnotationsDisabled))
+            {
+                writer.Line("#nullable disable annotations");
+            }
+
+            WriteTemplateMemberDocumentation(
+                writer,
+                member);
+
+            if (member.ObsoleteAttributeSource is { } obsoleteAttribute)
+            {
+                writer.Line($"[{obsoleteAttribute}]");
+            }
+
+            writer.OpenBlock(
+                $"public global::Morphant.Members.Member<{member.TypeName}> " +
+                Identifier(member.Name));
+
+            writer.Line("get => null!;");
+            writer.Line("set { }");
+
+            writer.CloseBlock();
+
+            var nextMemberRequiresNullableAnnotationsDisabled =
+                i + 1 < members.Count &&
+                members[i + 1].RequiresNullableAnnotationsDisabled;
+
+            if (member.RequiresNullableAnnotationsDisabled &&
+                !nextMemberRequiresNullableAnnotationsDisabled)
+            {
+                writer.Line("#nullable enable annotations");
+            }
+
+            writer.Line();
+        }
     }
 
     private static void WriteByConventionConstructor(
