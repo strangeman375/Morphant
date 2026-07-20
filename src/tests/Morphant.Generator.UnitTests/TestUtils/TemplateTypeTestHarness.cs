@@ -12,7 +12,8 @@ internal static class TemplateTypeTestHarness
         string additionalSource = "",
         string destinationDeclaration = "public sealed class Destination",
         string destinationMembers = "",
-        string expectedMembers = "")
+        string expectedMembers = "",
+        bool canConstructDestination = true)
     {
         return TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
@@ -25,7 +26,8 @@ internal static class TemplateTypeTestHarness
             BuildExpectedSource(
                 constructorMembers,
                 expectedConstructors,
-                expectedMembers));
+                expectedMembers,
+                canConstructDestination));
     }
 
     private static string BuildSource(
@@ -46,7 +48,8 @@ internal static class TemplateTypeTestHarness
     private static string BuildExpectedSource(
         string constructorMembers,
         string destinationConstructors,
-        string expectedMembers)
+        string expectedMembers,
+        bool canConstructDestination)
     {
         var hasConstructorMembers =
             !string.IsNullOrEmpty(constructorMembers);
@@ -61,10 +64,15 @@ internal static class TemplateTypeTestHarness
         }
 
         builder.AppendLine(ExpectedTemplateTypeStart);
-        builder.AppendLine(
-            hasConstructorMembers
-                ? ExpectedByConventionConstructorWithMembers
-                : ExpectedByConventionConstructorWithoutMembers);
+
+        var expectedByConventionConstructor =
+            !canConstructDestination
+                ? ExpectedByConventionConstructorWithoutDestinationConstructor
+                : hasConstructorMembers
+                    ? ExpectedByConventionConstructorWithMembers
+                    : ExpectedByConventionConstructorWithoutMembers;
+
+        builder.AppendLine(expectedByConventionConstructor);
         builder.AppendLine();
         builder.AppendLine(ExpectedByFactoryConstructor);
 
@@ -159,6 +167,18 @@ namespace TestCase.Morphant.Generated
 """
         /// <summary>
         /// Creates a destination instance using convention-based mapping.
+        /// </summary>
+        /// <param name="marker">Selects convention-based mapping.</param>
+        public DestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+""";
+
+    // lang=c#
+    private const string ExpectedByConventionConstructorWithoutDestinationConstructor =
+"""
+        /// <summary>
+        /// Configures convention-based mapping without selecting a destination constructor.
         /// </summary>
         /// <param name="marker">Selects convention-based mapping.</param>
         public DestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)

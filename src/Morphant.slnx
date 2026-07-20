@@ -6,6 +6,7 @@
     <File Path="Directory.Build.props" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Morphant.Generator.UnitTests.TestAssets/Morphant.Generator.UnitTests.TestAssets.csproj" />
     <Project Path="tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj" />
   </Folder>
   <Project Path="Morphant.Generator/Morphant.Generator.csproj" />

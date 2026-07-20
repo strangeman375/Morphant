@@ -90,6 +90,42 @@ internal sealed class TemplateTypeMemberRepresentationTests
     }
 
     [Test]
+    public async Task Preserves_tuple_and_dynamic_member_types()
+    {
+        // lang=c#
+        const string destinationMembers =
+"""
+        public (int Id, string? Name) Pair { get; set; }
+
+        public dynamic Payload { get; set; } = null!;
+""";
+
+        // lang=c#
+        const string expectedMembers =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.Pair"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<(int Id, string? Name)> Pair
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.Payload"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<dynamic> Payload
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        await RunAndAssert(destinationMembers, expectedMembers);
+    }
+
+    [Test]
     public async Task Preserves_property_and_field_declaration_order()
     {
         // lang=c#

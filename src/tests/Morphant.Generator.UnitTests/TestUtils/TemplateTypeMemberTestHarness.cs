@@ -6,16 +6,22 @@ internal static class TemplateTypeMemberTestHarness
         string destinationMembers,
         string expectedMembers,
         string additionalSource = "",
-        string destinationDeclaration = "public sealed class Destination")
+        string destinationDeclaration = "public sealed class Destination",
+        bool canConstructDestination = true)
     {
         return TemplateTypeTestHarness.RunAndAssert(
-            constructors: ParameterlessDestinationConstructor,
+            constructors: canConstructDestination
+                ? ParameterlessDestinationConstructor
+                : string.Empty,
             constructorMembers: string.Empty,
-            expectedConstructors: ExpectedParameterlessTemplateConstructor,
+            expectedConstructors: canConstructDestination
+                ? ExpectedParameterlessTemplateConstructor
+                : string.Empty,
             additionalSource: additionalSource,
             destinationDeclaration: destinationDeclaration,
             destinationMembers: destinationMembers,
-            expectedMembers: expectedMembers);
+            expectedMembers: expectedMembers,
+            canConstructDestination: canConstructDestination);
     }
 
     // lang=c#
