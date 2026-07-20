@@ -173,6 +173,86 @@ internal sealed class TemplateTypeConstructorMembersTests
     }
 
     [Test]
+    public async Task Disambiguates_user_defined_types_with_same_simple_name()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public Destination(First.SomeUserType value)
+        {
+        }
+
+        public Destination(Second.SomeUserType value)
+        {
+        }
+""";
+
+        // lang=c#
+        const string additionalSource =
+"""
+    namespace First
+    {
+        public sealed class SomeUserType
+        {
+        }
+    }
+
+    namespace Second
+    {
+        public sealed class SomeUserType
+        {
+        }
+    }
+""";
+
+        // lang=c#
+        const string constructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>value</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<global::TestCase.First.SomeUserType> valueSomeUserType = null!;
+
+        /// <summary>
+        /// Configures the <c>value</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<global::TestCase.Second.SomeUserType> valueSomeUserType2 = null!;
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<global::TestCase.First.SomeUserType> value)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<global::TestCase.Second.SomeUserType> value)
+        {
+        }
+""";
+
+        await RunAndAssert(
+            constructors,
+            constructorMembers,
+            expectedConstructors,
+            additionalSource);
+    }
+
+    [Test]
     public async Task Makes_field_names_unique_when_generated_names_collide()
     {
         // lang=c#
