@@ -6,6 +6,7 @@ internal sealed record TemplateTypeModel(
     string TemplateNamespace,
     string TemplateTypeName,
     string DestinationTypeName,
+    bool CanConstructDestination,
     TemplateDocumentationModel DestinationDocumentation,
     ImmutableArray<TemplateConstructorModel> Constructors,
     ImmutableArray<TemplateConstructorFieldModel> ConstructorFields,

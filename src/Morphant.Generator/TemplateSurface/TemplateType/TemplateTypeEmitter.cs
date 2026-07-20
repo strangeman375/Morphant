@@ -154,7 +154,9 @@ internal static class TemplateTypeEmitter
     {
         WriteSummary(
             writer,
-            "Creates a destination instance using convention-based mapping.");
+            model.CanConstructDestination
+                ? "Creates a destination instance using convention-based mapping."
+                : "Configures convention-based mapping without selecting a destination constructor.");
 
         WriteParameterDocumentation(
             writer,

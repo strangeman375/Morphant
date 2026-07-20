@@ -21,15 +21,22 @@ internal static class TemplateTypeModelBuilder
         Compilation compilation,
         CancellationToken cancellationToken)
     {
-        var constructors = BuildConstructors(
-            destinationType,
-            compilation,
-            cancellationToken);
+        var canConstructDestination =
+            destinationType.TypeKind != TypeKind.Interface &&
+            !destinationType.IsAbstract;
+
+        var constructors = canConstructDestination
+            ? BuildConstructors(
+                destinationType,
+                compilation,
+                cancellationToken)
+            : ImmutableArray<TemplateConstructorModel>.Empty;
 
         return new TemplateTypeModel(
             destinationTypeInfo.TemplateNamespace,
             destinationTypeInfo.TemplateTypeName,
             destinationType.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable),
+            canConstructDestination,
             BuildDocumentation(destinationType, cancellationToken),
             constructors,
             BuildConstructorFields(constructors),
@@ -53,10 +60,12 @@ internal static class TemplateTypeModelBuilder
                 continue;
             }
 
-            // ref/out/in-конструкторы требуют отдельной поддержки
-            // на этапе генерации настоящего вызова конструктора.
+            // ref/out/in и ref-like параметры требуют отдельного
+            // представления в template surface.
             if (constructor.Parameters.Any(
-                    static parameter => parameter.RefKind != RefKind.None))
+                    static parameter =>
+                        parameter.RefKind != RefKind.None ||
+                        parameter.Type.IsRefLikeType))
             {
                 continue;
             }
