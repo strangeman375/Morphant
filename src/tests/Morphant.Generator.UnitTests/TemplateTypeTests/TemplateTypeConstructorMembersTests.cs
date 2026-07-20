@@ -263,6 +263,187 @@ internal sealed class TemplateTypeConstructorMembersTests
     }
 
     [Test]
+    public async Task Treats_constructor_parameter_names_as_case_sensitive()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public Destination(int id)
+        {
+        }
+
+        public Destination(Guid Id)
+        {
+        }
+""";
+
+        // lang=c#
+        const string constructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>id</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<int> id = null!;
+
+        /// <summary>
+        /// Configures the <c>Id</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<global::System.Guid> Id = null!;
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="id">Configures the <c>id</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> id)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="Id">Configures the <c>Id</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<global::System.Guid> Id)
+        {
+        }
+""";
+
+        await RunAndAssert(constructors, constructorMembers, expectedConstructors);
+    }
+
+    [Test]
+    public async Task Deduplicates_same_parameter_type_written_with_different_aliases()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public Destination(int id)
+        {
+        }
+
+        public Destination(System.Int32 id, string name)
+        {
+        }
+""";
+
+        // lang=c#
+        const string constructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>id</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<int> id = null!;
+
+        /// <summary>
+        /// Configures the <c>name</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<string> name = null!;
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="id">Configures the <c>id</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> id)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="id">Configures the <c>id</c> constructor argument.</param>
+        /// <param name="name">Configures the <c>name</c> constructor argument.</param>
+        public DestinationMorphantTemplate(
+            global::Morphant.Members.ConstructorMember<int> id,
+            global::Morphant.Members.ConstructorMember<string> name)
+        {
+        }
+""";
+
+        await RunAndAssert(constructors, constructorMembers, expectedConstructors);
+    }
+
+    [Test]
+    public async Task Makes_field_names_unique_when_type_suffixes_collide()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public sealed class IntArray
+        {
+        }
+
+        public Destination(int[] value)
+        {
+        }
+
+        public Destination(IntArray value)
+        {
+        }
+""";
+
+        // lang=c#
+        const string constructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>value</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<int[]> valueIntArray = null!;
+
+        /// <summary>
+        /// Configures the <c>value</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<global::TestCase.Destination.IntArray> valueIntArray2 = null!;
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int[]> value)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<global::TestCase.Destination.IntArray> value)
+        {
+        }
+""";
+
+        await RunAndAssert(constructors, constructorMembers, expectedConstructors);
+    }
+
+    [Test]
     public async Task Builds_distinct_field_names_for_array_ranks()
     {
         // lang=c#
