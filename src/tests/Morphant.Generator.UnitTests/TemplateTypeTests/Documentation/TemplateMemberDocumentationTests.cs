@@ -318,6 +318,16 @@ internal sealed class TemplateMemberDocumentationTests
     public async Task Uses_inheritdoc_for_positional_record_members()
     {
         // lang=c#
+        const string destinationDocumentation =
+"""
+    /// <summary>
+    /// Represents a destination model.
+    /// </summary>
+    /// <param name="Id">The destination identifier.</param>
+    /// <param name="Name">The destination name.</param>
+""";
+
+        // lang=c#
         const string constructorMembers =
 """
     /// <summary>
@@ -374,6 +384,7 @@ internal sealed class TemplateMemberDocumentationTests
             expectedMembers: expectedMembers,
             destinationDeclaration:
                 "public sealed record Destination(int Id, string Name)",
+            destinationDocumentation: destinationDocumentation,
             constructors: string.Empty,
             constructorMembers: constructorMembers,
             expectedConstructors: expectedConstructors);
