@@ -6,11 +6,31 @@ public static class HintNameHelper
 {
     public static string ToHintNamePart(string value)
     {
-        var builder = new StringBuilder(value.Length + 9);
+        var builder = new StringBuilder(value.Length + 10);
+        var requiresDisambiguation = false;
 
-        foreach (var ch in value)
+        foreach (var character in value)
         {
-            builder.Append(char.IsLetterOrDigit(ch) ? ch : '_');
+            if (char.IsLetterOrDigit(character))
+            {
+                builder.Append(character);
+                continue;
+            }
+
+            builder.Append('_');
+
+            // Dots are unambiguous separators in a top-level metadata name.
+            // Other characters can collide with dots or with each other after
+            // replacement, for example A.B_C and A_B.C.
+            requiresDisambiguation |= character != '.';
+        }
+
+        if (requiresDisambiguation)
+        {
+            // A double underscore cannot occur in the non-hashed form because
+            // metadata names cannot contain empty namespace segments.
+            builder.Append("__");
+            builder.Append(GetStableHash(value));
         }
 
         return builder.ToString();
@@ -22,9 +42,9 @@ public static class HintNameHelper
         {
             uint hash = 2166136261;
 
-            foreach (var ch in value)
+            foreach (var character in value)
             {
-                hash ^= ch;
+                hash ^= character;
                 hash *= 16777619;
             }
 
