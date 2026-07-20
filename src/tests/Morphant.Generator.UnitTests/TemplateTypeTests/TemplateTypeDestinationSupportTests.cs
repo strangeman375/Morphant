@@ -7,120 +7,286 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests;
 internal sealed class TemplateTypeDestinationSupportTests
 {
     [Test]
-    public async Task Generates_template_for_internal_destination()
+    public async Task Generates_template_for_public_class()
     {
-        // lang=c#
-        const string constructors =
-"""
-        public Destination()
-        {
-        }
-""";
+        await RunSupportedDestinationWithParameterlessConstructor(
+            "public class Destination");
+    }
 
-        // lang=c#
-        const string expectedConstructors =
-"""
-        /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
-        /// </summary>
-        public DestinationMorphantTemplate()
-        {
-        }
-""";
+    [Test]
+    public async Task Generates_template_for_internal_class()
+    {
+        await RunSupportedDestinationWithParameterlessConstructor(
+            "internal sealed class Destination");
+    }
 
+    [Test]
+    public async Task Generates_template_for_partial_class()
+    {
+        await RunSupportedDestinationWithParameterlessConstructor(
+            "public sealed partial class Destination");
+    }
+
+    [Test]
+    public async Task Generates_template_for_abstract_class()
+    {
         await TemplateTypeTestHarness.RunAndAssert(
-            constructors,
+            constructors: string.Empty,
             constructorMembers: string.Empty,
-            expectedConstructors,
-            destinationDeclaration: "internal sealed class Destination");
+            expectedConstructors: string.Empty,
+            destinationDeclaration: "public abstract class Destination",
+            canConstructDestination: false);
+    }
+
+    [Test]
+    public async Task Generates_template_for_positional_record_class()
+    {
+        await TemplateTypeTestHarness.RunAndAssert(
+            constructors: string.Empty,
+            PositionalRecordConstructorMembers,
+            PositionalRecordClassConstructors,
+            destinationDeclaration:
+                "public sealed record Destination(int Id, string Name)",
+            expectedMembers: PositionalRecordMembers,
+            destinationDocumentation: PositionalRecordDocumentation);
+    }
+
+    [Test]
+    public async Task Generates_template_for_struct()
+    {
+        await RunSupportedDestinationWithParameterlessConstructor(
+            "public struct Destination");
+    }
+
+    [Test]
+    public async Task Generates_template_for_readonly_struct()
+    {
+        await RunSupportedDestinationWithParameterlessConstructor(
+            "public readonly struct Destination");
     }
 
     [Test]
     public async Task Generates_template_for_positional_record_struct()
     {
-        // lang=c#
-        const string constructorMembers =
-"""
-    /// <summary>
-    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
-    /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
-    {
-        /// <summary>
-        /// Configures the <c>Id</c> constructor argument.
-        /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> Id = null!;
-
-        /// <summary>
-        /// Configures the <c>Name</c> constructor argument.
-        /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> Name = null!;
-    }
-""";
-
-        // lang=c#
-        const string expectedConstructors =
-"""
-        /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
-        /// </summary>
-        /// <param name="Id">Configures the <c>Id</c> constructor argument.</param>
-        /// <param name="Name">Configures the <c>Name</c> constructor argument.</param>
-        public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<int> Id,
-            global::Morphant.Members.ConstructorMember<string> Name)
-        {
-        }
-
-        /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
-        /// </summary>
-        public DestinationMorphantTemplate()
-        {
-        }
-""";
-
-        // lang=c#
-        const string expectedMembers =
-"""
-        /// <inheritdoc cref="global::TestCase.Destination.Id"/>
-        public global::Morphant.Members.Member<int> Id
-        {
-            get => null!;
-            set { }
-        }
-
-        /// <inheritdoc cref="global::TestCase.Destination.Name"/>
-        public global::Morphant.Members.Member<string> Name
-        {
-            get => null!;
-            set { }
-        }
-""";
-
-        // lang=c#
-        const string destinationDocumentation =
-"""
-    /// <summary>
-    /// Represents a destination model.
-    /// </summary>
-    /// <param name="Id">The identifier.</param>
-    /// <param name="Name">The name.</param>
-""";
-
         await TemplateTypeTestHarness.RunAndAssert(
             constructors: string.Empty,
-            constructorMembers,
-            expectedConstructors,
+            PositionalRecordConstructorMembers,
+            PositionalRecordStructConstructors,
             destinationDeclaration:
                 "public record struct Destination(int Id, string Name)",
-            expectedMembers: expectedMembers,
-            destinationDocumentation: destinationDocumentation,
+            expectedMembers: PositionalRecordMembers,
+            destinationDocumentation: PositionalRecordDocumentation,
             languageVersion: LanguageVersion.CSharp10);
     }
 
     [Test]
-    public async Task Does_not_generate_template_for_generic_destination()
+    public async Task Generates_template_for_readonly_record_struct()
+    {
+        await RunSupportedDestinationWithParameterlessConstructor(
+            "public readonly record struct Destination",
+            LanguageVersion.CSharp10);
+    }
+
+    [Test]
+    public async Task Generates_template_for_interface()
+    {
+        await TemplateTypeTestHarness.RunAndAssert(
+            constructors: string.Empty,
+            constructorMembers: string.Empty,
+            expectedConstructors: string.Empty,
+            destinationDeclaration: "public interface Destination",
+            canConstructDestination: false);
+    }
+
+    [Test]
+    public async Task Generates_template_for_nullable_reference_destination()
+    {
+        await TemplateTypeTestHarness.RunAndAssert(
+            constructors: string.Empty,
+            constructorMembers: string.Empty,
+            ExpectedParameterlessConstructor,
+            destinationDeclaration: "public sealed class Destination",
+            mappedDestinationType: "Destination?");
+    }
+
+    [TestCase(
+        "public static class Container",
+        "public")]
+    [TestCase(
+        "internal static class Container",
+        "public")]
+    [TestCase(
+        "public static class Container",
+        "internal")]
+    [TestCase(
+        "public class Container",
+        "protected internal")]
+    public async Task Generates_template_for_accessible_nested_destination(
+        string containerDeclaration,
+        string destinationAccessibility)
+    {
+        var source = $$"""
+                       #pragma warning disable CS1591
+                       #nullable enable
+
+                       using Morphant;
+
+                       namespace TestCase
+                       {
+                           public sealed class Source
+                           {
+                           }
+
+                           {{containerDeclaration}}
+                           {
+                               /// <summary>
+                               /// Represents a destination model.
+                               /// </summary>
+                               {{destinationAccessibility}} sealed class Destination
+                               {
+                               }
+                           }
+
+                           [MorphantMapper]
+                           public partial class TestMapper : TypeMapper
+                           {
+                               protected override void Configure(MapperBuilder builder)
+                               {
+                                   builder.Map<Source, Container.Destination>();
+                               }
+                           }
+                       }
+                       """;
+
+        await TemplateTypeGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            "Morphant.TemplateType." +
+            "TestCase_Container_Destination__ed07600340fa8c3b.g.cs",
+            ExpectedNestedDestinationTemplate);
+    }
+
+    [Test]
+    public async Task Generates_template_for_destination_from_referenced_assembly()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+using Morphant.Generator.UnitTests.TestAssets;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, ReferencedDestination>();
+        }
+    }
+}
+""";
+
+        // lang=c#
+        const string expected =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
+{
+    /// <summary>
+    /// Represents the Morphant mapping template for <see cref="global::Morphant.Generator.UnitTests.TestAssets.ReferencedDestination"/>.
+    /// </summary>
+    internal sealed record ReferencedDestinationMorphantTemplate
+    {
+        /// <summary>
+        /// Creates a destination instance using convention-based mapping.
+        /// </summary>
+        /// <param name="marker">Selects convention-based mapping.</param>
+        public ReferencedDestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using factory-based destination construction.
+        /// </summary>
+        /// <param name="marker">Selects factory-based construction.</param>
+        public ReferencedDestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::Morphant.Generator.UnitTests.TestAssets.ReferencedDestination> marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public ReferencedDestinationMorphantTemplate()
+        {
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::Morphant.Generator.UnitTests.TestAssets.ReferencedDestination.PublicProperty"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int> PublicProperty
+        {
+            get => null!;
+            set { }
+        }
+
+        public bool Equals(ReferencedDestinationMorphantTemplate? other) => false;
+
+        public override int GetHashCode() => 0;
+
+        public override string ToString() => string.Empty;
+
+        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
+    }
+}
+""";
+
+        await TemplateTypeGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            new[]
+            {
+                typeof(
+                    Morphant.Generator.UnitTests.TestAssets
+                        .ReferencedDestination).Assembly
+            },
+            (
+                "Morphant.TemplateType." +
+                "Morphant_Generator_UnitTests_TestAssets_" +
+                "ReferencedDestination.g.cs",
+                expected
+            ));
+    }
+
+    [Test]
+    public async Task Generates_template_for_predefined_value_type()
+    {
+        await RunSupportedFrameworkDestination(
+            "int",
+            "System_Int32",
+            ExpectedInt32DestinationTemplate);
+    }
+
+    [Test]
+    public async Task Generates_template_for_predefined_reference_type()
+    {
+        await RunSupportedFrameworkDestination(
+            "object",
+            "System_Object",
+            ExpectedObjectDestinationTemplate);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_generic_class_destination()
     {
         // lang=c#
         const string destinationDeclaration =
@@ -133,6 +299,71 @@ internal sealed class TemplateTypeDestinationSupportTests
         await RunUnsupportedDestination(
             "Destination<int>",
             destinationDeclaration);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_generic_struct_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public struct Destination<T>
+    {
+    }
+""";
+
+        await RunUnsupportedDestination(
+            "Destination<int>",
+            destinationDeclaration);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_generic_interface_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public interface Destination<T>
+    {
+    }
+""";
+
+        await RunUnsupportedDestination(
+            "Destination<int>",
+            destinationDeclaration);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_generic_record_class_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public sealed record Destination<T>
+    {
+    }
+""";
+
+        await RunUnsupportedDestination(
+            "Destination<int>",
+            destinationDeclaration);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_generic_record_struct_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public record struct Destination<T>
+    {
+    }
+""";
+
+        await RunUnsupportedDestination(
+            "Destination<int>",
+            destinationDeclaration,
+            LanguageVersion.CSharp10);
     }
 
     [Test]
@@ -174,6 +405,38 @@ internal sealed class TemplateTypeDestinationSupportTests
 
         await RunUnsupportedDestination(
             "Destination[]",
+            destinationDeclaration);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_multidimensional_array_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public sealed class Destination
+    {
+    }
+""";
+
+        await RunUnsupportedDestination(
+            "Destination[,]",
+            destinationDeclaration);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_jagged_array_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public sealed class Destination
+    {
+    }
+""";
+
+        await RunUnsupportedDestination(
+            "Destination[][]",
             destinationDeclaration);
     }
 
@@ -294,6 +557,18 @@ namespace TestCase
     }
 
     [Test]
+    public async Task Does_not_generate_template_for_protected_nested_destination()
+    {
+        await RunInaccessibleNestedDestination("protected");
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_private_protected_nested_destination()
+    {
+        await RunInaccessibleNestedDestination("private protected");
+    }
+
+    [Test]
     public async Task Does_not_generate_template_when_containing_type_is_inaccessible()
     {
         // lang=c#
@@ -353,6 +628,58 @@ namespace TestCase
             LanguageVersion.CSharp11);
     }
 
+    [Test]
+    public async Task Does_not_generate_template_for_destination_nested_in_file_local_type()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    file static class Container
+    {
+        public sealed class Destination
+        {
+        }
+
+        [MorphantMapper]
+        public partial class TestMapper : TypeMapper
+        {
+            protected override void Configure(MapperBuilder builder)
+            {
+                builder.Map<Source, Destination>();
+            }
+        }
+    }
+}
+""";
+
+        await TemplateTypeGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp11,
+            source);
+    }
+
+    private static Task RunSupportedDestinationWithParameterlessConstructor(
+        string destinationDeclaration,
+        LanguageVersion languageVersion = LanguageVersion.CSharp9)
+    {
+        return TemplateTypeTestHarness.RunAndAssert(
+            constructors: string.Empty,
+            constructorMembers: string.Empty,
+            ExpectedParameterlessConstructor,
+            destinationDeclaration: destinationDeclaration,
+            languageVersion: languageVersion);
+    }
+
     private static Task RunUnsupportedDestination(
         string destinationType,
         string destinationDeclaration = "",
@@ -387,4 +714,308 @@ namespace TestCase
             languageVersion,
             source);
     }
+
+    private static Task RunInaccessibleNestedDestination(
+        string destinationAccessibility)
+    {
+        var source = $$"""
+                       #pragma warning disable CS1591
+                       #nullable enable
+
+                       using Morphant;
+
+                       namespace TestCase
+                       {
+                           public sealed class Source
+                           {
+                           }
+
+                           public class Container
+                           {
+                               {{destinationAccessibility}} sealed class Destination
+                               {
+                               }
+
+                               [MorphantMapper]
+                               public partial class TestMapper : TypeMapper
+                               {
+                                   protected override void Configure(MapperBuilder builder)
+                                   {
+                                       builder.Map<Source, Destination>();
+                                   }
+                               }
+                           }
+                       }
+                       """;
+
+        return TemplateTypeGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source);
+    }
+
+    private static Task RunSupportedFrameworkDestination(
+        string destinationType,
+        string hintNamePart,
+        string expected)
+    {
+        var source = $$"""
+                       #pragma warning disable CS1591
+                       #nullable enable
+
+                       using Morphant;
+
+                       namespace TestCase
+                       {
+                           public sealed class Source
+                           {
+                           }
+
+                           [MorphantMapper]
+                           public partial class TestMapper : TypeMapper
+                           {
+                               protected override void Configure(MapperBuilder builder)
+                               {
+                                   builder.Map<Source, {{destinationType}}>();
+                               }
+                           }
+                       }
+                       """;
+
+        return TemplateTypeGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            "Morphant.TemplateType." + hintNamePart + ".g.cs",
+            expected);
+    }
+
+    // lang=c#
+    private const string ExpectedParameterlessConstructor =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public DestinationMorphantTemplate()
+        {
+        }
+""";
+
+    // lang=c#
+    private const string PositionalRecordConstructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>Id</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<int> Id = null!;
+
+        /// <summary>
+        /// Configures the <c>Name</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<string> Name = null!;
+    }
+""";
+
+    // lang=c#
+    private const string PositionalRecordClassConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="Id">Configures the <c>Id</c> constructor argument.</param>
+        /// <param name="Name">Configures the <c>Name</c> constructor argument.</param>
+        public DestinationMorphantTemplate(
+            global::Morphant.Members.ConstructorMember<int> Id,
+            global::Morphant.Members.ConstructorMember<string> Name)
+        {
+        }
+""";
+
+    // lang=c#
+    private const string PositionalRecordStructConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="Id">Configures the <c>Id</c> constructor argument.</param>
+        /// <param name="Name">Configures the <c>Name</c> constructor argument.</param>
+        public DestinationMorphantTemplate(
+            global::Morphant.Members.ConstructorMember<int> Id,
+            global::Morphant.Members.ConstructorMember<string> Name)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public DestinationMorphantTemplate()
+        {
+        }
+""";
+
+    // lang=c#
+    private const string PositionalRecordMembers =
+"""
+        /// <inheritdoc cref="global::TestCase.Destination.Id"/>
+        public global::Morphant.Members.Member<int> Id
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <inheritdoc cref="global::TestCase.Destination.Name"/>
+        public global::Morphant.Members.Member<string> Name
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+    // lang=c#
+    private const string PositionalRecordDocumentation =
+"""
+    /// <summary>
+    /// Represents a destination model.
+    /// </summary>
+    /// <param name="Id">The identifier.</param>
+    /// <param name="Name">The name.</param>
+""";
+
+    // lang=c#
+    private const string ExpectedNestedDestinationTemplate =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace TestCase.Morphant.Generated.ContainerScope
+{
+    /// <inheritdoc cref="global::TestCase.Container.Destination"/>
+    internal sealed record DestinationMorphantTemplate
+    {
+        /// <summary>
+        /// Creates a destination instance using convention-based mapping.
+        /// </summary>
+        /// <param name="marker">Selects convention-based mapping.</param>
+        public DestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using factory-based destination construction.
+        /// </summary>
+        /// <param name="marker">Selects factory-based construction.</param>
+        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Container.Destination> marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public DestinationMorphantTemplate()
+        {
+        }
+
+        public bool Equals(DestinationMorphantTemplate? other) => false;
+
+        public override int GetHashCode() => 0;
+
+        public override string ToString() => string.Empty;
+
+        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
+    }
+}
+""";
+
+    // lang=c#
+    private const string ExpectedInt32DestinationTemplate =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace System.Morphant.Generated
+{
+    /// <inheritdoc cref="global::System.Int32"/>
+    internal sealed record Int32MorphantTemplate
+    {
+        /// <summary>
+        /// Creates a destination instance using convention-based mapping.
+        /// </summary>
+        /// <param name="marker">Selects convention-based mapping.</param>
+        public Int32MorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using factory-based destination construction.
+        /// </summary>
+        /// <param name="marker">Selects factory-based construction.</param>
+        public Int32MorphantTemplate(global::Morphant.Markers.ByFactoryMarker<int> marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public Int32MorphantTemplate()
+        {
+        }
+
+        public bool Equals(Int32MorphantTemplate? other) => false;
+
+        public override int GetHashCode() => 0;
+
+        public override string ToString() => string.Empty;
+
+        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
+    }
+}
+""";
+
+    // lang=c#
+    private const string ExpectedObjectDestinationTemplate =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace System.Morphant.Generated
+{
+    /// <inheritdoc cref="global::System.Object"/>
+    internal sealed record ObjectMorphantTemplate
+    {
+        /// <summary>
+        /// Creates a destination instance using convention-based mapping.
+        /// </summary>
+        /// <param name="marker">Selects convention-based mapping.</param>
+        public ObjectMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using factory-based destination construction.
+        /// </summary>
+        /// <param name="marker">Selects factory-based construction.</param>
+        public ObjectMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<object> marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public ObjectMorphantTemplate()
+        {
+        }
+
+        public bool Equals(ObjectMorphantTemplate? other) => false;
+
+        public override int GetHashCode() => 0;
+
+        public override string ToString() => string.Empty;
+
+        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
+    }
+}
+""";
 }

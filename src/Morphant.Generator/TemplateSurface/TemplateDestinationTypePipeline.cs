@@ -235,7 +235,7 @@ internal static class TemplateDestinationTypePipeline
         if (destinationType.IsGenericType ||
             destinationType.IsTupleType ||
             destinationType.IsRefLikeType ||
-            destinationType.IsFileLocal ||
+            IsFileLocal(destinationType) ||
             !compilation.IsSymbolAccessibleWithin(
                 destinationType,
                 compilation.Assembly))
@@ -247,5 +247,20 @@ internal static class TemplateDestinationTypePipeline
             TypeKind.Class or
             TypeKind.Struct or
             TypeKind.Interface;
+    }
+
+    private static bool IsFileLocal(INamedTypeSymbol type)
+    {
+        for (var current = type;
+             current is not null;
+             current = current.ContainingType)
+        {
+            if (current.IsFileLocal)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

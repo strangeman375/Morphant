@@ -18,7 +18,8 @@ internal static class TemplateTypeTestHarness
         string expectedTemplateTypeDocumentation = DefaultExpectedTemplateTypeDocumentation,
         string? expectedByConventionConstructor = null,
         string? expectedByFactoryConstructor = null,
-        LanguageVersion languageVersion = LanguageVersion.CSharp9)
+        LanguageVersion languageVersion = LanguageVersion.CSharp9,
+        string mappedDestinationType = "Destination")
     {
         return TemplateTypeGeneratorTest.RunAndAssert(
             languageVersion,
@@ -27,7 +28,8 @@ internal static class TemplateTypeTestHarness
                 additionalSource,
                 destinationDeclaration,
                 destinationMembers,
-                destinationDocumentation),
+                destinationDocumentation,
+                mappedDestinationType),
             "Morphant.TemplateType.TestCase_Destination.g.cs",
             BuildExpectedSource(
                 constructorMembers,
@@ -44,7 +46,8 @@ internal static class TemplateTypeTestHarness
         string additionalSource,
         string destinationDeclaration,
         string destinationMembers,
-        string destinationDocumentation)
+        string destinationDocumentation,
+        string mappedDestinationType)
     {
         return SourceTemplate
             .Replace(ConstructorPlaceholder, constructors)
@@ -55,7 +58,10 @@ internal static class TemplateTypeTestHarness
                 destinationDeclaration)
             .Replace(
                 DestinationDocumentationPlaceholder,
-                destinationDocumentation);
+                destinationDocumentation)
+            .Replace(
+                MappedDestinationTypePlaceholder,
+                mappedDestinationType);
     }
 
     private static string BuildExpectedSource(
@@ -128,6 +134,9 @@ internal static class TemplateTypeTestHarness
     private const string DestinationDocumentationPlaceholder =
         "__DESTINATION_DOCUMENTATION__";
 
+    private const string MappedDestinationTypePlaceholder =
+        "__MAPPED_DESTINATION_TYPE__";
+
     // lang=c#
     private const string SourceTemplate =
 """
@@ -156,7 +165,7 @@ __DESTINATION_MEMBERS__
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, Destination>();
+            builder.Map<Source, __MAPPED_DESTINATION_TYPE__>();
         }
     }
 
