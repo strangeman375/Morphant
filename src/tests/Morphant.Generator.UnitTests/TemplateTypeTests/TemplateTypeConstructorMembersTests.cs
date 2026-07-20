@@ -6,6 +6,34 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests;
 internal sealed class TemplateTypeConstructorMembersTests
 {
     [Test]
+    public async Task Does_not_generate_constructor_members_type_for_parameterless_constructor()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public Destination()
+        {
+        }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public DestinationMorphantTemplate()
+        {
+        }
+""";
+
+        await RunAndAssert(
+            constructors,
+            constructorMembers: string.Empty,
+            expectedConstructors: expectedConstructors);
+    }
+
+    [Test]
     public async Task Collects_unique_parameters_from_all_constructors_in_first_occurrence_order()
     {
         // lang=c#
@@ -217,6 +245,101 @@ internal sealed class TemplateTypeConstructorMembersTests
 """;
 
         await RunAndAssert(constructors, constructorMembers, expectedConstructors);
+    }
+
+    [Test]
+    public async Task Uses_next_available_numeric_suffix_when_constructor_member_names_collide()
+    {
+        // lang=c#
+        const string constructors =
+"""
+        public Destination(long valueInt)
+        {
+        }
+
+        public Destination(string valueInt2)
+        {
+        }
+
+        public Destination(int value)
+        {
+        }
+
+        public Destination(Guid value)
+        {
+        }
+""";
+
+        // lang=c#
+        const string constructorMembers =
+"""
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationMorphantTemplateConstructorMembers
+    {
+        /// <summary>
+        /// Configures the <c>valueInt</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<long> valueInt = null!;
+
+        /// <summary>
+        /// Configures the <c>valueInt2</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<string> valueInt2 = null!;
+
+        /// <summary>
+        /// Configures the <c>value</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<int> valueInt3 = null!;
+
+        /// <summary>
+        /// Configures the <c>value</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorMember<global::System.Guid> valueGuid = null!;
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="valueInt">Configures the <c>valueInt</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<long> valueInt)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="valueInt2">Configures the <c>valueInt2</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<string> valueInt2)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> value)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<global::System.Guid> value)
+        {
+        }
+""";
+
+        await RunAndAssert(
+            constructors,
+            constructorMembers,
+            expectedConstructors);
     }
 
     [Test]
