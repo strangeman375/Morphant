@@ -434,20 +434,14 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     }
 
     [Test]
-    public async Task Does_not_generate_template_for_nullable_custom_struct_destination()
+    public async Task Generates_template_for_nullable_custom_struct_destination()
     {
-        // lang=c#
-        const string destinationDeclaration =
-"""
-    public struct Destination
-    {
-        public int Value { get; set; }
-    }
-""";
-
-        await RunUnsupportedDestination(
-            "Destination?",
-            destinationDeclaration);
+        await TemplateTypeTestHarness.RunAndAssert(
+            constructors: string.Empty,
+            constructorMembers: string.Empty,
+            ExpectedParameterlessConstructor,
+            destinationDeclaration: "public struct Destination",
+            mappedDestinationType: "Destination?");
     }
 
     [Test]
