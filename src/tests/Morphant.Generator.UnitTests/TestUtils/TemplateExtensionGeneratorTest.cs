@@ -20,7 +20,6 @@ internal sealed class TemplateExtensionGeneratorTest :
     {
         _languageVersion = languageVersion;
         CompilerDiagnostics = CompilerDiagnostics.Warnings;
-        ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         TestState.AdditionalReferences.Add(typeof(TypeMapper).Assembly);
     }
 

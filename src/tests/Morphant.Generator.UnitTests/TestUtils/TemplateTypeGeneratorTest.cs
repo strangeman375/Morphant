@@ -16,7 +16,6 @@ internal sealed class TemplateTypeGeneratorTest : CSharpSourceGeneratorTest<Test
     {
         _languageVersion = languageVersion;
         CompilerDiagnostics = CompilerDiagnostics.Warnings;
-        ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
 
         if (addMapperAssembly)
         {
