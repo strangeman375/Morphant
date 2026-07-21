@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TemplateTypeTests;
+namespace Morphant.Generator.UnitTests.TemplateTypeTests.DestinationSupport;
 
 [TestFixture]
 internal sealed class TemplateTypeDestinationSupportTests
@@ -162,7 +162,7 @@ internal sealed class TemplateTypeDestinationSupportTests
             LanguageVersion.CSharp9,
             source,
             "Morphant.TemplateType." +
-            "TestCase_Container_Destination__ed07600340fa8c3b.g.cs",
+            "TestCase_Container_Destination.g.cs",
             ExpectedNestedDestinationTemplate);
     }
 

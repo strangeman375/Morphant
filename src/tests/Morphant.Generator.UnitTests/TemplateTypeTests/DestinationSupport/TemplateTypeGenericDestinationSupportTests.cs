@@ -1,13 +1,13 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TemplateTypeTests;
+namespace Morphant.Generator.UnitTests.TemplateTypeTests.DestinationSupport;
 
 internal sealed class TemplateTypeGenericDestinationSupportTests
 {
     private const string GenericDestinationHintName =
         "Morphant.TemplateType." +
-        "TestCase_Destination_1__2dbf98a8ea4bb55c.g.cs";
+        "TestCase_Destination_1.g.cs";
 
     [Test]
     public async Task Generates_generic_template_definition_from_constructed_class_destination()
@@ -154,7 +154,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             "Morphant.TemplateType." +
-            "TestCase_Destination_6__2dbf97a8ea4bb3a9.g.cs",
+            "TestCase_Destination_6.g.cs",
             ExpectedConstrainedGenericTemplate);
     }
 
@@ -200,7 +200,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             "Morphant.TemplateType." +
-            "TestCase_Outer_1_Destination_1__6af6a4e86880950f.g.cs",
+            "TestCase_Outer_1_Destination_1.g.cs",
             ExpectedNestedGenericTemplate);
     }
 
@@ -298,14 +298,12 @@ namespace TestCase
             source,
             (
                 "Morphant.TemplateType." +
-                "TestCase_Outer_1_Destination_1__" +
-                "6af6a4e86880950f.g.cs",
+                "TestCase_Outer_1_Destination_1.g.cs",
                 ExpectedNestedArityOneTemplate
             ),
             (
                 "Morphant.TemplateType." +
-                "TestCase_Outer_2_Destination__" +
-                "4151d07a6d672c31.g.cs",
+                "TestCase_Outer_2_Destination.g.cs",
                 ExpectedNestedArityTwoTemplate
             ));
     }
@@ -353,8 +351,7 @@ namespace TestCase
             (
                 "Morphant.TemplateType." +
                 "Morphant_Generator_UnitTests_TestAssets_" +
-                "ReferencedGenericDestination_1__" +
-                "3b1c16c4531080fc.g.cs",
+                "ReferencedGenericDestination_1.g.cs",
                 ExpectedReferencedGenericTemplate
             ));
     }

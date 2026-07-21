@@ -131,7 +131,7 @@ namespace TestCase
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "TestCase_Container_Destination__ed07600340fa8c3b",
+                "TestCase_Container_Destination",
                 "TestCase.Morphant.Generated.ContainerScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.Container.Destination"));
@@ -189,12 +189,12 @@ namespace TestCase
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "TestCase_First_Destination__2836210ee2ea978a",
+                "TestCase_First_Destination",
                 "TestCase.Morphant.Generated.FirstScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.First.Destination"),
             ExpectedTemplate(
-                "TestCase_Second_Destination__a43439fdb43fe60e",
+                "TestCase_Second_Destination",
                 "TestCase.Morphant.Generated.SecondScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.Second.Destination"));
@@ -244,7 +244,7 @@ namespace TestCase
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "TestCase_Outer_Middle_Destination__3130940fbd323f13",
+                "TestCase_Outer_Middle_Destination",
                 "TestCase.Morphant.Generated.OuterScope.MiddleScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.Outer.Middle.Destination"));
@@ -288,7 +288,7 @@ public partial class TestMapper : TypeMapper
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "Container_Destination__d13a8b79fbc90443",
+                "Container_Destination",
                 "Morphant.Generated.ContainerScope",
                 "DestinationMorphantTemplate",
                 "global::Container.Destination"));
@@ -335,7 +335,7 @@ namespace TestCase
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "TestCase_namespace_Destination__b1d50cce1ebc1363",
+                "TestCase_namespace_Destination",
                 "TestCase.Morphant.Generated.namespaceScope",
                 "DestinationMorphantTemplate",
                 "global::TestCase.@namespace.Destination"));
@@ -446,6 +446,63 @@ namespace @namespace
     }
 
     [Test]
+    public async Task Adds_hash_only_for_case_insensitive_hint_name_collision()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    /// <summary>
+    /// Represents the first destination model.
+    /// </summary>
+    public sealed class Destination
+    {
+    }
+
+    /// <summary>
+    /// Represents the second destination model.
+    /// </summary>
+    public sealed class destination
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>();
+            builder.Map<Source, destination>();
+        }
+    }
+}
+""";
+
+        await RunAndAssert(
+            source,
+            ExpectedTemplate(
+                "TestCase_Destination",
+                "TestCase.Morphant.Generated",
+                "DestinationMorphantTemplate",
+                "global::TestCase.Destination"),
+            ExpectedTemplate(
+                "TestCase_destination__c52cc9889f9bc467",
+                "TestCase.Morphant.Generated",
+                "destinationMorphantTemplate",
+                "global::TestCase.destination"));
+    }
+
+    [Test]
     public async Task Uses_unique_hint_names_for_colliding_sanitized_metadata_names()
     {
         // lang=c#
@@ -494,7 +551,7 @@ public partial class TestMapper : TypeMapper
         await RunAndAssert(
             source,
             ExpectedTemplate(
-                "A_B_C__dcf052f10671af9e",
+                "A_B_C",
                 "A.Morphant.Generated",
                 "B_CMorphantTemplate",
                 "global::A.B_C"),
@@ -657,7 +714,7 @@ public partial class TestMapper : TypeMapper
         var expectedTemplates = new[]
         {
             ExpectedTemplate(
-                "A_B_C__dcf052f10671af9e",
+                "A_B_C",
                 "A.Morphant.Generated",
                 "B_CMorphantTemplate",
                 "global::A.B_C"),

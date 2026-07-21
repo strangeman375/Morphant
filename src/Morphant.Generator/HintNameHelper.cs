@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace Morphant.Generator;
@@ -9,8 +10,33 @@ public static class HintNameHelper
 
     public static string ToHintNamePart(string value)
     {
-        var builder = new StringBuilder(value.Length + 18);
-        var requiresDisambiguation = false;
+        var hintNamePart = ToReadableHintNamePart(
+            value,
+            out var requiresDisambiguation);
+
+        return requiresDisambiguation
+            ? AppendStableHash(hintNamePart, value)
+            : hintNamePart;
+    }
+
+    internal static string ToReadableHintNamePart(string value)
+    {
+        return ToReadableHintNamePart(value, out _);
+    }
+
+    internal static string AppendStableHash(
+        string hintNamePart,
+        string value)
+    {
+        return hintNamePart + "__" + GetStableHash(value);
+    }
+
+    private static string ToReadableHintNamePart(
+        string value,
+        out bool requiresDisambiguation)
+    {
+        var builder = new StringBuilder(value.Length);
+        requiresDisambiguation = false;
 
         foreach (var character in value)
         {
@@ -28,14 +54,6 @@ public static class HintNameHelper
             requiresDisambiguation |= character != '.';
         }
 
-        if (requiresDisambiguation)
-        {
-            // A double underscore cannot occur in the non-hashed form because
-            // metadata names cannot contain empty namespace segments.
-            builder.Append("__");
-            builder.Append(GetStableHash(value));
-        }
-
         return builder.ToString();
     }
 
@@ -51,7 +69,9 @@ public static class HintNameHelper
                 hash *= Fnv1A64Prime;
             }
 
-            return hash.ToString("x16");
+            return hash.ToString(
+                "x16",
+                CultureInfo.InvariantCulture);
         }
     }
 }

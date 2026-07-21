@@ -32,11 +32,13 @@
   documentation and should make the resulting API understandable.
 - Use `TestTemplateTypeGenerator` for template type tests so unrelated
   template extension generation does not run.
-- Run focused tests while iterating, then run the full generator unit-test
-  project once before committing:
+- Run only focused tests for the changed category. The user runs the full test
+  suite periodically and reports failures; do not run the full suite, including
+  before committing or pushing. A focused run can use:
 
   ```shell
-  dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+  dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj \
+    --filter "FullyQualifiedName~TemplateTypeTests.Naming"
   ```
 
 ## Repository workflow

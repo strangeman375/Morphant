@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -12,7 +13,7 @@ internal static class TemplateTypePipeline
         IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValuesProvider<TemplateDestinationTypeInfo> destinationTypes)
     {
-        var destinationDefinitions = destinationTypes
+        var generationInputs = destinationTypes
             .Where(static destinationType =>
                 destinationType.Kind ==
                 TemplateDestinationTypeKind.GeneratedTemplate)
@@ -21,18 +22,18 @@ internal static class TemplateTypePipeline
             .WhereHasValue()
             .Collect()
             .SelectMany(static (destinationTypes, cancellationToken) =>
-                DeduplicateAndSortDefinitions(
+                DeduplicateSortAndAssignHintNames(
                     destinationTypes,
                     cancellationToken));
 
-        var requests = destinationDefinitions
+        var requests = generationInputs
             .Combine(compilationContext)
             .Select(static (x, cancellationToken) =>
             {
-                var (templateTypeDefinition, context) = x;
+                var (generationInput, context) = x;
 
                 return TryBuild(
-                    templateTypeDefinition,
+                    generationInput,
                     context,
                     cancellationToken);
             })
@@ -48,11 +49,13 @@ internal static class TemplateTypePipeline
     }
 
     private static TemplateTypeRequest? TryBuild(
-        TemplateTypeDefinitionInfo templateTypeDefinition,
+        TemplateTypeGenerationInput generationInput,
         CompilationContext context,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        var templateTypeDefinition = generationInput.Definition;
 
         var destinationType = context.Compilation.GetTypeByMetadataName(
             templateTypeDefinition.MetadataName);
@@ -70,8 +73,7 @@ internal static class TemplateTypePipeline
 
         var hintName =
             "Morphant.TemplateType." +
-            HintNameHelper.ToHintNamePart(
-                templateTypeDefinition.MetadataName) +
+            generationInput.HintNamePart +
             ".g.cs";
 
         return new TemplateTypeRequest(
@@ -79,8 +81,8 @@ internal static class TemplateTypePipeline
             TemplateTypeEmitter.Emit(model));
     }
 
-    private static ImmutableArray<TemplateTypeDefinitionInfo>
-        DeduplicateAndSortDefinitions(
+    private static ImmutableArray<TemplateTypeGenerationInput>
+        DeduplicateSortAndAssignHintNames(
             ImmutableArray<TemplateTypeDefinitionInfo> destinationTypes,
             CancellationToken cancellationToken)
     {
@@ -102,6 +104,55 @@ internal static class TemplateTypePipeline
                 left.MetadataName,
                 right.MetadataName));
 
-        return result.ToImmutableArray();
+        var generationInputs =
+            ImmutableArray.CreateBuilder<TemplateTypeGenerationInput>(
+                result.Count);
+
+        var usedHintNameParts =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var definition in result)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var readableHintNamePart =
+                HintNameHelper.ToReadableHintNamePart(
+                    definition.MetadataName);
+
+            var hintNamePart = readableHintNamePart;
+
+            if (!usedHintNameParts.Add(hintNamePart))
+            {
+                hintNamePart = HintNameHelper.AppendStableHash(
+                    readableHintNamePart,
+                    definition.MetadataName);
+
+                var collisionIndex = 2;
+
+                while (!usedHintNameParts.Add(hintNamePart))
+                {
+                    hintNamePart =
+                        HintNameHelper.AppendStableHash(
+                            readableHintNamePart,
+                            definition.MetadataName) +
+                        "_" +
+                        collisionIndex.ToString(
+                            CultureInfo.InvariantCulture);
+
+                    collisionIndex++;
+                }
+            }
+
+            generationInputs.Add(
+                new TemplateTypeGenerationInput(
+                    definition,
+                    hintNamePart));
+        }
+
+        return generationInputs.ToImmutable();
     }
+
+    private readonly record struct TemplateTypeGenerationInput(
+        TemplateTypeDefinitionInfo Definition,
+        string HintNamePart);
 }
