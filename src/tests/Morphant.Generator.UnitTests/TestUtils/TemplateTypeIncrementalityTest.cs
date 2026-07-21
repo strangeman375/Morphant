@@ -9,7 +9,7 @@ namespace Morphant.Generator.UnitTests.TestUtils;
 
 internal static class TemplateTypeIncrementalityTest
 {
-    private static readonly CSharpParseOptions ParseOptions = new(
+    private static readonly CSharpParseOptions DefaultParseOptions = new(
         LanguageVersion.CSharp9,
         DocumentationMode.Diagnose);
 
@@ -50,6 +50,7 @@ internal static class TemplateTypeIncrementalityTest
             name,
             sourceFiles,
             Array.Empty<MetadataReference>(),
+            NullableContextOptions.Enable,
             expectedOutputs);
     }
 
@@ -59,19 +60,59 @@ internal static class TemplateTypeIncrementalityTest
         IReadOnlyCollection<MetadataReference> additionalReferences,
         params TemplateTypeIncrementalityExpectedOutput[] expectedOutputs)
     {
+        return Step(
+            name,
+            sourceFiles,
+            additionalReferences,
+            NullableContextOptions.Enable,
+            expectedOutputs);
+    }
+
+    public static TemplateTypeIncrementalityStep Step(
+        string name,
+        IReadOnlyCollection<TemplateTypeIncrementalitySourceFile> sourceFiles,
+        NullableContextOptions nullableContextOptions,
+        params TemplateTypeIncrementalityExpectedOutput[] expectedOutputs)
+    {
+        return Step(
+            name,
+            sourceFiles,
+            Array.Empty<MetadataReference>(),
+            nullableContextOptions,
+            expectedOutputs);
+    }
+
+    private static TemplateTypeIncrementalityStep Step(
+        string name,
+        IReadOnlyCollection<TemplateTypeIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<MetadataReference> additionalReferences,
+        NullableContextOptions nullableContextOptions,
+        params TemplateTypeIncrementalityExpectedOutput[] expectedOutputs)
+    {
         return new TemplateTypeIncrementalityStep(
             name,
             sourceFiles.ToImmutableArray(),
             additionalReferences.ToImmutableArray(),
+            nullableContextOptions,
             expectedOutputs.ToImmutableArray());
     }
 
     public static void RunAndAssert(
         params TemplateTypeIncrementalityStep[] steps)
     {
+        RunAndAssert(LanguageVersion.CSharp9, steps);
+    }
+
+    public static void RunAndAssert(
+        LanguageVersion languageVersion,
+        params TemplateTypeIncrementalityStep[] steps)
+    {
         Assert.That(steps, Is.Not.Empty);
 
         var compilation = CreateCompilation();
+        var parseOptions = new CSharpParseOptions(
+            languageVersion,
+            DocumentationMode.Diagnose);
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: new[]
@@ -79,7 +120,7 @@ internal static class TemplateTypeIncrementalityTest
                 new TestTemplateTypeGenerator().AsSourceGenerator()
             },
             additionalTexts: Array.Empty<AdditionalText>(),
-            parseOptions: ParseOptions,
+            parseOptions: parseOptions,
             optionsProvider: null,
             driverOptions: new GeneratorDriverOptions(
                 IncrementalGeneratorOutputKind.None,
@@ -87,7 +128,10 @@ internal static class TemplateTypeIncrementalityTest
 
         foreach (var step in steps)
         {
-            compilation = ApplyStep(compilation, step);
+            compilation = ApplyStep(
+                compilation,
+                step,
+                parseOptions);
 
             driver = driver.RunGeneratorsAndUpdateCompilation(
                 compilation,
@@ -113,7 +157,10 @@ internal static class TemplateTypeIncrementalityTest
             assemblyName,
             new[]
             {
-                ParseSource(source, assemblyName + ".cs")
+                ParseSource(
+                    source,
+                    assemblyName + ".cs",
+                    DefaultParseOptions)
             },
             DefaultReferences,
             new CSharpCompilationOptions(
@@ -145,7 +192,8 @@ internal static class TemplateTypeIncrementalityTest
 
     private static CSharpCompilation ApplyStep(
         CSharpCompilation compilation,
-        TemplateTypeIncrementalityStep step)
+        TemplateTypeIncrementalityStep step,
+        CSharpParseOptions parseOptions)
     {
         var sourceFilesByPath = step.SourceFiles.ToDictionary(
             static sourceFile => sourceFile.Path,
@@ -172,24 +220,31 @@ internal static class TemplateTypeIncrementalityTest
 
             var sourceTree = ParseSource(
                 sourceFile.Source,
-                sourceFile.Path);
+                sourceFile.Path,
+                parseOptions);
 
             compilation = previousTree is null
                 ? compilation.AddSyntaxTrees(sourceTree)
                 : compilation.ReplaceSyntaxTree(previousTree, sourceTree);
         }
 
-        return compilation.WithReferences(
-            DefaultReferences.AddRange(step.AdditionalReferences));
+        return compilation
+            .WithOptions(
+                ((CSharpCompilationOptions)compilation.Options)
+                .WithNullableContextOptions(
+                    step.NullableContextOptions))
+            .WithReferences(
+                DefaultReferences.AddRange(step.AdditionalReferences));
     }
 
     private static SyntaxTree ParseSource(
         string source,
-        string path)
+        string path,
+        CSharpParseOptions parseOptions)
     {
         return CSharpSyntaxTree.ParseText(
             SourceText.From(source, Encoding.UTF8),
-            ParseOptions,
+            parseOptions,
             path);
     }
 
@@ -326,6 +381,7 @@ internal sealed record TemplateTypeIncrementalityStep(
     string Name,
     ImmutableArray<TemplateTypeIncrementalitySourceFile> SourceFiles,
     ImmutableArray<MetadataReference> AdditionalReferences,
+    NullableContextOptions NullableContextOptions,
     ImmutableArray<TemplateTypeIncrementalityExpectedOutput> ExpectedOutputs);
 
 internal sealed record TemplateTypeIncrementalitySourceFile(

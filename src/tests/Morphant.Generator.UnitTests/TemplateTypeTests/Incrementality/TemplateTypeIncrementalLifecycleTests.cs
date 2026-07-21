@@ -66,6 +66,40 @@ internal sealed class TemplateTypeIncrementalLifecycleTests
                     IncrementalStepRunReason.Removed)));
     }
 
+    [Test]
+    public void Removes_and_restores_model_when_destination_becomes_direct()
+    {
+        var destinationFile = SourceFile(
+            "Destination.cs",
+            BuildDestinationSource("Destination"));
+
+        RunAndAssert(
+            Step(
+                "generated destination",
+                WithMapper(
+                    new[] { destinationFile },
+                    "builder.Map<Source, Destination>();"),
+                Expected(
+                    "Morphant.TemplateType.TestCase_Destination.g.cs",
+                    IncrementalStepRunReason.New)),
+            Step(
+                "direct destination",
+                WithMapper(
+                    new[] { destinationFile },
+                    "builder.Map<Source, int>();"),
+                Expected(
+                    "Morphant.TemplateType.TestCase_Destination.g.cs",
+                    IncrementalStepRunReason.Removed)),
+            Step(
+                "generated destination restored",
+                WithMapper(
+                    new[] { destinationFile },
+                    "builder.Map<Source, Destination>();"),
+                Expected(
+                    "Morphant.TemplateType.TestCase_Destination.g.cs",
+                    IncrementalStepRunReason.New)));
+    }
+
     private static TemplateTypeIncrementalitySourceFile[] WithMapper(
         IEnumerable<TemplateTypeIncrementalitySourceFile> destinationFiles,
         params string[] mapStatements)

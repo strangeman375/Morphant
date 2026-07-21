@@ -1,8 +1,10 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Morphant.Generator.TemplateSurface.TemplateType;
 
@@ -13,7 +15,7 @@ internal static class TemplateTypeModelPipeline
         IncrementalValueProvider<CompilationContext> compilationContext)
     {
         // CompilationProvider changes after every source edit. Reduce that
-        // broad input to the syntax trees and references that can affect this
+        // broad input to the declarations and references that can affect this
         // particular destination before building its model.
         var modelInputs = generationInputs
             .Combine(compilationContext)
@@ -191,17 +193,30 @@ internal static class TemplateTypeModelPipeline
 
         if (syntaxReferences.Length > 0)
         {
+            // A span is not a stable part identity: editing an earlier type in
+            // the same file shifts every following declaration.
+            var partIndicesByPath = new Dictionary<string, int>(
+                StringComparer.Ordinal);
+
             foreach (var syntaxReference in syntaxReferences)
             {
+                var path = syntaxReference.SyntaxTree.FilePath;
+
+                partIndicesByPath.TryGetValue(path, out var partIndex);
+                partIndicesByPath[path] = partIndex + 1;
+
                 result.Add(
                     new TemplateTypeModelDependency(
                         metadataName +
                         "|source|" +
-                        syntaxReference.SyntaxTree.FilePath +
+                        path +
                         "|" +
-                        syntaxReference.Span.Start.ToString(
+                        partIndex.ToString(
                             CultureInfo.InvariantCulture),
-                        syntaxReference.SyntaxTree));
+                        BuildSourceDependencyVersion(
+                            syntaxReference,
+                            compilation,
+                            cancellationToken)));
             }
 
             return;
@@ -221,6 +236,176 @@ internal static class TemplateTypeModelPipeline
         }
     }
 
+    private static TemplateTypeSourceDependencyVersion
+        BuildSourceDependencyVersion(
+            SyntaxReference syntaxReference,
+            CSharpCompilation compilation,
+            CancellationToken cancellationToken)
+    {
+        var declaration = syntaxReference.GetSyntax(cancellationToken);
+        var parseOptions =
+            (CSharpParseOptions)syntaxReference.SyntaxTree.Options;
+
+        // Declaration text isolates sibling types in one syntax tree. The
+        // semantic context also catches unchanged syntax whose meaning changes
+        // through aliases or constants declared elsewhere.
+        return new TemplateTypeSourceDependencyVersion(
+            declaration.ToFullString(),
+            BuildSemanticContext(
+                declaration,
+                compilation,
+                cancellationToken),
+            BuildParseOptionsVersion(parseOptions));
+    }
+
+    private static string BuildSemanticContext(
+        SyntaxNode declaration,
+        CSharpCompilation compilation,
+        CancellationToken cancellationToken)
+    {
+        var semanticModel = compilation.GetSemanticModel(
+            declaration.SyntaxTree);
+
+        var result = new StringBuilder();
+
+        foreach (var typeSyntax in declaration
+                     .DescendantNodesAndSelf()
+                     .OfType<TypeSyntax>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var type = semanticModel.GetTypeInfo(
+                typeSyntax,
+                cancellationToken).Type;
+
+            result
+                .Append("type|")
+                .Append(typeSyntax.SpanStart - declaration.SpanStart)
+                .Append('|');
+
+            if (type is null)
+            {
+                result.Append("<unresolved>");
+            }
+            else
+            {
+                result
+                    .Append(
+                        type.ToDisplayString(
+                            SymbolDisplayFormats
+                                .FullyQualifiedNullable))
+                    .Append('|')
+                    .Append((int)type.NullableAnnotation);
+            }
+
+            result.AppendLine();
+        }
+
+        foreach (var attribute in declaration
+                     .DescendantNodesAndSelf()
+                     .OfType<AttributeSyntax>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var constructor = semanticModel.GetSymbolInfo(
+                attribute,
+                cancellationToken).Symbol;
+
+            result
+                .Append("attribute|")
+                .Append(attribute.SpanStart - declaration.SpanStart)
+                .Append('|')
+                .Append(
+                    constructor?.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat) ??
+                    "<unresolved>")
+                .AppendLine();
+        }
+
+        foreach (var expression in GetConstantExpressions(declaration))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var constant = semanticModel.GetConstantValue(
+                expression,
+                cancellationToken);
+
+            var type = semanticModel.GetTypeInfo(
+                expression,
+                cancellationToken).Type;
+
+            result
+                .Append("constant|")
+                .Append(expression.SpanStart - declaration.SpanStart)
+                .Append('|')
+                .Append(
+                    type?.ToDisplayString(
+                        SymbolDisplayFormats.FullyQualifiedNullable) ??
+                    "<unresolved>")
+                .Append('|')
+                .Append(FormatConstant(constant))
+                .AppendLine();
+        }
+
+        return result.ToString();
+    }
+
+    private static IEnumerable<ExpressionSyntax> GetConstantExpressions(
+        SyntaxNode declaration)
+    {
+        foreach (var argument in declaration
+                     .DescendantNodesAndSelf()
+                     .OfType<AttributeArgumentSyntax>())
+        {
+            yield return argument.Expression;
+        }
+
+        foreach (var parameter in declaration
+                     .DescendantNodesAndSelf()
+                     .OfType<ParameterSyntax>())
+        {
+            if (parameter.Default is { } defaultValue)
+            {
+                yield return defaultValue.Value;
+            }
+        }
+    }
+
+    private static string FormatConstant(Optional<object?> constant)
+    {
+        if (!constant.HasValue)
+        {
+            return "<not-constant>";
+        }
+
+        if (constant.Value is null)
+        {
+            return "null";
+        }
+
+        return constant.Value.GetType().FullName + ":" +
+               (SymbolDisplay.FormatPrimitive(
+                    constant.Value,
+                    quoteStrings: true,
+                    useHexadecimalNumbers: false) ??
+                Convert.ToString(
+                    constant.Value,
+                    CultureInfo.InvariantCulture));
+    }
+
+    private static string BuildParseOptionsVersion(
+        CSharpParseOptions parseOptions)
+    {
+        return parseOptions.LanguageVersion + "|" +
+               parseOptions.DocumentationMode + "|" +
+               parseOptions.Kind + "|" +
+               string.Join(
+                   ",",
+                   parseOptions.PreprocessorSymbolNames.OrderBy(
+                       static symbol => symbol,
+                       StringComparer.Ordinal));
+    }
+
     private readonly record struct TemplateTypeModelInput(
         TemplateTypeGenerationInput GenerationInput,
         string HintName,
@@ -234,6 +419,11 @@ internal static class TemplateTypeModelPipeline
     private readonly record struct TemplateTypeModelDependency(
         string Identity,
         object Version);
+
+    private readonly record struct TemplateTypeSourceDependencyVersion(
+        string Declaration,
+        string SemanticContext,
+        string ParseOptions);
 
     private sealed class TemplateTypeModelInputComparer :
         IEqualityComparer<TemplateTypeModelInput>
@@ -267,7 +457,7 @@ internal static class TemplateTypeModelPipeline
                 if (!StringComparer.Ordinal.Equals(
                         x.Dependencies[i].Identity,
                         y.Dependencies[i].Identity) ||
-                    !ReferenceEquals(
+                    !DependencyVersionsEqual(
                         x.Dependencies[i].Version,
                         y.Dependencies[i].Version))
                 {
@@ -291,12 +481,37 @@ internal static class TemplateTypeModelPipeline
             foreach (var dependency in obj.Dependencies)
             {
                 hash = AddHash(hash, dependency.Identity);
-                hash = unchecked(
-                    hash * 31 +
-                    RuntimeHelpers.GetHashCode(dependency.Version));
+                hash = AddDependencyVersionHash(
+                    hash,
+                    dependency.Version);
             }
 
             return hash;
+        }
+
+        private static bool DependencyVersionsEqual(
+            object x,
+            object y)
+        {
+            if (x is TemplateTypeSourceDependencyVersion sourceX &&
+                y is TemplateTypeSourceDependencyVersion sourceY)
+            {
+                return sourceX == sourceY;
+            }
+
+            return ReferenceEquals(x, y);
+        }
+
+        private static int AddDependencyVersionHash(
+            int hash,
+            object version)
+        {
+            var versionHash =
+                version is TemplateTypeSourceDependencyVersion source
+                    ? source.GetHashCode()
+                    : RuntimeHelpers.GetHashCode(version);
+
+            return unchecked(hash * 31 + versionHash);
         }
 
         private static int AddHash<T>(int hash, T value)

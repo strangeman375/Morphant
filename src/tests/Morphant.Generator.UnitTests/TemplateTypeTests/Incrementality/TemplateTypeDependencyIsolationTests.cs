@@ -19,6 +19,67 @@ internal sealed class TemplateTypeDependencyIsolationTests
     private const string InterfaceDestinationHintName =
         "Morphant.TemplateType.TestCase_InterfaceDestination.g.cs";
 
+    private const string NestedDestinationHintName =
+        "Morphant.TemplateType." +
+        "TestCase_Outer_1_NestedDestination.g.cs";
+
+    [Test]
+    public void Isolates_destinations_and_unrelated_declarations_in_same_file()
+    {
+        var mapperFile = SourceFile(
+            "Mapper.cs",
+            BuildMapperSource(
+                "TestCase.DestinationA",
+                "TestCase.DestinationB"));
+
+        RunAndAssert(
+            Step(
+                "initial shared file",
+                new[]
+                {
+                    mapperFile,
+                    SourceFile(
+                        "Destinations.cs",
+                        BuildSharedDestinationSource("int", 1))
+                },
+                Expected(
+                    DestinationAHintName,
+                    IncrementalStepRunReason.New),
+                Expected(
+                    DestinationBHintName,
+                    IncrementalStepRunReason.New)),
+            Step(
+                "unrelated declaration changed in shared file",
+                new[]
+                {
+                    mapperFile,
+                    SourceFile(
+                        "Destinations.cs",
+                        BuildSharedDestinationSource("int", 2))
+                },
+                Expected(
+                    DestinationAHintName,
+                    IncrementalStepRunReason.Cached),
+                Expected(
+                    DestinationBHintName,
+                    IncrementalStepRunReason.Cached)),
+            Step(
+                "one destination changed in shared file",
+                new[]
+                {
+                    mapperFile,
+                    SourceFile(
+                        "Destinations.cs",
+                        BuildSharedDestinationSource("long", 2))
+                },
+                Expected(
+                    DestinationAHintName,
+                    IncrementalStepRunReason.Modified),
+                Expected(
+                    DestinationBHintName,
+                    IncrementalStepRunReason.Cached)));
+    }
+
     [Test]
     public void Rebuilds_only_changed_partial_destination()
     {
@@ -149,6 +210,54 @@ internal sealed class TemplateTypeDependencyIsolationTests
     }
 
     [Test]
+    public void Rebuilds_nested_destination_when_containing_contract_changes()
+    {
+        var mapperFile = SourceFile(
+            "Mapper.cs",
+            BuildMapperSource(
+                "TestCase.Outer<string>.NestedDestination",
+                "TestCase.DestinationB"));
+
+        var destinationBFile = SourceFile(
+            "DestinationB.cs",
+            DestinationBSource);
+
+        RunAndAssert(
+            Step(
+                "initial containing contract",
+                new[]
+                {
+                    mapperFile,
+                    SourceFile(
+                        "Outer.cs",
+                        BuildNestedDestinationSource("class")),
+                    destinationBFile
+                },
+                Expected(
+                    NestedDestinationHintName,
+                    IncrementalStepRunReason.New),
+                Expected(
+                    DestinationBHintName,
+                    IncrementalStepRunReason.New)),
+            Step(
+                "containing contract changed",
+                new[]
+                {
+                    mapperFile,
+                    SourceFile(
+                        "Outer.cs",
+                        BuildNestedDestinationSource("notnull")),
+                    destinationBFile
+                },
+                Expected(
+                    NestedDestinationHintName,
+                    IncrementalStepRunReason.Modified),
+                Expected(
+                    DestinationBHintName,
+                    IncrementalStepRunReason.Cached)));
+    }
+
+    [Test]
     public void Rebuilds_only_destination_from_changed_reference()
     {
         var initialDestinationAReference = CreateReference(
@@ -229,6 +338,27 @@ internal sealed class TemplateTypeDependencyIsolationTests
             memberType);
     }
 
+    private static string BuildSharedDestinationSource(
+        string destinationAMemberType,
+        int unrelatedVersion)
+    {
+        return SharedDestinationSourceTemplate
+            .Replace(
+                "__DESTINATION_A_MEMBER_TYPE__",
+                destinationAMemberType)
+            .Replace(
+                "__UNRELATED_VERSION__",
+                unrelatedVersion.ToString());
+    }
+
+    private static string BuildNestedDestinationSource(
+        string typeParameterConstraint)
+    {
+        return NestedDestinationSourceTemplate.Replace(
+            "__TYPE_PARAMETER_CONSTRAINT__",
+            typeParameterConstraint);
+    }
+
     private static string BuildBaseClassSource(string memberType)
     {
         return BaseClassSourceTemplate.Replace(
@@ -303,6 +433,28 @@ namespace TestCase
 """;
 
     // lang=c#
+    private const string SharedDestinationSourceTemplate =
+"""
+namespace TestCase
+{
+    public sealed class DestinationA
+    {
+        public __DESTINATION_A_MEMBER_TYPE__ Id { get; set; }
+    }
+
+    public sealed class DestinationB
+    {
+        public string Name { get; set; } = null!;
+    }
+
+    internal static class Unrelated
+    {
+        public static int GetVersion() => __UNRELATED_VERSION__;
+    }
+}
+""";
+
+    // lang=c#
     private const string DestinationBSource =
 """
 namespace TestCase
@@ -319,7 +471,11 @@ namespace TestCase
 """
 namespace TestCase
 {
-    public sealed class ClassDestination : BaseDestination
+    public sealed class ClassDestination : IntermediateDestination
+    {
+    }
+
+    public class IntermediateDestination : BaseDestination
     {
     }
 }
@@ -342,7 +498,11 @@ namespace TestCase
 """
 namespace TestCase
 {
-    public interface InterfaceDestination : IBaseDestination
+    public interface InterfaceDestination : IIntermediateDestination
+    {
+    }
+
+    public interface IIntermediateDestination : IBaseDestination
     {
     }
 }
@@ -356,6 +516,24 @@ namespace TestCase
     public interface IBaseDestination
     {
         __MEMBER_TYPE__ Id { get; set; }
+    }
+}
+""";
+
+    // lang=c#
+    private const string NestedDestinationSourceTemplate =
+"""
+#nullable enable
+
+namespace TestCase
+{
+    public sealed class Outer<T>
+        where T : __TYPE_PARAMETER_CONSTRAINT__
+    {
+        public sealed class NestedDestination
+        {
+            public T Value { get; set; } = default!;
+        }
     }
 }
 """;

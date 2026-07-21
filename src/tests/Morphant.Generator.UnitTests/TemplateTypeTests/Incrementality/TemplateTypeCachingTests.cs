@@ -16,6 +16,9 @@ internal sealed class TemplateTypeCachingTests
     private const string DestinationBHintName =
         "Morphant.TemplateType.TestCase_DestinationB.g.cs";
 
+    private const string GenericDestinationHintName =
+        "Morphant.TemplateType.TestCase_Destination_1.g.cs";
+
     [Test]
     public void Caches_model_and_request_when_inputs_are_unchanged()
     {
@@ -174,13 +177,15 @@ namespace TestCase
                     DestinationBHintName,
                     IncrementalStepRunReason.New)),
             Step(
-                "map usages reordered",
+                "map usages reordered and mapping mode changed",
                 destinationFiles.Prepend(
                     SourceFile(
                         "Mapper.cs",
                         BuildMapperSource(
-                            "builder.Map<SourceB, DestinationB>();",
-                            "builder.Map<SourceA, DestinationA>();")))
+                            "builder.Map<SourceB, DestinationB>(" +
+                            "MappingMode.MapExisting);",
+                            "builder.Map<SourceA, DestinationA>(" +
+                            "MappingMode.MapNew);")))
                     .ToArray(),
                 Expected(
                     DestinationAHintName,
@@ -204,6 +209,87 @@ namespace TestCase
                 Expected(
                     DestinationBHintName,
                     IncrementalStepRunReason.Cached)));
+    }
+
+    [Test]
+    public void Keeps_generic_template_cached_when_constructed_usages_change()
+    {
+        var destinationFile = SourceFile(
+            "Destination.cs",
+            GenericDestinationSource);
+
+        RunAndAssert(
+            Step(
+                "initial constructed usage",
+                new[]
+                {
+                    SourceFile(
+                        "Mapper.cs",
+                        BuildMapperSource(
+                            "builder.Map<SourceA, Destination<int>>();")),
+                    destinationFile
+                },
+                Expected(
+                    GenericDestinationHintName,
+                    IncrementalStepRunReason.New)),
+            Step(
+                "constructed usage changed",
+                new[]
+                {
+                    SourceFile(
+                        "Mapper.cs",
+                        BuildMapperSource(
+                            "builder.Map<SourceB, Destination<string>>();")),
+                    destinationFile
+                },
+                Expected(
+                    GenericDestinationHintName,
+                    IncrementalStepRunReason.Cached)),
+            Step(
+                "another constructed usage added",
+                new[]
+                {
+                    SourceFile(
+                        "Mapper.cs",
+                        BuildMapperSource(
+                            "builder.Map<SourceB, Destination<string>>();",
+                            "builder.Map<SourceC, Destination<int>>();")),
+                    destinationFile
+                },
+                Expected(
+                    GenericDestinationHintName,
+                    IncrementalStepRunReason.Cached)));
+    }
+
+    [Test]
+    public void Rebuilds_template_when_nullable_project_setting_changes_surface()
+    {
+        var sourceFiles = new[]
+        {
+            SourceFile(
+                "Mapper.cs",
+                BuildMapperSource(
+                    "builder.Map<SourceA, Destination>();")),
+            SourceFile(
+                "Destination.cs",
+                ObliviousDestinationSource)
+        };
+
+        RunAndAssert(
+            Step(
+                "nullable disabled",
+                sourceFiles,
+                NullableContextOptions.Disable,
+                Expected(
+                    DestinationHintName,
+                    IncrementalStepRunReason.New)),
+            Step(
+                "nullable enabled",
+                sourceFiles,
+                NullableContextOptions.Enable,
+                Expected(
+                    DestinationHintName,
+                    IncrementalStepRunReason.Modified)));
     }
 
     private static string BuildMapperSource(
@@ -289,6 +375,32 @@ namespace TestCase
     public sealed class __TYPE_NAME__
     {
         public __MEMBER__ { get; set; } = default!;
+    }
+}
+""";
+
+    // lang=c#
+    private const string GenericDestinationSource =
+"""
+#nullable enable
+
+namespace TestCase
+{
+    public sealed class Destination<T>
+    {
+        public T Value { get; set; } = default!;
+    }
+}
+""";
+
+    // lang=c#
+    private const string ObliviousDestinationSource =
+"""
+namespace TestCase
+{
+    public sealed class Destination
+    {
+        public string Name { get; set; }
     }
 }
 """;
