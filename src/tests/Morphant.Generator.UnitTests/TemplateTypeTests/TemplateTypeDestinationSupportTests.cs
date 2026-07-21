@@ -267,122 +267,82 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
             ));
     }
 
-    [Test]
-    public async Task Generates_template_for_predefined_value_type()
+    [TestCase("object")]
+    [TestCase("object?")]
+    [TestCase("string")]
+    [TestCase("string?")]
+    [TestCase("bool")]
+    [TestCase("bool?")]
+    [TestCase("char")]
+    [TestCase("char?")]
+    [TestCase("sbyte")]
+    [TestCase("sbyte?")]
+    [TestCase("byte")]
+    [TestCase("byte?")]
+    [TestCase("short")]
+    [TestCase("short?")]
+    [TestCase("ushort")]
+    [TestCase("ushort?")]
+    [TestCase("int")]
+    [TestCase("int?")]
+    [TestCase("uint")]
+    [TestCase("uint?")]
+    [TestCase("long")]
+    [TestCase("long?")]
+    [TestCase("ulong")]
+    [TestCase("ulong?")]
+    [TestCase("nint")]
+    [TestCase("nint?")]
+    [TestCase("nuint")]
+    [TestCase("nuint?")]
+    [TestCase("float")]
+    [TestCase("float?")]
+    [TestCase("double")]
+    [TestCase("double?")]
+    [TestCase("decimal")]
+    [TestCase("decimal?")]
+    public async Task Does_not_generate_template_type_for_direct_predefined_destination(
+        string destinationType)
     {
-        await RunSupportedFrameworkDestination(
-            "int",
-            "System_Int32",
-            ExpectedInt32DestinationTemplate);
+        await RunUnsupportedDestination(destinationType);
     }
 
-    [Test]
-    public async Task Generates_template_for_predefined_reference_type()
+    [TestCase("global::System.Guid")]
+    [TestCase("global::System.Guid?")]
+    [TestCase("global::System.DateTime")]
+    [TestCase("global::System.DateTime?")]
+    [TestCase("global::System.DateTimeOffset")]
+    [TestCase("global::System.DateTimeOffset?")]
+    [TestCase("global::System.DateOnly")]
+    [TestCase("global::System.DateOnly?")]
+    [TestCase("global::System.TimeOnly")]
+    [TestCase("global::System.TimeOnly?")]
+    [TestCase("global::System.TimeSpan")]
+    [TestCase("global::System.TimeSpan?")]
+    [TestCase("global::System.Half")]
+    [TestCase("global::System.Half?")]
+    [TestCase("global::System.Int128")]
+    [TestCase("global::System.Int128?")]
+    [TestCase("global::System.UInt128")]
+    [TestCase("global::System.UInt128?")]
+    [TestCase("global::System.Uri")]
+    [TestCase("global::System.Uri?")]
+    [TestCase("global::System.Version")]
+    [TestCase("global::System.Version?")]
+    [TestCase("global::System.Numerics.BigInteger")]
+    [TestCase("global::System.Numerics.BigInteger?")]
+    [TestCase("global::System.Numerics.Complex")]
+    [TestCase("global::System.Numerics.Complex?")]
+    [TestCase("global::System.Text.Rune")]
+    [TestCase("global::System.Text.Rune?")]
+    [TestCase("global::System.Index")]
+    [TestCase("global::System.Index?")]
+    [TestCase("global::System.Range")]
+    [TestCase("global::System.Range?")]
+    public async Task Does_not_generate_template_type_for_direct_bcl_destination(
+        string destinationType)
     {
-        await RunSupportedFrameworkDestination(
-            "object",
-            "System_Object",
-            ExpectedObjectDestinationTemplate);
-    }
-
-    [Test]
-    public async Task Does_not_generate_template_for_generic_class_destination()
-    {
-        // lang=c#
-        const string destinationDeclaration =
-"""
-    public sealed class Destination<T>
-    {
-    }
-""";
-
-        await RunUnsupportedDestination(
-            "Destination<int>",
-            destinationDeclaration);
-    }
-
-    [Test]
-    public async Task Does_not_generate_template_for_generic_struct_destination()
-    {
-        // lang=c#
-        const string destinationDeclaration =
-"""
-    public struct Destination<T>
-    {
-    }
-""";
-
-        await RunUnsupportedDestination(
-            "Destination<int>",
-            destinationDeclaration);
-    }
-
-    [Test]
-    public async Task Does_not_generate_template_for_generic_interface_destination()
-    {
-        // lang=c#
-        const string destinationDeclaration =
-"""
-    public interface Destination<T>
-    {
-    }
-""";
-
-        await RunUnsupportedDestination(
-            "Destination<int>",
-            destinationDeclaration);
-    }
-
-    [Test]
-    public async Task Does_not_generate_template_for_generic_record_class_destination()
-    {
-        // lang=c#
-        const string destinationDeclaration =
-"""
-    public sealed record Destination<T>
-    {
-    }
-""";
-
-        await RunUnsupportedDestination(
-            "Destination<int>",
-            destinationDeclaration);
-    }
-
-    [Test]
-    public async Task Does_not_generate_template_for_generic_record_struct_destination()
-    {
-        // lang=c#
-        const string destinationDeclaration =
-"""
-    public record struct Destination<T>
-    {
-    }
-""";
-
-        await RunUnsupportedDestination(
-            "Destination<int>",
-            destinationDeclaration,
-            LanguageVersion.CSharp10);
-    }
-
-    [Test]
-    public async Task Does_not_generate_template_for_destination_nested_in_generic_type()
-    {
-        // lang=c#
-        const string destinationDeclaration =
-"""
-    public sealed class Container<T>
-    {
-        public sealed class Destination
-        {
-        }
-    }
-""";
-
-        await RunUnsupportedDestination(
-            "Container<int>.Destination",
-            destinationDeclaration);
+        await RunUnsupportedDestination(destinationType);
     }
 
     [Test]
@@ -440,8 +400,10 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
             destinationDeclaration);
     }
 
-    [Test]
-    public async Task Does_not_generate_template_for_enum_destination()
+    [TestCase("Destination")]
+    [TestCase("Destination?")]
+    public async Task Does_not_generate_template_type_for_direct_enum_destination(
+        string destinationType)
     {
         // lang=c#
         const string destinationDeclaration =
@@ -453,7 +415,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
 """;
 
         await RunUnsupportedDestination(
-            "Destination",
+            destinationType,
             destinationDeclaration);
     }
 
@@ -472,9 +434,20 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     }
 
     [Test]
-    public async Task Does_not_generate_template_for_nullable_value_type_destination()
+    public async Task Does_not_generate_template_for_nullable_custom_struct_destination()
     {
-        await RunUnsupportedDestination("int?");
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public struct Destination
+    {
+        public int Value { get; set; }
+    }
+""";
+
+        await RunUnsupportedDestination(
+            "Destination?",
+            destinationDeclaration);
     }
 
     [Test]
@@ -753,41 +726,6 @@ namespace TestCase
             source);
     }
 
-    private static Task RunSupportedFrameworkDestination(
-        string destinationType,
-        string hintNamePart,
-        string expected)
-    {
-        var source = $$"""
-                       #pragma warning disable CS1591
-                       #nullable enable
-
-                       using Morphant;
-
-                       namespace TestCase
-                       {
-                           public sealed class Source
-                           {
-                           }
-
-                           [MorphantMapper]
-                           public partial class TestMapper : TypeMapper
-                           {
-                               protected override void Configure(MapperBuilder builder)
-                               {
-                                   builder.Map<Source, {{destinationType}}>();
-                               }
-                           }
-                       }
-                       """;
-
-        return TemplateTypeGeneratorTest.RunAndAssert(
-            LanguageVersion.CSharp9,
-            source,
-            "Morphant.TemplateType." + hintNamePart + ".g.cs",
-            expected);
-    }
-
     // lang=c#
     private const string ExpectedParameterlessConstructor =
 """
@@ -929,93 +867,4 @@ namespace TestCase.Morphant.Generated.ContainerScope
 }
 """;
 
-    // lang=c#
-    private const string ExpectedInt32DestinationTemplate =
-"""
-// <auto-generated />
-#nullable enable
-
-namespace System.Morphant.Generated
-{
-    /// <inheritdoc cref="global::System.Int32"/>
-    internal sealed record Int32MorphantTemplate
-    {
-        /// <summary>
-        /// Creates a destination instance using convention-based mapping.
-        /// </summary>
-        /// <param name="marker">Selects convention-based mapping.</param>
-        public Int32MorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
-        /// <summary>
-        /// Creates a destination instance using factory-based destination construction.
-        /// </summary>
-        /// <param name="marker">Selects factory-based construction.</param>
-        public Int32MorphantTemplate(global::Morphant.Markers.ByFactoryMarker<int> marker)
-        {
-        }
-
-        /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
-        /// </summary>
-        public Int32MorphantTemplate()
-        {
-        }
-
-        public bool Equals(Int32MorphantTemplate? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
-    }
-}
-""";
-
-    // lang=c#
-    private const string ExpectedObjectDestinationTemplate =
-"""
-// <auto-generated />
-#nullable enable
-
-namespace System.Morphant.Generated
-{
-    /// <inheritdoc cref="global::System.Object"/>
-    internal sealed record ObjectMorphantTemplate
-    {
-        /// <summary>
-        /// Creates a destination instance using convention-based mapping.
-        /// </summary>
-        /// <param name="marker">Selects convention-based mapping.</param>
-        public ObjectMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
-        /// <summary>
-        /// Creates a destination instance using factory-based destination construction.
-        /// </summary>
-        /// <param name="marker">Selects factory-based construction.</param>
-        public ObjectMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<object> marker)
-        {
-        }
-
-        /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
-        /// </summary>
-        public ObjectMorphantTemplate()
-        {
-        }
-
-        public bool Equals(ObjectMorphantTemplate? other) => false;
-
-        public override int GetHashCode() => 0;
-
-        public override string ToString() => string.Empty;
-
-        private bool PrintMembers(global::System.Text.StringBuilder builder) => false;
-    }
-}
-""";
 }

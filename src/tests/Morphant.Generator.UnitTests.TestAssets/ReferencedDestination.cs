@@ -12,3 +12,9 @@ public class ReferencedDestination
 
     private int PrivateProperty { get; set; }
 }
+
+public sealed class ReferencedGenericDestination<T>
+    where T : notnull
+{
+    public T Value { get; set; } = default!;
+}

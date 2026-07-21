@@ -26,7 +26,7 @@ internal static class TemplateTypeModelBuilder
 
     public static TemplateTypeModel Build(
         INamedTypeSymbol destinationType,
-        TemplateDestinationTypeInfo destinationTypeInfo,
+        TemplateTypeDefinitionInfo templateTypeDefinition,
         Compilation compilation,
         CancellationToken cancellationToken)
     {
@@ -42,18 +42,96 @@ internal static class TemplateTypeModelBuilder
             : ImmutableArray<TemplateConstructorModel>.Empty;
 
         return new TemplateTypeModel(
-            destinationTypeInfo.TemplateNamespace,
-            destinationTypeInfo.TemplateTypeName,
+            templateTypeDefinition.TemplateNamespace,
+            templateTypeDefinition.TemplateTypeName,
             destinationType.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable),
+            BuildTypeParameters(destinationType, cancellationToken),
             canConstructDestination,
             BuildDocumentation(destinationType, cancellationToken),
             constructors,
             BuildConstructorFields(constructors),
             BuildMembers(
                 destinationType,
-                destinationTypeInfo.TemplateTypeName,
+                templateTypeDefinition.TemplateTypeName,
                 compilation,
                 cancellationToken));
+    }
+
+    private static ImmutableArray<TemplateTypeParameterModel>
+        BuildTypeParameters(
+            INamedTypeSymbol destinationType,
+            CancellationToken cancellationToken)
+    {
+        var containingTypes = new Stack<INamedTypeSymbol>();
+
+        for (var current = destinationType;
+             current is not null;
+             current = current.ContainingType)
+        {
+            containingTypes.Push(current);
+        }
+
+        var result =
+            ImmutableArray.CreateBuilder<TemplateTypeParameterModel>();
+
+        while (containingTypes.Count > 0)
+        {
+            foreach (var typeParameter in
+                     containingTypes.Pop().TypeParameters)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                result.Add(
+                    new TemplateTypeParameterModel(
+                        typeParameter.Name,
+                        BuildTypeParameterConstraints(typeParameter)));
+            }
+        }
+
+        return result.ToImmutable();
+    }
+
+    private static ImmutableArray<string> BuildTypeParameterConstraints(
+        ITypeParameterSymbol typeParameter)
+    {
+        var result = ImmutableArray.CreateBuilder<string>();
+
+        if (typeParameter.HasUnmanagedTypeConstraint)
+        {
+            result.Add("unmanaged");
+        }
+        else if (typeParameter.HasValueTypeConstraint)
+        {
+            result.Add("struct");
+        }
+        else if (typeParameter.HasReferenceTypeConstraint)
+        {
+            result.Add(
+                typeParameter.ReferenceTypeConstraintNullableAnnotation ==
+                NullableAnnotation.Annotated
+                    ? "class?"
+                    : "class");
+        }
+        else if (typeParameter.HasNotNullConstraint)
+        {
+            result.Add("notnull");
+        }
+
+        foreach (var constraintType in typeParameter.ConstraintTypes)
+        {
+            result.Add(
+                constraintType.ToDisplayString(
+                    SymbolDisplayFormats.FullyQualifiedNullable));
+        }
+
+        if (typeParameter.HasConstructorConstraint &&
+            !typeParameter.HasUnmanagedTypeConstraint &&
+            !typeParameter.HasValueTypeConstraint)
+        {
+            result.Add("new()");
+        }
+
+        return result.ToImmutable();
     }
 
     private static ImmutableArray<TemplateConstructorModel> BuildConstructors(
