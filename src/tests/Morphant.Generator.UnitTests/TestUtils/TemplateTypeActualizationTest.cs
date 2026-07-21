@@ -25,7 +25,7 @@ internal static class TemplateTypeActualizationTest
     {
         return Step(
             name,
-            source,
+            new[] { SourceFile(SourcePath, source) },
             Array.Empty<MetadataReference>(),
             expectedSources);
     }
@@ -36,9 +36,41 @@ internal static class TemplateTypeActualizationTest
         IReadOnlyCollection<MetadataReference> additionalReferences,
         params (string HintName, string Source)[] expectedSources)
     {
+        return Step(
+            name,
+            new[] { SourceFile(SourcePath, source) },
+            additionalReferences,
+            expectedSources);
+    }
+
+    public static TemplateTypeActualizationStep Step(
+        string name,
+        IReadOnlyCollection<TemplateTypeActualizationSourceFile> sourceFiles,
+        params (string HintName, string Source)[] expectedSources)
+    {
+        return Step(
+            name,
+            sourceFiles,
+            Array.Empty<MetadataReference>(),
+            expectedSources);
+    }
+
+    public static TemplateTypeActualizationSourceFile SourceFile(
+        string path,
+        string source)
+    {
+        return new TemplateTypeActualizationSourceFile(path, source);
+    }
+
+    private static TemplateTypeActualizationStep Step(
+        string name,
+        IReadOnlyCollection<TemplateTypeActualizationSourceFile> sourceFiles,
+        IReadOnlyCollection<MetadataReference> additionalReferences,
+        params (string HintName, string Source)[] expectedSources)
+    {
         return new TemplateTypeActualizationStep(
             name,
-            source,
+            sourceFiles.ToImmutableArray(),
             additionalReferences.ToImmutableArray(),
             expectedSources
                 .Select(static expectedSource =>
@@ -125,13 +157,37 @@ internal static class TemplateTypeActualizationTest
         CSharpCompilation compilation,
         TemplateTypeActualizationStep step)
     {
-        var sourceTree = ParseSource(step.Source, SourcePath);
-        var previousTree = compilation.SyntaxTrees.SingleOrDefault(
-            static tree => tree.FilePath == SourcePath);
+        var sourceFilesByPath = step.SourceFiles.ToDictionary(
+            static sourceFile => sourceFile.Path,
+            StringComparer.Ordinal);
 
-        compilation = previousTree is null
-            ? compilation.AddSyntaxTrees(sourceTree)
-            : compilation.ReplaceSyntaxTree(previousTree, sourceTree);
+        foreach (var previousTree in compilation.SyntaxTrees)
+        {
+            if (!sourceFilesByPath.ContainsKey(previousTree.FilePath))
+            {
+                compilation = compilation.RemoveSyntaxTrees(previousTree);
+            }
+        }
+
+        foreach (var sourceFile in step.SourceFiles)
+        {
+            var previousTree = compilation.SyntaxTrees.SingleOrDefault(
+                tree => tree.FilePath == sourceFile.Path);
+
+            if (previousTree is not null &&
+                previousTree.GetText().ToString() == sourceFile.Source)
+            {
+                continue;
+            }
+
+            var sourceTree = ParseSource(
+                sourceFile.Source,
+                sourceFile.Path);
+
+            compilation = previousTree is null
+                ? compilation.AddSyntaxTrees(sourceTree)
+                : compilation.ReplaceSyntaxTree(previousTree, sourceTree);
+        }
 
         return compilation.WithReferences(BuildReferences(step));
     }
@@ -243,9 +299,13 @@ internal static class TemplateTypeActualizationTest
 
 internal sealed record TemplateTypeActualizationStep(
     string Name,
-    string Source,
+    ImmutableArray<TemplateTypeActualizationSourceFile> SourceFiles,
     ImmutableArray<MetadataReference> AdditionalReferences,
     ImmutableArray<ExpectedGeneratedSource> ExpectedSources);
+
+internal sealed record TemplateTypeActualizationSourceFile(
+    string Path,
+    string Source);
 
 internal sealed record ExpectedGeneratedSource(
     string HintName,

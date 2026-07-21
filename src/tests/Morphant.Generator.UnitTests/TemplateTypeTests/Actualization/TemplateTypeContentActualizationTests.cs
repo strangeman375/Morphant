@@ -188,6 +188,156 @@ internal sealed class TemplateTypeContentActualizationTests
     }
 
     [Test]
+    public void Updates_template_when_separate_partial_destination_file_changes()
+    {
+        // lang=c#
+        const string mapperSource =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>();
+        }
+    }
+}
+""";
+
+        // lang=c#
+        const string destinationSource =
+"""
+#nullable enable
+
+namespace TestCase
+{
+    public sealed partial class Destination
+    {
+        public int Id { get; set; }
+    }
+}
+""";
+
+        // lang=c#
+        const string initialPartialSource =
+"""
+#nullable enable
+
+namespace TestCase
+{
+    public sealed partial class Destination
+    {
+        public string Name { get; set; } = null!;
+    }
+}
+""";
+
+        // lang=c#
+        const string updatedPartialSource =
+"""
+#nullable enable
+
+namespace TestCase
+{
+    public sealed partial class Destination
+    {
+        public string? DisplayName { get; set; }
+    }
+}
+""";
+
+        // lang=c#
+        const string initialMembers =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.Id"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int> Id
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.Name"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<string> Name
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        // lang=c#
+        const string updatedMembers =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.Id"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int> Id
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.DisplayName"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<string?> DisplayName
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        RunAndAssert(
+            Step(
+                "initial partial destination",
+                new[]
+                {
+                    SourceFile("Mapper.cs", mapperSource),
+                    SourceFile("Destination.cs", destinationSource),
+                    SourceFile(
+                        "Destination.Additional.cs",
+                        initialPartialSource)
+                },
+                (
+                    DestinationHintName,
+                    Expected.Build(
+                        destinationConstructors:
+                            ParameterlessTemplateConstructor,
+                        members: initialMembers)
+                )),
+            Step(
+                "separate partial file changed",
+                new[]
+                {
+                    SourceFile("Mapper.cs", mapperSource),
+                    SourceFile("Destination.cs", destinationSource),
+                    SourceFile(
+                        "Destination.Additional.cs",
+                        updatedPartialSource)
+                },
+                (
+                    DestinationHintName,
+                    Expected.Build(
+                        destinationConstructors:
+                            ParameterlessTemplateConstructor,
+                        members: updatedMembers)
+                )));
+    }
+
+    [Test]
     public void Updates_template_when_destination_base_type_changes()
     {
         // lang=c#
@@ -266,6 +416,103 @@ internal sealed class TemplateTypeContentActualizationTests
                         destinationConstructors:
                             ParameterlessTemplateConstructor,
                         members: updatedMember)
+                )));
+    }
+
+    [Test]
+    public void Updates_template_when_base_class_members_change()
+    {
+        // lang=c#
+        const string destination =
+"""
+    public sealed class Destination : Base
+    {
+        public bool IsActive { get; set; }
+    }
+""";
+
+        // lang=c#
+        const string initialBase =
+"""
+    public class Base
+    {
+        public int Id { get; set; }
+    }
+""";
+
+        // lang=c#
+        const string updatedBase =
+"""
+    public class Base
+    {
+        public string? Name { get; set; }
+    }
+""";
+
+        // lang=c#
+        const string initialMembers =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Base.Id"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int> Id
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.IsActive"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<bool> IsActive
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        // lang=c#
+        const string updatedMembers =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Base.Name"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<string?> Name
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.IsActive"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<bool> IsActive
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        RunAndAssert(
+            Step(
+                "initial base class members",
+                BuildSource(destination, initialBase),
+                (
+                    DestinationHintName,
+                    Expected.Build(
+                        destinationConstructors:
+                            ParameterlessTemplateConstructor,
+                        members: initialMembers)
+                )),
+            Step(
+                "base class members changed",
+                BuildSource(destination, updatedBase),
+                (
+                    DestinationHintName,
+                    Expected.Build(
+                        destinationConstructors:
+                            ParameterlessTemplateConstructor,
+                        members: updatedMembers)
                 )));
     }
 
@@ -364,6 +611,115 @@ internal sealed class TemplateTypeContentActualizationTests
     }
 
     [Test]
+    public void Updates_template_when_base_interface_members_change()
+    {
+        // lang=c#
+        const string destination =
+"""
+    public interface Destination : IContract
+    {
+        bool IsActive { get; set; }
+    }
+""";
+
+        // lang=c#
+        const string initialContract =
+"""
+    public interface IContract
+    {
+        int Id { get; set; }
+    }
+""";
+
+        // lang=c#
+        const string updatedContract =
+"""
+    public interface IContract
+    {
+        string? Name { get; set; }
+    }
+""";
+
+        // lang=c#
+        const string initialMembers =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.IContract.Id"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int> Id
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.IsActive"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<bool> IsActive
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        // lang=c#
+        const string updatedMembers =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.IContract.Name"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<string?> Name
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.IsActive"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<bool> IsActive
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        // lang=c#
+        const string byConventionConstructor =
+"""
+        /// <summary>
+        /// Configures convention-based mapping without selecting a destination constructor.
+        /// </summary>
+        /// <param name="marker">Selects convention-based mapping.</param>
+        public DestinationMorphantTemplate(global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+""";
+
+        RunAndAssert(
+            Step(
+                "initial base interface members",
+                BuildSource(destination, initialContract),
+                (
+                    DestinationHintName,
+                    Expected.Build(
+                        byConventionConstructor:
+                            byConventionConstructor,
+                        members: initialMembers)
+                )),
+            Step(
+                "base interface members changed",
+                BuildSource(destination, updatedContract),
+                (
+                    DestinationHintName,
+                    Expected.Build(
+                        byConventionConstructor:
+                            byConventionConstructor,
+                        members: updatedMembers)
+                )));
+    }
+
+    [Test]
     public void Updates_template_when_generic_constraints_change()
     {
         // lang=c#
@@ -413,8 +769,8 @@ namespace TestCase
 
         var updatedSource =
             initialSource.Replace(
-                "where T : Base\n",
-                "where T : Base, IContract, new()\n");
+                "where T : Base",
+                "where T : Base, IContract, new()");
 
         const string hintName =
             "Morphant.TemplateType.TestCase_Destination_1.g.cs";
@@ -684,6 +1040,143 @@ namespace TestCase
     }
 
     [Test]
+    public void Updates_changed_template_and_preserves_other_templates()
+    {
+        // lang=c#
+        const string initialSource =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public sealed class ChangedDestination
+    {
+        public int Id { get; set; }
+    }
+
+    public sealed class StableDestination
+    {
+        public string Name { get; set; } = null!;
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, ChangedDestination>();
+            builder.Map<Source, StableDestination>();
+        }
+    }
+}
+""";
+
+        var updatedSource = initialSource.Replace(
+            "public int Id { get; set; }",
+            "public long Id { get; set; }");
+
+        // lang=c#
+        const string initialChangedMember =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.ChangedDestination.Id"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int> Id
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        // lang=c#
+        const string updatedChangedMember =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.ChangedDestination.Id"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<long> Id
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        // lang=c#
+        const string stableMember =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.StableDestination.Name"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<string> Name
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        const string changedHintName =
+            "Morphant.TemplateType.TestCase_ChangedDestination.g.cs";
+
+        const string stableHintName =
+            "Morphant.TemplateType.TestCase_StableDestination.g.cs";
+
+        var initialChangedExpected = Expected.Build(
+            templateTypeName:
+                "ChangedDestinationMorphantTemplate",
+            templateTypeReference:
+                "ChangedDestinationMorphantTemplate",
+            destinationTypeName:
+                "global::TestCase.ChangedDestination",
+            destinationConstructors:
+                BuildParameterlessConstructor(
+                    "ChangedDestinationMorphantTemplate"),
+            members: initialChangedMember);
+
+        var updatedChangedExpected = Expected.Build(
+            templateTypeName:
+                "ChangedDestinationMorphantTemplate",
+            templateTypeReference:
+                "ChangedDestinationMorphantTemplate",
+            destinationTypeName:
+                "global::TestCase.ChangedDestination",
+            destinationConstructors:
+                BuildParameterlessConstructor(
+                    "ChangedDestinationMorphantTemplate"),
+            members: updatedChangedMember);
+
+        var stableExpected = Expected.Build(
+            templateTypeName:
+                "StableDestinationMorphantTemplate",
+            templateTypeReference:
+                "StableDestinationMorphantTemplate",
+            destinationTypeName:
+                "global::TestCase.StableDestination",
+            destinationConstructors:
+                BuildParameterlessConstructor(
+                    "StableDestinationMorphantTemplate"),
+            members: stableMember);
+
+        RunAndAssert(
+            Step(
+                "initial destinations",
+                initialSource,
+                (changedHintName, initialChangedExpected),
+                (stableHintName, stableExpected)),
+            Step(
+                "one destination changed",
+                updatedSource,
+                (changedHintName, updatedChangedExpected),
+                (stableHintName, stableExpected)));
+    }
+
+    [Test]
     public void Updates_template_when_referenced_destination_changes()
     {
         // lang=c#
@@ -830,6 +1323,20 @@ namespace ReferencedModels
         return SourceTemplate
             .Replace("__ADDITIONAL_SOURCE__", additionalSource)
             .Replace("__DESTINATION_DECLARATION__", destinationDeclaration);
+    }
+
+    private static string BuildParameterlessConstructor(
+        string templateTypeName)
+    {
+        return
+$$"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public {{templateTypeName}}()
+        {
+        }
+""";
     }
 
     // lang=c#

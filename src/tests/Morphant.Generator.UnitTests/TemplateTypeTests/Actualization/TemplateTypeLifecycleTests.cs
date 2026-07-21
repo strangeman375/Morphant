@@ -20,28 +20,32 @@ internal sealed class TemplateTypeLifecycleTests
         RunAndAssert(
             Step(
                 "without map",
-                BuildUsageSource(string.Empty)),
+                BuildUsageSource(
+                    string.Empty,
+                    string.Empty)),
             Step(
                 "first map added",
                 BuildUsageSource(
-                    "            builder.Map<Source, Destination>();"),
+                    "            builder.Map<Source, Destination>();",
+                    string.Empty),
                 (hintName, expected)),
             Step(
-                "second map added",
+                "map in second mapper added",
                 BuildUsageSource(
-"""
-            builder.Map<Source, Destination>();
-            builder.Map<AlternativeSource, Destination>();
-"""),
+                    "            builder.Map<Source, Destination>();",
+                    "            builder.Map<AlternativeSource, Destination>();"),
                 (hintName, expected)),
             Step(
-                "one map remains",
+                "map in second mapper remains",
                 BuildUsageSource(
+                    string.Empty,
                     "            builder.Map<AlternativeSource, Destination>();"),
                 (hintName, expected)),
             Step(
                 "last map removed",
-                BuildUsageSource(string.Empty)));
+                BuildUsageSource(
+                    string.Empty,
+                    string.Empty)));
     }
 
     [Test]
@@ -117,6 +121,31 @@ internal sealed class TemplateTypeLifecycleTests
     }
 
     [Test]
+    public void Removes_template_for_direct_destination_and_restores_it_when_switched_back()
+    {
+        const string hintName =
+            "Morphant.TemplateType.TestCase_Destination.g.cs";
+
+        var expected = Expected.Build(
+            destinationConstructors:
+                BuildParameterlessConstructor(
+                    "DestinationMorphantTemplate"));
+
+        RunAndAssert(
+            Step(
+                "generated destination",
+                BuildDirectTransitionSource("Destination"),
+                (hintName, expected)),
+            Step(
+                "direct destination",
+                BuildDirectTransitionSource("int")),
+            Step(
+                "generated destination restored",
+                BuildDirectTransitionSource("Destination"),
+                (hintName, expected)));
+    }
+
+    [Test]
     public void Moves_template_when_destination_is_renamed_and_moved()
     {
         var initialExpected = Expected.Build(
@@ -168,17 +197,31 @@ internal sealed class TemplateTypeLifecycleTests
                 )));
     }
 
-    private static string BuildUsageSource(string mapStatements)
+    private static string BuildUsageSource(
+        string firstMapperMapStatement,
+        string secondMapperMapStatement)
     {
-        return UsageSourceTemplate.Replace(
-            "__MAP_STATEMENTS__",
-            mapStatements);
+        return UsageSourceTemplate
+            .Replace(
+                "__FIRST_MAPPER_MAP_STATEMENT__",
+                firstMapperMapStatement)
+            .Replace(
+                "__SECOND_MAPPER_MAP_STATEMENT__",
+                secondMapperMapStatement);
     }
 
     private static string BuildReplacementSource(
         string mappedDestinationType)
     {
         return ReplacementSourceTemplate.Replace(
+            "__MAPPED_DESTINATION__",
+            mappedDestinationType);
+    }
+
+    private static string BuildDirectTransitionSource(
+        string mappedDestinationType)
+    {
+        return DirectTransitionSourceTemplate.Replace(
             "__MAPPED_DESTINATION__",
             mappedDestinationType);
     }
@@ -232,11 +275,48 @@ namespace TestCase
     }
 
     [MorphantMapper]
+    public partial class FirstMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+__FIRST_MAPPER_MAP_STATEMENT__
+        }
+    }
+
+    [MorphantMapper]
+    public partial class SecondMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+__SECOND_MAPPER_MAP_STATEMENT__
+        }
+    }
+}
+""";
+
+    // lang=c#
+    private const string DirectTransitionSourceTemplate =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public sealed class Destination
+    {
+    }
+
+    [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
-__MAP_STATEMENTS__
+            builder.Map<Source, __MAPPED_DESTINATION__>();
         }
     }
 }
