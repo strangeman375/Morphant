@@ -6,39 +6,29 @@ using Microsoft.CodeAnalysis.Testing;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
 
-internal sealed class TemplateTypeGeneratorTest : CSharpSourceGeneratorTest<TestTemplateTypeGenerator, DefaultVerifier>
+internal sealed class TemplateExtensionGeneratorTest :
+    CSharpSourceGeneratorTest<
+        TestTemplateExtensionGenerator,
+        DefaultVerifier>
 {
     private const string NewLine = "\r\n";
 
     private readonly LanguageVersion _languageVersion;
 
-    public TemplateTypeGeneratorTest(LanguageVersion languageVersion, bool addMapperAssembly = true)
+    private TemplateExtensionGeneratorTest(
+        LanguageVersion languageVersion)
     {
         _languageVersion = languageVersion;
         CompilerDiagnostics = CompilerDiagnostics.Warnings;
         ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
-
-        if (addMapperAssembly)
-        {
-            TestState.AdditionalReferences.Add(typeof(TypeMapper).Assembly);
-        }
+        TestState.AdditionalReferences.Add(typeof(TypeMapper).Assembly);
     }
 
     protected override ParseOptions CreateParseOptions()
     {
-        return new CSharpParseOptions(_languageVersion, DocumentationMode.Diagnose);
-    }
-
-    public static Task RunAndAssert(
-        LanguageVersion languageVersion,
-        string sourceFileContent,
-        string expectedFileName,
-        string expectedFileContent)
-    {
-        return RunAndAssert(
-            languageVersion,
-            sourceFileContent,
-            (expectedFileName, expectedFileContent));
+        return new CSharpParseOptions(
+            _languageVersion,
+            DocumentationMode.Diagnose);
     }
 
     public static Task RunAndAssert(
@@ -59,7 +49,7 @@ internal sealed class TemplateTypeGeneratorTest : CSharpSourceGeneratorTest<Test
         IReadOnlyCollection<Assembly> additionalReferences,
         params (string FileName, string Content)[] expectedSources)
     {
-        var test = new TemplateTypeGeneratorTest(languageVersion)
+        var test = new TemplateExtensionGeneratorTest(languageVersion)
         {
             TestCode = sourceFileContent
         };
@@ -74,7 +64,7 @@ internal sealed class TemplateTypeGeneratorTest : CSharpSourceGeneratorTest<Test
         {
             test.TestState.GeneratedSources.Add(
             (
-                typeof(TestTemplateTypeGenerator),
+                typeof(TestTemplateExtensionGenerator),
                 expectedSource.FileName,
                 NormalizeGeneratedSource(expectedSource.Content)
             ));

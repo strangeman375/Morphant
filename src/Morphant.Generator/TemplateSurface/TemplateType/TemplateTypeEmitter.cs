@@ -33,6 +33,10 @@ internal static class TemplateTypeEmitter
         CodeWriter writer,
         TemplateTypeModel model)
     {
+        var constructorMembersTypeReference = BuildTypeReference(
+            Identifier(model.ConstructorMembersTypeName),
+            model.TypeParameters);
+
         var destinationCref = XmlAttribute(
             model.DestinationDocumentation.Cref);
 
@@ -41,9 +45,11 @@ internal static class TemplateTypeEmitter
             "Contains mappings for constructor arguments of " +
             $"<see cref=\"{destinationCref}\"/>.");
 
-        writer.OpenBlock(
+        WriteTypeDeclaration(
+            writer,
             $"{TypeAccessibility} sealed class " +
-            Identifier(model.ConstructorMembersTypeName));
+            constructorMembersTypeReference,
+            model.TypeParameters);
 
         for (var i = 0; i < model.ConstructorFields.Length; i++)
         {
@@ -72,11 +78,16 @@ internal static class TemplateTypeEmitter
         TemplateTypeModel model)
     {
         var templateTypeName = Identifier(model.TemplateTypeName);
+        var templateTypeReference = BuildTypeReference(
+            templateTypeName,
+            model.TypeParameters);
 
         WriteTemplateTypeDocumentation(writer, model);
 
-        writer.OpenBlock(
-            $"{TypeAccessibility} sealed record {templateTypeName}");
+        WriteTypeDeclaration(
+            writer,
+            $"{TypeAccessibility} sealed record {templateTypeReference}",
+            model.TypeParameters);
 
         WriteByConventionConstructor(
             writer,
@@ -115,7 +126,7 @@ internal static class TemplateTypeEmitter
         WriteTemplateMembers(writer, model.Members);
 
         writer.Line(
-            $"public bool Equals({templateTypeName}? other) => false;");
+            $"public bool Equals({templateTypeReference}? other) => false;");
         writer.Line();
 
         writer.Line(
@@ -219,7 +230,10 @@ internal static class TemplateTypeEmitter
             new[]
             {
                 "global::Morphant.Markers.ByConventionMarker marker",
-                $"{Identifier(model.ConstructorMembersTypeName)}? members = null"
+                BuildTypeReference(
+                    Identifier(model.ConstructorMembersTypeName),
+                    model.TypeParameters) +
+                "? members = null"
             });
     }
 
@@ -402,6 +416,54 @@ internal static class TemplateTypeEmitter
 
         writer.Unindent();
         writer.EmptyBlock();
+    }
+
+    private static void WriteTypeDeclaration(
+        CodeWriter writer,
+        string declaration,
+        IReadOnlyList<TemplateTypeParameterModel> typeParameters)
+    {
+        if (typeParameters.All(
+                static typeParameter =>
+                    typeParameter.Constraints.IsEmpty))
+        {
+            writer.OpenBlock(declaration);
+            return;
+        }
+
+        writer.Line(declaration);
+        writer.Indent();
+
+        foreach (var typeParameter in typeParameters)
+        {
+            if (typeParameter.Constraints.IsEmpty)
+            {
+                continue;
+            }
+
+            writer.Line(
+                $"where {Identifier(typeParameter.Name)} : " +
+                string.Join(", ", typeParameter.Constraints));
+        }
+
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+    }
+
+    private static string BuildTypeReference(
+        string typeName,
+        IReadOnlyList<TemplateTypeParameterModel> typeParameters)
+    {
+        return typeParameters.Count == 0
+            ? typeName
+            : typeName +
+              "<" +
+              string.Join(
+                  ", ",
+                  typeParameters.Select(static typeParameter =>
+                      Identifier(typeParameter.Name))) +
+              ">";
     }
 
     private static string Identifier(string value)

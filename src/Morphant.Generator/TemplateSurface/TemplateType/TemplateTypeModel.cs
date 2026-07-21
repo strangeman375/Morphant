@@ -6,6 +6,7 @@ internal sealed record TemplateTypeModel(
     string TemplateNamespace,
     string TemplateTypeName,
     string DestinationTypeName,
+    ImmutableArray<TemplateTypeParameterModel> TypeParameters,
     bool CanConstructDestination,
     TemplateDocumentationModel DestinationDocumentation,
     ImmutableArray<TemplateConstructorModel> Constructors,
@@ -15,6 +16,10 @@ internal sealed record TemplateTypeModel(
     public string ConstructorMembersTypeName =>
         TemplateTypeName + "ConstructorMembers";
 }
+
+internal sealed record TemplateTypeParameterModel(
+    string Name,
+    ImmutableArray<string> Constraints);
 
 internal sealed record TemplateDocumentationModel(
     string Cref,

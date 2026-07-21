@@ -2,9 +2,22 @@ namespace Morphant.Generator.TemplateSurface;
 
 public readonly record struct TemplateDestinationTypeInfo
 (
-    string MetadataName,
+    TemplateDestinationTypeKind Kind,
+    TemplateTypeDefinitionInfo? TemplateTypeDefinition,
+    string UsageIdentity,
     string FullyQualifiedName,
+    string TemplateResultTypeFullyQualifiedName
+);
+
+public enum TemplateDestinationTypeKind
+{
+    GeneratedTemplate,
+    DirectTemplate
+}
+
+public readonly record struct TemplateTypeDefinitionInfo
+(
+    string MetadataName,
     string TemplateNamespace,
-    string TemplateTypeName,
-    string TemplateTypeFullyQualifiedName
+    string TemplateTypeName
 );

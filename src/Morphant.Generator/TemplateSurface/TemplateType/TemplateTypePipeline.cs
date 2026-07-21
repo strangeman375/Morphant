@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -11,14 +12,27 @@ internal static class TemplateTypePipeline
         IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValuesProvider<TemplateDestinationTypeInfo> destinationTypes)
     {
-        var requests = destinationTypes
+        var destinationDefinitions = destinationTypes
+            .Where(static destinationType =>
+                destinationType.Kind ==
+                TemplateDestinationTypeKind.GeneratedTemplate)
+            .Select(static (destinationType, _) =>
+                destinationType.TemplateTypeDefinition)
+            .WhereHasValue()
+            .Collect()
+            .SelectMany(static (destinationTypes, cancellationToken) =>
+                DeduplicateAndSortDefinitions(
+                    destinationTypes,
+                    cancellationToken));
+
+        var requests = destinationDefinitions
             .Combine(compilationContext)
             .Select(static (x, cancellationToken) =>
             {
-                var (destinationTypeInfo, context) = x;
+                var (templateTypeDefinition, context) = x;
 
                 return TryBuild(
-                    destinationTypeInfo,
+                    templateTypeDefinition,
                     context,
                     cancellationToken);
             })
@@ -34,14 +48,14 @@ internal static class TemplateTypePipeline
     }
 
     private static TemplateTypeRequest? TryBuild(
-        TemplateDestinationTypeInfo destinationTypeInfo,
+        TemplateTypeDefinitionInfo templateTypeDefinition,
         CompilationContext context,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         var destinationType = context.Compilation.GetTypeByMetadataName(
-            destinationTypeInfo.MetadataName);
+            templateTypeDefinition.MetadataName);
 
         if (destinationType is null)
         {
@@ -50,17 +64,44 @@ internal static class TemplateTypePipeline
 
         var model = TemplateTypeModelBuilder.Build(
             destinationType,
-            destinationTypeInfo,
+            templateTypeDefinition,
             context.Compilation,
             cancellationToken);
 
         var hintName =
             "Morphant.TemplateType." +
-            HintNameHelper.ToHintNamePart(destinationTypeInfo.MetadataName) +
+            HintNameHelper.ToHintNamePart(
+                templateTypeDefinition.MetadataName) +
             ".g.cs";
 
         return new TemplateTypeRequest(
             hintName,
             TemplateTypeEmitter.Emit(model));
+    }
+
+    private static ImmutableArray<TemplateTypeDefinitionInfo>
+        DeduplicateAndSortDefinitions(
+            ImmutableArray<TemplateTypeDefinitionInfo> destinationTypes,
+            CancellationToken cancellationToken)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var result = new List<TemplateTypeDefinitionInfo>();
+
+        foreach (var destinationType in destinationTypes)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (seen.Add(destinationType.MetadataName))
+            {
+                result.Add(destinationType);
+            }
+        }
+
+        result.Sort(static (left, right) =>
+            StringComparer.Ordinal.Compare(
+                left.MetadataName,
+                right.MetadataName));
+
+        return result.ToImmutableArray();
     }
 }

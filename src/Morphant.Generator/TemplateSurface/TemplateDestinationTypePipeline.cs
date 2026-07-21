@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.TypeMapperConfigure;
@@ -111,49 +112,120 @@ internal static class TemplateDestinationTypePipeline
             return null;
         }
 
-        var destinationType = method.TypeArguments[1]
-            .WithNullableAnnotation(
-                NullableAnnotation.NotAnnotated);
+        var destinationType = method.TypeArguments[1];
+
+        if (destinationType is IDynamicTypeSymbol)
+        {
+            return BuildDestinationTypeInfo(
+                semanticModel.Compilation.GetSpecialType(
+                    SpecialType.System_Object),
+                TemplateDestinationTypeKind.DirectTemplate);
+        }
 
         if (destinationType is not INamedTypeSymbol namedDestinationType ||
-            !IsSupportedDestinationType(
+            GetDestinationTypeKind(
                 namedDestinationType,
-                semanticModel.Compilation))
+                semanticModel.Compilation) is not { } kind)
         {
             return null;
         }
 
         return BuildDestinationTypeInfo(
-            namedDestinationType);
+            namedDestinationType,
+            kind);
     }
 
     private static TemplateDestinationTypeInfo BuildDestinationTypeInfo(
-        INamedTypeSymbol destinationType)
+        INamedTypeSymbol destinationType,
+        TemplateDestinationTypeKind kind)
     {
-        var metadataName =
-            SymbolNameHelper.GetFullMetadataName(destinationType);
+        var usageDefinition = destinationType.OriginalDefinition;
+
+        var usageMetadataName =
+            SymbolNameHelper.GetFullMetadataName(usageDefinition);
+
+        var usageTypeArgumentList =
+            BuildTemplateTypeArgumentList(destinationType);
+
+        var usageIdentity =
+            usageMetadataName + usageTypeArgumentList;
 
         var fullyQualifiedName = destinationType.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat);
+            SymbolDisplayFormats.FullyQualifiedNullable);
+
+        if (kind == TemplateDestinationTypeKind.DirectTemplate)
+        {
+            return new TemplateDestinationTypeInfo(
+                kind,
+                null,
+                usageIdentity,
+                fullyQualifiedName,
+                fullyQualifiedName);
+        }
+
+        var templateDestinationType =
+            GetTemplateDestinationType(destinationType);
+
+        var definition = templateDestinationType.OriginalDefinition;
+
+        var definitionMetadataName =
+            SymbolNameHelper.GetFullMetadataName(definition);
+
+        var templateTypeArgumentList =
+            BuildTemplateTypeArgumentList(templateDestinationType);
 
         var templateNamespace =
-            BuildTemplateNamespace(destinationType);
+            BuildTemplateNamespace(definition);
 
         var templateTypeName =
-            destinationType.Name + "MorphantTemplate";
+            definition.Name + "MorphantTemplate";
 
         var templateTypeFullyQualifiedName =
             "global::" +
             templateNamespace +
             "." +
-            templateTypeName;
+            templateTypeName +
+            templateTypeArgumentList +
+            (IsNullableDestination(destinationType) ? "?" : string.Empty);
 
         return new TemplateDestinationTypeInfo(
-            metadataName,
+            kind,
+            new TemplateTypeDefinitionInfo(
+                definitionMetadataName,
+                templateNamespace,
+                templateTypeName),
+            usageIdentity,
             fullyQualifiedName,
-            templateNamespace,
-            templateTypeName,
             templateTypeFullyQualifiedName);
+    }
+
+    private static string BuildTemplateTypeArgumentList(
+        INamedTypeSymbol destinationType)
+    {
+        var containingTypes = new Stack<INamedTypeSymbol>();
+
+        for (var current = destinationType;
+             current is not null;
+             current = current.ContainingType)
+        {
+            containingTypes.Push(current);
+        }
+
+        var typeArguments = new List<string>();
+
+        while (containingTypes.Count > 0)
+        {
+            foreach (var typeArgument in containingTypes.Pop().TypeArguments)
+            {
+                typeArguments.Add(
+                    typeArgument.ToDisplayString(
+                        SymbolDisplayFormats.FullyQualifiedNullable));
+            }
+        }
+
+        return typeArguments.Count == 0
+            ? string.Empty
+            : "<" + string.Join(", ", typeArguments) + ">";
     }
 
     private static string BuildTemplateNamespace(
@@ -180,8 +252,13 @@ internal static class TemplateDestinationTypePipeline
              containingType is not null;
              containingType = containingType.ContainingType)
         {
+            var aritySuffix = containingType.Arity == 0
+                ? string.Empty
+                : containingType.Arity.ToString(
+                    CultureInfo.InvariantCulture);
+
             containingTypeScopes.Push(
-                containingType.Name + "Scope");
+                containingType.Name + aritySuffix + "Scope");
         }
 
         return templateNamespace + "." +
@@ -200,7 +277,7 @@ internal static class TemplateDestinationTypePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (seen.Add(destinationType.MetadataName))
+            if (seen.Add(destinationType.UsageIdentity))
             {
                 result.Add(destinationType);
             }
@@ -208,8 +285,8 @@ internal static class TemplateDestinationTypePipeline
 
         result.Sort(static (left, right) =>
             StringComparer.Ordinal.Compare(
-                left.MetadataName,
-                right.MetadataName));
+                left.UsageIdentity,
+                right.UsageIdentity));
 
         return result.ToImmutableArray();
     }
@@ -228,25 +305,186 @@ internal static class TemplateDestinationTypePipeline
                    knownSymbols.MapperBuilder);
     }
 
-    private static bool IsSupportedDestinationType(
+    private static TemplateDestinationTypeKind? GetDestinationTypeKind(
         INamedTypeSymbol destinationType,
         Compilation compilation)
     {
-        if (destinationType.IsGenericType ||
-            destinationType.IsTupleType ||
-            destinationType.IsRefLikeType ||
-            IsFileLocal(destinationType) ||
+        var templateDestinationType =
+            GetTemplateDestinationType(destinationType);
+
+        if (ContainsTypeParameter(destinationType) ||
+            templateDestinationType.IsTupleType ||
+            templateDestinationType.IsRefLikeType ||
+            IsFileLocal(templateDestinationType) ||
             !compilation.IsSymbolAccessibleWithin(
                 destinationType,
                 compilation.Assembly))
         {
+            return null;
+        }
+
+        if (IsDirectTemplateDestination(destinationType))
+        {
+            return TemplateDestinationTypeKind.DirectTemplate;
+        }
+
+        if (HasDuplicateTypeParameterNames(templateDestinationType))
+        {
+            return null;
+        }
+
+        return templateDestinationType.TypeKind is
+            TypeKind.Class or
+            TypeKind.Struct or
+            TypeKind.Interface
+                ? TemplateDestinationTypeKind.GeneratedTemplate
+                : null;
+    }
+
+    private static bool IsDirectTemplateDestination(
+        INamedTypeSymbol destinationType)
+    {
+        if (IsCSharpPredefinedType(destinationType) ||
+            destinationType.TypeKind == TypeKind.Enum ||
+            IsSupportedBclDirectTemplateType(destinationType))
+        {
+            return true;
+        }
+
+        return IsNullableValueType(destinationType) &&
+               destinationType.TypeArguments[0] is
+                   INamedTypeSymbol underlyingType &&
+               IsDirectTemplateDestination(underlyingType);
+    }
+
+    private static bool IsCSharpPredefinedType(INamedTypeSymbol type)
+    {
+        return type.SpecialType is
+            SpecialType.System_Object or
+            SpecialType.System_String or
+            SpecialType.System_Boolean or
+            SpecialType.System_Char or
+            SpecialType.System_SByte or
+            SpecialType.System_Byte or
+            SpecialType.System_Int16 or
+            SpecialType.System_UInt16 or
+            SpecialType.System_Int32 or
+            SpecialType.System_UInt32 or
+            SpecialType.System_Int64 or
+            SpecialType.System_UInt64 or
+            SpecialType.System_IntPtr or
+            SpecialType.System_UIntPtr or
+            SpecialType.System_Single or
+            SpecialType.System_Double or
+            SpecialType.System_Decimal;
+    }
+
+    private static bool IsNullableValueType(INamedTypeSymbol type)
+    {
+        return type.OriginalDefinition.SpecialType ==
+               SpecialType.System_Nullable_T;
+    }
+
+    private static INamedTypeSymbol GetTemplateDestinationType(
+        INamedTypeSymbol destinationType)
+    {
+        return IsNullableValueType(destinationType) &&
+               destinationType.TypeArguments[0] is
+                   INamedTypeSymbol underlyingType
+            ? underlyingType
+            : destinationType;
+    }
+
+    private static bool IsNullableDestination(
+        INamedTypeSymbol destinationType)
+    {
+        return IsNullableValueType(destinationType) ||
+               destinationType.NullableAnnotation ==
+               NullableAnnotation.Annotated;
+    }
+
+    private static bool IsSupportedBclDirectTemplateType(
+        INamedTypeSymbol type)
+    {
+        return SymbolNameHelper.GetFullMetadataName(type.OriginalDefinition) is
+            "System.Guid" or
+            "System.DateTime" or
+            "System.DateTimeOffset" or
+            "System.DateOnly" or
+            "System.TimeOnly" or
+            "System.TimeSpan" or
+            "System.Half" or
+            "System.Int128" or
+            "System.UInt128" or
+            "System.Uri" or
+            "System.Version" or
+            "System.Numerics.BigInteger" or
+            "System.Numerics.Complex" or
+            "System.Text.Rune" or
+            "System.Index" or
+            "System.Range";
+    }
+
+    private static bool HasDuplicateTypeParameterNames(
+        INamedTypeSymbol type)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        var containingTypes = new Stack<INamedTypeSymbol>();
+
+        for (var current = type.OriginalDefinition;
+             current is not null;
+             current = current.ContainingType)
+        {
+            containingTypes.Push(current);
+        }
+
+        while (containingTypes.Count > 0)
+        {
+            foreach (var typeParameter in
+                     containingTypes.Pop().TypeParameters)
+            {
+                if (!names.Add(typeParameter.Name))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsTypeParameter(ITypeSymbol type)
+    {
+        if (type.TypeKind == TypeKind.TypeParameter)
+        {
+            return true;
+        }
+
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            return ContainsTypeParameter(arrayType.ElementType);
+        }
+
+        if (type is not INamedTypeSymbol namedType)
+        {
             return false;
         }
 
-        return destinationType.TypeKind is
-            TypeKind.Class or
-            TypeKind.Struct or
-            TypeKind.Interface;
+        if (namedType.ContainingType is not null &&
+            ContainsTypeParameter(namedType.ContainingType))
+        {
+            return true;
+        }
+
+        foreach (var typeArgument in namedType.TypeArguments)
+        {
+            if (ContainsTypeParameter(typeArgument))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsFileLocal(INamedTypeSymbol type)

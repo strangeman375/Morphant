@@ -2,8 +2,9 @@
 
 ## Template surface work
 
-- Read [docs/development/template-types.md](docs/development/template-types.md)
-  before changing template type discovery, modelling, emission, or tests.
+- Template destinations have three explicit outcomes: generated template type
+  plus extensions, direct extensions returning the destination itself, or no
+  template surface. Keep that boundary visible in code and tests.
 - Treat the generator as a black box when designing tests. Start from supported
   user scenarios, not from branches in the current implementation.
 - Every test category must be a complete specification of its own concern. It
