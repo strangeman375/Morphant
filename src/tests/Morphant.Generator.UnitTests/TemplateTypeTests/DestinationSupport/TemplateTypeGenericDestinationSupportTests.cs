@@ -84,6 +84,45 @@ namespace TestCase
     }
 
     [Test]
+    public async Task Generates_generic_template_for_nullable_custom_struct_destination()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public struct Destination<T>
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination<int>?>();
+        }
+    }
+}
+""";
+
+        await TemplateTypeGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            GenericDestinationHintName,
+            ExpectedMinimalConstructibleGenericTemplate);
+    }
+
+    [Test]
     public async Task Copies_all_generic_parameter_constraints()
     {
         // lang=c#
@@ -121,12 +160,20 @@ namespace TestCase
         TNotNull,
         TValue,
         TUnmanaged,
+        TNullableBase,
+        TNullableInterface,
+        TOther,
+        TNullableTypeParameter,
         TConstructed>
         where TClass : class
         where TNullable : class?
         where TNotNull : notnull
         where TValue : struct
         where TUnmanaged : unmanaged
+        where TNullableBase : Base?
+        where TNullableInterface : IContract?
+        where TOther : class?
+        where TNullableTypeParameter : TOther?
         where TConstructed : Base, IContract, new()
     {
     }
@@ -144,6 +191,10 @@ namespace TestCase
                     string,
                     int,
                     int,
+                    Base?,
+                    IContract?,
+                    string?,
+                    string?,
                     Constructed>>();
         }
     }
@@ -154,7 +205,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             "Morphant.TemplateType." +
-            "TestCase_Destination_6.g.cs",
+            "TestCase_Destination_10.g.cs",
             ExpectedConstrainedGenericTemplate);
     }
 
@@ -357,7 +408,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Does_not_generate_template_for_open_constructed_generic_destination()
+    public async Task Generates_template_for_open_constructed_generic_destination()
     {
         // lang=c#
         const string source =
@@ -390,7 +441,9 @@ namespace TestCase
 
         await TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
-            source);
+            source,
+            GenericDestinationHintName,
+            ExpectedMinimalConstructibleGenericTemplate);
     }
 
     [Test]
@@ -644,14 +697,18 @@ namespace TestCase.Morphant.Generated
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Represents the Morphant mapping template for <see cref="global::TestCase.Destination&lt;TClass, TNullable, TNotNull, TValue, TUnmanaged, TConstructed&gt;"/>.
+    /// Represents the Morphant mapping template for <see cref="global::TestCase.Destination&lt;TClass, TNullable, TNotNull, TValue, TUnmanaged, TNullableBase, TNullableInterface, TOther, TNullableTypeParameter, TConstructed&gt;"/>.
     /// </summary>
-    internal sealed record DestinationMorphantTemplate<TClass, TNullable, TNotNull, TValue, TUnmanaged, TConstructed>
+    internal sealed record DestinationMorphantTemplate<TClass, TNullable, TNotNull, TValue, TUnmanaged, TNullableBase, TNullableInterface, TOther, TNullableTypeParameter, TConstructed>
         where TClass : class
         where TNullable : class?
         where TNotNull : notnull
         where TValue : struct
         where TUnmanaged : unmanaged
+        where TNullableBase : global::TestCase.Base?
+        where TNullableInterface : global::TestCase.IContract?
+        where TOther : class?
+        where TNullableTypeParameter : TOther?
         where TConstructed : global::TestCase.Base, global::TestCase.IContract, new()
     {
         /// <summary>
@@ -666,7 +723,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination<TClass, TNullable, TNotNull, TValue, TUnmanaged, TConstructed>> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination<TClass, TNullable, TNotNull, TValue, TUnmanaged, TNullableBase, TNullableInterface, TOther, TNullableTypeParameter, TConstructed>> marker)
         {
         }
 
@@ -677,7 +734,7 @@ namespace TestCase.Morphant.Generated
         {
         }
 
-        public bool Equals(DestinationMorphantTemplate<TClass, TNullable, TNotNull, TValue, TUnmanaged, TConstructed>? other) => false;
+        public bool Equals(DestinationMorphantTemplate<TClass, TNullable, TNotNull, TValue, TUnmanaged, TNullableBase, TNullableInterface, TOther, TNullableTypeParameter, TConstructed>? other) => false;
 
         public override int GetHashCode() => 0;
 

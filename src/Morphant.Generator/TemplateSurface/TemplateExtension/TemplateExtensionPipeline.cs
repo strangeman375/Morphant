@@ -11,6 +11,8 @@ internal static class TemplateExtensionPipeline
         IncrementalValuesProvider<TemplateDestinationTypeInfo> destinationTypes)
     {
         var templateExtensionRequests = destinationTypes
+            .Where(static destinationType =>
+                destinationType.CanGenerateTemplateExtension)
             .Select(static (destinationType, _) =>
                 Build(destinationType))
             .WithTrackingName("MorphantGeneratorStageNames.BuildTemplateExtensionRequests");

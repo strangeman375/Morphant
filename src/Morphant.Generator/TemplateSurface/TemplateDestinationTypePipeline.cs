@@ -160,7 +160,8 @@ internal static class TemplateDestinationTypePipeline
                 null,
                 usageIdentity,
                 fullyQualifiedName,
-                fullyQualifiedName);
+                fullyQualifiedName,
+                !ContainsTypeParameter(destinationType));
         }
 
         var templateDestinationType =
@@ -196,7 +197,8 @@ internal static class TemplateDestinationTypePipeline
                 templateTypeName),
             usageIdentity,
             fullyQualifiedName,
-            templateTypeFullyQualifiedName);
+            templateTypeFullyQualifiedName,
+            !ContainsTypeParameter(destinationType));
     }
 
     private static string BuildTemplateTypeArgumentList(
@@ -312,7 +314,8 @@ internal static class TemplateDestinationTypePipeline
         var templateDestinationType =
             GetTemplateDestinationType(destinationType);
 
-        if (ContainsTypeParameter(destinationType) ||
+        if (IsNullableValueType(destinationType) &&
+            destinationType.TypeArguments[0] is not INamedTypeSymbol ||
             templateDestinationType.IsTupleType ||
             templateDestinationType.IsRefLikeType ||
             IsFileLocal(templateDestinationType) ||

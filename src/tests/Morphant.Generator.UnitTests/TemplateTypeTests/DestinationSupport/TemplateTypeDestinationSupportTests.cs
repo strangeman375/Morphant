@@ -304,7 +304,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     public async Task Does_not_generate_template_type_for_direct_predefined_destination(
         string destinationType)
     {
-        await RunUnsupportedDestination(destinationType);
+        await RunWithoutTemplateType(destinationType);
     }
 
     [TestCase("global::System.Guid")]
@@ -342,13 +342,13 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     public async Task Does_not_generate_template_type_for_direct_bcl_destination(
         string destinationType)
     {
-        await RunUnsupportedDestination(destinationType);
+        await RunWithoutTemplateType(destinationType);
     }
 
     [Test]
     public async Task Does_not_generate_template_for_tuple_destination()
     {
-        await RunUnsupportedDestination(
+        await RunWithoutTemplateType(
             "(int Id, string Name)");
     }
 
@@ -363,7 +363,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     }
 """;
 
-        await RunUnsupportedDestination(
+        await RunWithoutTemplateType(
             "Destination[]",
             destinationDeclaration);
     }
@@ -379,7 +379,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     }
 """;
 
-        await RunUnsupportedDestination(
+        await RunWithoutTemplateType(
             "Destination[,]",
             destinationDeclaration);
     }
@@ -395,7 +395,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     }
 """;
 
-        await RunUnsupportedDestination(
+        await RunWithoutTemplateType(
             "Destination[][]",
             destinationDeclaration);
     }
@@ -414,7 +414,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     }
 """;
 
-        await RunUnsupportedDestination(
+        await RunWithoutTemplateType(
             destinationType,
             destinationDeclaration);
     }
@@ -428,7 +428,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     public delegate void Destination();
 """;
 
-        await RunUnsupportedDestination(
+        await RunWithoutTemplateType(
             "Destination",
             destinationDeclaration);
     }
@@ -447,11 +447,11 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
     [Test]
     public async Task Does_not_generate_template_for_dynamic_destination()
     {
-        await RunUnsupportedDestination("dynamic");
+        await RunWithoutTemplateType("dynamic");
     }
 
     [Test]
-    public async Task Does_not_generate_template_for_type_parameter_destination()
+    public async Task Does_not_generate_template_type_for_type_parameter_destination()
     {
         // lang=c#
         const string source =
@@ -468,11 +468,11 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<TDestination> : TypeMapper
+    public partial class TestMapper<T> : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, TDestination>();
+            builder.Map<Source, T>();
         }
     }
 }
@@ -589,7 +589,7 @@ namespace TestCase
     }
 """;
 
-        await RunUnsupportedDestination(
+        await RunWithoutTemplateType(
             "Destination",
             destinationDeclaration,
             LanguageVersion.CSharp11);
@@ -647,7 +647,7 @@ namespace TestCase
             languageVersion: languageVersion);
     }
 
-    private static Task RunUnsupportedDestination(
+    private static Task RunWithoutTemplateType(
         string destinationType,
         string destinationDeclaration = "",
         LanguageVersion languageVersion = LanguageVersion.CSharp9)
