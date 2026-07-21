@@ -160,20 +160,32 @@ internal sealed class TemplateExtensionDestinationSupportTests
     }
 
     [Test]
-    public async Task Does_not_generate_extension_for_nullable_custom_struct_destination()
+    public async Task Generates_extension_for_nullable_custom_struct_destination()
     {
         // lang=c#
         const string destinationDeclaration =
 """
     public struct Destination
     {
-        public int Value { get; set; }
     }
 """;
 
-        await RunWithoutExtension(
-            "Destination?",
-            destinationDeclaration);
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            BuildSource(
+                destinationDeclaration,
+                "builder.Map<Source, Destination?>();",
+                NonGenericTemplateStub),
+            (
+                "Morphant.TemplateExtensions." +
+                HintNameHelper.ToHintNamePart(
+                    "System.Nullable`1<global::TestCase.Destination>") +
+                ".g.cs",
+                BuildExpectedGeneratedExtension(
+                    "global::TestCase.Destination?",
+                    "global::TestCase.Morphant.Generated." +
+                    "DestinationMorphantTemplate?")
+            ));
     }
 
     [TestCase("public class Destination", LanguageVersion.CSharp9)]
@@ -232,7 +244,7 @@ internal sealed class TemplateExtensionDestinationSupportTests
                 BuildExpectedGeneratedExtension(
                     "global::TestCase.Destination?",
                     "global::TestCase.Morphant.Generated." +
-                    "DestinationMorphantTemplate")
+                    "DestinationMorphantTemplate?")
             ));
     }
 
