@@ -9,6 +9,9 @@ public abstract class MapperBuilderBase<T>
     {
     }
 
+    public T TemplateSurface(TemplateSurface templateSurface) =>
+        throw new RuntimeInvocationNotSupportedException();
+
     public T NullSourceHandling(NullSourceHandling nullSourceHandling) =>
         throw new RuntimeInvocationNotSupportedException();
 
