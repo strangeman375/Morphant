@@ -26,19 +26,15 @@ internal static class TemplateTypePipeline
                     destinationTypes,
                     cancellationToken));
 
-        var requests = generationInputs
-            .Combine(compilationContext)
-            .Select(static (x, cancellationToken) =>
-            {
-                var (generationInput, context) = x;
+        var models = TemplateTypeModelPipeline.Build(
+            generationInputs,
+            compilationContext);
 
-                return TryBuild(
-                    generationInput,
-                    context,
-                    cancellationToken);
-            })
-            .WhereHasValue()
-            .WithTrackingName("MorphantGeneratorStageNames.BuildTemplateTypeRequests");
+        var requests = models
+            .Select(static (model, cancellationToken) =>
+                BuildRequest(model, cancellationToken))
+            .WithTrackingName(
+                MorphantGeneratorStageNames.BuildTemplateTypeRequests);
 
         context.RegisterSourceOutput(requests, static (context, request) =>
         {
@@ -48,37 +44,15 @@ internal static class TemplateTypePipeline
         });
     }
 
-    private static TemplateTypeRequest? TryBuild(
-        TemplateTypeGenerationInput generationInput,
-        CompilationContext context,
+    private static TemplateTypeRequest BuildRequest(
+        TemplateTypeModelResult model,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var templateTypeDefinition = generationInput.Definition;
-
-        var destinationType = context.Compilation.GetTypeByMetadataName(
-            templateTypeDefinition.MetadataName);
-
-        if (destinationType is null)
-        {
-            return null;
-        }
-
-        var model = TemplateTypeModelBuilder.Build(
-            destinationType,
-            templateTypeDefinition,
-            context.Compilation,
-            cancellationToken);
-
-        var hintName =
-            "Morphant.TemplateType." +
-            generationInput.HintNamePart +
-            ".g.cs";
-
         return new TemplateTypeRequest(
-            hintName,
-            TemplateTypeEmitter.Emit(model));
+            model.HintName,
+            TemplateTypeEmitter.Emit(model.Model));
     }
 
     private static ImmutableArray<TemplateTypeGenerationInput>
@@ -151,8 +125,8 @@ internal static class TemplateTypePipeline
 
         return generationInputs.ToImmutable();
     }
-
-    private readonly record struct TemplateTypeGenerationInput(
-        TemplateTypeDefinitionInfo Definition,
-        string HintNamePart);
 }
+
+internal readonly record struct TemplateTypeGenerationInput(
+    TemplateTypeDefinitionInfo Definition,
+    string HintNamePart);
