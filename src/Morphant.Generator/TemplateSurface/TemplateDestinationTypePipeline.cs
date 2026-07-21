@@ -139,19 +139,19 @@ internal static class TemplateDestinationTypePipeline
         INamedTypeSymbol destinationType,
         TemplateDestinationTypeKind kind)
     {
-        var definition = destinationType.OriginalDefinition;
+        var usageDefinition = destinationType.OriginalDefinition;
 
-        var definitionMetadataName =
-            SymbolNameHelper.GetFullMetadataName(definition);
+        var usageMetadataName =
+            SymbolNameHelper.GetFullMetadataName(usageDefinition);
 
-        var fullyQualifiedName = destinationType.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable);
-
-        var templateTypeArgumentList =
+        var usageTypeArgumentList =
             BuildTemplateTypeArgumentList(destinationType);
 
         var usageIdentity =
-            definitionMetadataName + templateTypeArgumentList;
+            usageMetadataName + usageTypeArgumentList;
+
+        var fullyQualifiedName = destinationType.ToDisplayString(
+            SymbolDisplayFormats.FullyQualifiedNullable);
 
         if (kind == TemplateDestinationTypeKind.DirectTemplate)
         {
@@ -162,6 +162,17 @@ internal static class TemplateDestinationTypePipeline
                 fullyQualifiedName,
                 fullyQualifiedName);
         }
+
+        var templateDestinationType =
+            GetTemplateDestinationType(destinationType);
+
+        var definition = templateDestinationType.OriginalDefinition;
+
+        var definitionMetadataName =
+            SymbolNameHelper.GetFullMetadataName(definition);
+
+        var templateTypeArgumentList =
+            BuildTemplateTypeArgumentList(templateDestinationType);
 
         var templateNamespace =
             BuildTemplateNamespace(definition);
@@ -174,7 +185,8 @@ internal static class TemplateDestinationTypePipeline
             templateNamespace +
             "." +
             templateTypeName +
-            templateTypeArgumentList;
+            templateTypeArgumentList +
+            (IsNullableDestination(destinationType) ? "?" : string.Empty);
 
         return new TemplateDestinationTypeInfo(
             kind,
@@ -297,10 +309,13 @@ internal static class TemplateDestinationTypePipeline
         INamedTypeSymbol destinationType,
         Compilation compilation)
     {
+        var templateDestinationType =
+            GetTemplateDestinationType(destinationType);
+
         if (ContainsTypeParameter(destinationType) ||
-            destinationType.IsTupleType ||
-            destinationType.IsRefLikeType ||
-            IsFileLocal(destinationType) ||
+            templateDestinationType.IsTupleType ||
+            templateDestinationType.IsRefLikeType ||
+            IsFileLocal(templateDestinationType) ||
             !compilation.IsSymbolAccessibleWithin(
                 destinationType,
                 compilation.Assembly))
@@ -313,13 +328,12 @@ internal static class TemplateDestinationTypePipeline
             return TemplateDestinationTypeKind.DirectTemplate;
         }
 
-        if (IsNullableValueType(destinationType) ||
-            HasDuplicateTypeParameterNames(destinationType))
+        if (HasDuplicateTypeParameterNames(templateDestinationType))
         {
             return null;
         }
 
-        return destinationType.TypeKind is
+        return templateDestinationType.TypeKind is
             TypeKind.Class or
             TypeKind.Struct or
             TypeKind.Interface
@@ -369,6 +383,24 @@ internal static class TemplateDestinationTypePipeline
     {
         return type.OriginalDefinition.SpecialType ==
                SpecialType.System_Nullable_T;
+    }
+
+    private static INamedTypeSymbol GetTemplateDestinationType(
+        INamedTypeSymbol destinationType)
+    {
+        return IsNullableValueType(destinationType) &&
+               destinationType.TypeArguments[0] is
+                   INamedTypeSymbol underlyingType
+            ? underlyingType
+            : destinationType;
+    }
+
+    private static bool IsNullableDestination(
+        INamedTypeSymbol destinationType)
+    {
+        return IsNullableValueType(destinationType) ||
+               destinationType.NullableAnnotation ==
+               NullableAnnotation.Annotated;
     }
 
     private static bool IsSupportedBclDirectTemplateType(
