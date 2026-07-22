@@ -126,7 +126,9 @@ namespace A
         global::Destination global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
             global::Source source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::Destination();
+        }
 
         global::Destination global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
             global::Source source,
@@ -151,7 +153,9 @@ namespace A_B
         global::Destination global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
             global::Source source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::Destination();
+        }
 
         global::Destination global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
             global::Source source,
@@ -229,7 +233,9 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Destination();
+        }
 
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source source,
@@ -254,7 +260,9 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Destination();
+        }
 
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source source,

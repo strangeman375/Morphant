@@ -60,7 +60,9 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Destination();
+        }
 
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source source,
@@ -85,7 +87,9 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Destination();
+        }
 
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source source,
@@ -234,7 +238,9 @@ namespace TestCase
                     global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper> global::Morphant.ITypeMapper<global::TestCase.Source<TOuter, TMiddle, TInner, TMapper>, global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper>>.Map(
                         global::TestCase.Source<TOuter, TMiddle, TInner, TMapper> source,
                         global::Morphant.MappingContext context)
-                        => throw new global::System.NotImplementedException();
+                    {
+                        return new global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper>();
+                    }
 
                     global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper> global::Morphant.ITypeMapper<global::TestCase.Source<TOuter, TMiddle, TInner, TMapper>, global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper>>.Map(
                         global::TestCase.Source<TOuter, TMiddle, TInner, TMapper> source,
@@ -312,7 +318,9 @@ namespace TestCase
                 global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
                     global::TestCase.Source source,
                     global::Morphant.MappingContext context)
-                    => throw new global::System.NotImplementedException();
+                {
+                    return new global::TestCase.Destination();
+                }
 
                 global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
                     global::TestCase.Source source,
@@ -396,7 +404,9 @@ namespace TestCase
             global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
                 global::TestCase.Source source,
                 global::Morphant.MappingContext context)
-                => throw new global::System.NotImplementedException();
+            {
+                return new global::TestCase.Destination();
+            }
 
             global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
                 global::TestCase.Source source,

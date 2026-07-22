@@ -147,7 +147,9 @@ namespace TestCase
         global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource> global::Morphant.ITypeMapper<global::TestCase.Generic<global::System.Collections.Generic.List<string?>>, global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>>.Map(
             global::TestCase.Generic<global::System.Collections.Generic.List<string?>> source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>();
+        }
 
         global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource> global::Morphant.ITypeMapper<global::TestCase.Generic<global::System.Collections.Generic.List<string?>>, global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>>.Map(
             global::TestCase.Generic<global::System.Collections.Generic.List<string?>> source,
@@ -230,7 +232,9 @@ namespace TestCase
             global::TestCase.Destination<TOuter, TValue> global::Morphant.ITypeMapper<global::TestCase.Source<TOuter, TValue>, global::TestCase.Destination<TOuter, TValue>>.Map(
                 global::TestCase.Source<TOuter, TValue> source,
                 global::Morphant.MappingContext context)
-                => throw new global::System.NotImplementedException();
+            {
+                return new global::TestCase.Destination<TOuter, TValue>();
+            }
 
             global::TestCase.Destination<TOuter, TValue> global::Morphant.ITypeMapper<global::TestCase.Source<TOuter, TValue>, global::TestCase.Destination<TOuter, TValue>>.Map(
                 global::TestCase.Source<TOuter, TValue> source,
@@ -423,7 +427,9 @@ namespace TestCase
         global::TestCase.SafeDestination global::Morphant.ITypeMapper<global::TestCase.SafeSource, global::TestCase.SafeDestination>.Map(
             global::TestCase.SafeSource source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.SafeDestination();
+        }
 
         global::TestCase.SafeDestination global::Morphant.ITypeMapper<global::TestCase.SafeSource, global::TestCase.SafeDestination>.Map(
             global::TestCase.SafeSource source,
@@ -500,7 +506,9 @@ namespace TestCase
         global::TestCase.SafeDestination global::Morphant.ITypeMapper<global::TestCase.SafeSource, global::TestCase.SafeDestination>.Map(
             global::TestCase.SafeSource source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.SafeDestination();
+        }
 
         global::TestCase.SafeDestination global::Morphant.ITypeMapper<global::TestCase.SafeSource, global::TestCase.SafeDestination>.Map(
             global::TestCase.SafeSource source,

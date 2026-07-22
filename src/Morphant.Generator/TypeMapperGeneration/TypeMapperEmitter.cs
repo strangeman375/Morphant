@@ -88,15 +88,42 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        WriteMapNew(writer, mapping);
+        writer.Line();
+        WriteMapExisting(writer, mapping);
+    }
+
+    private static void WriteMapNew(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
         writer.Line(
             $"{mapping.DestinationTypeName} {mapping.InterfaceTypeName}.Map(");
         writer.Indent();
         writer.Line($"{mapping.SourceTypeName} source,");
         writer.Line("global::Morphant.MappingContext context)");
+
+        if (mapping.CanMapNewWithParameterlessConstructor)
+        {
+            writer.Unindent();
+            writer.Line("{");
+            writer.Indent();
+            writer.Line(
+                $"return new {mapping.DestinationTypeName}();");
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
+
         writer.Line(
             "=> throw new global::System.NotImplementedException();");
         writer.Unindent();
-        writer.Line();
+    }
+
+    private static void WriteMapExisting(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
         writer.Line(
             $"{mapping.DestinationTypeName} {mapping.InterfaceTypeName}.Map(");
         writer.Indent();

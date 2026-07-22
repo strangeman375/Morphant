@@ -59,6 +59,8 @@ internal static class TypeMapperPipeline
 
         var mappings = BuildMappings(
             mapInfo,
+            context.Compilation,
+            mapperType,
             cancellationToken);
 
         if (mappings.IsDefaultOrEmpty)
@@ -227,6 +229,8 @@ internal static class TypeMapperPipeline
 
     private static ImmutableArray<TypeMapperMappingModel> BuildMappings(
         MapperBuilderMapInfo mapInfo,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
         var registrations =
@@ -281,13 +285,68 @@ internal static class TypeMapperPipeline
         }
 
         return registrations
-            .Select(static registration =>
+            .Select(registration =>
                 new TypeMapperMappingModel(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                         registration.SourceType),
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                        registration.DestinationType)))
+                        registration.DestinationType),
+                    CanMapNewWithParameterlessConstructor(
+                        registration.DestinationType,
+                        compilation,
+                        mapperType)))
             .ToImmutableArray();
+    }
+
+    private static bool CanMapNewWithParameterlessConstructor(
+        ITypeSymbol destinationType,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType)
+    {
+        if (destinationType is not INamedTypeSymbol
+            {
+                TypeKind: TypeKind.Class,
+                IsAbstract: false,
+                IsRecord: false,
+                SpecialType: SpecialType.None
+            } destination ||
+            destination.NullableAnnotation ==
+                NullableAnnotation.Annotated ||
+            HasInstanceFieldsOrProperties(destination))
+        {
+            return false;
+        }
+
+        var parameterlessConstructor =
+            destination.InstanceConstructors.FirstOrDefault(
+                static constructor =>
+                    constructor.Parameters.IsEmpty);
+
+        return parameterlessConstructor is not null &&
+               compilation.IsSymbolAccessibleWithin(
+                   parameterlessConstructor,
+                   mapperType);
+    }
+
+    private static bool HasInstanceFieldsOrProperties(
+        INamedTypeSymbol destination)
+    {
+        for (var current = destination;
+             current is not null &&
+             current.SpecialType != SpecialType.System_Object;
+             current = current.BaseType)
+        {
+            if (current.GetMembers().Any(
+                    static member =>
+                        !member.IsStatic &&
+                        !member.IsImplicitlyDeclared &&
+                        member is IFieldSymbol or IPropertySymbol))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string GetAccessibility(
