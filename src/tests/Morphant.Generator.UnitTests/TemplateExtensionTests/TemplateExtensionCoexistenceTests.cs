@@ -42,11 +42,17 @@ namespace TestCase
             builder.Map<Source, GenericDestination<int>>()
                 .Template(static _ => new());
 
+            builder.Map<Source, GenericDestination<int?>>()
+                .Template(static _ => new());
+
             builder.Map<Source, GenericDestination<string>>()
                 .Template(static _ => new());
 
             builder.Map<Source, int>()
                 .Template(static _ => 0);
+
+            builder.Map<Source, int?>()
+                .Template(static _ => null);
         }
     }
 }
@@ -65,6 +71,9 @@ namespace TestCase.Morphant.Generated
         const string intGenericDestination =
             "global::TestCase.GenericDestination<int>";
 
+        const string nullableIntGenericDestination =
+            "global::TestCase.GenericDestination<int?>";
+
         const string stringGenericDestination =
             "global::TestCase.GenericDestination<string>";
 
@@ -82,10 +91,85 @@ namespace TestCase.Morphant.Generated
                 "global::TestCase.Morphant.Generated." +
                 "GenericDestinationMorphantTemplate<int>"),
             ExpectedGeneratedExtension(
+                "TestCase.GenericDestination`1<int?>",
+                nullableIntGenericDestination,
+                "global::TestCase.Morphant.Generated." +
+                "GenericDestinationMorphantTemplate<int?>"),
+            ExpectedGeneratedExtension(
                 "TestCase.GenericDestination`1<string>",
                 stringGenericDestination,
                 "global::TestCase.Morphant.Generated." +
                 "GenericDestinationMorphantTemplate<string>"),
+            ExpectedDirectExtension(
+                "System.Int32",
+                "int",
+                "int"),
+            ExpectedDirectExtension(
+                "System.Nullable`1<int>",
+                "int?",
+                "int?"));
+    }
+
+    [Test]
+    public async Task Does_not_let_destinations_without_template_surface_affect_supported_destinations()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public sealed class GeneratedDestination
+    {
+    }
+
+    public delegate void DelegateDestination();
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, (int Id, string Name)>();
+
+            builder.Map<Source, GeneratedDestination>()
+                .Template(static _ => new());
+
+            builder.Map<Source, GeneratedDestination[]>();
+
+            builder.Map<Source, int>()
+                .Template(static _ => 0);
+
+            builder.Map<Source, DelegateDestination>();
+        }
+    }
+}
+
+namespace TestCase.Morphant.Generated
+{
+    internal sealed record GeneratedDestinationMorphantTemplate;
+}
+""";
+
+        const string generatedDestination =
+            "global::TestCase.GeneratedDestination";
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            ExpectedGeneratedExtension(
+                "TestCase.GeneratedDestination",
+                generatedDestination,
+                "global::TestCase.Morphant.Generated." +
+                "GeneratedDestinationMorphantTemplate"),
             ExpectedDirectExtension(
                 "System.Int32",
                 "int",
@@ -196,7 +280,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<FirstSource, Destination>()
+            builder.Map<FirstSource, Destination>(MappingMode.MapNew)
                 .Template(static _ => new());
 
             builder.Map<FirstSource, Destination>();
@@ -208,7 +292,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<SecondSource, Destination>()
+            builder.Map<SecondSource, Destination>(MappingMode.MapExisting)
                 .Template(static _ => new());
         }
     }
@@ -447,44 +531,17 @@ namespace A_B.Morphant.Generated
     public async Task Uses_unique_hint_names_for_case_insensitive_collisions()
     {
         // lang=c#
-        const string source =
+        const string forwardMapStatements =
 """
-#pragma warning disable CS1591
-#nullable enable
-
-using Morphant;
-
-namespace TestCase
-{
-    public sealed class Source
-    {
-    }
-
-    public sealed class Destination
-    {
-    }
-
-    public sealed class destination
-    {
-    }
-
-    [MorphantMapper]
-    public partial class TestMapper : TypeMapper
-    {
-        protected override void Configure(MapperBuilder builder)
-        {
             builder.Map<Source, Destination>();
             builder.Map<Source, destination>();
-        }
-    }
-}
+""";
 
-namespace TestCase.Morphant.Generated
-{
-    internal sealed record DestinationMorphantTemplate;
-
-    internal sealed record destinationMorphantTemplate;
-}
+        // lang=c#
+        const string reverseMapStatements =
+"""
+            builder.Map<Source, destination>();
+            builder.Map<Source, Destination>();
 """;
 
         const string firstDestination =
@@ -493,9 +550,8 @@ namespace TestCase.Morphant.Generated
         const string secondDestination =
             "global::TestCase.destination";
 
-        await TemplateExtensionGeneratorTest.RunAndAssert(
-            LanguageVersion.CSharp9,
-            source,
+        var expectedSources = new[]
+        {
             ExpectedGeneratedExtension(
                 "TestCase.Destination",
                 firstDestination,
@@ -508,7 +564,18 @@ namespace TestCase.Morphant.Generated
                 "destinationMorphantTemplate",
                 HintNameHelper.AppendStableHash(
                     "TestCase_destination",
-                    "TestCase.destination")));
+                    "TestCase.destination"))
+        };
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            BuildCaseInsensitiveCollisionSource(forwardMapStatements),
+            expectedSources);
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            BuildCaseInsensitiveCollisionSource(reverseMapStatements),
+            expectedSources);
     }
 
     private static string BuildTopLevelEquivalentSource(
@@ -643,6 +710,49 @@ namespace TestCase.Morphant.Generated
                  namespace TestCase.Morphant.Generated.Outer1Scope
                  {
                      internal sealed record ContainedDestinationMorphantTemplate<T>;
+                 }
+                 """;
+    }
+
+    private static string BuildCaseInsensitiveCollisionSource(
+        string mapStatements)
+    {
+        // lang=c#
+        return $$"""
+                 #pragma warning disable CS1591
+                 #nullable enable
+
+                 using Morphant;
+
+                 namespace TestCase
+                 {
+                     public sealed class Source
+                     {
+                     }
+
+                     public sealed class Destination
+                     {
+                     }
+
+                     public sealed class destination
+                     {
+                     }
+
+                     [MorphantMapper]
+                     public partial class TestMapper : TypeMapper
+                     {
+                         protected override void Configure(MapperBuilder builder)
+                         {
+                 {{mapStatements}}
+                         }
+                     }
+                 }
+
+                 namespace TestCase.Morphant.Generated
+                 {
+                     internal sealed record DestinationMorphantTemplate;
+
+                     internal sealed record destinationMorphantTemplate;
                  }
                  """;
     }
