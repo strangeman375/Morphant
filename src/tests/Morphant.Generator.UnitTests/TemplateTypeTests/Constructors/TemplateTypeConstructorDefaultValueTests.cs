@@ -44,7 +44,7 @@ internal sealed class TemplateTypeConstructorDefaultValueTests
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?> name = null!;
+        public global::Morphant.Members.ConstructorMember<string?>? name = null!;
 
         /// <summary>
         /// Configures the <c>createdAt</c> constructor argument.
@@ -93,12 +93,12 @@ internal sealed class TemplateTypeConstructorDefaultValueTests
         /// <param name="text">Configures the <c>text</c> constructor argument. If omitted, the destination constructor default value <c>"A &lt; B &amp; C"</c> is used.</param>
         public DestinationMorphantTemplate(
             global::Morphant.Members.ConstructorMember<string?>? name = null,
-            global::Morphant.Members.ConstructorMember<global::System.DateTime>? createdAt = null,
-            global::Morphant.Members.ConstructorMember<global::System.DayOfWeek>? day = null,
-            global::Morphant.Members.ConstructorMember<global::TestCase.Mode>? mode = null,
-            global::Morphant.Members.ConstructorMember<decimal>? amount = null,
-            global::Morphant.Members.ConstructorMember<char>? separator = null,
-            global::Morphant.Members.ConstructorMember<string>? text = null)
+            global::Morphant.Members.ConstructorMember<global::System.DateTime> createdAt = null!,
+            global::Morphant.Members.ConstructorMember<global::System.DayOfWeek> day = null!,
+            global::Morphant.Members.ConstructorMember<global::TestCase.Mode> mode = null!,
+            global::Morphant.Members.ConstructorMember<decimal> amount = null!,
+            global::Morphant.Members.ConstructorMember<char> separator = null!,
+            global::Morphant.Members.ConstructorMember<string> text = null!)
         {
         }
 """;

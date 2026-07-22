@@ -81,10 +81,15 @@ internal static class TemplateTypeModelBuilder
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                var constraints = BuildTypeParameterConstraints(
+                    typeParameter,
+                    out var requiresNullableAnnotationsDisabled);
+
                 result.Add(
                     new TemplateTypeParameterModel(
                         typeParameter.Name,
-                        BuildTypeParameterConstraints(typeParameter)));
+                        constraints,
+                        requiresNullableAnnotationsDisabled));
             }
         }
 
@@ -92,9 +97,11 @@ internal static class TemplateTypeModelBuilder
     }
 
     private static ImmutableArray<string> BuildTypeParameterConstraints(
-        ITypeParameterSymbol typeParameter)
+        ITypeParameterSymbol typeParameter,
+        out bool requiresNullableAnnotationsDisabled)
     {
         var result = ImmutableArray.CreateBuilder<string>();
+        requiresNullableAnnotationsDisabled = false;
 
         if (typeParameter.HasUnmanagedTypeConstraint)
         {
@@ -111,6 +118,10 @@ internal static class TemplateTypeModelBuilder
                 NullableAnnotation.Annotated
                     ? "class?"
                     : "class");
+
+            requiresNullableAnnotationsDisabled =
+                typeParameter.ReferenceTypeConstraintNullableAnnotation ==
+                NullableAnnotation.None;
         }
         else if (typeParameter.HasNotNullConstraint)
         {
@@ -119,6 +130,9 @@ internal static class TemplateTypeModelBuilder
 
         foreach (var constraintType in typeParameter.ConstraintTypes)
         {
+            requiresNullableAnnotationsDisabled |=
+                HasObliviousTopLevelAnnotation(constraintType);
+
             result.Add(
                 constraintType.ToDisplayString(
                     SymbolDisplayFormats.FullyQualifiedNullable));
@@ -169,14 +183,23 @@ internal static class TemplateTypeModelBuilder
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                var typeName = BuildInputTypeName(
+                    parameter.Type,
+                    parameter.NullableAnnotation,
+                    parameter,
+                    null,
+                    out var acceptsNull,
+                    out var requiresNullableAnnotationsDisabled);
+
                 parameters.Add(
                     new TemplateConstructorParameterModel(
                         parameter.Name,
-                        parameter.Type.ToDisplayString(
-                            SymbolDisplayFormats.FullyQualifiedNullable),
+                        typeName,
                         BuildTypeSuffix(parameter.Type),
                         parameter.IsOptional || parameter.IsParams,
-                        BuildDefaultValueDisplay(parameter)));
+                        BuildDefaultValueDisplay(parameter),
+                        acceptsNull,
+                        requiresNullableAnnotationsDisabled));
             }
 
             result.Add(new TemplateConstructorModel(parameters.ToImmutable()));
@@ -232,7 +255,9 @@ internal static class TemplateTypeModelBuilder
                 new TemplateConstructorFieldModel(
                     fieldName,
                     parameter.Name,
-                    parameter.TypeName));
+                    parameter.TypeName,
+                    parameter.AcceptsNull,
+                    parameter.RequiresNullableAnnotationsDisabled));
         }
 
         return result.ToImmutable();
@@ -586,11 +611,12 @@ internal static class TemplateTypeModelBuilder
             var setterParameter =
                 setter.Parameters[setter.Parameters.Length - 1];
 
-            var typeName = BuildMemberTypeName(
+            var typeName = BuildInputTypeName(
                 property.Type,
                 setterParameter.NullableAnnotation,
                 property,
                 setterParameter,
+                out var acceptsNull,
                 out var requiresNullableAnnotationsDisabled);
 
             return new TemplateMemberModel(
@@ -599,6 +625,7 @@ internal static class TemplateTypeModelBuilder
                 BuildDocumentation(
                     property,
                     cancellationToken),
+                acceptsNull,
                 requiresNullableAnnotationsDisabled,
                 BuildObsoleteAttributeSource(property));
         }
@@ -615,11 +642,12 @@ internal static class TemplateTypeModelBuilder
                 return null;
             }
 
-            var typeName = BuildMemberTypeName(
+            var typeName = BuildInputTypeName(
                 field.Type,
                 field.NullableAnnotation,
                 field,
                 null,
+                out var acceptsNull,
                 out var requiresNullableAnnotationsDisabled);
 
             return new TemplateMemberModel(
@@ -628,6 +656,7 @@ internal static class TemplateTypeModelBuilder
                 BuildDocumentation(
                     field,
                     cancellationToken),
+                acceptsNull,
                 requiresNullableAnnotationsDisabled,
                 BuildObsoleteAttributeSource(field));
         }
@@ -635,34 +664,46 @@ internal static class TemplateTypeModelBuilder
         return null;
     }
 
-    private static string BuildMemberTypeName(
+    private static string BuildInputTypeName(
         ITypeSymbol type,
         NullableAnnotation nullableAnnotation,
         ISymbol member,
         ISymbol? inputSymbol,
+        out bool acceptsNull,
         out bool requiresNullableAnnotationsDisabled)
     {
+        var hasDisallowNull =
+            HasAttribute(
+                member,
+                DisallowNullAttributeMetadataName) ||
+            HasAttribute(
+                inputSymbol,
+                DisallowNullAttributeMetadataName);
+
+        var hasAllowNull =
+            HasAttribute(
+                member,
+                AllowNullAttributeMetadataName) ||
+            HasAttribute(
+                inputSymbol,
+                AllowNullAttributeMetadataName);
+
         if (CanApplyNullableAnnotation(type))
         {
-            if (HasAttribute(
-                    member,
-                    DisallowNullAttributeMetadataName) ||
-                HasAttribute(
-                    inputSymbol,
-                    DisallowNullAttributeMetadataName))
+            if (hasDisallowNull)
             {
                 nullableAnnotation = NullableAnnotation.NotAnnotated;
             }
-            else if (HasAttribute(
-                         member,
-                         AllowNullAttributeMetadataName) ||
-                     HasAttribute(
-                         inputSymbol,
-                         AllowNullAttributeMetadataName))
+            else if (hasAllowNull)
             {
                 nullableAnnotation = NullableAnnotation.Annotated;
             }
         }
+
+        acceptsNull = !hasDisallowNull &&
+                      (IsNullableValueType(type) ||
+                       nullableAnnotation == NullableAnnotation.Annotated ||
+                       hasAllowNull && CanAcceptNull(type));
 
         requiresNullableAnnotationsDisabled =
             nullableAnnotation == NullableAnnotation.None &&
@@ -677,6 +718,25 @@ internal static class TemplateTypeModelBuilder
     {
         return type.IsReferenceType ||
                type.TypeKind == TypeKind.TypeParameter;
+    }
+
+    private static bool CanAcceptNull(ITypeSymbol type)
+    {
+        return CanApplyNullableAnnotation(type) ||
+               IsNullableValueType(type);
+    }
+
+    private static bool IsNullableValueType(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol namedType &&
+               namedType.OriginalDefinition.SpecialType ==
+               SpecialType.System_Nullable_T;
+    }
+
+    private static bool HasObliviousTopLevelAnnotation(ITypeSymbol type)
+    {
+        return CanApplyNullableAnnotation(type) &&
+               type.NullableAnnotation == NullableAnnotation.None;
     }
 
     private static bool IsSupportedMemberType(ITypeSymbol type)

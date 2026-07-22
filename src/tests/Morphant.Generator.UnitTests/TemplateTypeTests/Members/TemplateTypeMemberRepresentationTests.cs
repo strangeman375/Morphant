@@ -40,7 +40,7 @@ internal sealed class TemplateTypeMemberRepresentationTests
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.Name"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> Name
+        public global::Morphant.Members.Member<string?>? Name
         {
             get => null!;
             set { }
@@ -49,7 +49,7 @@ internal sealed class TemplateTypeMemberRepresentationTests
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.Count"/>.
         /// </summary>
-        public global::Morphant.Members.Member<int?> Count
+        public global::Morphant.Members.Member<int?>? Count
         {
             get => null!;
             set { }
@@ -58,7 +58,7 @@ internal sealed class TemplateTypeMemberRepresentationTests
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.User"/>.
         /// </summary>
-        public global::Morphant.Members.Member<global::TestCase.UserModel?> User
+        public global::Morphant.Members.Member<global::TestCase.UserModel?>? User
         {
             get => null!;
             set { }
@@ -76,7 +76,7 @@ internal sealed class TemplateTypeMemberRepresentationTests
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.Users"/>.
         /// </summary>
-        public global::Morphant.Members.Member<global::TestCase.UserModel?[]?> Users
+        public global::Morphant.Members.Member<global::TestCase.UserModel?[]?>? Users
         {
             get => null!;
             set { }

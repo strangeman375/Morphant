@@ -33,7 +33,7 @@ internal sealed class TemplateTypeFieldTests
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.Name"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> Name
+        public global::Morphant.Members.Member<string?>? Name
         {
             get => null!;
             set { }

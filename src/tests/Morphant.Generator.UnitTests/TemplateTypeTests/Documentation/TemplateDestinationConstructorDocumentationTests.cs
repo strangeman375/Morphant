@@ -127,8 +127,8 @@ internal sealed class TemplateDestinationConstructorDocumentationTests
         /// <param name="text">Configures the <c>text</c> constructor argument. If omitted, the destination constructor default value <c>"A &lt; B &amp; C"</c> is used.</param>
         /// <param name="separator">Configures the <c>separator</c> constructor argument. If omitted, the destination constructor default value <c>'&lt;'</c> is used.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<string>? text = null,
-            global::Morphant.Members.ConstructorMember<char>? separator = null)
+            global::Morphant.Members.ConstructorMember<string> text = null!,
+            global::Morphant.Members.ConstructorMember<char> separator = null!)
         {
         }
 """;
@@ -163,7 +163,7 @@ internal sealed class TemplateDestinationConstructorDocumentationTests
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?> name = null!;
+        public global::Morphant.Members.ConstructorMember<string?>? name = null!;
 
         /// <summary>
         /// Configures the <c>createdAt</c> constructor argument.
@@ -182,7 +182,7 @@ internal sealed class TemplateDestinationConstructorDocumentationTests
         /// <param name="createdAt">Configures the <c>createdAt</c> constructor argument. If omitted, the destination constructor default value <c>default</c> is used.</param>
         public DestinationMorphantTemplate(
             global::Morphant.Members.ConstructorMember<string?>? name = null,
-            global::Morphant.Members.ConstructorMember<global::System.DateTime>? createdAt = null)
+            global::Morphant.Members.ConstructorMember<global::System.DateTime> createdAt = null!)
         {
         }
 """;
@@ -245,8 +245,8 @@ internal sealed class TemplateDestinationConstructorDocumentationTests
         /// <param name="status">Configures the <c>status</c> constructor argument. If omitted, the destination constructor default value <c>Status.Active</c> is used.</param>
         /// <param name="fallback">Configures the <c>fallback</c> constructor argument. If omitted, the destination constructor default value <c>(Status)42</c> is used.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<global::TestCase.Status>? status = null,
-            global::Morphant.Members.ConstructorMember<global::TestCase.Status>? fallback = null)
+            global::Morphant.Members.ConstructorMember<global::TestCase.Status> status = null!,
+            global::Morphant.Members.ConstructorMember<global::TestCase.Status> fallback = null!)
         {
         }
 """;
@@ -291,7 +291,7 @@ internal sealed class TemplateDestinationConstructorDocumentationTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="values">Configures the <c>values</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int[]>? values = null)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int[]> values = null!)
         {
         }
 """;

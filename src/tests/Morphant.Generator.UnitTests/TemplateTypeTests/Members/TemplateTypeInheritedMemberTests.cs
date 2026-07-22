@@ -38,7 +38,7 @@ internal sealed class TemplateTypeInheritedMemberTests
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.BaseDestination.BaseField"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> BaseField
+        public global::Morphant.Members.Member<string?>? BaseField
         {
             get => null!;
             set { }

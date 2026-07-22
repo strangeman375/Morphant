@@ -19,7 +19,8 @@ internal sealed record TemplateTypeModel(
 
 internal sealed record TemplateTypeParameterModel(
     string Name,
-    ImmutableArray<string> Constraints);
+    ImmutableArray<string> Constraints,
+    bool RequiresNullableAnnotationsDisabled);
 
 internal sealed record TemplateDocumentationModel(
     string Cref,
@@ -33,16 +34,21 @@ internal sealed record TemplateConstructorParameterModel(
     string TypeName,
     string TypeSuffix,
     bool IsOptional,
-    string? DefaultValueDisplay);
+    string? DefaultValueDisplay,
+    bool AcceptsNull,
+    bool RequiresNullableAnnotationsDisabled);
 
 internal sealed record TemplateConstructorFieldModel(
     string Name,
     string ParameterName,
-    string TypeName);
+    string TypeName,
+    bool AcceptsNull,
+    bool RequiresNullableAnnotationsDisabled);
 
 internal sealed record TemplateMemberModel(
     string Name,
     string TypeName,
     TemplateDocumentationModel Documentation,
+    bool AcceptsNull = false,
     bool RequiresNullableAnnotationsDisabled = false,
     string? ObsoleteAttributeSource = null);

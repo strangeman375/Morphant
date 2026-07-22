@@ -53,7 +53,7 @@ internal sealed class TemplateTypeMemberNullabilityTests
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.AllowsNull"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> AllowsNull
+        public global::Morphant.Members.Member<string?>? AllowsNull
         {
             get => null!;
             set { }
@@ -70,5 +70,83 @@ internal sealed class TemplateTypeMemberNullabilityTests
 """;
 
         await RunAndAssert(destinationMembers, expectedMembers);
+    }
+
+    [Test]
+    public async Task Accepts_null_literal_when_member_input_accepts_null()
+    {
+        // lang=c#
+        const string destinationMembers =
+"""
+        public string? NullableProperty { get; set; }
+
+        public int? NullableField;
+
+        [global::System.Diagnostics.CodeAnalysis.AllowNull]
+        public string AllowsNullField = null!;
+
+        [global::System.Diagnostics.CodeAnalysis.DisallowNull]
+        public string? DisallowsNullField;
+""";
+
+        // lang=c#
+        const string expectedMembers =
+"""
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.NullableProperty"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<string?>? NullableProperty
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.NullableField"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int?>? NullableField
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.AllowsNullField"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<string?>? AllowsNullField
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.DisallowsNullField"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<string> DisallowsNullField
+        {
+            get => null!;
+            set { }
+        }
+""";
+
+        // lang=c#
+        const string additionalSource =
+"""
+    internal static class TemplateUsage
+    {
+        internal static global::TestCase.Morphant.Generated.DestinationMorphantTemplate Create() =>
+            new()
+            {
+                NullableProperty = null,
+                NullableField = null,
+                AllowsNullField = null
+            };
+    }
+""";
+
+        await RunAndAssert(
+            destinationMembers,
+            expectedMembers,
+            additionalSource);
     }
 }

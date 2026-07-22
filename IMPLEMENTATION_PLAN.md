@@ -66,6 +66,19 @@ TDD-среза, но детали могут уточняться перед р�
   `default`. Generated explicit implementations повторяют этот nullable-
   контракт и наследуют XML-документацию интерфейса.
 
+- [x] Проверить nullable-контракт template surface.
+
+  Template types сохраняют input-nullability destination members и
+  constructor parameters, включая nullable value/reference types,
+  `AllowNull`/`DisallowNull` и oblivious-контекст. Внешняя обёртка `Member<T>`
+  или `ConstructorMember<T>` допускает `null` только там, где он является
+  валидным явно заданным значением; для optional non-nullable constructor
+  mappings `null!` остаётся только внутренним omission sentinel.
+
+  Nullable-аннотации параметров и результата `Template()`-лямбд, чья точная
+  семантика зависит от effective null-handling settings, намеренно оставлены
+  до реализации настроек.
+
 ## Фаза 2. Минимальное исполняемое маппирование
 
 - [x] Простейший MapNew.
@@ -157,7 +170,9 @@ TDD-среза, но детали могут уточняться перед р�
 - [ ] Null-handling.
 
   `NullSourceHandling` и `NullDestinationHandling` для reference types,
-  nullable/value types и двух режимов маппинга.
+  nullable/value types и двух режимов маппинга. В этом же срезе уточнить
+  nullable-аннотации входов и результата `Template()`-лямбд по их фактической
+  семантике после применения effective settings.
 
 - [ ] Наследование конфигурации.
 

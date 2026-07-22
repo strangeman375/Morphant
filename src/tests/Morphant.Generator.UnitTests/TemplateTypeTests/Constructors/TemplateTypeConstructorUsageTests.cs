@@ -136,8 +136,8 @@ internal sealed class TemplateTypeConstructorUsageTests
         /// <param name="tags">Configures the <c>tags</c> constructor argument.</param>
         public DestinationMorphantTemplate(
             global::Morphant.Members.ConstructorMember<int> id,
-            global::Morphant.Members.ConstructorMember<bool>? enabled = null,
-            global::Morphant.Members.ConstructorMember<string[]>? tags = null)
+            global::Morphant.Members.ConstructorMember<bool> enabled = null!,
+            global::Morphant.Members.ConstructorMember<string[]> tags = null!)
         {
         }
 """;
@@ -215,7 +215,7 @@ internal sealed class TemplateTypeConstructorUsageTests
         /// <param name="enabled">Configures the <c>enabled</c> constructor argument. If omitted, the destination constructor default value <c>true</c> is used.</param>
         public DestinationMorphantTemplate(
             global::Morphant.Members.ConstructorMember<int> id,
-            global::Morphant.Members.ConstructorMember<bool>? enabled = null)
+            global::Morphant.Members.ConstructorMember<bool> enabled = null!)
         {
         }
 """;

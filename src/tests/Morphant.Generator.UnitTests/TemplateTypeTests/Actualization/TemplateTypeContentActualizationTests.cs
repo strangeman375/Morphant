@@ -51,7 +51,7 @@ internal sealed class TemplateTypeContentActualizationTests
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?> name = null!;
+        public global::Morphant.Members.ConstructorMember<string?>? name = null!;
     }
 """;
 
@@ -157,7 +157,7 @@ internal sealed class TemplateTypeContentActualizationTests
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.DisplayName"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> DisplayName
+        public global::Morphant.Members.Member<string?>? DisplayName
         {
             get => null!;
             set { }
@@ -293,7 +293,7 @@ namespace TestCase
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.DisplayName"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> DisplayName
+        public global::Morphant.Members.Member<string?>? DisplayName
         {
             get => null!;
             set { }
@@ -389,7 +389,7 @@ namespace TestCase
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.SecondBase.Name"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> Name
+        public global::Morphant.Members.Member<string?>? Name
         {
             get => null!;
             set { }
@@ -477,7 +477,7 @@ namespace TestCase
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Base.Name"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> Name
+        public global::Morphant.Members.Member<string?>? Name
         {
             get => null!;
             set { }
@@ -568,7 +568,7 @@ namespace TestCase
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.ISecondBase.Name"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> Name
+        public global::Morphant.Members.Member<string?>? Name
         {
             get => null!;
             set { }
@@ -668,7 +668,7 @@ namespace TestCase
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.IContract.Name"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> Name
+        public global::Morphant.Members.Member<string?>? Name
         {
             get => null!;
             set { }
@@ -950,7 +950,7 @@ namespace TestCase
         /// Configures mapping for <see cref="global::TestCase.Destination.Legacy"/>.
         /// </summary>
         [global::System.ObsoleteAttribute("Legacy was removed.", true)]
-        public global::Morphant.Members.Member<string?> Legacy
+        public global::Morphant.Members.Member<string?>? Legacy
         {
             get => null!;
             set { }
@@ -1247,7 +1247,7 @@ namespace ReferencedModels
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?> name = null!;
+        public global::Morphant.Members.ConstructorMember<string?>? name = null!;
     }
 """;
 
@@ -1258,7 +1258,7 @@ namespace ReferencedModels
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="name">Configures the <c>name</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<string?> name)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<string?>? name)
         {
         }
 """;
@@ -1269,7 +1269,7 @@ namespace ReferencedModels
         /// <summary>
         /// Configures mapping for <see cref="global::ReferencedModels.Destination.Name"/>.
         /// </summary>
-        public global::Morphant.Members.Member<string?> Name
+        public global::Morphant.Members.Member<string?>? Name
         {
             get => null!;
             set { }

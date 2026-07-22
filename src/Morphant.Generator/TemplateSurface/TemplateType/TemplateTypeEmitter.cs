@@ -55,6 +55,14 @@ internal static class TemplateTypeEmitter
         {
             var field = model.ConstructorFields[i];
 
+            if (field.RequiresNullableAnnotationsDisabled &&
+                (i == 0 ||
+                 !model.ConstructorFields[i - 1]
+                     .RequiresNullableAnnotationsDisabled))
+            {
+                writer.Line("#nullable disable annotations");
+            }
+
             WriteSummary(
                 writer,
                 "Configures the " +
@@ -62,7 +70,20 @@ internal static class TemplateTypeEmitter
                 "constructor argument.");
 
             writer.Line(
-                $"public global::Morphant.Members.ConstructorMember<{field.TypeName}> {Identifier(field.Name)} = null!;");
+                $"public global::Morphant.Members.ConstructorMember<{field.TypeName}>" +
+                (field.AcceptsNull ? "?" : string.Empty) +
+                $" {Identifier(field.Name)} = null!;");
+
+            var nextFieldRequiresNullableAnnotationsDisabled =
+                i + 1 < model.ConstructorFields.Length &&
+                model.ConstructorFields[i + 1]
+                    .RequiresNullableAnnotationsDisabled;
+
+            if (field.RequiresNullableAnnotationsDisabled &&
+                !nextFieldRequiresNullableAnnotationsDisabled)
+            {
+                writer.Line("#nullable enable annotations");
+            }
 
             if (i < model.ConstructorFields.Length - 1)
             {
@@ -108,17 +129,23 @@ internal static class TemplateTypeEmitter
             WriteDestinationConstructorDocumentation(writer, constructor);
 
             var parameters = new string[constructor.Parameters.Length];
+            var nullableAnnotationsDisabled =
+                new bool[constructor.Parameters.Length];
 
             for (var i = 0; i < constructor.Parameters.Length; i++)
             {
                 parameters[i] = FormatParameter(
                     constructor.Parameters[i]);
+                nullableAnnotationsDisabled[i] =
+                    constructor.Parameters[i]
+                        .RequiresNullableAnnotationsDisabled;
             }
 
             WriteConstructor(
                 writer,
                 templateTypeName,
-                parameters);
+                parameters,
+                nullableAnnotationsDisabled);
 
             writer.Line();
         }
@@ -168,7 +195,8 @@ internal static class TemplateTypeEmitter
             }
 
             writer.OpenBlock(
-                $"public global::Morphant.Members.Member<{member.TypeName}> " +
+                $"public global::Morphant.Members.Member<{member.TypeName}>" +
+                (member.AcceptsNull ? "? " : " ") +
                 Identifier(member.Name));
 
             writer.Line("get => null!;");
@@ -376,20 +404,22 @@ internal static class TemplateTypeEmitter
         var wrapperType =
             $"global::Morphant.Members.ConstructorMember<{parameter.TypeName}>";
 
-        if (parameter.IsOptional)
+        if (parameter.AcceptsNull)
         {
             wrapperType += "?";
         }
 
         return parameter.IsOptional
-            ? $"{wrapperType} {Identifier(parameter.Name)} = null"
+            ? $"{wrapperType} {Identifier(parameter.Name)} = " +
+              (parameter.AcceptsNull ? "null" : "null!")
             : $"{wrapperType} {Identifier(parameter.Name)}";
     }
 
     private static void WriteConstructor(
         CodeWriter writer,
         string typeName,
-        IReadOnlyList<string> parameters)
+        IReadOnlyList<string> parameters,
+        IReadOnlyList<bool>? nullableAnnotationsDisabled = null)
     {
         if (parameters.Count <= 1)
         {
@@ -397,21 +427,60 @@ internal static class TemplateTypeEmitter
                 ? string.Empty
                 : parameters[0];
 
+            var annotationsDisabled =
+                nullableAnnotationsDisabled is not null &&
+                nullableAnnotationsDisabled.Count == 1 &&
+                nullableAnnotationsDisabled[0];
+
+            if (annotationsDisabled)
+            {
+                writer.Line("#nullable disable annotations");
+            }
+
             writer.Line($"public {typeName}({parameter})");
             writer.EmptyBlock();
+
+            if (annotationsDisabled)
+            {
+                writer.Line("#nullable enable annotations");
+            }
+
             return;
         }
 
         writer.Line($"public {typeName}(");
         writer.Indent();
 
+        var annotationsAreDisabled = false;
+
         for (var i = 0; i < parameters.Count; i++)
         {
+            var parameterRequiresNullableAnnotationsDisabled =
+                nullableAnnotationsDisabled is not null &&
+                nullableAnnotationsDisabled[i];
+
+            if (parameterRequiresNullableAnnotationsDisabled !=
+                annotationsAreDisabled)
+            {
+                writer.Line(
+                    parameterRequiresNullableAnnotationsDisabled
+                        ? "#nullable disable annotations"
+                        : "#nullable enable annotations");
+
+                annotationsAreDisabled =
+                    parameterRequiresNullableAnnotationsDisabled;
+            }
+
             var ending = i == parameters.Count - 1
                 ? ")"
                 : ",";
 
             writer.Line(parameters[i] + ending);
+        }
+
+        if (annotationsAreDisabled)
+        {
+            writer.Line("#nullable enable annotations");
         }
 
         writer.Unindent();
@@ -434,6 +503,8 @@ internal static class TemplateTypeEmitter
         writer.Line(declaration);
         writer.Indent();
 
+        var annotationsAreDisabled = false;
+
         foreach (var typeParameter in typeParameters)
         {
             if (typeParameter.Constraints.IsEmpty)
@@ -441,9 +512,26 @@ internal static class TemplateTypeEmitter
                 continue;
             }
 
+            if (typeParameter.RequiresNullableAnnotationsDisabled !=
+                annotationsAreDisabled)
+            {
+                writer.Line(
+                    typeParameter.RequiresNullableAnnotationsDisabled
+                        ? "#nullable disable annotations"
+                        : "#nullable enable annotations");
+
+                annotationsAreDisabled =
+                    typeParameter.RequiresNullableAnnotationsDisabled;
+            }
+
             writer.Line(
                 $"where {Identifier(typeParameter.Name)} : " +
                 string.Join(", ", typeParameter.Constraints));
+        }
+
+        if (annotationsAreDisabled)
+        {
+            writer.Line("#nullable enable annotations");
         }
 
         writer.Unindent();
