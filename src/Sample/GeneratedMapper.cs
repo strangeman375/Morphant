@@ -1,11 +1,8 @@
-using System.Runtime.CompilerServices;
-
 namespace Morphant.Generator;
 
-[CompilerGenerated]
 public partial class UserMapper : ITypeMapper<User, UserModel>
 {
-    public UserModel Map(User source, MappingContext context)
+    UserModel ITypeMapper<User, UserModel>.Map(User source, MappingContext context)
     {
         return new UserModel()
         {
@@ -19,7 +16,7 @@ public partial class UserMapper : ITypeMapper<User, UserModel>
         };
     }
 
-    public UserModel Map(User source, UserModel destination, MappingContext context)
+    UserModel ITypeMapper<User, UserModel>.Map(User source, UserModel destination, MappingContext context)
     {
         destination.Id = source.Id;
         destination.FullName = source.FirstName + " " + source.LastName;
@@ -32,17 +29,4 @@ public partial class UserMapper : ITypeMapper<User, UserModel>
         return destination;
     }
 
-    public IQueryable<UserModel> Project(IQueryable<User> queryable)
-    {
-        return queryable.Select(s => new UserModel()
-        {
-            Id = s.Id,
-            FullName = s.FirstName + " " + s.LastName,
-            Email = s.Email,
-            CreatedAt = s.CreatedAt,
-            LastLoginAt = s.LastLoginAt,
-            IsActive = true,
-            // AddressDto = inline sub projection
-        });
-    }
 }

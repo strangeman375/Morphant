@@ -8,8 +8,6 @@ public interface ITypeMapper<in TSource, TDestination>
     TDestination Map(TSource source, MappingContext context);
 
     TDestination Map(TSource source, TDestination destination, MappingContext context);
-
-    IQueryable<TDestination> Project(IQueryable<TSource> queryable);
 }
 
 public abstract class TypeMapper
