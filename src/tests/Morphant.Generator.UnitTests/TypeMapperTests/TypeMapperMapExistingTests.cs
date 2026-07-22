@@ -4,10 +4,10 @@ using Morphant.Generator.UnitTests.TestUtils;
 namespace Morphant.Generator.UnitTests.TypeMapperTests;
 
 [TestFixture]
-internal sealed class TypeMapperMapNewTests
+internal sealed class TypeMapperMapExistingTests
 {
     [Test]
-    public async Task Creates_a_memberless_destination_with_an_implicit_parameterless_constructor()
+    public async Task Returns_the_passed_memberless_destination()
     {
         // lang=c#
         const string source =
@@ -75,11 +75,12 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Creates_a_memberless_destination_with_an_explicit_accessible_parameterless_constructor()
+    public async Task Supports_inherited_and_constructed_generic_memberless_classes()
     {
         // lang=c#
         const string source =
 """
+#nullable enable
 #pragma warning disable CS1591
 
 using Morphant;
@@ -90,9 +91,17 @@ namespace TestCase
     {
     }
 
-    public sealed class Destination
+    public class DestinationBase
     {
-        internal Destination()
+    }
+
+    public sealed class DerivedDestination : DestinationBase
+    {
+    }
+
+    public sealed class Outer<TOuter>
+    {
+        public sealed class NestedDestination<TInner>
         {
         }
     }
@@ -102,7 +111,8 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, Destination>();
+            builder.Map<Source, DerivedDestination>();
+            builder.Map<Source, Outer<int>.NestedDestination<string?>>();
         }
     }
 }
@@ -117,18 +127,32 @@ namespace TestCase
 namespace TestCase
 {
     public partial class TestMapper :
-        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.DerivedDestination>,
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Outer<int>.NestedDestination<string?>>
     {
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.DerivedDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.DerivedDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
-            return new global::TestCase.Destination();
+            return new global::TestCase.DerivedDestination();
         }
 
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.DerivedDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.DerivedDestination>.Map(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
+            global::TestCase.DerivedDestination destination,
+            global::Morphant.MappingContext context)
+            => destination;
+
+        global::TestCase.Outer<int>.NestedDestination<string?> global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Outer<int>.NestedDestination<string?>>.Map(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Outer<int>.NestedDestination<string?>();
+        }
+
+        global::TestCase.Outer<int>.NestedDestination<string?> global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Outer<int>.NestedDestination<string?>>.Map(
+            global::TestCase.Source source,
+            global::TestCase.Outer<int>.NestedDestination<string?> destination,
             global::Morphant.MappingContext context)
             => destination;
     }
@@ -145,7 +169,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Keeps_MapNew_unimplemented_without_an_accessible_parameterless_constructor()
+    public async Task Does_not_require_a_constructible_concrete_destination()
     {
         // lang=c#
         const string source =
@@ -167,9 +191,9 @@ namespace TestCase
         }
     }
 
-    public sealed class InaccessibleDestination
+    public abstract class AbstractDestination
     {
-        private InaccessibleDestination()
+        protected AbstractDestination(int value)
         {
         }
     }
@@ -180,7 +204,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, ParameterizedDestination>();
-            builder.Map<Source, InaccessibleDestination>();
+            builder.Map<Source, AbstractDestination>();
         }
     }
 }
@@ -196,7 +220,7 @@ namespace TestCase
 {
     public partial class TestMapper :
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ParameterizedDestination>,
-        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InaccessibleDestination>
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AbstractDestination>
     {
         global::TestCase.ParameterizedDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ParameterizedDestination>.Map(
             global::TestCase.Source source,
@@ -209,14 +233,14 @@ namespace TestCase
             global::Morphant.MappingContext context)
             => destination;
 
-        global::TestCase.InaccessibleDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InaccessibleDestination>.Map(
+        global::TestCase.AbstractDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AbstractDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        global::TestCase.InaccessibleDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InaccessibleDestination>.Map(
+        global::TestCase.AbstractDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AbstractDestination>.Map(
             global::TestCase.Source source,
-            global::TestCase.InaccessibleDestination destination,
+            global::TestCase.AbstractDestination destination,
             global::Morphant.MappingContext context)
             => destination;
     }
@@ -233,7 +257,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Keeps_MapNew_unimplemented_when_the_destination_has_an_instance_member()
+    public async Task Keeps_MapExisting_unimplemented_when_the_destination_has_an_instance_member()
     {
         // lang=c#
         const string source =
@@ -248,12 +272,17 @@ namespace TestCase
     {
     }
 
+    public sealed class FieldDestination
+    {
+        public int Value;
+    }
+
     public class DestinationBase
     {
         public int Value { get; set; }
     }
 
-    public sealed class Destination : DestinationBase
+    public sealed class InheritedPropertyDestination : DestinationBase
     {
     }
 
@@ -262,7 +291,8 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, Destination>();
+            builder.Map<Source, FieldDestination>();
+            builder.Map<Source, InheritedPropertyDestination>();
         }
     }
 }
@@ -277,16 +307,28 @@ namespace TestCase
 namespace TestCase
 {
     public partial class TestMapper :
-        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FieldDestination>,
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InheritedPropertyDestination>
     {
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.FieldDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FieldDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.FieldDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FieldDestination>.Map(
             global::TestCase.Source source,
-            global::TestCase.Destination destination,
+            global::TestCase.FieldDestination destination,
+            global::Morphant.MappingContext context)
+            => throw new global::System.NotImplementedException();
+
+        global::TestCase.InheritedPropertyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InheritedPropertyDestination>.Map(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+            => throw new global::System.NotImplementedException();
+
+        global::TestCase.InheritedPropertyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InheritedPropertyDestination>.Map(
+            global::TestCase.Source source,
+            global::TestCase.InheritedPropertyDestination destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
     }
@@ -303,7 +345,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Keeps_MapNew_unimplemented_for_destination_kinds_outside_the_minimal_class_slice()
+    public async Task Keeps_MapExisting_unimplemented_for_destination_kinds_outside_the_minimal_class_slice()
     {
         // lang=c#
         const string source =
@@ -319,7 +361,7 @@ namespace TestCase
     {
     }
 
-    public abstract class AbstractDestination
+    public interface IInterfaceDestination
     {
     }
 
@@ -331,6 +373,11 @@ namespace TestCase
     {
     }
 
+    public enum EnumDestination
+    {
+        Value
+    }
+
     public sealed class NullableDestination
     {
     }
@@ -340,9 +387,10 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, AbstractDestination>();
+            builder.Map<Source, IInterfaceDestination>();
             builder.Map<Source, RecordDestination>();
             builder.Map<Source, StructDestination>();
+            builder.Map<Source, EnumDestination>();
             builder.Map<Source, NullableDestination?>();
             builder.Map<Source, object>();
         }
@@ -359,22 +407,23 @@ namespace TestCase
 namespace TestCase
 {
     public partial class TestMapper :
-        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AbstractDestination>,
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IInterfaceDestination>,
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RecordDestination>,
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.StructDestination>,
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.EnumDestination>,
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.NullableDestination?>,
         global::Morphant.ITypeMapper<global::TestCase.Source, object>
     {
-        global::TestCase.AbstractDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AbstractDestination>.Map(
+        global::TestCase.IInterfaceDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IInterfaceDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        global::TestCase.AbstractDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AbstractDestination>.Map(
+        global::TestCase.IInterfaceDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IInterfaceDestination>.Map(
             global::TestCase.Source source,
-            global::TestCase.AbstractDestination destination,
+            global::TestCase.IInterfaceDestination destination,
             global::Morphant.MappingContext context)
-            => destination;
+            => throw new global::System.NotImplementedException();
 
         global::TestCase.RecordDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RecordDestination>.Map(
             global::TestCase.Source source,
@@ -395,6 +444,17 @@ namespace TestCase
         global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.StructDestination>.Map(
             global::TestCase.Source source,
             global::TestCase.StructDestination destination,
+            global::Morphant.MappingContext context)
+            => throw new global::System.NotImplementedException();
+
+        global::TestCase.EnumDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.EnumDestination>.Map(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+            => throw new global::System.NotImplementedException();
+
+        global::TestCase.EnumDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.EnumDestination>.Map(
+            global::TestCase.Source source,
+            global::TestCase.EnumDestination destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
@@ -428,6 +488,67 @@ namespace TestCase
             source,
             (
                 "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                expected
+            ));
+    }
+
+    [Test]
+    public async Task Keeps_MapExisting_unimplemented_for_a_destination_type_parameter()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper<TDestination> : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, TDestination>();
+        }
+    }
+}
+""";
+
+        // lang=c#
+        const string expected =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace TestCase
+{
+    public partial class TestMapper<TDestination> :
+        global::Morphant.ITypeMapper<global::TestCase.Source, TDestination>
+    {
+        TDestination global::Morphant.ITypeMapper<global::TestCase.Source, TDestination>.Map(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+            => throw new global::System.NotImplementedException();
+
+        TDestination global::Morphant.ITypeMapper<global::TestCase.Source, TDestination>.Map(
+            global::TestCase.Source source,
+            TDestination destination,
+            global::Morphant.MappingContext context)
+            => throw new global::System.NotImplementedException();
+    }
+}
+""";
+
+        await TypeMapperGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper_1.g.cs",
                 expected
             ));
     }

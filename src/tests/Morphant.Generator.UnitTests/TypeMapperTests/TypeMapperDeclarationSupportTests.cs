@@ -68,7 +68,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -95,7 +95,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -246,7 +246,7 @@ namespace TestCase
                         global::TestCase.Source<TOuter, TMiddle, TInner, TMapper> source,
                         global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper> destination,
                         global::Morphant.MappingContext context)
-                        => throw new global::System.NotImplementedException();
+                        => destination;
                 }
             }
         }
@@ -326,7 +326,7 @@ namespace TestCase
                     global::TestCase.Source source,
                     global::TestCase.Destination destination,
                     global::Morphant.MappingContext context)
-                    => throw new global::System.NotImplementedException();
+                    => destination;
             }
         }
     }
@@ -412,7 +412,7 @@ namespace TestCase
                 global::TestCase.Source source,
                 global::TestCase.Destination destination,
                 global::Morphant.MappingContext context)
-                => throw new global::System.NotImplementedException();
+                => destination;
         }
     }
 }

@@ -134,7 +134,7 @@ namespace A
             global::Source source,
             global::Destination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -161,7 +161,7 @@ namespace A_B
             global::Source source,
             global::Destination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -241,7 +241,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -268,7 +268,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;

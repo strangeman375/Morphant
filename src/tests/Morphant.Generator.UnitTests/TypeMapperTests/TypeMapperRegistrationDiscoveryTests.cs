@@ -147,7 +147,7 @@ namespace TestCase
             global::TestCase.FirstSource source,
             global::TestCase.FirstDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         global::TestCase.SecondDestination global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.SecondDestination>.Map(
             global::TestCase.SecondSource source,
@@ -160,7 +160,7 @@ namespace TestCase
             global::TestCase.SecondSource source,
             global::TestCase.SecondDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -187,7 +187,7 @@ namespace TestCase
             global::TestCase.ExpressionSource source,
             global::TestCase.ExpressionDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -274,7 +274,7 @@ namespace TestCase
             global::TestCase.FirstSource source,
             global::TestCase.FirstDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         global::TestCase.SecondDestination global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.SecondDestination>.Map(
             global::TestCase.FirstSource source,
@@ -287,7 +287,7 @@ namespace TestCase
             global::TestCase.FirstSource source,
             global::TestCase.SecondDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         global::TestCase.FirstDestination global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.FirstDestination>.Map(
             global::TestCase.SecondSource source,
@@ -300,7 +300,7 @@ namespace TestCase
             global::TestCase.SecondSource source,
             global::TestCase.FirstDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;

@@ -129,7 +129,7 @@ namespace TestCase
             global::TestCase.Generic<global::System.Collections.Generic.List<string?>> source,
             global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource> destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         global::System.Guid global::Morphant.ITypeMapper<object, global::System.Guid>.Map(
             object source,
@@ -251,7 +251,7 @@ namespace TestCase
             string source,
             global::TestCase.SafeDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -325,7 +325,7 @@ namespace TestCase
                 global::TestCase.Source<TOuter, TValue> source,
                 global::TestCase.Destination<TOuter, TValue> destination,
                 global::Morphant.MappingContext context)
-                => throw new global::System.NotImplementedException();
+                => destination;
         }
     }
 }
@@ -415,7 +415,7 @@ namespace TestCase
             global::TestCase.Box<object> source,
             global::TestCase.Pair<object?, string?> destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         nuint global::Morphant.ITypeMapper<nint, nuint>.Map(
             nint source,
@@ -522,7 +522,7 @@ namespace TestCase
             global::TestCase.SafeSource source,
             global::TestCase.SafeDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -601,7 +601,7 @@ namespace TestCase
             global::TestCase.SafeSource source,
             global::TestCase.SafeDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -837,7 +837,7 @@ namespace TestCase
             T source,
             global::TestCase.Box<T> destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         U global::Morphant.ITypeMapper<global::TestCase.Box<U>, U>.Map(
             global::TestCase.Box<U> source,

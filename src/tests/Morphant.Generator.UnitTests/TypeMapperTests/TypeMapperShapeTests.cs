@@ -59,7 +59,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;
@@ -121,7 +121,7 @@ internal partial class TestMapper :
         global::Source source,
         global::Destination destination,
         global::Morphant.MappingContext context)
-        => throw new global::System.NotImplementedException();
+        => destination;
 }
 """;
 
@@ -193,7 +193,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.SecondDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         global::TestCase.FirstDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FirstDestination>.Map(
             global::TestCase.Source source,
@@ -206,7 +206,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.FirstDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;

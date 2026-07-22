@@ -132,7 +132,9 @@ internal static class TypeMapperEmitter
             $"{mapping.DestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
         writer.Line(
-            "=> throw new global::System.NotImplementedException();");
+            mapping.CanMapExistingWithoutMembers
+                ? "=> destination;"
+                : "=> throw new global::System.NotImplementedException();");
         writer.Unindent();
     }
 }

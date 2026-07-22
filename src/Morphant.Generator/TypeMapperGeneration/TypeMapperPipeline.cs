@@ -294,7 +294,9 @@ internal static class TypeMapperPipeline
                     CanMapNewWithParameterlessConstructor(
                         registration.DestinationType,
                         compilation,
-                        mapperType)))
+                        mapperType),
+                    CanMapExistingWithoutMembers(
+                        registration.DestinationType)))
             .ToImmutableArray();
     }
 
@@ -303,16 +305,9 @@ internal static class TypeMapperPipeline
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType)
     {
-        if (destinationType is not INamedTypeSymbol
-            {
-                TypeKind: TypeKind.Class,
-                IsAbstract: false,
-                IsRecord: false,
-                SpecialType: SpecialType.None
-            } destination ||
-            destination.NullableAnnotation ==
-                NullableAnnotation.Annotated ||
-            HasInstanceFieldsOrProperties(destination))
+        var destination = GetMemberlessClass(destinationType);
+
+        if (destination is null || destination.IsAbstract)
         {
             return false;
         }
@@ -326,6 +321,31 @@ internal static class TypeMapperPipeline
                compilation.IsSymbolAccessibleWithin(
                    parameterlessConstructor,
                    mapperType);
+    }
+
+    private static bool CanMapExistingWithoutMembers(
+        ITypeSymbol destinationType)
+    {
+        return GetMemberlessClass(destinationType) is not null;
+    }
+
+    private static INamedTypeSymbol? GetMemberlessClass(
+        ITypeSymbol destinationType)
+    {
+        if (destinationType is not INamedTypeSymbol
+            {
+                TypeKind: TypeKind.Class,
+                IsRecord: false,
+                SpecialType: SpecialType.None
+            } destination ||
+            destination.NullableAnnotation ==
+                NullableAnnotation.Annotated ||
+            HasInstanceFieldsOrProperties(destination))
+        {
+            return null;
+        }
+
+        return destination;
     }
 
     private static bool HasInstanceFieldsOrProperties(

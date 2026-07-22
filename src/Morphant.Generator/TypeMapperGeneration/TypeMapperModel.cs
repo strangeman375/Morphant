@@ -23,7 +23,8 @@ internal readonly record struct TypeMapperMappingModel
 (
     string SourceTypeName,
     string DestinationTypeName,
-    bool CanMapNewWithParameterlessConstructor
+    bool CanMapNewWithParameterlessConstructor,
+    bool CanMapExistingWithoutMembers
 )
 {
     public string InterfaceTypeName =>
