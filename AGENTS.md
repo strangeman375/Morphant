@@ -55,7 +55,14 @@
 ## Repository workflow
 
 - Preserve unrelated user changes.
-- Commit each completed coherent change. Direct commits to `main` are
-  authorized for this repository; verify the exact committed file set.
+- Standing authorization: when the user asks to implement or change something
+  in this repository, work directly in local `main`, commit each completed
+  coherent change, and publish it to remote `main` without asking again in
+  later turns. This authorization persists across Work sessions.
+- Before publishing, verify the exact committed file set and update remote
+  `main` only by ordinary fast-forward. Never force-push. Stop for direction if
+  the user explicitly requests a branch or pull request, if remote `main` has
+  conflicting concurrent changes, or if fast-forward publication is not
+  possible.
 - Keep tool output focused: use filtered test runs and avoid returning entire
   files or build logs when a smaller excerpt establishes the result.
