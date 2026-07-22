@@ -2,16 +2,20 @@
 
 ## Implementation plan
 
-- `IMPLEMENTATION_PLAN.md` is the authoritative implementation order and
-  progress record. Read it before selecting the next work slice.
-- Follow the plan from top to bottom. Do not start a later item or phase while
-  an earlier item is incomplete unless the user explicitly reprioritizes the
-  work.
+- `IMPLEMENTATION_PLAN.md` is the current agreed roadmap and progress record.
+  Read it before selecting the next work slice.
+- Use the next incomplete plan item by default, but treat the plan as a working
+  document rather than an immutable specification. If new information suggests
+  a better sequence or scope, explain the proposed change and agree it with the
+  user before deviating from the current roadmap.
+- The plan may be clarified, extended, split, combined, reordered, or reduced
+  after that agreement. Update it when the direction changes so future work
+  does not have to reconstruct the decision from conversation history.
 - When the plan says that a support boundary must be agreed separately, agree
   it with the user before writing tests or production code for that slice.
-- Update the plan in the same coherent change that completes a work item: mark
-  the item complete and identify the next item. Do not duplicate changing plan
-  status in this file.
+- Update the plan in the same coherent change that completes a work item or
+  applies an agreed plan revision. Mark completed items and identify the next
+  item. Do not duplicate changing plan status in this file.
 
 ## Test design
 
