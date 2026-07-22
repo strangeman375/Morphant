@@ -341,6 +341,57 @@ internal sealed class TemplateExtensionContentActualizationTests
                 expected));
     }
 
+    [Test]
+    public void Keeps_extension_documentation_unchanged_when_destination_documentation_changes()
+    {
+        var expected = ExpectedGeneratedReferenceExtension(
+            "TestCase_Destination",
+            "global::TestCase.Destination",
+            "global::TestCase.Morphant.Generated." +
+            "DestinationMorphantTemplate");
+
+        // lang=c#
+        const string initialDocumentation =
+"""
+    /// <summary>
+    /// Represents the initial destination.
+    /// </summary>
+
+""";
+
+        // lang=c#
+        const string editedDocumentation =
+"""
+    /// <summary>
+    /// Represents the edited destination.
+    /// </summary>
+    /// <remarks>
+    /// This destination-specific text must not appear on Template methods.
+    /// </remarks>
+
+""";
+
+        RunAndAssert(
+            Step(
+                "undocumented destination",
+                BuildDestinationDocumentationSource(string.Empty),
+                expected),
+            Step(
+                "destination documentation added",
+                BuildDestinationDocumentationSource(
+                    initialDocumentation),
+                expected),
+            Step(
+                "destination documentation edited",
+                BuildDestinationDocumentationSource(
+                    editedDocumentation),
+                expected),
+            Step(
+                "destination documentation removed",
+                BuildDestinationDocumentationSource(string.Empty),
+                expected));
+    }
+
     private static (string HintName, string Source)
         ExpectedConstructedExtension(string typeArgument)
     {
@@ -462,6 +513,14 @@ internal sealed class TemplateExtensionContentActualizationTests
                 mappingModeArgument)
             .Replace("__DESTINATION_BODY__", destinationBody)
             .Replace("__TEMPLATE_BODY__", templateBody);
+    }
+
+    private static string BuildDestinationDocumentationSource(
+        string destinationDocumentation)
+    {
+        return DestinationDocumentationSourceTemplate.Replace(
+            "__DESTINATION_DOCUMENTATION__",
+            destinationDocumentation);
     }
 
     // lang=c#
@@ -669,6 +728,40 @@ __DESTINATION_BODY__
 namespace TestCase.Morphant.Generated
 {
     internal sealed record DestinationMorphantTemplate__TEMPLATE_BODY__
+}
+""";
+
+    // lang=c#
+    private const string DestinationDocumentationSourceTemplate =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+__DESTINATION_DOCUMENTATION__    public sealed class Destination
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>();
+        }
+    }
+}
+
+namespace TestCase.Morphant.Generated
+{
+    internal sealed record DestinationMorphantTemplate;
 }
 """;
 }

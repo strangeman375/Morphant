@@ -1164,11 +1164,30 @@ namespace TestCase
                  {
                      internal static partial class MorphantGeneratedTemplateExtensions
                      {
+                         /// <summary>
+                         /// Configures a mapping template.
+                         /// </summary>
+                         /// <typeparam name="TSource">The source type.</typeparam>
+                         /// <param name="builder">The mapping builder to configure.</param>
+                         /// <param name="template">
+                         /// A lambda expression that receives the source value and describes the mapping.
+                         /// </param>
+                         /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{type}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{type}}> builder,
                              global::System.Func<TSource, {{type}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
+                         /// <summary>
+                         /// Configures a mapping template that depends on the destination's previous state.
+                         /// </summary>
+                         /// <typeparam name="TSource">The source type.</typeparam>
+                         /// <param name="builder">The mapping builder to configure.</param>
+                         /// <param name="template">
+                         /// A lambda expression that receives the source value and the previous destination value
+                         /// and describes the mapping.
+                         /// </param>
+                         /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{type}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{type}}> builder,
                              global::System.Func<TSource, {{existingDestinationType}}, {{type}}> template)
@@ -1191,11 +1210,30 @@ namespace TestCase
                  {
                      internal static partial class MorphantGeneratedTemplateExtensions
                      {
+                         /// <summary>
+                         /// Configures a mapping template.
+                         /// </summary>
+                         /// <typeparam name="TSource">The source type.</typeparam>
+                         /// <param name="builder">The mapping builder to configure.</param>
+                         /// <param name="template">
+                         /// A lambda expression that receives the source value and describes the mapping.
+                         /// </param>
+                         /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{destinationType}}> builder,
                              global::System.Func<TSource, {{templateType}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
+                         /// <summary>
+                         /// Configures a mapping template that depends on the destination's previous state.
+                         /// </summary>
+                         /// <typeparam name="TSource">The source type.</typeparam>
+                         /// <param name="builder">The mapping builder to configure.</param>
+                         /// <param name="template">
+                         /// A lambda expression that receives the source value and the previous destination value
+                         /// and describes the mapping.
+                         /// </param>
+                         /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{destinationType}}> builder,
                              global::System.Func<TSource, {{existingDestinationType}}, {{templateType}}> template)
@@ -1275,11 +1313,30 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedTemplateExtensions
     {
+        /// <summary>
+        /// Configures a mapping template.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="template">
+        /// A lambda expression that receives the source value and describes the mapping.
+        /// </param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<global::TestCase.User?>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<global::TestCase.User?>> builder,
             global::System.Func<TSource, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<global::TestCase.User?>> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
+        /// <summary>
+        /// Configures a mapping template that depends on the destination's previous state.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="template">
+        /// A lambda expression that receives the source value and the previous destination value
+        /// and describes the mapping.
+        /// </param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<global::TestCase.User?>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<global::TestCase.User?>> builder,
             global::System.Func<TSource, global::TestCase.Destination<global::TestCase.User?>?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<global::TestCase.User?>> template)
@@ -1298,11 +1355,30 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedTemplateExtensions
     {
+        /// <summary>
+        /// Configures a mapping template.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="template">
+        /// A lambda expression that receives the source value and describes the mapping.
+        /// </param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<int>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<int>> builder,
             global::System.Func<TSource, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<int>> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
+        /// <summary>
+        /// Configures a mapping template that depends on the destination's previous state.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="template">
+        /// A lambda expression that receives the source value and the previous destination value
+        /// and describes the mapping.
+        /// </param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<int>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<int>> builder,
             global::System.Func<TSource, global::TestCase.Destination<int>?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<int>> template)
@@ -1321,11 +1397,30 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedTemplateExtensions
     {
+        /// <summary>
+        /// Configures a mapping template.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="template">
+        /// A lambda expression that receives the source value and describes the mapping.
+        /// </param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<string>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<string>> builder,
             global::System.Func<TSource, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<string>> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
+        /// <summary>
+        /// Configures a mapping template that depends on the destination's previous state.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="template">
+        /// A lambda expression that receives the source value and the previous destination value
+        /// and describes the mapping.
+        /// </param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<string>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<string>> builder,
             global::System.Func<TSource, global::TestCase.Destination<string>?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<string>> template)
@@ -1344,11 +1439,30 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedTemplateExtensions
     {
+        /// <summary>
+        /// Configures a mapping template.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="template">
+        /// A lambda expression that receives the source value and describes the mapping.
+        /// </param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Outer<int>.Destination<string?>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Outer<int>.Destination<string?>> builder,
             global::System.Func<TSource, global::TestCase.Morphant.Generated.Outer1Scope.DestinationMorphantTemplate<int, string?>> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
+        /// <summary>
+        /// Configures a mapping template that depends on the destination's previous state.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="template">
+        /// A lambda expression that receives the source value and the previous destination value
+        /// and describes the mapping.
+        /// </param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Outer<int>.Destination<string?>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Outer<int>.Destination<string?>> builder,
             global::System.Func<TSource, global::TestCase.Outer<int>.Destination<string?>?, global::TestCase.Morphant.Generated.Outer1Scope.DestinationMorphantTemplate<int, string?>> template)
