@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Morphant.Generator.MapperBuilderMap;
 using Morphant.Generator.TemplateSurface;
 using Morphant.Generator.TemplateSurface.TemplateType;
 using Morphant.Generator.TypeMapperConfigure;
@@ -11,7 +12,12 @@ internal sealed class TestTemplateTypeGenerator : IIncrementalGenerator
     {
         var compilationContext = CompilationContextPipeline.Build(context);
         var typeMapperConfigureInfos = TypeMapperConfigurePipeline.Build(context, compilationContext);
-        var destinationTypeInfos = TemplateDestinationTypePipeline.Build(compilationContext, typeMapperConfigureInfos);
+        var mapInfos = MapperBuilderMapPipeline.Build(
+            compilationContext,
+            typeMapperConfigureInfos);
+        var destinationTypeInfos = TemplateDestinationTypePipeline.Build(
+            compilationContext,
+            mapInfos);
 
         TemplateTypePipeline.Register(context, compilationContext, destinationTypeInfos);
     }

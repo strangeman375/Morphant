@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Morphant.Generator.TypeMapperConfigure;
+using Morphant.Generator.MapperBuilderMap;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -11,9 +11,9 @@ internal static class TypeMapperPipeline
     public static void Register(
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
-        IncrementalValuesProvider<TypeMapperConfigureInfo> configureInfos)
+        IncrementalValuesProvider<MapperBuilderMapInfo> mapInfos)
     {
-        var requests = configureInfos
+        var requests = mapInfos
             .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
                 TryBuildGenerationInput(source, cancellationToken))
@@ -36,22 +36,17 @@ internal static class TypeMapperPipeline
 
     private static TypeMapperGenerationInput? TryBuildGenerationInput(
         (
-            TypeMapperConfigureInfo ConfigureInfo,
+            MapperBuilderMapInfo MapInfo,
             CompilationContext Context
         ) source,
         CancellationToken cancellationToken)
     {
-        var (configureInfo, context) = source;
-
-        if (context.KnownSymbols is not { } knownSymbols)
-        {
-            return null;
-        }
+        var (mapInfo, context) = source;
 
         var semanticModel = context.Compilation.GetSemanticModel(
-            configureInfo.Syntax.SyntaxTree);
+            mapInfo.ConfigureSyntax.SyntaxTree);
 
-        if (configureInfo.Syntax.Parent is not ClassDeclarationSyntax mapperDeclaration ||
+        if (mapInfo.ConfigureSyntax.Parent is not ClassDeclarationSyntax mapperDeclaration ||
             semanticModel.GetDeclaredSymbol(
                 mapperDeclaration,
                 cancellationToken) is not INamedTypeSymbol mapperType ||
@@ -63,9 +58,7 @@ internal static class TypeMapperPipeline
         }
 
         var mappings = BuildMappings(
-            configureInfo,
-            semanticModel,
-            knownSymbols,
+            mapInfo,
             cancellationToken);
 
         if (mappings.IsDefaultOrEmpty)
@@ -233,32 +226,18 @@ internal static class TypeMapperPipeline
     }
 
     private static ImmutableArray<TypeMapperMappingModel> BuildMappings(
-        TypeMapperConfigureInfo configureInfo,
-        SemanticModel semanticModel,
-        KnownSymbols knownSymbols,
+        MapperBuilderMapInfo mapInfo,
         CancellationToken cancellationToken)
     {
         var mappings =
             ImmutableArray.CreateBuilder<TypeMapperMappingModel>();
-        var seen = new HashSet<TypeMapperMappingModel>();
 
-        foreach (var invocation in configureInfo.Syntax
-                     .DescendantNodes()
-                     .OfType<InvocationExpressionSyntax>())
+        foreach (var registration in mapInfo.Registrations)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!IsMapInvocationCandidate(invocation) ||
-                semanticModel.GetSymbolInfo(
-                    invocation,
-                    cancellationToken).Symbol is not IMethodSymbol method ||
-                !IsMapperBuilderMapMethod(method, knownSymbols))
-            {
-                continue;
-            }
-
-            var sourceType = method.TypeArguments[0];
-            var destinationType = method.TypeArguments[1];
+            var sourceType = registration.SourceType;
+            var destinationType = registration.DestinationType;
 
             if (ContainsFileLocalType(sourceType) ||
                 ContainsFileLocalType(destinationType))
@@ -266,50 +245,15 @@ internal static class TypeMapperPipeline
                 continue;
             }
 
-            var mapping = new TypeMapperMappingModel(
-                sourceType.ToDisplayString(
-                    SymbolDisplayFormats.FullyQualifiedNullable),
-                destinationType.ToDisplayString(
-                    SymbolDisplayFormats.FullyQualifiedNullable));
-
-            if (seen.Add(mapping))
-            {
-                mappings.Add(mapping);
-            }
+            mappings.Add(
+                new TypeMapperMappingModel(
+                    sourceType.ToDisplayString(
+                        SymbolDisplayFormats.FullyQualifiedNullable),
+                    destinationType.ToDisplayString(
+                        SymbolDisplayFormats.FullyQualifiedNullable)));
         }
 
         return mappings.ToImmutable();
-    }
-
-    private static bool IsMapInvocationCandidate(
-        InvocationExpressionSyntax invocation)
-    {
-        return invocation is
-        {
-            ArgumentList.Arguments.Count: <= 1,
-            Expression: MemberAccessExpressionSyntax
-            {
-                Name: GenericNameSyntax
-                {
-                    Identifier.ValueText: "Map",
-                    TypeArgumentList.Arguments.Count: 2
-                }
-            }
-        };
-    }
-
-    private static bool IsMapperBuilderMapMethod(
-        IMethodSymbol method,
-        KnownSymbols knownSymbols)
-    {
-        return method.Name == "Map" &&
-               method.MethodKind == MethodKind.Ordinary &&
-               !method.IsStatic &&
-               method.Parameters.Length == 1 &&
-               method.TypeArguments.Length == 2 &&
-               SymbolEqualityComparer.Default.Equals(
-                   method.ContainingType,
-                   knownSymbols.MapperBuilder);
     }
 
     private static bool ContainsFileLocalType(ITypeSymbol type)

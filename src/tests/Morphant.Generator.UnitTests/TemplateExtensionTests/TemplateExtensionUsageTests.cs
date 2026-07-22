@@ -35,7 +35,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            MapperBuilder<Source, Destination> configured = builder
+            builder
                 .Map<Source, Destination>()
                 .NullSourceHandling(
                     global::Morphant.NullSourceHandling.Throw)
@@ -93,7 +93,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            MapperBuilder<Source, Destination> configured = builder
+            builder
                 .Map<Source, Destination>()
                 .Template(static (Source source) =>
                     new(source.Value))
@@ -141,7 +141,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            MapperBuilder<Source, string> configured = builder
+            builder
                 .Map<Source, string>()
                 .Template(static source => source.Value)
                 .Template(static (source, destination) =>
@@ -188,7 +188,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            MapperBuilder<Source, int> configured = builder
+            builder
                 .Map<Source, int>()
                 .Template(static source => source.Value)
                 .Template(static (source, destination) =>
@@ -382,7 +382,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            MapperBuilder<TSource, Destination> configured = builder
+            builder
                 .Map<TSource, Destination>()
                 .Template(static source =>
                     new(GetValue(source)))

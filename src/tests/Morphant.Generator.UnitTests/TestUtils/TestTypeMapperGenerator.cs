@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Morphant.Generator.MapperBuilderMap;
 using Morphant.Generator.TypeMapperGeneration;
 using Morphant.Generator.TypeMapperConfigure;
 
@@ -12,10 +13,13 @@ internal sealed class TestTypeMapperGenerator : IIncrementalGenerator
         var configureInfos = TypeMapperConfigurePipeline.Build(
             context,
             compilationContext);
+        var mapInfos = MapperBuilderMapPipeline.Build(
+            compilationContext,
+            configureInfos);
 
         TypeMapperPipeline.Register(
             context,
             compilationContext,
-            configureInfos);
+            mapInfos);
     }
 }

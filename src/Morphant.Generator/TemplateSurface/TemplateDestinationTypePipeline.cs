@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Morphant.Generator.TypeMapperConfigure;
+using Morphant.Generator.MapperBuilderMap;
 
 namespace Morphant.Generator.TemplateSurface;
 
@@ -10,16 +10,16 @@ internal static class TemplateDestinationTypePipeline
 {
     public static IncrementalValuesProvider<TemplateDestinationTypeInfo> Build(
         IncrementalValueProvider<CompilationContext> compilationContext,
-        IncrementalValuesProvider<TypeMapperConfigureInfo> configureInfos)
+        IncrementalValuesProvider<MapperBuilderMapInfo> mapInfos)
     {
-        var destinationTypes = configureInfos
+        var destinationTypes = mapInfos
             .Combine(compilationContext)
             .SelectMany(static (source, cancellationToken) =>
             {
-                var (configureInfo, context) = source;
+                var (mapInfo, context) = source;
 
                 return BuildDestinationTypes(
-                    configureInfo,
+                    mapInfo,
                     context,
                     cancellationToken);
             })
@@ -40,36 +40,23 @@ internal static class TemplateDestinationTypePipeline
 
     private static ImmutableArray<TemplateDestinationTypeInfo>
         BuildDestinationTypes(
-            TypeMapperConfigureInfo configureInfo,
+            MapperBuilderMapInfo mapInfo,
             CompilationContext context,
             CancellationToken cancellationToken)
     {
-        if (context.KnownSymbols is not { } knownSymbols)
-        {
-            return ImmutableArray<TemplateDestinationTypeInfo>.Empty;
-        }
-
         var semanticModel = context.Compilation.GetSemanticModel(
-            configureInfo.Syntax.SyntaxTree);
+            mapInfo.ConfigureSyntax.SyntaxTree);
 
         var result =
             ImmutableArray.CreateBuilder<TemplateDestinationTypeInfo>();
 
-        foreach (var invocation in configureInfo.Syntax
-                     .DescendantNodes()
-                     .OfType<InvocationExpressionSyntax>())
+        foreach (var registration in mapInfo.Registrations)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!IsMapInvocationCandidate(invocation))
-            {
-                continue;
-            }
-
             if (TryGetDestinationType(
-                    invocation,
+                    registration.Syntax,
                     semanticModel,
-                    knownSymbols,
                     cancellationToken) is { } destinationType)
             {
                 result.Add(destinationType);
@@ -79,39 +66,11 @@ internal static class TemplateDestinationTypePipeline
         return result.ToImmutable();
     }
 
-    private static bool IsMapInvocationCandidate(
-        InvocationExpressionSyntax invocation)
-    {
-        return invocation is
-        {
-            ArgumentList.Arguments.Count: <= 1,
-            Expression: MemberAccessExpressionSyntax
-            {
-                Name: GenericNameSyntax
-                {
-                    Identifier.ValueText: "Map",
-                    TypeArgumentList.Arguments.Count: 2
-                }
-            }
-        };
-    }
-
     private static TemplateDestinationTypeInfo? TryGetDestinationType(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
-        KnownSymbols knownSymbols,
         CancellationToken cancellationToken)
     {
-        var symbolInfo = semanticModel.GetSymbolInfo(
-            invocation,
-            cancellationToken);
-
-        if (symbolInfo.Symbol is not IMethodSymbol method ||
-            !IsMapperBuilderMapMethod(method, knownSymbols))
-        {
-            return null;
-        }
-
         if (invocation.Expression is not MemberAccessExpressionSyntax
             {
                 Name: GenericNameSyntax genericName
@@ -459,20 +418,6 @@ internal static class TemplateDestinationTypePipeline
                 left.ExplicitTupleElementNameCount +
                 right.ExplicitTupleElementNameCount);
         }
-    }
-
-    private static bool IsMapperBuilderMapMethod(
-        IMethodSymbol method,
-        KnownSymbols knownSymbols)
-    {
-        return method.Name == "Map" &&
-               method.MethodKind == MethodKind.Ordinary &&
-               !method.IsStatic &&
-               method.Parameters.Length == 1 &&
-               method.TypeArguments.Length == 2 &&
-               SymbolEqualityComparer.Default.Equals(
-                   method.ContainingType,
-                   knownSymbols.MapperBuilder);
     }
 
     private static TemplateDestinationTypeKind? GetDestinationTypeKind(
