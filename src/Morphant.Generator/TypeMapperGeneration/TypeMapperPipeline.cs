@@ -50,7 +50,9 @@ internal static class TypeMapperPipeline
             semanticModel.GetDeclaredSymbol(
                 mapperDeclaration,
                 cancellationToken) is not INamedTypeSymbol mapperType ||
-            !CanGenerate(mapperType))
+            !CanGenerate(
+                mapperType,
+                mapperDeclaration))
         {
             return null;
         }
@@ -73,8 +75,11 @@ internal static class TypeMapperPipeline
 
         var model = new TypeMapperModel(
             mapperNamespace,
+            BuildContainingTypes(mapperDeclaration),
             GetAccessibility(mapperType.DeclaredAccessibility),
             mapperDeclaration.Identifier.Text,
+            BuildTypeParameterList(
+                mapperDeclaration.TypeParameterList),
             mappings);
 
         var hintName = GeneratedSourceHintName.Create(
@@ -87,18 +92,108 @@ internal static class TypeMapperPipeline
             model);
     }
 
-    private static bool CanGenerate(INamedTypeSymbol mapperType)
+    private static bool CanGenerate(
+        INamedTypeSymbol mapperType,
+        ClassDeclarationSyntax mapperDeclaration)
     {
-        return mapperType.ContainingType is null &&
-               mapperType.Arity == 0 &&
-               !mapperType.IsFileLocal &&
-               mapperType.DeclaringSyntaxReferences.Any(static reference =>
-                   reference.GetSyntax() is ClassDeclarationSyntax declaration &&
-                   declaration.Modifiers.Any(
-                       SyntaxKind.PartialKeyword)) &&
-               mapperType.DeclaredAccessibility is
-                   Accessibility.Public or
-                   Accessibility.Internal;
+        if (!IsPartial(mapperDeclaration) ||
+            !IsSupportedAccessibility(
+                mapperType.DeclaredAccessibility) ||
+            mapperDeclaration
+                .Ancestors()
+                .OfType<TypeDeclarationSyntax>()
+                .Any(static declaration =>
+                    !IsPartial(declaration)))
+        {
+            return false;
+        }
+
+        for (var current = mapperType;
+             current is not null;
+             current = current.ContainingType)
+        {
+            if (current.IsFileLocal)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsPartial(
+        TypeDeclarationSyntax declaration)
+    {
+        return declaration.Modifiers.Any(
+            SyntaxKind.PartialKeyword);
+    }
+
+    private static bool IsSupportedAccessibility(
+        Accessibility accessibility)
+    {
+        return accessibility is
+            Accessibility.Public or
+            Accessibility.Internal or
+            Accessibility.Private or
+            Accessibility.Protected or
+            Accessibility.ProtectedAndInternal or
+            Accessibility.ProtectedOrInternal;
+    }
+
+    private static ImmutableArray<TypeMapperContainingTypeModel>
+        BuildContainingTypes(
+            ClassDeclarationSyntax mapperDeclaration)
+    {
+        return mapperDeclaration
+            .Ancestors()
+            .OfType<TypeDeclarationSyntax>()
+            .Reverse()
+            .Select(static declaration =>
+                new TypeMapperContainingTypeModel(
+                    GetDeclarationKind(declaration),
+                    declaration.Identifier.Text,
+                    BuildTypeParameterList(
+                        declaration.TypeParameterList)))
+            .ToImmutableArray();
+    }
+
+    private static string GetDeclarationKind(
+        TypeDeclarationSyntax declaration)
+    {
+        if (declaration is RecordDeclarationSyntax recordDeclaration)
+        {
+            return recordDeclaration.ClassOrStructKeyword.IsKind(
+                SyntaxKind.StructKeyword)
+                    ? "record struct"
+                    : "record";
+        }
+
+        return declaration switch
+        {
+            ClassDeclarationSyntax => "class",
+            StructDeclarationSyntax => "struct",
+            InterfaceDeclarationSyntax => "interface",
+            _ => throw new InvalidOperationException(
+                $"Unsupported containing type declaration: {declaration.Kind()}.")
+        };
+    }
+
+    private static string BuildTypeParameterList(
+        TypeParameterListSyntax? typeParameterList)
+    {
+        if (typeParameterList is null)
+        {
+            return string.Empty;
+        }
+
+        return
+            "<" +
+            string.Join(
+                ", ",
+                typeParameterList.Parameters.Select(
+                    static parameter =>
+                        parameter.Identifier.Text)) +
+            ">";
     }
 
     private static ImmutableArray<TypeMapperMappingModel> BuildMappings(
@@ -214,8 +309,18 @@ internal static class TypeMapperPipeline
     private static string GetAccessibility(
         Accessibility accessibility)
     {
-        return accessibility == Accessibility.Public
-            ? "public"
-            : "internal";
+        return accessibility switch
+        {
+            Accessibility.Public => "public",
+            Accessibility.Internal => "internal",
+            Accessibility.Private => "private",
+            Accessibility.Protected => "protected",
+            Accessibility.ProtectedAndInternal =>
+                "private protected",
+            Accessibility.ProtectedOrInternal =>
+                "protected internal",
+            _ => throw new InvalidOperationException(
+                $"Unsupported mapper accessibility: {accessibility}.")
+        };
     }
 }

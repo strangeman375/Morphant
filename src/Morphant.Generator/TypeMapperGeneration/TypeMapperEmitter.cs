@@ -18,7 +18,22 @@ internal static class TypeMapperEmitter
             writer.OpenBlock($"namespace {model.Namespace}");
         }
 
+        foreach (var containingType in model.ContainingTypes)
+        {
+            writer.OpenBlock(
+                $"partial {containingType.DeclarationKind} " +
+                containingType.TypeName +
+                containingType.TypeParameterList);
+        }
+
         WriteType(writer, model);
+
+        for (var index = model.ContainingTypes.Length - 1;
+             index >= 0;
+             index--)
+        {
+            writer.CloseBlock();
+        }
 
         if (model.Namespace.Length > 0)
         {
@@ -35,7 +50,10 @@ internal static class TypeMapperEmitter
         TypeMapperModel model)
     {
         writer.Line(
-            $"{model.Accessibility} partial class {model.TypeName} :");
+            $"{model.Accessibility} partial class " +
+            model.TypeName +
+            model.TypeParameterList +
+            " :");
         writer.Indent();
 
         for (var index = 0; index < model.Mappings.Length; index++)
