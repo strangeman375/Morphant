@@ -324,23 +324,10 @@ namespace TestCase
                 .Template(static source =>
                     new(source?.Value ?? 0));
 
-            builder.Map<
-                    (ReferenceSource Left, ValueSource Right),
-                    Destination>()
-                .Template(static (source, destination) =>
-                    new(
-                        source.Left.Value +
-                        source.Right.Value +
-                        (destination?.Value ?? 0)));
-
             builder.Map<GenericSource<string?>, Destination>()
                 .Template(static source =>
                     new(
                         source.Value?.Length ?? 0));
-
-            builder.Map<int[], Destination>()
-                .Template(static source =>
-                    new(source.Length));
 
             builder.Map<dynamic, Destination>()
                 .Template(static source =>

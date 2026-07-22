@@ -54,7 +54,11 @@ internal static class TemplateDestinationTypePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (TryGetDestinationType(
+            if (MappingTypePolicy.IsSupported(
+                    registration.SourceType) &&
+                MappingTypePolicy.IsSupported(
+                    registration.DestinationType) &&
+                TryGetDestinationType(
                     registration.Syntax,
                     semanticModel,
                     cancellationToken) is { } destinationType)

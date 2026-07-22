@@ -5,40 +5,6 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TypeMapperMappingTypePolicy
 {
-    public static bool IsSupported(ITypeSymbol type)
-    {
-        if (type.TypeKind == TypeKind.Error)
-        {
-            return false;
-        }
-
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            return IsSupported(arrayType.ElementType);
-        }
-
-        if (type is IPointerTypeSymbol or
-            IFunctionPointerTypeSymbol)
-        {
-            return false;
-        }
-
-        if (type is INamedTypeSymbol namedType)
-        {
-            if (namedType.IsFileLocal ||
-                namedType.ContainingType is { } containingType &&
-                !IsSupported(containingType))
-            {
-                return false;
-            }
-
-            return namedType.TypeArguments.All(IsSupported);
-        }
-
-        return type is ITypeParameterSymbol or
-            IDynamicTypeSymbol;
-    }
-
     public static bool AreEquivalent(
         ITypeSymbol left,
         ITypeSymbol right)

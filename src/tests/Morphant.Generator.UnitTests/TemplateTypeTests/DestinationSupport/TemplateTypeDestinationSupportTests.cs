@@ -345,11 +345,13 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
         await RunWithoutTemplateType(destinationType);
     }
 
-    [Test]
-    public async Task Does_not_generate_template_for_tuple_destination()
+    [TestCase("(int Id, string Name)")]
+    [TestCase("global::System.ValueTuple<int, string>")]
+    [TestCase("global::System.Tuple<int, string>")]
+    public async Task Does_not_generate_template_for_tuple_destination(
+        string destinationType)
     {
-        await RunWithoutTemplateType(
-            "(int Id, string Name)");
+        await RunWithoutTemplateType(destinationType);
     }
 
     [Test]
@@ -400,6 +402,39 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
             destinationDeclaration);
     }
 
+    [TestCase("global::System.Collections.IEnumerable")]
+    [TestCase("global::System.Collections.Generic.IEnumerable<int>")]
+    [TestCase("global::System.Collections.Generic.List<int>")]
+    [TestCase("global::System.Collections.Generic.Dictionary<int, string>")]
+    public async Task Does_not_generate_template_for_collection_destination(
+        string destinationType)
+    {
+        await RunWithoutTemplateType(destinationType);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_for_custom_collection_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public sealed class Destination :
+        global::System.Collections.Generic.IEnumerable<int>
+    {
+        public global::System.Collections.Generic.IEnumerator<int> GetEnumerator() =>
+            throw new global::System.NotImplementedException();
+
+        global::System.Collections.IEnumerator
+            global::System.Collections.IEnumerable.GetEnumerator() =>
+                GetEnumerator();
+    }
+""";
+
+        await RunWithoutTemplateType(
+            "Destination",
+            destinationDeclaration);
+    }
+
     [TestCase("Destination")]
     [TestCase("Destination?")]
     public async Task Does_not_generate_template_type_for_direct_enum_destination(
@@ -431,6 +466,56 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
         await RunWithoutTemplateType(
             "Destination",
             destinationDeclaration);
+    }
+
+    [Test]
+    public async Task Does_not_generate_template_when_source_is_unsupported()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Destination
+    {
+    }
+
+    public sealed class CustomCollection :
+        global::System.Collections.Generic.IEnumerable<int>
+    {
+        public global::System.Collections.Generic.IEnumerator<int> GetEnumerator() =>
+            throw new global::System.NotImplementedException();
+
+        global::System.Collections.IEnumerator
+            global::System.Collections.IEnumerable.GetEnumerator() =>
+                GetEnumerator();
+    }
+
+    public delegate void CustomDelegate();
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<(int Id, string Name), Destination>();
+            builder.Map<int[], Destination>();
+            builder.Map<global::System.Collections.Generic.List<int>, Destination>();
+            builder.Map<CustomCollection, Destination>();
+            builder.Map<CustomDelegate, Destination>();
+        }
+    }
+}
+""";
+
+        await TemplateTypeGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source);
     }
 
     [Test]

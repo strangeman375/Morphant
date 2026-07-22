@@ -29,7 +29,9 @@ namespace TestCase
     {
     }
 
-    public delegate void SourceDelegate(string value);
+    public readonly struct StructSource
+    {
+    }
 
     public readonly struct StructDestination
     {
@@ -57,16 +59,12 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<ClassSource, IInterfaceDestination>();
-            builder.Map<SourceDelegate, StructDestination>();
+            builder.Map<StructSource, StructDestination>();
             builder.Map<SourceEnum?, int?>();
-            builder.Map<string?[], object[,]>();
-            builder.Map<
-                (ClassSource Source, int Count),
-                (string? Text, SourceEnum Kind)>();
             builder.Map<
                 Generic<List<string?>>,
                 Outer<int>.Nested<ClassSource>>();
-            builder.Map<dynamic, Action>();
+            builder.Map<dynamic, Guid>();
         }
     }
 }
@@ -82,12 +80,10 @@ namespace TestCase
 {
     public partial class ConcreteMapper :
         global::Morphant.ITypeMapper<global::TestCase.ClassSource, global::TestCase.IInterfaceDestination>,
-        global::Morphant.ITypeMapper<global::TestCase.SourceDelegate, global::TestCase.StructDestination>,
+        global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.StructDestination>,
         global::Morphant.ITypeMapper<global::TestCase.SourceEnum?, int?>,
-        global::Morphant.ITypeMapper<string?[], object[,]>,
-        global::Morphant.ITypeMapper<(global::TestCase.ClassSource Source, int Count), (string? Text, global::TestCase.SourceEnum Kind)>,
         global::Morphant.ITypeMapper<global::TestCase.Generic<global::System.Collections.Generic.List<string?>>, global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>>,
-        global::Morphant.ITypeMapper<object, global::System.Action>
+        global::Morphant.ITypeMapper<object, global::System.Guid>
     {
         global::TestCase.IInterfaceDestination global::Morphant.ITypeMapper<global::TestCase.ClassSource, global::TestCase.IInterfaceDestination>.Map(
             global::TestCase.ClassSource source,
@@ -100,13 +96,13 @@ namespace TestCase
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.SourceDelegate, global::TestCase.StructDestination>.Map(
-            global::TestCase.SourceDelegate source,
+        global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.StructDestination>.Map(
+            global::TestCase.StructSource source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.SourceDelegate, global::TestCase.StructDestination>.Map(
-            global::TestCase.SourceDelegate source,
+        global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.StructDestination>.Map(
+            global::TestCase.StructSource source,
             global::TestCase.StructDestination destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
@@ -119,28 +115,6 @@ namespace TestCase
         int? global::Morphant.ITypeMapper<global::TestCase.SourceEnum?, int?>.Map(
             global::TestCase.SourceEnum? source,
             int? destination,
-            global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
-
-        object[,] global::Morphant.ITypeMapper<string?[], object[,]>.Map(
-            string?[] source,
-            global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
-
-        object[,] global::Morphant.ITypeMapper<string?[], object[,]>.Map(
-            string?[] source,
-            object[,] destination,
-            global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
-
-        (string? Text, global::TestCase.SourceEnum Kind) global::Morphant.ITypeMapper<(global::TestCase.ClassSource Source, int Count), (string? Text, global::TestCase.SourceEnum Kind)>.Map(
-            (global::TestCase.ClassSource Source, int Count) source,
-            global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
-
-        (string? Text, global::TestCase.SourceEnum Kind) global::Morphant.ITypeMapper<(global::TestCase.ClassSource Source, int Count), (string? Text, global::TestCase.SourceEnum Kind)>.Map(
-            (global::TestCase.ClassSource Source, int Count) source,
-            (string? Text, global::TestCase.SourceEnum Kind) destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
@@ -157,14 +131,14 @@ namespace TestCase
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        global::System.Action global::Morphant.ITypeMapper<object, global::System.Action>.Map(
+        global::System.Guid global::Morphant.ITypeMapper<object, global::System.Guid>.Map(
             object source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        global::System.Action global::Morphant.ITypeMapper<object, global::System.Action>.Map(
+        global::System.Guid global::Morphant.ITypeMapper<object, global::System.Guid>.Map(
             object source,
-            global::System.Action destination,
+            global::System.Guid destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
     }
@@ -176,6 +150,117 @@ namespace TestCase
             source,
             (
                 "Morphant.Generated.TypeMapper.TestCase_ConcreteMapper.g.cs",
+                expected
+            ));
+    }
+
+    [Test]
+    public async Task Skips_tuples_collections_and_delegates_in_both_mapping_positions()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class SafeSource
+    {
+    }
+
+    public sealed class SafeDestination
+    {
+    }
+
+    public sealed class CustomCollection : IEnumerable<int>
+    {
+        public IEnumerator<int> GetEnumerator() =>
+            throw new NotImplementedException();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    public struct StructCollection : IEnumerable<int>
+    {
+        public IEnumerator<int> GetEnumerator() =>
+            throw new NotImplementedException();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    public delegate void CustomDelegate(string value);
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<(int Id, string Name), SafeDestination>();
+            builder.Map<SafeSource, (int Id, string Name)>();
+            builder.Map<(int Id, string Name)?, SafeDestination>();
+            builder.Map<Tuple<int, string>, SafeDestination>();
+            builder.Map<SafeSource, Tuple<int, string>>();
+
+            builder.Map<int[], SafeDestination>();
+            builder.Map<int[][], SafeDestination>();
+            builder.Map<SafeSource, int[,]>();
+            builder.Map<IEnumerable, SafeDestination>();
+            builder.Map<SafeSource, IEnumerable<int>>();
+            builder.Map<List<int>, SafeDestination>();
+            builder.Map<SafeSource, Dictionary<int, string>>();
+            builder.Map<CustomCollection, SafeDestination>();
+            builder.Map<SafeSource, StructCollection?>();
+
+            builder.Map<CustomDelegate, SafeDestination>();
+            builder.Map<Func<int>, SafeDestination>();
+            builder.Map<SafeSource, Action>();
+            builder.Map<SafeSource, Delegate>();
+            builder.Map<MulticastDelegate, SafeDestination>();
+
+            builder.Map<string, SafeDestination>();
+        }
+    }
+}
+""";
+
+        // lang=c#
+        const string expected =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace TestCase
+{
+    public partial class TestMapper :
+        global::Morphant.ITypeMapper<string, global::TestCase.SafeDestination>
+    {
+        global::TestCase.SafeDestination global::Morphant.ITypeMapper<string, global::TestCase.SafeDestination>.Map(
+            string source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.SafeDestination();
+        }
+
+        global::TestCase.SafeDestination global::Morphant.ITypeMapper<string, global::TestCase.SafeDestination>.Map(
+            string source,
+            global::TestCase.SafeDestination destination,
+            global::Morphant.MappingContext context)
+            => throw new global::System.NotImplementedException();
+    }
+}
+""";
+
+        await TypeMapperGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
                 expected
             ));
     }
@@ -273,6 +358,10 @@ namespace TestCase
     {
     }
 
+    public sealed class Pair<TFirst, TSecond>
+    {
+    }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
@@ -281,12 +370,8 @@ namespace TestCase
             builder.Map<dynamic, object?>();
             builder.Map<object?, dynamic>();
 
-            builder.Map<
-                Box<(dynamic Item, string? Name)[]>,
-                (object? Value, int Count)>();
-            builder.Map<
-                Box<(object Value, string Name)[]>,
-                (dynamic Other, int Total)>();
+            builder.Map<Box<dynamic>, Pair<object?, string?>>();
+            builder.Map<Box<object>, Pair<dynamic, string>>();
 
             builder.Map<nint, nuint>();
             builder.Map<IntPtr, UIntPtr>();
@@ -305,7 +390,7 @@ namespace TestCase
 {
     public partial class TestMapper :
         global::Morphant.ITypeMapper<object, object?>,
-        global::Morphant.ITypeMapper<global::TestCase.Box<(object Item, string? Name)[]>, (object? Value, int Count)>,
+        global::Morphant.ITypeMapper<global::TestCase.Box<object>, global::TestCase.Pair<object?, string?>>,
         global::Morphant.ITypeMapper<nint, nuint>
     {
         object? global::Morphant.ITypeMapper<object, object?>.Map(
@@ -319,14 +404,16 @@ namespace TestCase
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        (object? Value, int Count) global::Morphant.ITypeMapper<global::TestCase.Box<(object Item, string? Name)[]>, (object? Value, int Count)>.Map(
-            global::TestCase.Box<(object Item, string? Name)[]> source,
+        global::TestCase.Pair<object?, string?> global::Morphant.ITypeMapper<global::TestCase.Box<object>, global::TestCase.Pair<object?, string?>>.Map(
+            global::TestCase.Box<object> source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Pair<object?, string?>();
+        }
 
-        (object? Value, int Count) global::Morphant.ITypeMapper<global::TestCase.Box<(object Item, string? Name)[]>, (object? Value, int Count)>.Map(
-            global::TestCase.Box<(object Item, string? Name)[]> source,
-            (object? Value, int Count) destination,
+        global::TestCase.Pair<object?, string?> global::Morphant.ITypeMapper<global::TestCase.Box<object>, global::TestCase.Pair<object?, string?>>.Map(
+            global::TestCase.Box<object> source,
+            global::TestCase.Pair<object?, string?> destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
@@ -478,11 +565,11 @@ namespace TestCase
     {
         protected override unsafe void Configure(MapperBuilder builder)
         {
-            builder.Map<int*[], SafeDestination>();
+            builder.Map<Envelope<int*[]>, SafeDestination>();
             builder.Map<
                 Envelope<delegate*<int, void>[]>,
                 SafeDestination>();
-            builder.Map<SafeSource, int*[,]>();
+            builder.Map<SafeSource, Envelope<int*[,]>>();
             builder.Map<
                 SafeSource,
                 Envelope<delegate* unmanaged<int, void>[]>>();
@@ -600,16 +687,6 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ArrayMapper<T> : TypeMapper
-    {
-        protected override void Configure(MapperBuilder builder)
-        {
-            builder.Map<T[], object>();
-            builder.Map<int[], object>();
-        }
-    }
-
-    [MorphantMapper]
     public partial class NestedContainingTypeMapper<T, U> : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
@@ -685,11 +762,18 @@ namespace TestCase
 """
 #pragma warning disable CS1591
 
-using System.Collections.Generic;
 using Morphant;
 
 namespace TestCase
 {
+    public sealed class Box<T>
+    {
+    }
+
+    public sealed class Pair<TFirst, TSecond>
+    {
+    }
+
     [MorphantMapper]
     public partial class TestMapper<T, U> : TypeMapper
     {
@@ -697,10 +781,9 @@ namespace TestCase
         {
             builder.Map<T, T>();
             builder.Map<int, string>();
-            builder.Map<T, List<T>>();
-            builder.Map<List<U>, U>();
-            builder.Map<T[], int>();
-            builder.Map<T[,], int>();
+            builder.Map<T, Box<T>>();
+            builder.Map<Box<U>, U>();
+            builder.Map<Pair<T, U>, int>();
         }
     }
 }
@@ -717,10 +800,9 @@ namespace TestCase
     public partial class TestMapper<T, U> :
         global::Morphant.ITypeMapper<T, T>,
         global::Morphant.ITypeMapper<int, string>,
-        global::Morphant.ITypeMapper<T, global::System.Collections.Generic.List<T>>,
-        global::Morphant.ITypeMapper<global::System.Collections.Generic.List<U>, U>,
-        global::Morphant.ITypeMapper<T[], int>,
-        global::Morphant.ITypeMapper<T[,], int>
+        global::Morphant.ITypeMapper<T, global::TestCase.Box<T>>,
+        global::Morphant.ITypeMapper<global::TestCase.Box<U>, U>,
+        global::Morphant.ITypeMapper<global::TestCase.Pair<T, U>, int>
     {
         T global::Morphant.ITypeMapper<T, T>.Map(
             T source,
@@ -744,46 +826,37 @@ namespace TestCase
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        global::System.Collections.Generic.List<T> global::Morphant.ITypeMapper<T, global::System.Collections.Generic.List<T>>.Map(
+        global::TestCase.Box<T> global::Morphant.ITypeMapper<T, global::TestCase.Box<T>>.Map(
             T source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Box<T>();
+        }
 
-        global::System.Collections.Generic.List<T> global::Morphant.ITypeMapper<T, global::System.Collections.Generic.List<T>>.Map(
+        global::TestCase.Box<T> global::Morphant.ITypeMapper<T, global::TestCase.Box<T>>.Map(
             T source,
-            global::System.Collections.Generic.List<T> destination,
+            global::TestCase.Box<T> destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        U global::Morphant.ITypeMapper<global::System.Collections.Generic.List<U>, U>.Map(
-            global::System.Collections.Generic.List<U> source,
+        U global::Morphant.ITypeMapper<global::TestCase.Box<U>, U>.Map(
+            global::TestCase.Box<U> source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        U global::Morphant.ITypeMapper<global::System.Collections.Generic.List<U>, U>.Map(
-            global::System.Collections.Generic.List<U> source,
+        U global::Morphant.ITypeMapper<global::TestCase.Box<U>, U>.Map(
+            global::TestCase.Box<U> source,
             U destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        int global::Morphant.ITypeMapper<T[], int>.Map(
-            T[] source,
+        int global::Morphant.ITypeMapper<global::TestCase.Pair<T, U>, int>.Map(
+            global::TestCase.Pair<T, U> source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();
 
-        int global::Morphant.ITypeMapper<T[], int>.Map(
-            T[] source,
-            int destination,
-            global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
-
-        int global::Morphant.ITypeMapper<T[,], int>.Map(
-            T[,] source,
-            global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
-
-        int global::Morphant.ITypeMapper<T[,], int>.Map(
-            T[,] source,
+        int global::Morphant.ITypeMapper<global::TestCase.Pair<T, U>, int>.Map(
+            global::TestCase.Pair<T, U> source,
             int destination,
             global::Morphant.MappingContext context)
             => throw new global::System.NotImplementedException();

@@ -150,6 +150,7 @@ internal sealed class TemplateExtensionDestinationSupportTests
 
     [TestCase("(int Id, string Name)")]
     [TestCase("global::System.ValueTuple<int, string>")]
+    [TestCase("global::System.Tuple<int, string>")]
     public async Task Does_not_generate_extension_for_tuple_destination(
         string destinationType)
     {
@@ -175,6 +176,39 @@ internal sealed class TemplateExtensionDestinationSupportTests
             destinationDeclaration);
     }
 
+    [TestCase("global::System.Collections.IEnumerable")]
+    [TestCase("global::System.Collections.Generic.IEnumerable<int>")]
+    [TestCase("global::System.Collections.Generic.List<int>")]
+    [TestCase("global::System.Collections.Generic.Dictionary<int, string>")]
+    public async Task Does_not_generate_extension_for_collection_destination(
+        string destinationType)
+    {
+        await RunWithoutExtension(destinationType);
+    }
+
+    [Test]
+    public async Task Does_not_generate_extension_for_custom_collection_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public sealed class Destination :
+        global::System.Collections.Generic.IEnumerable<int>
+    {
+        public global::System.Collections.Generic.IEnumerator<int> GetEnumerator() =>
+            throw new global::System.NotImplementedException();
+
+        global::System.Collections.IEnumerator
+            global::System.Collections.IEnumerable.GetEnumerator() =>
+                GetEnumerator();
+    }
+""";
+
+        await RunWithoutExtension(
+            "Destination",
+            destinationDeclaration);
+    }
+
     [TestCase("Destination", "public delegate void Destination();")]
     [TestCase("Destination?", "public delegate void Destination();")]
     [TestCase("Destination<int>", "public delegate void Destination<T>();")]
@@ -186,6 +220,48 @@ internal sealed class TemplateExtensionDestinationSupportTests
         await RunWithoutExtension(
             destinationType,
             "    " + destinationTypeDeclaration);
+    }
+
+    [Test]
+    public async Task Does_not_generate_extension_when_source_is_unsupported()
+    {
+        // lang=c#
+        const string declarations =
+"""
+    public sealed class Destination
+    {
+    }
+
+    public sealed class CustomCollection :
+        global::System.Collections.Generic.IEnumerable<int>
+    {
+        public global::System.Collections.Generic.IEnumerator<int> GetEnumerator() =>
+            throw new global::System.NotImplementedException();
+
+        global::System.Collections.IEnumerator
+            global::System.Collections.IEnumerable.GetEnumerator() =>
+                GetEnumerator();
+    }
+
+    public delegate void CustomDelegate();
+""";
+
+        // lang=c#
+        const string mapStatements =
+"""
+            builder.Map<(int Id, string Name), Destination>();
+            builder.Map<int[], Destination>();
+            builder.Map<global::System.Collections.Generic.List<int>, Destination>();
+            builder.Map<CustomCollection, Destination>();
+            builder.Map<CustomDelegate, Destination>();
+""";
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            BuildSource(
+                declarations,
+                mapStatements,
+                NonGenericTemplateStub));
     }
 
     [Test]

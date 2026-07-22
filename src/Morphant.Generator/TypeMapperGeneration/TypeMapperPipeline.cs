@@ -241,9 +241,9 @@ internal static class TypeMapperPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!TypeMapperMappingTypePolicy.IsSupported(
+            if (!MappingTypePolicy.IsSupported(
                     registration.SourceType) ||
-                !TypeMapperMappingTypePolicy.IsSupported(
+                !MappingTypePolicy.IsSupported(
                     registration.DestinationType) ||
                 registrations.Any(
                     existing =>
