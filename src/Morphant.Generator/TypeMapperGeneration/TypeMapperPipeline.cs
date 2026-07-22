@@ -229,61 +229,65 @@ internal static class TypeMapperPipeline
         MapperBuilderMapInfo mapInfo,
         CancellationToken cancellationToken)
     {
-        var mappings =
-            ImmutableArray.CreateBuilder<TypeMapperMappingModel>();
+        var registrations =
+            ImmutableArray.CreateBuilder<
+                MapperBuilderMapRegistrationInfo>();
 
         foreach (var registration in mapInfo.Registrations)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var sourceType = registration.SourceType;
-            var destinationType = registration.DestinationType;
-
-            if (ContainsFileLocalType(sourceType) ||
-                ContainsFileLocalType(destinationType))
+            if (!TypeMapperMappingTypePolicy.IsSupported(
+                    registration.SourceType) ||
+                !TypeMapperMappingTypePolicy.IsSupported(
+                    registration.DestinationType) ||
+                registrations.Any(
+                    existing =>
+                        TypeMapperMappingTypePolicy.AreEquivalent(
+                            existing.SourceType,
+                            registration.SourceType) &&
+                        TypeMapperMappingTypePolicy.AreEquivalent(
+                            existing.DestinationType,
+                            registration.DestinationType)))
             {
                 continue;
             }
 
-            mappings.Add(
-                new TypeMapperMappingModel(
-                    sourceType.ToDisplayString(
-                        SymbolDisplayFormats.FullyQualifiedNullable),
-                    destinationType.ToDisplayString(
-                        SymbolDisplayFormats.FullyQualifiedNullable)));
+            registrations.Add(registration);
         }
 
-        return mappings.ToImmutable();
-    }
-
-    private static bool ContainsFileLocalType(ITypeSymbol type)
-    {
-        if (type is IArrayTypeSymbol arrayType)
+        for (var leftIndex = 0;
+             leftIndex < registrations.Count;
+             leftIndex++)
         {
-            return ContainsFileLocalType(arrayType.ElementType);
-        }
-
-        if (type is IPointerTypeSymbol pointerType)
-        {
-            return ContainsFileLocalType(pointerType.PointedAtType);
-        }
-
-        if (type is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        for (var current = namedType;
-             current is not null;
-             current = current.ContainingType)
-        {
-            if (current.IsFileLocal)
+            for (var rightIndex = leftIndex + 1;
+                 rightIndex < registrations.Count;
+                 rightIndex++)
             {
-                return true;
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var left = registrations[leftIndex];
+                var right = registrations[rightIndex];
+
+                if (TypeMapperMappingTypePolicy.CanMappingsUnify(
+                        left.SourceType,
+                        left.DestinationType,
+                        right.SourceType,
+                        right.DestinationType))
+                {
+                    return default;
+                }
             }
         }
 
-        return namedType.TypeArguments.Any(ContainsFileLocalType);
+        return registrations
+            .Select(static registration =>
+                new TypeMapperMappingModel(
+                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                        registration.SourceType),
+                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                        registration.DestinationType)))
+            .ToImmutableArray();
     }
 
     private static string GetAccessibility(

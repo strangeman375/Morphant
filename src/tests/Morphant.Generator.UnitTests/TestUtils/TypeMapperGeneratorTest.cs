@@ -30,10 +30,39 @@ internal sealed class TypeMapperGeneratorTest : CSharpSourceGeneratorTest<TestTy
         string sourceFileContent,
         params (string FileName, string Content)[] expectedSources)
     {
+        await RunAndAssert(
+            languageVersion,
+            sourceFileContent,
+            allowUnsafe: false,
+            expectedSources);
+    }
+
+    public static async Task RunAndAssert(
+        LanguageVersion languageVersion,
+        string sourceFileContent,
+        bool allowUnsafe,
+        params (string FileName, string Content)[] expectedSources)
+    {
         var test = new TypeMapperGeneratorTest(languageVersion)
         {
             TestCode = sourceFileContent
         };
+
+        if (allowUnsafe)
+        {
+            test.SolutionTransforms.Add(
+                static (solution, projectId) =>
+                {
+                    var project = solution.GetProject(projectId)!;
+                    var options =
+                        ((CSharpCompilationOptions)project.CompilationOptions!)
+                        .WithAllowUnsafe(true);
+
+                    return solution.WithProjectCompilationOptions(
+                        project.Id,
+                        options);
+                });
+        }
 
         foreach (var expectedSource in expectedSources)
         {
