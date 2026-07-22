@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TemplateExtensionTests.Shape;
+namespace Morphant.Generator.UnitTests.TemplateExtensionTests;
 
 [TestFixture]
 internal sealed class TemplateExtensionShapeTests
