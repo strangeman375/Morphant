@@ -29,6 +29,8 @@
 - Generated hint names use
   `Morphant.Generated.<ArtifactKind>.<StableIdentity>.g.cs`, with a singular
   artifact kind.
+- Add a stable hash suffix only when two generated files of the same artifact
+  kind have an actual case-insensitive hint-name collision after sanitization.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes, or compatibility branches without a concrete user-facing need.
 - Diagnostics are a separate future scope. Unsupported cases currently skip

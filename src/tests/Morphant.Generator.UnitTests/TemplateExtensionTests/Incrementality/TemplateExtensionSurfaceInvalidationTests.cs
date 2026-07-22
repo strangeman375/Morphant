@@ -69,7 +69,7 @@ internal sealed class TemplateExtensionSurfaceInvalidationTests
     {
         const string nullableHintName =
             "Morphant.Generated.TemplateExtension." +
-            "System_Nullable_1_int___7d45e0b10f64f4d1.g.cs";
+            "System_Nullable_1_int_.g.cs";
         const string nonNullableHintName =
             "Morphant.Generated.TemplateExtension.System_Int32.g.cs";
 
@@ -100,7 +100,7 @@ internal sealed class TemplateExtensionSurfaceInvalidationTests
         const string nullableHintName =
             "Morphant.Generated.TemplateExtension." +
             "System_Nullable_1_global__TestCase_" +
-            "StructDestination___a1aeebe8bb0e4854.g.cs";
+            "StructDestination_.g.cs";
         const string nonNullableHintName =
             "Morphant.Generated.TemplateExtension." +
             "TestCase_StructDestination.g.cs";
@@ -134,16 +134,13 @@ internal sealed class TemplateExtensionSurfaceInvalidationTests
     {
         const string intHintName =
             "Morphant.Generated.TemplateExtension." +
-            "TestCase_ChangingDestination_1_int___" +
-            "e0dc5b0509e8cbce.g.cs";
+            "TestCase_ChangingDestination_1_int_.g.cs";
         const string nullableStringHintName =
             "Morphant.Generated.TemplateExtension." +
-            "TestCase_ChangingDestination_1_string____" +
-            "2040dc9137256187.g.cs";
+            "TestCase_ChangingDestination_1_string__.g.cs";
         const string dynamicHintName =
             "Morphant.Generated.TemplateExtension." +
-            "TestCase_ChangingDestination_1_dynamic___" +
-            "0a0fbd5397ddb59a.g.cs";
+            "TestCase_ChangingDestination_1_dynamic_.g.cs";
 
         RunAndAssert(
             Step(

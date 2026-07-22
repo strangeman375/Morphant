@@ -282,8 +282,7 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
     {
         const string closedHintName =
             "Morphant.Generated.TemplateExtension." +
-            "TestCase_GenericDestination_1_int___" +
-            "b7900cafc9c698ba.g.cs";
+            "TestCase_GenericDestination_1_int_.g.cs";
 
         RunAndAssert(
             Step(

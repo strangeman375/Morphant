@@ -130,7 +130,7 @@ internal sealed class TemplateExtensionLifecycleTests
     public void Follows_destination_between_generated_direct_and_no_surface_outcomes()
     {
         const string hintNamePart =
-            "TestCase_Models_Destination__84a940df8bb69798";
+            "TestCase_Models_Destination";
         const string destinationType =
             "global::TestCase.Models.Destination";
 

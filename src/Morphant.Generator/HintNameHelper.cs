@@ -10,18 +10,17 @@ public static class HintNameHelper
 
     public static string ToHintNamePart(string value)
     {
-        var hintNamePart = ToReadableHintNamePart(
-            value,
-            out var requiresDisambiguation);
+        var builder = new StringBuilder(value.Length);
 
-        return requiresDisambiguation
-            ? AppendStableHash(hintNamePart, value)
-            : hintNamePart;
-    }
+        foreach (var character in value)
+        {
+            builder.Append(
+                char.IsLetterOrDigit(character)
+                    ? character
+                    : '_');
+        }
 
-    internal static string ToReadableHintNamePart(string value)
-    {
-        return ToReadableHintNamePart(value, out _);
+        return builder.ToString();
     }
 
     internal static string AppendStableHash(
@@ -29,32 +28,6 @@ public static class HintNameHelper
         string value)
     {
         return hintNamePart + "__" + GetStableHash(value);
-    }
-
-    private static string ToReadableHintNamePart(
-        string value,
-        out bool requiresDisambiguation)
-    {
-        var builder = new StringBuilder(value.Length);
-        requiresDisambiguation = false;
-
-        foreach (var character in value)
-        {
-            if (char.IsLetterOrDigit(character))
-            {
-                builder.Append(character);
-                continue;
-            }
-
-            builder.Append('_');
-
-            // Dots are unambiguous separators in a top-level metadata name.
-            // Other characters can collide with dots or with each other after
-            // replacement, for example A.B_C and A_B.C.
-            requiresDisambiguation |= character != '.';
-        }
-
-        return builder.ToString();
     }
 
     private static string GetStableHash(string value)
@@ -73,5 +46,43 @@ public static class HintNameHelper
                 "x16",
                 CultureInfo.InvariantCulture);
         }
+    }
+}
+
+internal sealed class HintNamePartAllocator
+{
+    private readonly HashSet<string> _usedHintNameParts =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public string Allocate(string stableIdentity)
+    {
+        var readableHintNamePart =
+            HintNameHelper.ToHintNamePart(stableIdentity);
+
+        if (_usedHintNameParts.Add(readableHintNamePart))
+        {
+            return readableHintNamePart;
+        }
+
+        var hintNamePart = HintNameHelper.AppendStableHash(
+            readableHintNamePart,
+            stableIdentity);
+
+        var collisionIndex = 2;
+
+        while (!_usedHintNameParts.Add(hintNamePart))
+        {
+            hintNamePart =
+                HintNameHelper.AppendStableHash(
+                    readableHintNamePart,
+                    stableIdentity) +
+                "_" +
+                collisionIndex.ToString(
+                    CultureInfo.InvariantCulture);
+
+            collisionIndex++;
+        }
+
+        return hintNamePart;
     }
 }

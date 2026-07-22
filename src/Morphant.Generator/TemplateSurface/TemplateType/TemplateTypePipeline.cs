@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -82,40 +81,14 @@ internal static class TemplateTypePipeline
             ImmutableArray.CreateBuilder<TemplateTypeGenerationInput>(
                 result.Count);
 
-        var usedHintNameParts =
-            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var hintNamePartAllocator = new HintNamePartAllocator();
 
         foreach (var definition in result)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var readableHintNamePart =
-                HintNameHelper.ToReadableHintNamePart(
-                    definition.MetadataName);
-
-            var hintNamePart = readableHintNamePart;
-
-            if (!usedHintNameParts.Add(hintNamePart))
-            {
-                hintNamePart = HintNameHelper.AppendStableHash(
-                    readableHintNamePart,
-                    definition.MetadataName);
-
-                var collisionIndex = 2;
-
-                while (!usedHintNameParts.Add(hintNamePart))
-                {
-                    hintNamePart =
-                        HintNameHelper.AppendStableHash(
-                            readableHintNamePart,
-                            definition.MetadataName) +
-                        "_" +
-                        collisionIndex.ToString(
-                            CultureInfo.InvariantCulture);
-
-                    collisionIndex++;
-                }
-            }
+            var hintNamePart = hintNamePartAllocator.Allocate(
+                definition.MetadataName);
 
             generationInputs.Add(
                 new TemplateTypeGenerationInput(

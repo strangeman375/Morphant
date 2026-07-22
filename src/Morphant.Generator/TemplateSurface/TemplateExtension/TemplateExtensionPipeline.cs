@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -86,8 +85,7 @@ internal static class TemplateExtensionPipeline
                         right.FullyQualifiedName);
             });
 
-        var usedHintNameParts =
-            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var hintNamePartAllocator = new HintNamePartAllocator();
 
         var requests =
             ImmutableArray.CreateBuilder<TemplateExtensionRequest>(
@@ -97,34 +95,8 @@ internal static class TemplateExtensionPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var hintNamePart = HintNameHelper.ToHintNamePart(
+            var hintNamePart = hintNamePartAllocator.Allocate(
                 destinationType.UsageIdentity);
-
-            if (!usedHintNameParts.Add(hintNamePart))
-            {
-                var readableHintNamePart =
-                    HintNameHelper.ToReadableHintNamePart(
-                        destinationType.UsageIdentity);
-
-                hintNamePart = HintNameHelper.AppendStableHash(
-                    readableHintNamePart,
-                    destinationType.UsageIdentity);
-
-                var collisionIndex = 2;
-
-                while (!usedHintNameParts.Add(hintNamePart))
-                {
-                    hintNamePart =
-                        HintNameHelper.AppendStableHash(
-                            readableHintNamePart,
-                            destinationType.UsageIdentity) +
-                        "_" +
-                        collisionIndex.ToString(
-                            CultureInfo.InvariantCulture);
-
-                    collisionIndex++;
-                }
-            }
 
             requests.Add(Build(destinationType, hintNamePart));
         }

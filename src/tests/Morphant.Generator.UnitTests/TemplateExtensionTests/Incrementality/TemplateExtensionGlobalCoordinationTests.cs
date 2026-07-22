@@ -9,33 +9,28 @@ internal sealed class TemplateExtensionGlobalCoordinationTests
 {
     private const string NullableLessPreferredHintName =
         "Morphant.Generated.TemplateExtension." +
-        "TestCase_NullableDestination_1_string____" +
-        "b64ec6cc8fc799d5.g.cs";
+        "TestCase_NullableDestination_1_string__.g.cs";
 
     private const string NullablePreferredHintName =
         "Morphant.Generated.TemplateExtension." +
-        "TestCase_NullableDestination_1_string___" +
-        "16200651af1de0b6.g.cs";
+        "TestCase_NullableDestination_1_string_.g.cs";
 
     private const string DynamicLessPreferredHintName =
         "Morphant.Generated.TemplateExtension." +
-        "TestCase_DynamicDestination_1_dynamic___" +
-        "6b8a07a128236db2.g.cs";
+        "TestCase_DynamicDestination_1_dynamic_.g.cs";
 
     private const string DynamicPreferredHintName =
         "Morphant.Generated.TemplateExtension." +
-        "TestCase_DynamicDestination_1_object___" +
-        "91eadf3e59f1b642.g.cs";
+        "TestCase_DynamicDestination_1_object_.g.cs";
 
     private const string TupleLessPreferredHintName =
         "Morphant.Generated.TemplateExtension." +
         "TestCase_TupleDestination_1__int_Id__" +
-        "string_Name____f7175c39d6140b21.g.cs";
+        "string_Name__.g.cs";
 
     private const string TuplePreferredHintName =
         "Morphant.Generated.TemplateExtension." +
-        "TestCase_TupleDestination_1__int__string____" +
-        "c03f8b6309bd87d3.g.cs";
+        "TestCase_TupleDestination_1__int__string__.g.cs";
 
     private const string StableHintName =
         "Morphant.Generated.TemplateExtension.TestCase_ZStableDestination.g.cs";

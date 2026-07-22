@@ -163,7 +163,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper_2__af7465ea4c883c3e.g.cs",
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper_2.g.cs",
                 expected
             ));
     }
@@ -252,7 +252,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.TypeMapper.TestCase_Outer_1_Middle_1_Inner_1_TestMapper_1__391726c1ef7b2d5d.g.cs",
+                "Morphant.Generated.TypeMapper.TestCase_Outer_1_Middle_1_Inner_1_TestMapper_1.g.cs",
                 expected
             ));
     }
@@ -329,7 +329,7 @@ namespace TestCase
             LanguageVersion.CSharp10,
             source,
             (
-                "Morphant.Generated.TypeMapper.TestCase_IContainer_1_Payload_1_TestMapper__d5ebc855a2d49e5a.g.cs",
+                "Morphant.Generated.TypeMapper.TestCase_IContainer_1_Payload_1_TestMapper.g.cs",
                 expected
             ));
     }
@@ -412,7 +412,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.TypeMapper.TestCase_Container_TestMapper__04af4b8cdba275d4.g.cs",
+                "Morphant.Generated.TypeMapper.TestCase_Container_TestMapper.g.cs",
                 expected
             ));
     }

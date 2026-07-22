@@ -700,8 +700,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 GenericTemplateStub),
             (
                 "Morphant.Generated.TemplateExtension." +
-                "TestCase_Destination_1_global__TestCase_User____" +
-                "e161f976f3b0adf9.g.cs",
+                "TestCase_Destination_1_global__TestCase_User__.g.cs",
                 ExpectedNullableGenericExtension
             ));
     }
@@ -849,8 +848,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 GenericTemplateStub),
             (
                 "Morphant.Generated.TemplateExtension." +
-                "TestCase_Destination_1_int___" +
-                "a212525a5607429d.g.cs",
+                "TestCase_Destination_1_int_.g.cs",
                 BuildExpectedGeneratedExtension(
                     "global::TestCase.Destination<int>",
                     "global::TestCase.Morphant.Generated." +
@@ -888,14 +886,12 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 GenericTemplateStub),
             (
                 "Morphant.Generated.TemplateExtension." +
-                "TestCase_Destination_1_int___" +
-                "a212525a5607429d.g.cs",
+                "TestCase_Destination_1_int_.g.cs",
                 ExpectedIntGenericExtension
             ),
             (
                 "Morphant.Generated.TemplateExtension." +
-                "TestCase_Destination_1_string___" +
-                "887c5e6840177255.g.cs",
+                "TestCase_Destination_1_string_.g.cs",
                 ExpectedStringGenericExtension
             ));
     }
@@ -923,8 +919,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 NestedGenericTemplateStub),
             (
                 "Morphant.Generated.TemplateExtension." +
-                "TestCase_Outer_1_Destination_1_int__string____" +
-                "1f963160e176dad2.g.cs",
+                "TestCase_Outer_1_Destination_1_int__string__.g.cs",
                 ExpectedNestedGenericExtension
             ));
     }
@@ -1117,7 +1112,7 @@ namespace TestCase
             "Morphant.Generator.UnitTests.TestAssets.ReferencedDestination" =>
                 "Morphant_Generator_UnitTests_TestAssets_ReferencedDestination",
             "Morphant.Generator.UnitTests.TestAssets.ReferencedGenericDestination`1<string>" =>
-                "Morphant_Generator_UnitTests_TestAssets_ReferencedGenericDestination_1_string___d8d840c16ce06d75",
+                "Morphant_Generator_UnitTests_TestAssets_ReferencedGenericDestination_1_string_",
             "System.Boolean" =>
                 "System_Boolean",
             "System.Byte" =>
@@ -1151,67 +1146,67 @@ namespace TestCase
             "System.IntPtr" =>
                 "System_IntPtr",
             "System.Nullable`1<bool>" =>
-                "System_Nullable_1_bool___4df6b1bcb377cf3e",
+                "System_Nullable_1_bool_",
             "System.Nullable`1<byte>" =>
-                "System_Nullable_1_byte___bd82412e67f076e8",
+                "System_Nullable_1_byte_",
             "System.Nullable`1<char>" =>
-                "System_Nullable_1_char___7639ecb5376dbbe2",
+                "System_Nullable_1_char_",
             "System.Nullable`1<decimal>" =>
-                "System_Nullable_1_decimal___a19b0d4f7fe22c9f",
+                "System_Nullable_1_decimal_",
             "System.Nullable`1<double>" =>
-                "System_Nullable_1_double___0ea1965ff8720a8d",
+                "System_Nullable_1_double_",
             "System.Nullable`1<float>" =>
-                "System_Nullable_1_float___ced16b7b3299ead0",
+                "System_Nullable_1_float_",
             "System.Nullable`1<global::System.DateOnly>" =>
-                "System_Nullable_1_global__System_DateOnly___9366ff1ee268685c",
+                "System_Nullable_1_global__System_DateOnly_",
             "System.Nullable`1<global::System.DateTime>" =>
-                "System_Nullable_1_global__System_DateTime___9d17bf23ad831f5d",
+                "System_Nullable_1_global__System_DateTime_",
             "System.Nullable`1<global::System.DateTimeOffset>" =>
-                "System_Nullable_1_global__System_DateTimeOffset___87a81c9caab3f4f0",
+                "System_Nullable_1_global__System_DateTimeOffset_",
             "System.Nullable`1<global::System.Guid>" =>
-                "System_Nullable_1_global__System_Guid___bbf6f8313e5a607d",
+                "System_Nullable_1_global__System_Guid_",
             "System.Nullable`1<global::System.Half>" =>
-                "System_Nullable_1_global__System_Half___ae31267332346df1",
+                "System_Nullable_1_global__System_Half_",
             "System.Nullable`1<global::System.Index>" =>
-                "System_Nullable_1_global__System_Index___9c9e151f7bbc19b2",
+                "System_Nullable_1_global__System_Index_",
             "System.Nullable`1<global::System.Int128>" =>
-                "System_Nullable_1_global__System_Int128___09da207b976fff58",
+                "System_Nullable_1_global__System_Int128_",
             "System.Nullable`1<global::System.Numerics.BigInteger>" =>
-                "System_Nullable_1_global__System_Numerics_BigInteger___98a17ac6005dfd8c",
+                "System_Nullable_1_global__System_Numerics_BigInteger_",
             "System.Nullable`1<global::System.Numerics.Complex>" =>
-                "System_Nullable_1_global__System_Numerics_Complex___62269ba80b3273b0",
+                "System_Nullable_1_global__System_Numerics_Complex_",
             "System.Nullable`1<global::System.Range>" =>
-                "System_Nullable_1_global__System_Range___7d2ca1569bdf6e8d",
+                "System_Nullable_1_global__System_Range_",
             "System.Nullable`1<global::System.Text.Rune>" =>
-                "System_Nullable_1_global__System_Text_Rune___ab5c22a4797f9c6b",
+                "System_Nullable_1_global__System_Text_Rune_",
             "System.Nullable`1<global::System.TimeOnly>" =>
-                "System_Nullable_1_global__System_TimeOnly___b819988b3624a363",
+                "System_Nullable_1_global__System_TimeOnly_",
             "System.Nullable`1<global::System.TimeSpan>" =>
-                "System_Nullable_1_global__System_TimeSpan___4a20d129bcbc8975",
+                "System_Nullable_1_global__System_TimeSpan_",
             "System.Nullable`1<global::System.UInt128>" =>
-                "System_Nullable_1_global__System_UInt128___34541e2275456c89",
+                "System_Nullable_1_global__System_UInt128_",
             "System.Nullable`1<global::TestCase.Destination<int>>" =>
-                "System_Nullable_1_global__TestCase_Destination_int____6efe5daae75cd750",
+                "System_Nullable_1_global__TestCase_Destination_int__",
             "System.Nullable`1<global::TestCase.Destination>" =>
-                "System_Nullable_1_global__TestCase_Destination___19e6d3705ef85e11",
+                "System_Nullable_1_global__TestCase_Destination_",
             "System.Nullable`1<int>" =>
-                "System_Nullable_1_int___7d45e0b10f64f4d1",
+                "System_Nullable_1_int_",
             "System.Nullable`1<long>" =>
-                "System_Nullable_1_long___f5f9a2e31fa2375c",
+                "System_Nullable_1_long_",
             "System.Nullable`1<nint>" =>
-                "System_Nullable_1_nint___798d651cdd512a3b",
+                "System_Nullable_1_nint_",
             "System.Nullable`1<nuint>" =>
-                "System_Nullable_1_nuint___513079d293d515ac",
+                "System_Nullable_1_nuint_",
             "System.Nullable`1<sbyte>" =>
-                "System_Nullable_1_sbyte___32da8cbe2dbcdc6b",
+                "System_Nullable_1_sbyte_",
             "System.Nullable`1<short>" =>
-                "System_Nullable_1_short___3d107169614015b8",
+                "System_Nullable_1_short_",
             "System.Nullable`1<uint>" =>
-                "System_Nullable_1_uint___9a5d5d570fd42f1e",
+                "System_Nullable_1_uint_",
             "System.Nullable`1<ulong>" =>
-                "System_Nullable_1_ulong___444552ddee1b3661",
+                "System_Nullable_1_ulong_",
             "System.Nullable`1<ushort>" =>
-                "System_Nullable_1_ushort___e130dbe80b6dcb5f",
+                "System_Nullable_1_ushort_",
             "System.Numerics.BigInteger" =>
                 "System_Numerics_BigInteger",
             "System.Numerics.Complex" =>
@@ -1247,25 +1242,25 @@ namespace TestCase
             "System.Version" =>
                 "System_Version",
             "TestCase.Container+Destination" =>
-                "TestCase_Container_Destination__ed07600340fa8c3b",
+                "TestCase_Container_Destination",
             "TestCase.Destination" =>
                 "TestCase_Destination",
             "TestCase.Destination`1<(int Id, string Name)>" =>
-                "TestCase_Destination_1__int_Id__string_Name____b1410dab23b9cb4d",
+                "TestCase_Destination_1__int_Id__string_Name__",
             "TestCase.Destination`1<(int, string)>" =>
-                "TestCase_Destination_1__int__string____347961e6881fe97f",
+                "TestCase_Destination_1__int__string__",
             "TestCase.Destination`1<dynamic>" =>
-                "TestCase_Destination_1_dynamic___46185ec8cd0035cd",
+                "TestCase_Destination_1_dynamic_",
             "TestCase.Destination`1<global::System.Action>" =>
-                "TestCase_Destination_1_global__System_Action___16040dabb2c7fd34",
+                "TestCase_Destination_1_global__System_Action_",
             "TestCase.Destination`1<global::System.Collections.Generic.Dictionary<string, int?>>" =>
-                "TestCase_Destination_1_global__System_Collections_Generic_Dictionary_string__int_____01318f645d99328b",
+                "TestCase_Destination_1_global__System_Collections_Generic_Dictionary_string__int___",
             "TestCase.Destination`1<int>" =>
-                "TestCase_Destination_1_int___a212525a5607429d",
+                "TestCase_Destination_1_int_",
             "TestCase.Destination`1<int?>" =>
-                "TestCase_Destination_1_int____6c6110802e53283c",
+                "TestCase_Destination_1_int__",
             "TestCase.Destination`1<string?[]>" =>
-                "TestCase_Destination_1_string______1a0ca624e6ea6ba4",
+                "TestCase_Destination_1_string____",
             _ => throw new ArgumentOutOfRangeException(
                 nameof(usageIdentity),
                 usageIdentity,

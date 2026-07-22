@@ -810,7 +810,7 @@ namespace A_B.Morphant.Generated
         return usageIdentity switch
         {
             "A.B_C" =>
-                "A_B_C__dcf052f10671af9e",
+                "A_B_C",
             "A_B.C" =>
                 "A_B_C__a143b4740e1429ca",
             "First.Destination" =>
@@ -820,41 +820,41 @@ namespace A_B.Morphant.Generated
             "System.Int32" =>
                 "System_Int32",
             "System.Nullable`1<int>" =>
-                "System_Nullable_1_int___7d45e0b10f64f4d1",
+                "System_Nullable_1_int_",
             "System.Object" =>
                 "System_Object",
             "System.String" =>
                 "System_String",
             "TestCase.AliasDestination`1<int>" =>
-                "TestCase_AliasDestination_1_int___815e348eb3d00b3f",
+                "TestCase_AliasDestination_1_int_",
             "TestCase.ArrayDestination`1<string[]>" =>
-                "TestCase_ArrayDestination_1_string_____a106d1a757d34b88",
+                "TestCase_ArrayDestination_1_string___",
             "TestCase.ClassDestination" =>
                 "TestCase_ClassDestination",
             "TestCase.Destination" =>
                 "TestCase_Destination",
             "TestCase.DynamicDestination`1<object>" =>
-                "TestCase_DynamicDestination_1_object___91eadf3e59f1b642",
+                "TestCase_DynamicDestination_1_object_",
             "TestCase.GeneratedDestination" =>
                 "TestCase_GeneratedDestination",
             "TestCase.GenericDestination`1<int>" =>
-                "TestCase_GenericDestination_1_int___b7900cafc9c698ba",
+                "TestCase_GenericDestination_1_int_",
             "TestCase.GenericDestination`1<int?>" =>
-                "TestCase_GenericDestination_1_int____b06194b3dc783b09",
+                "TestCase_GenericDestination_1_int__",
             "TestCase.GenericDestination`1<string>" =>
-                "TestCase_GenericDestination_1_string___e25b9b1caeecf4cc",
+                "TestCase_GenericDestination_1_string_",
             "TestCase.NativeDestination`1<nint>" =>
-                "TestCase_NativeDestination_1_nint___8a6c6c3c0b8343e6",
+                "TestCase_NativeDestination_1_nint_",
             "TestCase.NestedDestination`1<global::TestCase.Wrapper<object>>" =>
-                "TestCase_NestedDestination_1_global__TestCase_Wrapper_object____b3634760cd3421cc",
+                "TestCase_NestedDestination_1_global__TestCase_Wrapper_object__",
             "TestCase.NullableDestination`1<string>" =>
-                "TestCase_NullableDestination_1_string___16200651af1de0b6",
+                "TestCase_NullableDestination_1_string_",
             "TestCase.Outer`1+ContainedDestination<string>" =>
-                "TestCase_Outer_1_ContainedDestination_string___a497208b3ac4952e",
+                "TestCase_Outer_1_ContainedDestination_string_",
             "TestCase.TupleDestination`1<(int, string)>" =>
-                "TestCase_TupleDestination_1__int__string____c03f8b6309bd87d3",
+                "TestCase_TupleDestination_1__int__string__",
             "TestCase.ValueTupleDestination`1<(int, string)>" =>
-                "TestCase_ValueTupleDestination_1__int__string____3bc191e0be51c7a2",
+                "TestCase_ValueTupleDestination_1__int__string__",
             "TestCase.destination" =>
                 "TestCase_destination",
             _ => throw new ArgumentOutOfRangeException(

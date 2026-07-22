@@ -16,8 +16,13 @@ internal static class TypeMapperPipeline
         var requests = configureInfos
             .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
-                TryBuildRequest(source, cancellationToken))
+                TryBuildGenerationInput(source, cancellationToken))
             .WhereHasValue()
+            .Collect()
+            .SelectMany(static (generationInputs, cancellationToken) =>
+                BuildRequests(
+                    generationInputs,
+                    cancellationToken))
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildTypeMappers);
 
@@ -29,7 +34,7 @@ internal static class TypeMapperPipeline
                     TypeMapperEmitter.Emit(request.Model)));
     }
 
-    private static TypeMapperRequest? TryBuildRequest(
+    private static TypeMapperGenerationInput? TryBuildGenerationInput(
         (
             TypeMapperConfigureInfo ConfigureInfo,
             CompilationContext Context
@@ -82,14 +87,45 @@ internal static class TypeMapperPipeline
                 mapperDeclaration.TypeParameterList),
             mappings);
 
-        var hintName = GeneratedSourceHintName.Create(
-            "TypeMapper",
-            HintNameHelper.ToHintNamePart(
-                SymbolNameHelper.GetFullMetadataName(mapperType)));
-
-        return new TypeMapperRequest(
-            hintName,
+        return new TypeMapperGenerationInput(
+            SymbolNameHelper.GetFullMetadataName(mapperType),
             model);
+    }
+
+    private static ImmutableArray<TypeMapperRequest> BuildRequests(
+        ImmutableArray<TypeMapperGenerationInput> generationInputs,
+        CancellationToken cancellationToken)
+    {
+        var orderedInputs = generationInputs.ToArray();
+
+        Array.Sort(
+            orderedInputs,
+            static (left, right) =>
+                StringComparer.Ordinal.Compare(
+                    left.StableIdentity,
+                    right.StableIdentity));
+
+        var hintNamePartAllocator = new HintNamePartAllocator();
+        var requests =
+            ImmutableArray.CreateBuilder<TypeMapperRequest>(
+                orderedInputs.Length);
+
+        foreach (var generationInput in orderedInputs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var hintName = GeneratedSourceHintName.Create(
+                "TypeMapper",
+                hintNamePartAllocator.Allocate(
+                    generationInput.StableIdentity));
+
+            requests.Add(
+                new TypeMapperRequest(
+                    hintName,
+                    generationInput.Model));
+        }
+
+        return requests.ToImmutable();
     }
 
     private static bool CanGenerate(
@@ -323,4 +359,8 @@ internal static class TypeMapperPipeline
                 $"Unsupported mapper accessibility: {accessibility}.")
         };
     }
+
+    private readonly record struct TypeMapperGenerationInput(
+        string StableIdentity,
+        TypeMapperModel Model);
 }

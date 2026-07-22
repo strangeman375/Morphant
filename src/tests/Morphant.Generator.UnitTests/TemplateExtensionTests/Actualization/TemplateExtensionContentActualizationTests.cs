@@ -39,7 +39,7 @@ internal sealed class TemplateExtensionContentActualizationTests
             "string?");
 
         var nullableDirectValue = ExpectedDirectExtension(
-            "System_Nullable_1_int___7d45e0b10f64f4d1",
+            "System_Nullable_1_int_",
             "int?",
             "int?");
 
@@ -51,7 +51,7 @@ internal sealed class TemplateExtensionContentActualizationTests
         var nullableGeneratedValue =
             ExpectedGeneratedValueExtension(
                 "System_Nullable_1_global__TestCase_" +
-                "StructDestination___a1aeebe8bb0e4854",
+                "StructDestination_",
                 "global::TestCase.StructDestination?",
                 "global::TestCase.Morphant.Generated." +
                 "StructDestinationMorphantTemplate?");
@@ -454,32 +454,24 @@ internal sealed class TemplateExtensionContentActualizationTests
         var hintNamePart = (destinationName, typeArgument) switch
         {
             ("ChangingDestination", "int") =>
-                "TestCase_ChangingDestination_1_int___" +
-                "e0dc5b0509e8cbce",
+                "TestCase_ChangingDestination_1_int_",
             ("ChangingDestination", "string?") =>
-                "TestCase_ChangingDestination_1_string____" +
-                "2040dc9137256187",
+                "TestCase_ChangingDestination_1_string__",
             ("ChangingDestination", "dynamic") =>
-                "TestCase_ChangingDestination_1_dynamic___" +
-                "0a0fbd5397ddb59a",
+                "TestCase_ChangingDestination_1_dynamic_",
             ("NullableDestination", "string?") =>
-                "TestCase_NullableDestination_1_string____" +
-                "b64ec6cc8fc799d5",
+                "TestCase_NullableDestination_1_string__",
             ("NullableDestination", "string") =>
-                "TestCase_NullableDestination_1_string___" +
-                "16200651af1de0b6",
+                "TestCase_NullableDestination_1_string_",
             ("DynamicDestination", "dynamic") =>
-                "TestCase_DynamicDestination_1_dynamic___" +
-                "6b8a07a128236db2",
+                "TestCase_DynamicDestination_1_dynamic_",
             ("DynamicDestination", "object") =>
-                "TestCase_DynamicDestination_1_object___" +
-                "91eadf3e59f1b642",
+                "TestCase_DynamicDestination_1_object_",
             ("TupleDestination", "(int Id, string Name)") =>
                 "TestCase_TupleDestination_1__int_Id__" +
-                "string_Name____f7175c39d6140b21",
+                "string_Name__",
             ("TupleDestination", "(int, string)") =>
-                "TestCase_TupleDestination_1__int__string____" +
-                "c03f8b6309bd87d3",
+                "TestCase_TupleDestination_1__int__string__",
             _ => throw new ArgumentOutOfRangeException(
                 nameof(typeArgument),
                 typeArgument,
