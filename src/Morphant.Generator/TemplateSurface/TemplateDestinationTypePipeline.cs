@@ -153,6 +153,14 @@ internal static class TemplateDestinationTypePipeline
         var fullyQualifiedName = destinationType.ToDisplayString(
             SymbolDisplayFormats.FullyQualifiedNullable);
 
+        var existingDestinationTypeFullyQualifiedName =
+            destinationType.IsReferenceType
+                ? destinationType
+                    .WithNullableAnnotation(NullableAnnotation.Annotated)
+                    .ToDisplayString(
+                        SymbolDisplayFormats.FullyQualifiedNullable)
+                : fullyQualifiedName;
+
         if (kind == TemplateDestinationTypeKind.DirectTemplate)
         {
             return new TemplateDestinationTypeInfo(
@@ -160,6 +168,7 @@ internal static class TemplateDestinationTypePipeline
                 null,
                 usageIdentity,
                 fullyQualifiedName,
+                existingDestinationTypeFullyQualifiedName,
                 fullyQualifiedName,
                 !ContainsTypeParameter(destinationType));
         }
@@ -197,6 +206,7 @@ internal static class TemplateDestinationTypePipeline
                 templateTypeName),
             usageIdentity,
             fullyQualifiedName,
+            existingDestinationTypeFullyQualifiedName,
             templateTypeFullyQualifiedName,
             !ContainsTypeParameter(destinationType));
     }

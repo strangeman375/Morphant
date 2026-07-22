@@ -6,6 +6,7 @@ public readonly record struct TemplateDestinationTypeInfo
     TemplateTypeDefinitionInfo? TemplateTypeDefinition,
     string UsageIdentity,
     string FullyQualifiedName,
+    string ExistingDestinationTypeFullyQualifiedName,
     string TemplateResultTypeFullyQualifiedName,
     bool CanGenerateTemplateExtension
 );

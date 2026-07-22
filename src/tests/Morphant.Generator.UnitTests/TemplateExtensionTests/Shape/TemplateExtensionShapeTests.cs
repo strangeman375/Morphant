@@ -60,7 +60,7 @@ namespace Morphant
 
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination> builder,
-            global::System.Func<TSource, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
+            global::System.Func<TSource, global::TestCase.Destination?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

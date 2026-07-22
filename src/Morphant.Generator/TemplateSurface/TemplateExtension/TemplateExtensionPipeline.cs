@@ -58,7 +58,7 @@ namespace Morphant
 
         public static global::Morphant.MapperBuilder<TSource, {destinationType.FullyQualifiedName}> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, {destinationType.FullyQualifiedName}> builder,
-            global::System.Func<TSource, {destinationType.FullyQualifiedName}, {destinationType.TemplateResultTypeFullyQualifiedName}> template)
+            global::System.Func<TSource, {destinationType.ExistingDestinationTypeFullyQualifiedName}, {destinationType.TemplateResultTypeFullyQualifiedName}> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }}
 }}

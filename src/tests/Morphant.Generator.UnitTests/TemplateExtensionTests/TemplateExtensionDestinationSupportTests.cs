@@ -45,10 +45,18 @@ internal sealed class TemplateExtensionDestinationSupportTests
         string expectedType,
         string usageIdentity)
     {
+        var expectedExistingDestinationType = expectedType switch
+        {
+            "object" => "object?",
+            "string" => "string?",
+            _ => expectedType
+        };
+
         await RunDirectTemplateDestination(
             destinationType,
             expectedType,
-            usageIdentity);
+            usageIdentity,
+            expectedExistingDestinationType);
     }
 
     [TestCase("global::System.Guid", "global::System.Guid", "System.Guid")]
@@ -88,10 +96,18 @@ internal sealed class TemplateExtensionDestinationSupportTests
         string expectedType,
         string usageIdentity)
     {
+        var expectedExistingDestinationType = expectedType switch
+        {
+            "global::System.Uri" => "global::System.Uri?",
+            "global::System.Version" => "global::System.Version?",
+            _ => expectedType
+        };
+
         await RunDirectTemplateDestination(
             destinationType,
             expectedType,
-            usageIdentity);
+            usageIdentity,
+            expectedExistingDestinationType);
     }
 
     [TestCase("Destination", "global::TestCase.Destination", "TestCase.Destination")]
@@ -114,6 +130,7 @@ internal sealed class TemplateExtensionDestinationSupportTests
             destinationType,
             expectedType,
             usageIdentity,
+            expectedType,
             destinationDeclaration);
     }
 
@@ -123,7 +140,8 @@ internal sealed class TemplateExtensionDestinationSupportTests
         await RunDirectTemplateDestination(
             "dynamic",
             "object",
-            "System.Object");
+            "System.Object",
+            "object?");
     }
 
     [Test]
@@ -184,22 +202,24 @@ internal sealed class TemplateExtensionDestinationSupportTests
                 BuildExpectedGeneratedExtension(
                     "global::TestCase.Destination?",
                     "global::TestCase.Morphant.Generated." +
-                    "DestinationMorphantTemplate?")
+                    "DestinationMorphantTemplate?",
+                    "global::TestCase.Destination?")
             ));
     }
 
-    [TestCase("public class Destination", LanguageVersion.CSharp9)]
-    [TestCase("internal sealed class Destination", LanguageVersion.CSharp9)]
-    [TestCase("public sealed partial class Destination", LanguageVersion.CSharp9)]
-    [TestCase("public abstract class Destination", LanguageVersion.CSharp9)]
-    [TestCase("public sealed record Destination", LanguageVersion.CSharp9)]
-    [TestCase("public struct Destination", LanguageVersion.CSharp9)]
-    [TestCase("public readonly struct Destination", LanguageVersion.CSharp9)]
-    [TestCase("public interface Destination", LanguageVersion.CSharp9)]
-    [TestCase("public record struct Destination", LanguageVersion.CSharp10)]
-    [TestCase("public readonly record struct Destination", LanguageVersion.CSharp10)]
+    [TestCase("public class Destination", true, LanguageVersion.CSharp9)]
+    [TestCase("internal sealed class Destination", true, LanguageVersion.CSharp9)]
+    [TestCase("public sealed partial class Destination", true, LanguageVersion.CSharp9)]
+    [TestCase("public abstract class Destination", true, LanguageVersion.CSharp9)]
+    [TestCase("public sealed record Destination", true, LanguageVersion.CSharp9)]
+    [TestCase("public struct Destination", false, LanguageVersion.CSharp9)]
+    [TestCase("public readonly struct Destination", false, LanguageVersion.CSharp9)]
+    [TestCase("public interface Destination", true, LanguageVersion.CSharp9)]
+    [TestCase("public record struct Destination", false, LanguageVersion.CSharp10)]
+    [TestCase("public readonly record struct Destination", false, LanguageVersion.CSharp10)]
     public async Task Generates_extension_for_non_generic_destination_kind(
         string destinationTypeDeclaration,
+        bool isReferenceType,
         LanguageVersion languageVersion)
     {
         var destinationDeclaration = $$"""
@@ -217,7 +237,13 @@ internal sealed class TemplateExtensionDestinationSupportTests
             (
                 "Morphant.TemplateExtensions." +
                 "TestCase_Destination.g.cs",
-                ExpectedNonGenericExtension
+                BuildExpectedGeneratedExtension(
+                    "global::TestCase.Destination",
+                    "global::TestCase.Morphant.Generated." +
+                    "DestinationMorphantTemplate",
+                    isReferenceType
+                        ? "global::TestCase.Destination?"
+                        : "global::TestCase.Destination")
             ));
     }
 
@@ -244,7 +270,8 @@ internal sealed class TemplateExtensionDestinationSupportTests
                 BuildExpectedGeneratedExtension(
                     "global::TestCase.Destination?",
                     "global::TestCase.Morphant.Generated." +
-                    "DestinationMorphantTemplate?")
+                    "DestinationMorphantTemplate?",
+                    "global::TestCase.Destination?")
             ));
     }
 
@@ -285,7 +312,8 @@ namespace TestCase.Morphant.Generated.ContainerScope
                 BuildExpectedGeneratedExtension(
                     "global::TestCase.Container.Destination",
                     "global::TestCase.Morphant.Generated." +
-                    "ContainerScope.DestinationMorphantTemplate")
+                    "ContainerScope.DestinationMorphantTemplate",
+                    "global::TestCase.Container.Destination?")
             ));
     }
 
@@ -375,14 +403,15 @@ namespace TestCase
             ));
     }
 
-    [TestCase("public sealed class Destination<T>", LanguageVersion.CSharp9)]
-    [TestCase("public struct Destination<T>", LanguageVersion.CSharp9)]
-    [TestCase("public sealed record Destination<T>", LanguageVersion.CSharp9)]
-    [TestCase("public abstract class Destination<T>", LanguageVersion.CSharp9)]
-    [TestCase("public interface Destination<T>", LanguageVersion.CSharp9)]
-    [TestCase("public record struct Destination<T>", LanguageVersion.CSharp10)]
+    [TestCase("public sealed class Destination<T>", true, LanguageVersion.CSharp9)]
+    [TestCase("public struct Destination<T>", false, LanguageVersion.CSharp9)]
+    [TestCase("public sealed record Destination<T>", true, LanguageVersion.CSharp9)]
+    [TestCase("public abstract class Destination<T>", true, LanguageVersion.CSharp9)]
+    [TestCase("public interface Destination<T>", true, LanguageVersion.CSharp9)]
+    [TestCase("public record struct Destination<T>", false, LanguageVersion.CSharp10)]
     public async Task Generates_extension_for_generic_destination_kind(
         string destinationTypeDeclaration,
+        bool isReferenceType,
         LanguageVersion languageVersion)
     {
         var destinationDeclaration = $$"""
@@ -401,7 +430,13 @@ namespace TestCase
                 "Morphant.TemplateExtensions." +
                 "TestCase_Destination_1_int___" +
                 "a212525a5607429d.g.cs",
-                ExpectedIntGenericExtension
+                BuildExpectedGeneratedExtension(
+                    "global::TestCase.Destination<int>",
+                    "global::TestCase.Morphant.Generated." +
+                    "DestinationMorphantTemplate<int>",
+                    isReferenceType
+                        ? "global::TestCase.Destination<int>?"
+                        : "global::TestCase.Destination<int>")
             ));
     }
 
@@ -516,7 +551,8 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 ".g.cs",
                 BuildExpectedGeneratedExtension(
                     destinationType,
-                    templateType)
+                    templateType,
+                    destinationType + "?")
             ));
     }
 
@@ -637,6 +673,7 @@ namespace TestCase
         string destinationType,
         string expectedType,
         string usageIdentity,
+        string expectedExistingDestinationType,
         string destinationDeclaration = "")
     {
         var mapStatements = $$"""
@@ -644,7 +681,7 @@ namespace TestCase
                                         .Template(static _ => default!);
 
                                     builder.Map<Source, {{destinationType}}>()
-                                        .Template(static (_, destination) => destination);
+                                        .Template(static (_, destination) => destination!);
                                """;
 
         return TemplateExtensionGeneratorTest.RunAndAssert(
@@ -656,7 +693,9 @@ namespace TestCase
                 "Morphant.TemplateExtensions." +
                 HintNameHelper.ToHintNamePart(usageIdentity) +
                 ".g.cs",
-                BuildExpectedDirectExtension(expectedType)
+                BuildExpectedDirectExtension(
+                    expectedType,
+                    expectedExistingDestinationType)
             ));
     }
 
@@ -672,7 +711,9 @@ namespace TestCase
                 $"builder.Map<Source, {destinationType}>();"));
     }
 
-    private static string BuildExpectedDirectExtension(string type)
+    private static string BuildExpectedDirectExtension(
+        string type,
+        string existingDestinationType)
     {
         return $$"""
                  // <auto-generated />
@@ -689,7 +730,7 @@ namespace TestCase
 
                          public static global::Morphant.MapperBuilder<TSource, {{type}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{type}}> builder,
-                             global::System.Func<TSource, {{type}}, {{type}}> template)
+                             global::System.Func<TSource, {{existingDestinationType}}, {{type}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
                      }
                  }
@@ -698,7 +739,8 @@ namespace TestCase
 
     private static string BuildExpectedGeneratedExtension(
         string destinationType,
-        string templateType)
+        string templateType,
+        string existingDestinationType)
     {
         return $$"""
                  // <auto-generated />
@@ -715,7 +757,7 @@ namespace TestCase
 
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{destinationType}}> builder,
-                             global::System.Func<TSource, {{destinationType}}, {{templateType}}> template)
+                             global::System.Func<TSource, {{existingDestinationType}}, {{templateType}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
                      }
                  }
@@ -783,29 +825,6 @@ namespace TestCase.Morphant.Generated.Outer1Scope
 """;
 
     // lang=c#
-    private const string ExpectedNonGenericExtension =
-"""
-// <auto-generated />
-#nullable enable
-
-namespace Morphant
-{
-    internal static partial class MorphantGeneratedTemplateExtensions
-    {
-        public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination> Template<TSource>(
-            this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination> builder,
-            global::System.Func<TSource, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-
-        public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination> Template<TSource>(
-            this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination> builder,
-            global::System.Func<TSource, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
-            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
-    }
-}
-""";
-
-    // lang=c#
     private const string ExpectedNullableGenericExtension =
 """
 // <auto-generated />
@@ -822,7 +841,7 @@ namespace Morphant
 
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<global::TestCase.User?>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<global::TestCase.User?>> builder,
-            global::System.Func<TSource, global::TestCase.Destination<global::TestCase.User?>, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<global::TestCase.User?>> template)
+            global::System.Func<TSource, global::TestCase.Destination<global::TestCase.User?>?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<global::TestCase.User?>> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -845,7 +864,7 @@ namespace Morphant
 
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<int>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<int>> builder,
-            global::System.Func<TSource, global::TestCase.Destination<int>, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<int>> template)
+            global::System.Func<TSource, global::TestCase.Destination<int>?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<int>> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -868,7 +887,7 @@ namespace Morphant
 
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<string>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<string>> builder,
-            global::System.Func<TSource, global::TestCase.Destination<string>, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<string>> template)
+            global::System.Func<TSource, global::TestCase.Destination<string>?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate<string>> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -891,7 +910,7 @@ namespace Morphant
 
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Outer<int>.Destination<string?>> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, global::TestCase.Outer<int>.Destination<string?>> builder,
-            global::System.Func<TSource, global::TestCase.Outer<int>.Destination<string?>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationMorphantTemplate<int, string?>> template)
+            global::System.Func<TSource, global::TestCase.Outer<int>.Destination<string?>?, global::TestCase.Morphant.Generated.Outer1Scope.DestinationMorphantTemplate<int, string?>> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
