@@ -7,6 +7,10 @@
   template surface. Keep that boundary visible in code and tests.
 - Treat the generator as a black box when designing tests. Start from supported
   user scenarios, not from branches in the current implementation.
+- Production pipelines may only be referenced by the minimal test generators
+  that invoke the code under test. Expected values and assertions must use
+  literal or test-owned data; never compute them with generator helpers,
+  models, emitters, or constants.
 - Every test category must be a complete specification of its own concern. It
   must remain useful and sufficient if all other test categories are removed.
 - Do not omit a scenario merely because another category happens to exercise

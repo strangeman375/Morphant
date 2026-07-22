@@ -3,12 +3,17 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
-using Morphant.Generator.TemplateSurface.TemplateType;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
 
 internal static class TemplateTypeIncrementalityTest
 {
+    // Literal contracts: do not import the generator's stage-name constants.
+    private const string BuildTemplateTypeModelsStage =
+        "BuildTemplateTypeModels";
+    private const string BuildTemplateTypeRequestsStage =
+        "BuildTemplateTypeRequests";
+
     private static readonly CSharpParseOptions DefaultParseOptions = new(
         LanguageVersion.CSharp9,
         DocumentationMode.Diagnose);
@@ -296,18 +301,16 @@ internal static class TemplateTypeIncrementalityTest
             Is.Null,
             $"Step '{step.Name}' must not throw from the generator.");
 
-        AssertTrackedOutputs<TemplateTypeModelResult>(
+        AssertTrackedOutputs(
             step,
             generatorResult,
-            MorphantGeneratorStageNames.BuildTemplateTypeModels,
-            static model => model.HintName,
+            BuildTemplateTypeModelsStage,
             static expected => expected.ModelReason);
 
-        AssertTrackedOutputs<TemplateTypeRequest>(
+        AssertTrackedOutputs(
             step,
             generatorResult,
-            MorphantGeneratorStageNames.BuildTemplateTypeRequests,
-            static request => request.HintName,
+            BuildTemplateTypeRequestsStage,
             static expected => expected.RequestReason);
 
         var expectedGeneratedHintNames = step.ExpectedOutputs
@@ -327,14 +330,12 @@ internal static class TemplateTypeIncrementalityTest
             $"Step '{step.Name}' generated an unexpected file set.");
     }
 
-    private static void AssertTrackedOutputs<T>(
+    private static void AssertTrackedOutputs(
         TemplateTypeIncrementalityStep step,
         GeneratorRunResult generatorResult,
         string stageName,
-        Func<T, string> getHintName,
         Func<TemplateTypeIncrementalityExpectedOutput,
             IncrementalStepRunReason> getExpectedReason)
-        where T : struct
     {
         Assert.That(
             generatorResult.TrackedSteps.TryGetValue(
@@ -347,14 +348,11 @@ internal static class TemplateTypeIncrementalityTest
             .SelectMany(static trackedStep => trackedStep.Outputs)
             .Select(output =>
             {
-                Assert.That(
-                    output.Value,
-                    Is.TypeOf<T>(),
-                    $"Step '{step.Name}', stage '{stageName}' " +
-                    "produced an unexpected value type.");
-
                 return new TemplateTypeTrackedOutput(
-                    getHintName((T)output.Value),
+                    GetTrackedHintName(
+                        output.Value,
+                        step.Name,
+                        stageName),
                     output.Reason);
             })
             .OrderBy(static output => output.HintName, StringComparer.Ordinal)
@@ -374,6 +372,30 @@ internal static class TemplateTypeIncrementalityTest
             actualOutputs,
             Is.EqualTo(expectedOutputs),
             $"Step '{step.Name}', stage '{stageName}'.");
+    }
+
+    private static string GetTrackedHintName(
+        object value,
+        string stepName,
+        string stageName)
+    {
+        var hintNameProperty = value.GetType().GetProperty("HintName");
+
+        Assert.That(
+            hintNameProperty,
+            Is.Not.Null,
+            $"Step '{stepName}', stage '{stageName}' produced an " +
+            "output without a HintName property.");
+
+        var hintName = hintNameProperty!.GetValue(value);
+
+        Assert.That(
+            hintName,
+            Is.TypeOf<string>(),
+            $"Step '{stepName}', stage '{stageName}' produced an " +
+            "output without a string HintName value.");
+
+        return (string)hintName!;
     }
 }
 

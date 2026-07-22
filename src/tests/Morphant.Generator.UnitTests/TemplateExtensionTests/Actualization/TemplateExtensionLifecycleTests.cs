@@ -211,6 +211,36 @@ internal sealed class TemplateExtensionLifecycleTests
     }
 
     [Test]
+    public void Updates_extension_when_destination_alias_target_changes()
+    {
+        var firstExpected = ExpectedGeneratedReferenceExtension(
+            "TestCase_FirstDestination",
+            "global::TestCase.FirstDestination",
+            "global::TestCase.Morphant.Generated." +
+            "FirstDestinationMorphantTemplate");
+
+        var secondExpected = ExpectedGeneratedReferenceExtension(
+            "TestCase_SecondDestination",
+            "global::TestCase.SecondDestination",
+            "global::TestCase.Morphant.Generated." +
+            "SecondDestinationMorphantTemplate");
+
+        RunAndAssert(
+            Step(
+                "alias targets first destination",
+                BuildAliasTargetSource("FirstDestination"),
+                firstExpected),
+            Step(
+                "alias targets second destination",
+                BuildAliasTargetSource("SecondDestination"),
+                secondExpected),
+            Step(
+                "first alias target restored",
+                BuildAliasTargetSource("FirstDestination"),
+                firstExpected));
+    }
+
+    [Test]
     public void Updates_extension_when_referenced_destination_kind_changes()
     {
         var generated = ExpectedGeneratedReferenceExtension(
@@ -239,6 +269,17 @@ internal sealed class TemplateExtensionLifecycleTests
                 "        None\n" +
                 "    }"));
 
+        var editedClassReference = CreateReference(
+            "ReferencedModels",
+            BuildReferencedDestination(
+                "/// <summary>\n" +
+                "    /// Represents an edited destination.\n" +
+                "    /// </summary>\n" +
+                "    public sealed class Destination\n" +
+                "    {\n" +
+                "        public int Id { get; init; }\n" +
+                "    }"));
+
         var delegateReference = CreateReference(
             "ReferencedModels",
             BuildReferencedDestination(
@@ -249,6 +290,11 @@ internal sealed class TemplateExtensionLifecycleTests
                 "referenced class",
                 ReferencedUsageSource,
                 new[] { classReference },
+                generated),
+            Step(
+                "referenced class details changed",
+                ReferencedUsageSource,
+                new[] { editedClassReference },
                 generated),
             Step(
                 "referenced enum",
@@ -307,6 +353,13 @@ internal sealed class TemplateExtensionLifecycleTests
             .Replace(
                 "__DESTINATION_NAME__",
                 destinationName);
+    }
+
+    private static string BuildAliasTargetSource(string aliasTarget)
+    {
+        return AliasTargetSourceTemplate.Replace(
+            "__ALIAS_TARGET__",
+            aliasTarget);
     }
 
     private static string BuildReferencedDestination(
@@ -468,6 +521,46 @@ public partial class TestMapper : TypeMapper
 namespace __DESTINATION_NAMESPACE__.Morphant.Generated
 {
     internal sealed record __DESTINATION_NAME__MorphantTemplate;
+}
+""";
+
+    // lang=c#
+    private const string AliasTargetSourceTemplate =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+using DestinationAlias = TestCase.__ALIAS_TARGET__;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public sealed class FirstDestination
+    {
+    }
+
+    public sealed class SecondDestination
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, DestinationAlias>();
+        }
+    }
+}
+
+namespace TestCase.Morphant.Generated
+{
+    internal sealed record FirstDestinationMorphantTemplate;
+
+    internal sealed record SecondDestinationMorphantTemplate;
 }
 """;
 

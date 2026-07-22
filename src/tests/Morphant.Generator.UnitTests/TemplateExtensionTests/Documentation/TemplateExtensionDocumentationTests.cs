@@ -69,6 +69,7 @@ namespace TestCase.Morphant.Generated
         const string source =
 """
 #pragma warning disable CS1591
+#nullable enable
 
 using Morphant;
 
@@ -78,12 +79,23 @@ namespace TestCase
     {
     }
 
+    /// <summary>
+    /// Represents a direct destination whose documentation must not be copied.
+    /// </summary>
+    /// <remarks>
+    /// Destination-specific remarks must not appear on template extensions.
+    /// </remarks>
+    public enum Destination
+    {
+        None
+    }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, int>();
+            builder.Map<Source, Destination>();
         }
     }
 }
@@ -93,8 +105,11 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.System_Int32.g.cs",
-                BuildExpectedExtension("int", "int", "int")
+                "Morphant.TemplateExtensions.TestCase_Destination.g.cs",
+                BuildExpectedExtension(
+                    "global::TestCase.Destination",
+                    "global::TestCase.Destination",
+                    "global::TestCase.Destination")
             ));
     }
 

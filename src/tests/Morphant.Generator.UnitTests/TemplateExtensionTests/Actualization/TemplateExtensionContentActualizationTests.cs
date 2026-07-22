@@ -133,6 +133,43 @@ internal sealed class TemplateExtensionContentActualizationTests
     }
 
     [Test]
+    public void Updates_generated_extension_when_destination_changes_between_reference_and_value_type()
+    {
+        const string destination =
+            "global::TestCase.Destination";
+        const string template =
+            "global::TestCase.Morphant.Generated." +
+            "DestinationMorphantTemplate";
+
+        var referenceExpected = ExpectedGeneratedReferenceExtension(
+            "TestCase_Destination",
+            destination,
+            template);
+
+        var valueExpected = ExpectedGeneratedValueExtension(
+            "TestCase_Destination",
+            destination,
+            template);
+
+        RunAndAssert(
+            Step(
+                "reference destination",
+                BuildDestinationTypeKindSource(
+                    "public sealed class Destination"),
+                referenceExpected),
+            Step(
+                "destination becomes a value type",
+                BuildDestinationTypeKindSource(
+                    "public struct Destination"),
+                valueExpected),
+            Step(
+                "reference destination restored",
+                BuildDestinationTypeKindSource(
+                    "public sealed class Destination"),
+                referenceExpected));
+    }
+
+    [Test]
     public void Replaces_changed_constructed_extension_and_preserves_unaffected_extension()
     {
         var stable = ExpectedGeneratedReferenceExtension(
@@ -344,11 +381,16 @@ internal sealed class TemplateExtensionContentActualizationTests
     [Test]
     public void Keeps_extension_documentation_unchanged_when_destination_documentation_changes()
     {
-        var expected = ExpectedGeneratedReferenceExtension(
+        var generatedExpected = ExpectedGeneratedReferenceExtension(
             "TestCase_Destination",
             "global::TestCase.Destination",
             "global::TestCase.Morphant.Generated." +
             "DestinationMorphantTemplate");
+
+        var directExpected = ExpectedDirectExtension(
+            "TestCase_DirectDestination",
+            "global::TestCase.DirectDestination",
+            "global::TestCase.DirectDestination");
 
         // lang=c#
         const string initialDocumentation =
@@ -375,21 +417,25 @@ internal sealed class TemplateExtensionContentActualizationTests
             Step(
                 "undocumented destination",
                 BuildDestinationDocumentationSource(string.Empty),
-                expected),
+                generatedExpected,
+                directExpected),
             Step(
                 "destination documentation added",
                 BuildDestinationDocumentationSource(
                     initialDocumentation),
-                expected),
+                generatedExpected,
+                directExpected),
             Step(
                 "destination documentation edited",
                 BuildDestinationDocumentationSource(
                     editedDocumentation),
-                expected),
+                generatedExpected,
+                directExpected),
             Step(
                 "destination documentation removed",
                 BuildDestinationDocumentationSource(string.Empty),
-                expected));
+                generatedExpected,
+                directExpected));
     }
 
     private static (string HintName, string Source)
@@ -471,6 +517,14 @@ internal sealed class TemplateExtensionContentActualizationTests
             .Replace(
                 "__GENERATED_VALUE_DESTINATION__",
                 generatedValueDestination);
+    }
+
+    private static string BuildDestinationTypeKindSource(
+        string destinationDeclaration)
+    {
+        return DestinationTypeKindSourceTemplate.Replace(
+            "__DESTINATION_DECLARATION__",
+            destinationDeclaration);
     }
 
     private static string BuildConstructedSource(
@@ -563,6 +617,40 @@ namespace TestCase.Morphant.Generated
     internal sealed record DestinationMorphantTemplate;
 
     internal sealed record StructDestinationMorphantTemplate;
+}
+""";
+
+    // lang=c#
+    private const string DestinationTypeKindSourceTemplate =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    __DESTINATION_DECLARATION__
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>();
+        }
+    }
+}
+
+namespace TestCase.Morphant.Generated
+{
+    internal sealed record DestinationMorphantTemplate;
 }
 """;
 
@@ -749,12 +837,18 @@ __DESTINATION_DOCUMENTATION__    public sealed class Destination
     {
     }
 
+__DESTINATION_DOCUMENTATION__    public enum DirectDestination
+    {
+        None
+    }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>();
+            builder.Map<Source, DirectDestination>();
         }
     }
 }
