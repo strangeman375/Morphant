@@ -1,6 +1,19 @@
 # Morphant repository instructions
 
-## Template surface work
+## Implementation plan
+
+- `IMPLEMENTATION_PLAN.md` is the authoritative implementation order and
+  progress record. Read it before selecting the next work slice.
+- Follow the plan from top to bottom. Do not start a later item or phase while
+  an earlier item is incomplete unless the user explicitly reprioritizes the
+  work.
+- When the plan says that a support boundary must be agreed separately, agree
+  it with the user before writing tests or production code for that slice.
+- Update the plan in the same coherent change that completes a work item: mark
+  the item complete and identify the next item. Do not duplicate changing plan
+  status in this file.
+
+## Test design
 
 - Template destinations have three explicit outcomes: generated template type
   plus extensions, direct extensions returning the destination itself, or no
@@ -45,12 +58,8 @@
   template extension generation does not run.
 - Run only focused tests for the changed category. The user runs the full test
   suite periodically and reports failures; do not run the full suite, including
-  before committing or pushing. A focused run can use:
-
-  ```shell
-  dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj \
-    --filter "FullyQualifiedName~TemplateTypeTests.Naming"
-  ```
+  before committing or pushing. Use the focused-test command supplied by the
+  enclosing workspace instructions when available.
 
 ## Repository workflow
 
