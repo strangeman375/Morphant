@@ -97,10 +97,13 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        writer.Line("/// <inheritdoc/>");
         writer.Line(
-            $"{mapping.DestinationTypeName} {mapping.InterfaceTypeName}.Map(");
+            $"{mapping.MaybeNullDestinationTypeName} " +
+            $"{mapping.InterfaceTypeName}.Map(");
         writer.Indent();
-        writer.Line($"{mapping.SourceTypeName} source,");
+        writer.Line(
+            $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.MappingContext context)");
 
         if (mapping.CanMapNewWithParameterlessConstructor)
@@ -124,12 +127,15 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        writer.Line("/// <inheritdoc/>");
         writer.Line(
-            $"{mapping.DestinationTypeName} {mapping.InterfaceTypeName}.Map(");
+            $"{mapping.MaybeNullDestinationTypeName} " +
+            $"{mapping.InterfaceTypeName}.Map(");
         writer.Indent();
-        writer.Line($"{mapping.SourceTypeName} source,");
         writer.Line(
-            $"{mapping.DestinationTypeName} destination,");
+            $"{mapping.MaybeNullSourceTypeName} source,");
+        writer.Line(
+            $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
         writer.Line(
             mapping.CanMapExistingWithoutMembers

@@ -136,29 +136,33 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>,
         global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.SecondDestination>
     {
-        global::TestCase.FirstDestination global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>.Map(
-            global::TestCase.FirstSource source,
+        /// <inheritdoc/>
+        global::TestCase.FirstDestination? global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>.Map(
+            global::TestCase.FirstSource? source,
             global::Morphant.MappingContext context)
         {
             return new global::TestCase.FirstDestination();
         }
 
-        global::TestCase.FirstDestination global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>.Map(
-            global::TestCase.FirstSource source,
-            global::TestCase.FirstDestination destination,
+        /// <inheritdoc/>
+        global::TestCase.FirstDestination? global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>.Map(
+            global::TestCase.FirstSource? source,
+            global::TestCase.FirstDestination? destination,
             global::Morphant.MappingContext context)
             => destination;
 
-        global::TestCase.SecondDestination global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.SecondDestination>.Map(
-            global::TestCase.SecondSource source,
+        /// <inheritdoc/>
+        global::TestCase.SecondDestination? global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.SecondDestination>.Map(
+            global::TestCase.SecondSource? source,
             global::Morphant.MappingContext context)
         {
             return new global::TestCase.SecondDestination();
         }
 
-        global::TestCase.SecondDestination global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.SecondDestination>.Map(
-            global::TestCase.SecondSource source,
-            global::TestCase.SecondDestination destination,
+        /// <inheritdoc/>
+        global::TestCase.SecondDestination? global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.SecondDestination>.Map(
+            global::TestCase.SecondSource? source,
+            global::TestCase.SecondDestination? destination,
             global::Morphant.MappingContext context)
             => destination;
     }
@@ -176,16 +180,18 @@ namespace TestCase
     internal partial class ExpressionMapper :
         global::Morphant.ITypeMapper<global::TestCase.ExpressionSource, global::TestCase.ExpressionDestination>
     {
-        global::TestCase.ExpressionDestination global::Morphant.ITypeMapper<global::TestCase.ExpressionSource, global::TestCase.ExpressionDestination>.Map(
-            global::TestCase.ExpressionSource source,
+        /// <inheritdoc/>
+        global::TestCase.ExpressionDestination? global::Morphant.ITypeMapper<global::TestCase.ExpressionSource, global::TestCase.ExpressionDestination>.Map(
+            global::TestCase.ExpressionSource? source,
             global::Morphant.MappingContext context)
         {
             return new global::TestCase.ExpressionDestination();
         }
 
-        global::TestCase.ExpressionDestination global::Morphant.ITypeMapper<global::TestCase.ExpressionSource, global::TestCase.ExpressionDestination>.Map(
-            global::TestCase.ExpressionSource source,
-            global::TestCase.ExpressionDestination destination,
+        /// <inheritdoc/>
+        global::TestCase.ExpressionDestination? global::Morphant.ITypeMapper<global::TestCase.ExpressionSource, global::TestCase.ExpressionDestination>.Map(
+            global::TestCase.ExpressionSource? source,
+            global::TestCase.ExpressionDestination? destination,
             global::Morphant.MappingContext context)
             => destination;
     }
@@ -263,42 +269,48 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.SecondDestination>,
         global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.FirstDestination>
     {
-        global::TestCase.FirstDestination global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>.Map(
-            global::TestCase.FirstSource source,
+        /// <inheritdoc/>
+        global::TestCase.FirstDestination? global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>.Map(
+            global::TestCase.FirstSource? source,
             global::Morphant.MappingContext context)
         {
             return new global::TestCase.FirstDestination();
         }
 
-        global::TestCase.FirstDestination global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>.Map(
-            global::TestCase.FirstSource source,
-            global::TestCase.FirstDestination destination,
+        /// <inheritdoc/>
+        global::TestCase.FirstDestination? global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.FirstDestination>.Map(
+            global::TestCase.FirstSource? source,
+            global::TestCase.FirstDestination? destination,
             global::Morphant.MappingContext context)
             => destination;
 
-        global::TestCase.SecondDestination global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.SecondDestination>.Map(
-            global::TestCase.FirstSource source,
+        /// <inheritdoc/>
+        global::TestCase.SecondDestination? global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.SecondDestination>.Map(
+            global::TestCase.FirstSource? source,
             global::Morphant.MappingContext context)
         {
             return new global::TestCase.SecondDestination();
         }
 
-        global::TestCase.SecondDestination global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.SecondDestination>.Map(
-            global::TestCase.FirstSource source,
-            global::TestCase.SecondDestination destination,
+        /// <inheritdoc/>
+        global::TestCase.SecondDestination? global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.SecondDestination>.Map(
+            global::TestCase.FirstSource? source,
+            global::TestCase.SecondDestination? destination,
             global::Morphant.MappingContext context)
             => destination;
 
-        global::TestCase.FirstDestination global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.FirstDestination>.Map(
-            global::TestCase.SecondSource source,
+        /// <inheritdoc/>
+        global::TestCase.FirstDestination? global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.FirstDestination>.Map(
+            global::TestCase.SecondSource? source,
             global::Morphant.MappingContext context)
         {
             return new global::TestCase.FirstDestination();
         }
 
-        global::TestCase.FirstDestination global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.FirstDestination>.Map(
-            global::TestCase.SecondSource source,
-            global::TestCase.FirstDestination destination,
+        /// <inheritdoc/>
+        global::TestCase.FirstDestination? global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.FirstDestination>.Map(
+            global::TestCase.SecondSource? source,
+            global::TestCase.FirstDestination? destination,
             global::Morphant.MappingContext context)
             => destination;
     }

@@ -45,14 +45,16 @@ namespace TestCase
         public partial class TestMapper<TMapper> :
             global::Morphant.ITypeMapper<object, object>
         {
-            object global::Morphant.ITypeMapper<object, object>.Map(
-                object source,
+            /// <inheritdoc/>
+            object? global::Morphant.ITypeMapper<object, object>.Map(
+                object? source,
                 global::Morphant.MappingContext context)
                 => throw new global::System.NotImplementedException();
 
-            object global::Morphant.ITypeMapper<object, object>.Map(
-                object source,
-                object destination,
+            /// <inheritdoc/>
+            object? global::Morphant.ITypeMapper<object, object>.Map(
+                object? source,
+                object? destination,
                 global::Morphant.MappingContext context)
                 => throw new global::System.NotImplementedException();
         }
@@ -123,16 +125,18 @@ namespace A
     public partial class B_C :
         global::Morphant.ITypeMapper<global::Source, global::Destination>
     {
-        global::Destination global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
-            global::Source source,
+        /// <inheritdoc/>
+        global::Destination? global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
+            global::Source? source,
             global::Morphant.MappingContext context)
         {
             return new global::Destination();
         }
 
-        global::Destination global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
-            global::Source source,
-            global::Destination destination,
+        /// <inheritdoc/>
+        global::Destination? global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
+            global::Source? source,
+            global::Destination? destination,
             global::Morphant.MappingContext context)
             => destination;
     }
@@ -150,16 +154,18 @@ namespace A_B
     public partial class C :
         global::Morphant.ITypeMapper<global::Source, global::Destination>
     {
-        global::Destination global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
-            global::Source source,
+        /// <inheritdoc/>
+        global::Destination? global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
+            global::Source? source,
             global::Morphant.MappingContext context)
         {
             return new global::Destination();
         }
 
-        global::Destination global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
-            global::Source source,
-            global::Destination destination,
+        /// <inheritdoc/>
+        global::Destination? global::Morphant.ITypeMapper<global::Source, global::Destination>.Map(
+            global::Source? source,
+            global::Destination? destination,
             global::Morphant.MappingContext context)
             => destination;
     }
@@ -230,16 +236,18 @@ namespace TestCase
     public partial class Mapper :
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
-            global::TestCase.Source source,
+        /// <inheritdoc/>
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+            global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             return new global::TestCase.Destination();
         }
 
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
+        /// <inheritdoc/>
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+            global::TestCase.Source? source,
+            global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
             => destination;
     }
@@ -257,16 +265,18 @@ namespace TestCase
     public partial class mapper :
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
-            global::TestCase.Source source,
+        /// <inheritdoc/>
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+            global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             return new global::TestCase.Destination();
         }
 
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
+        /// <inheritdoc/>
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+            global::TestCase.Source? source,
+            global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
             => destination;
     }

@@ -22,7 +22,9 @@ internal readonly record struct TypeMapperContainingTypeModel
 internal readonly record struct TypeMapperMappingModel
 (
     string SourceTypeName,
+    string MaybeNullSourceTypeName,
     string DestinationTypeName,
+    string MaybeNullDestinationTypeName,
     bool CanMapNewWithParameterlessConstructor,
     bool CanMapExistingWithoutMembers
 )

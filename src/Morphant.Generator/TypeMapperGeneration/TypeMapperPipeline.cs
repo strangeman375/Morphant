@@ -289,8 +289,14 @@ internal static class TypeMapperPipeline
                 new TypeMapperMappingModel(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                         registration.SourceType),
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedMaybeNullTypeName(
+                            registration.SourceType),
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                         registration.DestinationType),
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedMaybeNullTypeName(
+                            registration.DestinationType),
                     CanMapNewWithParameterlessConstructor(
                         registration.DestinationType,
                         compilation,

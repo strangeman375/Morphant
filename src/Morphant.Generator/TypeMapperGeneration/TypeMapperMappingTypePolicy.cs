@@ -122,6 +122,18 @@ internal static class TypeMapperMappingTypePolicy
         return builder.ToString();
     }
 
+    public static string GetGeneratedMaybeNullTypeName(
+        ITypeSymbol type)
+    {
+        if (!type.IsValueType)
+        {
+            type = type.WithNullableAnnotation(
+                NullableAnnotation.Annotated);
+        }
+
+        return GetGeneratedTypeName(type);
+    }
+
     private static bool AreContainingTypesEquivalent(
         INamedTypeSymbol? left,
         INamedTypeSymbol? right)
