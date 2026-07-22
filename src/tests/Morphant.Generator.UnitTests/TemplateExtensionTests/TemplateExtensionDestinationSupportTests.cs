@@ -4,6 +4,7 @@ using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests.TemplateExtensionTests;
 
+[TestFixture]
 internal sealed class TemplateExtensionDestinationSupportTests
 {
     [TestCase("object", "object", "System.Object")]
@@ -134,20 +135,25 @@ internal sealed class TemplateExtensionDestinationSupportTests
             destinationDeclaration);
     }
 
-    [Test]
-    public async Task Reuses_object_extension_for_dynamic_destination()
+    [TestCase("dynamic", "object")]
+    [TestCase("dynamic?", "object?")]
+    public async Task Reuses_object_extension_for_dynamic_destination(
+        string destinationType,
+        string expectedType)
     {
         await RunDirectTemplateDestination(
-            "dynamic",
-            "object",
+            destinationType,
+            expectedType,
             "System.Object",
             "object?");
     }
 
-    [Test]
-    public async Task Does_not_generate_extension_for_tuple_destination()
+    [TestCase("(int Id, string Name)")]
+    [TestCase("global::System.ValueTuple<int, string>")]
+    public async Task Does_not_generate_extension_for_tuple_destination(
+        string destinationType)
     {
-        await RunWithoutExtension("(int Id, string Name)");
+        await RunWithoutExtension(destinationType);
     }
 
     [TestCase("Destination[]")]
@@ -275,19 +281,30 @@ internal sealed class TemplateExtensionDestinationSupportTests
             ));
     }
 
-    [Test]
-    public async Task Generates_extension_for_accessible_nested_destination()
+    [TestCase(
+        "public static class Container",
+        "public")]
+    [TestCase(
+        "internal static class Container",
+        "public")]
+    [TestCase(
+        "public static class Container",
+        "internal")]
+    [TestCase(
+        "public class Container",
+        "protected internal")]
+    public async Task Generates_extension_for_accessible_nested_destination(
+        string containerDeclaration,
+        string destinationAccessibility)
     {
-        // lang=c#
-        const string destinationDeclaration =
-"""
-    public static class Container
-    {
-        public sealed class Destination
-        {
-        }
-    }
-""";
+        var destinationDeclaration = $$"""
+                                           {{containerDeclaration}}
+                                           {
+                                               {{destinationAccessibility}} sealed class Destination
+                                               {
+                                               }
+                                           }
+                                       """;
 
         // lang=c#
         const string templateStub =
@@ -317,8 +334,49 @@ namespace TestCase.Morphant.Generated.ContainerScope
             ));
     }
 
+    [TestCase("private")]
+    [TestCase("protected")]
+    [TestCase("private protected")]
+    public async Task Does_not_generate_extension_for_inaccessible_nested_destination(
+        string destinationAccessibility)
+    {
+        var source = $$"""
+                       #pragma warning disable CS1591
+                       #nullable enable
+
+                       using Morphant;
+
+                       namespace TestCase
+                       {
+                           public sealed class Source
+                           {
+                           }
+
+                           public class Container
+                           {
+                               {{destinationAccessibility}} sealed class Destination
+                               {
+                               }
+
+                               [MorphantMapper]
+                               public partial class TestMapper : TypeMapper
+                               {
+                                   protected override void Configure(MapperBuilder builder)
+                                   {
+                                       builder.Map<Source, Destination>();
+                                   }
+                               }
+                           }
+                       }
+                       """;
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source);
+    }
+
     [Test]
-    public async Task Does_not_generate_extension_for_inaccessible_nested_destination()
+    public async Task Does_not_generate_extension_when_containing_type_is_inaccessible()
     {
         // lang=c#
         const string source =
@@ -334,18 +392,21 @@ namespace TestCase
     {
     }
 
-    public static class Container
+    public static class Outer
     {
-        private sealed class Destination
+        private static class Container
         {
-        }
-
-        [MorphantMapper]
-        public partial class TestMapper : TypeMapper
-        {
-            protected override void Configure(MapperBuilder builder)
+            public sealed class Destination
             {
-                builder.Map<Source, Destination>();
+            }
+
+            [MorphantMapper]
+            public partial class TestMapper : TypeMapper
+            {
+                protected override void Configure(MapperBuilder builder)
+                {
+                    builder.Map<Source, Destination>();
+                }
             }
         }
     }
@@ -375,6 +436,94 @@ namespace TestCase
     }
 
     [Test]
+    public async Task Does_not_generate_extension_for_destination_nested_in_file_local_type()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    file static class Container
+    {
+        public sealed class Destination
+        {
+        }
+
+        [MorphantMapper]
+        public partial class TestMapper : TypeMapper
+        {
+            protected override void Configure(MapperBuilder builder)
+            {
+                builder.Map<Source, Destination>();
+            }
+        }
+    }
+}
+""";
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp11,
+            source);
+    }
+
+    [Test]
+    public async Task Generates_extension_for_non_generic_destination_from_referenced_assembly()
+    {
+        // lang=c#
+        const string templateStub =
+"""
+namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
+{
+    internal sealed record ReferencedDestinationMorphantTemplate;
+}
+""";
+
+        const string destinationType =
+            "global::Morphant.Generator.UnitTests.TestAssets." +
+            "ReferencedDestination";
+
+        const string templateType =
+            "global::Morphant.Generator.UnitTests.TestAssets." +
+            "Morphant.Generated." +
+            "ReferencedDestinationMorphantTemplate";
+
+        const string usageIdentity =
+            "Morphant.Generator.UnitTests.TestAssets." +
+            "ReferencedDestination";
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            BuildSource(
+                destinationDeclaration: string.Empty,
+                $"builder.Map<Source, {destinationType}>();",
+                templateStub),
+            new[]
+            {
+                typeof(
+                    Morphant.Generator.UnitTests.TestAssets
+                        .ReferencedDestination).Assembly
+            },
+            (
+                "Morphant.TemplateExtensions." +
+                HintNameHelper.ToHintNamePart(usageIdentity) +
+                ".g.cs",
+                BuildExpectedGeneratedExtension(
+                    destinationType,
+                    templateType,
+                    destinationType + "?")
+            ));
+    }
+
+    [Test]
     public async Task Preserves_nullable_arguments_in_constructed_generic_extension()
     {
         // lang=c#
@@ -400,6 +549,73 @@ namespace TestCase
                 "TestCase_Destination_1_global__TestCase_User____" +
                 "e161f976f3b0adf9.g.cs",
                 ExpectedNullableGenericExtension
+            ));
+    }
+
+    [Test]
+    public async Task Preserves_top_level_nullable_annotation_on_constructed_generic_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public sealed class Destination<T>
+    {
+    }
+""";
+
+        const string destinationType =
+            "global::TestCase.Destination<int>?";
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            BuildSource(
+                destinationDeclaration,
+                "builder.Map<Source, Destination<int>?>();",
+                GenericTemplateStub),
+            (
+                "Morphant.TemplateExtensions." +
+                HintNameHelper.ToHintNamePart(
+                    "TestCase.Destination`1<int>") +
+                ".g.cs",
+                BuildExpectedGeneratedExtension(
+                    destinationType,
+                    "global::TestCase.Morphant.Generated." +
+                    "DestinationMorphantTemplate<int>?",
+                    destinationType)
+            ));
+    }
+
+    [Test]
+    public async Task Generates_extension_for_nullable_generic_custom_struct_destination()
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public struct Destination<T>
+    {
+    }
+""";
+
+        const string destinationType =
+            "global::TestCase.Destination<int>?";
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            BuildSource(
+                destinationDeclaration,
+                "builder.Map<Source, Destination<int>?>();",
+                GenericTemplateStub),
+            (
+                "Morphant.TemplateExtensions." +
+                HintNameHelper.ToHintNamePart(
+                    "System.Nullable`1<" +
+                    "global::TestCase.Destination<int>>") +
+                ".g.cs",
+                BuildExpectedGeneratedExtension(
+                    destinationType,
+                    "global::TestCase.Morphant.Generated." +
+                    "DestinationMorphantTemplate<int>?",
+                    destinationType)
             ));
     }
 

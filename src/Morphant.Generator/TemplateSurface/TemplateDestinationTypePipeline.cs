@@ -135,13 +135,23 @@ internal static class TemplateDestinationTypePipeline
         if (destinationType is IDynamicTypeSymbol)
         {
             return BuildDestinationTypeInfo(
-                semanticModel.Compilation.GetSpecialType(
-                    SpecialType.System_Object),
+                PreserveTopLevelNullableAnnotation(
+                    destinationTypeSyntax,
+                    semanticModel.Compilation.GetSpecialType(
+                        SpecialType.System_Object)),
                 TemplateDestinationTypeKind.DirectTemplate);
         }
 
-        if (destinationType is not INamedTypeSymbol namedDestinationType ||
-            GetDestinationTypeKind(
+        if (destinationType is not INamedTypeSymbol namedDestinationType)
+        {
+            return null;
+        }
+
+        namedDestinationType = PreserveTopLevelNullableAnnotation(
+            destinationTypeSyntax,
+            namedDestinationType);
+
+        if (GetDestinationTypeKind(
                 namedDestinationType,
                 semanticModel.Compilation) is not { } kind)
         {
@@ -151,6 +161,16 @@ internal static class TemplateDestinationTypePipeline
         return BuildDestinationTypeInfo(
             namedDestinationType,
             kind);
+    }
+
+    private static INamedTypeSymbol PreserveTopLevelNullableAnnotation(
+        TypeSyntax syntax,
+        INamedTypeSymbol type)
+    {
+        return syntax is NullableTypeSyntax && type.IsReferenceType
+            ? (INamedTypeSymbol)type.WithNullableAnnotation(
+                NullableAnnotation.Annotated)
+            : type;
     }
 
     private static TemplateDestinationTypeInfo BuildDestinationTypeInfo(
