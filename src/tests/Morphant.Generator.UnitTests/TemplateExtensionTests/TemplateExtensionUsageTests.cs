@@ -37,14 +37,18 @@ namespace TestCase
         {
             MapperBuilder<Source, Destination> configured = builder
                 .Map<Source, Destination>()
+                .NullSourceHandling(
+                    global::Morphant.NullSourceHandling.Throw)
                 .Template(static (Source source) =>
                     new(source.Value))
+                .MemberMatching(
+                    global::Morphant.MemberMatching.Explicit)
                 .Template(static (Source source, Destination? destination) =>
                     new(
                         source.Value,
                         destination?.Value))
-                .NullSourceHandling(
-                    global::Morphant.NullSourceHandling.Throw);
+                .UnmappedMemberValidation(
+                    global::Morphant.UnmappedMemberValidation.None);
         }
     }
 }
@@ -209,6 +213,63 @@ namespace TestCase
     }
 
     [Test]
+    public async Task Resolves_overloads_for_block_bodied_lambdas()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+using TestCase.Morphant.Generated;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public int Value { get; }
+    }
+
+    public sealed class Destination
+    {
+        public int Value { get; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>()
+                .Template(source =>
+                {
+                    var value = source.Value;
+
+                    return new(value);
+                })
+                .Template((source, destination) =>
+                {
+                    var value =
+                        source.Value +
+                        (destination?.Value ?? 0);
+
+                    return new(value);
+                });
+        }
+    }
+}
+
+namespace TestCase.Morphant.Generated
+{
+    internal sealed record DestinationMorphantTemplate(int Value);
+}
+""";
+
+        await RunGeneratedDestination(source, isReferenceType: true);
+    }
+
+    [Test]
     public async Task Infers_source_type_from_receiver_for_supported_source_shapes()
     {
         // lang=c#
@@ -276,7 +337,62 @@ namespace TestCase
                 .Template(static source =>
                     new(
                         source.Value?.Length ?? 0));
+
+            builder.Map<int[], Destination>()
+                .Template(static source =>
+                    new(source.Length));
+
+            builder.Map<dynamic, Destination>()
+                .Template(static source =>
+                    new(source is null ? 0 : 1));
         }
+    }
+}
+
+namespace TestCase.Morphant.Generated
+{
+    internal sealed record DestinationMorphantTemplate(int Value);
+}
+""";
+
+        await RunGeneratedDestination(source, isReferenceType: true);
+    }
+
+    [Test]
+    public async Task Infers_open_source_type_parameter_from_generic_mapper_receiver()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+using TestCase.Morphant.Generated;
+
+namespace TestCase
+{
+    public sealed class Destination
+    {
+        public int Value { get; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper<TSource> : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            MapperBuilder<TSource, Destination> configured = builder
+                .Map<TSource, Destination>()
+                .Template(static source =>
+                    new(GetValue(source)))
+                .Template(static (source, destination) =>
+                    new(
+                        GetValue(source) +
+                        (destination?.Value ?? 0)));
+        }
+
+        private static int GetValue(TSource source) => 0;
     }
 }
 
