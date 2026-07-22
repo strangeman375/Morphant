@@ -15,6 +15,8 @@
   must remain useful and sufficient if all other test categories are removed.
 - Do not omit a scenario merely because another category happens to exercise
   it. Deliberate overlap between categories is acceptable.
+- Create a category subdirectory only when it contains more than one test
+  file. Keep single-file categories directly in their parent test directory.
 
 ## Compatibility and generated code
 

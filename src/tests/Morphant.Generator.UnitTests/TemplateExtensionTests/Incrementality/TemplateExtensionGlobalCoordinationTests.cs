@@ -77,6 +77,12 @@ internal sealed class TemplateExtensionGlobalCoordinationTests
                     IncrementalStepRunReason.Unchanged,
                     IncrementalStepRunReason.Unchanged)),
             Step(
+                "non-canonical usages restored",
+                BuildCanonicalSourceFiles(AllStatements),
+                PreferredExpected(
+                    IncrementalStepRunReason.Unchanged,
+                    IncrementalStepRunReason.Unchanged)),
+            Step(
                 "less preferred representatives restored",
                 BuildCanonicalSourceFiles(LessPreferredStatements),
                 LessPreferredExpected(

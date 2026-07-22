@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 using static Morphant.Generator.UnitTests.TestUtils.TemplateExtensionIncrementalityTest;
 
@@ -317,6 +318,49 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
                     IncrementalStepRunReason.Removed)));
     }
 
+    [Test]
+    public void Removes_and_restores_request_as_destination_becomes_file_local()
+    {
+        const string hintName =
+            "Morphant.TemplateExtensions.TestCase_Destination.g.cs";
+
+        RunAndAssert(
+            LanguageVersion.CSharp11,
+            Step(
+                "internal destination",
+                new[]
+                {
+                    SourceFile(
+                        "TestCase.cs",
+                        BuildFileLocalDestinationSource("internal"))
+                },
+                Expected(
+                    hintName,
+                    IncrementalStepRunReason.New)),
+            Step(
+                "file-local destination",
+                new[]
+                {
+                    SourceFile(
+                        "TestCase.cs",
+                        BuildFileLocalDestinationSource("file"))
+                },
+                Expected(
+                    hintName,
+                    IncrementalStepRunReason.Removed)),
+            Step(
+                "internal destination restored",
+                new[]
+                {
+                    SourceFile(
+                        "TestCase.cs",
+                        BuildFileLocalDestinationSource("internal"))
+                },
+                Expected(
+                    hintName,
+                    IncrementalStepRunReason.New)));
+    }
+
     private static TemplateExtensionIncrementalitySourceFile[] WithMapper(
         TemplateExtensionIncrementalitySourceFile models,
         params string[] mapStatements)
@@ -363,6 +407,14 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
         return GenericUsageSourceTemplate.Replace(
             "__TYPE_ARGUMENT__",
             typeArgument);
+    }
+
+    private static string BuildFileLocalDestinationSource(
+        string accessibility)
+    {
+        return FileLocalDestinationSourceTemplate.Replace(
+            "__ACCESSIBILITY__",
+            accessibility);
     }
 
     // lang=c#
@@ -574,6 +626,39 @@ namespace TestCase
 namespace TestCase.Morphant.Generated
 {
     internal sealed record GenericDestinationMorphantTemplate<TValue>;
+}
+""";
+
+    // lang=c#
+    private const string FileLocalDestinationSourceTemplate =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    __ACCESSIBILITY__ sealed class Destination
+    {
+    }
+
+    public sealed class Source
+    {
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>();
+        }
+    }
+}
+
+namespace TestCase.Morphant.Generated
+{
+    internal sealed record DestinationMorphantTemplate;
 }
 """;
 }
