@@ -212,7 +212,7 @@ internal static class TemplateDestinationTypePipeline
                 fullyQualifiedName,
                 existingDestinationTypeFullyQualifiedName,
                 fullyQualifiedName,
-                !ContainsTypeParameter(destinationType));
+                CanGenerateTemplateExtension(destinationType));
         }
 
         var templateDestinationType =
@@ -251,7 +251,7 @@ internal static class TemplateDestinationTypePipeline
             fullyQualifiedName,
             existingDestinationTypeFullyQualifiedName,
             templateTypeFullyQualifiedName,
-            !ContainsTypeParameter(destinationType));
+            CanGenerateTemplateExtension(destinationType));
     }
 
     private static TemplateExtensionSignatureInfo
@@ -624,38 +624,43 @@ internal static class TemplateDestinationTypePipeline
         return false;
     }
 
-    private static bool ContainsTypeParameter(ITypeSymbol type)
+    private static bool CanGenerateTemplateExtension(ITypeSymbol type)
     {
         if (type.TypeKind == TypeKind.TypeParameter)
-        {
-            return true;
-        }
-
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            return ContainsTypeParameter(arrayType.ElementType);
-        }
-
-        if (type is not INamedTypeSymbol namedType)
         {
             return false;
         }
 
-        if (namedType.ContainingType is not null &&
-            ContainsTypeParameter(namedType.ContainingType))
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            return CanGenerateTemplateExtension(arrayType.ElementType);
+        }
+
+        if (type is not INamedTypeSymbol namedType)
         {
             return true;
         }
 
+        if (IsFileLocal(namedType))
+        {
+            return false;
+        }
+
+        if (namedType.ContainingType is { } containingType &&
+            !CanGenerateTemplateExtension(containingType))
+        {
+            return false;
+        }
+
         foreach (var typeArgument in namedType.TypeArguments)
         {
-            if (ContainsTypeParameter(typeArgument))
+            if (!CanGenerateTemplateExtension(typeArgument))
             {
-                return true;
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
     private static bool IsFileLocal(INamedTypeSymbol type)

@@ -41,6 +41,7 @@ internal sealed class TemplateExtensionDestinationSupportTests
     [TestCase("double?", "double?", "System.Nullable`1<double>")]
     [TestCase("decimal", "decimal", "System.Decimal")]
     [TestCase("decimal?", "decimal?", "System.Nullable`1<decimal>")]
+    [TestCase("global::System.Nullable<int>", "int?", "System.Nullable`1<int>")]
     public async Task Generates_direct_extension_for_predefined_destination(
         string destinationType,
         string expectedType,
@@ -175,12 +176,17 @@ internal sealed class TemplateExtensionDestinationSupportTests
             destinationDeclaration);
     }
 
-    [Test]
-    public async Task Does_not_generate_extension_for_delegate_destination()
+    [TestCase("Destination", "public delegate void Destination();")]
+    [TestCase("Destination?", "public delegate void Destination();")]
+    [TestCase("Destination<int>", "public delegate void Destination<T>();")]
+    [TestCase("Destination<int>?", "public delegate void Destination<T>();")]
+    public async Task Does_not_generate_extension_for_delegate_destination(
+        string destinationType,
+        string destinationTypeDeclaration)
     {
         await RunWithoutExtension(
-            "Destination",
-            "    public delegate void Destination();");
+            destinationType,
+            "    " + destinationTypeDeclaration);
     }
 
     [Test]
@@ -250,6 +256,53 @@ internal sealed class TemplateExtensionDestinationSupportTests
                     isReferenceType
                         ? "global::TestCase.Destination?"
                         : "global::TestCase.Destination")
+            ));
+    }
+
+    [Test]
+    public async Task Generates_extension_for_destination_in_global_namespace()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+#nullable enable
+
+using Morphant;
+
+public sealed class Source
+{
+}
+
+public sealed class Destination
+{
+}
+
+[MorphantMapper]
+public partial class TestMapper : TypeMapper
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        builder.Map<Source, Destination>();
+    }
+}
+
+namespace Morphant.Generated
+{
+    internal sealed record DestinationMorphantTemplate;
+}
+""";
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.TemplateExtensions.Destination.g.cs",
+                BuildExpectedGeneratedExtension(
+                    "global::Destination",
+                    "global::Morphant.Generated." +
+                    "DestinationMorphantTemplate",
+                    "global::Destination?")
             ));
     }
 
@@ -418,6 +471,66 @@ namespace TestCase
             source);
     }
 
+    [TestCase("Destination<Hidden>")]
+    [TestCase("Destination<Wrapper<Hidden>>")]
+    [TestCase("Destination<Hidden[]>")]
+    [TestCase("Outer<Hidden>.Destination<int>")]
+    [TestCase("HiddenEnum?")]
+    public async Task Does_not_generate_extension_when_destination_contains_inaccessible_type(
+        string destinationType)
+    {
+        var source = $$"""
+                       #pragma warning disable CS1591
+                       #nullable enable
+
+                       using Morphant;
+
+                       namespace TestCase
+                       {
+                           public sealed class Source
+                           {
+                           }
+
+                           public sealed class Destination<T>
+                           {
+                           }
+
+                           public sealed class Wrapper<T>
+                           {
+                           }
+
+                           public sealed class Outer<TOuter>
+                           {
+                               public sealed class Destination<TValue>
+                               {
+                               }
+                           }
+
+                           [MorphantMapper]
+                           public partial class TestMapper : TypeMapper
+                           {
+                               private sealed class Hidden
+                               {
+                               }
+
+                               private enum HiddenEnum
+                               {
+                                   None
+                               }
+
+                               protected override void Configure(MapperBuilder builder)
+                               {
+                                   builder.Map<Source, {{destinationType}}>();
+                               }
+                           }
+                       }
+                       """;
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source);
+    }
+
     [Test]
     public async Task Does_not_generate_extension_for_file_local_destination()
     {
@@ -473,6 +586,48 @@ namespace TestCase
         await TemplateExtensionGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp11,
             source);
+    }
+
+    [TestCase("Destination<Hidden>")]
+    [TestCase("Destination<Wrapper<Hidden>>")]
+    [TestCase("Destination<Hidden[]>")]
+    [TestCase("Outer<Hidden>.Destination<int>")]
+    [TestCase("HiddenEnum?")]
+    public async Task Does_not_generate_extension_when_constructed_destination_contains_file_local_type(
+        string destinationType)
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    file sealed class Hidden
+    {
+    }
+
+    file enum HiddenEnum
+    {
+        None
+    }
+
+    public sealed class Destination<T>
+    {
+    }
+
+    public sealed class Wrapper<T>
+    {
+    }
+
+    public sealed class Outer<TOuter>
+    {
+        public sealed class Destination<TValue>
+        {
+        }
+    }
+""";
+
+        await RunWithoutExtension(
+            destinationType,
+            destinationDeclaration,
+            LanguageVersion.CSharp11);
     }
 
     [Test]
@@ -552,6 +707,55 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
             ));
     }
 
+    [TestCase("dynamic", "dynamic")]
+    [TestCase("global::System.Int32", "int")]
+    [TestCase("global::System.Nullable<int>", "int?")]
+    [TestCase("string?[]", "string?[]")]
+    [TestCase("(int Id, string Name)", "(int Id, string Name)")]
+    [TestCase(
+        "global::System.ValueTuple<int, string>",
+        "(int, string)")]
+    [TestCase("global::System.Action", "global::System.Action")]
+    [TestCase(
+        "global::System.Collections.Generic.Dictionary<string, int?>",
+        "global::System.Collections.Generic.Dictionary<string, int?>")]
+    public async Task Generates_extension_for_supported_closed_generic_argument(
+        string destinationTypeArgument,
+        string expectedTypeArgument)
+    {
+        // lang=c#
+        const string destinationDeclaration =
+"""
+    public sealed class Destination<T>
+    {
+    }
+""";
+
+        var destinationType =
+            $"global::TestCase.Destination<{expectedTypeArgument}>";
+
+        var usageIdentity =
+            $"TestCase.Destination`1<{expectedTypeArgument}>";
+
+        await TemplateExtensionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            BuildSource(
+                destinationDeclaration,
+                $"builder.Map<Source, Destination<{destinationTypeArgument}>>();",
+                GenericTemplateStub),
+            (
+                "Morphant.TemplateExtensions." +
+                HintNameHelper.ToHintNamePart(usageIdentity) +
+                ".g.cs",
+                BuildExpectedGeneratedExtension(
+                    destinationType,
+                    "global::TestCase.Morphant.Generated." +
+                    "DestinationMorphantTemplate<" +
+                    expectedTypeArgument + ">",
+                    destinationType + "?")
+            ));
+    }
+
     [Test]
     public async Task Preserves_top_level_nullable_annotation_on_constructed_generic_destination()
     {
@@ -621,10 +825,12 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
 
     [TestCase("public sealed class Destination<T>", true, LanguageVersion.CSharp9)]
     [TestCase("public struct Destination<T>", false, LanguageVersion.CSharp9)]
+    [TestCase("public readonly struct Destination<T>", false, LanguageVersion.CSharp9)]
     [TestCase("public sealed record Destination<T>", true, LanguageVersion.CSharp9)]
     [TestCase("public abstract class Destination<T>", true, LanguageVersion.CSharp9)]
     [TestCase("public interface Destination<T>", true, LanguageVersion.CSharp9)]
     [TestCase("public record struct Destination<T>", false, LanguageVersion.CSharp10)]
+    [TestCase("public readonly record struct Destination<T>", false, LanguageVersion.CSharp10)]
     public async Task Generates_extension_for_generic_destination_kind(
         string destinationTypeDeclaration,
         bool isReferenceType,
@@ -772,70 +978,89 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
             ));
     }
 
-    [Test]
-    public async Task Does_not_generate_extension_for_open_constructed_destination()
+    [TestCase("Destination<T>")]
+    [TestCase("Destination<Wrapper<T>>")]
+    [TestCase("Destination<T[]>")]
+    [TestCase("Destination<(T Item, int Count)>")]
+    [TestCase("Outer<T>.Destination<int>")]
+    public async Task Does_not_generate_extension_for_open_constructed_destination(
+        string destinationType)
     {
-        // lang=c#
-        const string source =
-"""
-#pragma warning disable CS1591
-#nullable enable
+        var source = $$"""
+                       #pragma warning disable CS1591
+                       #nullable enable
 
-using Morphant;
+                       using Morphant;
 
-namespace TestCase
-{
-    public sealed class Source
-    {
-    }
+                       namespace TestCase
+                       {
+                           public sealed class Source
+                           {
+                           }
 
-    public sealed class Destination<T>
-    {
-    }
+                           public sealed class Destination<TValue>
+                           {
+                           }
 
-    [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper
-    {
-        protected override void Configure(MapperBuilder builder)
-        {
-            builder.Map<Source, Destination<T>>();
-        }
-    }
-}
-""";
+                           public sealed class Wrapper<TValue>
+                           {
+                           }
+
+                           public sealed class Outer<TOuter>
+                           {
+                               public sealed class Destination<TValue>
+                               {
+                               }
+                           }
+
+                           [MorphantMapper]
+                           public partial class TestMapper<T> : TypeMapper
+                           {
+                               protected override void Configure(MapperBuilder builder)
+                               {
+                                   builder.Map<Source, {{destinationType}}>();
+                               }
+                           }
+                       }
+                       """;
 
         await TemplateExtensionGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source);
     }
 
-    [Test]
-    public async Task Does_not_generate_extension_for_type_parameter_destination()
+    [TestCase("TDestination", "")]
+    [TestCase("TDestination", "where TDestination : class")]
+    [TestCase("TDestination?", "where TDestination : class")]
+    [TestCase("TDestination", "where TDestination : struct")]
+    [TestCase("TDestination?", "where TDestination : struct")]
+    public async Task Does_not_generate_extension_for_type_parameter_destination(
+        string destinationType,
+        string constraint)
     {
-        // lang=c#
-        const string source =
-"""
-#pragma warning disable CS1591
-#nullable enable
+        var source = $$"""
+                       #pragma warning disable CS1591
+                       #nullable enable
 
-using Morphant;
+                       using Morphant;
 
-namespace TestCase
-{
-    public sealed class Source
-    {
-    }
+                       namespace TestCase
+                       {
+                           public sealed class Source
+                           {
+                           }
 
-    [MorphantMapper]
-    public partial class TestMapper<TDestination> : TypeMapper
-    {
-        protected override void Configure(MapperBuilder builder)
-        {
-            builder.Map<Source, TDestination>();
-        }
-    }
-}
-""";
+                           [MorphantMapper]
+                           public partial class TestMapper<TDestination> : TypeMapper
+                               {{constraint}}
+                           {
+                               protected override void Configure(MapperBuilder builder)
+                               {
+                                   builder.Map<Source, {{destinationType}}>();
+                               }
+                           }
+                       }
+                       """;
 
         await TemplateExtensionGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
