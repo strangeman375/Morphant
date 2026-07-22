@@ -17,7 +17,7 @@ internal static class TemplateTypeNamingTestHarness
 
             expectedSources[i] =
             (
-                "Morphant.TemplateType." + expected.HintNamePart + ".g.cs",
+                "Morphant.Generated.TemplateType." + expected.HintNamePart + ".g.cs",
                 BuildExpectedSource(expected)
             );
         }

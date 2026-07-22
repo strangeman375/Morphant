@@ -161,7 +161,7 @@ internal sealed class TemplateTypeDestinationSupportTests
         await TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            "Morphant.TemplateType." +
+            "Morphant.Generated.TemplateType." +
             "TestCase_Container_Destination.g.cs",
             ExpectedNestedDestinationTemplate);
     }
@@ -260,7 +260,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                         .ReferencedDestination).Assembly
             },
             (
-                "Morphant.TemplateType." +
+                "Morphant.Generated.TemplateType." +
                 "Morphant_Generator_UnitTests_TestAssets_" +
                 "ReferencedDestination.g.cs",
                 expected

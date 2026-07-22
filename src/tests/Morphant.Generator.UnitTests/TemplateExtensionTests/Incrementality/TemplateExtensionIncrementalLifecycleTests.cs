@@ -9,13 +9,13 @@ namespace Morphant.Generator.UnitTests.TemplateExtensionTests.Incrementality;
 internal sealed class TemplateExtensionIncrementalLifecycleTests
 {
     private const string GeneratedHintName =
-        "Morphant.TemplateExtensions.TestCase_GeneratedDestination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_GeneratedDestination.g.cs";
 
     private const string StableHintName =
-        "Morphant.TemplateExtensions.TestCase_StableDestination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_StableDestination.g.cs";
 
     private const string DirectHintName =
-        "Morphant.TemplateExtensions.TestCase_ZDirectDestination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_ZDirectDestination.g.cs";
 
     [Test]
     public void Adds_and_removes_only_affected_requests()
@@ -115,7 +115,7 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
                     SourceFile("Mapper.cs", MapperSource)
                 },
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "TestCase_ZChangingDestination.g.cs",
                     IncrementalStepRunReason.New),
                 Expected(
@@ -136,7 +136,7 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
                     SourceFile("Mapper.cs", MapperSource)
                 },
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "TestCase_ZChangingDestination.g.cs",
                     IncrementalStepRunReason.Modified),
                 Expected(
@@ -155,7 +155,7 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
                     SourceFile("Mapper.cs", MapperSource)
                 },
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "TestCase_ZChangingDestination.g.cs",
                     IncrementalStepRunReason.Removed),
                 Expected(
@@ -175,7 +175,7 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
                     SourceFile("Mapper.cs", MapperSource)
                 },
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "TestCase_ZChangingDestination.g.cs",
                     IncrementalStepRunReason.New),
                 Expected(
@@ -214,7 +214,7 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
                 "    [MorphantMapper]\n"));
 
         const string discoveredHintName =
-            "Morphant.TemplateExtensions." +
+            "Morphant.Generated.TemplateExtension." +
             "TestCase_ZDiscoveredDestination.g.cs";
 
         RunAndAssert(
@@ -281,7 +281,7 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
     public void Adds_and_removes_request_as_generic_usage_closes_and_opens()
     {
         const string closedHintName =
-            "Morphant.TemplateExtensions." +
+            "Morphant.Generated.TemplateExtension." +
             "TestCase_GenericDestination_1_int___" +
             "b7900cafc9c698ba.g.cs";
 
@@ -322,7 +322,7 @@ internal sealed class TemplateExtensionIncrementalLifecycleTests
     public void Removes_and_restores_request_as_destination_becomes_file_local()
     {
         const string hintName =
-            "Morphant.TemplateExtensions.TestCase_Destination.g.cs";
+            "Morphant.Generated.TemplateExtension.TestCase_Destination.g.cs";
 
         RunAndAssert(
             LanguageVersion.CSharp11,

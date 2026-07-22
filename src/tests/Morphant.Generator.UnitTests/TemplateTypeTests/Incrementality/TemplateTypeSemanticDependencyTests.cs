@@ -9,10 +9,10 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests.Incrementality;
 internal sealed class TemplateTypeSemanticDependencyTests
 {
     private const string DestinationHintName =
-        "Morphant.TemplateType.TestCase_Destination.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_Destination.g.cs";
 
     private const string StableDestinationHintName =
-        "Morphant.TemplateType.TestCase_StableDestination.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_StableDestination.g.cs";
 
     [Test]
     public void Rebuilds_only_affected_template_when_global_alias_changes()

@@ -30,7 +30,7 @@ internal static class TemplateTypeTestHarness
                 destinationMembers,
                 destinationDocumentation,
                 mappedDestinationType),
-            "Morphant.TemplateType.TestCase_Destination.g.cs",
+            "Morphant.Generated.TemplateType.TestCase_Destination.g.cs",
             BuildExpectedSource(
                 constructorMembers,
                 expectedConstructors,

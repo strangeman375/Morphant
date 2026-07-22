@@ -875,7 +875,7 @@ namespace A_B.Morphant.Generated
             ExpectedHintNamePart(usageIdentity);
 
         var fileName =
-            $"Morphant.TemplateExtensions.{hintNamePart}.g.cs";
+            $"Morphant.Generated.TemplateExtension.{hintNamePart}.g.cs";
 
         // lang=c#
         var content = $$"""

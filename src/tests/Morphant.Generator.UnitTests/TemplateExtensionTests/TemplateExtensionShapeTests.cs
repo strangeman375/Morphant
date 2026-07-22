@@ -89,7 +89,7 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.TestCase_Destination.g.cs",
+                "Morphant.Generated.TemplateExtension.TestCase_Destination.g.cs",
                 expected
             ));
     }
@@ -167,7 +167,7 @@ namespace Morphant
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.System_Int32.g.cs",
+                "Morphant.Generated.TemplateExtension.System_Int32.g.cs",
                 expected
             ));
     }

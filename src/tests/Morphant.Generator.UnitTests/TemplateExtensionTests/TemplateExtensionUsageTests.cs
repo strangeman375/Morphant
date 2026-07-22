@@ -157,7 +157,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.System_String.g.cs",
+                "Morphant.Generated.TemplateExtension.System_String.g.cs",
                 BuildExpectedExtension(
                     "string",
                     "string?",
@@ -204,7 +204,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.System_Int32.g.cs",
+                "Morphant.Generated.TemplateExtension.System_Int32.g.cs",
                 BuildExpectedExtension(
                     "int",
                     "int",
@@ -415,7 +415,7 @@ namespace TestCase.Morphant.Generated
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.TestCase_Destination.g.cs",
+                "Morphant.Generated.TemplateExtension.TestCase_Destination.g.cs",
                 BuildExpectedExtension(
                     destinationType,
                     isReferenceType

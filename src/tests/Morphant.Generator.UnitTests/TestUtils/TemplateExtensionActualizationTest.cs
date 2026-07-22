@@ -191,7 +191,7 @@ internal static class TemplateExtensionActualizationTest
         string templateResultType)
     {
         var hintName =
-            $"Morphant.TemplateExtensions.{hintNamePart}.g.cs";
+            $"Morphant.Generated.TemplateExtension.{hintNamePart}.g.cs";
 
         // lang=c#
         var source = $$"""

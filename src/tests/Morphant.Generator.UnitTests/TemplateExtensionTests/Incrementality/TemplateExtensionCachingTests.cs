@@ -8,10 +8,10 @@ namespace Morphant.Generator.UnitTests.TemplateExtensionTests.Incrementality;
 internal sealed class TemplateExtensionCachingTests
 {
     private const string GeneratedHintName =
-        "Morphant.TemplateExtensions.TestCase_GeneratedDestination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_GeneratedDestination.g.cs";
 
     private const string DirectHintName =
-        "Morphant.TemplateExtensions.TestCase_DirectDestination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_DirectDestination.g.cs";
 
     [Test]
     public void Caches_generated_and_direct_requests_when_inputs_are_unchanged()

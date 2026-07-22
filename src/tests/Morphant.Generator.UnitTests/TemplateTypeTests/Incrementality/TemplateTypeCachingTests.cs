@@ -8,16 +8,16 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests.Incrementality;
 internal sealed class TemplateTypeCachingTests
 {
     private const string DestinationHintName =
-        "Morphant.TemplateType.TestCase_Destination.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_Destination.g.cs";
 
     private const string DestinationAHintName =
-        "Morphant.TemplateType.TestCase_DestinationA.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_DestinationA.g.cs";
 
     private const string DestinationBHintName =
-        "Morphant.TemplateType.TestCase_DestinationB.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_DestinationB.g.cs";
 
     private const string GenericDestinationHintName =
-        "Morphant.TemplateType.TestCase_Destination_1.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_Destination_1.g.cs";
 
     [Test]
     public void Caches_model_and_request_when_inputs_are_unchanged()

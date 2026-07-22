@@ -99,7 +99,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 typeof(ReferencedDestination).Assembly
             },
             (
-                "Morphant.TemplateType." +
+                "Morphant.Generated.TemplateType." +
                 "Morphant_Generator_UnitTests_TestAssets_" +
                 "ReferencedDestination.g.cs",
                 expected

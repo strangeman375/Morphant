@@ -178,10 +178,9 @@ internal static class TemplateExtensionPipeline
         TemplateDestinationTypeInfo destinationType,
         string hintNamePart)
     {
-        var hintName =
-            "Morphant.TemplateExtensions." +
-            hintNamePart +
-            ".g.cs";
+        var hintName = GeneratedSourceHintName.Create(
+            "TemplateExtension",
+            hintNamePart);
 
         return new TemplateExtensionRequest(
             destinationType,

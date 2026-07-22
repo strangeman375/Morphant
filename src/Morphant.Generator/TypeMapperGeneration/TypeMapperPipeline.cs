@@ -77,11 +77,10 @@ internal static class TypeMapperPipeline
             mapperDeclaration.Identifier.Text,
             mappings);
 
-        var hintName =
-            "Morphant.TypeMapper." +
+        var hintName = GeneratedSourceHintName.Create(
+            "TypeMapper",
             HintNameHelper.ToHintNamePart(
-                SymbolNameHelper.GetFullMetadataName(mapperType)) +
-            ".g.cs";
+                SymbolNameHelper.GetFullMetadataName(mapperType)));
 
         return new TypeMapperRequest(
             hintName,

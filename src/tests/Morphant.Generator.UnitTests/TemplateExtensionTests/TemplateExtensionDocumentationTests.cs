@@ -53,7 +53,7 @@ namespace TestCase.Morphant.Generated
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.TestCase_Destination.g.cs",
+                "Morphant.Generated.TemplateExtension.TestCase_Destination.g.cs",
                 BuildExpectedExtension(
                     "global::TestCase.Destination",
                     "global::TestCase.Destination?",
@@ -105,7 +105,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.TestCase_Destination.g.cs",
+                "Morphant.Generated.TemplateExtension.TestCase_Destination.g.cs",
                 BuildExpectedExtension(
                     "global::TestCase.Destination",
                     "global::TestCase.Destination",

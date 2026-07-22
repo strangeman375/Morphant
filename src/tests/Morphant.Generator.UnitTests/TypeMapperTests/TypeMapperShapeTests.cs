@@ -66,7 +66,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TypeMapper.TestCase_TestMapper.g.cs",
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
                 expected
             ));
     }
@@ -148,7 +148,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TypeMapper.TestCase_TestMapper.g.cs",
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
                 expected
             ));
     }

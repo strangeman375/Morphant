@@ -9,13 +9,13 @@ namespace Morphant.Generator.UnitTests.TemplateExtensionTests.Incrementality;
 internal sealed class TemplateExtensionDependencyIsolationTests
 {
     private const string DestinationAHintName =
-        "Morphant.TemplateExtensions.TestCase_DestinationA.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_DestinationA.g.cs";
 
     private const string DestinationBHintName =
-        "Morphant.TemplateExtensions.TestCase_DestinationB.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_DestinationB.g.cs";
 
     private const string StableHintName =
-        "Morphant.TemplateExtensions.TestCase_ZStableDestination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_ZStableDestination.g.cs";
 
     [Test]
     public void Rebuilds_only_request_whose_surface_changes()
@@ -87,7 +87,7 @@ internal sealed class TemplateExtensionDependencyIsolationTests
                                 "FirstDestination")))
                     .ToArray(),
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "TestCase_FirstDestination.g.cs",
                     IncrementalStepRunReason.New),
                 Expected(
@@ -102,7 +102,7 @@ internal sealed class TemplateExtensionDependencyIsolationTests
                                 "SecondDestination")))
                     .ToArray(),
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "TestCase_SecondDestination.g.cs",
                     IncrementalStepRunReason.Modified),
                 Expected(
@@ -156,11 +156,11 @@ internal sealed class TemplateExtensionDependencyIsolationTests
                     stableReference
                 },
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "ExternalChanging_Destination.g.cs",
                     IncrementalStepRunReason.New),
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "ExternalStable_Destination.g.cs",
                     IncrementalStepRunReason.New)),
             Step(
@@ -172,11 +172,11 @@ internal sealed class TemplateExtensionDependencyIsolationTests
                     stableReference
                 },
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "ExternalChanging_Destination.g.cs",
                     IncrementalStepRunReason.Cached),
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "ExternalStable_Destination.g.cs",
                     IncrementalStepRunReason.Cached)));
     }
@@ -224,11 +224,11 @@ internal sealed class TemplateExtensionDependencyIsolationTests
                     stableReference
                 },
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "ExternalChanging_Destination.g.cs",
                     IncrementalStepRunReason.New),
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "ExternalStable_Destination.g.cs",
                     IncrementalStepRunReason.New)),
             Step(
@@ -240,11 +240,11 @@ internal sealed class TemplateExtensionDependencyIsolationTests
                     stableReference
                 },
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "ExternalChanging_Destination.g.cs",
                     IncrementalStepRunReason.Modified),
                 Expected(
-                    "Morphant.TemplateExtensions." +
+                    "Morphant.Generated.TemplateExtension." +
                     "ExternalStable_Destination.g.cs",
                     IncrementalStepRunReason.Unchanged)));
     }

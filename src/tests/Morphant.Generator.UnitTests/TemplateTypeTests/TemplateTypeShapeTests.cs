@@ -88,7 +88,7 @@ namespace TestCase.Morphant.Generated
         await TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            "Morphant.TemplateType.TestCase_Destination.g.cs",
+            "Morphant.Generated.TemplateType.TestCase_Destination.g.cs",
             expected);
     }
 }

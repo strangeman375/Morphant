@@ -406,7 +406,7 @@ namespace TestCase.Morphant.Generated
         return TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            "Morphant.TemplateType.TestCase_Destination.g.cs",
+            "Morphant.Generated.TemplateType.TestCase_Destination.g.cs",
             expected);
     }
 }

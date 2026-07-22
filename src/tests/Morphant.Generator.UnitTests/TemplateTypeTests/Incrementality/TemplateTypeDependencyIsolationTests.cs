@@ -8,19 +8,19 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests.Incrementality;
 internal sealed class TemplateTypeDependencyIsolationTests
 {
     private const string DestinationAHintName =
-        "Morphant.TemplateType.TestCase_DestinationA.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_DestinationA.g.cs";
 
     private const string DestinationBHintName =
-        "Morphant.TemplateType.TestCase_DestinationB.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_DestinationB.g.cs";
 
     private const string ClassDestinationHintName =
-        "Morphant.TemplateType.TestCase_ClassDestination.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_ClassDestination.g.cs";
 
     private const string InterfaceDestinationHintName =
-        "Morphant.TemplateType.TestCase_InterfaceDestination.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_InterfaceDestination.g.cs";
 
     private const string NestedDestinationHintName =
-        "Morphant.TemplateType." +
+        "Morphant.Generated.TemplateType." +
         "TestCase_Outer_1_NestedDestination.g.cs";
 
     [Test]
@@ -300,10 +300,10 @@ internal sealed class TemplateTypeDependencyIsolationTests
                     destinationBReference
                 },
                 Expected(
-                    "Morphant.TemplateType.ExternalA_DestinationA.g.cs",
+                    "Morphant.Generated.TemplateType.ExternalA_DestinationA.g.cs",
                     IncrementalStepRunReason.New),
                 Expected(
-                    "Morphant.TemplateType.ExternalB_DestinationB.g.cs",
+                    "Morphant.Generated.TemplateType.ExternalB_DestinationB.g.cs",
                     IncrementalStepRunReason.New)),
             Step(
                 "one reference changed",
@@ -314,10 +314,10 @@ internal sealed class TemplateTypeDependencyIsolationTests
                     destinationBReference
                 },
                 Expected(
-                    "Morphant.TemplateType.ExternalA_DestinationA.g.cs",
+                    "Morphant.Generated.TemplateType.ExternalA_DestinationA.g.cs",
                     IncrementalStepRunReason.Modified),
                 Expected(
-                    "Morphant.TemplateType.ExternalB_DestinationB.g.cs",
+                    "Morphant.Generated.TemplateType.ExternalB_DestinationB.g.cs",
                     IncrementalStepRunReason.Cached)));
     }
 

@@ -206,7 +206,7 @@ internal sealed class TemplateExtensionDestinationSupportTests
                 "builder.Map<Source, Destination?>();",
                 NonGenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 ExpectedHintNamePart(
                     "System.Nullable`1<global::TestCase.Destination>") +
                 ".g.cs",
@@ -246,7 +246,7 @@ internal sealed class TemplateExtensionDestinationSupportTests
                 "builder.Map<Source, Destination>();",
                 NonGenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 "TestCase_Destination.g.cs",
                 BuildExpectedGeneratedExtension(
                     "global::TestCase.Destination",
@@ -296,7 +296,7 @@ namespace Morphant.Generated
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateExtensions.Destination.g.cs",
+                "Morphant.Generated.TemplateExtension.Destination.g.cs",
                 BuildExpectedGeneratedExtension(
                     "global::Destination",
                     "global::Morphant.Generated." +
@@ -323,7 +323,7 @@ namespace Morphant.Generated
                 "builder.Map<Source, Destination?>();",
                 NonGenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 "TestCase_Destination.g.cs",
                 BuildExpectedGeneratedExtension(
                     "global::TestCase.Destination?",
@@ -374,7 +374,7 @@ namespace TestCase.Morphant.Generated.ContainerScope
                 "builder.Map<Source, Container.Destination>();",
                 templateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 ExpectedHintNamePart(
                     "TestCase.Container+Destination") +
                 ".g.cs",
@@ -667,7 +667,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                         .ReferencedDestination).Assembly
             },
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 ExpectedHintNamePart(usageIdentity) +
                 ".g.cs",
                 BuildExpectedGeneratedExtension(
@@ -699,7 +699,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 "builder.Map<Source, Destination<User?>>();",
                 GenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 "TestCase_Destination_1_global__TestCase_User____" +
                 "e161f976f3b0adf9.g.cs",
                 ExpectedNullableGenericExtension
@@ -743,7 +743,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 $"builder.Map<Source, Destination<{destinationTypeArgument}>>();",
                 GenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 ExpectedHintNamePart(usageIdentity) +
                 ".g.cs",
                 BuildExpectedGeneratedExtension(
@@ -776,7 +776,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 "builder.Map<Source, Destination<int>?>();",
                 GenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 ExpectedHintNamePart(
                     "TestCase.Destination`1<int>") +
                 ".g.cs",
@@ -809,7 +809,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 "builder.Map<Source, Destination<int>?>();",
                 GenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 ExpectedHintNamePart(
                     "System.Nullable`1<" +
                     "global::TestCase.Destination<int>>") +
@@ -848,7 +848,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 "builder.Map<Source, Destination<int>>();",
                 GenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 "TestCase_Destination_1_int___" +
                 "a212525a5607429d.g.cs",
                 BuildExpectedGeneratedExtension(
@@ -887,13 +887,13 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 mapStatements,
                 GenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 "TestCase_Destination_1_int___" +
                 "a212525a5607429d.g.cs",
                 ExpectedIntGenericExtension
             ),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 "TestCase_Destination_1_string___" +
                 "887c5e6840177255.g.cs",
                 ExpectedStringGenericExtension
@@ -922,7 +922,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                 "Outer<int>.Destination<string?>>();",
                 NestedGenericTemplateStub),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 "TestCase_Outer_1_Destination_1_int__string____" +
                 "1f963160e176dad2.g.cs",
                 ExpectedNestedGenericExtension
@@ -967,7 +967,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
                         .ReferencedGenericDestination<>).Assembly
             },
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 ExpectedHintNamePart(usageIdentity) +
                 ".g.cs",
                 BuildExpectedGeneratedExtension(
@@ -1294,7 +1294,7 @@ namespace TestCase
                 destinationDeclaration,
                 mapStatements),
             (
-                "Morphant.TemplateExtensions." +
+                "Morphant.Generated.TemplateExtension." +
                 ExpectedHintNamePart(usageIdentity) +
                 ".g.cs",
                 BuildExpectedDirectExtension(

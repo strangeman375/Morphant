@@ -10,7 +10,7 @@ internal sealed class TemplateTypeLifecycleTests
     public void Adds_template_after_first_map_and_removes_it_after_last_map()
     {
         const string hintName =
-            "Morphant.TemplateType.TestCase_Destination.g.cs";
+            "Morphant.Generated.TemplateType.TestCase_Destination.g.cs";
 
         var expected = Expected.Build(
             destinationConstructors:
@@ -106,7 +106,7 @@ internal sealed class TemplateTypeLifecycleTests
                 "customer destination",
                 BuildReplacementSource("CustomerDestination"),
                 (
-                    "Morphant.TemplateType." +
+                    "Morphant.Generated.TemplateType." +
                     "TestCase_CustomerDestination.g.cs",
                     customerExpected
                 )),
@@ -114,7 +114,7 @@ internal sealed class TemplateTypeLifecycleTests
                 "order destination",
                 BuildReplacementSource("OrderDestination"),
                 (
-                    "Morphant.TemplateType." +
+                    "Morphant.Generated.TemplateType." +
                     "TestCase_OrderDestination.g.cs",
                     orderExpected
                 )));
@@ -124,7 +124,7 @@ internal sealed class TemplateTypeLifecycleTests
     public void Removes_template_for_direct_destination_and_restores_it_when_switched_back()
     {
         const string hintName =
-            "Morphant.TemplateType.TestCase_Destination.g.cs";
+            "Morphant.Generated.TemplateType.TestCase_Destination.g.cs";
 
         var expected = Expected.Build(
             destinationConstructors:
@@ -181,7 +181,7 @@ internal sealed class TemplateTypeLifecycleTests
                     "OldModels",
                     "Destination"),
                 (
-                    "Morphant.TemplateType." +
+                    "Morphant.Generated.TemplateType." +
                     "OldModels_Destination.g.cs",
                     initialExpected
                 )),
@@ -191,7 +191,7 @@ internal sealed class TemplateTypeLifecycleTests
                     "NewModels",
                     "RenamedDestination"),
                 (
-                    "Morphant.TemplateType." +
+                    "Morphant.Generated.TemplateType." +
                     "NewModels_RenamedDestination.g.cs",
                     updatedExpected
                 )));

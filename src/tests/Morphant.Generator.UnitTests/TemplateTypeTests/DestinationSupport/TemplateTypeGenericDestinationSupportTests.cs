@@ -6,7 +6,7 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests.DestinationSupport;
 internal sealed class TemplateTypeGenericDestinationSupportTests
 {
     private const string GenericDestinationHintName =
-        "Morphant.TemplateType." +
+        "Morphant.Generated.TemplateType." +
         "TestCase_Destination_1.g.cs";
 
     [Test]
@@ -204,7 +204,7 @@ namespace TestCase
         await TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            "Morphant.TemplateType." +
+            "Morphant.Generated.TemplateType." +
             "TestCase_Destination_10.g.cs",
             ExpectedConstrainedGenericTemplate);
     }
@@ -250,7 +250,7 @@ namespace TestCase
         await TemplateTypeGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
-            "Morphant.TemplateType." +
+            "Morphant.Generated.TemplateType." +
             "TestCase_Outer_1_Destination_1.g.cs",
             ExpectedNestedGenericTemplate);
     }
@@ -348,12 +348,12 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.TemplateType." +
+                "Morphant.Generated.TemplateType." +
                 "TestCase_Outer_1_Destination_1.g.cs",
                 ExpectedNestedArityOneTemplate
             ),
             (
-                "Morphant.TemplateType." +
+                "Morphant.Generated.TemplateType." +
                 "TestCase_Outer_2_Destination.g.cs",
                 ExpectedNestedArityTwoTemplate
             ));
@@ -400,7 +400,7 @@ namespace TestCase
                         .ReferencedGenericDestination<>).Assembly
             },
             (
-                "Morphant.TemplateType." +
+                "Morphant.Generated.TemplateType." +
                 "Morphant_Generator_UnitTests_TestAssets_" +
                 "ReferencedGenericDestination_1.g.cs",
                 ExpectedReferencedGenericTemplate

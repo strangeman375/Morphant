@@ -54,10 +54,9 @@ internal static class TemplateTypeModelPipeline
             return null;
         }
 
-        var hintName =
-            "Morphant.TemplateType." +
-            generationInput.HintNamePart +
-            ".g.cs";
+        var hintName = GeneratedSourceHintName.Create(
+            "TemplateType",
+            generationInput.HintNamePart);
 
         return new TemplateTypeModelInput(
             generationInput,

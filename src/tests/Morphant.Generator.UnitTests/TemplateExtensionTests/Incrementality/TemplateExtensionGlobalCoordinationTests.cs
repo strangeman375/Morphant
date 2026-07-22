@@ -8,46 +8,46 @@ namespace Morphant.Generator.UnitTests.TemplateExtensionTests.Incrementality;
 internal sealed class TemplateExtensionGlobalCoordinationTests
 {
     private const string NullableLessPreferredHintName =
-        "Morphant.TemplateExtensions." +
+        "Morphant.Generated.TemplateExtension." +
         "TestCase_NullableDestination_1_string____" +
         "b64ec6cc8fc799d5.g.cs";
 
     private const string NullablePreferredHintName =
-        "Morphant.TemplateExtensions." +
+        "Morphant.Generated.TemplateExtension." +
         "TestCase_NullableDestination_1_string___" +
         "16200651af1de0b6.g.cs";
 
     private const string DynamicLessPreferredHintName =
-        "Morphant.TemplateExtensions." +
+        "Morphant.Generated.TemplateExtension." +
         "TestCase_DynamicDestination_1_dynamic___" +
         "6b8a07a128236db2.g.cs";
 
     private const string DynamicPreferredHintName =
-        "Morphant.TemplateExtensions." +
+        "Morphant.Generated.TemplateExtension." +
         "TestCase_DynamicDestination_1_object___" +
         "91eadf3e59f1b642.g.cs";
 
     private const string TupleLessPreferredHintName =
-        "Morphant.TemplateExtensions." +
+        "Morphant.Generated.TemplateExtension." +
         "TestCase_TupleDestination_1__int_Id__" +
         "string_Name____f7175c39d6140b21.g.cs";
 
     private const string TuplePreferredHintName =
-        "Morphant.TemplateExtensions." +
+        "Morphant.Generated.TemplateExtension." +
         "TestCase_TupleDestination_1__int__string____" +
         "c03f8b6309bd87d3.g.cs";
 
     private const string StableHintName =
-        "Morphant.TemplateExtensions.TestCase_ZStableDestination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_ZStableDestination.g.cs";
 
     private const string UpperHintName =
-        "Morphant.TemplateExtensions.TestCase_Destination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_Destination.g.cs";
 
     private const string LowerHintName =
-        "Morphant.TemplateExtensions.TestCase_destination.g.cs";
+        "Morphant.Generated.TemplateExtension.TestCase_destination.g.cs";
 
     private const string CollidingLowerHintName =
-        "Morphant.TemplateExtensions." +
+        "Morphant.Generated.TemplateExtension." +
         "TestCase_destination__c52cc9889f9bc467.g.cs";
 
     [Test]

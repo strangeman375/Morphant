@@ -11,7 +11,7 @@ internal sealed class TemplateExtensionSurfaceInvalidationTests
     public void Rebuilds_generated_reference_request_when_nullability_changes()
     {
         const string hintName =
-            "Morphant.TemplateExtensions.TestCase_Destination.g.cs";
+            "Morphant.Generated.TemplateExtension.TestCase_Destination.g.cs";
 
         RunAndAssert(
             Step(
@@ -41,7 +41,7 @@ internal sealed class TemplateExtensionSurfaceInvalidationTests
     public void Rebuilds_direct_reference_request_when_nullability_changes()
     {
         const string hintName =
-            "Morphant.TemplateExtensions.System_String.g.cs";
+            "Morphant.Generated.TemplateExtension.System_String.g.cs";
 
         RunAndAssert(
             Step(
@@ -68,10 +68,10 @@ internal sealed class TemplateExtensionSurfaceInvalidationTests
     public void Rebuilds_direct_value_request_when_nullability_changes()
     {
         const string nullableHintName =
-            "Morphant.TemplateExtensions." +
+            "Morphant.Generated.TemplateExtension." +
             "System_Nullable_1_int___7d45e0b10f64f4d1.g.cs";
         const string nonNullableHintName =
-            "Morphant.TemplateExtensions.System_Int32.g.cs";
+            "Morphant.Generated.TemplateExtension.System_Int32.g.cs";
 
         RunAndAssert(
             Step(
@@ -98,11 +98,11 @@ internal sealed class TemplateExtensionSurfaceInvalidationTests
     public void Rebuilds_generated_value_request_when_nullability_changes()
     {
         const string nullableHintName =
-            "Morphant.TemplateExtensions." +
+            "Morphant.Generated.TemplateExtension." +
             "System_Nullable_1_global__TestCase_" +
             "StructDestination___a1aeebe8bb0e4854.g.cs";
         const string nonNullableHintName =
-            "Morphant.TemplateExtensions." +
+            "Morphant.Generated.TemplateExtension." +
             "TestCase_StructDestination.g.cs";
 
         RunAndAssert(
@@ -133,15 +133,15 @@ internal sealed class TemplateExtensionSurfaceInvalidationTests
     public void Rebuilds_constructed_request_when_type_argument_changes()
     {
         const string intHintName =
-            "Morphant.TemplateExtensions." +
+            "Morphant.Generated.TemplateExtension." +
             "TestCase_ChangingDestination_1_int___" +
             "e0dc5b0509e8cbce.g.cs";
         const string nullableStringHintName =
-            "Morphant.TemplateExtensions." +
+            "Morphant.Generated.TemplateExtension." +
             "TestCase_ChangingDestination_1_string____" +
             "2040dc9137256187.g.cs";
         const string dynamicHintName =
-            "Morphant.TemplateExtensions." +
+            "Morphant.Generated.TemplateExtension." +
             "TestCase_ChangingDestination_1_dynamic___" +
             "0a0fbd5397ddb59a.g.cs";
 

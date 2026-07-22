@@ -8,10 +8,10 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests.Incrementality;
 internal sealed class TemplateTypeIncrementalLifecycleTests
 {
     private const string DestinationAHintName =
-        "Morphant.TemplateType.TestCase_DestinationA.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_DestinationA.g.cs";
 
     private const string DestinationBHintName =
-        "Morphant.TemplateType.TestCase_DestinationB.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_DestinationB.g.cs";
 
     [Test]
     public void Adds_and_removes_only_affected_model_and_request()
@@ -80,7 +80,7 @@ internal sealed class TemplateTypeIncrementalLifecycleTests
                     new[] { destinationFile },
                     "builder.Map<Source, Destination>();"),
                 Expected(
-                    "Morphant.TemplateType.TestCase_Destination.g.cs",
+                    "Morphant.Generated.TemplateType.TestCase_Destination.g.cs",
                     IncrementalStepRunReason.New)),
             Step(
                 "direct destination",
@@ -88,7 +88,7 @@ internal sealed class TemplateTypeIncrementalLifecycleTests
                     new[] { destinationFile },
                     "builder.Map<Source, int>();"),
                 Expected(
-                    "Morphant.TemplateType.TestCase_Destination.g.cs",
+                    "Morphant.Generated.TemplateType.TestCase_Destination.g.cs",
                     IncrementalStepRunReason.Removed)),
             Step(
                 "generated destination restored",
@@ -96,7 +96,7 @@ internal sealed class TemplateTypeIncrementalLifecycleTests
                     new[] { destinationFile },
                     "builder.Map<Source, Destination>();"),
                 Expected(
-                    "Morphant.TemplateType.TestCase_Destination.g.cs",
+                    "Morphant.Generated.TemplateType.TestCase_Destination.g.cs",
                     IncrementalStepRunReason.New)));
     }
 

@@ -8,7 +8,7 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests.Actualization;
 internal sealed class TemplateTypeContentActualizationTests
 {
     private const string DestinationHintName =
-        "Morphant.TemplateType.TestCase_Destination.g.cs";
+        "Morphant.Generated.TemplateType.TestCase_Destination.g.cs";
 
     [Test]
     public void Updates_template_when_destination_constructors_change()
@@ -773,7 +773,7 @@ namespace TestCase
                 "where T : Base, IContract, new()");
 
         const string hintName =
-            "Morphant.TemplateType.TestCase_Destination_1.g.cs";
+            "Morphant.Generated.TemplateType.TestCase_Destination_1.g.cs";
 
         RunAndAssert(
             Step(
@@ -1122,10 +1122,10 @@ namespace TestCase
 """;
 
         const string changedHintName =
-            "Morphant.TemplateType.TestCase_ChangedDestination.g.cs";
+            "Morphant.Generated.TemplateType.TestCase_ChangedDestination.g.cs";
 
         const string stableHintName =
-            "Morphant.TemplateType.TestCase_StableDestination.g.cs";
+            "Morphant.Generated.TemplateType.TestCase_StableDestination.g.cs";
 
         var initialChangedExpected = Expected.Build(
             templateTypeName:
@@ -1277,7 +1277,7 @@ namespace ReferencedModels
 """;
 
         const string hintName =
-            "Morphant.TemplateType.ReferencedModels_Destination.g.cs";
+            "Morphant.Generated.TemplateType.ReferencedModels_Destination.g.cs";
 
         RunAndAssert(
             Step(
