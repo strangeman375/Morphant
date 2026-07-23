@@ -26,9 +26,16 @@ internal readonly record struct TypeMapperMappingModel
     string DestinationTypeName,
     string MaybeNullDestinationTypeName,
     bool CanMapNewWithParameterlessConstructor,
-    bool CanMapExistingWithoutMembers
+    bool CanMapExisting,
+    ImmutableArray<TypeMapperPropertyMappingModel> PropertyMappings
 )
 {
     public string InterfaceTypeName =>
         $"global::Morphant.ITypeMapper<{SourceTypeName}, {DestinationTypeName}>";
 }
+
+internal readonly record struct TypeMapperPropertyMappingModel
+(
+    string SourcePropertyName,
+    string DestinationPropertyName
+);

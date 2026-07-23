@@ -286,34 +286,51 @@ internal static class TypeMapperPipeline
 
         return registrations
             .Select(registration =>
-                new TypeMapperMappingModel(
-                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                        registration.SourceType),
-                    TypeMapperMappingTypePolicy
-                        .GetGeneratedMaybeNullTypeName(
-                            registration.SourceType),
-                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                        registration.DestinationType),
-                    TypeMapperMappingTypePolicy
-                        .GetGeneratedMaybeNullTypeName(
-                            registration.DestinationType),
-                    CanMapNewWithParameterlessConstructor(
-                        registration.DestinationType,
-                        compilation,
-                        mapperType),
-                    CanMapExistingWithoutMembers(
-                        registration.DestinationType)))
+                BuildMapping(
+                    registration,
+                    compilation,
+                    mapperType))
             .ToImmutableArray();
     }
 
-    private static bool CanMapNewWithParameterlessConstructor(
-        ITypeSymbol destinationType,
+    private static TypeMapperMappingModel BuildMapping(
+        MapperBuilderMapRegistrationInfo registration,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType)
     {
-        var destination = GetMemberlessClass(destinationType);
+        var destination =
+            GetSupportedClassDestination(
+                registration.DestinationType);
 
-        if (destination is null || destination.IsAbstract)
+        return new TypeMapperMappingModel(
+            TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                registration.SourceType),
+            TypeMapperMappingTypePolicy
+                .GetGeneratedMaybeNullTypeName(
+                    registration.SourceType),
+            TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                registration.DestinationType),
+            TypeMapperMappingTypePolicy
+                .GetGeneratedMaybeNullTypeName(
+                    registration.DestinationType),
+            CanMapNewWithParameterlessConstructor(
+                destination,
+                compilation,
+                mapperType),
+            destination is not null,
+            BuildConventionPropertyMappings(
+                registration.SourceType,
+                destination));
+    }
+
+    private static bool CanMapNewWithParameterlessConstructor(
+        INamedTypeSymbol? destination,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType)
+    {
+        if (destination is null ||
+            destination.IsAbstract ||
+            HasRequiredInstanceMembers(destination))
         {
             return false;
         }
@@ -329,13 +346,88 @@ internal static class TypeMapperPipeline
                    mapperType);
     }
 
-    private static bool CanMapExistingWithoutMembers(
-        ITypeSymbol destinationType)
+    private static ImmutableArray<TypeMapperPropertyMappingModel>
+        BuildConventionPropertyMappings(
+            ITypeSymbol sourceType,
+            INamedTypeSymbol? destination)
     {
-        return GetMemberlessClass(destinationType) is not null;
+        if (sourceType is not INamedTypeSymbol source ||
+            destination is null)
+        {
+            return [];
+        }
+
+        var sourceProperties = source
+            .GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(IsOrdinaryProperty)
+            .ToArray();
+
+        if (sourceProperties.Length == 0)
+        {
+            return [];
+        }
+
+        var mappings =
+            ImmutableArray.CreateBuilder<
+                TypeMapperPropertyMappingModel>();
+
+        foreach (var destinationProperty in destination
+                     .GetMembers()
+                     .OfType<IPropertySymbol>())
+        {
+            if (!IsOrdinaryProperty(destinationProperty))
+            {
+                continue;
+            }
+
+            var sourceProperty = sourceProperties.FirstOrDefault(
+                candidate =>
+                    StringComparer.Ordinal.Equals(
+                        candidate.Name,
+                        destinationProperty.Name) &&
+                    SymbolEqualityComparer.IncludeNullability.Equals(
+                        candidate.Type,
+                        destinationProperty.Type));
+
+            if (sourceProperty is null)
+            {
+                continue;
+            }
+
+            mappings.Add(
+                new TypeMapperPropertyMappingModel(
+                    sourceProperty.Name,
+                    destinationProperty.Name));
+        }
+
+        return mappings.ToImmutable();
     }
 
-    private static INamedTypeSymbol? GetMemberlessClass(
+    private static bool IsOrdinaryProperty(
+        IPropertySymbol property)
+    {
+        return !property.IsStatic &&
+               !property.IsIndexer &&
+               !property.IsRequired &&
+               !property.ReturnsByRef &&
+               !property.ReturnsByRefReadonly &&
+               property.DeclaredAccessibility ==
+                   Accessibility.Public &&
+               property.GetMethod is
+               {
+                   DeclaredAccessibility:
+                       Accessibility.Public
+               } &&
+               property.SetMethod is
+               {
+                   DeclaredAccessibility:
+                       Accessibility.Public,
+                   IsInitOnly: false
+               };
+    }
+
+    private static INamedTypeSymbol? GetSupportedClassDestination(
         ITypeSymbol destinationType)
     {
         if (destinationType is not INamedTypeSymbol
@@ -345,8 +437,7 @@ internal static class TypeMapperPipeline
                 SpecialType: SpecialType.None
             } destination ||
             destination.NullableAnnotation ==
-                NullableAnnotation.Annotated ||
-            HasInstanceFieldsOrProperties(destination))
+                NullableAnnotation.Annotated)
         {
             return null;
         }
@@ -354,7 +445,7 @@ internal static class TypeMapperPipeline
         return destination;
     }
 
-    private static bool HasInstanceFieldsOrProperties(
+    private static bool HasRequiredInstanceMembers(
         INamedTypeSymbol destination)
     {
         for (var current = destination;
@@ -365,8 +456,13 @@ internal static class TypeMapperPipeline
             if (current.GetMembers().Any(
                     static member =>
                         !member.IsStatic &&
-                        !member.IsImplicitlyDeclared &&
-                        member is IFieldSymbol or IPropertySymbol))
+                        member is IFieldSymbol
+                        {
+                            IsRequired: true
+                        } or IPropertySymbol
+                        {
+                            IsRequired: true
+                        }))
             {
                 return true;
             }

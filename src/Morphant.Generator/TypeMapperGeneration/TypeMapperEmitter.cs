@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Morphant.Generator.TypeMapperGeneration;
@@ -111,8 +112,40 @@ internal static class TypeMapperEmitter
             writer.Unindent();
             writer.Line("{");
             writer.Indent();
-            writer.Line(
-                $"return new {mapping.DestinationTypeName}();");
+
+            if (mapping.PropertyMappings.IsEmpty)
+            {
+                writer.Line(
+                    $"return new {mapping.DestinationTypeName}();");
+            }
+            else
+            {
+                writer.Line(
+                    $"return new {mapping.DestinationTypeName}()");
+                writer.Line("{");
+                writer.Indent();
+
+                for (var index = 0;
+                     index < mapping.PropertyMappings.Length;
+                     index++)
+                {
+                    var propertyMapping =
+                        mapping.PropertyMappings[index];
+                    var suffix =
+                        index < mapping.PropertyMappings.Length - 1
+                            ? ","
+                            : string.Empty;
+
+                    writer.Line(
+                        $"{Identifier(propertyMapping.DestinationPropertyName)} = " +
+                        $"source!.{Identifier(propertyMapping.SourcePropertyName)}" +
+                        suffix);
+                }
+
+                writer.Unindent();
+                writer.Line("};");
+            }
+
             writer.Unindent();
             writer.Line("}");
             return;
@@ -137,10 +170,44 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
-        writer.Line(
-            mapping.CanMapExistingWithoutMembers
-                ? "=> destination;"
-                : "=> throw new global::System.NotImplementedException();");
+
+        if (!mapping.CanMapExisting)
+        {
+            writer.Line(
+                "=> throw new global::System.NotImplementedException();");
+            writer.Unindent();
+            return;
+        }
+
+        if (mapping.PropertyMappings.IsEmpty)
+        {
+            writer.Line("=> destination;");
+            writer.Unindent();
+            return;
+        }
+
         writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        foreach (var propertyMapping in mapping.PropertyMappings)
+        {
+            writer.Line(
+                $"destination!.{Identifier(propertyMapping.DestinationPropertyName)} = " +
+                $"source!.{Identifier(propertyMapping.SourcePropertyName)};");
+        }
+
+        writer.Line();
+        writer.Line("return destination;");
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static string Identifier(string value)
+    {
+        return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
+            ? "@" + value
+            : value;
     }
 }

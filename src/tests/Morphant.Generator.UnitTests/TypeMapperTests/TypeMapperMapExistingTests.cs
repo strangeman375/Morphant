@@ -267,7 +267,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Keeps_MapExisting_unimplemented_when_the_destination_has_an_instance_member()
+    public async Task Returns_destinations_whose_members_are_outside_the_current_mapping_slice()
     {
         // lang=c#
         const string source =
@@ -324,27 +324,31 @@ namespace TestCase
         global::TestCase.FieldDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FieldDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.FieldDestination();
+        }
 
         /// <inheritdoc/>
         global::TestCase.FieldDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FieldDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.FieldDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         /// <inheritdoc/>
         global::TestCase.InheritedPropertyDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InheritedPropertyDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.InheritedPropertyDestination();
+        }
 
         /// <inheritdoc/>
         global::TestCase.InheritedPropertyDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InheritedPropertyDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.InheritedPropertyDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;

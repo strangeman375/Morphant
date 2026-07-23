@@ -241,7 +241,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Keeps_MapNew_unimplemented_when_the_destination_has_an_instance_member()
+    public async Task Creates_a_destination_when_its_members_are_outside_the_current_mapping_slice()
     {
         // lang=c#
         const string source =
@@ -291,14 +291,16 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Destination();
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
     }
 }
 """;

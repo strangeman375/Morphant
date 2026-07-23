@@ -51,7 +51,7 @@ namespace TestCase
     {
     }
 
-    public sealed class Destination
+    public sealed record Destination
     {
         public int Value { get; set; }
     }
