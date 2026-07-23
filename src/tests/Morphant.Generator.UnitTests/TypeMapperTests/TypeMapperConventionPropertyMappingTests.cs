@@ -106,7 +106,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Maps_only_properties_inside_the_initial_convention_slice()
+    public async Task Maps_exactly_matching_members_and_ignores_nonmatching_members()
     {
         // lang=c#
         const string source =
@@ -235,8 +235,10 @@ namespace TestCase
         {
             return new global::TestCase.Destination()
             {
+                Inherited = source!.Inherited,
                 Included = source!.Included,
-                NullableIncluded = source!.NullableIncluded
+                NullableIncluded = source!.NullableIncluded,
+                SourceField = source!.SourceField
             };
         }
 
@@ -246,8 +248,10 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            destination!.Inherited = source!.Inherited;
             destination!.Included = source!.Included;
             destination!.NullableIncluded = source!.NullableIncluded;
+            destination!.SourceField = source!.SourceField;
 
             return destination;
         }
@@ -654,7 +658,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Defers_required_properties_without_emitting_invalid_MapNew_code()
+    public async Task Maps_required_properties_when_convention_satisfies_them()
     {
         // lang=c#
         const string source =
@@ -705,7 +709,13 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Destination()
+            {
+                RequiredValue = source!.RequiredValue,
+                Included = source!.Included
+            };
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
@@ -713,6 +723,7 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            destination!.RequiredValue = source!.RequiredValue;
             destination!.Included = source!.Included;
 
             return destination;

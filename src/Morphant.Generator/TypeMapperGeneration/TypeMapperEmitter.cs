@@ -113,7 +113,7 @@ internal static class TypeMapperEmitter
             writer.Line("{");
             writer.Indent();
 
-            if (mapping.PropertyMappings.IsEmpty)
+            if (mapping.MapNewMemberMappings.IsEmpty)
             {
                 writer.Line(
                     $"return new {mapping.DestinationTypeName}();");
@@ -126,19 +126,19 @@ internal static class TypeMapperEmitter
                 writer.Indent();
 
                 for (var index = 0;
-                     index < mapping.PropertyMappings.Length;
+                     index < mapping.MapNewMemberMappings.Length;
                      index++)
                 {
-                    var propertyMapping =
-                        mapping.PropertyMappings[index];
+                    var memberMapping =
+                        mapping.MapNewMemberMappings[index];
                     var suffix =
-                        index < mapping.PropertyMappings.Length - 1
+                        index < mapping.MapNewMemberMappings.Length - 1
                             ? ","
                             : string.Empty;
 
                     writer.Line(
-                        $"{Identifier(propertyMapping.DestinationPropertyName)} = " +
-                        $"source!.{Identifier(propertyMapping.SourcePropertyName)}" +
+                        $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                        $"source!.{Identifier(memberMapping.SourceMemberName)}" +
                         suffix);
                 }
 
@@ -179,7 +179,7 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.PropertyMappings.IsEmpty)
+        if (mapping.MapExistingMemberMappings.IsEmpty)
         {
             writer.Line("=> destination;");
             writer.Unindent();
@@ -190,11 +190,11 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
-        foreach (var propertyMapping in mapping.PropertyMappings)
+        foreach (var memberMapping in mapping.MapExistingMemberMappings)
         {
             writer.Line(
-                $"destination!.{Identifier(propertyMapping.DestinationPropertyName)} = " +
-                $"source!.{Identifier(propertyMapping.SourcePropertyName)};");
+                $"destination!.{Identifier(memberMapping.DestinationMemberName)} = " +
+                $"source!.{Identifier(memberMapping.SourceMemberName)};");
         }
 
         writer.Line();

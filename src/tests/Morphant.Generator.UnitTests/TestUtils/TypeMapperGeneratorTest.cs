@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
@@ -43,6 +44,35 @@ internal sealed class TypeMapperGeneratorTest : CSharpSourceGeneratorTest<TestTy
         bool allowUnsafe,
         params (string FileName, string Content)[] expectedSources)
     {
+        await RunAndAssert(
+            languageVersion,
+            sourceFileContent,
+            allowUnsafe,
+            Array.Empty<Assembly>(),
+            expectedSources);
+    }
+
+    public static async Task RunAndAssert(
+        LanguageVersion languageVersion,
+        string sourceFileContent,
+        IReadOnlyCollection<Assembly> additionalReferences,
+        params (string FileName, string Content)[] expectedSources)
+    {
+        await RunAndAssert(
+            languageVersion,
+            sourceFileContent,
+            allowUnsafe: false,
+            additionalReferences,
+            expectedSources);
+    }
+
+    private static async Task RunAndAssert(
+        LanguageVersion languageVersion,
+        string sourceFileContent,
+        bool allowUnsafe,
+        IReadOnlyCollection<Assembly> additionalReferences,
+        params (string FileName, string Content)[] expectedSources)
+    {
         var test = new TypeMapperGeneratorTest(languageVersion)
         {
             TestCode = sourceFileContent
@@ -62,6 +92,12 @@ internal sealed class TypeMapperGeneratorTest : CSharpSourceGeneratorTest<TestTy
                         project.Id,
                         options);
                 });
+        }
+
+        foreach (var additionalReference in additionalReferences)
+        {
+            test.TestState.AdditionalReferences.Add(
+                additionalReference);
         }
 
         foreach (var expectedSource in expectedSources)

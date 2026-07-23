@@ -23,9 +23,10 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 2 → Полная матрица доступности членов.** Следующий срез определяет
-поддержку source/destination properties и fields с учётом наследования,
-accessibility и специальных форм членов.
+**Фаза 2 → Совместимость типов выражений.** Следующий срез расширяет текущее
+сопоставление идентичных типов допустимыми неявными преобразованиями. Точный
+набор conversions нужно согласовать отдельно до написания тестов и
+production-кода.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -99,24 +100,44 @@ accessibility и специальных форм членов.
   Сначала только одинаковое имя и заведомо совместимый тип, без настроек и
   специальных случаев.
 
-  Текущая граница: объявленные непосредственно в source и destination
-  публичные instance properties с обычными публичными `get` и `set`
-  сопоставляются по регистрозависимому имени и идентичному типу с учётом
-  nullable-аннотации. Присваивания следуют порядку объявления destination.
-  Неподходящие и специальные члены пока игнорируются и не блокируют маппинг
-  остальных свойств.
+  Первый executable-срез закрепил регистрозависимое сопоставление по имени и
+  идентичному типу с учётом nullable-аннотации, object initializer для
+  `MapNew` и последовательные присваивания для `MapExisting`. Полная текущая
+  граница выбора членов описана следующим завершённым пунктом.
 
-  `MapNew` использует object initializer для поддерживаемого class-destination
-  с доступным parameterless-конструктором; наличие `required`-члена пока
-  оставляет этот режим заглушкой. `MapExisting` присваивает свойства
-  переданному class-destination независимо от его constructibility. Входы
-  разыменовываются с подавлением nullable-warning до реализации effective
-  null-handling settings.
+- [x] Полная матрица доступности членов.
 
-- [ ] Полная матрица доступности членов.
+  Convention mapping поддерживает все четыре комбинации property/field.
+  Source-член должен быть доступен generated mapper-у и читаем через корневой
+  source-тип: property требует доступный `get`, field может быть mutable или
+  readonly. Для destination `MapNew` принимает доступный `set` или `init`,
+  включая set-only property, либо mutable field; `MapExisting` исключает
+  init-only property, но использует обычные setter-ы и mutable fields.
 
-  Source/destination properties и fields, inherited/static/indexer/readonly/
-  init-only/get-only/set-only/required, сокрытие членов.
+  Accessibility вычисляется в реальном lexical context generated mapper-а и
+  с учётом типа receiver-а. Поэтому учитываются private/protected-доступ,
+  internal-граница assembly и referenced types. Члены class/record/struct
+  source и class destination наследуются base-first; любое объявление в
+  производном типе скрывает одноимённые базовые члены независимо от своей
+  пригодности, override выводится один раз. Для interface source выбирается
+  единственное most-derived объявление, а unrelated неоднозначные объявления
+  не маппятся. Source type parameters используют class/interface constraints,
+  включая транзитивные constraints.
+
+  `required` destination-члены разрешают `MapNew`, если все они закрыты
+  convention initializer-ом либо parameterless-конструктор помечен
+  `[SetsRequiredMembers]`; иначе только `MapNew` остаётся заглушкой.
+  Static/const, indexers, ref-return properties, explicit interface
+  implementations, fixed buffers, нечитаемые source-члены, get-only
+  destination properties и readonly destination fields не участвуют.
+
+  Порядок mappings — base-first и затем порядок destination-деклараций с
+  most-derived hiding. Для metadata-типа исходное взаимное чередование fields
+  и properties не представлено, поэтому сохраняется детерминированный порядок
+  членов, предоставленный Roslyn. Сопоставление пока по-прежнему требует
+  одинакового регистрозависимого имени и идентичного типа; conversions и
+  расширенная nullability-совместимость относятся к следующему пункту.
+  Поддерживаемые разновидности destination этим срезом не расширены.
 
 - [ ] Совместимость типов выражений.
 
