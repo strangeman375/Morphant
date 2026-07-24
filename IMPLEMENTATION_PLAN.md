@@ -23,10 +23,10 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 2 → Разновидности destination.** Следующий срез определяет исполняемую
-семантику для classes, structs, records, nullable structs и остальных уже
-обнаруживаемых форм destination. Точную границу поддержки нужно согласовать до
-написания тестов и production-кода.
+**Фаза 3 → Базовый `Template()`.** Следующий срез добавляет простую
+expression-lambda с явным созданием destination и явными значениями членов.
+Точную поддерживаемую форму выражения и её взаимодействие с уже реализованным
+convention mapping нужно согласовать до написания тестов и production-кода.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -194,10 +194,38 @@ TDD-среза, но детали могут уточняться перед р�
   (`sourceId`); коллизии с другими локальными именами и видимыми type parameters
   разрешаются числовым суффиксом (`sourceId1`).
 
-- [ ] Разновидности destination.
+- [x] Разновидности destination.
 
   Classes, structs, records, nullable structs и остальные формы, для которых
   маппирование имеет осмысленную семантику.
+
+  Concrete class/record class и struct/record struct поддерживают оба режима.
+  `MapNew` использует тот же constructor/member planning независимо от record-
+  формы; `MapExisting` изменяет переданный reference destination либо локальную
+  копию value destination и возвращает результат. Readonly/init-only члены
+  участвуют только в `MapNew`. Abstract classes и interfaces не создаются, но
+  поддерживают `MapExisting` через доступные mutable-члены. Nullable reference
+  destination следует семантике соответствующего reference type. Constructed
+  generic destination следует разновидности своего constructed-типа.
+
+  Для nullable struct `MapNew` создаёт underlying value. `MapExisting` явно
+  проверяет `destination` на `null`: non-null значение копируется, изменяется и
+  возвращается, а null-ветка пока бросает `NotImplementedException` до этапа
+  `NullDestinationHandling`. Локальная копия получает читаемое collision-safe
+  имя `destinationValue`, при необходимости с числовым суффиксом.
+
+  Destination type parameter поддерживается по constraints. `MapNew` доступен
+  при `struct`, `unmanaged` или `new()` constraint. `MapExisting` доступен при
+  reference-type или named class/interface constraint; члены берутся из
+  class/interface constraints, включая транзитивные. Value-constrained type
+  parameter изменяется и возвращается как копия. Unconstrained type parameter
+  остаётся заглушкой.
+
+  C# predefined types, enums и согласованный набор direct BCL types остаются
+  заглушками до явного `Template()`: создание через `default` и возврат
+  существующего значения не считаются convention mapping. Этот список общий
+  для generated mapper-а и template surface. Корневые tuples, arrays,
+  collections и delegates по-прежнему исключаются более ранней type policy.
 
 ## Фаза 3. Template DSL
 

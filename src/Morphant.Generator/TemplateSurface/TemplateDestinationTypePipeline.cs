@@ -443,7 +443,7 @@ internal static class TemplateDestinationTypePipeline
             return null;
         }
 
-        if (IsDirectTemplateDestination(destinationType))
+        if (DirectDestinationTypePolicy.IsDirect(destinationType))
         {
             return TemplateDestinationTypeKind.DirectTemplate;
         }
@@ -459,44 +459,6 @@ internal static class TemplateDestinationTypePipeline
             TypeKind.Interface
                 ? TemplateDestinationTypeKind.GeneratedTemplate
                 : null;
-    }
-
-    private static bool IsDirectTemplateDestination(
-        INamedTypeSymbol destinationType)
-    {
-        if (IsCSharpPredefinedType(destinationType) ||
-            destinationType.TypeKind == TypeKind.Enum ||
-            IsSupportedBclDirectTemplateType(destinationType))
-        {
-            return true;
-        }
-
-        return IsNullableValueType(destinationType) &&
-               destinationType.TypeArguments[0] is
-                   INamedTypeSymbol underlyingType &&
-               IsDirectTemplateDestination(underlyingType);
-    }
-
-    private static bool IsCSharpPredefinedType(INamedTypeSymbol type)
-    {
-        return type.SpecialType is
-            SpecialType.System_Object or
-            SpecialType.System_String or
-            SpecialType.System_Boolean or
-            SpecialType.System_Char or
-            SpecialType.System_SByte or
-            SpecialType.System_Byte or
-            SpecialType.System_Int16 or
-            SpecialType.System_UInt16 or
-            SpecialType.System_Int32 or
-            SpecialType.System_UInt32 or
-            SpecialType.System_Int64 or
-            SpecialType.System_UInt64 or
-            SpecialType.System_IntPtr or
-            SpecialType.System_UIntPtr or
-            SpecialType.System_Single or
-            SpecialType.System_Double or
-            SpecialType.System_Decimal;
     }
 
     private static bool IsNullableValueType(INamedTypeSymbol type)
@@ -521,28 +483,6 @@ internal static class TemplateDestinationTypePipeline
         return IsNullableValueType(destinationType) ||
                destinationType.NullableAnnotation ==
                NullableAnnotation.Annotated;
-    }
-
-    private static bool IsSupportedBclDirectTemplateType(
-        INamedTypeSymbol type)
-    {
-        return SymbolNameHelper.GetFullMetadataName(type.OriginalDefinition) is
-            "System.Guid" or
-            "System.DateTime" or
-            "System.DateTimeOffset" or
-            "System.DateOnly" or
-            "System.TimeOnly" or
-            "System.TimeSpan" or
-            "System.Half" or
-            "System.Int128" or
-            "System.UInt128" or
-            "System.Uri" or
-            "System.Version" or
-            "System.Numerics.BigInteger" or
-            "System.Numerics.Complex" or
-            "System.Text.Rune" or
-            "System.Index" or
-            "System.Range";
     }
 
     private static bool HasDuplicateTypeParameterNames(

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -300,24 +301,31 @@ internal static class TypeMapperPipeline
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
-        var destination =
-            GetSupportedClassDestination(
-                registration.DestinationType);
+        var destinationPlan =
+            BuildDestinationPlan(
+                registration.DestinationType,
+                cancellationToken);
 
         var memberMappings = ConventionMemberMappingPlanner.Build(
             registration.SourceType,
-            destination,
+            destinationPlan.MemberType,
             compilation,
             mapperType,
             cancellationToken);
         var constructorMapping =
             ConventionConstructorMappingPlanner.Build(
                 registration.SourceType,
-                destination,
+                destinationPlan.MemberType,
                 memberMappings,
                 compilation,
                 mapperType,
                 cancellationToken);
+        var mapExistingDestinationLocalName =
+            destinationPlan.MapExistingKind ==
+                TypeMapperMapExistingKind.NullableValue &&
+            !memberMappings.MapExisting.IsEmpty
+                ? AllocateDestinationValueLocalName(mapperType)
+                : null;
 
         return new TypeMapperMappingModel(
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
@@ -331,28 +339,175 @@ internal static class TypeMapperPipeline
                 .GetGeneratedMaybeNullTypeName(
                     registration.DestinationType),
             constructorMapping?.Constructor,
-            destination is not null,
+            destinationPlan.MapExistingKind,
+            mapExistingDestinationLocalName,
             constructorMapping?.MapNewMemberMappings ??
                 memberMappings.MapNew,
             memberMappings.MapExisting);
     }
 
-    private static INamedTypeSymbol? GetSupportedClassDestination(
-        ITypeSymbol destinationType)
+    private static DestinationPlan BuildDestinationPlan(
+        ITypeSymbol destinationType,
+        CancellationToken cancellationToken)
     {
-        if (destinationType is not INamedTypeSymbol
-            {
-                TypeKind: TypeKind.Class,
-                IsRecord: false,
-                SpecialType: SpecialType.None
-            } destination ||
-            destination.NullableAnnotation ==
-                NullableAnnotation.Annotated)
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var memberType = destinationType;
+        var isNullableValue = false;
+
+        if (destinationType is INamedTypeSymbol namedDestination)
         {
-            return null;
+            if (DirectDestinationTypePolicy.IsDirect(
+                    namedDestination))
+            {
+                return default;
+            }
+
+            if (namedDestination.OriginalDefinition.SpecialType ==
+                    SpecialType.System_Nullable_T)
+            {
+                memberType = namedDestination.TypeArguments[0];
+                isNullableValue = true;
+            }
         }
 
-        return destination;
+        memberType = memberType.WithNullableAnnotation(
+            NullableAnnotation.NotAnnotated);
+
+        if (memberType is ITypeParameterSymbol typeParameter)
+        {
+            return new DestinationPlan(
+                memberType,
+                isNullableValue
+                    ? TypeMapperMapExistingKind.NullableValue
+                    : GetTypeParameterMapExistingKind(
+                        typeParameter,
+                        cancellationToken));
+        }
+
+        if (memberType is not INamedTypeSymbol namedMemberType ||
+            namedMemberType.IsRefLikeType)
+        {
+            return default;
+        }
+
+        return namedMemberType.TypeKind switch
+        {
+            TypeKind.Class or TypeKind.Interface =>
+                new DestinationPlan(
+                    memberType,
+                    TypeMapperMapExistingKind.Reference),
+            TypeKind.Struct =>
+                new DestinationPlan(
+                    memberType,
+                    isNullableValue
+                        ? TypeMapperMapExistingKind.NullableValue
+                        : TypeMapperMapExistingKind.Value),
+            _ => default
+        };
+    }
+
+    private static TypeMapperMapExistingKind
+        GetTypeParameterMapExistingKind(
+            ITypeParameterSymbol typeParameter,
+            CancellationToken cancellationToken)
+    {
+        if (!HasMapExistingConstraint(
+                typeParameter,
+                new HashSet<ISymbol>(
+                    SymbolEqualityComparer.Default),
+                cancellationToken))
+        {
+            return TypeMapperMapExistingKind.Unsupported;
+        }
+
+        return typeParameter.HasValueTypeConstraint
+            ? TypeMapperMapExistingKind.Value
+            : TypeMapperMapExistingKind.Reference;
+    }
+
+    private static bool HasMapExistingConstraint(
+        ITypeParameterSymbol typeParameter,
+        HashSet<ISymbol> visitedTypeParameters,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!visitedTypeParameters.Add(typeParameter))
+        {
+            return false;
+        }
+
+        if (typeParameter.HasReferenceTypeConstraint)
+        {
+            return true;
+        }
+
+        foreach (var constraint in typeParameter.ConstraintTypes)
+        {
+            if (constraint is ITypeParameterSymbol
+                    nestedTypeParameter)
+            {
+                if (HasMapExistingConstraint(
+                        nestedTypeParameter,
+                        visitedTypeParameters,
+                        cancellationToken))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (constraint.TypeKind is
+                TypeKind.Class or
+                TypeKind.Interface)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string AllocateDestinationValueLocalName(
+        INamedTypeSymbol mapperType)
+    {
+        var usedNames = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "source",
+            "destination",
+            "context"
+        };
+
+        for (var type = mapperType;
+             type is not null;
+             type = type.ContainingType)
+        {
+            foreach (var typeParameter in type.TypeParameters)
+            {
+                usedNames.Add(typeParameter.Name);
+            }
+        }
+
+        const string candidate = "destinationValue";
+
+        if (usedNames.Add(candidate))
+        {
+            return candidate;
+        }
+
+        for (var suffix = 1;; suffix++)
+        {
+            var name =
+                candidate +
+                suffix.ToString(CultureInfo.InvariantCulture);
+
+            if (usedNames.Add(name))
+            {
+                return name;
+            }
+        }
     }
 
     private static string GetAccessibility(
@@ -376,4 +531,8 @@ internal static class TypeMapperPipeline
     private readonly record struct TypeMapperGenerationInput(
         string StableIdentity,
         TypeMapperModel Model);
+
+    private readonly record struct DestinationPlan(
+        ITypeSymbol? MemberType,
+        TypeMapperMapExistingKind MapExistingKind);
 }

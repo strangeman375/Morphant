@@ -157,7 +157,9 @@ namespace TestCase
         TDestination? global::Morphant.ITypeMapper<TSource, TDestination>.Map(
             TSource? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new TDestination();
+        }
 
         /// <inheritdoc/>
         TDestination? global::Morphant.ITypeMapper<TSource, TDestination>.Map(

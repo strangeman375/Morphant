@@ -363,7 +363,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Keeps_MapExisting_unimplemented_for_destination_kinds_outside_the_minimal_class_slice()
+    public async Task Returns_supported_destination_kinds_but_not_direct_types()
     {
         // lang=c#
         const string source =
@@ -443,33 +443,37 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.IInterfaceDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         /// <inheritdoc/>
         global::TestCase.RecordDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RecordDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.RecordDestination();
+        }
 
         /// <inheritdoc/>
         global::TestCase.RecordDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RecordDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.RecordDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         /// <inheritdoc/>
         global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.StructDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.StructDestination();
+        }
 
         /// <inheritdoc/>
         global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.StructDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.StructDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         /// <inheritdoc/>
         global::TestCase.EnumDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.EnumDestination>.Map(
@@ -488,14 +492,16 @@ namespace TestCase
         global::TestCase.NullableDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.NullableDestination?>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.NullableDestination();
+        }
 
         /// <inheritdoc/>
         global::TestCase.NullableDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.NullableDestination?>.Map(
             global::TestCase.Source? source,
             global::TestCase.NullableDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         /// <inheritdoc/>
         object? global::Morphant.ITypeMapper<global::TestCase.Source, object>.Map(

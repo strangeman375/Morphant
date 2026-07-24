@@ -376,7 +376,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Does_not_expand_destination_kinds_outside_the_current_class_slice()
+    public async Task Maps_properties_across_supported_destination_kinds()
     {
         // lang=c#
         const string source =
@@ -445,27 +445,45 @@ namespace TestCase
         global::TestCase.RecordDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RecordDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.RecordDestination()
+            {
+                Value = source!.Value
+            };
+        }
 
         /// <inheritdoc/>
         global::TestCase.RecordDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RecordDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.RecordDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            destination!.Value = source!.Value;
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.StructDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.StructDestination()
+            {
+                Value = source!.Value
+            };
+        }
 
         /// <inheritdoc/>
         global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.StructDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.StructDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            destination.Value = source!.Value;
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.IInterfaceDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IInterfaceDestination>.Map(
@@ -478,20 +496,33 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.IInterfaceDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            destination!.Value = source!.Value;
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.NullableDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.NullableDestination?>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.NullableDestination()
+            {
+                Value = source!.Value
+            };
+        }
 
         /// <inheritdoc/>
         global::TestCase.NullableDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.NullableDestination?>.Map(
             global::TestCase.Source? source,
             global::TestCase.NullableDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            destination!.Value = source!.Value;
+
+            return destination;
+        }
     }
 }
 """;

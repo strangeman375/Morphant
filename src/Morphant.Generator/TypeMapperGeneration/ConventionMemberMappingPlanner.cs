@@ -8,7 +8,7 @@ internal static class ConventionMemberMappingPlanner
 {
     public static ConventionMemberMappingPlan Build(
         ITypeSymbol sourceType,
-        INamedTypeSymbol? destination,
+        ITypeSymbol? destination,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
@@ -627,7 +627,7 @@ internal static class ConventionMemberMappingPlanner
 
     private static WritableMember? TryBuildWritableMember(
         EffectiveMemberGroup memberGroup,
-        INamedTypeSymbol destination,
+        ITypeSymbol destination,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType)
     {

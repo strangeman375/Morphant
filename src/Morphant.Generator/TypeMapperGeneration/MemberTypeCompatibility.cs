@@ -9,7 +9,7 @@ internal static class MemberTypeCompatibility
 {
     public static ImmutableArray<bool> FindCompatibleCandidates(
         ITypeSymbol sourceType,
-        INamedTypeSymbol destinationType,
+        ITypeSymbol destinationType,
         ImmutableArray<MemberTypeCompatibilityCandidate> candidates,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -102,7 +102,7 @@ internal static class MemberTypeCompatibility
 
     private static SyntaxTree BuildProbeTree(
         ITypeSymbol sourceType,
-        INamedTypeSymbol destinationType,
+        ITypeSymbol destinationType,
         ImmutableArray<ProbeCandidate> candidates,
         INamedTypeSymbol mapperType)
     {

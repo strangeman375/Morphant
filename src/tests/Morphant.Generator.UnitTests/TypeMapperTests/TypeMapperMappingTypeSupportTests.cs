@@ -96,20 +96,22 @@ namespace TestCase
             global::TestCase.ClassSource? source,
             global::TestCase.IInterfaceDestination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         /// <inheritdoc/>
         global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.StructDestination>.Map(
             global::TestCase.StructSource source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.StructDestination();
+        }
 
         /// <inheritdoc/>
         global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.StructDestination>.Map(
             global::TestCase.StructSource source,
             global::TestCase.StructDestination destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+            => destination;
 
         /// <inheritdoc/>
         int? global::Morphant.ITypeMapper<global::TestCase.SourceEnum?, int?>.Map(

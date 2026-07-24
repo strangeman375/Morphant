@@ -26,7 +26,8 @@ internal readonly record struct TypeMapperMappingModel
     string DestinationTypeName,
     string MaybeNullDestinationTypeName,
     TypeMapperConstructorMappingModel? MapNewConstructor,
-    bool CanMapExisting,
+    TypeMapperMapExistingKind MapExistingKind,
+    string? MapExistingDestinationLocalName,
     ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings
 )
@@ -37,8 +38,17 @@ internal readonly record struct TypeMapperMappingModel
 
 internal readonly record struct TypeMapperConstructorMappingModel
 (
+    string ConstructedTypeName,
     ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments
 );
+
+internal enum TypeMapperMapExistingKind
+{
+    Unsupported,
+    Reference,
+    Value,
+    NullableValue
+}
 
 internal readonly record struct TypeMapperConstructorArgumentMappingModel
 (

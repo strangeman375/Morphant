@@ -13,16 +13,23 @@ internal static class ConventionConstructorMappingPlanner
 
     public static ConventionConstructorMappingPlan? Build(
         ITypeSymbol sourceType,
-        INamedTypeSymbol? destination,
+        ITypeSymbol? destination,
         ConventionMemberMappingPlan memberMappings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
-        if (destination is null ||
-            destination.IsAbstract ||
+        if (destination is ITypeParameterSymbol typeParameter)
+        {
+            return BuildTypeParameterPlan(
+                typeParameter,
+                memberMappings);
+        }
+
+        if (destination is not INamedTypeSymbol namedDestination ||
+            namedDestination.IsAbstract ||
             TrySelectConstructor(
-                destination,
+                namedDestination,
                 compilation,
                 mapperType,
                 cancellationToken) is not { } constructor)
@@ -79,7 +86,7 @@ internal static class ConventionConstructorMappingPlanner
         var candidateArray = candidates.ToImmutable();
         var compatibility = FindCompatibleCandidates(
             sourceType,
-            destination,
+            namedDestination,
             constructor,
             candidateArray,
             compilation,
@@ -122,7 +129,7 @@ internal static class ConventionConstructorMappingPlanner
         {
             if (!BindsSelectedConstructor(
                     sourceType,
-                    destination,
+                    namedDestination,
                     constructor,
                     argumentArray,
                     compilation,
@@ -142,7 +149,29 @@ internal static class ConventionConstructorMappingPlanner
             argumentArray,
             memberMappings.MapNew,
             setsRequiredMembers,
-            mapperType);
+            mapperType,
+            namedDestination);
+    }
+
+    private static ConventionConstructorMappingPlan?
+        BuildTypeParameterPlan(
+            ITypeParameterSymbol destination,
+            ConventionMemberMappingPlan memberMappings)
+    {
+        if ((!destination.HasValueTypeConstraint &&
+             !destination.HasUnmanagedTypeConstraint &&
+             !destination.HasConstructorConstraint) ||
+            memberMappings.HasUnmappedRequiredMembers)
+        {
+            return null;
+        }
+
+        return new ConventionConstructorMappingPlan(
+            new TypeMapperConstructorMappingModel(
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    destination),
+                []),
+            memberMappings.MapNew);
     }
 
     private static IMethodSymbol? TrySelectConstructor(
@@ -431,7 +460,8 @@ internal static class ConventionConstructorMappingPlanner
         ImmutableArray<ConstructorArgumentCandidate> arguments,
         ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
         bool setsRequiredMembers,
-        INamedTypeSymbol mapperType)
+        INamedTypeSymbol mapperType,
+        INamedTypeSymbol destination)
     {
         var correspondingArguments =
             new List<int>[memberMappings.Length];
@@ -523,6 +553,8 @@ internal static class ConventionConstructorMappingPlanner
 
         return new ConventionConstructorMappingPlan(
             new TypeMapperConstructorMappingModel(
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    destination),
                 argumentModels.ToImmutableArray()),
             memberModels.ToImmutable());
     }

@@ -141,7 +141,7 @@ internal static class TypeMapperEmitter
             if (constructor.Arguments.IsEmpty)
             {
                 writer.Line(
-                    $"return new {mapping.DestinationTypeName}()" +
+                    $"return new {constructor.ConstructedTypeName}()" +
                     (mapping.MapNewMemberMappings.IsEmpty
                         ? ";"
                         : string.Empty));
@@ -149,7 +149,7 @@ internal static class TypeMapperEmitter
             else
             {
                 writer.Line(
-                    $"return new {mapping.DestinationTypeName}(");
+                    $"return new {constructor.ConstructedTypeName}(");
                 writer.Indent();
 
                 for (var index = 0;
@@ -229,11 +229,21 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
 
-        if (!mapping.CanMapExisting)
+        if (mapping.MapExistingKind ==
+            TypeMapperMapExistingKind.Unsupported)
         {
             writer.Line(
                 "=> throw new global::System.NotImplementedException();");
             writer.Unindent();
+            return;
+        }
+
+        if (mapping.MapExistingKind ==
+            TypeMapperMapExistingKind.NullableValue)
+        {
+            WriteNullableValueMapExistingBody(
+                writer,
+                mapping);
             return;
         }
 
@@ -248,10 +258,16 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
+        var destinationExpression =
+            mapping.MapExistingKind ==
+                TypeMapperMapExistingKind.Reference
+                ? "destination!"
+                : "destination";
+
         foreach (var memberMapping in mapping.MapExistingMemberMappings)
         {
             writer.Line(
-                $"destination!.{Identifier(memberMapping.DestinationMemberName)} = " +
+                $"{destinationExpression}.{Identifier(memberMapping.DestinationMemberName)} = " +
                 SourceValueExpression(
                     memberMapping.SourceMemberName,
                     memberMapping.SourceValueLocalName) +
@@ -260,6 +276,54 @@ internal static class TypeMapperEmitter
 
         writer.Line();
         writer.Line("return destination;");
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteNullableValueMapExistingBody(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+        writer.Line("if (destination is null)");
+        writer.Line("{");
+        writer.Indent();
+        writer.Line(
+            "throw new global::System.NotImplementedException();");
+        writer.Unindent();
+        writer.Line("}");
+        writer.Line();
+
+        if (mapping.MapExistingMemberMappings.IsEmpty)
+        {
+            writer.Line("return destination;");
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
+
+        var destinationLocalName =
+            mapping.MapExistingDestinationLocalName ??
+            throw new InvalidOperationException(
+                "Nullable destination member mappings require a local name.");
+
+        writer.Line(
+            $"var {destinationLocalName} = destination.Value;");
+
+        foreach (var memberMapping in mapping.MapExistingMemberMappings)
+        {
+            writer.Line(
+                $"{destinationLocalName}.{Identifier(memberMapping.DestinationMemberName)} = " +
+                SourceValueExpression(
+                    memberMapping.SourceMemberName,
+                    memberMapping.SourceValueLocalName) +
+                ";");
+        }
+
+        writer.Line();
+        writer.Line($"return {destinationLocalName};");
         writer.Unindent();
         writer.Line("}");
     }
