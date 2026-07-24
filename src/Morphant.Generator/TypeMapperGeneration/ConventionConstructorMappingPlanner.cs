@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -140,7 +141,8 @@ internal static class ConventionConstructorMappingPlanner
         return BuildPlan(
             argumentArray,
             memberMappings.MapNew,
-            setsRequiredMembers);
+            setsRequiredMembers,
+            mapperType);
     }
 
     private static IMethodSymbol? TrySelectConstructor(
@@ -428,7 +430,8 @@ internal static class ConventionConstructorMappingPlanner
     private static ConventionConstructorMappingPlan BuildPlan(
         ImmutableArray<ConstructorArgumentCandidate> arguments,
         ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
-        bool setsRequiredMembers)
+        bool setsRequiredMembers,
+        INamedTypeSymbol mapperType)
     {
         var correspondingArguments =
             new List<int>[memberMappings.Length];
@@ -463,6 +466,8 @@ internal static class ConventionConstructorMappingPlanner
         var memberModels =
             ImmutableArray.CreateBuilder<
                 TypeMapperMemberMappingModel>();
+        var usedSourceValueLocalNames =
+            BuildUsedSourceValueLocalNames(mapperType);
 
         for (var memberIndex = 0;
              memberIndex < memberMappings.Length;
@@ -496,8 +501,9 @@ internal static class ConventionConstructorMappingPlanner
                         memberMapping.SourceMemberName))
                 {
                     sourceValueLocalName =
-                        "__morphantConstructorArgument" +
-                        argument.Parameter.Ordinal;
+                        MakeUniqueSourceValueLocalName(
+                            argument.SourceMember.Name,
+                            usedSourceValueLocalNames);
                     argumentModels[argumentIndex] =
                         argumentModels[argumentIndex] with
                         {
@@ -519,6 +525,55 @@ internal static class ConventionConstructorMappingPlanner
             new TypeMapperConstructorMappingModel(
                 argumentModels.ToImmutableArray()),
             memberModels.ToImmutable());
+    }
+
+    private static HashSet<string> BuildUsedSourceValueLocalNames(
+        INamedTypeSymbol mapperType)
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "source",
+            "context"
+        };
+
+        for (var type = mapperType;
+             type is not null;
+             type = type.ContainingType)
+        {
+            foreach (var typeParameter in type.TypeParameters)
+            {
+                result.Add(typeParameter.Name);
+            }
+        }
+
+        return result;
+    }
+
+    private static string MakeUniqueSourceValueLocalName(
+        string sourceMemberName,
+        HashSet<string> usedNames)
+    {
+        var candidate =
+            "source" +
+            char.ToUpperInvariant(sourceMemberName[0]) +
+            sourceMemberName.Substring(1);
+
+        if (usedNames.Add(candidate))
+        {
+            return candidate;
+        }
+
+        for (var suffix = 1;; suffix++)
+        {
+            var name =
+                candidate +
+                suffix.ToString(CultureInfo.InvariantCulture);
+
+            if (usedNames.Add(name))
+            {
+                return name;
+            }
+        }
     }
 
     private static int? FindCorrespondingMemberIndex(
