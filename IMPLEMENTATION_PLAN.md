@@ -23,10 +23,10 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 2 → Совместимость типов выражений.** Следующий срез расширяет текущее
-сопоставление идентичных типов допустимыми неявными преобразованиями. Точный
-набор conversions нужно согласовать отдельно до написания тестов и
-production-кода.
+**Фаза 2 → Конструкторное маппирование по умолчанию.** Следующий срез добавляет
+parameterless и текущую стратегию `Unambiguous`: маппинг параметров
+конструктора, optional-параметры и исключение уже использованных членов из
+initializer-а.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -134,15 +134,29 @@ production-кода.
   Порядок mappings — base-first и затем порядок destination-деклараций с
   most-derived hiding. Для metadata-типа исходное взаимное чередование fields
   и properties не представлено, поэтому сохраняется детерминированный порядок
-  членов, предоставленный Roslyn. Сопоставление пока по-прежнему требует
-  одинакового регистрозависимого имени и идентичного типа; conversions и
-  расширенная nullability-совместимость относятся к следующему пункту.
-  Поддерживаемые разновидности destination этим срезом не расширены.
+  членов, предоставленный Roslyn. Сопоставление по-прежнему требует одинакового
+  регистрозависимого имени; правила совместимости типов описаны следующим
+  завершённым пунктом. Поддерживаемые разновидности destination этим срезом не
+  расширены.
 
-- [ ] Совместимость типов выражений.
+- [x] Совместимость типов выражений.
 
-  Неявные преобразования, nullable-аннотации, reference/value types. Спорный
-  объём поддерживаемых conversions согласовать отдельно.
+  Convention member маппится, если выражение присваивания имеет статически
+  разрешимое неявное C#-преобразование и не создаёт nullable-warning. Никакие
+  дополнительные cast или null-forgiving operator в выражение не вставляются.
+
+  Поддерживаются implicit numeric и lifted nullable conversions, implicit
+  reference conversions, inheritance, interfaces, variance, arrays, boxing,
+  type parameters, tuple conversions и пользовательские `implicit operator`.
+  Коллекция, массив или tuple здесь остаются единым значением члена; корневые
+  collection/tuple mappings этим срезом не включаются.
+
+  Narrowing, downcast, unboxing и другие explicit conversions не выполняются.
+  Runtime dynamic conversion также исключается; статические identity/reference
+  conversions в `dynamic`/`object` остаются допустимыми. Nullable-совместимость
+  проверяется на фактическом выражении в lexical context generated mapper-а,
+  поэтому учитываются вложенные annotations, `MaybeNull`/`NotNull`,
+  `AllowNull`/`DisallowNull`, nullable generic constraints и oblivious-код.
 
 - [ ] Конструкторное маппирование по умолчанию.
 

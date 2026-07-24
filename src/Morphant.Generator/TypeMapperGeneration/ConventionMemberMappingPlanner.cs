@@ -49,6 +49,11 @@ internal static class ConventionMemberMappingPlanner
         var mapExisting =
             ImmutableArray.CreateBuilder<
                 TypeMapperMemberMappingModel>();
+        var candidates =
+            ImmutableArray.CreateBuilder<
+                MemberTypeCompatibilityCandidate>();
+        var candidateRequiredMembers =
+            ImmutableArray.CreateBuilder<bool>();
         var hasUnmappedRequiredMembers = false;
 
         foreach (var memberGroup in BuildEffectiveMemberGroups(
@@ -67,22 +72,53 @@ internal static class ConventionMemberMappingPlanner
                     mapperType) is not { } writableMember ||
                 !sourceMembers.TryGetValue(
                     writableMember.Name,
-                    out var sourceMember) ||
-                !SymbolEqualityComparer.IncludeNullability.Equals(
-                    sourceMember.Type,
-                    writableMember.Type))
+                    out var sourceMember))
             {
                 hasUnmappedRequiredMembers |= isRequired;
                 continue;
             }
 
+            candidates.Add(
+                new MemberTypeCompatibilityCandidate(
+                    sourceMember.Name,
+                    writableMember.Name,
+                    sourceMember.Type,
+                    writableMember.Type,
+                    writableMember.CanAssign));
+            candidateRequiredMembers.Add(isRequired);
+        }
+
+        var compatibleCandidates =
+            MemberTypeCompatibility.FindCompatibleCandidates(
+                sourceType,
+                destination,
+                candidates.ToImmutable(),
+                compilation,
+                mapperType,
+                cancellationToken);
+
+        for (var index = 0;
+             index < candidates.Count;
+             index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var candidate = candidates[index];
+
+            if (!compatibleCandidates[index])
+            {
+                hasUnmappedRequiredMembers |=
+                    candidateRequiredMembers[index];
+                continue;
+            }
+
             var mapping = new TypeMapperMemberMappingModel(
-                sourceMember.Name,
-                writableMember.Name);
+                candidate.SourceMemberName,
+                candidate.DestinationMemberName);
 
             mapNew.Add(mapping);
 
-            if (writableMember.CanAssign)
+            if (candidate.CanAssign)
             {
                 mapExisting.Add(mapping);
             }

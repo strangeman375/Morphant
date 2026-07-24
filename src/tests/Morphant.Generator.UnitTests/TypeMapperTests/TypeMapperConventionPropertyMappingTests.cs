@@ -106,7 +106,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Maps_exactly_matching_members_and_ignores_nonmatching_members()
+    public async Task Maps_compatible_members_and_ignores_nonmatching_members()
     {
         // lang=c#
         const string source =
@@ -129,7 +129,7 @@ namespace TestCase
 
         public string? NullableIncluded { get; set; }
 
-        public int DifferentType { get; set; }
+        public int CompatibleType { get; set; }
 
         public int DifferentName { get; set; }
 
@@ -170,7 +170,7 @@ namespace TestCase
 
         public string? NullableIncluded { get; set; }
 
-        public long DifferentType { get; set; }
+        public long CompatibleType { get; set; }
 
         public int differentName { get; set; }
 
@@ -238,6 +238,7 @@ namespace TestCase
                 Inherited = source!.Inherited,
                 Included = source!.Included,
                 NullableIncluded = source!.NullableIncluded,
+                CompatibleType = source!.CompatibleType,
                 SourceField = source!.SourceField
             };
         }
@@ -251,6 +252,7 @@ namespace TestCase
             destination!.Inherited = source!.Inherited;
             destination!.Included = source!.Included;
             destination!.NullableIncluded = source!.NullableIncluded;
+            destination!.CompatibleType = source!.CompatibleType;
             destination!.SourceField = source!.SourceField;
 
             return destination;
