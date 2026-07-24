@@ -8,9 +8,6 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TypeMapperPipeline
 {
-    private const string SetsRequiredMembersAttributeMetadataName =
-        "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute";
-
     public static void Register(
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
@@ -313,6 +310,14 @@ internal static class TypeMapperPipeline
             compilation,
             mapperType,
             cancellationToken);
+        var constructorMapping =
+            ConventionConstructorMappingPlanner.Build(
+                registration.SourceType,
+                destination,
+                memberMappings,
+                compilation,
+                mapperType,
+                cancellationToken);
 
         return new TypeMapperMappingModel(
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
@@ -325,57 +330,11 @@ internal static class TypeMapperPipeline
             TypeMapperMappingTypePolicy
                 .GetGeneratedMaybeNullTypeName(
                     registration.DestinationType),
-            CanMapNewWithParameterlessConstructor(
-                destination,
-                compilation,
-                mapperType,
-                memberMappings.HasUnmappedRequiredMembers),
+            constructorMapping?.Constructor,
             destination is not null,
-            memberMappings.MapNew,
+            constructorMapping?.MapNewMemberMappings ??
+                memberMappings.MapNew,
             memberMappings.MapExisting);
-    }
-
-    private static bool CanMapNewWithParameterlessConstructor(
-        INamedTypeSymbol? destination,
-        CSharpCompilation compilation,
-        INamedTypeSymbol mapperType,
-        bool hasUnmappedRequiredMembers)
-    {
-        if (destination is null ||
-            destination.IsAbstract)
-        {
-            return false;
-        }
-
-        var parameterlessConstructor =
-            destination.InstanceConstructors.FirstOrDefault(
-                static constructor =>
-                    constructor.Parameters.IsEmpty);
-
-        return parameterlessConstructor is not null &&
-               compilation.IsSymbolAccessibleWithin(
-                   parameterlessConstructor,
-                   mapperType) &&
-               (!hasUnmappedRequiredMembers ||
-                HasSetsRequiredMembersAttribute(
-                    parameterlessConstructor));
-    }
-
-    private static bool HasSetsRequiredMembersAttribute(
-        IMethodSymbol constructor)
-    {
-        foreach (var attribute in constructor.GetAttributes())
-        {
-            if (attribute.AttributeClass is { } attributeType &&
-                SymbolNameHelper.GetFullMetadataName(
-                    attributeType) ==
-                SetsRequiredMembersAttributeMetadataName)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static INamedTypeSymbol? GetSupportedClassDestination(

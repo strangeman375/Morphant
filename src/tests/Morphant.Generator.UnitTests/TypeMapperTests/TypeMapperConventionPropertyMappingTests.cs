@@ -289,7 +289,7 @@ namespace TestCase
 
     public sealed class ParameterizedDestination
     {
-        public ParameterizedDestination(int value)
+        public ParameterizedDestination(int missing)
         {
         }
 

@@ -21,27 +21,14 @@ internal static class ConventionMemberMappingPlanner
                 HasUnmappedRequiredMembers: false);
         }
 
-        var sourceMembers =
-            new Dictionary<string, ReadableMember>(
+        var sourceMembers = BuildReadableMembers(
+                sourceType,
+                compilation,
+                mapperType,
+                cancellationToken)
+            .ToDictionary(
+                static member => member.Name,
                 StringComparer.Ordinal);
-
-        foreach (var memberGroup in BuildEffectiveMemberGroups(
-                     sourceType,
-                     cancellationToken))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (TryBuildReadableMember(
-                    memberGroup,
-                    sourceType,
-                    compilation,
-                    mapperType) is { } readableMember)
-            {
-                sourceMembers.Add(
-                    readableMember.Name,
-                    readableMember);
-            }
-        }
 
         var mapNew =
             ImmutableArray.CreateBuilder<
@@ -114,7 +101,9 @@ internal static class ConventionMemberMappingPlanner
 
             var mapping = new TypeMapperMemberMappingModel(
                 candidate.SourceMemberName,
-                candidate.DestinationMemberName);
+                candidate.DestinationMemberName,
+                candidateRequiredMembers[index],
+                SourceValueLocalName: null);
 
             mapNew.Add(mapping);
 
@@ -128,6 +117,36 @@ internal static class ConventionMemberMappingPlanner
             mapNew.ToImmutable(),
             mapExisting.ToImmutable(),
             hasUnmappedRequiredMembers);
+    }
+
+    internal static ImmutableArray<ConventionReadableMember>
+        BuildReadableMembers(
+            ITypeSymbol sourceType,
+            CSharpCompilation compilation,
+            INamedTypeSymbol mapperType,
+            CancellationToken cancellationToken)
+    {
+        var result =
+            ImmutableArray.CreateBuilder<
+                ConventionReadableMember>();
+
+        foreach (var memberGroup in BuildEffectiveMemberGroups(
+                     sourceType,
+                     cancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (TryBuildReadableMember(
+                    memberGroup,
+                    sourceType,
+                    compilation,
+                    mapperType) is { } readableMember)
+            {
+                result.Add(readableMember);
+            }
+        }
+
+        return result.ToImmutable();
     }
 
     private static ImmutableArray<EffectiveMemberGroup>
@@ -550,7 +569,8 @@ internal static class ConventionMemberMappingPlanner
                     baseInterface));
     }
 
-    private static ReadableMember? TryBuildReadableMember(
+    private static ConventionReadableMember?
+        TryBuildReadableMember(
         EffectiveMemberGroup memberGroup,
         ITypeSymbol source,
         CSharpCompilation compilation,
@@ -580,7 +600,7 @@ internal static class ConventionMemberMappingPlanner
                     continue;
                 }
 
-                return new ReadableMember(
+                return new ConventionReadableMember(
                     property.Name,
                     property.Type);
             }
@@ -596,7 +616,7 @@ internal static class ConventionMemberMappingPlanner
                     compilation,
                     mapperType))
             {
-                return new ReadableMember(
+                return new ConventionReadableMember(
                     field.Name,
                     field.Type);
             }
@@ -694,10 +714,6 @@ internal static class ConventionMemberMappingPlanner
         string Name,
         ImmutableArray<ISymbol> Members);
 
-    private readonly record struct ReadableMember(
-        string Name,
-        ITypeSymbol Type);
-
     private readonly record struct WritableMember(
         string Name,
         ITypeSymbol Type,
@@ -708,3 +724,7 @@ internal readonly record struct ConventionMemberMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> MapNew,
     ImmutableArray<TypeMapperMemberMappingModel> MapExisting,
     bool HasUnmappedRequiredMembers);
+
+internal readonly record struct ConventionReadableMember(
+    string Name,
+    ITypeSymbol Type);

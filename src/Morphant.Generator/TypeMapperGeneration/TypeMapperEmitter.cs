@@ -107,21 +107,77 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.MappingContext context)");
 
-        if (mapping.CanMapNewWithParameterlessConstructor)
+        if (mapping.MapNewConstructor is
+            { } constructor)
         {
             writer.Unindent();
             writer.Line("{");
             writer.Indent();
 
-            if (mapping.MapNewMemberMappings.IsEmpty)
+            var hasSourceValueLocals = false;
+
+            foreach (var argument in constructor.Arguments)
+            {
+                if (argument.SourceValueLocalName is not
+                    { } sourceValueLocalName)
+                {
+                    continue;
+                }
+
+                hasSourceValueLocals = true;
+                writer.Line(
+                    $"var {sourceValueLocalName} = " +
+                    SourceValueExpression(
+                        argument.SourceMemberName,
+                        sourceValueLocalName: null) +
+                    ";");
+            }
+
+            if (hasSourceValueLocals)
+            {
+                writer.Line();
+            }
+
+            if (constructor.Arguments.IsEmpty)
             {
                 writer.Line(
-                    $"return new {mapping.DestinationTypeName}();");
+                    $"return new {mapping.DestinationTypeName}()" +
+                    (mapping.MapNewMemberMappings.IsEmpty
+                        ? ";"
+                        : string.Empty));
             }
             else
             {
                 writer.Line(
-                    $"return new {mapping.DestinationTypeName}()");
+                    $"return new {mapping.DestinationTypeName}(");
+                writer.Indent();
+
+                for (var index = 0;
+                     index < constructor.Arguments.Length;
+                     index++)
+                {
+                    var argument = constructor.Arguments[index];
+                    var isLast =
+                        index == constructor.Arguments.Length - 1;
+                    var suffix = isLast
+                        ? mapping.MapNewMemberMappings.IsEmpty
+                            ? ");"
+                            : ")"
+                        : ",";
+
+                    writer.Line(
+                        $"{Identifier(argument.ParameterName)}: " +
+                        SourceValueExpression(
+                            argument.SourceMemberName,
+                            argument.SourceValueLocalName) +
+                        suffix);
+                }
+
+                writer.Unindent();
+            }
+
+            if (!mapping.MapNewMemberMappings.IsEmpty)
+            {
                 writer.Line("{");
                 writer.Indent();
 
@@ -138,7 +194,9 @@ internal static class TypeMapperEmitter
 
                     writer.Line(
                         $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                        $"source!.{Identifier(memberMapping.SourceMemberName)}" +
+                        SourceValueExpression(
+                            memberMapping.SourceMemberName,
+                            memberMapping.SourceValueLocalName) +
                         suffix);
                 }
 
@@ -194,13 +252,24 @@ internal static class TypeMapperEmitter
         {
             writer.Line(
                 $"destination!.{Identifier(memberMapping.DestinationMemberName)} = " +
-                $"source!.{Identifier(memberMapping.SourceMemberName)};");
+                SourceValueExpression(
+                    memberMapping.SourceMemberName,
+                    memberMapping.SourceValueLocalName) +
+                ";");
         }
 
         writer.Line();
         writer.Line("return destination;");
         writer.Unindent();
         writer.Line("}");
+    }
+
+    private static string SourceValueExpression(
+        string sourceMemberName,
+        string? sourceValueLocalName)
+    {
+        return sourceValueLocalName ??
+               $"source!.{Identifier(sourceMemberName)}";
     }
 
     private static string Identifier(string value)
