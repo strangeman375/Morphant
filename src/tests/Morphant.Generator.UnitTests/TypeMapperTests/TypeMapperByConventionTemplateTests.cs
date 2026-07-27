@@ -667,7 +667,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Does_not_use_explicit_mappings_to_select_a_constructor_or_execute_future_markers()
+    public async Task Does_not_use_explicit_mappings_to_select_a_constructor_and_applies_Auto()
     {
         // lang=c#
         const string source =
@@ -825,7 +825,13 @@ namespace TestCase
         global::TestCase.MarkerDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.MarkerDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.MarkerDestination(
+                value: source!.Value)
+            {
+                Remaining = source!.Remaining + 2
+            };
+        }
 
         /// <inheritdoc/>
         global::TestCase.MarkerDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.MarkerDestination>.Map(

@@ -95,6 +95,7 @@ internal static class TemplateMappingPlanner
                 expression,
                 [],
                 [],
+                [],
                 TemplateConstructionKind.None,
                 Constructor: null,
                 FactoryExpression: null,
@@ -114,6 +115,9 @@ internal static class TemplateMappingPlanner
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var mapExisting =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
+        var memberMarkers =
+            ImmutableArray.CreateBuilder<
+                TemplateMemberMarkerMappingModel>();
         var seenNames = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var initializerExpression in initializerExpressions)
@@ -134,6 +138,19 @@ internal static class TemplateMappingPlanner
                     mapperType) is not { } member)
             {
                 return null;
+            }
+
+            if (TemplateMemberMarker.TryGetKind(
+                    value,
+                    semanticModel,
+                    cancellationToken,
+                    out var markerKind))
+            {
+                memberMarkers.Add(
+                    new TemplateMemberMarkerMappingModel(
+                        member.Name,
+                        markerKind));
+                continue;
             }
 
             var mapping = new TypeMapperMemberMappingModel(
@@ -214,6 +231,7 @@ internal static class TemplateMappingPlanner
             MapExistingDirectExpression: null,
             mapNew.ToImmutable(),
             mapExisting.ToImmutable(),
+            memberMarkers.ToImmutable(),
             constructionKind,
             constructor,
             factoryExpression,
@@ -938,11 +956,16 @@ internal readonly record struct TemplateMappingPlan(
     string? MapExistingDirectExpression,
     ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
+    ImmutableArray<TemplateMemberMarkerMappingModel> MemberMarkers,
     TemplateConstructionKind ConstructionKind,
     TemplateConstructorMappingPlan? Constructor,
     string? FactoryExpression,
     ImmutableArray<TemplateConstructorMemberMappingModel>
         ConventionConstructorMappings);
+
+internal readonly record struct TemplateMemberMarkerMappingModel(
+    string MemberName,
+    TemplateMemberMarkerKind Kind);
 
 internal enum TemplateConstructionKind
 {

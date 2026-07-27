@@ -107,10 +107,26 @@ internal static class TemplateByConventionMappingPlanner
                 return true;
             }
 
-            result.Add(
-                new TemplateConstructorMemberMappingModel(
-                    memberName.Identifier.ValueText,
-                    rewriteExpression(value)));
+            if (TemplateMemberMarker.TryGetKind(
+                    value,
+                    semanticModel,
+                    cancellationToken,
+                    out var markerKind))
+            {
+                result.Add(
+                    new TemplateConstructorMemberMappingModel(
+                        memberName.Identifier.ValueText,
+                        markerKind,
+                        ExplicitValueExpression: null));
+            }
+            else
+            {
+                result.Add(
+                    new TemplateConstructorMemberMappingModel(
+                        memberName.Identifier.ValueText,
+                        MarkerKind: null,
+                        rewriteExpression(value)));
+            }
         }
 
         mappings = result.ToImmutable();
@@ -200,4 +216,5 @@ internal static class TemplateByConventionMappingPlanner
 
 internal readonly record struct TemplateConstructorMemberMappingModel(
     string ParameterName,
-    string ExplicitValueExpression);
+    TemplateMemberMarkerKind? MarkerKind,
+    string? ExplicitValueExpression);

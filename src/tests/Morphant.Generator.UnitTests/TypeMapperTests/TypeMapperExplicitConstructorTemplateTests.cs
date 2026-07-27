@@ -722,7 +722,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Leaves_constructor_member_markers_for_their_own_slice()
+    public async Task Applies_Auto_to_an_explicit_constructor_parameter()
     {
         // lang=c#
         const string source =
@@ -787,7 +787,10 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            return new global::TestCase.Destination(
+                value: source!.Value);
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(

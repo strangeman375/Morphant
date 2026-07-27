@@ -77,26 +77,54 @@ internal static class ConventionConstructorMappingPlanner
                 explicitMappings.Length);
         var explicitParameterNames =
             new HashSet<string>(StringComparer.Ordinal);
+        var ignoredParameterNames =
+            new HashSet<string>(StringComparer.Ordinal);
+        var configuredParameterNames =
+            new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var mapping in explicitMappings)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!explicitParameterNames.Add(
-                    mapping.ParameterName) ||
-                TryFindParameter(
+            if (TryFindParameter(
                     constructor,
                     mapping.ParameterName) is not { } parameter)
             {
                 return null;
             }
 
+            if (!configuredParameterNames.Add(parameter.Name))
+            {
+                return null;
+            }
+
+            if (mapping.MarkerKind ==
+                TemplateMemberMarkerKind.Ignore)
+            {
+                if (!CanOmit(parameter))
+                {
+                    return null;
+                }
+
+                ignoredParameterNames.Add(parameter.Name);
+                continue;
+            }
+
+            if (mapping.MarkerKind ==
+                TemplateMemberMarkerKind.Auto)
+            {
+                continue;
+            }
+
+            explicitParameterNames.Add(parameter.Name);
             explicitArguments.Add(
                 new TypeMapperConstructorArgumentMappingModel(
                     parameter.Name,
                     SourceMemberName: string.Empty,
                     ValueLocalName: null,
-                    mapping.ExplicitValueExpression,
+                    mapping.ExplicitValueExpression ??
+                    throw new InvalidOperationException(
+                        "Explicit constructor mapping requires a value."),
                     ValueLocalTypeName:
                         BuildExplicitValueLocalTypeName(
                             parameter)));
@@ -119,6 +147,11 @@ internal static class ConventionConstructorMappingPlanner
             cancellationToken.ThrowIfCancellationRequested();
 
             if (explicitParameterNames.Contains(parameter.Name))
+            {
+                continue;
+            }
+
+            if (ignoredParameterNames.Contains(parameter.Name))
             {
                 continue;
             }
@@ -237,7 +270,7 @@ internal static class ConventionConstructorMappingPlanner
         return null;
     }
 
-    private static string BuildExplicitValueLocalTypeName(
+    internal static string BuildExplicitValueLocalTypeName(
         IParameterSymbol parameter)
     {
         var nullableAnnotation =
@@ -325,13 +358,13 @@ internal static class ConventionConstructorMappingPlanner
                 parameter.Type.IsRefLikeType);
     }
 
-    private static bool CanOmit(IParameterSymbol parameter)
+    internal static bool CanOmit(IParameterSymbol parameter)
     {
         return parameter.IsOptional ||
                parameter.IsParams;
     }
 
-    private static ConventionReadableMember?
+    internal static ConventionReadableMember?
         TryFindSourceMember(
             ImmutableArray<ConventionReadableMember> sourceMembers,
             string parameterName)
@@ -768,7 +801,7 @@ internal static class ConventionConstructorMappingPlanner
             memberModels.ToImmutable());
     }
 
-    private static HashSet<string> BuildUsedValueLocalNames(
+    internal static HashSet<string> BuildUsedValueLocalNames(
         INamedTypeSymbol mapperType)
     {
         var result = new HashSet<string>(StringComparer.Ordinal)
@@ -790,7 +823,7 @@ internal static class ConventionConstructorMappingPlanner
         return result;
     }
 
-    private static string MakeUniqueSourceValueLocalName(
+    internal static string MakeUniqueSourceValueLocalName(
         string sourceMemberName,
         HashSet<string> usedNames)
     {
@@ -800,7 +833,7 @@ internal static class ConventionConstructorMappingPlanner
             usedNames);
     }
 
-    private static string MakeUniqueValueLocalName(
+    internal static string MakeUniqueValueLocalName(
         string prefix,
         string valueName,
         HashSet<string> usedNames)

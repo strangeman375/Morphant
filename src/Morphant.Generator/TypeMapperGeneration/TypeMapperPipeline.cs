@@ -451,7 +451,8 @@ internal static class TypeMapperPipeline
             ? BuildTemplateConstructorMapping(
                 destination,
                 memberMappings,
-                constructor)
+                constructor,
+                mapperType)
             : null;
     }
 
@@ -474,6 +475,15 @@ internal static class TypeMapperPipeline
         {
             explicitNames.Add(mapping.DestinationMemberName);
         }
+
+        foreach (var marker in value.MemberMarkers)
+        {
+            if (marker.Kind == TemplateMemberMarkerKind.Ignore)
+            {
+                explicitNames.Add(marker.MemberName);
+            }
+        }
+
         var mapNew = value.MapNewMemberMappings
             .AddRange(
                 convention.MapNew.Where(mapping =>
@@ -520,7 +530,8 @@ internal static class TypeMapperPipeline
         BuildTemplateConstructorMapping(
             ITypeSymbol? destination,
             ConventionMemberMappingPlan memberMappings,
-            TemplateConstructorMappingPlan templateConstructor)
+            TemplateConstructorMappingPlan templateConstructor,
+            INamedTypeSymbol mapperType)
     {
         var setsRequiredMembers =
             ConventionConstructorMappingPlanner
@@ -540,6 +551,13 @@ internal static class TypeMapperPipeline
         foreach (var parameter in
                  templateConstructor.Constructor.Parameters)
         {
+            if (templateConstructor.IgnoredParameterNames.Contains(
+                    parameter.Name,
+                    StringComparer.Ordinal))
+            {
+                continue;
+            }
+
             if (FindCorrespondingMemberIndex(
                     memberMappings.MapNew,
                     parameter.Name) is { } memberIndex)
@@ -548,9 +566,32 @@ internal static class TypeMapperPipeline
             }
         }
 
+        var correspondingArgumentIndexes =
+            new List<int>[memberMappings.MapNew.Length];
+
+        for (var argumentIndex = 0;
+             argumentIndex < templateConstructor.Arguments.Length;
+             argumentIndex++)
+        {
+            if (FindCorrespondingMemberIndex(
+                    memberMappings.MapNew,
+                    templateConstructor.Arguments[argumentIndex]
+                        .ParameterName) is not { } memberIndex)
+            {
+                continue;
+            }
+
+            correspondingArgumentIndexes[memberIndex] ??=
+                new List<int>();
+            correspondingArgumentIndexes[memberIndex]!
+                .Add(argumentIndex);
+        }
+
         var mapNew =
             ImmutableArray.CreateBuilder<
                 TypeMapperMemberMappingModel>();
+        var sharedValues =
+            new List<(int MemberIndex, int ArgumentIndex)>();
 
         for (var index = 0;
              index < memberMappings.MapNew.Length;
@@ -562,7 +603,81 @@ internal static class TypeMapperPipeline
                 mapping.ExplicitValueExpression is not null ||
                 mapping.IsRequired && !setsRequiredMembers)
             {
+                if (correspondingMemberIndexes.Contains(index) &&
+                    mapping.ExplicitValueExpression is null &&
+                    mapping.IsRequired &&
+                    !setsRequiredMembers &&
+                    correspondingArgumentIndexes[index] is
+                        { Count: 1 } argumentIndexes)
+                {
+                    var argumentIndex = argumentIndexes[0];
+                    var argument =
+                        templateConstructor.Arguments[
+                            argumentIndex];
+
+                    if (argument.ExplicitValueExpression is null &&
+                        StringComparer.Ordinal.Equals(
+                            argument.SourceMemberName,
+                            mapping.SourceMemberName))
+                    {
+                        sharedValues.Add(
+                            (mapNew.Count, argumentIndex));
+                    }
+                }
+
                 mapNew.Add(mapping);
+            }
+        }
+
+        var argumentModels =
+            templateConstructor.Arguments.ToArray();
+
+        if (sharedValues.Count > 0)
+        {
+            var lastSharedArgumentIndex =
+                sharedValues.Max(
+                    static value =>
+                        value.ArgumentIndex);
+            var usedValueLocalNames =
+                ConventionConstructorMappingPlanner
+                    .BuildUsedValueLocalNames(mapperType);
+
+            for (var argumentIndex = 0;
+                 argumentIndex <= lastSharedArgumentIndex;
+                 argumentIndex++)
+            {
+                var argument = argumentModels[argumentIndex];
+
+                argumentModels[argumentIndex] =
+                    argument with
+                    {
+                        ValueLocalName =
+                            argument.ExplicitValueExpression is not null
+                                ? ConventionConstructorMappingPlanner
+                                    .MakeUniqueValueLocalName(
+                                        "template",
+                                        argument.ParameterName,
+                                        usedValueLocalNames)
+                                : ConventionConstructorMappingPlanner
+                                    .MakeUniqueSourceValueLocalName(
+                                        argument.SourceMemberName,
+                                        usedValueLocalNames)
+                    };
+            }
+
+            foreach (var sharedValue in sharedValues)
+            {
+                var memberMapping =
+                    mapNew[sharedValue.MemberIndex];
+
+                mapNew[sharedValue.MemberIndex] =
+                    memberMapping with
+                    {
+                        SourceValueLocalName =
+                            argumentModels[
+                                sharedValue.ArgumentIndex]
+                                .ValueLocalName
+                    };
             }
         }
 
@@ -570,7 +685,7 @@ internal static class TypeMapperPipeline
             new TypeMapperConstructorMappingModel(
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     destination),
-                templateConstructor.Arguments),
+                argumentModels.ToImmutableArray()),
             mapNew.ToImmutable());
     }
 

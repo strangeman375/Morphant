@@ -138,6 +138,14 @@ internal static class TemplateConstructorMappingPlanner
             ImmutableArray.CreateBuilder<
                 TypeMapperConstructorArgumentMappingModel>(
                 objectCreation.ArgumentList.Arguments.Count);
+        var ignoredParameterNames =
+            ImmutableArray.CreateBuilder<string>();
+        var sourceMembers =
+            ConventionMemberMappingPlanner.BuildReadableMembers(
+                sourceType,
+                compilation,
+                mapperType,
+                cancellationToken);
 
         for (var index = 0;
              index < probeArgumentList.Arguments.Count;
@@ -167,6 +175,47 @@ internal static class TemplateConstructorMappingPlanner
             var templateArgument =
                 objectCreation.ArgumentList.Arguments[index];
 
+            if (TemplateMemberMarker.TryGetKind(
+                    templateArgument.Expression,
+                    templateSemanticModel,
+                    cancellationToken,
+                    out var markerKind))
+            {
+                if (markerKind == TemplateMemberMarkerKind.Ignore)
+                {
+                    if (!ConventionConstructorMappingPlanner.CanOmit(
+                            destinationParameter))
+                    {
+                        return null;
+                    }
+
+                    ignoredParameterNames.Add(
+                        destinationParameter.Name);
+                    continue;
+                }
+
+                if (ConventionConstructorMappingPlanner
+                        .TryFindSourceMember(
+                            sourceMembers,
+                            destinationParameter.Name) is not
+                    { } sourceMember ||
+                    !MappingExpressionCompatibility
+                        .HasPotentiallyCompatibleConversion(
+                            sourceMember.Type,
+                            destinationParameter.Type,
+                            compilation))
+                {
+                    return null;
+                }
+
+                arguments.Add(
+                    new TypeMapperConstructorArgumentMappingModel(
+                        destinationParameter.Name,
+                        sourceMember.Name,
+                        ValueLocalName: null));
+                continue;
+            }
+
             arguments.Add(
                 new TypeMapperConstructorArgumentMappingModel(
                     destinationParameter.Name,
@@ -178,7 +227,11 @@ internal static class TemplateConstructorMappingPlanner
                         compilation,
                         templateSemanticModel,
                         rewriteExpression,
-                        cancellationToken)));
+                        cancellationToken),
+                    ValueLocalTypeName:
+                        ConventionConstructorMappingPlanner
+                            .BuildExplicitValueLocalTypeName(
+                                destinationParameter)));
         }
 
         var argumentModels = arguments.ToImmutable();
@@ -198,7 +251,8 @@ internal static class TemplateConstructorMappingPlanner
 
         return new TemplateConstructorMappingPlan(
             destinationConstructor,
-            argumentModels);
+            argumentModels,
+            ignoredParameterNames.ToImmutable());
     }
 
     private static ImmutableArray<IMethodSymbol>
@@ -377,8 +431,7 @@ internal static class TemplateConstructorMappingPlanner
                         writer.Line(
                             $"{Identifier(argument.ParameterName)}: " +
                             (argument.ExplicitValueExpression ??
-                             throw new InvalidOperationException(
-                                 "Template constructor arguments require an explicit value.")) +
+                             $"source!.{Identifier(argument.SourceMemberName)}") +
                             suffix);
                     }
 
@@ -406,11 +459,32 @@ internal static class TemplateConstructorMappingPlanner
                 cancellationToken)
             .Symbol as IMethodSymbol;
 
-        return boundConstructor is not null &&
-               ConventionConstructorMappingPlanner
-                   .AreSameConstructor(
-                       boundConstructor,
-                       selectedConstructor);
+        if (boundConstructor is null ||
+            !ConventionConstructorMappingPlanner
+                .AreSameConstructor(
+                    boundConstructor,
+                    selectedConstructor))
+        {
+            return false;
+        }
+
+        var diagnostics = semanticModel.GetDiagnostics(
+            cancellationToken: cancellationToken);
+
+        for (var index = 0;
+             index < arguments.Length;
+             index++)
+        {
+            if (arguments[index].ExplicitValueExpression is null &&
+                MappingExpressionCompatibility.HasNullableWarning(
+                    diagnostics,
+                    objectCreation.ArgumentList!.Arguments[index].Span))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static string BuildArgumentExpression(
@@ -599,4 +673,5 @@ internal static class TemplateConstructorMappingPlanner
 
 internal readonly record struct TemplateConstructorMappingPlan(
     IMethodSymbol Constructor,
-    ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments);
+    ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments,
+    ImmutableArray<string> IgnoredParameterNames);
