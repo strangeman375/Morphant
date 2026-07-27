@@ -6,6 +6,46 @@ namespace Morphant.Generator.UnitTests.TemplateTypeTests.Constructors;
 internal sealed class TemplateTypeConstructorUsageTests
 {
     [Test]
+    public async Task Allows_selecting_by_convention_or_by_factory_for_the_same_template_type()
+    {
+        // lang=c#
+        const string usage =
+"""
+    public sealed class UsageMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+        }
+
+        public object ByConventionUsage() =>
+            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(
+                ByConvention());
+
+        public object ByFactoryUsage() =>
+            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(
+                ByFactory(() => new Destination()));
+    }
+""";
+
+        // lang=c#
+        const string expectedConstructors =
+"""
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        public DestinationMorphantTemplate()
+        {
+        }
+""";
+
+        await RunAndAssert(
+            constructors: "",
+            constructorMembers: "",
+            expectedConstructors,
+            usage);
+    }
+
+    [Test]
     public async Task Accepts_raw_values_and_named_arguments()
     {
         // lang=c#

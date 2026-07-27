@@ -73,6 +73,11 @@ namespace TestCase.Morphant.Generated
     internal sealed record DestinationMorphantTemplate
     {
         public DestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        public DestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
         {
         }
@@ -208,6 +213,11 @@ namespace TestCase.Morphant.Generated
     internal sealed record IInterfaceDestinationMorphantTemplate
     {
         public IInterfaceDestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        public IInterfaceDestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.IInterfaceDestination> marker)
         {
         }
@@ -337,6 +347,11 @@ namespace TestCase.Morphant.Generated
 {
     internal sealed record DestinationMorphantTemplate
     {
+        public DestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
         public DestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
         {
@@ -479,6 +494,11 @@ namespace TestCase.Morphant.Generated
     internal sealed record ValueDestinationMorphantTemplate
     {
         public ValueDestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        public ValueDestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.ValueDestination> marker)
         {
         }
@@ -498,6 +518,11 @@ namespace TestCase.Morphant.Generated
 
     internal sealed record GenericDestinationMorphantTemplate<T>
     {
+        public GenericDestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
         public GenericDestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.GenericDestination<T>> marker)
         {
@@ -659,6 +684,11 @@ namespace TestCase.Morphant.Generated
     internal sealed record DestinationMorphantTemplate
     {
         public DestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        public DestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
         {
         }
@@ -798,6 +828,11 @@ namespace TestCase.Morphant.Generated
     internal sealed record MethodGroupDestinationMorphantTemplate
     {
         public MethodGroupDestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        public MethodGroupDestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.MethodGroupDestination> marker)
         {
         }
@@ -812,6 +847,11 @@ namespace TestCase.Morphant.Generated
     internal sealed record DelegateDestinationMorphantTemplate
     {
         public DelegateDestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
+        public DelegateDestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.DelegateDestination> marker)
         {
         }
@@ -825,6 +865,11 @@ namespace TestCase.Morphant.Generated
 
     internal sealed record BlockLambdaDestinationMorphantTemplate
     {
+        public BlockLambdaDestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
         public BlockLambdaDestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.BlockLambdaDestination> marker)
         {
@@ -984,6 +1029,11 @@ namespace TestCase.Morphant.Generated
 {
     internal sealed record DestinationMorphantTemplate
     {
+        public DestinationMorphantTemplate(
+            global::Morphant.Markers.ByConventionMarker marker)
+        {
+        }
+
         public DestinationMorphantTemplate(
             global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
         {
