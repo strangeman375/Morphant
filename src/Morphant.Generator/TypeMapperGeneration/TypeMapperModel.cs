@@ -27,6 +27,7 @@ internal readonly record struct TypeMapperMappingModel
     string MaybeNullDestinationTypeName,
     string? MapNewDirectExpression,
     string? MapExistingDirectExpression,
+    TypeMapperFactoryMappingModel? MapNewFactory,
     TypeMapperConstructorMappingModel? MapNewConstructor,
     TypeMapperMapExistingKind MapExistingKind,
     string? MapExistingDestinationLocalName,
@@ -37,6 +38,13 @@ internal readonly record struct TypeMapperMappingModel
     public string InterfaceTypeName =>
         $"global::Morphant.ITypeMapper<{SourceTypeName}, {DestinationTypeName}>";
 }
+
+internal readonly record struct TypeMapperFactoryMappingModel
+(
+    string ValueExpression,
+    string DestinationLocalName,
+    string? NullableValueLocalName
+);
 
 internal readonly record struct TypeMapperConstructorMappingModel
 (

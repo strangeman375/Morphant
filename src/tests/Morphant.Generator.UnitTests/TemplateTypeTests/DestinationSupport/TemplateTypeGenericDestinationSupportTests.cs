@@ -611,7 +611,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination<T>> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination<T>> marker)
         {
         }
 
@@ -668,7 +668,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination<T>> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination<T>> marker)
         {
         }
 
@@ -718,7 +718,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination<T>> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination<T>> marker)
         {
         }
 
@@ -765,7 +765,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination<T>> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination<T>> marker)
         {
         }
 
@@ -815,7 +815,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination<TClass, TNullable, TNotNull, TValue, TUnmanaged, TNullableBase, TNullableInterface, TOther, TNullableTypeParameter, TConstructed>> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination<TClass, TNullable, TNotNull, TValue, TUnmanaged, TNullableBase, TNullableInterface, TOther, TNullableTypeParameter, TConstructed>> marker)
         {
         }
 
@@ -864,7 +864,7 @@ namespace TestCase.Morphant.Generated.Outer1Scope
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Outer<TOuter>.Destination<TValue>> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Outer<TOuter>.Destination<TValue>> marker)
         {
         }
 
@@ -921,7 +921,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public ReferencedGenericDestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::Morphant.Generator.UnitTests.TestAssets.ReferencedGenericDestination<T>> marker)
+        public ReferencedGenericDestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::Morphant.Generator.UnitTests.TestAssets.ReferencedGenericDestination<T>> marker)
         {
         }
 
@@ -977,7 +977,7 @@ namespace TestCase.Morphant.Generated.Outer1Scope
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Outer<TOuter>.Destination<TValue>> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Outer<TOuter>.Destination<TValue>> marker)
         {
         }
 
@@ -1024,7 +1024,7 @@ namespace TestCase.Morphant.Generated.Outer2Scope
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Outer<TFirst, TSecond>.Destination> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Outer<TFirst, TSecond>.Destination> marker)
         {
         }
 

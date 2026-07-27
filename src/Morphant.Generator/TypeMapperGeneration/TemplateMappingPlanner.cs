@@ -97,6 +97,7 @@ internal static class TemplateMappingPlanner
                 [],
                 TemplateConstructionKind.None,
                 Constructor: null,
+                FactoryExpression: null,
                 ConventionConstructorMappings: []);
         }
 
@@ -156,6 +157,7 @@ internal static class TemplateMappingPlanner
         var constructionKind =
             TemplateConstructionKind.DestinationConstructor;
         TemplateConstructorMappingPlan? constructor = null;
+        string? factoryExpression = null;
         ImmutableArray<TemplateConstructorMemberMappingModel>
             conventionConstructorMappings = [];
 
@@ -171,6 +173,19 @@ internal static class TemplateMappingPlanner
         {
             constructionKind =
                 TemplateConstructionKind.ByConvention;
+        }
+        else if (TemplateByFactoryMappingPlanner.TryBuild(
+                     objectCreation,
+                     semanticModel,
+                     expression => RewriteSource(
+                         expression,
+                         parameterSymbol,
+                         semanticModel),
+                     cancellationToken,
+                     out factoryExpression))
+        {
+            constructionKind =
+                TemplateConstructionKind.ByFactory;
         }
         else if (memberType is ITypeParameterSymbol &&
             objectCreation.ArgumentList.Arguments.Count == 0)
@@ -201,6 +216,7 @@ internal static class TemplateMappingPlanner
             mapExisting.ToImmutable(),
             constructionKind,
             constructor,
+            factoryExpression,
             conventionConstructorMappings);
     }
 
@@ -249,12 +265,15 @@ internal static class TemplateMappingPlanner
         IParameterSymbol parameter,
         SemanticModel semanticModel)
     {
-        return new SourceParameterRewriter(
+        var rewritten = new SourceParameterRewriter(
                 parameter,
                 semanticModel)
             .Visit(expression)!
             .WithoutTrivia()
-            .NormalizeWhitespace()
+            .NormalizeWhitespace();
+
+        return new NullableSuppressionTriviaRewriter()
+            .Visit(rewritten)!
             .ToFullString();
     }
 
@@ -383,6 +402,36 @@ internal static class TemplateMappingPlanner
         SemanticModel semanticModel)
         : CSharpSyntaxRewriter
     {
+        public override SyntaxNode? VisitObjectCreationExpression(
+            ObjectCreationExpressionSyntax node)
+        {
+            if (semanticModel.GetTypeInfo(node).Type is not
+                INamedTypeSymbol createdType)
+            {
+                return base.VisitObjectCreationExpression(node);
+            }
+
+            var rewritten = node.WithType(
+                SyntaxFactory.ParseTypeName(
+                    createdType.ToDisplayString(
+                        SymbolDisplayFormats
+                            .FullyQualifiedNullable)));
+
+            if (node.ArgumentList is { } argumentList)
+            {
+                rewritten = rewritten.WithArgumentList(
+                    (ArgumentListSyntax)Visit(argumentList)!);
+            }
+
+            if (node.Initializer is { } initializer)
+            {
+                rewritten = rewritten.WithInitializer(
+                    (InitializerExpressionSyntax)Visit(initializer)!);
+            }
+
+            return rewritten.WithTriviaFrom(node);
+        }
+
         public override SyntaxNode? VisitInvocationExpression(
             InvocationExpressionSyntax node)
         {
@@ -850,6 +899,34 @@ internal static class TemplateMappingPlanner
         }
     }
 
+    private sealed class NullableSuppressionTriviaRewriter :
+        CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitPostfixUnaryExpression(
+            PostfixUnaryExpressionSyntax node)
+        {
+            var rewritten =
+                (PostfixUnaryExpressionSyntax)
+                base.VisitPostfixUnaryExpression(node)!;
+
+            if (!rewritten.IsKind(
+                    SyntaxKind
+                        .SuppressNullableWarningExpression))
+            {
+                return rewritten;
+            }
+
+            return rewritten
+                .WithOperand(
+                    rewritten.Operand.WithTrailingTrivia(
+                        default(SyntaxTriviaList)))
+                .WithOperatorToken(
+                    rewritten.OperatorToken
+                        .WithLeadingTrivia(
+                            default(SyntaxTriviaList)));
+        }
+    }
+
     private readonly record struct TemplateWritableMember(
         string Name,
         bool IsRequired,
@@ -863,6 +940,7 @@ internal readonly record struct TemplateMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
     TemplateConstructionKind ConstructionKind,
     TemplateConstructorMappingPlan? Constructor,
+    string? FactoryExpression,
     ImmutableArray<TemplateConstructorMemberMappingModel>
         ConventionConstructorMappings);
 
@@ -871,5 +949,6 @@ internal enum TemplateConstructionKind
     None,
     TypeParameterParameterless,
     DestinationConstructor,
-    ByConvention
+    ByConvention,
+    ByFactory
 }

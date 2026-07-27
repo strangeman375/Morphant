@@ -137,7 +137,7 @@ $$"""
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public {{templateTypeName}}(global::Morphant.Markers.ByFactoryMarker<{{destinationTypeName}}> marker)
+        public {{templateTypeName}}(global::Morphant.Markers.IByFactoryMarker<{{destinationTypeName}}> marker)
         {
         }
 """;

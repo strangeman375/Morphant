@@ -114,6 +114,15 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (mapping.MapNewFactory is { } factory)
+        {
+            WriteFactoryMapNew(
+                writer,
+                mapping,
+                factory);
+            return;
+        }
+
         if (mapping.MapNewConstructor is
             { } constructor)
         {
@@ -215,6 +224,62 @@ internal static class TypeMapperEmitter
         writer.Line(
             "=> throw new global::System.NotImplementedException();");
         writer.Unindent();
+    }
+
+    private static void WriteFactoryMapNew(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperFactoryMappingModel factory)
+    {
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        var destinationLocalName =
+            Identifier(factory.DestinationLocalName);
+
+        writer.Line(
+            $"{mapping.DestinationTypeName} {destinationLocalName} = " +
+            factory.ValueExpression +
+            ";");
+
+        var assignmentTarget = destinationLocalName;
+        var returnExpression = destinationLocalName;
+
+        if (!mapping.MapNewMemberMappings.IsEmpty &&
+            factory.NullableValueLocalName is
+                { } nullableValueLocalName)
+        {
+            var valueLocalName =
+                Identifier(nullableValueLocalName);
+
+            writer.Line(
+                $"var {valueLocalName} = " +
+                $"{destinationLocalName}.Value;");
+
+            assignmentTarget = valueLocalName;
+            returnExpression = valueLocalName;
+        }
+        else if (mapping.MapExistingKind ==
+                 TypeMapperMapExistingKind.Reference)
+        {
+            assignmentTarget += "!";
+        }
+
+        foreach (var memberMapping in
+                 mapping.MapNewMemberMappings)
+        {
+            writer.Line(
+                $"{assignmentTarget}." +
+                $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                MemberValueExpression(memberMapping) +
+                ";");
+        }
+
+        writer.Line();
+        writer.Line($"return {returnExpression};");
+        writer.Unindent();
+        writer.Line("}");
     }
 
     private static void WriteMapExisting(

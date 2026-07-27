@@ -23,11 +23,11 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → `ByFactory()` в `Template()`.** Следующий самостоятельный срез
-добавляет создание destination через явно заданную factory-функцию. До
-написания тестов нужно согласовать поддерживаемые формы factory-выражения,
-область допустимых captures, порядок вычисления относительно initializer-а и
-семантику `MapExisting`.
+**Фаза 3 → маркеры членов в `Template()`.** Следующий самостоятельный срез
+добавляет `Auto()` и `Ignore()` для outer initializer и constructor-member
+mappings. До написания тестов нужно согласовать смысл generic/non-generic
+вариантов, взаимодействие с explicit/convention mappings и поведение каждого
+маркера в `MapNew` и `MapExisting`.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -270,12 +270,12 @@ TDD-среза, но детали могут уточняться перед р�
   template-перегрузку и переносится в generated mapper как cast к фактическому
   типу destination-параметра.
 
-  Фактически переданный constructor parameter исключает соответствующий
-  automatic member только из `MapNew`. Explicit initializer сохраняется
+  Каждый параметр выбранного destination-конструктора исключает
+  соответствующий automatic member только из `MapNew`, в том числе когда
+  optional/`params` argument был опущен. Explicit initializer сохраняется
   всегда; required initializer без `[SetsRequiredMembers]` также сохраняется.
-  Опущенный параметр member mapping не исключает. В `MapExisting` constructor
-  arguments вообще не вычисляются: применяются только initializer и
-  convention mappings.
+  В `MapExisting` constructor arguments вообще не вычисляются: применяются
+  только initializer и convention mappings.
 
 - [x] `ByConvention()` в `Template()`.
 
@@ -307,9 +307,27 @@ TDD-среза, но детали могут уточняться перед р�
   convention mapping. Для abstract class и interface `MapNew` остаётся
   заглушкой, а `MapExisting` поддерживается.
 
-- [ ] `ByFactory()` в `Template()`.
+- [x] `ByFactory()` в `Template()`.
 
-  Реализовать отдельным самостоятельным срезом.
+  Поддерживается inline expression-lambda `() => expression`. Factory-
+  выражение может использовать source, instance/static members mapper-а и
+  static API; ссылки переносятся в generated-код по тем же правилам, что и
+  остальные explicit expressions. `IByFactoryMarker<out TDestination>`
+  ковариантен, поэтому interface/base destination не требует явного generic-
+  аргумента:
+  `new(ByFactory(() => new ConcreteDestination()))`.
+
+  В `MapNew` factory вычисляется ровно один раз и сохраняется в переменную
+  заявленного destination-типа. После неё в порядке DSL выполняются explicit
+  assignable members, затем оставшиеся convention members. Factory отвечает
+  за создание объекта, required- и init-only-члены. Explicit init-only member
+  во внешнем initializer-е пропускается для factory-created объекта, но не
+  делает весь `MapNew` неподдерживаемым. Автоматической null-проверки,
+  подстановки нового destination или иной обработки результата factory пока
+  нет.
+
+  В `MapExisting` factory и всё её выражение полностью игнорируются; работают
+  только assignable outer initializer и convention mappings.
 
 - [ ] Маркеры членов.
 
@@ -330,6 +348,13 @@ TDD-среза, но детали могут уточняться перед р�
 
   Conditional expressions, простые block-lambda, локальные переменные и
   with-overlay.
+
+- [ ] Расширенные формы factory.
+
+  Рассмотреть method groups, заранее созданные `Func<TDestination>`,
+  block-lambda и captures Configure-local значений, параметров и local
+  functions. Для каждой формы отдельно определить переносимость в generated-
+  код, порядок вычисления и диагностику неподдерживаемых captures.
 
 ## Фаза 4. Настройки и композиция
 
@@ -373,8 +398,10 @@ TDD-среза, но детали могут уточняться перед р�
 - [ ] Диагностики и валидация.
 
   Unsupported DSL, неоднозначные конструкторы, unmapped members, nullability
-  mismatch, конфликтующие registrations. Оставить поздним этапом, как и было
-  согласовано.
+  mismatch, конфликтующие registrations. Отдельно сообщать о явно заданном
+  init-only member, который не может быть применён после `ByFactory()` в
+  `MapNew` и не может присваиваться в `MapExisting`. Оставить поздним этапом,
+  как и было согласовано.
 
 - [ ] Актуализация generated mapper-а.
 

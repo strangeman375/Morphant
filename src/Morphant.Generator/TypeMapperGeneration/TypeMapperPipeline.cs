@@ -323,6 +323,11 @@ internal static class TypeMapperPipeline
             templateMapping,
             destinationPlan.MemberType,
             cancellationToken);
+        var factoryMapping = BuildFactoryMapping(
+            destinationPlan,
+            templateMapping,
+            memberMappings,
+            mapperType);
         var constructorMapping = BuildConstructorMapping(
             registration.SourceType,
             destinationPlan.MemberType,
@@ -351,12 +356,42 @@ internal static class TypeMapperPipeline
                     registration.DestinationType),
             templateMapping?.MapNewDirectExpression,
             templateMapping?.MapExistingDirectExpression,
+            factoryMapping,
             constructorMapping?.Constructor,
             destinationPlan.MapExistingKind,
             mapExistingDestinationLocalName,
-            constructorMapping?.MapNewMemberMappings ??
-                memberMappings.MapNew,
+            factoryMapping is not null
+                ? memberMappings.MapExisting
+                : constructorMapping?.MapNewMemberMappings ??
+                  memberMappings.MapNew,
             memberMappings.MapExisting);
+    }
+
+    private static TypeMapperFactoryMappingModel?
+        BuildFactoryMapping(
+            DestinationPlan destinationPlan,
+            TemplateMappingPlan? template,
+            ConventionMemberMappingPlan memberMappings,
+            INamedTypeSymbol mapperType)
+    {
+        if (template is not
+            {
+                ConstructionKind:
+                    TemplateConstructionKind.ByFactory,
+                FactoryExpression: { } factoryExpression
+            })
+        {
+            return null;
+        }
+
+        return new TypeMapperFactoryMappingModel(
+            factoryExpression,
+            AllocateFactoryDestinationLocalName(mapperType),
+            destinationPlan.MapExistingKind ==
+                TypeMapperMapExistingKind.NullableValue &&
+            !memberMappings.MapExisting.IsEmpty
+                ? AllocateDestinationValueLocalName(mapperType)
+                : null);
     }
 
     private static ConventionConstructorMappingPlan?
@@ -404,6 +439,12 @@ internal static class TypeMapperPipeline
                     compilation,
                     mapperType,
                     cancellationToken);
+        }
+
+        if (templateValue.ConstructionKind ==
+            TemplateConstructionKind.ByFactory)
+        {
+            return null;
         }
 
         return templateValue.Constructor is { } constructor
@@ -718,6 +759,45 @@ internal static class TypeMapperPipeline
         }
 
         const string candidate = "destinationValue";
+
+        if (usedNames.Add(candidate))
+        {
+            return candidate;
+        }
+
+        for (var suffix = 1;; suffix++)
+        {
+            var name =
+                candidate +
+                suffix.ToString(CultureInfo.InvariantCulture);
+
+            if (usedNames.Add(name))
+            {
+                return name;
+            }
+        }
+    }
+
+    private static string AllocateFactoryDestinationLocalName(
+        INamedTypeSymbol mapperType)
+    {
+        var usedNames = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "source",
+            "context"
+        };
+
+        for (var type = mapperType;
+             type is not null;
+             type = type.ContainingType)
+        {
+            foreach (var typeParameter in type.TypeParameters)
+            {
+                usedNames.Add(typeParameter.Name);
+            }
+        }
+
+        const string candidate = "destination";
 
         if (usedNames.Add(candidate))
         {

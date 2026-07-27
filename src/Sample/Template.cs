@@ -24,7 +24,7 @@ public sealed record UserModelMorphantTemplate
     {
     }
 
-    public UserModelMorphantTemplate(ByFactoryMarker<UserModel> marker)
+    public UserModelMorphantTemplate(IByFactoryMarker<UserModel> marker)
     {
     }
 

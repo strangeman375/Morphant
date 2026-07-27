@@ -14,9 +14,6 @@ public abstract class ByConventionMarker : ConstructorMarker
     }
 }
 
-public abstract class ByFactoryMarker<TDestination> : ConstructorMarker
+public interface IByFactoryMarker<out TDestination>
 {
-    private ByFactoryMarker()
-    {
-    }
 }

@@ -219,7 +219,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public ReferencedDestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::Morphant.Generator.UnitTests.TestAssets.ReferencedDestination> marker)
+        public ReferencedDestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::Morphant.Generator.UnitTests.TestAssets.ReferencedDestination> marker)
         {
         }
 
@@ -924,7 +924,7 @@ namespace TestCase.Morphant.Generated.ContainerScope
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Container.Destination> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Container.Destination> marker)
         {
         }
 

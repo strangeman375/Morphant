@@ -65,7 +65,7 @@ internal static class TemplateTypeNamingTestHarness
                          /// Creates a destination instance using factory-based destination construction.
                          /// </summary>
                          /// <param name="marker">Selects factory-based construction.</param>
-                         public {{expected.TemplateTypeName}}(global::Morphant.Markers.ByFactoryMarker<{{expected.DestinationTypeName}}> marker)
+                         public {{expected.TemplateTypeName}}(global::Morphant.Markers.IByFactoryMarker<{{expected.DestinationTypeName}}> marker)
                          {
                          }
 

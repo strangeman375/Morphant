@@ -83,7 +83,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
         {
         }
 
@@ -185,7 +185,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
         {
         }
 
@@ -286,7 +286,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
         {
         }
 
@@ -372,7 +372,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using factory-based destination construction.
         /// </summary>
         /// <param name="marker">Selects factory-based construction.</param>
-        public DestinationMorphantTemplate(global::Morphant.Markers.ByFactoryMarker<global::TestCase.Destination> marker)
+        public DestinationMorphantTemplate(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
         {
         }
 

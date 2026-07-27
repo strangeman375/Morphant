@@ -284,7 +284,7 @@ internal static class TemplateTypeEmitter
             templateTypeName,
             new[]
             {
-                $"global::Morphant.Markers.ByFactoryMarker<{model.DestinationTypeName}> marker"
+                $"global::Morphant.Markers.IByFactoryMarker<{model.DestinationTypeName}> marker"
             });
     }
 
