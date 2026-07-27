@@ -496,11 +496,12 @@ internal static class TypeMapperPipeline
         var correspondingMemberIndexes =
             new HashSet<int>();
 
-        foreach (var argument in templateConstructor.Arguments)
+        foreach (var parameter in
+                 templateConstructor.Constructor.Parameters)
         {
             if (FindCorrespondingMemberIndex(
                     memberMappings.MapNew,
-                    argument.ParameterName) is { } memberIndex)
+                    parameter.Name) is { } memberIndex)
             {
                 correspondingMemberIndexes.Add(memberIndex);
             }
