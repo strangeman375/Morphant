@@ -665,7 +665,7 @@ internal static class ConventionConstructorMappingPlanner
         return false;
     }
 
-    private static bool AreSameConstructor(
+    internal static bool AreSameConstructor(
         IMethodSymbol left,
         IMethodSymbol right)
     {

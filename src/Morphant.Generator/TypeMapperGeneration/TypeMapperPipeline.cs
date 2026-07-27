@@ -323,23 +323,14 @@ internal static class TypeMapperPipeline
             templateMapping,
             destinationPlan.MemberType,
             cancellationToken);
-        var constructorMapping = templateMapping is
-            {
-                UsesParameterlessConstructor: true
-            }
-                ? BuildParameterlessConstructorMapping(
-                    destinationPlan.MemberType,
-                    memberMappings,
-                    compilation,
-                    mapperType,
-                    cancellationToken)
-                : ConventionConstructorMappingPlanner.Build(
-                    registration.SourceType,
-                    destinationPlan.MemberType,
-                    memberMappings,
-                    compilation,
-                    mapperType,
-                    cancellationToken);
+        var constructorMapping = BuildConstructorMapping(
+            registration.SourceType,
+            destinationPlan.MemberType,
+            memberMappings,
+            templateMapping,
+            compilation,
+            mapperType,
+            cancellationToken);
         var mapExistingDestinationLocalName =
             destinationPlan.MapExistingKind ==
                 TypeMapperMapExistingKind.NullableValue &&
@@ -366,6 +357,45 @@ internal static class TypeMapperPipeline
             constructorMapping?.MapNewMemberMappings ??
                 memberMappings.MapNew,
             memberMappings.MapExisting);
+    }
+
+    private static ConventionConstructorMappingPlan?
+        BuildConstructorMapping(
+            ITypeSymbol source,
+            ITypeSymbol? destination,
+            ConventionMemberMappingPlan memberMappings,
+            TemplateMappingPlan? template,
+            CSharpCompilation compilation,
+            INamedTypeSymbol mapperType,
+            CancellationToken cancellationToken)
+    {
+        if (template is not { } templateValue ||
+            templateValue.ConstructionKind ==
+                TemplateConstructionKind.None)
+        {
+            return ConventionConstructorMappingPlanner.Build(
+                source,
+                destination,
+                memberMappings,
+                compilation,
+                mapperType,
+                cancellationToken);
+        }
+
+        if (templateValue.ConstructionKind ==
+            TemplateConstructionKind.TypeParameterParameterless)
+        {
+            return BuildTypeParameterConstructorMapping(
+                destination,
+                memberMappings);
+        }
+
+        return templateValue.Constructor is { } constructor
+            ? BuildTemplateConstructorMapping(
+                destination,
+                memberMappings,
+                constructor)
+            : null;
     }
 
     private static ConventionMemberMappingPlan MergeMemberMappings(
@@ -408,60 +438,122 @@ internal static class TypeMapperPipeline
     }
 
     private static ConventionConstructorMappingPlan?
-        BuildParameterlessConstructorMapping(
+        BuildTypeParameterConstructorMapping(
             ITypeSymbol? destination,
-            ConventionMemberMappingPlan memberMappings,
-            CSharpCompilation compilation,
-            INamedTypeSymbol mapperType,
-            CancellationToken cancellationToken)
+            ConventionMemberMappingPlan memberMappings)
     {
-        if (destination is ITypeParameterSymbol typeParameter)
-        {
-            if (memberMappings.HasUnmappedRequiredMembers ||
-                !typeParameter.HasValueTypeConstraint &&
-                !typeParameter.HasUnmanagedTypeConstraint &&
-                !typeParameter.HasConstructorConstraint)
-            {
-                return null;
-            }
-
-            return new ConventionConstructorMappingPlan(
-                new TypeMapperConstructorMappingModel(
-                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                        destination),
-                    []),
-                memberMappings.MapNew);
-        }
-
-        if (destination is not INamedTypeSymbol namedDestination ||
-            namedDestination.IsAbstract)
+        if (destination is not ITypeParameterSymbol typeParameter ||
+            memberMappings.HasUnmappedRequiredMembers ||
+            !typeParameter.HasValueTypeConstraint &&
+            !typeParameter.HasUnmanagedTypeConstraint &&
+            !typeParameter.HasConstructorConstraint)
         {
             return null;
         }
 
-        foreach (var constructor in namedDestination.InstanceConstructors)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
+        return new ConventionConstructorMappingPlan(
+            new TypeMapperConstructorMappingModel(
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    destination),
+                []),
+            memberMappings.MapNew);
+    }
 
-            if (constructor.Parameters.IsEmpty &&
-                compilation.IsSymbolAccessibleWithin(
-                    constructor,
-                    mapperType) &&
-                (!memberMappings.HasUnmappedRequiredMembers ||
-                 ConventionConstructorMappingPlanner
-                     .HasSetsRequiredMembersAttribute(
-                         constructor)))
+    private static ConventionConstructorMappingPlan?
+        BuildTemplateConstructorMapping(
+            ITypeSymbol? destination,
+            ConventionMemberMappingPlan memberMappings,
+            TemplateConstructorMappingPlan templateConstructor)
+    {
+        var setsRequiredMembers =
+            ConventionConstructorMappingPlanner
+                .HasSetsRequiredMembersAttribute(
+                    templateConstructor.Constructor);
+
+        if (destination is null ||
+            memberMappings.HasUnmappedRequiredMembers &&
+            !setsRequiredMembers)
+        {
+            return null;
+        }
+
+        var correspondingMemberIndexes =
+            new HashSet<int>();
+
+        foreach (var argument in templateConstructor.Arguments)
+        {
+            if (FindCorrespondingMemberIndex(
+                    memberMappings.MapNew,
+                    argument.ParameterName) is { } memberIndex)
             {
-                return new ConventionConstructorMappingPlan(
-                    new TypeMapperConstructorMappingModel(
-                        TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                            destination),
-                        []),
-                    memberMappings.MapNew);
+                correspondingMemberIndexes.Add(memberIndex);
             }
         }
 
-        return null;
+        var mapNew =
+            ImmutableArray.CreateBuilder<
+                TypeMapperMemberMappingModel>();
+
+        for (var index = 0;
+             index < memberMappings.MapNew.Length;
+             index++)
+        {
+            var mapping = memberMappings.MapNew[index];
+
+            if (!correspondingMemberIndexes.Contains(index) ||
+                mapping.ExplicitValueExpression is not null ||
+                mapping.IsRequired && !setsRequiredMembers)
+            {
+                mapNew.Add(mapping);
+            }
+        }
+
+        return new ConventionConstructorMappingPlan(
+            new TypeMapperConstructorMappingModel(
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    destination),
+                templateConstructor.Arguments),
+            mapNew.ToImmutable());
+    }
+
+    private static int? FindCorrespondingMemberIndex(
+        ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
+        string parameterName)
+    {
+        for (var index = 0;
+             index < memberMappings.Length;
+             index++)
+        {
+            if (StringComparer.Ordinal.Equals(
+                    memberMappings[index].DestinationMemberName,
+                    parameterName))
+            {
+                return index;
+            }
+        }
+
+        int? result = null;
+
+        for (var index = 0;
+             index < memberMappings.Length;
+             index++)
+        {
+            if (!StringComparer.OrdinalIgnoreCase.Equals(
+                    memberMappings[index].DestinationMemberName,
+                    parameterName))
+            {
+                continue;
+            }
+
+            if (result is not null)
+            {
+                return null;
+            }
+
+            result = index;
+        }
+
+        return result;
     }
 
     private static DestinationPlan BuildDestinationPlan(

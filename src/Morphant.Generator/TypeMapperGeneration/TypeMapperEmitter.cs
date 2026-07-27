@@ -174,9 +174,7 @@ internal static class TypeMapperEmitter
 
                     writer.Line(
                         $"{Identifier(argument.ParameterName)}: " +
-                        SourceValueExpression(
-                            argument.SourceMemberName,
-                            argument.SourceValueLocalName) +
+                        ConstructorArgumentValueExpression(argument) +
                         suffix);
                 }
 
@@ -346,6 +344,15 @@ internal static class TypeMapperEmitter
 
     private static string MemberValueExpression(
         TypeMapperMemberMappingModel mapping)
+    {
+        return mapping.ExplicitValueExpression ??
+               SourceValueExpression(
+                   mapping.SourceMemberName,
+                   mapping.SourceValueLocalName);
+    }
+
+    private static string ConstructorArgumentValueExpression(
+        TypeMapperConstructorArgumentMappingModel mapping)
     {
         return mapping.ExplicitValueExpression ??
                SourceValueExpression(

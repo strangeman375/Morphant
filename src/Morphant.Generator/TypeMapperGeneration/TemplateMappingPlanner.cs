@@ -95,19 +95,19 @@ internal static class TemplateMappingPlanner
                 expression,
                 [],
                 [],
-                UsesParameterlessConstructor: false);
+                TemplateConstructionKind.None,
+                Constructor: null);
         }
 
         if (memberType is null ||
             body is not ImplicitObjectCreationExpressionSyntax
-            {
-                ArgumentList.Arguments.Count: 0,
-                Initializer.Expressions: var initializerExpressions
-            })
+                objectCreation)
         {
             return null;
         }
 
+        var initializerExpressions =
+            objectCreation.Initializer?.Expressions ?? default;
         var mapNew =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var mapExisting =
@@ -152,12 +152,39 @@ internal static class TemplateMappingPlanner
             }
         }
 
+        var constructionKind =
+            TemplateConstructionKind.DestinationConstructor;
+        TemplateConstructorMappingPlan? constructor = null;
+
+        if (memberType is ITypeParameterSymbol &&
+            objectCreation.ArgumentList.Arguments.Count == 0)
+        {
+            constructionKind =
+                TemplateConstructionKind.TypeParameterParameterless;
+        }
+        else if (memberType is INamedTypeSymbol constructorDestination)
+        {
+            constructor = TemplateConstructorMappingPlanner.Build(
+                objectCreation,
+                registration.SourceType,
+                constructorDestination,
+                compilation,
+                mapperType,
+                semanticModel,
+                expression => RewriteSource(
+                    expression,
+                    parameterSymbol,
+                    semanticModel),
+                cancellationToken);
+        }
+
         return new TemplateMappingPlan(
             MapNewDirectExpression: null,
             MapExistingDirectExpression: null,
             mapNew.ToImmutable(),
             mapExisting.ToImmutable(),
-            UsesParameterlessConstructor: true);
+            constructionKind,
+            constructor);
     }
 
     private static bool TryGetLambda(
@@ -817,4 +844,12 @@ internal readonly record struct TemplateMappingPlan(
     string? MapExistingDirectExpression,
     ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
-    bool UsesParameterlessConstructor);
+    TemplateConstructionKind ConstructionKind,
+    TemplateConstructorMappingPlan? Constructor);
+
+internal enum TemplateConstructionKind
+{
+    None,
+    TypeParameterParameterless,
+    DestinationConstructor
+}

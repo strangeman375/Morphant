@@ -23,11 +23,11 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → Явный конструктор в `Template()`.** Следующий срез добавляет
-constructor arguments в template object creation. Точную границу
-поддерживаемых аргументов, optional/`params`, порядок их вычисления и
-взаимодействие с `MapExisting` нужно согласовать до написания тестов и
-production-кода.
+**Фаза 3 → `ByConvention()` в `Template()`.** Следующий самостоятельный срез
+добавляет convention-based способ создания destination. До написания тестов
+нужно согласовать, ограничивается ли первый срез bare-маркером либо сразу
+включает объект с явными constructor-member mappings, а также точное
+взаимодействие с initializer-ом и `MapExisting`.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -249,10 +249,42 @@ production-кода.
   файла. Compile-time результат `nameof` сохраняется строковым литералом.
   Configure-local captures и управляющие формы lambda остаются отложенными.
 
-- [ ] Способы создания destination.
+- [x] Явный конструктор в `Template()`.
 
-  Явный конструктор, `ByConvention()` и `ByFactory()` — по одному независимому
-  срезу.
+  Поддерживаются positional, named и mixed constructor arguments, включая
+  перестановку named arguments. Аргументы вычисляются слева направо в порядке
+  записи, затем вызывается выбранный destination-конструктор, после чего идут
+  explicit initializer members и оставшиеся convention members.
+
+  Optional-параметры можно опускать; применяется default соответствующего
+  destination-конструктора. `params` поддерживает omission либо передачу
+  массива целиком, но не expanded-форму. Синтаксически присутствующий `null`
+  остаётся явно переданным аргументом. Если все optional/`params` параметры
+  опущены, `new()` выбирает parameterless-конструктор при его наличии, иначе
+  применимый optional-конструктор по обычным правилам overload resolution C#.
+
+  Перегрузка выбирается компиляторным probe с теми же
+  `ConstructorMember<T>`-сигнатурами, что у template type. Поэтому
+  positional/named binding, optional tie-breaking и неоднозначности не
+  воспроизводятся вручную. Явный `ConstructorMember<T>` cast выбирает нужную
+  template-перегрузку и переносится в generated mapper как cast к фактическому
+  типу destination-параметра.
+
+  Фактически переданный constructor parameter исключает соответствующий
+  automatic member только из `MapNew`. Explicit initializer сохраняется
+  всегда; required initializer без `[SetsRequiredMembers]` также сохраняется.
+  Опущенный параметр member mapping не исключает. В `MapExisting` constructor
+  arguments вообще не вычисляются: применяются только initializer и
+  convention mappings.
+
+- [ ] `ByConvention()` в `Template()`.
+
+  Реализовать отдельным самостоятельным срезом. Границу bare-маркера и
+  constructor-member mappings согласовать перед тестами.
+
+- [ ] `ByFactory()` в `Template()`.
+
+  Реализовать отдельным самостоятельным срезом.
 
 - [ ] Маркеры членов.
 
