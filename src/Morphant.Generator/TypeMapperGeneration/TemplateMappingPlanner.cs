@@ -96,7 +96,8 @@ internal static class TemplateMappingPlanner
                 [],
                 [],
                 TemplateConstructionKind.None,
-                Constructor: null);
+                Constructor: null,
+                ConventionConstructorMappings: []);
         }
 
         if (memberType is null ||
@@ -155,8 +156,23 @@ internal static class TemplateMappingPlanner
         var constructionKind =
             TemplateConstructionKind.DestinationConstructor;
         TemplateConstructorMappingPlan? constructor = null;
+        ImmutableArray<TemplateConstructorMemberMappingModel>
+            conventionConstructorMappings = [];
 
-        if (memberType is ITypeParameterSymbol &&
+        if (TemplateByConventionMappingPlanner.TryBuild(
+                objectCreation,
+                semanticModel,
+                expression => RewriteSource(
+                    expression,
+                    parameterSymbol,
+                    semanticModel),
+                cancellationToken,
+                out conventionConstructorMappings))
+        {
+            constructionKind =
+                TemplateConstructionKind.ByConvention;
+        }
+        else if (memberType is ITypeParameterSymbol &&
             objectCreation.ArgumentList.Arguments.Count == 0)
         {
             constructionKind =
@@ -184,7 +200,8 @@ internal static class TemplateMappingPlanner
             mapNew.ToImmutable(),
             mapExisting.ToImmutable(),
             constructionKind,
-            constructor);
+            constructor,
+            conventionConstructorMappings);
     }
 
     private static bool TryGetLambda(
@@ -845,11 +862,14 @@ internal readonly record struct TemplateMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
     TemplateConstructionKind ConstructionKind,
-    TemplateConstructorMappingPlan? Constructor);
+    TemplateConstructorMappingPlan? Constructor,
+    ImmutableArray<TemplateConstructorMemberMappingModel>
+        ConventionConstructorMappings);
 
 internal enum TemplateConstructionKind
 {
     None,
     TypeParameterParameterless,
-    DestinationConstructor
+    DestinationConstructor,
+    ByConvention
 }

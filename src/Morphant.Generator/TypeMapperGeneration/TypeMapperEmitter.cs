@@ -121,26 +121,26 @@ internal static class TypeMapperEmitter
             writer.Line("{");
             writer.Indent();
 
-            var hasSourceValueLocals = false;
+            var hasValueLocals = false;
 
             foreach (var argument in constructor.Arguments)
             {
-                if (argument.SourceValueLocalName is not
-                    { } sourceValueLocalName)
+                if (argument.ValueLocalName is not
+                    { } valueLocalName)
                 {
                     continue;
                 }
 
-                hasSourceValueLocals = true;
+                hasValueLocals = true;
                 writer.Line(
-                    $"var {sourceValueLocalName} = " +
-                    SourceValueExpression(
-                        argument.SourceMemberName,
-                        sourceValueLocalName: null) +
+                    (argument.ValueLocalTypeName ?? "var") +
+                    $" {valueLocalName} = " +
+                    ConstructorArgumentUncachedValueExpression(
+                        argument) +
                     ";");
             }
 
-            if (hasSourceValueLocals)
+            if (hasValueLocals)
             {
                 writer.Line();
             }
@@ -354,10 +354,17 @@ internal static class TypeMapperEmitter
     private static string ConstructorArgumentValueExpression(
         TypeMapperConstructorArgumentMappingModel mapping)
     {
+        return mapping.ValueLocalName ??
+               ConstructorArgumentUncachedValueExpression(mapping);
+    }
+
+    private static string ConstructorArgumentUncachedValueExpression(
+        TypeMapperConstructorArgumentMappingModel mapping)
+    {
         return mapping.ExplicitValueExpression ??
                SourceValueExpression(
                    mapping.SourceMemberName,
-                   mapping.SourceValueLocalName);
+                   sourceValueLocalName: null);
     }
 
     private static string Identifier(string value)

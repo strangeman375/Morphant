@@ -19,8 +19,33 @@ internal static class ConventionConstructorMappingPlanner
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
+        return Build(
+            sourceType,
+            destination,
+            memberMappings,
+            [],
+            compilation,
+            mapperType,
+            cancellationToken);
+    }
+
+    public static ConventionConstructorMappingPlan? Build(
+        ITypeSymbol sourceType,
+        ITypeSymbol? destination,
+        ConventionMemberMappingPlan memberMappings,
+        ImmutableArray<TemplateConstructorMemberMappingModel>
+            explicitMappings,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
         if (destination is ITypeParameterSymbol typeParameter)
         {
+            if (!explicitMappings.IsEmpty)
+            {
+                return null;
+            }
+
             return BuildTypeParameterPlan(
                 typeParameter,
                 memberMappings);
@@ -46,6 +71,39 @@ internal static class ConventionConstructorMappingPlanner
             return null;
         }
 
+        var explicitArguments =
+            ImmutableArray.CreateBuilder<
+                TypeMapperConstructorArgumentMappingModel>(
+                explicitMappings.Length);
+        var explicitParameterNames =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var mapping in explicitMappings)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!explicitParameterNames.Add(
+                    mapping.ParameterName) ||
+                TryFindParameter(
+                    constructor,
+                    mapping.ParameterName) is not { } parameter)
+            {
+                return null;
+            }
+
+            explicitArguments.Add(
+                new TypeMapperConstructorArgumentMappingModel(
+                    parameter.Name,
+                    SourceMemberName: string.Empty,
+                    ValueLocalName: null,
+                    mapping.ExplicitValueExpression,
+                    ValueLocalTypeName:
+                        BuildExplicitValueLocalTypeName(
+                            parameter)));
+        }
+
+        var explicitArgumentArray =
+            explicitArguments.ToImmutable();
         var sourceMembers =
             ConventionMemberMappingPlanner.BuildReadableMembers(
                 sourceType,
@@ -59,6 +117,11 @@ internal static class ConventionConstructorMappingPlanner
         foreach (var parameter in constructor.Parameters)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (explicitParameterNames.Contains(parameter.Name))
+            {
+                continue;
+            }
 
             if (TryFindSourceMember(
                     sourceMembers,
@@ -88,6 +151,7 @@ internal static class ConventionConstructorMappingPlanner
             sourceType,
             namedDestination,
             constructor,
+            explicitArgumentArray,
             candidateArray,
             compilation,
             mapperType,
@@ -131,6 +195,7 @@ internal static class ConventionConstructorMappingPlanner
                     sourceType,
                     namedDestination,
                     constructor,
+                    explicitArgumentArray,
                     argumentArray,
                     compilation,
                     mapperType,
@@ -139,18 +204,56 @@ internal static class ConventionConstructorMappingPlanner
                 return null;
             }
         }
-        else if (compatibility.Value
-            .HasInvocationNullableWarning)
+        else if (explicitArgumentArray.IsEmpty &&
+                 compatibility.Value
+                     .HasInvocationNullableWarning)
         {
             return null;
         }
 
         return BuildPlan(
+            explicitArgumentArray,
             argumentArray,
             memberMappings.MapNew,
             setsRequiredMembers,
             mapperType,
             namedDestination);
+    }
+
+    private static IParameterSymbol? TryFindParameter(
+        IMethodSymbol constructor,
+        string parameterName)
+    {
+        foreach (var parameter in constructor.Parameters)
+        {
+            if (StringComparer.Ordinal.Equals(
+                    parameter.Name,
+                    parameterName))
+            {
+                return parameter;
+            }
+        }
+
+        return null;
+    }
+
+    private static string BuildExplicitValueLocalTypeName(
+        IParameterSymbol parameter)
+    {
+        var nullableAnnotation =
+            parameter.Type.IsReferenceType ||
+            parameter.Type is ITypeParameterSymbol
+            {
+                HasValueTypeConstraint: false,
+                HasUnmanagedTypeConstraint: false
+            }
+                ? NullableAnnotation.Annotated
+                : parameter.NullableAnnotation;
+
+        return parameter.Type
+            .WithNullableAnnotation(nullableAnnotation)
+            .ToDisplayString(
+                SymbolDisplayFormats.FullyQualifiedNullable);
     }
 
     private static ConventionConstructorMappingPlan?
@@ -270,6 +373,8 @@ internal static class ConventionConstructorMappingPlanner
             ITypeSymbol sourceType,
             INamedTypeSymbol destination,
             IMethodSymbol constructor,
+            ImmutableArray<TypeMapperConstructorArgumentMappingModel>
+                explicitArguments,
             ImmutableArray<ConstructorArgumentCandidate> candidates,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
@@ -278,6 +383,7 @@ internal static class ConventionConstructorMappingPlanner
         var probe = BindProbe(
             sourceType,
             destination,
+            explicitArguments,
             candidates,
             compilation,
             mapperType,
@@ -302,7 +408,8 @@ internal static class ConventionConstructorMappingPlanner
 
             var argument =
                 probe.Value.ObjectCreation.ArgumentList!
-                    .Arguments[index];
+                    .Arguments[
+                        explicitArguments.Length + index];
             var conversion =
                 probe.Value.SemanticModel.GetConversion(
                     argument.Expression,
@@ -328,6 +435,8 @@ internal static class ConventionConstructorMappingPlanner
         ITypeSymbol sourceType,
         INamedTypeSymbol destination,
         IMethodSymbol constructor,
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel>
+            explicitArguments,
         ImmutableArray<ConstructorArgumentCandidate> arguments,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -336,23 +445,52 @@ internal static class ConventionConstructorMappingPlanner
         var probe = BindProbe(
             sourceType,
             destination,
+            explicitArguments,
             arguments,
             compilation,
             mapperType,
             cancellationToken);
 
-        return probe is { } value &&
-               AreSameConstructor(
-                   value.Constructor,
-                   constructor) &&
-               !MappingExpressionCompatibility.HasNullableWarning(
-                   value.Diagnostics,
-                   value.ObjectCreation.Span);
+        if (probe is not { } value ||
+            !AreSameConstructor(
+                value.Constructor,
+                constructor))
+        {
+            return false;
+        }
+
+        if (explicitArguments.IsEmpty)
+        {
+            return !MappingExpressionCompatibility.HasNullableWarning(
+                value.Diagnostics,
+                value.ObjectCreation.Span);
+        }
+
+        for (var index = 0;
+             index < arguments.Length;
+             index++)
+        {
+            var argument =
+                value.ObjectCreation.ArgumentList!
+                    .Arguments[
+                        explicitArguments.Length + index];
+
+            if (MappingExpressionCompatibility.HasNullableWarning(
+                    value.Diagnostics,
+                    argument.Span))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static ConstructorProbeBinding? BindProbe(
         ITypeSymbol sourceType,
         INamedTypeSymbol destination,
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel>
+            explicitArguments,
         ImmutableArray<ConstructorArgumentCandidate> arguments,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -361,6 +499,7 @@ internal static class ConventionConstructorMappingPlanner
         var probeTree = BuildProbeTree(
             sourceType,
             destination,
+            explicitArguments,
             arguments,
             mapperType);
         var probeCompilation = compilation
@@ -397,6 +536,8 @@ internal static class ConventionConstructorMappingPlanner
     private static SyntaxTree BuildProbeTree(
         ITypeSymbol sourceType,
         INamedTypeSymbol destination,
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel>
+            explicitArguments,
         ImmutableArray<ConstructorArgumentCandidate> arguments,
         INamedTypeSymbol mapperType)
     {
@@ -421,7 +562,10 @@ internal static class ConventionConstructorMappingPlanner
                 writer.Line("{");
                 writer.Indent();
 
-                if (arguments.IsEmpty)
+                var argumentCount =
+                    explicitArguments.Length + arguments.Length;
+
+                if (argumentCount == 0)
                 {
                     writer.Line(
                         $"return new {destinationTypeName}();");
@@ -433,12 +577,31 @@ internal static class ConventionConstructorMappingPlanner
                     writer.Indent();
 
                     for (var index = 0;
+                         index < explicitArguments.Length;
+                         index++)
+                    {
+                        var argument = explicitArguments[index];
+                        var suffix =
+                            index < argumentCount - 1
+                                ? ","
+                                : ");";
+
+                        writer.Line(
+                            $"{Identifier(argument.ParameterName)}: " +
+                            (argument.ExplicitValueExpression ??
+                             throw new InvalidOperationException(
+                                 "Explicit constructor mapping requires a value.")) +
+                            suffix);
+                    }
+
+                    for (var index = 0;
                          index < arguments.Length;
                          index++)
                     {
                         var argument = arguments[index];
                         var suffix =
-                            index < arguments.Length - 1
+                            explicitArguments.Length + index <
+                                argumentCount - 1
                                 ? ","
                                 : ");";
 
@@ -457,6 +620,8 @@ internal static class ConventionConstructorMappingPlanner
     }
 
     private static ConventionConstructorMappingPlan BuildPlan(
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel>
+            explicitArguments,
         ImmutableArray<ConstructorArgumentCandidate> arguments,
         ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
         bool setsRequiredMembers,
@@ -466,13 +631,24 @@ internal static class ConventionConstructorMappingPlanner
         var correspondingArguments =
             new List<int>[memberMappings.Length];
 
+        var argumentModels =
+            explicitArguments
+                .AddRange(
+                    arguments.Select(
+                        static argument =>
+                            new TypeMapperConstructorArgumentMappingModel(
+                                argument.Parameter.Name,
+                                argument.SourceMember.Name,
+                                ValueLocalName: null)))
+                .ToArray();
+
         for (var argumentIndex = 0;
-             argumentIndex < arguments.Length;
+             argumentIndex < argumentModels.Length;
              argumentIndex++)
         {
             if (FindCorrespondingMemberIndex(
                     memberMappings,
-                    arguments[argumentIndex].Parameter.Name) is not
+                    argumentModels[argumentIndex].ParameterName) is not
                 { } memberIndex)
             {
                 continue;
@@ -484,20 +660,13 @@ internal static class ConventionConstructorMappingPlanner
                 .Add(argumentIndex);
         }
 
-        var argumentModels =
-            arguments
-                .Select(
-                    static argument =>
-                        new TypeMapperConstructorArgumentMappingModel(
-                            argument.Parameter.Name,
-                            argument.SourceMember.Name,
-                            SourceValueLocalName: null))
-                .ToArray();
         var memberModels =
             ImmutableArray.CreateBuilder<
                 TypeMapperMemberMappingModel>();
-        var usedSourceValueLocalNames =
-            BuildUsedSourceValueLocalNames(mapperType);
+        var sharedValues =
+            new List<SharedConstructorValue>();
+        var usedValueLocalNames =
+            BuildUsedValueLocalNames(mapperType);
 
         for (var memberIndex = 0;
              memberIndex < memberMappings.Length;
@@ -513,42 +682,82 @@ internal static class ConventionConstructorMappingPlanner
                 continue;
             }
 
+            if (memberMapping.ExplicitValueExpression is not null)
+            {
+                memberModels.Add(memberMapping);
+                continue;
+            }
+
             if (!memberMapping.IsRequired ||
                 setsRequiredMembers)
             {
                 continue;
             }
 
-            string? sourceValueLocalName = null;
-
             if (matchingArguments.Count == 1)
             {
                 var argumentIndex = matchingArguments[0];
-                var argument = arguments[argumentIndex];
+                var automaticArgumentIndex =
+                    argumentIndex - explicitArguments.Length;
 
-                if (StringComparer.Ordinal.Equals(
-                        argument.SourceMember.Name,
+                if (automaticArgumentIndex >= 0 &&
+                    StringComparer.Ordinal.Equals(
+                        arguments[automaticArgumentIndex]
+                            .SourceMember.Name,
                         memberMapping.SourceMemberName))
                 {
-                    sourceValueLocalName =
-                        MakeUniqueSourceValueLocalName(
-                            argument.SourceMember.Name,
-                            usedSourceValueLocalNames);
-                    argumentModels[argumentIndex] =
-                        argumentModels[argumentIndex] with
-                        {
-                            SourceValueLocalName =
-                                sourceValueLocalName
-                        };
+                    sharedValues.Add(
+                        new SharedConstructorValue(
+                            memberModels.Count,
+                            argumentIndex));
                 }
             }
 
-            memberModels.Add(
-                memberMapping with
-                {
-                    SourceValueLocalName =
-                        sourceValueLocalName
-                });
+            memberModels.Add(memberMapping);
+        }
+
+        if (sharedValues.Count > 0)
+        {
+            var lastSharedArgumentIndex =
+                sharedValues.Max(
+                    static value =>
+                        value.ArgumentIndex);
+
+            for (var argumentIndex = 0;
+                 argumentIndex <= lastSharedArgumentIndex;
+                 argumentIndex++)
+            {
+                var argument = argumentModels[argumentIndex];
+
+                argumentModels[argumentIndex] =
+                    argument with
+                    {
+                        ValueLocalName =
+                            argument.ExplicitValueExpression is not null
+                                ? MakeUniqueValueLocalName(
+                                    "template",
+                                    argument.ParameterName,
+                                    usedValueLocalNames)
+                                : MakeUniqueSourceValueLocalName(
+                                    argument.SourceMemberName,
+                                    usedValueLocalNames)
+                    };
+            }
+
+            foreach (var sharedValue in sharedValues)
+            {
+                var memberMapping =
+                    memberModels[sharedValue.MemberIndex];
+
+                memberModels[sharedValue.MemberIndex] =
+                    memberMapping with
+                    {
+                        SourceValueLocalName =
+                            argumentModels[
+                                sharedValue.ArgumentIndex]
+                                .ValueLocalName
+                    };
+            }
         }
 
         return new ConventionConstructorMappingPlan(
@@ -559,7 +768,7 @@ internal static class ConventionConstructorMappingPlanner
             memberModels.ToImmutable());
     }
 
-    private static HashSet<string> BuildUsedSourceValueLocalNames(
+    private static HashSet<string> BuildUsedValueLocalNames(
         INamedTypeSymbol mapperType)
     {
         var result = new HashSet<string>(StringComparer.Ordinal)
@@ -585,10 +794,21 @@ internal static class ConventionConstructorMappingPlanner
         string sourceMemberName,
         HashSet<string> usedNames)
     {
+        return MakeUniqueValueLocalName(
+            "source",
+            sourceMemberName,
+            usedNames);
+    }
+
+    private static string MakeUniqueValueLocalName(
+        string prefix,
+        string valueName,
+        HashSet<string> usedNames)
+    {
         var candidate =
-            "source" +
-            char.ToUpperInvariant(sourceMemberName[0]) +
-            sourceMemberName.Substring(1);
+            prefix +
+            char.ToUpperInvariant(valueName[0]) +
+            valueName.Substring(1);
 
         if (usedNames.Add(candidate))
         {
@@ -730,6 +950,10 @@ internal static class ConventionConstructorMappingPlanner
     private readonly record struct ConstructorArgumentCandidate(
         IParameterSymbol Parameter,
         ConventionReadableMember SourceMember);
+
+    private readonly record struct SharedConstructorValue(
+        int MemberIndex,
+        int ArgumentIndex);
 
     private readonly record struct ConstructorCandidateCompatibility(
         ImmutableArray<bool> Candidates,

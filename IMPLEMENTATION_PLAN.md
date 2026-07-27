@@ -23,11 +23,11 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → `ByConvention()` в `Template()`.** Следующий самостоятельный срез
-добавляет convention-based способ создания destination. До написания тестов
-нужно согласовать, ограничивается ли первый срез bare-маркером либо сразу
-включает объект с явными constructor-member mappings, а также точное
-взаимодействие с initializer-ом и `MapExisting`.
+**Фаза 3 → `ByFactory()` в `Template()`.** Следующий самостоятельный срез
+добавляет создание destination через явно заданную factory-функцию. До
+написания тестов нужно согласовать поддерживаемые формы factory-выражения,
+область допустимых captures, порядок вычисления относительно initializer-а и
+семантику `MapExisting`.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -277,10 +277,35 @@ TDD-среза, но детали могут уточняться перед р�
   arguments вообще не вычисляются: применяются только initializer и
   convention mappings.
 
-- [ ] `ByConvention()` в `Template()`.
+- [x] `ByConvention()` в `Template()`.
 
-  Реализовать отдельным самостоятельным срезом. Границу bare-маркера и
-  constructor-member mappings согласовать перед тестами.
+  Поддерживаются bare-маркер и объект с явными constructor-member mappings:
+  `new(ByConvention())` и
+  `new(ByConvention(), new() { id = source.ExternalId })`. Параметры
+  специального template-конструктора сохраняют обычное C#-связывание, включая
+  named arguments и их перестановку.
+
+  Сначала текущая стратегия `Unambiguous` выбирает destination-конструктор.
+  Явные mappings не участвуют в выборе перегрузки, а перекрывают automatic
+  mapping параметров уже выбранного конструктора. Остальные параметры
+  маппятся convention либо опускаются, если они optional/`params`.
+  `Auto()`/`Ignore()`/`Map()` внутри constructor mappings остаются для
+  отдельного среза member-маркеров.
+
+  Явные constructor mappings вычисляются в порядке записи, затем automatic
+  arguments — в порядке параметров, после чего вызывается конструктор. Если
+  automatic-значение одновременно требуется для `required` initializer-а,
+  предшествующие аргументы вычисляются в локальные переменные в том же порядке,
+  поэтому повторное использование не меняет C#-семантику вычислений. Далее
+  выполняются внешний explicit initializer и оставшиеся convention members.
+
+  Фактически переданный constructor parameter исключает соответствующий
+  automatic member только из `MapNew`. Внешний explicit initializer
+  сохраняется; required initializer без `[SetsRequiredMembers]` также
+  сохраняется. В `MapExisting` маркер, объект constructor mappings и все их
+  выражения полностью игнорируются: работают только внешний initializer и
+  convention mapping. Для abstract class и interface `MapNew` остаётся
+  заглушкой, а `MapExisting` поддерживается.
 
 - [ ] `ByFactory()` в `Template()`.
 

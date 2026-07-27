@@ -56,8 +56,9 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
 (
     string ParameterName,
     string SourceMemberName,
-    string? SourceValueLocalName,
-    string? ExplicitValueExpression = null
+    string? ValueLocalName,
+    string? ExplicitValueExpression = null,
+    string? ValueLocalTypeName = null
 );
 
 internal readonly record struct TypeMapperMemberMappingModel

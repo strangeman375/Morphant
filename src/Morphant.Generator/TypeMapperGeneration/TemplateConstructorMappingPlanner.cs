@@ -171,7 +171,7 @@ internal static class TemplateConstructorMappingPlanner
                 new TypeMapperConstructorArgumentMappingModel(
                     destinationParameter.Name,
                     SourceMemberName: string.Empty,
-                    SourceValueLocalName: null,
+                    ValueLocalName: null,
                     BuildArgumentExpression(
                         templateArgument.Expression,
                         destinationParameter,

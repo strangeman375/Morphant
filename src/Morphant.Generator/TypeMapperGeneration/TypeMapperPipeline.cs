@@ -390,6 +390,22 @@ internal static class TypeMapperPipeline
                 memberMappings);
         }
 
+        if (templateValue.ConstructionKind ==
+            TemplateConstructionKind.ByConvention)
+        {
+            return templateValue.ConventionConstructorMappings
+                    .IsDefault
+                ? null
+                : ConventionConstructorMappingPlanner.Build(
+                    source,
+                    destination,
+                    memberMappings,
+                    templateValue.ConventionConstructorMappings,
+                    compilation,
+                    mapperType,
+                    cancellationToken);
+        }
+
         return templateValue.Constructor is { } constructor
             ? BuildTemplateConstructorMapping(
                 destination,
