@@ -107,6 +107,13 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.MappingContext context)");
 
+        if (mapping.MapNewDirectExpression is { } directExpression)
+        {
+            writer.Line($"=> {directExpression};");
+            writer.Unindent();
+            return;
+        }
+
         if (mapping.MapNewConstructor is
             { } constructor)
         {
@@ -194,9 +201,7 @@ internal static class TypeMapperEmitter
 
                     writer.Line(
                         $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                        SourceValueExpression(
-                            memberMapping.SourceMemberName,
-                            memberMapping.SourceValueLocalName) +
+                        MemberValueExpression(memberMapping) +
                         suffix);
                 }
 
@@ -228,6 +233,13 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
+
+        if (mapping.MapExistingDirectExpression is { } directExpression)
+        {
+            writer.Line($"=> {directExpression};");
+            writer.Unindent();
+            return;
+        }
 
         if (mapping.MapExistingKind ==
             TypeMapperMapExistingKind.Unsupported)
@@ -268,9 +280,7 @@ internal static class TypeMapperEmitter
         {
             writer.Line(
                 $"{destinationExpression}.{Identifier(memberMapping.DestinationMemberName)} = " +
-                SourceValueExpression(
-                    memberMapping.SourceMemberName,
-                    memberMapping.SourceValueLocalName) +
+                MemberValueExpression(memberMapping) +
                 ";");
         }
 
@@ -316,9 +326,7 @@ internal static class TypeMapperEmitter
         {
             writer.Line(
                 $"{destinationLocalName}.{Identifier(memberMapping.DestinationMemberName)} = " +
-                SourceValueExpression(
-                    memberMapping.SourceMemberName,
-                    memberMapping.SourceValueLocalName) +
+                MemberValueExpression(memberMapping) +
                 ";");
         }
 
@@ -334,6 +342,15 @@ internal static class TypeMapperEmitter
     {
         return sourceValueLocalName ??
                $"source!.{Identifier(sourceMemberName)}";
+    }
+
+    private static string MemberValueExpression(
+        TypeMapperMemberMappingModel mapping)
+    {
+        return mapping.ExplicitValueExpression ??
+               SourceValueExpression(
+                   mapping.SourceMemberName,
+                   mapping.SourceValueLocalName);
     }
 
     private static string Identifier(string value)

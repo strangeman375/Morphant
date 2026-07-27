@@ -306,20 +306,40 @@ internal static class TypeMapperPipeline
                 registration.DestinationType,
                 cancellationToken);
 
-        var memberMappings = ConventionMemberMappingPlanner.Build(
+        var conventionMemberMappings = ConventionMemberMappingPlanner.Build(
             registration.SourceType,
             destinationPlan.MemberType,
             compilation,
             mapperType,
             cancellationToken);
-        var constructorMapping =
-            ConventionConstructorMappingPlanner.Build(
-                registration.SourceType,
-                destinationPlan.MemberType,
-                memberMappings,
-                compilation,
-                mapperType,
-                cancellationToken);
+        var templateMapping = TemplateMappingPlanner.Build(
+            registration,
+            destinationPlan.MemberType,
+            compilation,
+            mapperType,
+            cancellationToken);
+        var memberMappings = MergeMemberMappings(
+            conventionMemberMappings,
+            templateMapping,
+            destinationPlan.MemberType,
+            cancellationToken);
+        var constructorMapping = templateMapping is
+            {
+                UsesParameterlessConstructor: true
+            }
+                ? BuildParameterlessConstructorMapping(
+                    destinationPlan.MemberType,
+                    memberMappings,
+                    compilation,
+                    mapperType,
+                    cancellationToken)
+                : ConventionConstructorMappingPlanner.Build(
+                    registration.SourceType,
+                    destinationPlan.MemberType,
+                    memberMappings,
+                    compilation,
+                    mapperType,
+                    cancellationToken);
         var mapExistingDestinationLocalName =
             destinationPlan.MapExistingKind ==
                 TypeMapperMapExistingKind.NullableValue &&
@@ -338,12 +358,110 @@ internal static class TypeMapperPipeline
             TypeMapperMappingTypePolicy
                 .GetGeneratedMaybeNullTypeName(
                     registration.DestinationType),
+            templateMapping?.MapNewDirectExpression,
+            templateMapping?.MapExistingDirectExpression,
             constructorMapping?.Constructor,
             destinationPlan.MapExistingKind,
             mapExistingDestinationLocalName,
             constructorMapping?.MapNewMemberMappings ??
                 memberMappings.MapNew,
             memberMappings.MapExisting);
+    }
+
+    private static ConventionMemberMappingPlan MergeMemberMappings(
+        ConventionMemberMappingPlan convention,
+        TemplateMappingPlan? template,
+        ITypeSymbol? destination,
+        CancellationToken cancellationToken)
+    {
+        if (template is not { } value ||
+            value.MapNewDirectExpression is not null)
+        {
+            return convention;
+        }
+
+        var explicitNames =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var mapping in value.MapNewMemberMappings)
+        {
+            explicitNames.Add(mapping.DestinationMemberName);
+        }
+        var mapNew = value.MapNewMemberMappings
+            .AddRange(
+                convention.MapNew.Where(mapping =>
+                    !explicitNames.Contains(
+                        mapping.DestinationMemberName)));
+        var mapExisting = value.MapExistingMemberMappings
+            .AddRange(
+                convention.MapExisting.Where(mapping =>
+                    !explicitNames.Contains(
+                        mapping.DestinationMemberName)));
+
+        return new ConventionMemberMappingPlan(
+            mapNew,
+            mapExisting,
+            TemplateMappingPlanner.HasUnmappedRequiredMembers(
+                destination,
+                mapNew,
+                cancellationToken));
+    }
+
+    private static ConventionConstructorMappingPlan?
+        BuildParameterlessConstructorMapping(
+            ITypeSymbol? destination,
+            ConventionMemberMappingPlan memberMappings,
+            CSharpCompilation compilation,
+            INamedTypeSymbol mapperType,
+            CancellationToken cancellationToken)
+    {
+        if (destination is ITypeParameterSymbol typeParameter)
+        {
+            if (memberMappings.HasUnmappedRequiredMembers ||
+                !typeParameter.HasValueTypeConstraint &&
+                !typeParameter.HasUnmanagedTypeConstraint &&
+                !typeParameter.HasConstructorConstraint)
+            {
+                return null;
+            }
+
+            return new ConventionConstructorMappingPlan(
+                new TypeMapperConstructorMappingModel(
+                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                        destination),
+                    []),
+                memberMappings.MapNew);
+        }
+
+        if (destination is not INamedTypeSymbol namedDestination ||
+            namedDestination.IsAbstract)
+        {
+            return null;
+        }
+
+        foreach (var constructor in namedDestination.InstanceConstructors)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (constructor.Parameters.IsEmpty &&
+                compilation.IsSymbolAccessibleWithin(
+                    constructor,
+                    mapperType) &&
+                (!memberMappings.HasUnmappedRequiredMembers ||
+                 ConventionConstructorMappingPlanner
+                     .HasSetsRequiredMembersAttribute(
+                         constructor)))
+            {
+                return new ConventionConstructorMappingPlan(
+                    new TypeMapperConstructorMappingModel(
+                        TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                            destination),
+                        []),
+                    memberMappings.MapNew);
+            }
+        }
+
+        return null;
     }
 
     private static DestinationPlan BuildDestinationPlan(

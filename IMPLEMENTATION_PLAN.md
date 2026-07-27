@@ -23,10 +23,11 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → Базовый `Template()`.** Следующий срез добавляет простую
-expression-lambda с явным созданием destination и явными значениями членов.
-Точную поддерживаемую форму выражения и её взаимодействие с уже реализованным
-convention mapping нужно согласовать до написания тестов и production-кода.
+**Фаза 3 → Явный конструктор в `Template()`.** Следующий срез добавляет
+constructor arguments в template object creation. Точную границу
+поддерживаемых аргументов, optional/`params`, порядок их вычисления и
+взаимодействие с `MapExisting` нужно согласовать до написания тестов и
+production-кода.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -229,15 +230,29 @@ convention mapping нужно согласовать до написания т�
 
 ## Фаза 3. Template DSL
 
-- [ ] Базовый `Template()`.
+- [x] Базовый `Template()`.
 
-  Простая expression-lambda, явное создание destination и явные значения
-  членов.
+  Однопараметрическая expression-lambda поддерживает две базовые формы.
+  Generated destination принимает `new() { Member = expression }`, где
+  target-typed `new()` явно выбирает доступный parameterless-конструктор,
+  включая обычный контракт `[SetsRequiredMembers]`. Явные значения закрывают
+  соответствующие required-члены.
+  Direct destination принимает итоговое expression-значение и использует его
+  в обоих режимах маппинга.
+
+  Явные initializer-выражения перекрывают convention mappings и вычисляются в
+  порядке initializer-а; оставшиеся convention mappings следуют после них в
+  обычном порядке destination-членов. Init-only destination-член применяется
+  только в `MapNew`. Lambda-параметр переносится как nullable-safe `source!`,
+  а ссылки на типы, static-члены и extension methods переносятся в
+  fully-qualified форме, чтобы generated-код не зависел от `using` исходного
+  файла. Compile-time результат `nameof` сохраняется строковым литералом.
+  Configure-local captures и управляющие формы lambda остаются отложенными.
 
 - [ ] Способы создания destination.
 
-  `new()`, явный конструктор, `ByConvention()` и `ByFactory()` — по одному
-  независимому срезу.
+  Явный конструктор, `ByConvention()` и `ByFactory()` — по одному независимому
+  срезу.
 
 - [ ] Маркеры членов.
 

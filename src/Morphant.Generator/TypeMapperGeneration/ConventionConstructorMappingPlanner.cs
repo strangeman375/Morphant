@@ -648,7 +648,7 @@ internal static class ConventionConstructorMappingPlanner
         return result;
     }
 
-    private static bool HasSetsRequiredMembersAttribute(
+    internal static bool HasSetsRequiredMembersAttribute(
         IMethodSymbol constructor)
     {
         foreach (var attribute in constructor.GetAttributes())

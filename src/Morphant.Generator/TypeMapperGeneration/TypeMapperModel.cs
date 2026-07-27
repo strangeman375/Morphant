@@ -25,6 +25,8 @@ internal readonly record struct TypeMapperMappingModel
     string MaybeNullSourceTypeName,
     string DestinationTypeName,
     string MaybeNullDestinationTypeName,
+    string? MapNewDirectExpression,
+    string? MapExistingDirectExpression,
     TypeMapperConstructorMappingModel? MapNewConstructor,
     TypeMapperMapExistingKind MapExistingKind,
     string? MapExistingDestinationLocalName,
@@ -62,5 +64,6 @@ internal readonly record struct TypeMapperMemberMappingModel
     string SourceMemberName,
     string DestinationMemberName,
     bool IsRequired,
-    string? SourceValueLocalName
+    string? SourceValueLocalName,
+    string? ExplicitValueExpression = null
 );

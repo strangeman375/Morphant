@@ -66,9 +66,12 @@ internal static class MapperBuilderMapPipeline
             ImmutableArray.CreateBuilder<MapperBuilderMapRegistrationInfo>();
         var seen = new HashSet<MapperBuilderMapIdentity>();
 
-        foreach (var invocation in invocations)
+        for (var invocationIndex = 0;
+             invocationIndex < invocations.Length;
+             invocationIndex++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var invocation = invocations[invocationIndex];
 
             if (!IsMapInvocationCandidate(invocation) ||
                 semanticModel.GetSymbolInfo(
@@ -93,6 +96,10 @@ internal static class MapperBuilderMapPipeline
                 registrations.Add(
                     new MapperBuilderMapRegistrationInfo(
                         invocation,
+                        FindTemplateInvocation(
+                            invocations,
+                            invocationIndex + 1,
+                            invocation),
                         sourceType,
                         destinationType));
             }
@@ -101,6 +108,35 @@ internal static class MapperBuilderMapPipeline
         return new MapperBuilderMapInfo(
             configureInfo.Syntax,
             registrations.ToImmutable());
+    }
+
+    private static InvocationExpressionSyntax? FindTemplateInvocation(
+        ImmutableArray<InvocationExpressionSyntax> invocations,
+        int startIndex,
+        InvocationExpressionSyntax mapInvocation)
+    {
+        for (var index = startIndex;
+             index < invocations.Length;
+             index++)
+        {
+            var invocation = invocations[index];
+
+            if (IsMapInvocationCandidate(invocation))
+            {
+                return null;
+            }
+
+            if (invocation.Expression is MemberAccessExpressionSyntax
+                {
+                    Name.Identifier.ValueText: "Template"
+                } &&
+                invocation.DescendantNodes().Contains(mapInvocation))
+            {
+                return invocation;
+            }
+        }
+
+        return null;
     }
 
     private static bool TryGetLinearInvocations(

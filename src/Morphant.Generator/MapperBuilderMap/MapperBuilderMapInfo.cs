@@ -10,5 +10,6 @@ internal readonly record struct MapperBuilderMapInfo(
 
 internal readonly record struct MapperBuilderMapRegistrationInfo(
     InvocationExpressionSyntax Syntax,
+    InvocationExpressionSyntax? TemplateSyntax,
     ITypeSymbol SourceType,
     ITypeSymbol DestinationType);
