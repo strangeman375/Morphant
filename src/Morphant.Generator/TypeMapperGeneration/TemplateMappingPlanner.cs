@@ -94,8 +94,6 @@ internal static class TemplateMappingPlanner
                 expression,
                 expression,
                 [],
-                [],
-                [],
                 TemplateConstructionKind.None,
                 Constructor: null,
                 FactoryExpression: null,
@@ -111,13 +109,8 @@ internal static class TemplateMappingPlanner
 
         var initializerExpressions =
             objectCreation.Initializer?.Expressions ?? default;
-        var mapNew =
-            ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
-        var mapExisting =
-            ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
-        var memberMarkers =
-            ImmutableArray.CreateBuilder<
-                TemplateMemberMarkerMappingModel>();
+        var memberMappings =
+            ImmutableArray.CreateBuilder<TemplateMemberMappingModel>();
         var seenNames = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var initializerExpression in initializerExpressions)
@@ -146,10 +139,15 @@ internal static class TemplateMappingPlanner
                     cancellationToken,
                     out var markerKind))
             {
-                memberMarkers.Add(
-                    new TemplateMemberMarkerMappingModel(
+                memberMappings.Add(
+                    new TemplateMemberMappingModel(
                         member.Name,
-                        markerKind));
+                        markerKind ==
+                            TemplateMemberMarkerKind.Auto
+                            ? TemplateMemberMappingKind.Auto
+                            : TemplateMemberMappingKind.Ignore,
+                        MapNewMapping: null,
+                        MapExistingMapping: null));
                 continue;
             }
 
@@ -163,12 +161,12 @@ internal static class TemplateMappingPlanner
                     parameterSymbol,
                     semanticModel));
 
-            mapNew.Add(mapping);
-
-            if (member.CanAssign)
-            {
-                mapExisting.Add(mapping);
-            }
+            memberMappings.Add(
+                new TemplateMemberMappingModel(
+                    member.Name,
+                    TemplateMemberMappingKind.Explicit,
+                    mapping,
+                    member.CanAssign ? mapping : null));
         }
 
         var constructionKind =
@@ -229,9 +227,7 @@ internal static class TemplateMappingPlanner
         return new TemplateMappingPlan(
             MapNewDirectExpression: null,
             MapExistingDirectExpression: null,
-            mapNew.ToImmutable(),
-            mapExisting.ToImmutable(),
-            memberMarkers.ToImmutable(),
+            memberMappings.ToImmutable(),
             constructionKind,
             constructor,
             factoryExpression,
@@ -954,18 +950,25 @@ internal static class TemplateMappingPlanner
 internal readonly record struct TemplateMappingPlan(
     string? MapNewDirectExpression,
     string? MapExistingDirectExpression,
-    ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
-    ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
-    ImmutableArray<TemplateMemberMarkerMappingModel> MemberMarkers,
+    ImmutableArray<TemplateMemberMappingModel> MemberMappings,
     TemplateConstructionKind ConstructionKind,
     TemplateConstructorMappingPlan? Constructor,
     string? FactoryExpression,
     ImmutableArray<TemplateConstructorMemberMappingModel>
         ConventionConstructorMappings);
 
-internal readonly record struct TemplateMemberMarkerMappingModel(
+internal readonly record struct TemplateMemberMappingModel(
     string MemberName,
-    TemplateMemberMarkerKind Kind);
+    TemplateMemberMappingKind Kind,
+    TypeMapperMemberMappingModel? MapNewMapping,
+    TypeMapperMemberMappingModel? MapExistingMapping);
+
+internal enum TemplateMemberMappingKind
+{
+    Explicit,
+    Auto,
+    Ignore
+}
 
 internal enum TemplateConstructionKind
 {

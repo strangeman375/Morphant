@@ -468,39 +468,74 @@ internal static class TypeMapperPipeline
             return convention;
         }
 
-        var explicitNames =
+        var templateMemberNames =
             new HashSet<string>(StringComparer.Ordinal);
+        var conventionMapNewByName =
+            convention.MapNew.ToDictionary(
+                static mapping =>
+                    mapping.DestinationMemberName,
+                StringComparer.Ordinal);
+        var conventionMapExistingByName =
+            convention.MapExisting.ToDictionary(
+                static mapping =>
+                    mapping.DestinationMemberName,
+                StringComparer.Ordinal);
+        var mapNew =
+            ImmutableArray.CreateBuilder<
+                TypeMapperMemberMappingModel>();
+        var mapExisting =
+            ImmutableArray.CreateBuilder<
+                TypeMapperMemberMappingModel>();
 
-        foreach (var mapping in value.MapNewMemberMappings)
+        foreach (var templateMember in value.MemberMappings)
         {
-            explicitNames.Add(mapping.DestinationMemberName);
-        }
+            templateMemberNames.Add(templateMember.MemberName);
 
-        foreach (var marker in value.MemberMarkers)
-        {
-            if (marker.Kind == TemplateMemberMarkerKind.Ignore)
+            if (templateMember.MapNewMapping is { } explicitMapNew)
             {
-                explicitNames.Add(marker.MemberName);
+                mapNew.Add(explicitMapNew);
+            }
+            else if (templateMember.Kind ==
+                         TemplateMemberMappingKind.Auto &&
+                     conventionMapNewByName.TryGetValue(
+                         templateMember.MemberName,
+                         out var automaticMapNew))
+            {
+                mapNew.Add(automaticMapNew);
+            }
+
+            if (templateMember.MapExistingMapping is
+                { } explicitMapExisting)
+            {
+                mapExisting.Add(explicitMapExisting);
+            }
+            else if (templateMember.Kind ==
+                         TemplateMemberMappingKind.Auto &&
+                     conventionMapExistingByName.TryGetValue(
+                         templateMember.MemberName,
+                         out var automaticMapExisting))
+            {
+                mapExisting.Add(automaticMapExisting);
             }
         }
 
-        var mapNew = value.MapNewMemberMappings
-            .AddRange(
-                convention.MapNew.Where(mapping =>
-                    !explicitNames.Contains(
-                        mapping.DestinationMemberName)));
-        var mapExisting = value.MapExistingMemberMappings
-            .AddRange(
-                convention.MapExisting.Where(mapping =>
-                    !explicitNames.Contains(
-                        mapping.DestinationMemberName)));
+        mapNew.AddRange(
+            convention.MapNew.Where(mapping =>
+                !templateMemberNames.Contains(
+                    mapping.DestinationMemberName)));
+        mapExisting.AddRange(
+            convention.MapExisting.Where(mapping =>
+                !templateMemberNames.Contains(
+                    mapping.DestinationMemberName)));
+
+        var mapNewMappings = mapNew.ToImmutable();
 
         return new ConventionMemberMappingPlan(
-            mapNew,
-            mapExisting,
+            mapNewMappings,
+            mapExisting.ToImmutable(),
             TemplateMappingPlanner.HasUnmappedRequiredMembers(
                 destination,
-                mapNew,
+                mapNewMappings,
                 cancellationToken));
     }
 

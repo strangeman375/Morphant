@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperTests;
 internal sealed class TypeMapperMemberMarkerTests
 {
     [Test]
-    public async Task Applies_outer_markers_in_the_automatic_phase_for_both_modes()
+    public async Task Preserves_written_order_of_outer_explicit_and_Auto_members_for_both_modes()
     {
         // lang=c#
         const string source =
@@ -61,9 +61,9 @@ namespace TestCase
             builder.Map<Source, Destination>()
                 .Template(s => new()
                 {
-                    ExplicitFirst = Observe(s.ExplicitFirst),
                     AutomaticFirst = Auto(),
                     Ignored = Ignore(),
+                    ExplicitFirst = Observe(s.ExplicitFirst),
                     GenericAutomatic = Auto<int>(),
                     GenericIgnored = Ignore<int>(),
                     InitOnly = Auto()
@@ -139,11 +139,11 @@ namespace TestCase
         {
             return new global::TestCase.Destination()
             {
-                ExplicitFirst = Observe(source!.ExplicitFirst),
                 AutomaticFirst = source!.AutomaticFirst,
+                ExplicitFirst = Observe(source!.ExplicitFirst),
                 GenericAutomatic = source!.GenericAutomatic,
-                Remaining = source!.Remaining,
-                InitOnly = source!.InitOnly
+                InitOnly = source!.InitOnly,
+                Remaining = source!.Remaining
             };
         }
 
@@ -153,8 +153,8 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
-            destination!.ExplicitFirst = Observe(source!.ExplicitFirst);
             destination!.AutomaticFirst = source!.AutomaticFirst;
+            destination!.ExplicitFirst = Observe(source!.ExplicitFirst);
             destination!.GenericAutomatic = source!.GenericAutomatic;
             destination!.Remaining = source!.Remaining;
 
@@ -1006,8 +1006,8 @@ namespace TestCase
             builder.Map<Source, Destination>()
                 .Template(_ => new(ByFactory(() => Create()))
                 {
-                    RequiredAuto = Auto(),
                     Automatic = Auto(),
+                    RequiredAuto = Auto(),
                     Ignored = Ignore(),
                     GenericAuto = Auto<int>(),
                     GenericIgnored = Ignore<int>(),
@@ -1094,8 +1094,8 @@ namespace TestCase
             global::Morphant.MappingContext context)
         {
             global::TestCase.Destination destination = global::TestCase.TestMapper.Create();
-            destination!.RequiredAuto = source!.RequiredAuto;
             destination!.Automatic = source!.Automatic;
+            destination!.RequiredAuto = source!.RequiredAuto;
             destination!.GenericAuto = source!.GenericAuto;
             destination!.Remaining = source!.Remaining;
 
@@ -1108,8 +1108,8 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
-            destination!.RequiredAuto = source!.RequiredAuto;
             destination!.Automatic = source!.Automatic;
+            destination!.RequiredAuto = source!.RequiredAuto;
             destination!.GenericAuto = source!.GenericAuto;
             destination!.Remaining = source!.Remaining;
 
