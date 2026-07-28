@@ -19,6 +19,8 @@ internal static class TemplateConstructorMappingPlanner
         INamedTypeSymbol mapperType,
         SemanticModel templateSemanticModel,
         Func<ExpressionSyntax, string> rewriteExpression,
+        Func<ExpressionSyntax, bool>
+            isKnownAbsentExistingDestination,
         CancellationToken cancellationToken)
     {
         if (destination.TypeKind == TypeKind.Interface ||
@@ -223,6 +225,7 @@ internal static class TemplateConstructorMappingPlanner
                     mapperType,
                     templateSemanticModel,
                     rewriteExpression,
+                    isKnownAbsentExistingDestination,
                     cancellationToken,
                     out var nestedMap))
             {

@@ -77,5 +77,6 @@ internal readonly record struct TypeMapperMemberMappingModel
     string? SourceValueLocalName,
     string? ExplicitValueExpression = null,
     string? ExplicitValueTypeName = null,
-    string? ValueLocalName = null
+    string? ValueLocalName = null,
+    bool RequiresPreviousDestinationValueLocal = false
 );

@@ -8,6 +8,14 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TemplateMappingPlanner
 {
+    private static readonly SyntaxAnnotation
+        KnownNullMapNewExpressionAnnotation =
+            new(nameof(KnownNullMapNewExpressionAnnotation));
+
+    private static readonly SyntaxAnnotation
+        SimplifiedMapNewExpressionAnnotation =
+            new(nameof(SimplifiedMapNewExpressionAnnotation));
+
     public static bool HasUnmappedRequiredMembers(
         ITypeSymbol? destination,
         ImmutableArray<TypeMapperMemberMappingModel> mappings,
@@ -100,15 +108,14 @@ internal static class TemplateMappingPlanner
                 declaredDestinationParameter;
         }
 
+        var mapNewDestinationIsKnownNull =
+            HasKnownNullDefault(registration.DestinationType);
         var mapNewDestinationExpression =
             destinationParameterSymbol is null
                 ? null
-                : SyntaxFactory.ParseExpression(
-                    "default(" +
-                    TypeMapperMappingTypePolicy
-                        .GetGeneratedMaybeNullTypeName(
-                            registration.DestinationType) +
-                    ")");
+                : BuildMapNewDestinationExpression(
+                    registration.DestinationType,
+                    mapNewDestinationIsKnownNull);
         var mapExistingDestinationExpression =
             destinationParameterSymbol is null
                 ? null
@@ -128,6 +135,15 @@ internal static class TemplateMappingPlanner
                 sourceParameterSymbol,
                 destinationParameterSymbol,
                 mapExistingDestinationExpression,
+                semanticModel);
+
+        bool IsMapNewDestinationKnownAbsent(
+            ExpressionSyntax expression) =>
+            destinationParameterSymbol is not null &&
+            mapNewDestinationIsKnownNull &&
+            IsKnownNullFromDestinationParameter(
+                expression,
+                destinationParameterSymbol,
                 semanticModel);
 
         if (registration.DestinationType is INamedTypeSymbol namedDestination &&
@@ -209,6 +225,7 @@ internal static class TemplateMappingPlanner
                     mapperType,
                     semanticModel,
                     RewriteMapNew,
+                    IsMapNewDestinationKnownAbsent,
                     cancellationToken,
                     out var mapNewValueExpression))
             {
@@ -227,6 +244,7 @@ internal static class TemplateMappingPlanner
                     mapperType,
                     semanticModel,
                     RewriteMapExisting,
+                    static _ => false,
                     cancellationToken,
                     out mapExistingValueExpression))
             {
@@ -251,7 +269,14 @@ internal static class TemplateMappingPlanner
                         member.IsRequired,
                         SourceValueLocalName: null,
                         mapExistingValueExpression,
-                        explicitValueTypeName)
+                        explicitValueTypeName,
+                        RequiresPreviousDestinationValueLocal:
+                            destinationParameterSymbol is not null &&
+                            ReferencesParameter(
+                                value,
+                                destinationParameterSymbol,
+                                semanticModel,
+                                cancellationToken))
                     : null;
 
             memberMappings.Add(
@@ -276,6 +301,7 @@ internal static class TemplateMappingPlanner
                 mapperType,
                 semanticModel,
                 RewriteMapNew,
+                IsMapNewDestinationKnownAbsent,
                 cancellationToken,
                 out conventionConstructorMappings))
         {
@@ -308,6 +334,7 @@ internal static class TemplateMappingPlanner
                 mapperType,
                 semanticModel,
                 RewriteMapNew,
+                IsMapNewDestinationKnownAbsent,
                 cancellationToken);
         }
 
@@ -378,6 +405,8 @@ internal static class TemplateMappingPlanner
         INamedTypeSymbol mapperType,
         SemanticModel semanticModel,
         Func<ExpressionSyntax, string> rewriteExpression,
+        Func<ExpressionSyntax, bool>
+            isKnownAbsentExistingDestination,
         CancellationToken cancellationToken,
         out string valueExpression)
     {
@@ -390,6 +419,7 @@ internal static class TemplateMappingPlanner
                 mapperType,
                 semanticModel,
                 rewriteExpression,
+                isKnownAbsentExistingDestination,
                 cancellationToken,
                 out var nestedMap))
         {
@@ -402,6 +432,135 @@ internal static class TemplateMappingPlanner
                    nestedMapValue,
                    targetDestinationType,
                    out valueExpression);
+    }
+
+    private static ExpressionSyntax BuildMapNewDestinationExpression(
+        ITypeSymbol destinationType,
+        bool isKnownNull)
+    {
+        var expression = SyntaxFactory.ParseExpression(
+            "default(" +
+            TypeMapperMappingTypePolicy
+                .GetGeneratedMaybeNullTypeName(destinationType) +
+            ")");
+
+        return isKnownNull
+            ? expression.WithAdditionalAnnotations(
+                KnownNullMapNewExpressionAnnotation)
+            : expression;
+    }
+
+    private static bool HasKnownNullDefault(ITypeSymbol type)
+    {
+        return type.IsReferenceType ||
+               type is INamedTypeSymbol namedType &&
+               namedType.OriginalDefinition.SpecialType ==
+               SpecialType.System_Nullable_T ||
+               type is ITypeParameterSymbol
+               {
+                   HasReferenceTypeConstraint: true
+               };
+    }
+
+    private static bool IsKnownNullFromDestinationParameter(
+        ExpressionSyntax expression,
+        IParameterSymbol destinationParameter,
+        SemanticModel semanticModel)
+    {
+        while (true)
+        {
+            if (expression is ParenthesizedExpressionSyntax
+                {
+                    Expression: var parenthesizedExpression
+                })
+            {
+                expression = parenthesizedExpression;
+                continue;
+            }
+
+            if (expression is PostfixUnaryExpressionSyntax
+                {
+                    RawKind:
+                        (int)SyntaxKind
+                            .SuppressNullableWarningExpression,
+                    Operand: var operand
+                })
+            {
+                expression = operand;
+                continue;
+            }
+
+            break;
+        }
+
+        if (expression is IdentifierNameSyntax identifier)
+        {
+            return SymbolEqualityComparer.Default.Equals(
+                semanticModel.GetSymbolInfo(identifier).Symbol,
+                destinationParameter);
+        }
+
+        return expression is ConditionalAccessExpressionSyntax
+               {
+                   Expression: var receiver
+               } &&
+               IsKnownNullFromDestinationParameter(
+                   receiver,
+                   destinationParameter,
+                   semanticModel);
+    }
+
+    private static bool ReferencesParameter(
+        ExpressionSyntax expression,
+        IParameterSymbol parameter,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        foreach (var identifier in expression
+                     .DescendantNodesAndSelf()
+                     .OfType<IdentifierNameSyntax>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsInsideNameof(identifier, expression) ||
+                !SymbolEqualityComparer.Default.Equals(
+                    semanticModel.GetSymbolInfo(
+                            identifier,
+                            cancellationToken)
+                        .Symbol,
+                    parameter))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsInsideNameof(
+        IdentifierNameSyntax identifier,
+        ExpressionSyntax expression)
+    {
+        for (SyntaxNode? current = identifier.Parent;
+             current is not null &&
+             !ReferenceEquals(current, expression.Parent);
+             current = current.Parent)
+        {
+            if (current is InvocationExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax
+                    {
+                        Identifier.ValueText: "nameof"
+                    }
+                })
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string RewriteParameters(
@@ -556,6 +715,39 @@ internal static class TemplateMappingPlanner
         SemanticModel semanticModel)
         : CSharpSyntaxRewriter
     {
+        public override SyntaxNode? VisitBinaryExpression(
+            BinaryExpressionSyntax node)
+        {
+            var rewritten =
+                (BinaryExpressionSyntax)
+                base.VisitBinaryExpression(node)!;
+
+            if (node.IsKind(SyntaxKind.CoalesceExpression) &&
+                IsKnownNullMapNewExpression(rewritten.Left))
+            {
+                return MarkSimplified(
+                    rewritten.Right.WithTriviaFrom(node));
+            }
+
+            return rewritten;
+        }
+
+        public override SyntaxNode? VisitParenthesizedExpression(
+            ParenthesizedExpressionSyntax node)
+        {
+            var rewritten =
+                (ParenthesizedExpressionSyntax)
+                base.VisitParenthesizedExpression(node)!;
+            var expression = rewritten.Expression;
+
+            return node.Parent is BinaryExpressionSyntax &&
+                   expression.HasAnnotation(
+                       SimplifiedMapNewExpressionAnnotation) &&
+                   CanRemoveParentheses(expression)
+                ? expression.WithTriviaFrom(node)
+                : rewritten;
+        }
+
         public override SyntaxNode? VisitObjectCreationExpression(
             ObjectCreationExpressionSyntax node)
         {
@@ -584,6 +776,63 @@ internal static class TemplateMappingPlanner
             }
 
             return rewritten.WithTriviaFrom(node);
+        }
+
+        private static bool IsKnownNullMapNewExpression(
+            ExpressionSyntax expression)
+        {
+            expression = UnwrapParentheses(expression);
+
+            if (expression.HasAnnotation(
+                    KnownNullMapNewExpressionAnnotation))
+            {
+                return true;
+            }
+
+            return expression is ConditionalAccessExpressionSyntax
+                   {
+                       Expression: var receiver
+                   } &&
+                   IsKnownNullMapNewExpression(receiver);
+        }
+
+        private static bool CanRemoveParentheses(
+            ExpressionSyntax expression)
+        {
+            return expression is
+                LiteralExpressionSyntax or
+                IdentifierNameSyntax or
+                MemberAccessExpressionSyntax or
+                ConditionalAccessExpressionSyntax or
+                InvocationExpressionSyntax or
+                ElementAccessExpressionSyntax or
+                ObjectCreationExpressionSyntax or
+                ImplicitObjectCreationExpressionSyntax or
+                DefaultExpressionSyntax or
+                CastExpressionSyntax or
+                PrefixUnaryExpressionSyntax or
+                PostfixUnaryExpressionSyntax;
+        }
+
+        private static ExpressionSyntax UnwrapParentheses(
+            ExpressionSyntax expression)
+        {
+            while (expression is ParenthesizedExpressionSyntax
+                   {
+                       Expression: var nested
+                   })
+            {
+                expression = nested;
+            }
+
+            return expression;
+        }
+
+        private static ExpressionSyntax MarkSimplified(
+            ExpressionSyntax expression)
+        {
+            return expression.WithAdditionalAnnotations(
+                SimplifiedMapNewExpressionAnnotation);
         }
 
         public override SyntaxNode? VisitInvocationExpression(

@@ -340,17 +340,18 @@ internal static class TypeMapperPipeline
             compilation,
             mapperType,
             cancellationToken);
+        var mapExistingDestinationLocalName =
+            destinationPlan.MapExistingKind ==
+                TypeMapperMapExistingKind.NullableValue &&
+            !memberMappings.MapExisting.IsEmpty
+                ? AllocateDestinationValueLocalName(mapperType)
+                : null;
         var mapExistingMemberMappings =
             BuildMapExistingMemberMappings(
                 memberMappings.MapExisting,
                 templateMapping,
-                mapperType);
-        var mapExistingDestinationLocalName =
-            destinationPlan.MapExistingKind ==
-                TypeMapperMapExistingKind.NullableValue &&
-            !mapExistingMemberMappings.IsEmpty
-                ? AllocateDestinationValueLocalName(mapperType)
-                : null;
+                mapperType,
+                mapExistingDestinationLocalName);
 
         return new TypeMapperMappingModel(
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
@@ -408,7 +409,8 @@ internal static class TypeMapperPipeline
         BuildMapExistingMemberMappings(
             ImmutableArray<TypeMapperMemberMappingModel> mappings,
             TemplateMappingPlan? template,
-            INamedTypeSymbol mapperType)
+            INamedTypeSymbol mapperType,
+            string? destinationLocalName)
     {
         if (template is not
             {
@@ -426,11 +428,17 @@ internal static class TypeMapperPipeline
 
         usedNames.Add("destination");
 
+        if (destinationLocalName is not null)
+        {
+            usedNames.Add(destinationLocalName);
+        }
+
         for (var index = 0; index < result.Length; index++)
         {
             var mapping = result[index];
 
-            if (mapping.ExplicitValueExpression is null)
+            if (mapping.ExplicitValueExpression is null ||
+                !mapping.RequiresPreviousDestinationValueLocal)
             {
                 continue;
             }
@@ -444,15 +452,49 @@ internal static class TypeMapperPipeline
             result[index] = mapping with
             {
                 ValueLocalName =
-                    ConventionConstructorMappingPlanner
-                        .MakeUniqueValueLocalName(
-                            "template",
-                            mapping.DestinationMemberName,
-                            usedNames)
+                    MakeUniquePreviousDestinationValueLocalName(
+                        mapping.DestinationMemberName,
+                        usedNames)
             };
         }
 
         return result.ToImmutableArray();
+    }
+
+    private static string
+        MakeUniquePreviousDestinationValueLocalName(
+            string memberName,
+            HashSet<string> usedNames)
+    {
+        var candidate =
+            char.ToLowerInvariant(memberName[0]) +
+            memberName.Substring(1);
+
+        if (usedNames.Add(candidate))
+        {
+            return EscapeIdentifier(candidate);
+        }
+
+        for (var suffix = 1;; suffix++)
+        {
+            var name =
+                candidate +
+                suffix.ToString(CultureInfo.InvariantCulture);
+
+            if (usedNames.Add(name))
+            {
+                return EscapeIdentifier(name);
+            }
+        }
+    }
+
+    private static string EscapeIdentifier(string value)
+    {
+        return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(value) !=
+               SyntaxKind.None
+            ? "@" + value
+            : value;
     }
 
     private static TypeMapperFactoryMappingModel?

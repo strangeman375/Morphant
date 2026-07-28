@@ -17,6 +17,8 @@ internal static class TemplateByConventionMappingPlanner
         INamedTypeSymbol mapperType,
         SemanticModel semanticModel,
         Func<ExpressionSyntax, string> rewriteExpression,
+        Func<ExpressionSyntax, bool>
+            isKnownAbsentExistingDestination,
         CancellationToken cancellationToken,
         out ImmutableArray<TemplateConstructorMemberMappingModel>
             mappings)
@@ -129,6 +131,7 @@ internal static class TemplateByConventionMappingPlanner
                          mapperType,
                          semanticModel,
                          rewriteExpression,
+                         isKnownAbsentExistingDestination,
                          cancellationToken,
                          out var nestedMap))
             {

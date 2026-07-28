@@ -17,6 +17,8 @@ internal static class TemplateNestedMapMappingPlanner
         INamedTypeSymbol mapperType,
         SemanticModel semanticModel,
         Func<ExpressionSyntax, string> rewriteExpression,
+        Func<ExpressionSyntax, bool>
+            isKnownAbsentExistingDestination,
         CancellationToken cancellationToken,
         out TemplateNestedMapMapping? mapping)
     {
@@ -143,11 +145,17 @@ internal static class TemplateNestedMapMappingPlanner
             explicitDestinationType = type;
         }
 
+        var destinationIsKnownAbsent =
+            destinationExpression is not null &&
+            isKnownAbsentExistingDestination(
+                destinationExpression);
+
         mapping = new TemplateNestedMapMapping(
             sourceType,
             rewrittenSourceExpression,
             explicitDestinationType,
-            destinationExpression is null
+            destinationExpression is null ||
+            destinationIsKnownAbsent
                 ? null
                 : RewriteExistingDestinationArgument(
                     destinationExpression,
