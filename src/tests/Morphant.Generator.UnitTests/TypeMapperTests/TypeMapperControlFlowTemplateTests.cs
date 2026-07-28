@@ -236,7 +236,9 @@ namespace TestCase
 
             if (result)
             {
-                global::TestCase.Destination destination = new global::TestCase.Destination(source!.FactoryId);
+                global::TestCase.Destination CreateByFactory(global::TestCase.Source source1) => new global::TestCase.Destination(source1.FactoryId);
+
+                global::TestCase.Destination destination = CreateByFactory(source!);
                 destination!.DisplayName = displayName;
                 destination!.Replaced = source!.Replacement;
                 destination!.Id = source!.Id;
@@ -936,20 +938,16 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConditionalSource, global::TestCase.Destination>.Map(
             global::TestCase.ConditionalSource? source,
             global::Morphant.MappingContext context)
-        {
-            throw new global::System.NotSupportedException(
-                "Static local functions currently support only expression bodies or local variable declarations followed by a single return statement.");
-        }
+            => throw new global::System.NotSupportedException(
+                "Template contains a capture that cannot be transferred to the generated mapper.");
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConditionalSource, global::TestCase.Destination>.Map(
             global::TestCase.ConditionalSource? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-        {
-            throw new global::System.NotSupportedException(
-                "Static local functions currently support only expression bodies or local variable declarations followed by a single return statement.");
-        }
+            => throw new global::System.NotSupportedException(
+                "Template contains a capture that cannot be transferred to the generated mapper.");
     }
 }
 """;

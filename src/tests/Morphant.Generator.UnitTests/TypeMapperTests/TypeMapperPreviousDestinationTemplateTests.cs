@@ -493,7 +493,9 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::TestCase.FactoryDestination destination = new global::TestCase.FactoryDestination(source!.Seed);
+            global::TestCase.FactoryDestination CreateByFactory(global::TestCase.FactoryDestination? previous, global::TestCase.Source source1) => previous ?? new global::TestCase.FactoryDestination(source1.Seed);
+
+            global::TestCase.FactoryDestination destination = CreateByFactory(default(global::TestCase.FactoryDestination?), source!);
             destination!.Value = 3 + source!.Value;
 
             return destination;

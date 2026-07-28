@@ -571,7 +571,9 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::TestCase.Destination destination = Create();
+            global::TestCase.Destination CreateByFactory() => Create();
+
+            global::TestCase.Destination destination = CreateByFactory();
             destination!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.ChildSource, context);
             destination!.Remaining = source!.Remaining;
 

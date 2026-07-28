@@ -104,28 +104,6 @@ internal static class TemplateMappingPlanner
                 declaredDestinationParameter;
         }
 
-        var localFunctionResult =
-            TemplateLocalFunctionPlanner.Build(
-                lambda,
-                semanticModel,
-                cancellationToken);
-
-        if (localFunctionResult is
-            UnsupportedTemplateLocalFunctions
-            unsupportedLocalFunctions)
-        {
-            return new UnsupportedTemplateMappingPlanResult(
-                unsupportedLocalFunctions.Message);
-        }
-
-        var localFunctions =
-            (SupportedTemplateLocalFunctions)
-            localFunctionResult;
-        var localFunctionPlaceholderNames =
-            localFunctions.Functions
-                .Select(static function =>
-                    function.PlaceholderName)
-                .ToImmutableArray();
         var directTemplate =
             registration.DestinationType is
                 INamedTypeSymbol namedDestination &&
@@ -190,9 +168,7 @@ internal static class TemplateMappingPlanner
                 mapNewDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames,
-                localFunctions.Placeholders,
-                localFunctionPlaceholderNames);
+                runtimeLocalPlaceholderNames);
 
         string RewriteMapExisting(ExpressionSyntax expression) =>
             RewriteParameters(
@@ -202,9 +178,7 @@ internal static class TemplateMappingPlanner
                 mapExistingDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames,
-                localFunctions.Placeholders,
-                localFunctionPlaceholderNames);
+                runtimeLocalPlaceholderNames);
 
         var runtimeLocals =
             controlFlow.RuntimeLocals
@@ -407,6 +381,7 @@ internal static class TemplateMappingPlanner
             }
             else if (TemplateByFactoryMappingPlanner.TryBuild(
                          leaf.Arguments,
+                         registration.DestinationType,
                          semanticModel,
                          allowedFactoryCaptureSymbols,
                          cancellationToken,
@@ -417,13 +392,12 @@ internal static class TemplateMappingPlanner
                 factory = BuildFactoryPlan(
                     factorySyntax,
                     sourceParameterSymbol,
+                    registration.SourceType,
                     destinationParameterSymbol,
+                    registration.DestinationType,
                     mapNewDestinationExpression,
                     semanticModel,
-                    controlFlow.RuntimeLocalPlaceholders,
-                    runtimeLocalPlaceholderNames,
-                    localFunctions.Placeholders,
-                    localFunctionPlaceholderNames);
+                    controlFlow.RuntimeLocalPlaceholders);
             }
             else if (memberType is ITypeParameterSymbol &&
                      leaf.Arguments.IsEmpty)
@@ -471,51 +445,21 @@ internal static class TemplateMappingPlanner
             return null;
         }
 
-        var transferredLocalFunctions =
-            localFunctions.Functions
-                .Select(function =>
-                    new TemplateLocalFunctionPlan(
-                        function.PlaceholderName,
-                        function.PreferredName,
-                        function.UnsupportedMessage is null
-                            ? RewriteLocalFunction(
-                                function.Syntax,
-                                sourceParameterSymbol,
-                                destinationParameterSymbol,
-                                mapNewDestinationExpression,
-                                semanticModel,
-                                controlFlow
-                                    .RuntimeLocalPlaceholders,
-                                runtimeLocalPlaceholderNames,
-                                localFunctions.Placeholders,
-                                localFunctionPlaceholderNames)
-                            : RewriteUnsupportedLocalFunction(
-                                function.Syntax,
-                                semanticModel,
-                                localFunctions.Placeholders),
-                        function.UnsupportedMessage))
-                .ToImmutableArray();
-
         return new SupportedTemplateMappingPlanResult(
             root,
-            runtimeLocals,
-            transferredLocalFunctions);
+            runtimeLocals);
     }
 
     private static TemplateFactoryPlan? BuildFactoryPlan(
         TemplateFactorySyntaxPlan? syntax,
         IParameterSymbol sourceParameter,
+        ITypeSymbol sourceType,
         IParameterSymbol? destinationParameter,
+        ITypeSymbol destinationType,
         ExpressionSyntax? mapNewDestinationExpression,
         SemanticModel semanticModel,
         IReadOnlyDictionary<ISymbol, string>
-            templateRuntimeLocalPlaceholders,
-        IReadOnlyCollection<string>
-            templateRuntimeLocalPlaceholderNames,
-        IReadOnlyDictionary<ISymbol, string>
-            localFunctionPlaceholders,
-        IReadOnlyCollection<string>
-            localFunctionPlaceholderNames)
+            templateRuntimeLocalPlaceholders)
     {
         if (syntax is null)
         {
@@ -526,69 +470,364 @@ internal static class TemplateMappingPlanner
             { } unsupportedMessage)
         {
             return new TemplateFactoryPlan(
-                [],
-                ValueExpression: null,
+                LocalFunctionPlaceholderName: null,
+                LocalFunctionDeclaration: null,
+                Captures: [],
+                RuntimeLocalDependencies: [],
                 unsupportedMessage);
         }
 
-        var localPlaceholders =
+        var capturePlaceholders =
             new Dictionary<ISymbol, string>(
                 SymbolEqualityComparer.Default);
+        var parameterCaptures =
+            ImmutableArray.CreateBuilder<(
+                TemplateFactoryCaptureSyntax Capture,
+                string TypeName,
+                string InvocationExpression
+            )>();
+        var runtimeLocalDependencies =
+            ImmutableArray.CreateBuilder<string>();
 
-        foreach (var pair in
-                 templateRuntimeLocalPlaceholders)
+        foreach (var capture in syntax.Captures)
         {
-            localPlaceholders.Add(
-                pair.Key,
-                pair.Value);
+            if (SymbolEqualityComparer.Default.Equals(
+                    capture.Symbol,
+                    sourceParameter))
+            {
+                capturePlaceholders.Add(
+                    capture.Symbol,
+                    capture.PlaceholderName);
+                parameterCaptures.Add((
+                    capture,
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedTypeName(sourceType),
+                    "source!"
+                ));
+                continue;
+            }
+
+            if (destinationParameter is not null &&
+                SymbolEqualityComparer.Default.Equals(
+                    capture.Symbol,
+                    destinationParameter) &&
+                mapNewDestinationExpression is not null)
+            {
+                capturePlaceholders.Add(
+                    capture.Symbol,
+                    capture.PlaceholderName);
+                parameterCaptures.Add((
+                    capture,
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedMaybeNullTypeName(
+                            destinationType),
+                    NormalizeFactoryExpression(
+                        mapNewDestinationExpression)
+                ));
+                continue;
+            }
+
+            if (templateRuntimeLocalPlaceholders
+                .TryGetValue(
+                    capture.Symbol,
+                    out var runtimeLocalPlaceholder))
+            {
+                capturePlaceholders.Add(
+                    capture.Symbol,
+                    runtimeLocalPlaceholder);
+                runtimeLocalDependencies.Add(
+                    runtimeLocalPlaceholder);
+                continue;
+            }
+
+            throw new InvalidOperationException(
+                "Factory capture does not have a generated value.");
         }
 
-        foreach (var pair in
-                 syntax.RuntimeLocalPlaceholders)
+        ExpressionSyntax CaptureExpression(
+            IParameterSymbol parameter)
         {
-            localPlaceholders.Add(
-                pair.Key,
-                pair.Value);
+            return capturePlaceholders.TryGetValue(
+                    parameter,
+                    out var placeholder)
+                ? SyntaxFactory.IdentifierName(placeholder)
+                : SyntaxFactory.IdentifierName(
+                    "__morphantUnusedFactoryCapture");
         }
 
-        var localPlaceholderNames =
-            templateRuntimeLocalPlaceholderNames
-                .Concat(
-                    syntax.RuntimeLocals.Select(
-                        static local =>
-                            local.PlaceholderName))
+        var capturePlaceholderNames =
+            capturePlaceholders.Values
                 .ToImmutableArray();
+        var rewrittenExpressionBody =
+            syntax.ExpressionBody is { } expressionBody
+                ? RewriteFactorySyntax(
+                    expressionBody,
+                    sourceParameter,
+                    CaptureExpression(sourceParameter),
+                    destinationParameter,
+                    destinationParameter is null
+                        ? null
+                        : CaptureExpression(
+                            destinationParameter),
+                    semanticModel,
+                    capturePlaceholders,
+                    capturePlaceholderNames)
+                : null;
+        var rewrittenBlockBody =
+            syntax.BlockBody is { } blockBody
+                ? RewriteFactorySyntax(
+                    blockBody,
+                    sourceParameter,
+                    CaptureExpression(sourceParameter),
+                    destinationParameter,
+                    destinationParameter is null
+                        ? null
+                        : CaptureExpression(
+                            destinationParameter),
+                    semanticModel,
+                    capturePlaceholders,
+                    capturePlaceholderNames)
+                : null;
+        var rewrittenDelegateExpression =
+            syntax.DelegateExpression is { } delegateExpression
+                ? RewriteFactorySyntax(
+                    delegateExpression,
+                    sourceParameter,
+                    CaptureExpression(sourceParameter),
+                    destinationParameter,
+                    destinationParameter is null
+                        ? null
+                        : CaptureExpression(
+                            destinationParameter),
+                    semanticModel,
+                    capturePlaceholders,
+                    capturePlaceholderNames)
+                : null;
+        var reservedNames =
+            BuildFactoryReservedNames(
+                rewrittenExpressionBody,
+                rewrittenBlockBody,
+                rewrittenDelegateExpression,
+                capturePlaceholderNames);
+        var functionOrdinal = 0;
+        var functionPlaceholder =
+            AllocateFactoryPlaceholder(
+                "__morphantFactoryFunction",
+                ref functionOrdinal,
+                reservedNames);
+        var parameterList =
+            SyntaxFactory.ParameterList(
+                SyntaxFactory.SeparatedList(
+                    parameterCaptures.Select(item =>
+                        SyntaxFactory.Parameter(
+                                SyntaxFactory.Identifier(
+                                    item.Capture
+                                        .PlaceholderName))
+                            .WithType(
+                                SyntaxFactory.ParseTypeName(
+                                    item.TypeName)))));
+        var localFunction =
+            SyntaxFactory.LocalFunctionStatement(
+                    SyntaxFactory.ParseTypeName(
+                        syntax.ReturnTypeName),
+                    SyntaxFactory.Identifier(
+                        functionPlaceholder))
+                .WithParameterList(parameterList);
 
-        string Rewrite(ExpressionSyntax expression) =>
-            RewriteParameters(
-                expression,
-                sourceParameter,
-                destinationParameter,
-                mapNewDestinationExpression,
-                semanticModel,
-                localPlaceholders,
-                localPlaceholderNames,
-                localFunctionPlaceholders,
-                localFunctionPlaceholderNames);
+        if (syntax.IsStatic)
+        {
+            localFunction = localFunction.WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(
+                        SyntaxKind.StaticKeyword)));
+        }
 
-        var runtimeLocals =
-            syntax.RuntimeLocals
-                .Select(local =>
-                    new TemplateFactoryRuntimeLocalPlan(
-                        local.PlaceholderName,
-                        local.PreferredName,
-                        local.DeclarationType,
-                        Rewrite(local.Initializer)))
+        if (rewrittenExpressionBody is not null)
+        {
+            localFunction = localFunction
+                .WithExpressionBody(
+                    SyntaxFactory.ArrowExpressionClause(
+                        rewrittenExpressionBody))
+                .WithSemicolonToken(
+                    SyntaxFactory.Token(
+                        SyntaxKind.SemicolonToken));
+        }
+        else if (rewrittenBlockBody is not null)
+        {
+            localFunction = localFunction.WithBody(
+                rewrittenBlockBody);
+        }
+        else if (rewrittenDelegateExpression is not null &&
+                 syntax.ConvertedTypeName is not null)
+        {
+            var delegateOrdinal = 0;
+            var delegateName =
+                AllocateFactoryPlaceholder(
+                    "__morphantFactoryDelegate",
+                    ref delegateOrdinal,
+                    reservedNames);
+            var delegateDeclaration =
+                SyntaxFactory.LocalDeclarationStatement(
+                    SyntaxFactory.VariableDeclaration(
+                            SyntaxFactory.ParseTypeName(
+                                syntax.ConvertedTypeName))
+                        .WithVariables(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.VariableDeclarator(
+                                        SyntaxFactory.Identifier(
+                                            delegateName))
+                                    .WithInitializer(
+                                        SyntaxFactory.EqualsValueClause(
+                                            rewrittenDelegateExpression)))));
+            var returnStatement =
+                SyntaxFactory.ReturnStatement(
+                    SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.IdentifierName(
+                            delegateName)));
+
+            localFunction = localFunction.WithBody(
+                SyntaxFactory.Block(
+                    delegateDeclaration,
+                    returnStatement));
+        }
+        else
+        {
+            return null;
+        }
+
+        var declaration =
+            NormalizeFactoryLocalFunction(
+                localFunction);
+        var captures =
+            parameterCaptures
+                .Select(item =>
+                    new TemplateFactoryCapturePlan(
+                        item.Capture.PlaceholderName,
+                        item.Capture.PreferredName,
+                        item.InvocationExpression))
                 .ToImmutableArray();
-        var valueExpression =
-            syntax.ResultExpression is { } resultExpression
-                ? Rewrite(resultExpression)
-                : syntax.InvokedLocalPlaceholder + "()";
 
         return new TemplateFactoryPlan(
-            runtimeLocals,
-            valueExpression,
+            functionPlaceholder,
+            declaration,
+            captures,
+            runtimeLocalDependencies.ToImmutable(),
             UnsupportedMessage: null);
+    }
+
+    private static TNode RewriteFactorySyntax<TNode>(
+        TNode syntax,
+        IParameterSymbol sourceParameter,
+        ExpressionSyntax sourceExpression,
+        IParameterSymbol? destinationParameter,
+        ExpressionSyntax? destinationExpression,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, string>
+            capturePlaceholders,
+        IReadOnlyCollection<string>
+            capturePlaceholderNames)
+        where TNode : CSharpSyntaxNode
+    {
+        var rewritten =
+            new TemplateParameterRewriter(
+                sourceParameter,
+                sourceExpression,
+                destinationParameter,
+                destinationExpression,
+                semanticModel,
+                capturePlaceholders,
+                capturePlaceholderNames)
+            .Visit(syntax)!;
+        var placeholdersByName =
+            capturePlaceholders.ToDictionary(
+                static pair => pair.Key.Name,
+                static pair => pair.Value,
+                StringComparer.Ordinal);
+
+        return (TNode)new FactoryCaptureNameRewriter(
+                placeholdersByName)
+            .Visit(rewritten)!;
+    }
+
+    private static HashSet<string> BuildFactoryReservedNames(
+        ExpressionSyntax? expressionBody,
+        BlockSyntax? blockBody,
+        ExpressionSyntax? delegateExpression,
+        IReadOnlyCollection<string> capturePlaceholderNames)
+    {
+        var result =
+            new HashSet<string>(
+                capturePlaceholderNames,
+                StringComparer.Ordinal);
+
+        foreach (var syntax in new SyntaxNode?[]
+                 {
+                     expressionBody,
+                     blockBody,
+                     delegateExpression
+                 })
+        {
+            if (syntax is null)
+            {
+                continue;
+            }
+
+            foreach (var token in syntax.DescendantTokens())
+            {
+                if (token.IsKind(
+                        SyntaxKind.IdentifierToken))
+                {
+                    result.Add(token.ValueText);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static string AllocateFactoryPlaceholder(
+        string prefix,
+        ref int ordinal,
+        HashSet<string> reservedNames)
+    {
+        while (true)
+        {
+            var candidate =
+                prefix +
+                ordinal++.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture);
+
+            if (reservedNames.Add(candidate))
+            {
+                return candidate;
+            }
+        }
+    }
+
+    private static string NormalizeFactoryLocalFunction(
+        LocalFunctionStatementSyntax localFunction)
+    {
+        var rewritten = localFunction
+            .WithoutTrivia()
+            .NormalizeWhitespace(
+                indentation: "    ",
+                eol: "\r\n");
+
+        return new NullableSuppressionTriviaRewriter()
+            .Visit(rewritten)!
+            .ToFullString();
+    }
+
+    private static string NormalizeFactoryExpression(
+        ExpressionSyntax expression)
+    {
+        var rewritten = expression
+            .WithoutTrivia()
+            .NormalizeWhitespace();
+
+        return new NullableSyntaxTriviaRewriter()
+            .Visit(rewritten)!
+            .ToFullString();
     }
 
     private static bool TryGetLambda(
@@ -860,21 +1099,18 @@ internal static class TemplateMappingPlanner
         IReadOnlyDictionary<ISymbol, string>
             runtimeLocalPlaceholders,
         IReadOnlyCollection<string>
-            runtimeLocalPlaceholderNames,
-        IReadOnlyDictionary<ISymbol, string>
-            localFunctionPlaceholders,
-        IReadOnlyCollection<string>
-            localFunctionPlaceholderNames)
+            runtimeLocalPlaceholderNames)
     {
         var rewritten = new TemplateParameterRewriter(
                 sourceParameter,
+                SyntaxFactory.PostfixUnaryExpression(
+                    SyntaxKind.SuppressNullableWarningExpression,
+                    SyntaxFactory.IdentifierName("source")),
                 destinationParameter,
                 destinationExpression,
                 semanticModel,
                 runtimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames,
-                localFunctionPlaceholders,
-                localFunctionPlaceholderNames)
+                runtimeLocalPlaceholderNames)
             .Visit(expression)!
             .WithoutTrivia()
             .NormalizeWhitespace();
@@ -882,60 +1118,6 @@ internal static class TemplateMappingPlanner
         return new NullableSyntaxTriviaRewriter()
             .Visit(rewritten)!
             .ToFullString();
-    }
-
-    private static string RewriteLocalFunction(
-        LocalFunctionStatementSyntax localFunction,
-        IParameterSymbol sourceParameter,
-        IParameterSymbol? destinationParameter,
-        ExpressionSyntax? destinationExpression,
-        SemanticModel semanticModel,
-        IReadOnlyDictionary<ISymbol, string>
-            runtimeLocalPlaceholders,
-        IReadOnlyCollection<string>
-            runtimeLocalPlaceholderNames,
-        IReadOnlyDictionary<ISymbol, string>
-            localFunctionPlaceholders,
-        IReadOnlyCollection<string>
-            localFunctionPlaceholderNames)
-    {
-        var rewritten = new TemplateParameterRewriter(
-                sourceParameter,
-                destinationParameter,
-                destinationExpression,
-                semanticModel,
-                runtimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames,
-                localFunctionPlaceholders,
-                localFunctionPlaceholderNames)
-            .Visit(localFunction)!
-            .WithoutTrivia()
-            .NormalizeWhitespace(
-                indentation: "    ",
-                eol: "\r\n");
-
-        return new NullableSyntaxTriviaRewriter()
-            .Visit(rewritten)!
-            .ToFullString();
-    }
-
-    private static string RewriteUnsupportedLocalFunction(
-        LocalFunctionStatementSyntax localFunction,
-        SemanticModel semanticModel,
-        IReadOnlyDictionary<ISymbol, string>
-            localFunctionPlaceholders)
-    {
-        var rewritten =
-            new UnsupportedLocalFunctionRewriter(
-                    semanticModel,
-                    localFunctionPlaceholders)
-                .Visit(localFunction)!
-                .WithoutTrivia()
-                .NormalizeWhitespace(
-                    indentation: "    ",
-                    eol: "\r\n");
-
-        return rewritten.ToFullString();
     }
 
     private static TemplateWritableMember? TryFindWritableMember(
@@ -1035,17 +1217,14 @@ internal static class TemplateMappingPlanner
 
     private sealed class TemplateParameterRewriter(
         IParameterSymbol sourceParameter,
+        ExpressionSyntax sourceExpression,
         IParameterSymbol? destinationParameter,
         ExpressionSyntax? destinationExpression,
         SemanticModel semanticModel,
         IReadOnlyDictionary<ISymbol, string>
             runtimeLocalPlaceholders,
         IReadOnlyCollection<string>
-            runtimeLocalPlaceholderNames,
-        IReadOnlyDictionary<ISymbol, string>
-            localFunctionPlaceholders,
-        IReadOnlyCollection<string>
-            localFunctionPlaceholderNames)
+            runtimeLocalPlaceholderNames)
         : CSharpSyntaxRewriter
     {
         public override SyntaxNode? VisitBinaryExpression(
@@ -1352,16 +1531,6 @@ internal static class TemplateMappingPlanner
                             Visit(
                                 node.ExpressionBody.Expression)!));
 
-            if (localFunctionPlaceholders.TryGetValue(
-                    function,
-                    out var placeholder))
-            {
-                rewritten = rewritten.WithIdentifier(
-                    SyntaxFactory.Identifier(placeholder)
-                        .WithTriviaFrom(
-                            rewritten.Identifier));
-            }
-
             return rewritten;
         }
 
@@ -1574,9 +1743,6 @@ internal static class TemplateMappingPlanner
         {
             if (runtimeLocalPlaceholderNames.Contains(
                     node.Identifier.ValueText,
-                    StringComparer.Ordinal) ||
-                localFunctionPlaceholderNames.Contains(
-                    node.Identifier.ValueText,
                     StringComparer.Ordinal))
             {
                 return node;
@@ -1594,14 +1760,12 @@ internal static class TemplateMappingPlanner
                 symbol = semanticModel.GetSymbolInfo(invocation).Symbol;
             }
 
-            if (symbol is not null &&
-                localFunctionPlaceholders.TryGetValue(
-                    symbol,
-                    out var localFunctionPlaceholder))
+            if (symbol is IMethodSymbol
+                {
+                    MethodKind: MethodKind.LocalFunction
+                })
             {
-                return SyntaxFactory.IdentifierName(
-                        localFunctionPlaceholder)
-                    .WithTriviaFrom(node);
+                return node;
             }
 
             if (symbol is ILocalSymbol
@@ -1641,10 +1805,7 @@ internal static class TemplateMappingPlanner
                     symbol,
                     sourceParameter))
             {
-                return SyntaxFactory.PostfixUnaryExpression(
-                        SyntaxKind.SuppressNullableWarningExpression,
-                        SyntaxFactory.IdentifierName("source"))
-                    .WithTriviaFrom(node);
+                return sourceExpression.WithTriviaFrom(node);
             }
 
             if (destinationExpression is not null &&
@@ -1744,16 +1905,12 @@ internal static class TemplateMappingPlanner
         {
             var symbol = GetReferencedSymbol(node);
 
-            if (symbol is not null &&
-                localFunctionPlaceholders.TryGetValue(
-                    symbol,
-                    out var localFunctionPlaceholder))
+            if (symbol is IMethodSymbol
+                {
+                    MethodKind: MethodKind.LocalFunction
+                })
             {
-                return node.WithIdentifier(
-                    SyntaxFactory.Identifier(
-                            localFunctionPlaceholder)
-                        .WithTriviaFrom(
-                            node.Identifier));
+                return node;
             }
 
             if (symbol is INamedTypeSymbol type)
@@ -1920,81 +2077,48 @@ internal static class TemplateMappingPlanner
         }
     }
 
-    private sealed class UnsupportedLocalFunctionRewriter(
-        SemanticModel semanticModel,
-        IReadOnlyDictionary<ISymbol, string>
-            localFunctionPlaceholders)
+    private sealed class FactoryCaptureNameRewriter(
+        IReadOnlyDictionary<string, string> placeholders)
         : CSharpSyntaxRewriter
     {
-        public override SyntaxNode? VisitLocalFunctionStatement(
-            LocalFunctionStatementSyntax node)
-        {
-            var rewritten =
-                (LocalFunctionStatementSyntax)
-                base.VisitLocalFunctionStatement(node)!;
-
-            return semanticModel.GetDeclaredSymbol(node) is
-                    { } function &&
-                localFunctionPlaceholders.TryGetValue(
-                    function,
-                    out var placeholder)
-                ? rewritten.WithIdentifier(
-                    SyntaxFactory.Identifier(placeholder)
-                        .WithTriviaFrom(
-                            rewritten.Identifier))
-                : rewritten;
-        }
-
         public override SyntaxNode? VisitIdentifierName(
             IdentifierNameSyntax node)
         {
-            return TryGetPlaceholder(
-                    node,
+            return placeholders.TryGetValue(
+                    node.Identifier.ValueText,
                     out var placeholder)
-                ? SyntaxFactory.IdentifierName(placeholder)
+                ? SyntaxFactory.IdentifierName(
+                        placeholder)
                     .WithTriviaFrom(node)
                 : base.VisitIdentifierName(node);
         }
+    }
 
-        public override SyntaxNode? VisitGenericName(
-            GenericNameSyntax node)
+    private sealed class NullableSuppressionTriviaRewriter :
+        CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitPostfixUnaryExpression(
+            PostfixUnaryExpressionSyntax node)
         {
-            return TryGetPlaceholder(
-                    node,
-                    out var placeholder)
-                ? node.WithIdentifier(
-                    SyntaxFactory.Identifier(placeholder)
-                        .WithTriviaFrom(
-                            node.Identifier))
-                : base.VisitGenericName(node);
-        }
+            var rewritten =
+                (PostfixUnaryExpressionSyntax)
+                base.VisitPostfixUnaryExpression(node)!;
 
-        private bool TryGetPlaceholder(
-            SimpleNameSyntax name,
-            out string placeholder)
-        {
-            placeholder = string.Empty;
-            var symbol =
-                semanticModel.GetSymbolInfo(name).Symbol;
-
-            if (symbol is null &&
-                name.Parent is InvocationExpressionSyntax
-                {
-                    Expression: var invocationExpression
-                } invocation &&
-                ReferenceEquals(
-                    invocationExpression,
-                    name))
+            if (!rewritten.IsKind(
+                    SyntaxKind
+                        .SuppressNullableWarningExpression))
             {
-                symbol =
-                    semanticModel.GetSymbolInfo(invocation)
-                        .Symbol;
+                return rewritten;
             }
 
-            return symbol is not null &&
-                   localFunctionPlaceholders.TryGetValue(
-                       symbol,
-                       out placeholder);
+            return rewritten
+                .WithOperand(
+                    rewritten.Operand.WithTrailingTrivia(
+                        default(SyntaxTriviaList)))
+                .WithOperatorToken(
+                    rewritten.OperatorToken
+                        .WithLeadingTrivia(
+                            default(SyntaxTriviaList)));
         }
     }
 
@@ -2052,8 +2176,7 @@ internal sealed record UnsupportedTemplateMappingPlanResult(
 
 internal sealed record SupportedTemplateMappingPlanResult(
     TemplateMappingPlanNode Root,
-    ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals,
-    ImmutableArray<TemplateLocalFunctionPlan> LocalFunctions)
+    ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals)
     : TemplateMappingPlanResult;
 
 internal abstract record TemplateMappingPlanNode;
@@ -2076,12 +2199,6 @@ internal readonly record struct TemplateRuntimeLocalPlan(
     string MapNewExpression,
     string MapExistingExpression);
 
-internal readonly record struct TemplateLocalFunctionPlan(
-    string PlaceholderName,
-    string PreferredName,
-    string Declaration,
-    string? UnsupportedMessage);
-
 internal readonly record struct TemplateMappingPlan(
     string? MapNewDirectExpression,
     string? MapExistingDirectExpression,
@@ -2094,15 +2211,16 @@ internal readonly record struct TemplateMappingPlan(
     bool HasDestinationParameter);
 
 internal readonly record struct TemplateFactoryPlan(
-    ImmutableArray<TemplateFactoryRuntimeLocalPlan> RuntimeLocals,
-    string? ValueExpression,
+    string? LocalFunctionPlaceholderName,
+    string? LocalFunctionDeclaration,
+    ImmutableArray<TemplateFactoryCapturePlan> Captures,
+    ImmutableArray<string> RuntimeLocalDependencies,
     string? UnsupportedMessage);
 
-internal readonly record struct TemplateFactoryRuntimeLocalPlan(
+internal readonly record struct TemplateFactoryCapturePlan(
     string PlaceholderName,
     string PreferredName,
-    string DeclarationType,
-    string ValueExpression);
+    string InvocationExpression);
 
 internal readonly record struct TemplateMemberMappingModel(
     string MemberName,

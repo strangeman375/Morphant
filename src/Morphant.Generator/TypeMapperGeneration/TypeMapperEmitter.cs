@@ -196,20 +196,6 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
-        if (controlFlow.MapNewUnsupportedExceptionMessage is
-            { } unsupportedExceptionMessage)
-        {
-            WriteUnsupportedMappingStatement(
-                writer,
-                unsupportedExceptionMessage);
-            writer.Unindent();
-            writer.Line("}");
-            return;
-        }
-
-        WriteLocalFunctions(
-            writer,
-            controlFlow.MapNewLocalFunctions);
         WriteLocalValues(
             writer,
             controlFlow.MapNewLocals);
@@ -393,18 +379,9 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         TypeMapperFactoryMappingModel factory)
     {
-        foreach (var local in factory.Locals)
-        {
-            writer.Line(
-                $"{local.DeclarationType} {local.Name} = " +
-                local.ValueExpression +
-                ";");
-        }
-
-        if (!factory.Locals.IsEmpty)
-        {
-            writer.Line();
-        }
+        WriteLocalFunction(
+            writer,
+            factory.LocalFunctionDeclaration);
 
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);
@@ -569,17 +546,6 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
-        if (controlFlow.MapExistingUnsupportedExceptionMessage is
-            { } unsupportedExceptionMessage)
-        {
-            WriteUnsupportedMappingStatement(
-                writer,
-                unsupportedExceptionMessage);
-            writer.Unindent();
-            writer.Line("}");
-            return;
-        }
-
         if (mapping.MapExistingKind ==
             TypeMapperMapExistingKind.NullableValue)
         {
@@ -593,9 +559,6 @@ internal static class TypeMapperEmitter
             writer.Line();
         }
 
-        WriteLocalFunctions(
-            writer,
-            controlFlow.MapExistingLocalFunctions);
         WriteLocalValues(
             writer,
             controlFlow.MapExistingLocals);
@@ -792,33 +755,19 @@ internal static class TypeMapperEmitter
         }
     }
 
-    private static void WriteLocalFunctions(
+    private static void WriteLocalFunction(
         CodeWriter writer,
-        ImmutableArray<TypeMapperLocalFunctionModel> functions)
+        string declaration)
     {
-        for (var index = 0;
-             index < functions.Length;
-             index++)
+        foreach (var line in declaration
+                     .Replace("\r\n", "\n")
+                     .Replace('\r', '\n')
+                     .Split('\n'))
         {
-            if (index > 0)
-            {
-                writer.Line();
-            }
-
-            foreach (var line in functions[index]
-                         .Declaration
-                         .Replace("\r\n", "\n")
-                         .Replace('\r', '\n')
-                         .Split('\n'))
-            {
-                writer.Line(line);
-            }
+            writer.Line(line);
         }
 
-        if (!functions.IsEmpty)
-        {
-            writer.Line();
-        }
+        writer.Line();
     }
 
     private static string SourceValueExpression(

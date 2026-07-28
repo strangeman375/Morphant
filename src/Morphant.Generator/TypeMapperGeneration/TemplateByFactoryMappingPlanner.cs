@@ -16,17 +16,13 @@ internal static class TemplateByFactoryMappingPlanner
     private const string TypeMapperMetadataName =
         "Morphant.TypeMapper";
 
-    private const string UnsupportedBlockMessage =
-        "ByFactory block lambdas currently support only local " +
-        "variable declarations followed by a single return " +
-        "statement.";
-
     private const string UnsupportedCaptureMessage =
         "ByFactory contains a capture that cannot be transferred " +
         "to the generated mapper.";
 
     public static bool TryBuild(
         ImmutableArray<TemplateObjectArgumentSyntax> arguments,
+        ITypeSymbol factoryDestinationType,
         SemanticModel semanticModel,
         HashSet<ISymbol> allowedCapturedSymbols,
         CancellationToken cancellationToken,
@@ -75,23 +71,6 @@ internal static class TemplateByFactoryMappingPlanner
             return true;
         }
 
-        var factoryExpression =
-            UnwrapParentheses(factoryArgument.Expression);
-
-        if (factoryExpression is
-            ParenthesizedLambdaExpressionSyntax
-            {
-                ParameterList.Parameters.Count: 0
-            } lambda)
-        {
-            factory = BuildLambda(
-                lambda,
-                semanticModel,
-                allowedCapturedSymbols,
-                cancellationToken);
-            return true;
-        }
-
         if (semanticModel.GetTypeInfo(
                     factoryArgument.Expression,
                     cancellationToken)
@@ -105,197 +84,187 @@ internal static class TemplateByFactoryMappingPlanner
             return true;
         }
 
-        if (ContainsUnsupportedCapture(
-                [factoryArgument.Expression],
-                factoryArgument.Expression,
-                allowedCapturedSymbols,
+        var factoryExpression =
+            UnwrapParentheses(factoryArgument.Expression);
+        var transferredSyntax =
+            factoryExpression is
+                ParenthesizedLambdaExpressionSyntax
+                {
+                    ParameterList.Parameters.Count: 0
+                } lambda
+                ? (SyntaxNode)lambda
+                : factoryArgument.Expression;
+
+        if (!TryBuildCaptures(
+                transferredSyntax,
                 semanticModel,
-                cancellationToken))
+                allowedCapturedSymbols,
+                cancellationToken,
+                out var captures))
         {
             factory = TemplateFactorySyntaxPlan.Unsupported(
                 UnsupportedCaptureMessage);
             return true;
         }
 
-        var reservedNames = BuildReservedNames(
-            factoryArgument.Expression);
-        var placeholderOrdinal = 0;
-        var placeholder = AllocatePlaceholder(
-            ref placeholderOrdinal,
-            reservedNames);
-        var local = new TemplateFactoryRuntimeLocalSyntax(
-            placeholder,
-            PreferredName: "factory",
+        var convertedReturnType =
+            convertedType.TypeArguments[0]
+                .WithNullableAnnotation(
+                    convertedType.TypeArgumentNullableAnnotations[0]);
+        var returnType =
+            convertedReturnType.TypeKind == TypeKind.Error
+                ? factoryDestinationType
+                : convertedReturnType;
+        var returnTypeName =
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                convertedType),
-            factoryArgument.Expression);
+                returnType);
+        var convertedTypeName =
+            convertedReturnType.TypeKind == TypeKind.Error
+                ? "global::System.Func<" +
+                  returnTypeName +
+                  ">"
+                : TypeMapperMappingTypePolicy
+                    .GetGeneratedTypeName(
+                        convertedType);
+
+        if (factoryExpression is
+            ParenthesizedLambdaExpressionSyntax
+            {
+                ParameterList.Parameters.Count: 0
+            } factoryLambda)
+        {
+            factory = new TemplateFactorySyntaxPlan(
+                returnTypeName,
+                ConvertedTypeName: null,
+                factoryLambda.ExpressionBody,
+                factoryLambda.Block,
+                DelegateExpression: null,
+                IsStatic:
+                    factoryLambda.Modifiers.Any(
+                        static modifier =>
+                            modifier.IsKind(
+                                SyntaxKind.StaticKeyword)),
+                captures,
+                UnsupportedMessage: null);
+            return true;
+        }
 
         factory = new TemplateFactorySyntaxPlan(
-            [local],
-            new Dictionary<ISymbol, string>(
-                SymbolEqualityComparer.Default),
-            ResultExpression: null,
-            InvokedLocalPlaceholder: placeholder,
+            returnTypeName,
+            convertedTypeName,
+            ExpressionBody: null,
+            BlockBody: null,
+            DelegateExpression:
+                factoryArgument.Expression,
+            IsStatic: false,
+            captures,
             UnsupportedMessage: null);
         return true;
     }
 
-    private static TemplateFactorySyntaxPlan BuildLambda(
-        ParenthesizedLambdaExpressionSyntax lambda,
+    private static bool TryBuildCaptures(
+        SyntaxNode transferredSyntax,
         SemanticModel semanticModel,
         HashSet<ISymbol> allowedCapturedSymbols,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        out ImmutableArray<TemplateFactoryCaptureSyntax>
+            captures)
     {
-        if (!TransferableLambdaSyntax.TryGetResult(
-                lambda,
-                out var declarations,
-                out var resultExpression))
-        {
-            return TemplateFactorySyntaxPlan.Unsupported(
-                UnsupportedBlockMessage);
-        }
-
-        var runtimeLocals =
+        var result =
             ImmutableArray.CreateBuilder<
-                TemplateFactoryRuntimeLocalSyntax>();
-        var localPlaceholders =
-            new Dictionary<ISymbol, string>(
-                SymbolEqualityComparer.Default);
-        var allowedSymbols =
+                TemplateFactoryCaptureSyntax>();
+        var seen =
             new HashSet<ISymbol>(
-                allowedCapturedSymbols,
                 SymbolEqualityComparer.Default);
-        var reservedNames = BuildReservedNames(lambda);
-        var ordinal = 0;
+        var reservedNames = BuildReservedNames(
+            transferredSyntax);
+        var captureOrdinal = 0;
 
-        foreach (var declaration in declarations)
+        foreach (var identifier in transferredSyntax
+                     .DescendantNodesAndSelf()
+                     .OfType<SimpleNameSyntax>())
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!declaration.UsingKeyword.IsKind(
-                    SyntaxKind.None) ||
-                declaration.Declaration.Variables.Count == 0)
+            var symbol = semanticModel.GetSymbolInfo(
+                    identifier,
+                    cancellationToken)
+                .Symbol;
+
+            if (symbol is ILocalSymbol
+                {
+                    IsConst: true
+                })
             {
-                return TemplateFactorySyntaxPlan.Unsupported(
-                    UnsupportedBlockMessage);
+                continue;
             }
 
-            foreach (var variable in
-                     declaration.Declaration.Variables)
+            if (symbol is IMethodSymbol
+                {
+                    MethodKind: MethodKind.LocalFunction
+                })
             {
-                if (variable.Initializer?.Value is not
-                        { } initializer ||
-                    semanticModel.GetDeclaredSymbol(
-                        variable,
-                        cancellationToken) is not
-                        ILocalSymbol local)
+                if (!IsDeclaredWithin(
+                        symbol,
+                        transferredSyntax))
                 {
-                    return TemplateFactorySyntaxPlan.Unsupported(
-                        UnsupportedBlockMessage);
+                    captures = default;
+                    return false;
                 }
 
-                var placeholder = AllocatePlaceholder(
-                    ref ordinal,
-                    reservedNames);
-                var declarationType =
-                    declaration.Declaration.Type.IsVar
-                        ? "var"
-                        : TypeMapperMappingTypePolicy
-                            .GetGeneratedTypeName(
-                                local.Type.WithNullableAnnotation(
-                                    local.NullableAnnotation));
-
-                localPlaceholders.Add(
-                    local,
-                    placeholder);
-                allowedSymbols.Add(local);
-                runtimeLocals.Add(
-                    new TemplateFactoryRuntimeLocalSyntax(
-                        placeholder,
-                        local.Name,
-                        declarationType,
-                        initializer));
+                continue;
             }
-        }
 
-        if (ContainsUnsupportedCapture(
-                runtimeLocals
-                    .Select(static local =>
-                        local.Initializer)
-                    .Append(resultExpression),
-                lambda,
-                allowedSymbols,
-                semanticModel,
-                cancellationToken))
-        {
-            return TemplateFactorySyntaxPlan.Unsupported(
-                UnsupportedCaptureMessage);
-        }
-
-        return new TemplateFactorySyntaxPlan(
-            runtimeLocals.ToImmutable(),
-            localPlaceholders,
-            resultExpression,
-            InvokedLocalPlaceholder: null,
-            UnsupportedMessage: null);
-    }
-
-    private static bool ContainsUnsupportedCapture(
-        IEnumerable<ExpressionSyntax> expressions,
-        SyntaxNode transferredSyntax,
-        HashSet<ISymbol> allowedSymbols,
-        SemanticModel semanticModel,
-        CancellationToken cancellationToken)
-    {
-        foreach (var expression in expressions)
-        {
-            foreach (var identifier in expression
-                         .DescendantNodesAndSelf()
-                         .OfType<SimpleNameSyntax>())
+            if (symbol is IRangeVariableSymbol)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var symbol = semanticModel.GetSymbolInfo(
-                        identifier,
-                        cancellationToken)
-                    .Symbol;
-
-                if (symbol is ILocalSymbol
-                    {
-                        IsConst: true
-                    })
+                if (!IsDeclaredWithin(
+                        symbol,
+                        transferredSyntax))
                 {
-                    continue;
+                    captures = default;
+                    return false;
                 }
 
-                if (symbol is ILocalSymbol or
-                    IParameterSymbol)
-                {
-                    if (!allowedSymbols.Contains(symbol) &&
-                        !IsDeclaredWithin(
-                            symbol,
-                            transferredSyntax))
-                    {
-                        return true;
-                    }
-
-                    continue;
-                }
-
-                if (symbol is IRangeVariableSymbol ||
-                    symbol is IMethodSymbol
-                    {
-                        MethodKind:
-                            MethodKind.LocalFunction,
-                        IsStatic: false
-                    })
-                {
-                    return true;
-                }
+                continue;
             }
+
+            if (symbol is not ILocalSymbol &&
+                symbol is not IParameterSymbol)
+            {
+                continue;
+            }
+
+            if (IsDeclaredWithin(
+                    symbol,
+                    transferredSyntax))
+            {
+                continue;
+            }
+
+            if (!allowedCapturedSymbols.Contains(symbol))
+            {
+                captures = default;
+                return false;
+            }
+
+            if (!seen.Add(symbol))
+            {
+                continue;
+            }
+
+            var placeholder = AllocateName(
+                "__morphantFactoryCapture",
+                ref captureOrdinal,
+                reservedNames);
+            result.Add(
+                new TemplateFactoryCaptureSyntax(
+                    symbol,
+                    placeholder,
+                    symbol.Name));
         }
 
-        return false;
+        captures = result.ToImmutable();
+        return true;
     }
 
     private static bool IsDeclaredWithin(
@@ -331,14 +300,15 @@ internal static class TemplateByFactoryMappingPlanner
             StringComparer.Ordinal);
     }
 
-    private static string AllocatePlaceholder(
+    private static string AllocateName(
+        string prefix,
         ref int ordinal,
         HashSet<string> reservedNames)
     {
         while (true)
         {
             var candidate =
-                "__morphantFactoryLocal" +
+                prefix +
                 ordinal++.ToString(
                     System.Globalization.CultureInfo.InvariantCulture);
 
@@ -431,27 +401,31 @@ internal static class TemplateByFactoryMappingPlanner
 }
 
 internal sealed record TemplateFactorySyntaxPlan(
-    ImmutableArray<TemplateFactoryRuntimeLocalSyntax> RuntimeLocals,
-    IReadOnlyDictionary<ISymbol, string> RuntimeLocalPlaceholders,
-    ExpressionSyntax? ResultExpression,
-    string? InvokedLocalPlaceholder,
+    string ReturnTypeName,
+    string? ConvertedTypeName,
+    ExpressionSyntax? ExpressionBody,
+    BlockSyntax? BlockBody,
+    ExpressionSyntax? DelegateExpression,
+    bool IsStatic,
+    ImmutableArray<TemplateFactoryCaptureSyntax> Captures,
     string? UnsupportedMessage)
 {
     public static TemplateFactorySyntaxPlan Unsupported(
         string message)
     {
         return new TemplateFactorySyntaxPlan(
-            [],
-            new Dictionary<ISymbol, string>(
-                SymbolEqualityComparer.Default),
-            ResultExpression: null,
-            InvokedLocalPlaceholder: null,
+            ReturnTypeName: string.Empty,
+            ConvertedTypeName: null,
+            ExpressionBody: null,
+            BlockBody: null,
+            DelegateExpression: null,
+            IsStatic: false,
+            Captures: [],
             UnsupportedMessage: message);
     }
 }
 
-internal readonly record struct TemplateFactoryRuntimeLocalSyntax(
+internal readonly record struct TemplateFactoryCaptureSyntax(
+    ISymbol Symbol,
     string PlaceholderName,
-    string PreferredName,
-    string DeclarationType,
-    ExpressionSyntax Initializer);
+    string PreferredName);

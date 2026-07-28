@@ -45,17 +45,12 @@ internal readonly record struct TypeMapperMappingModel
 
 internal readonly record struct TypeMapperFactoryMappingModel
 (
-    ImmutableArray<TypeMapperFactoryLocalValueModel> Locals,
+    string LocalFunctionName,
+    string LocalFunctionDeclaration,
     string ValueExpression,
+    ImmutableArray<string> RuntimeLocalDependencies,
     string DestinationLocalName,
     string? NullableValueLocalName
-);
-
-internal readonly record struct TypeMapperFactoryLocalValueModel
-(
-    string DeclarationType,
-    string Name,
-    string ValueExpression
 );
 
 internal readonly record struct TypeMapperConstructorMappingModel
@@ -96,20 +91,10 @@ internal readonly record struct TypeMapperMemberMappingModel
 
 internal sealed record TypeMapperControlFlowMappingModel
 (
-    ImmutableArray<TypeMapperLocalFunctionModel> MapNewLocalFunctions,
-    ImmutableArray<TypeMapperLocalFunctionModel>
-        MapExistingLocalFunctions,
     ImmutableArray<TypeMapperLocalValueModel> MapNewLocals,
     ImmutableArray<TypeMapperLocalValueModel> MapExistingLocals,
     TypeMapperControlFlowNode MapNewRoot,
-    TypeMapperControlFlowNode MapExistingRoot,
-    string? MapNewUnsupportedExceptionMessage = null,
-    string? MapExistingUnsupportedExceptionMessage = null
-);
-
-internal readonly record struct TypeMapperLocalFunctionModel
-(
-    string Declaration
+    TypeMapperControlFlowNode MapExistingRoot
 );
 
 internal readonly record struct TypeMapperLocalValueModel

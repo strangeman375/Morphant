@@ -34,24 +34,6 @@ internal static class TransferableLambdaSyntax
         return true;
     }
 
-    public static bool HasSupportedBody(
-        LocalFunctionStatementSyntax localFunction)
-    {
-        if (localFunction.ExpressionBody is
-            {
-                Expression: not null
-            })
-        {
-            return true;
-        }
-
-        return localFunction.Body is { } body &&
-               TryGetBlockResult(
-                   body,
-                   out _,
-                   out _);
-    }
-
     private static bool TryGetBlockResult(
         BlockSyntax block,
         out ImmutableArray<LocalDeclarationStatementSyntax>

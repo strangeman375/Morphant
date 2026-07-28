@@ -23,10 +23,10 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → Statement-level управляющие конструкции DSL.** Следующий
+**Фаза 3 → Statement-level управляющие конструкции `Template`.** Следующий
 самостоятельный срез определяет поддержку `if`, `switch`, циклов,
 присваиваний, нескольких `return`, объявлений local functions внутри
-переносимой lambda и общего control flow. Точную границу нужно отдельно
+`Template` lambda и общего control flow. Точную границу нужно отдельно
 согласовать до тестов и production-кода.
 
 ## Фаза 1. Контракт generated mapper-а
@@ -481,43 +481,49 @@ TDD-среза, но детали могут уточняться перед р�
 
 - [x] Расширенные формы factory.
 
-  `Template` и inline-lambda `ByFactory` используют один переносимый набор
-  конструкций: expression-body либо block из объявлений локальных переменных
-  и одного финального `return`; ветвление внутри текущего среза выражается
-  через `?:`. Каждая локальная переменная имеет initializer; `using`- и
-  `ref`-locals в текущую границу не входят. Factory block сохраняет
-  пользовательские имена locals и порядок вычисления, а его locals
-  выполняются один раз и только в `MapNew`, после необходимых Template-locals.
+  Inline lambda из `ByFactory` не раскладывается на собственную модель
+  statements и expressions. Генератор переносит её expression-body либо весь
+  block в generated local function внутри `MapNew`; обычный C#-компилятор
+  обрабатывает ветвления, циклы, несколько `return`, `throw`, вложенные local
+  functions и остальные допустимые синхронные конструкции. Генератор только
+  перепривязывает имена и внешние зависимости, не воспроизводя control flow.
+
+  Source и предыдущий destination передаются local function как параметры, а
+  нужные Template-locals захватываются из `MapNew` после однократного
+  вычисления. Factory helper вызывается ровно один раз, после чего применяются
+  assignable explicit/convention members. Ни helper, ни construction-only
+  Template-locals не попадают в `MapExisting`.
 
   `ByFactory` дополнительно принимает method group и заранее созданный
-  `Func<TDestination>` из поля или свойства mapper-а. Выражение receiver-а
-  либо delegate-member читается в типизированный local при каждом `MapNew`,
-  после чего delegate вызывается ровно один раз. Между mapping-вызовами
-  receiver или delegate не кешируется. В `MapExisting` ни чтения, ни вызова
-  нет.
+  `Func<TDestination>` из поля или свойства mapper-а. Эти формы проходят через
+  тот же generated helper: выражение receiver-а либо delegate-member читается
+  в типизированный local при каждом `MapNew`, после чего delegate вызывается
+  ровно один раз. Между mapping-вызовами receiver или delegate не кешируется.
 
   Переносимые factory-выражения могут использовать source, предыдущее
   destination, Template-locals, instance/static members mapper-а, static API и
-  Configure-local compile-time constants. Константы подставляются и в обычные
-  Template-выражения, поэтому граница captures общая.
+  Configure-local compile-time constants. Обычные Configure-locals, параметр
+  `builder` и все local functions, объявленные в `Configure()`, не
+  переносятся; переиспользуемую логику пользователь выносит в обычный
+  instance/static метод mapper-а. Local functions, объявленные внутри самого
+  factory block, переносятся автоматически вместе с телом. Если
+  неподдерживаемая зависимость находится только внутри factory, generated
+  `MapNew` бросает `NotSupportedException`, а независимый `MapExisting`
+  сохраняется.
 
-  `static` Configure-local functions поддерживаются с той же границей тела,
-  что и `Template`/`ByFactory`: expression-body либо locals и финальный
-  `return`. Они переносятся как generated local functions только в те режимы,
-  где реально нужны. Неподдерживаемое тело также делает throwing только
-  использующие его режимы и template-ветви. Обычные Configure-locals, параметр
-  `builder` и non-static local functions не переносятся. Если такая
-  зависимость находится только внутри factory, generated `MapNew` бросает
-  `NotSupportedException`, а независимый `MapExisting` сохраняется.
+  Константы подставляются и в обычные Template-выражения. Набор statement-level
+  конструкций у `Template` и `ByFactory` намеренно больше не связан:
+  `Template` остаётся анализируемым DSL, а factory body передаётся
+  C#-компилятору как обычный runtime-код.
 
   Discovery допускает local declarations и local function declarations рядом
   с прямыми builder-chain, но по-прежнему не следует за aliases, delegates,
   helper/local-function calls или иным непрямым кодом регистрации.
 
-- [ ] Statement-level управляющие конструкции DSL.
+- [ ] Statement-level управляющие конструкции `Template`.
 
   Отдельно определить и реализовать statement-level `if` и `switch`, циклы,
-  присваивания, объявления local functions внутри переносимой lambda,
+  присваивания, объявления local functions внутри `Template` lambda,
   несколько `return` и прочий общий control flow. В этот же этап входит
   DSL-shaping `switch` expression. Обычный
   switch-expression внутри уже поддерживаемого explicit C#-значения не меняет

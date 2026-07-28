@@ -1150,10 +1150,47 @@ internal static class TemplateControlFlowPlanner
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var symbol = semanticModel.GetSymbolInfo(
-                        identifier,
-                        cancellationToken)
-                    .Symbol;
+                var symbolInfo = semanticModel.GetSymbolInfo(
+                    identifier,
+                    cancellationToken);
+                var symbol = symbolInfo.Symbol ??
+                    symbolInfo.CandidateSymbols
+                        .FirstOrDefault(static candidate =>
+                            candidate is IMethodSymbol
+                            {
+                                MethodKind:
+                                    MethodKind.LocalFunction
+                            }) ??
+                    symbolInfo.CandidateSymbols
+                        .FirstOrDefault();
+
+                if (symbol is null &&
+                    identifier.Parent is
+                        InvocationExpressionSyntax
+                        {
+                            Expression:
+                                var invocationExpression
+                        } invocation &&
+                    ReferenceEquals(
+                        invocationExpression,
+                        identifier))
+                {
+                    var invocationInfo =
+                        semanticModel.GetSymbolInfo(
+                            invocation,
+                            cancellationToken);
+
+                    symbol = invocationInfo.Symbol ??
+                        invocationInfo.CandidateSymbols
+                            .FirstOrDefault(static candidate =>
+                                candidate is IMethodSymbol
+                                {
+                                    MethodKind:
+                                        MethodKind.LocalFunction
+                                }) ??
+                        invocationInfo.CandidateSymbols
+                            .FirstOrDefault();
+                }
 
                 if (IsInsideByFactoryArgument(
                         identifier,
@@ -1180,8 +1217,7 @@ internal static class TemplateControlFlowPlanner
                     symbol is IMethodSymbol
                     {
                         MethodKind:
-                            MethodKind.LocalFunction,
-                        IsStatic: false
+                            MethodKind.LocalFunction
                     })
                 {
                     return true;

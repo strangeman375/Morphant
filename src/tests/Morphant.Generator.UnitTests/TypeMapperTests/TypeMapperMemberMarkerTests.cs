@@ -1093,7 +1093,9 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::TestCase.Destination destination = global::TestCase.TestMapper.Create();
+            global::TestCase.Destination CreateByFactory() => global::TestCase.TestMapper.Create();
+
+            global::TestCase.Destination destination = CreateByFactory();
             destination!.Automatic = source!.Automatic;
             destination!.RequiredAuto = source!.RequiredAuto;
             destination!.GenericAuto = source!.GenericAuto;
