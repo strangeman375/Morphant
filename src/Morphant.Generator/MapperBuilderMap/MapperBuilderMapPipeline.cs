@@ -156,6 +156,13 @@ internal static class MapperBuilderMapPipeline
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                if (statement is
+                    LocalDeclarationStatementSyntax or
+                    LocalFunctionStatementSyntax)
+                {
+                    continue;
+                }
+
                 if (statement is not ExpressionStatementSyntax
                     {
                         Expression: var expression
@@ -300,12 +307,52 @@ internal static class MapperBuilderMapPipeline
                             semanticModel.GetSymbolInfo(
                                 identifier,
                                 cancellationToken).Symbol,
-                            builderParameter))
+                            builderParameter) &&
+                        !IsInsideByFactoryArgument(
+                            identifier,
+                            semanticModel,
+                            cancellationToken))
                     {
                         return true;
                     }
                 }
             }
+        }
+
+        return false;
+    }
+
+    private static bool IsInsideByFactoryArgument(
+        IdentifierNameSyntax identifier,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        foreach (var argument in identifier
+                     .Ancestors()
+                     .OfType<ArgumentSyntax>())
+        {
+            if (argument.Parent is not ArgumentListSyntax
+                {
+                    Parent:
+                        InvocationExpressionSyntax invocation
+                } ||
+                semanticModel.GetSymbolInfo(
+                        invocation,
+                        cancellationToken)
+                    .Symbol is not IMethodSymbol
+                    {
+                        Name: "ByFactory",
+                        ContainingType: { } containingType
+                    } ||
+                !StringComparer.Ordinal.Equals(
+                    SymbolNameHelper.GetFullMetadataName(
+                        containingType),
+                    "Morphant.TypeMapper"))
+            {
+                continue;
+            }
+
+            return true;
         }
 
         return false;

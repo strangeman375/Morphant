@@ -12,6 +12,10 @@ internal static class TemplateControlFlowPlanner
         "variable declarations followed by a single return " +
         "statement.";
 
+    private const string UnsupportedCaptureMessage =
+        "Template contains a capture that cannot be transferred " +
+        "to the generated mapper.";
+
     private const string MemberMetadataName =
         "Morphant.Members.Member`1";
 
@@ -30,7 +34,7 @@ internal static class TemplateControlFlowPlanner
         bool directTemplate,
         CancellationToken cancellationToken)
     {
-        if (!TryGetLambdaResult(
+        if (!TransferableLambdaSyntax.TryGetResult(
                 lambda,
                 out var localDeclarations,
                 out var resultExpression))
@@ -100,7 +104,8 @@ internal static class TemplateControlFlowPlanner
                     SyntaxKind.None) ||
                 declaration.Declaration.Variables.Count == 0)
             {
-                return null;
+                return new UnsupportedTemplateControlFlow(
+                    UnsupportedBlockMessage);
             }
 
             foreach (var variable in
@@ -115,7 +120,8 @@ internal static class TemplateControlFlowPlanner
                         cancellationToken) is not
                         ILocalSymbol local)
                 {
-                    return null;
+                    return new UnsupportedTemplateControlFlow(
+                        UnsupportedBlockMessage);
                 }
 
                 allLocals.Add(local);
@@ -190,7 +196,8 @@ internal static class TemplateControlFlowPlanner
                 semanticModel,
                 cancellationToken))
         {
-            return null;
+            return new UnsupportedTemplateControlFlow(
+                UnsupportedCaptureMessage);
         }
 
         TemplateControlFlowSyntaxNode? root =
@@ -232,57 +239,6 @@ internal static class TemplateControlFlowPlanner
             root,
             runtimeLocals.ToImmutable(),
             runtimeLocalPlaceholders);
-    }
-
-    private static bool TryGetLambdaResult(
-        LambdaExpressionSyntax lambda,
-        out ImmutableArray<LocalDeclarationStatementSyntax>
-            localDeclarations,
-        out ExpressionSyntax resultExpression)
-    {
-        if (lambda.ExpressionBody is { } expressionBody)
-        {
-            localDeclarations = [];
-            resultExpression = expressionBody;
-            return true;
-        }
-
-        if (lambda.Block is not { } block ||
-            block.Statements.Count == 0 ||
-            block.Statements[block.Statements.Count - 1] is not
-                ReturnStatementSyntax
-            {
-                Expression: { } returnExpression
-            })
-        {
-            localDeclarations = default;
-            resultExpression = null!;
-            return false;
-        }
-
-        var declarations =
-            ImmutableArray.CreateBuilder<
-                LocalDeclarationStatementSyntax>(
-                block.Statements.Count - 1);
-
-        for (var index = 0;
-             index < block.Statements.Count - 1;
-             index++)
-        {
-            if (block.Statements[index] is not
-                LocalDeclarationStatementSyntax declaration)
-            {
-                localDeclarations = default;
-                resultExpression = null!;
-                return false;
-            }
-
-            declarations.Add(declaration);
-        }
-
-        localDeclarations = declarations.ToImmutable();
-        resultExpression = returnExpression;
-        return true;
     }
 
     private static TemplateControlFlowSyntaxNode?
@@ -1184,11 +1140,13 @@ internal static class TemplateControlFlowPlanner
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        foreach (var expression in expressions)
+        var expressionArray = expressions.ToArray();
+
+        foreach (var expression in expressionArray)
         {
             foreach (var identifier in expression
                          .DescendantNodesAndSelf()
-                         .OfType<IdentifierNameSyntax>())
+                         .OfType<SimpleNameSyntax>())
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -1197,14 +1155,93 @@ internal static class TemplateControlFlowPlanner
                         cancellationToken)
                     .Symbol;
 
-                if (symbol is ILocalSymbol &&
-                    !allowedLocals.Contains(symbol) ||
+                if (IsInsideByFactoryArgument(
+                        identifier,
+                        semanticModel,
+                        cancellationToken))
+                {
+                    continue;
+                }
+
+                if (symbol is ILocalSymbol
+                    {
+                        IsConst: true
+                    })
+                {
+                    continue;
+                }
+
+                if ((symbol is ILocalSymbol local &&
+                     !allowedLocals.Contains(local) &&
+                     !IsDeclaredWithin(
+                         local,
+                         expressionArray)) ||
                     symbol is IRangeVariableSymbol ||
                     symbol is IMethodSymbol
                     {
                         MethodKind:
-                            MethodKind.LocalFunction
+                            MethodKind.LocalFunction,
+                        IsStatic: false
                     })
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsInsideByFactoryArgument(
+        SimpleNameSyntax identifier,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        foreach (var argument in identifier
+                     .Ancestors()
+                     .OfType<ArgumentSyntax>())
+        {
+            if (argument.Parent is not ArgumentListSyntax
+                {
+                    Parent:
+                        InvocationExpressionSyntax invocation
+                } ||
+                semanticModel.GetSymbolInfo(
+                        invocation,
+                        cancellationToken)
+                    .Symbol is not IMethodSymbol
+                    {
+                        Name: "ByFactory",
+                        ContainingType: { } containingType
+                    } ||
+                !StringComparer.Ordinal.Equals(
+                    SymbolNameHelper.GetFullMetadataName(
+                        containingType),
+                    TypeMapperMetadataName))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsDeclaredWithin(
+        ISymbol symbol,
+        IEnumerable<ExpressionSyntax> expressions)
+    {
+        foreach (var reference in
+                 symbol.DeclaringSyntaxReferences)
+        {
+            foreach (var expression in expressions)
+            {
+                if (ReferenceEquals(
+                        reference.SyntaxTree,
+                        expression.SyntaxTree) &&
+                    expression.FullSpan.Contains(
+                        reference.Span))
                 {
                     return true;
                 }

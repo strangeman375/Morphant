@@ -126,6 +126,16 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (mapping.MapNewUnsupportedExceptionMessage is
+            { } mapNewUnsupportedExceptionMessage)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                mapNewUnsupportedExceptionMessage);
+            writer.Unindent();
+            return;
+        }
+
         if (mapping.MapNewDirectExpression is { } directExpression)
         {
             writer.Line($"=> {directExpression};");
@@ -186,6 +196,20 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
+        if (controlFlow.MapNewUnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMappingStatement(
+                writer,
+                unsupportedExceptionMessage);
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
+
+        WriteLocalFunctions(
+            writer,
+            controlFlow.MapNewLocalFunctions);
         WriteLocalValues(
             writer,
             controlFlow.MapNewLocals);
@@ -231,6 +255,15 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        if (mapping.MapNewUnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMappingStatement(
+                writer,
+                unsupportedExceptionMessage);
+            return;
+        }
+
         if (mapping.MapNewDirectExpression is
             { } directExpression)
         {
@@ -360,6 +393,19 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         TypeMapperFactoryMappingModel factory)
     {
+        foreach (var local in factory.Locals)
+        {
+            writer.Line(
+                $"{local.DeclarationType} {local.Name} = " +
+                local.ValueExpression +
+                ";");
+        }
+
+        if (!factory.Locals.IsEmpty)
+        {
+            writer.Line();
+        }
+
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);
 
@@ -439,6 +485,16 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (mapping.MapExistingUnsupportedExceptionMessage is
+            { } mapExistingUnsupportedExceptionMessage)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                mapExistingUnsupportedExceptionMessage);
+            writer.Unindent();
+            return;
+        }
+
         if (mapping.MapExistingDirectExpression is { } directExpression)
         {
             writer.Line($"=> {directExpression};");
@@ -513,6 +569,17 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
+        if (controlFlow.MapExistingUnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMappingStatement(
+                writer,
+                unsupportedExceptionMessage);
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
+
         if (mapping.MapExistingKind ==
             TypeMapperMapExistingKind.NullableValue)
         {
@@ -526,6 +593,9 @@ internal static class TypeMapperEmitter
             writer.Line();
         }
 
+        WriteLocalFunctions(
+            writer,
+            controlFlow.MapExistingLocalFunctions);
         WriteLocalValues(
             writer,
             controlFlow.MapExistingLocals);
@@ -571,6 +641,15 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        if (mapping.MapExistingUnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMappingStatement(
+                writer,
+                unsupportedExceptionMessage);
+            return;
+        }
+
         if (mapping.MapExistingDirectExpression is
             { } directExpression)
         {
@@ -678,6 +757,23 @@ internal static class TypeMapperEmitter
         writer.Unindent();
     }
 
+    private static void WriteUnsupportedMappingStatement(
+        CodeWriter writer,
+        string exceptionMessage)
+    {
+        var messageLiteral =
+            SyntaxFactory.LiteralExpression(
+                    SyntaxKind.StringLiteralExpression,
+                    SyntaxFactory.Literal(exceptionMessage))
+                .ToString();
+
+        writer.Line(
+            "throw new global::System.NotSupportedException(");
+        writer.Indent();
+        writer.Line($"{messageLiteral});");
+        writer.Unindent();
+    }
+
     private static void WriteLocalValues(
         CodeWriter writer,
         ImmutableArray<TypeMapperLocalValueModel> locals)
@@ -691,6 +787,35 @@ internal static class TypeMapperEmitter
         }
 
         if (!locals.IsEmpty)
+        {
+            writer.Line();
+        }
+    }
+
+    private static void WriteLocalFunctions(
+        CodeWriter writer,
+        ImmutableArray<TypeMapperLocalFunctionModel> functions)
+    {
+        for (var index = 0;
+             index < functions.Length;
+             index++)
+        {
+            if (index > 0)
+            {
+                writer.Line();
+            }
+
+            foreach (var line in functions[index]
+                         .Declaration
+                         .Replace("\r\n", "\n")
+                         .Replace('\r', '\n')
+                         .Split('\n'))
+            {
+                writer.Line(line);
+            }
+        }
+
+        if (!functions.IsEmpty)
         {
             writer.Line();
         }

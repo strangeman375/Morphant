@@ -23,11 +23,11 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → Расширенные формы factory.** Следующий самостоятельный срез
-рассматривает method groups, заранее созданные `Func<TDestination>`,
-block-lambda factory и captures Configure-local значений, параметров и local
-functions. Перед тестами нужно отдельно согласовать переносимость каждой формы,
-порядок вычисления и границу допустимых captures.
+**Фаза 3 → Statement-level управляющие конструкции DSL.** Следующий
+самостоятельный срез определяет поддержку `if`, `switch`, циклов,
+присваиваний, нескольких `return`, объявлений local functions внутри
+переносимой lambda и общего control flow. Точную границу нужно отдельно
+согласовать до тестов и production-кода.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -247,8 +247,10 @@ functions. Перед тестами нужно отдельно согласо�
   а ссылки на типы, static-члены и extension methods переносятся в
   fully-qualified форме, чтобы generated-код не зависел от `using` исходного
   файла. Compile-time результат `nameof` сохраняется строковым литералом.
-  Configure-local captures остаются отложенными. Поддерживаемая граница
-  block-lambda и управляющих форм описана отдельным завершённым пунктом ниже.
+  Из Configure-контекста переносятся compile-time constants и поддерживаемые
+  `static` local functions; обычные locals, `builder` и non-static local
+  functions не переносятся. Общая граница block-lambda и управляющих форм
+  описана отдельным завершённым пунктом ниже.
 
 - [x] Явный конструктор в `Template()`.
 
@@ -477,18 +479,47 @@ functions. Перед тестами нужно отдельно согласо�
   `NotSupportedException` при вызове. Такой ввод не маскируется fallback-ом на
   convention mapping и не приводит к исключению внутри самого генератора.
 
-- [ ] Расширенные формы factory.
+- [x] Расширенные формы factory.
 
-  Рассмотреть method groups, заранее созданные `Func<TDestination>`,
-  block-lambda и captures Configure-local значений, параметров и local
-  functions. Для каждой формы отдельно определить переносимость в generated-
-  код, порядок вычисления и диагностику неподдерживаемых captures.
+  `Template` и inline-lambda `ByFactory` используют один переносимый набор
+  конструкций: expression-body либо block из объявлений локальных переменных
+  и одного финального `return`; ветвление внутри текущего среза выражается
+  через `?:`. Каждая локальная переменная имеет initializer; `using`- и
+  `ref`-locals в текущую границу не входят. Factory block сохраняет
+  пользовательские имена locals и порядок вычисления, а его locals
+  выполняются один раз и только в `MapNew`, после необходимых Template-locals.
+
+  `ByFactory` дополнительно принимает method group и заранее созданный
+  `Func<TDestination>` из поля или свойства mapper-а. Выражение receiver-а
+  либо delegate-member читается в типизированный local при каждом `MapNew`,
+  после чего delegate вызывается ровно один раз. Между mapping-вызовами
+  receiver или delegate не кешируется. В `MapExisting` ни чтения, ни вызова
+  нет.
+
+  Переносимые factory-выражения могут использовать source, предыдущее
+  destination, Template-locals, instance/static members mapper-а, static API и
+  Configure-local compile-time constants. Константы подставляются и в обычные
+  Template-выражения, поэтому граница captures общая.
+
+  `static` Configure-local functions поддерживаются с той же границей тела,
+  что и `Template`/`ByFactory`: expression-body либо locals и финальный
+  `return`. Они переносятся как generated local functions только в те режимы,
+  где реально нужны. Неподдерживаемое тело также делает throwing только
+  использующие его режимы и template-ветви. Обычные Configure-locals, параметр
+  `builder` и non-static local functions не переносятся. Если такая
+  зависимость находится только внутри factory, generated `MapNew` бросает
+  `NotSupportedException`, а независимый `MapExisting` сохраняется.
+
+  Discovery допускает local declarations и local function declarations рядом
+  с прямыми builder-chain, но по-прежнему не следует за aliases, delegates,
+  helper/local-function calls или иным непрямым кодом регистрации.
 
 - [ ] Statement-level управляющие конструкции DSL.
 
   Отдельно определить и реализовать statement-level `if` и `switch`, циклы,
-  присваивания, local functions, несколько `return` и прочий общий control
-  flow. В этот же этап входит DSL-shaping `switch` expression. Обычный
+  присваивания, объявления local functions внутри переносимой lambda,
+  несколько `return` и прочий общий control flow. В этот же этап входит
+  DSL-shaping `switch` expression. Обычный
   switch-expression внутри уже поддерживаемого explicit C#-значения не меняет
   семантику Template и остаётся обычным переносимым выражением.
 

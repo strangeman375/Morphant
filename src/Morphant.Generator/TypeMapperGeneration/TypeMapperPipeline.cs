@@ -327,6 +327,7 @@ internal static class TypeMapperPipeline
                 conventionMemberMappings,
                 templateMapping: null,
                 runtimeLocals: [],
+                localFunctions: [],
                 compilation,
                 mapperType,
                 cancellationToken);
@@ -352,6 +353,7 @@ internal static class TypeMapperPipeline
                 conventionMemberMappings,
                 leaf,
                 templateMapping.RuntimeLocals,
+                templateMapping.LocalFunctions,
                 compilation,
                 mapperType,
                 cancellationToken));
@@ -366,11 +368,14 @@ internal static class TypeMapperPipeline
             mapNew: false);
         var controlFlow = BuildControlFlowModel(
             templateMapping.RuntimeLocals,
+            templateMapping.LocalFunctions,
             mapNewRoot,
             mapExistingRoot,
             mapperType);
 
-        if (controlFlow.MapNewLocals.IsEmpty &&
+        if (controlFlow.MapNewLocalFunctions.IsEmpty &&
+            controlFlow.MapExistingLocalFunctions.IsEmpty &&
+            controlFlow.MapNewLocals.IsEmpty &&
             controlFlow.MapExistingLocals.IsEmpty &&
             mapNewRoot.Leaf is { } mapNewLeaf &&
             mapExistingRoot.Leaf is { } mapExistingLeaf)
@@ -427,6 +432,7 @@ internal static class TypeMapperPipeline
         ConventionMemberMappingPlan conventionMemberMappings,
         TemplateMappingPlan? templateMapping,
         ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+        ImmutableArray<TemplateLocalFunctionPlan> localFunctions,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
@@ -444,6 +450,8 @@ internal static class TypeMapperPipeline
             destinationPlan,
             templateMapping,
             factoryMapNewMemberMappings,
+            runtimeLocals,
+            localFunctions,
             mapperType);
         var constructorMapping = BuildConstructorMapping(
             registration.SourceType,
@@ -467,7 +475,7 @@ internal static class TypeMapperPipeline
                 mapperType,
                 mapExistingDestinationLocalName);
 
-        return new TypeMapperMappingModel(
+        var mapping = new TypeMapperMappingModel(
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                 registration.SourceType),
             TypeMapperMappingTypePolicy
@@ -488,7 +496,28 @@ internal static class TypeMapperPipeline
                 ? factoryMapNewMemberMappings
                 : constructorMapping?.MapNewMemberMappings ??
                   memberMappings.MapNew,
-            mapExistingMemberMappings);
+            mapExistingMemberMappings,
+            MapNewUnsupportedExceptionMessage:
+                templateMapping?
+                    .Factory?
+                    .UnsupportedMessage);
+
+        return mapping with
+        {
+            MapNewUnsupportedExceptionMessage =
+                mapping.MapNewUnsupportedExceptionMessage ??
+                FindUnsupportedLocalFunctionMessage(
+                    localFunctions,
+                    runtimeLocals,
+                    mapping,
+                    mapNew: true),
+            MapExistingUnsupportedExceptionMessage =
+                FindUnsupportedLocalFunctionMessage(
+                    localFunctions,
+                    runtimeLocals,
+                    mapping,
+                    mapNew: false)
+        };
     }
 
     private static PlannedControlFlowNode BuildPlannedControlFlow(
@@ -612,6 +641,9 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel right)
     {
         return StringComparer.Ordinal.Equals(
+                   left.MapNewUnsupportedExceptionMessage,
+                   right.MapNewUnsupportedExceptionMessage) &&
+               StringComparer.Ordinal.Equals(
                    left.MapNewDirectExpression,
                    right.MapNewDirectExpression) &&
                Equals(
@@ -629,6 +661,9 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel right)
     {
         return StringComparer.Ordinal.Equals(
+                   left.MapExistingUnsupportedExceptionMessage,
+                   right.MapExistingUnsupportedExceptionMessage) &&
+               StringComparer.Ordinal.Equals(
                    left.MapExistingDirectExpression,
                    right.MapExistingDirectExpression) &&
                left.MapExistingKind ==
@@ -699,6 +734,8 @@ internal static class TypeMapperPipeline
 
         if (whenTrue.Leaf is not { } trueMapping ||
             whenFalse.Leaf is not { } falseMapping ||
+            trueMapping.MapNewUnsupportedExceptionMessage is not null ||
+            falseMapping.MapNewUnsupportedExceptionMessage is not null ||
             trueMapping.MapNewDirectExpression is not null ||
             falseMapping.MapNewDirectExpression is not null ||
             trueMapping.MapNewFactory is not null ||
@@ -984,6 +1021,8 @@ internal static class TypeMapperPipeline
                 mapExisting.MapExistingDestinationLocalName,
             MapExistingMemberMappings =
                 mapExisting.MapExistingMemberMappings,
+            MapExistingUnsupportedExceptionMessage =
+                mapExisting.MapExistingUnsupportedExceptionMessage,
             ControlFlow = null
         };
     }
@@ -998,6 +1037,7 @@ internal static class TypeMapperPipeline
     private static TypeMapperControlFlowMappingModel
         BuildControlFlowModel(
             ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+            ImmutableArray<TemplateLocalFunctionPlan> localFunctions,
             TypeMapperControlFlowNode mapNewRoot,
             TypeMapperControlFlowNode mapExistingRoot,
             INamedTypeSymbol mapperType)
@@ -1012,28 +1052,85 @@ internal static class TypeMapperPipeline
                 runtimeLocals,
                 mapExistingRoot,
                 mapNew: false);
+        var mapNewRequiredLocalFunctions =
+            CollectRequiredLocalFunctions(
+                localFunctions,
+                runtimeLocals,
+                mapNewRequiredLocals,
+                mapNewRoot,
+                mapNew: true);
+        var mapExistingRequiredLocalFunctions =
+            CollectRequiredLocalFunctions(
+                localFunctions,
+                runtimeLocals,
+                mapExistingRequiredLocals,
+                mapExistingRoot,
+                mapNew: false);
+        var mapNewUnsupportedExceptionMessage =
+            FindUnsupportedLocalFunctionMessage(
+                localFunctions,
+                mapNewRequiredLocalFunctions);
+        var mapExistingUnsupportedExceptionMessage =
+            FindUnsupportedLocalFunctionMessage(
+                localFunctions,
+                mapExistingRequiredLocalFunctions);
+
+        if (mapNewUnsupportedExceptionMessage is not null)
+        {
+            mapNewRequiredLocals.Clear();
+            mapNewRequiredLocalFunctions.Clear();
+        }
+
+        if (mapExistingUnsupportedExceptionMessage is not null)
+        {
+            mapExistingRequiredLocals.Clear();
+            mapExistingRequiredLocalFunctions.Clear();
+        }
+
+        var mapNewLocalFunctionNames =
+            AllocateLocalFunctionNames(
+                localFunctions,
+                mapNewRequiredLocalFunctions,
+                mapNewRoot,
+                mapperType,
+                hasDestinationParameter: false);
+        var mapExistingLocalFunctionNames =
+            AllocateLocalFunctionNames(
+                localFunctions,
+                mapExistingRequiredLocalFunctions,
+                mapExistingRoot,
+                mapperType,
+                hasDestinationParameter: true);
         var mapNewNames =
             AllocateRuntimeLocalNames(
                 runtimeLocals,
                 mapNewRequiredLocals,
                 mapNewRoot,
                 mapperType,
-                hasDestinationParameter: false);
+                hasDestinationParameter: false,
+                mapNewLocalFunctionNames.Values);
         var mapExistingNames =
             AllocateRuntimeLocalNames(
                 runtimeLocals,
                 mapExistingRequiredLocals,
                 mapExistingRoot,
                 mapperType,
-                hasDestinationParameter: true);
+                hasDestinationParameter: true,
+                mapExistingLocalFunctionNames.Values);
+        var mapNewAllNames = CombineNames(
+            mapNewLocalFunctionNames,
+            mapNewNames);
+        var mapExistingAllNames = CombineNames(
+            mapExistingLocalFunctionNames,
+            mapExistingNames);
         var renamedMapNewRoot =
             RenameControlFlow(
                 mapNewRoot,
-                mapNewNames);
+                mapNewAllNames);
         var renamedMapExistingRoot =
             RenameControlFlow(
                 mapExistingRoot,
-                mapExistingNames);
+                mapExistingAllNames);
         var mapNewLocals =
             runtimeLocals
                 .Where(local =>
@@ -1046,7 +1143,7 @@ internal static class TypeMapperPipeline
                             local.PlaceholderName],
                         RenameExpression(
                             local.MapNewExpression,
-                            mapNewNames)))
+                            mapNewAllNames)))
                 .ToImmutableArray();
         var mapExistingLocals =
             runtimeLocals
@@ -1060,14 +1157,28 @@ internal static class TypeMapperPipeline
                             local.PlaceholderName],
                         RenameExpression(
                             local.MapExistingExpression,
-                            mapExistingNames)))
+                            mapExistingAllNames)))
                 .ToImmutableArray();
+        var mapNewLocalFunctions =
+            BuildLocalFunctions(
+                localFunctions,
+                mapNewRequiredLocalFunctions,
+                mapNewAllNames);
+        var mapExistingLocalFunctions =
+            BuildLocalFunctions(
+                localFunctions,
+                mapExistingRequiredLocalFunctions,
+                mapExistingAllNames);
 
         return new TypeMapperControlFlowMappingModel(
+            mapNewLocalFunctions,
+            mapExistingLocalFunctions,
             mapNewLocals,
             mapExistingLocals,
             renamedMapNewRoot,
-            renamedMapExistingRoot);
+            renamedMapExistingRoot,
+            mapNewUnsupportedExceptionMessage,
+            mapExistingUnsupportedExceptionMessage);
     }
 
     private static IReadOnlyDictionary<string, string>
@@ -1076,7 +1187,8 @@ internal static class TypeMapperPipeline
             HashSet<string> requiredLocals,
             TypeMapperControlFlowNode root,
             INamedTypeSymbol mapperType,
-            bool hasDestinationParameter)
+            bool hasDestinationParameter,
+            IEnumerable<string> reservedNames)
     {
         var usedNames =
             ConventionConstructorMappingPlanner
@@ -1085,6 +1197,13 @@ internal static class TypeMapperPipeline
         if (hasDestinationParameter)
         {
             usedNames.Add("destination");
+        }
+
+        foreach (var reservedName in reservedNames)
+        {
+            AddUsedLocalName(
+                usedNames,
+                reservedName);
         }
 
         CollectGeneratedLocalNames(
@@ -1111,6 +1230,218 @@ internal static class TypeMapperPipeline
         }
 
         return allocatedNames;
+    }
+
+    private static IReadOnlyDictionary<string, string>
+        AllocateLocalFunctionNames(
+            ImmutableArray<TemplateLocalFunctionPlan> localFunctions,
+            HashSet<string> requiredFunctions,
+            TypeMapperControlFlowNode root,
+            INamedTypeSymbol mapperType,
+            bool hasDestinationParameter)
+    {
+        var usedNames =
+            ConventionConstructorMappingPlanner
+                .BuildUsedValueLocalNames(mapperType);
+
+        if (hasDestinationParameter)
+        {
+            usedNames.Add("destination");
+        }
+
+        CollectGeneratedLocalNames(
+            root,
+            usedNames);
+
+        var result =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+
+        foreach (var function in localFunctions)
+        {
+            if (!requiredFunctions.Contains(
+                    function.PlaceholderName))
+            {
+                continue;
+            }
+
+            result.Add(
+                function.PlaceholderName,
+                AllocateUserLocalName(
+                    function.PreferredName,
+                    usedNames));
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyDictionary<string, string>
+        CombineNames(
+            IReadOnlyDictionary<string, string> first,
+            IReadOnlyDictionary<string, string> second)
+    {
+        var result =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+
+        foreach (var pair in first)
+        {
+            result.Add(
+                pair.Key,
+                pair.Value);
+        }
+
+        foreach (var pair in second)
+        {
+            result.Add(
+                pair.Key,
+                pair.Value);
+        }
+
+        return result;
+    }
+
+    private static ImmutableArray<TypeMapperLocalFunctionModel>
+        BuildLocalFunctions(
+            ImmutableArray<TemplateLocalFunctionPlan> localFunctions,
+            HashSet<string> requiredFunctions,
+            IReadOnlyDictionary<string, string> allNames)
+    {
+        return localFunctions
+            .Where(function =>
+                requiredFunctions.Contains(
+                    function.PlaceholderName))
+            .Select(function =>
+                new TypeMapperLocalFunctionModel(
+                    RenameLocalFunctionDeclaration(
+                        function.Declaration,
+                        allNames)))
+            .ToImmutableArray();
+    }
+
+    private static HashSet<string>
+        CollectRequiredLocalFunctions(
+            ImmutableArray<TemplateLocalFunctionPlan> localFunctions,
+            ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+            HashSet<string> requiredRuntimeLocals,
+            TypeMapperControlFlowNode root,
+            bool mapNew)
+    {
+        var result =
+            new HashSet<string>(StringComparer.Ordinal);
+        var expressions =
+            EnumerateControlFlowExpressions(
+                    root,
+                    mapNew)
+                .Concat(
+                    runtimeLocals
+                        .Where(local =>
+                            requiredRuntimeLocals.Contains(
+                                local.PlaceholderName))
+                        .Select(local =>
+                            mapNew
+                                ? local.MapNewExpression
+                                : local.MapExistingExpression))
+                .ToArray();
+
+        foreach (var function in localFunctions)
+        {
+            if (expressions.Any(expression =>
+                    ReferencesIdentifier(
+                        expression,
+                        function.PlaceholderName)))
+            {
+                result.Add(
+                    function.PlaceholderName);
+            }
+        }
+
+        var changed = true;
+
+        while (changed)
+        {
+            changed = false;
+
+            foreach (var function in localFunctions)
+            {
+                if (!result.Contains(
+                        function.PlaceholderName))
+                {
+                    continue;
+                }
+
+                foreach (var dependency in localFunctions)
+                {
+                    if (!result.Contains(
+                            dependency.PlaceholderName) &&
+                        ReferencesIdentifierInStatement(
+                            function.Declaration,
+                            dependency.PlaceholderName))
+                    {
+                        result.Add(
+                            dependency.PlaceholderName);
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static string?
+        FindUnsupportedLocalFunctionMessage(
+            ImmutableArray<TemplateLocalFunctionPlan> localFunctions,
+            ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+            TypeMapperMappingModel mapping,
+            bool mapNew)
+    {
+        if (!localFunctions.Any(static function =>
+                function.UnsupportedMessage is not null))
+        {
+            return null;
+        }
+
+        var root = new TypeMapperControlFlowNode(
+            Condition: null,
+            WhenTrue: null,
+            WhenFalse: null,
+            mapping);
+        var requiredLocals =
+            CollectRequiredLocals(
+                runtimeLocals,
+                root,
+                mapNew);
+        var requiredFunctions =
+            CollectRequiredLocalFunctions(
+                localFunctions,
+                runtimeLocals,
+                requiredLocals,
+                root,
+                mapNew);
+
+        return FindUnsupportedLocalFunctionMessage(
+            localFunctions,
+            requiredFunctions);
+    }
+
+    private static string?
+        FindUnsupportedLocalFunctionMessage(
+            ImmutableArray<TemplateLocalFunctionPlan> localFunctions,
+            HashSet<string> requiredFunctions)
+    {
+        foreach (var function in localFunctions)
+        {
+            if (function.UnsupportedMessage is
+                    { } unsupportedMessage &&
+                requiredFunctions.Contains(
+                    function.PlaceholderName))
+            {
+                return unsupportedMessage;
+            }
+        }
+
+        return null;
     }
 
     private static HashSet<string> CollectRequiredLocals(
@@ -1204,10 +1535,23 @@ internal static class TypeMapperPipeline
         }
 
         var leaf = node.Leaf!.Value;
+
+        if (!mapNew &&
+            leaf.MapExistingUnsupportedExceptionMessage is not null)
+        {
+            yield break;
+        }
+
         var directExpression =
             mapNew
                 ? leaf.MapNewDirectExpression
                 : leaf.MapExistingDirectExpression;
+
+        if (mapNew &&
+            leaf.MapNewUnsupportedExceptionMessage is not null)
+        {
+            yield break;
+        }
 
         if (directExpression is not null)
         {
@@ -1219,6 +1563,11 @@ internal static class TypeMapperPipeline
             if (leaf.MapNewFactory is
                 { } factory)
             {
+                foreach (var local in factory.Locals)
+                {
+                    yield return local.ValueExpression;
+                }
+
                 yield return factory.ValueExpression;
             }
 
@@ -1274,6 +1623,20 @@ internal static class TypeMapperPipeline
                     identifier));
     }
 
+    private static bool ReferencesIdentifierInStatement(
+        string statement,
+        string identifier)
+    {
+        return SyntaxFactory.ParseStatement(statement)
+            .DescendantTokens()
+            .Any(token =>
+                token.IsKind(
+                    SyntaxKind.IdentifierToken) &&
+                StringComparer.Ordinal.Equals(
+                    token.ValueText,
+                    identifier));
+    }
+
     private static void CollectGeneratedLocalNames(
         TypeMapperControlFlowNode node,
         HashSet<string> result)
@@ -1293,6 +1656,13 @@ internal static class TypeMapperPipeline
 
         if (leaf.MapNewFactory is { } factory)
         {
+            foreach (var local in factory.Locals)
+            {
+                AddUsedLocalName(
+                    result,
+                    local.Name);
+            }
+
             AddUsedLocalName(
                 result,
                 factory.DestinationLocalName);
@@ -1421,6 +1791,16 @@ internal static class TypeMapperPipeline
                 mapping.MapNewFactory is { } factory
                     ? factory with
                     {
+                        Locals = factory.Locals
+                            .Select(local =>
+                                local with
+                                {
+                                    ValueExpression =
+                                        RenameExpression(
+                                            local.ValueExpression,
+                                            names)
+                                })
+                            .ToImmutableArray(),
                         ValueExpression =
                             RenameExpression(
                                 factory.ValueExpression,
@@ -1494,6 +1874,21 @@ internal static class TypeMapperPipeline
             .Visit(
                 SyntaxFactory.ParseExpression(
                     expression))!
+            .ToFullString();
+    }
+
+    private static string RenameLocalFunctionDeclaration(
+        string declaration,
+        IReadOnlyDictionary<string, string> names)
+    {
+        return new PlaceholderExpressionRewriter(
+                    names)
+            .Visit(
+                SyntaxFactory.ParseStatement(
+                    declaration))!
+            .NormalizeWhitespace(
+                indentation: "    ",
+                eol: "\r\n")
             .ToFullString();
     }
 
@@ -1623,26 +2018,85 @@ internal static class TypeMapperPipeline
             TemplateMappingPlan? template,
             ImmutableArray<TypeMapperMemberMappingModel>
                 mapNewMemberMappings,
+            ImmutableArray<TemplateRuntimeLocalPlan>
+                templateRuntimeLocals,
+            ImmutableArray<TemplateLocalFunctionPlan>
+                templateLocalFunctions,
             INamedTypeSymbol mapperType)
     {
         if (template is not
             {
                 ConstructionKind:
                     TemplateConstructionKind.ByFactory,
-                FactoryExpression: { } factoryExpression
+                Factory:
+                {
+                    ValueExpression: { } factoryExpression
+                } factory
             })
         {
             return null;
         }
 
-        return new TypeMapperFactoryMappingModel(
-            factoryExpression,
-            AllocateFactoryDestinationLocalName(mapperType),
+        var usedNames =
+            ConventionConstructorMappingPlanner
+                .BuildUsedValueLocalNames(mapperType);
+
+        foreach (var runtimeLocal in templateRuntimeLocals)
+        {
+            usedNames.Add(runtimeLocal.PreferredName);
+        }
+
+        foreach (var localFunction in templateLocalFunctions)
+        {
+            usedNames.Add(localFunction.PreferredName);
+        }
+
+        var localNames =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+        var locals =
+            ImmutableArray.CreateBuilder<
+                TypeMapperFactoryLocalValueModel>(
+                factory.RuntimeLocals.Length);
+
+        foreach (var local in factory.RuntimeLocals)
+        {
+            var name = AllocateUserLocalName(
+                local.PreferredName,
+                usedNames);
+
+            localNames.Add(
+                local.PlaceholderName,
+                name);
+            locals.Add(
+                new TypeMapperFactoryLocalValueModel(
+                    local.DeclarationType,
+                    name,
+                    RenameExpression(
+                        local.ValueExpression,
+                        localNames)));
+        }
+
+        var destinationLocalName =
+            AllocateUserLocalName(
+                "destination",
+                usedNames);
+        var nullableValueLocalName =
             destinationPlan.MapExistingKind ==
                 TypeMapperMapExistingKind.NullableValue &&
             !mapNewMemberMappings.IsEmpty
-                ? AllocateDestinationValueLocalName(mapperType)
-                : null);
+                ? AllocateUserLocalName(
+                    "destinationValue",
+                    usedNames)
+                : null;
+
+        return new TypeMapperFactoryMappingModel(
+            locals.ToImmutable(),
+            RenameExpression(
+                factoryExpression,
+                localNames),
+            destinationLocalName,
+            nullableValueLocalName);
     }
 
     private static ConventionConstructorMappingPlan?
@@ -2181,45 +2635,6 @@ internal static class TypeMapperPipeline
         }
     }
 
-    private static string AllocateFactoryDestinationLocalName(
-        INamedTypeSymbol mapperType)
-    {
-        var usedNames = new HashSet<string>(StringComparer.Ordinal)
-        {
-            "source",
-            "context"
-        };
-
-        for (var type = mapperType;
-             type is not null;
-             type = type.ContainingType)
-        {
-            foreach (var typeParameter in type.TypeParameters)
-            {
-                usedNames.Add(typeParameter.Name);
-            }
-        }
-
-        const string candidate = "destination";
-
-        if (usedNames.Add(candidate))
-        {
-            return candidate;
-        }
-
-        for (var suffix = 1;; suffix++)
-        {
-            var name =
-                candidate +
-                suffix.ToString(CultureInfo.InvariantCulture);
-
-            if (usedNames.Add(name))
-            {
-                return name;
-            }
-        }
-    }
-
     private static string GetAccessibility(
         Accessibility accessibility)
     {
@@ -2253,6 +2668,23 @@ internal static class TypeMapperPipeline
         IReadOnlyDictionary<string, string> names)
         : CSharpSyntaxRewriter
     {
+        public override SyntaxNode? VisitLocalFunctionStatement(
+            LocalFunctionStatementSyntax node)
+        {
+            var rewritten =
+                (LocalFunctionStatementSyntax)
+                base.VisitLocalFunctionStatement(node)!;
+
+            return names.TryGetValue(
+                    node.Identifier.ValueText,
+                    out var name)
+                ? rewritten.WithIdentifier(
+                    SyntaxFactory.Identifier(name)
+                        .WithTriviaFrom(
+                            rewritten.Identifier))
+                : rewritten;
+        }
+
         public override SyntaxNode? VisitIdentifierName(
             IdentifierNameSyntax node)
         {
@@ -2265,6 +2697,23 @@ internal static class TypeMapperPipeline
 
             return SyntaxFactory.IdentifierName(name)
                 .WithTriviaFrom(node);
+        }
+
+        public override SyntaxNode? VisitGenericName(
+            GenericNameSyntax node)
+        {
+            var rewritten =
+                (GenericNameSyntax)
+                base.VisitGenericName(node)!;
+
+            return names.TryGetValue(
+                    node.Identifier.ValueText,
+                    out var name)
+                ? rewritten.WithIdentifier(
+                    SyntaxFactory.Identifier(name)
+                        .WithTriviaFrom(
+                            rewritten.Identifier))
+                : rewritten;
         }
     }
 

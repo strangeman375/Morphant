@@ -104,6 +104,28 @@ internal static class TemplateMappingPlanner
                 declaredDestinationParameter;
         }
 
+        var localFunctionResult =
+            TemplateLocalFunctionPlanner.Build(
+                lambda,
+                semanticModel,
+                cancellationToken);
+
+        if (localFunctionResult is
+            UnsupportedTemplateLocalFunctions
+            unsupportedLocalFunctions)
+        {
+            return new UnsupportedTemplateMappingPlanResult(
+                unsupportedLocalFunctions.Message);
+        }
+
+        var localFunctions =
+            (SupportedTemplateLocalFunctions)
+            localFunctionResult;
+        var localFunctionPlaceholderNames =
+            localFunctions.Functions
+                .Select(static function =>
+                    function.PlaceholderName)
+                .ToImmutableArray();
         var directTemplate =
             registration.DestinationType is
                 INamedTypeSymbol namedDestination &&
@@ -146,6 +168,19 @@ internal static class TemplateMappingPlanner
                     static local =>
                         local.PlaceholderName)
                 .ToImmutableArray();
+        var allowedFactoryCaptureSymbols =
+            new HashSet<ISymbol>(
+                controlFlow.RuntimeLocalPlaceholders.Keys,
+                SymbolEqualityComparer.Default)
+            {
+                sourceParameterSymbol
+            };
+
+        if (destinationParameterSymbol is not null)
+        {
+            allowedFactoryCaptureSymbols.Add(
+                destinationParameterSymbol);
+        }
 
         string RewriteMapNew(ExpressionSyntax expression) =>
             RewriteParameters(
@@ -155,7 +190,9 @@ internal static class TemplateMappingPlanner
                 mapNewDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames);
+                runtimeLocalPlaceholderNames,
+                localFunctions.Placeholders,
+                localFunctionPlaceholderNames);
 
         string RewriteMapExisting(ExpressionSyntax expression) =>
             RewriteParameters(
@@ -165,7 +202,9 @@ internal static class TemplateMappingPlanner
                 mapExistingDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames);
+                runtimeLocalPlaceholderNames,
+                localFunctions.Placeholders,
+                localFunctionPlaceholderNames);
 
         var runtimeLocals =
             controlFlow.RuntimeLocals
@@ -215,7 +254,7 @@ internal static class TemplateMappingPlanner
                     [],
                     TemplateConstructionKind.None,
                     Constructor: null,
-                    FactoryExpression: null,
+                    Factory: null,
                     ConventionConstructorMappings: [],
                     HasDestinationParameter:
                         destinationParameterSymbol is not null);
@@ -347,7 +386,7 @@ internal static class TemplateMappingPlanner
             var constructionKind =
                 TemplateConstructionKind.DestinationConstructor;
             TemplateConstructorMappingPlan? constructor = null;
-            string? factoryExpression = null;
+            TemplateFactoryPlan? factory = null;
             ImmutableArray<
                     TemplateConstructorMemberMappingModel>
                 conventionConstructorMappings = [];
@@ -369,12 +408,22 @@ internal static class TemplateMappingPlanner
             else if (TemplateByFactoryMappingPlanner.TryBuild(
                          leaf.Arguments,
                          semanticModel,
-                         RewriteMapNew,
+                         allowedFactoryCaptureSymbols,
                          cancellationToken,
-                         out factoryExpression))
+                         out var factorySyntax))
             {
                 constructionKind =
                     TemplateConstructionKind.ByFactory;
+                factory = BuildFactoryPlan(
+                    factorySyntax,
+                    sourceParameterSymbol,
+                    destinationParameterSymbol,
+                    mapNewDestinationExpression,
+                    semanticModel,
+                    controlFlow.RuntimeLocalPlaceholders,
+                    runtimeLocalPlaceholderNames,
+                    localFunctions.Placeholders,
+                    localFunctionPlaceholderNames);
             }
             else if (memberType is ITypeParameterSymbol &&
                      leaf.Arguments.IsEmpty)
@@ -406,7 +455,7 @@ internal static class TemplateMappingPlanner
                 memberMappings.ToImmutable(),
                 constructionKind,
                 constructor,
-                factoryExpression,
+                factory,
                 conventionConstructorMappings,
                 HasDestinationParameter:
                     destinationParameterSymbol is not null);
@@ -422,9 +471,124 @@ internal static class TemplateMappingPlanner
             return null;
         }
 
+        var transferredLocalFunctions =
+            localFunctions.Functions
+                .Select(function =>
+                    new TemplateLocalFunctionPlan(
+                        function.PlaceholderName,
+                        function.PreferredName,
+                        function.UnsupportedMessage is null
+                            ? RewriteLocalFunction(
+                                function.Syntax,
+                                sourceParameterSymbol,
+                                destinationParameterSymbol,
+                                mapNewDestinationExpression,
+                                semanticModel,
+                                controlFlow
+                                    .RuntimeLocalPlaceholders,
+                                runtimeLocalPlaceholderNames,
+                                localFunctions.Placeholders,
+                                localFunctionPlaceholderNames)
+                            : RewriteUnsupportedLocalFunction(
+                                function.Syntax,
+                                semanticModel,
+                                localFunctions.Placeholders),
+                        function.UnsupportedMessage))
+                .ToImmutableArray();
+
         return new SupportedTemplateMappingPlanResult(
             root,
-            runtimeLocals);
+            runtimeLocals,
+            transferredLocalFunctions);
+    }
+
+    private static TemplateFactoryPlan? BuildFactoryPlan(
+        TemplateFactorySyntaxPlan? syntax,
+        IParameterSymbol sourceParameter,
+        IParameterSymbol? destinationParameter,
+        ExpressionSyntax? mapNewDestinationExpression,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, string>
+            templateRuntimeLocalPlaceholders,
+        IReadOnlyCollection<string>
+            templateRuntimeLocalPlaceholderNames,
+        IReadOnlyDictionary<ISymbol, string>
+            localFunctionPlaceholders,
+        IReadOnlyCollection<string>
+            localFunctionPlaceholderNames)
+    {
+        if (syntax is null)
+        {
+            return null;
+        }
+
+        if (syntax.UnsupportedMessage is
+            { } unsupportedMessage)
+        {
+            return new TemplateFactoryPlan(
+                [],
+                ValueExpression: null,
+                unsupportedMessage);
+        }
+
+        var localPlaceholders =
+            new Dictionary<ISymbol, string>(
+                SymbolEqualityComparer.Default);
+
+        foreach (var pair in
+                 templateRuntimeLocalPlaceholders)
+        {
+            localPlaceholders.Add(
+                pair.Key,
+                pair.Value);
+        }
+
+        foreach (var pair in
+                 syntax.RuntimeLocalPlaceholders)
+        {
+            localPlaceholders.Add(
+                pair.Key,
+                pair.Value);
+        }
+
+        var localPlaceholderNames =
+            templateRuntimeLocalPlaceholderNames
+                .Concat(
+                    syntax.RuntimeLocals.Select(
+                        static local =>
+                            local.PlaceholderName))
+                .ToImmutableArray();
+
+        string Rewrite(ExpressionSyntax expression) =>
+            RewriteParameters(
+                expression,
+                sourceParameter,
+                destinationParameter,
+                mapNewDestinationExpression,
+                semanticModel,
+                localPlaceholders,
+                localPlaceholderNames,
+                localFunctionPlaceholders,
+                localFunctionPlaceholderNames);
+
+        var runtimeLocals =
+            syntax.RuntimeLocals
+                .Select(local =>
+                    new TemplateFactoryRuntimeLocalPlan(
+                        local.PlaceholderName,
+                        local.PreferredName,
+                        local.DeclarationType,
+                        Rewrite(local.Initializer)))
+                .ToImmutableArray();
+        var valueExpression =
+            syntax.ResultExpression is { } resultExpression
+                ? Rewrite(resultExpression)
+                : syntax.InvokedLocalPlaceholder + "()";
+
+        return new TemplateFactoryPlan(
+            runtimeLocals,
+            valueExpression,
+            UnsupportedMessage: null);
     }
 
     private static bool TryGetLambda(
@@ -696,7 +860,11 @@ internal static class TemplateMappingPlanner
         IReadOnlyDictionary<ISymbol, string>
             runtimeLocalPlaceholders,
         IReadOnlyCollection<string>
-            runtimeLocalPlaceholderNames)
+            runtimeLocalPlaceholderNames,
+        IReadOnlyDictionary<ISymbol, string>
+            localFunctionPlaceholders,
+        IReadOnlyCollection<string>
+            localFunctionPlaceholderNames)
     {
         var rewritten = new TemplateParameterRewriter(
                 sourceParameter,
@@ -704,7 +872,9 @@ internal static class TemplateMappingPlanner
                 destinationExpression,
                 semanticModel,
                 runtimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames)
+                runtimeLocalPlaceholderNames,
+                localFunctionPlaceholders,
+                localFunctionPlaceholderNames)
             .Visit(expression)!
             .WithoutTrivia()
             .NormalizeWhitespace();
@@ -712,6 +882,60 @@ internal static class TemplateMappingPlanner
         return new NullableSyntaxTriviaRewriter()
             .Visit(rewritten)!
             .ToFullString();
+    }
+
+    private static string RewriteLocalFunction(
+        LocalFunctionStatementSyntax localFunction,
+        IParameterSymbol sourceParameter,
+        IParameterSymbol? destinationParameter,
+        ExpressionSyntax? destinationExpression,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, string>
+            runtimeLocalPlaceholders,
+        IReadOnlyCollection<string>
+            runtimeLocalPlaceholderNames,
+        IReadOnlyDictionary<ISymbol, string>
+            localFunctionPlaceholders,
+        IReadOnlyCollection<string>
+            localFunctionPlaceholderNames)
+    {
+        var rewritten = new TemplateParameterRewriter(
+                sourceParameter,
+                destinationParameter,
+                destinationExpression,
+                semanticModel,
+                runtimeLocalPlaceholders,
+                runtimeLocalPlaceholderNames,
+                localFunctionPlaceholders,
+                localFunctionPlaceholderNames)
+            .Visit(localFunction)!
+            .WithoutTrivia()
+            .NormalizeWhitespace(
+                indentation: "    ",
+                eol: "\r\n");
+
+        return new NullableSyntaxTriviaRewriter()
+            .Visit(rewritten)!
+            .ToFullString();
+    }
+
+    private static string RewriteUnsupportedLocalFunction(
+        LocalFunctionStatementSyntax localFunction,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, string>
+            localFunctionPlaceholders)
+    {
+        var rewritten =
+            new UnsupportedLocalFunctionRewriter(
+                    semanticModel,
+                    localFunctionPlaceholders)
+                .Visit(localFunction)!
+                .WithoutTrivia()
+                .NormalizeWhitespace(
+                    indentation: "    ",
+                    eol: "\r\n");
+
+        return rewritten.ToFullString();
     }
 
     private static TemplateWritableMember? TryFindWritableMember(
@@ -817,7 +1041,11 @@ internal static class TemplateMappingPlanner
         IReadOnlyDictionary<ISymbol, string>
             runtimeLocalPlaceholders,
         IReadOnlyCollection<string>
-            runtimeLocalPlaceholderNames)
+            runtimeLocalPlaceholderNames,
+        IReadOnlyDictionary<ISymbol, string>
+            localFunctionPlaceholders,
+        IReadOnlyCollection<string>
+            localFunctionPlaceholderNames)
         : CSharpSyntaxRewriter
     {
         public override SyntaxNode? VisitBinaryExpression(
@@ -1026,6 +1254,161 @@ internal static class TemplateMappingPlanner
             return base.VisitInvocationExpression(node);
         }
 
+        public override SyntaxNode? VisitMemberAccessExpression(
+            MemberAccessExpressionSyntax node)
+        {
+            if (semanticModel.GetSymbolInfo(node).Symbol is
+                INamedTypeSymbol type)
+            {
+                return SyntaxFactory.ParseExpression(
+                        type.ToDisplayString(
+                            SymbolDisplayFormats.FullyQualifiedNullable))
+                    .WithTriviaFrom(node);
+            }
+
+            return base.VisitMemberAccessExpression(node);
+        }
+
+        public override SyntaxNode? VisitLocalFunctionStatement(
+            LocalFunctionStatementSyntax node)
+        {
+            if (semanticModel.GetDeclaredSymbol(node) is not
+                IMethodSymbol function)
+            {
+                return node;
+            }
+
+            var returnType =
+                SyntaxFactory.ParseTypeName(
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedTypeName(
+                            function.ReturnType
+                                .WithNullableAnnotation(
+                                    function
+                                        .ReturnNullableAnnotation)))
+                    .WithTriviaFrom(node.ReturnType);
+
+            if (node.ReturnType is RefTypeSyntax refReturnType)
+            {
+                returnType = refReturnType.WithType(
+                    returnType);
+            }
+
+            var parameters =
+                node.ParameterList.Parameters
+                    .Select((parameter, index) =>
+                    {
+                        var parameterSymbol =
+                            function.Parameters[index];
+                        var rewritten = parameter.WithType(
+                            SyntaxFactory.ParseTypeName(
+                                    TypeMapperMappingTypePolicy
+                                        .GetGeneratedTypeName(
+                                            parameterSymbol.Type
+                                                .WithNullableAnnotation(
+                                                    parameterSymbol
+                                                        .NullableAnnotation)))
+                                .WithTriviaFrom(
+                                    parameter.Type!));
+
+                        if (parameter.Default is { } defaultValue)
+                        {
+                            rewritten = rewritten.WithDefault(
+                                defaultValue.WithValue(
+                                    (ExpressionSyntax)
+                                    Visit(
+                                        defaultValue.Value)!));
+                        }
+
+                        return rewritten;
+                    });
+            var constraints =
+                node.ConstraintClauses
+                    .Select(clause =>
+                        clause.WithConstraints(
+                            SyntaxFactory.SeparatedList<
+                                TypeParameterConstraintSyntax>(
+                                clause.Constraints.Select(
+                                    constraint =>
+                                        RewriteConstraint(
+                                            constraint)))));
+            var rewritten = node
+                .WithReturnType(returnType)
+                .WithParameterList(
+                    node.ParameterList.WithParameters(
+                        SyntaxFactory.SeparatedList(
+                            parameters)))
+                .WithConstraintClauses(
+                    SyntaxFactory.List(constraints))
+                .WithBody(
+                    node.Body is null
+                        ? null
+                        : (BlockSyntax)Visit(node.Body)!)
+                .WithExpressionBody(
+                    node.ExpressionBody is null
+                        ? null
+                        : node.ExpressionBody.WithExpression(
+                            (ExpressionSyntax)
+                            Visit(
+                                node.ExpressionBody.Expression)!));
+
+            if (localFunctionPlaceholders.TryGetValue(
+                    function,
+                    out var placeholder))
+            {
+                rewritten = rewritten.WithIdentifier(
+                    SyntaxFactory.Identifier(placeholder)
+                        .WithTriviaFrom(
+                            rewritten.Identifier));
+            }
+
+            return rewritten;
+        }
+
+        public override SyntaxNode? VisitVariableDeclaration(
+            VariableDeclarationSyntax node)
+        {
+            if (node.Type.IsVar)
+            {
+                return node.WithVariables(
+                    VisitList(node.Variables));
+            }
+
+            if (semanticModel.GetTypeInfo(node.Type).Type is not
+                    { } type)
+            {
+                return base.VisitVariableDeclaration(node);
+            }
+
+            return node
+                .WithType(
+                    SyntaxFactory.ParseTypeName(
+                            TypeMapperMappingTypePolicy
+                                .GetGeneratedTypeName(type))
+                        .WithTriviaFrom(node.Type))
+                .WithVariables(
+                    VisitList(node.Variables));
+        }
+
+        private TypeParameterConstraintSyntax RewriteConstraint(
+            TypeParameterConstraintSyntax constraint)
+        {
+            if (constraint is not TypeConstraintSyntax typeConstraint ||
+                semanticModel.GetTypeInfo(
+                        typeConstraint.Type)
+                    .Type is not { } type)
+            {
+                return constraint;
+            }
+
+            return typeConstraint.WithType(
+                SyntaxFactory.ParseTypeName(
+                        TypeMapperMappingTypePolicy
+                            .GetGeneratedTypeName(type))
+                    .WithTriviaFrom(
+                        typeConstraint.Type));
+        }
+
         private ITypeSymbol? GetExpressionType(
             ExpressionSyntax expression)
         {
@@ -1191,6 +1574,9 @@ internal static class TemplateMappingPlanner
         {
             if (runtimeLocalPlaceholderNames.Contains(
                     node.Identifier.ValueText,
+                    StringComparer.Ordinal) ||
+                localFunctionPlaceholderNames.Contains(
+                    node.Identifier.ValueText,
                     StringComparer.Ordinal))
             {
                 return node;
@@ -1206,6 +1592,49 @@ internal static class TemplateMappingPlanner
                 ReferenceEquals(invocationExpression, node))
             {
                 symbol = semanticModel.GetSymbolInfo(invocation).Symbol;
+            }
+
+            if (symbol is not null &&
+                localFunctionPlaceholders.TryGetValue(
+                    symbol,
+                    out var localFunctionPlaceholder))
+            {
+                return SyntaxFactory.IdentifierName(
+                        localFunctionPlaceholder)
+                    .WithTriviaFrom(node);
+            }
+
+            if (symbol is ILocalSymbol
+                {
+                    IsConst: true,
+                    HasConstantValue: true
+                } constantLocal &&
+                !runtimeLocalPlaceholders.ContainsKey(
+                    constantLocal) &&
+                !IsDeclaredInEnclosingLocalFunction(
+                    constantLocal,
+                    node))
+            {
+                var literal =
+                    constantLocal.ConstantValue is null
+                        ? SyntaxFactory.LiteralExpression(
+                            SyntaxKind.NullLiteralExpression)
+                        : SyntaxFactory.ParseExpression(
+                            SymbolDisplay.FormatPrimitive(
+                                constantLocal.ConstantValue,
+                                quoteStrings: true,
+                                useHexadecimalNumbers: false));
+                var constantExpression =
+                    RequiresConstantCast(constantLocal)
+                        ? SyntaxFactory.CastExpression(
+                            SyntaxFactory.ParseTypeName(
+                                TypeMapperMappingTypePolicy
+                                    .GetGeneratedTypeName(
+                                        constantLocal.Type)),
+                            literal)
+                        : literal;
+
+                return constantExpression.WithTriviaFrom(node);
             }
 
             if (SymbolEqualityComparer.Default.Equals(
@@ -1238,6 +1667,15 @@ internal static class TemplateMappingPlanner
 
             if (symbol is INamedTypeSymbol type)
             {
+                if (node.Parent is MemberAccessExpressionSyntax
+                    {
+                        Name: var typeMemberName
+                    } &&
+                    ReferenceEquals(typeMemberName, node))
+                {
+                    return node;
+                }
+
                 return SyntaxFactory.ParseExpression(
                         type.ToDisplayString(
                             SymbolDisplayFormats.FullyQualifiedNullable))
@@ -1262,19 +1700,69 @@ internal static class TemplateMappingPlanner
             return base.VisitIdentifierName(node);
         }
 
+        private static bool RequiresConstantCast(
+            ILocalSymbol constant)
+        {
+            if (constant.ConstantValue is null ||
+                constant.Type.TypeKind == TypeKind.Enum)
+            {
+                return true;
+            }
+
+            return constant.Type.SpecialType is
+                SpecialType.System_SByte or
+                SpecialType.System_Byte or
+                SpecialType.System_Int16 or
+                SpecialType.System_UInt16 or
+                SpecialType.System_IntPtr or
+                SpecialType.System_UIntPtr;
+        }
+
+        private static bool IsDeclaredInEnclosingLocalFunction(
+            ILocalSymbol local,
+            IdentifierNameSyntax reference)
+        {
+            if (reference.Ancestors()
+                    .OfType<LocalFunctionStatementSyntax>()
+                    .FirstOrDefault() is not
+                { } localFunction)
+            {
+                return false;
+            }
+
+            return local.DeclaringSyntaxReferences.Any(
+                declaration =>
+                    ReferenceEquals(
+                        declaration.SyntaxTree,
+                        localFunction.SyntaxTree) &&
+                    localFunction.FullSpan.Contains(
+                        declaration.Span));
+        }
+
         public override SyntaxNode? VisitGenericName(
             GenericNameSyntax node)
         {
-            if (GetReferencedSymbol(node) is
-                INamedTypeSymbol type)
+            var symbol = GetReferencedSymbol(node);
+
+            if (symbol is not null &&
+                localFunctionPlaceholders.TryGetValue(
+                    symbol,
+                    out var localFunctionPlaceholder))
+            {
+                return node.WithIdentifier(
+                    SyntaxFactory.Identifier(
+                            localFunctionPlaceholder)
+                        .WithTriviaFrom(
+                            node.Identifier));
+            }
+
+            if (symbol is INamedTypeSymbol type)
             {
                 return SyntaxFactory.ParseExpression(
                         type.ToDisplayString(
                             SymbolDisplayFormats.FullyQualifiedNullable))
                     .WithTriviaFrom(node);
             }
-
-            var symbol = GetReferencedSymbol(node);
 
             if (node.Parent is not MemberAccessExpressionSyntax
                 {
@@ -1432,6 +1920,84 @@ internal static class TemplateMappingPlanner
         }
     }
 
+    private sealed class UnsupportedLocalFunctionRewriter(
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, string>
+            localFunctionPlaceholders)
+        : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitLocalFunctionStatement(
+            LocalFunctionStatementSyntax node)
+        {
+            var rewritten =
+                (LocalFunctionStatementSyntax)
+                base.VisitLocalFunctionStatement(node)!;
+
+            return semanticModel.GetDeclaredSymbol(node) is
+                    { } function &&
+                localFunctionPlaceholders.TryGetValue(
+                    function,
+                    out var placeholder)
+                ? rewritten.WithIdentifier(
+                    SyntaxFactory.Identifier(placeholder)
+                        .WithTriviaFrom(
+                            rewritten.Identifier))
+                : rewritten;
+        }
+
+        public override SyntaxNode? VisitIdentifierName(
+            IdentifierNameSyntax node)
+        {
+            return TryGetPlaceholder(
+                    node,
+                    out var placeholder)
+                ? SyntaxFactory.IdentifierName(placeholder)
+                    .WithTriviaFrom(node)
+                : base.VisitIdentifierName(node);
+        }
+
+        public override SyntaxNode? VisitGenericName(
+            GenericNameSyntax node)
+        {
+            return TryGetPlaceholder(
+                    node,
+                    out var placeholder)
+                ? node.WithIdentifier(
+                    SyntaxFactory.Identifier(placeholder)
+                        .WithTriviaFrom(
+                            node.Identifier))
+                : base.VisitGenericName(node);
+        }
+
+        private bool TryGetPlaceholder(
+            SimpleNameSyntax name,
+            out string placeholder)
+        {
+            placeholder = string.Empty;
+            var symbol =
+                semanticModel.GetSymbolInfo(name).Symbol;
+
+            if (symbol is null &&
+                name.Parent is InvocationExpressionSyntax
+                {
+                    Expression: var invocationExpression
+                } invocation &&
+                ReferenceEquals(
+                    invocationExpression,
+                    name))
+            {
+                symbol =
+                    semanticModel.GetSymbolInfo(invocation)
+                        .Symbol;
+            }
+
+            return symbol is not null &&
+                   localFunctionPlaceholders.TryGetValue(
+                       symbol,
+                       out placeholder);
+        }
+    }
+
     private sealed class NullableSyntaxTriviaRewriter :
         CSharpSyntaxRewriter
     {
@@ -1486,7 +2052,8 @@ internal sealed record UnsupportedTemplateMappingPlanResult(
 
 internal sealed record SupportedTemplateMappingPlanResult(
     TemplateMappingPlanNode Root,
-    ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals)
+    ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals,
+    ImmutableArray<TemplateLocalFunctionPlan> LocalFunctions)
     : TemplateMappingPlanResult;
 
 internal abstract record TemplateMappingPlanNode;
@@ -1509,16 +2076,33 @@ internal readonly record struct TemplateRuntimeLocalPlan(
     string MapNewExpression,
     string MapExistingExpression);
 
+internal readonly record struct TemplateLocalFunctionPlan(
+    string PlaceholderName,
+    string PreferredName,
+    string Declaration,
+    string? UnsupportedMessage);
+
 internal readonly record struct TemplateMappingPlan(
     string? MapNewDirectExpression,
     string? MapExistingDirectExpression,
     ImmutableArray<TemplateMemberMappingModel> MemberMappings,
     TemplateConstructionKind ConstructionKind,
     TemplateConstructorMappingPlan? Constructor,
-    string? FactoryExpression,
+    TemplateFactoryPlan? Factory,
     ImmutableArray<TemplateConstructorMemberMappingModel>
         ConventionConstructorMappings,
     bool HasDestinationParameter);
+
+internal readonly record struct TemplateFactoryPlan(
+    ImmutableArray<TemplateFactoryRuntimeLocalPlan> RuntimeLocals,
+    string? ValueExpression,
+    string? UnsupportedMessage);
+
+internal readonly record struct TemplateFactoryRuntimeLocalPlan(
+    string PlaceholderName,
+    string PreferredName,
+    string DeclarationType,
+    string ValueExpression);
 
 internal readonly record struct TemplateMemberMappingModel(
     string MemberName,
