@@ -222,7 +222,11 @@ internal static class TemplateConstructorMappingPlanner
                     new TypeMapperConstructorArgumentMappingModel(
                         destinationParameter.Name,
                         sourceMember.Name,
-                        ValueLocalName: null));
+                        ValueLocalName: null,
+                        TargetTypeName:
+                            ConventionConstructorMappingPlanner
+                                .BuildTargetValueLocalTypeName(
+                                    destinationParameter)));
                 continue;
             }
 
@@ -259,6 +263,10 @@ internal static class TemplateConstructorMappingPlanner
                         ValueLocalTypeName:
                             ConventionConstructorMappingPlanner
                                 .BuildExplicitValueLocalTypeName(
+                                    destinationParameter),
+                        TargetTypeName:
+                            ConventionConstructorMappingPlanner
+                                .BuildTargetValueLocalTypeName(
                                     destinationParameter)));
                 continue;
             }
@@ -278,6 +286,10 @@ internal static class TemplateConstructorMappingPlanner
                     ValueLocalTypeName:
                         ConventionConstructorMappingPlanner
                             .BuildExplicitValueLocalTypeName(
+                                destinationParameter),
+                    TargetTypeName:
+                        ConventionConstructorMappingPlanner
+                            .BuildTargetValueLocalTypeName(
                                 destinationParameter)));
         }
 

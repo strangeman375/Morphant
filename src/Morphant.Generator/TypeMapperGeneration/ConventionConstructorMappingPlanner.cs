@@ -150,6 +150,9 @@ internal static class ConventionConstructorMappingPlanner
                     explicitValueExpression,
                     ValueLocalTypeName:
                         BuildExplicitValueLocalTypeName(
+                            parameter),
+                    TargetTypeName:
+                        BuildTargetValueLocalTypeName(
                             parameter)));
         }
 
@@ -310,6 +313,16 @@ internal static class ConventionConstructorMappingPlanner
 
         return parameter.Type
             .WithNullableAnnotation(nullableAnnotation)
+            .ToDisplayString(
+                SymbolDisplayFormats.FullyQualifiedNullable);
+    }
+
+    internal static string BuildTargetValueLocalTypeName(
+        IParameterSymbol parameter)
+    {
+        return parameter.Type
+            .WithNullableAnnotation(
+                parameter.NullableAnnotation)
             .ToDisplayString(
                 SymbolDisplayFormats.FullyQualifiedNullable);
     }
@@ -732,7 +745,10 @@ internal static class ConventionConstructorMappingPlanner
                             new TypeMapperConstructorArgumentMappingModel(
                                 argument.Parameter.Name,
                                 argument.SourceMember.Name,
-                                ValueLocalName: null)))
+                                ValueLocalName: null,
+                                TargetTypeName:
+                                    BuildTargetValueLocalTypeName(
+                                        argument.Parameter))))
                 .ToArray();
 
         for (var argumentIndex = 0;

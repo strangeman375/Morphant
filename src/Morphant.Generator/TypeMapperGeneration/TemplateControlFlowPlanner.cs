@@ -30,7 +30,10 @@ internal static class TemplateControlFlowPlanner
                 out var localDeclarations,
                 out var resultExpression))
         {
-            return null;
+            throw new NotSupportedException(
+                "Template block lambdas currently support only local " +
+                "variable declarations followed by a single return " +
+                "statement.");
         }
 
         var convertedResultType =

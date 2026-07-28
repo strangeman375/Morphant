@@ -343,9 +343,12 @@ internal static class TypeMapperPipeline
                 compilation,
                 mapperType,
                 cancellationToken));
-        var mapNewRoot = BuildModeControlFlow(
-            plannedRoot,
-            mapNew: true);
+        var mapNewRoot =
+            HoistConditionalConstructorValues(
+                BuildModeControlFlow(
+                    plannedRoot,
+                    mapNew: true),
+                mapperType);
         var mapExistingRoot = BuildModeControlFlow(
             plannedRoot,
             mapNew: false);
@@ -358,12 +361,11 @@ internal static class TypeMapperPipeline
         if (controlFlow.MapNewLocals.IsEmpty &&
             controlFlow.MapExistingLocals.IsEmpty &&
             mapNewRoot.Leaf is { } mapNewLeaf &&
-            mapExistingRoot.Leaf is { } mapExistingLeaf &&
-            AreSameFlatMapping(
-                mapNewLeaf,
-                mapExistingLeaf))
+            mapExistingRoot.Leaf is { } mapExistingLeaf)
         {
-            return mapNewLeaf;
+            return CombineModeMappings(
+                mapNewLeaf,
+                mapExistingLeaf);
         }
 
         var representative =
@@ -594,11 +596,352 @@ internal static class TypeMapperPipeline
                    right.MapExistingMemberMappings);
     }
 
-    private static bool AreSameFlatMapping(
-        TypeMapperMappingModel left,
-        TypeMapperMappingModel right)
+    private static TypeMapperControlFlowNode
+        HoistConditionalConstructorValues(
+            TypeMapperControlFlowNode node,
+            INamedTypeSymbol mapperType)
     {
-        return left.Equals(right);
+        if (node.Leaf is not null)
+        {
+            return node;
+        }
+
+        var whenTrue =
+            HoistConditionalConstructorValues(
+                node.WhenTrue!,
+                mapperType);
+        var whenFalse =
+            HoistConditionalConstructorValues(
+                node.WhenFalse!,
+                mapperType);
+
+        if (AreEquivalentControlFlow(
+                whenTrue,
+                whenFalse,
+                mapNew: true))
+        {
+            return whenTrue;
+        }
+
+        if (TryMergeConditionalConstructorValues(
+                node.Condition!,
+                whenTrue,
+                whenFalse,
+                mapperType,
+                out var merged))
+        {
+            return new TypeMapperControlFlowNode(
+                Condition: null,
+                WhenTrue: null,
+                WhenFalse: null,
+                merged);
+        }
+
+        return node with
+        {
+            WhenTrue = whenTrue,
+            WhenFalse = whenFalse
+        };
+    }
+
+    private static bool TryMergeConditionalConstructorValues(
+        string condition,
+        TypeMapperControlFlowNode whenTrue,
+        TypeMapperControlFlowNode whenFalse,
+        INamedTypeSymbol mapperType,
+        out TypeMapperMappingModel merged)
+    {
+        merged = default;
+
+        if (whenTrue.Leaf is not { } trueMapping ||
+            whenFalse.Leaf is not { } falseMapping ||
+            trueMapping.MapNewDirectExpression is not null ||
+            falseMapping.MapNewDirectExpression is not null ||
+            trueMapping.MapNewFactory is not null ||
+            falseMapping.MapNewFactory is not null ||
+            trueMapping.MapNewConstructor is not
+                { } trueConstructor ||
+            falseMapping.MapNewConstructor is not
+                { } falseConstructor ||
+            !StringComparer.Ordinal.Equals(
+                trueConstructor.ConstructedTypeName,
+                falseConstructor.ConstructedTypeName) ||
+            trueConstructor.Arguments.Length !=
+                falseConstructor.Arguments.Length ||
+            !trueMapping.MapNewMemberMappings.SequenceEqual(
+                falseMapping.MapNewMemberMappings))
+        {
+            return false;
+        }
+
+        var lastDifferentArgumentIndex = -1;
+
+        for (var index = 0;
+             index < trueConstructor.Arguments.Length;
+             index++)
+        {
+            var trueArgument =
+                trueConstructor.Arguments[index];
+            var falseArgument =
+                falseConstructor.Arguments[index];
+
+            if (trueArgument.Equals(falseArgument))
+            {
+                continue;
+            }
+
+            if (!CanMergeConditionalConstructorArgument(
+                    trueArgument,
+                    falseArgument))
+            {
+                return false;
+            }
+
+            lastDifferentArgumentIndex = index;
+        }
+
+        if (lastDifferentArgumentIndex < 0)
+        {
+            return false;
+        }
+
+        var usedNames =
+            ConventionConstructorMappingPlanner
+                .BuildUsedValueLocalNames(mapperType);
+
+        CollectMapNewGeneratedLocalNames(
+            trueMapping,
+            usedNames);
+        CollectMapNewGeneratedLocalNames(
+            falseMapping,
+            usedNames);
+
+        var arguments =
+            ImmutableArray.CreateBuilder<
+                TypeMapperConstructorArgumentMappingModel>(
+                trueConstructor.Arguments.Length);
+
+        for (var index = 0;
+             index < trueConstructor.Arguments.Length;
+             index++)
+        {
+            var trueArgument =
+                trueConstructor.Arguments[index];
+
+            if (index > lastDifferentArgumentIndex ||
+                trueArgument.Equals(
+                    falseConstructor.Arguments[index]) &&
+                trueArgument.ValueLocalName is not null)
+            {
+                arguments.Add(trueArgument);
+                continue;
+            }
+
+            var falseArgument =
+                falseConstructor.Arguments[index];
+            var valueLocalName =
+                trueArgument.ValueLocalName ??
+                AllocateUserLocalName(
+                    trueArgument.ParameterName,
+                    usedNames);
+            var valueExpression =
+                trueArgument.Equals(falseArgument)
+                    ? GetUncachedConstructorArgumentValue(
+                        trueArgument)
+                    : BuildConditionalValueExpression(
+                        condition,
+                        GetUncachedConstructorArgumentValue(
+                            trueArgument),
+                        GetUncachedConstructorArgumentValue(
+                            falseArgument));
+
+            arguments.Add(
+                trueArgument with
+                {
+                    SourceMemberName = string.Empty,
+                    ValueLocalName = valueLocalName,
+                    ExplicitValueExpression =
+                        valueExpression,
+                    ValueLocalTypeName =
+                        trueArgument.TargetTypeName ??
+                        falseArgument.TargetTypeName ??
+                        trueArgument.ValueLocalTypeName ??
+                        falseArgument.ValueLocalTypeName
+                });
+        }
+
+        merged = trueMapping with
+        {
+            MapNewConstructor =
+                trueConstructor with
+                {
+                    Arguments = arguments.ToImmutable()
+                }
+        };
+
+        return true;
+    }
+
+    private static void CollectMapNewGeneratedLocalNames(
+        TypeMapperMappingModel mapping,
+        HashSet<string> result)
+    {
+        if (mapping.MapNewFactory is { } factory)
+        {
+            AddUsedLocalName(
+                result,
+                factory.DestinationLocalName);
+
+            if (factory.NullableValueLocalName is
+                { } nullableValueLocalName)
+            {
+                AddUsedLocalName(
+                    result,
+                    nullableValueLocalName);
+            }
+        }
+
+        if (mapping.MapNewConstructor is
+            { } constructor)
+        {
+            foreach (var argument in constructor.Arguments)
+            {
+                if (argument.ValueLocalName is
+                    { } valueLocalName)
+                {
+                    AddUsedLocalName(
+                        result,
+                        valueLocalName);
+                }
+            }
+        }
+
+        foreach (var memberMapping in
+                 mapping.MapNewMemberMappings)
+        {
+            if (memberMapping.SourceValueLocalName is
+                { } sourceValueLocalName)
+            {
+                AddUsedLocalName(
+                    result,
+                    sourceValueLocalName);
+            }
+
+            if (memberMapping.ValueLocalName is
+                { } valueLocalName)
+            {
+                AddUsedLocalName(
+                    result,
+                    valueLocalName);
+            }
+        }
+    }
+
+    private static void AddUsedLocalName(
+        HashSet<string> result,
+        string name)
+    {
+        result.Add(
+            name.Length > 0 && name[0] == '@'
+                ? name.Substring(1)
+                : name);
+    }
+
+    private static bool
+        CanMergeConditionalConstructorArgument(
+            TypeMapperConstructorArgumentMappingModel whenTrue,
+            TypeMapperConstructorArgumentMappingModel whenFalse)
+    {
+        if (!StringComparer.Ordinal.Equals(
+                whenTrue.ParameterName,
+                whenFalse.ParameterName) ||
+            (whenTrue.ValueLocalName is null) !=
+            (whenFalse.ValueLocalName is null) ||
+            whenTrue.ValueLocalName is not null &&
+            !StringComparer.Ordinal.Equals(
+                whenTrue.ValueLocalName,
+                whenFalse.ValueLocalName))
+        {
+            return false;
+        }
+
+        var trueTargetType =
+            whenTrue.TargetTypeName ??
+            whenTrue.ValueLocalTypeName;
+        var falseTargetType =
+            whenFalse.TargetTypeName ??
+            whenFalse.ValueLocalTypeName;
+
+        return trueTargetType is null ||
+               falseTargetType is null ||
+               StringComparer.Ordinal.Equals(
+                   trueTargetType,
+                   falseTargetType);
+    }
+
+    private static string
+        GetUncachedConstructorArgumentValue(
+            TypeMapperConstructorArgumentMappingModel argument)
+    {
+        if (argument.ExplicitValueExpression is
+            { } explicitValue)
+        {
+            return explicitValue;
+        }
+
+        if (argument.SourceMemberName.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "Constructor argument requires a value.");
+        }
+
+        return
+            $"source!.{EscapeIdentifier(argument.SourceMemberName)}";
+    }
+
+    private static string BuildConditionalValueExpression(
+        string condition,
+        string whenTrue,
+        string whenFalse)
+    {
+        var expression = SyntaxFactory.ParseExpression(
+            ParenthesizeConditionalExpression(condition) +
+            " ? " +
+            ParenthesizeConditionalExpression(whenTrue) +
+            " : " +
+            ParenthesizeConditionalExpression(whenFalse));
+
+        return expression
+            .WithoutTrivia()
+            .NormalizeWhitespace()
+            .ToFullString();
+    }
+
+    private static string ParenthesizeConditionalExpression(
+        string expression)
+    {
+        return SyntaxFactory.ParseExpression(expression) is
+            ConditionalExpressionSyntax
+                ? $"({expression})"
+                : expression;
+    }
+
+    private static TypeMapperMappingModel CombineModeMappings(
+        TypeMapperMappingModel mapNew,
+        TypeMapperMappingModel mapExisting)
+    {
+        return mapNew with
+        {
+            MapExistingDirectExpression =
+                mapExisting.MapExistingDirectExpression,
+            MapExistingKind =
+                mapExisting.MapExistingKind,
+            MapExistingDestinationLocalName =
+                mapExisting.MapExistingDestinationLocalName,
+            MapExistingMemberMappings =
+                mapExisting.MapExistingMemberMappings,
+            ControlFlow = null
+        };
     }
 
     private static TypeMapperMappingModel FindFirstLeaf(
@@ -906,19 +1249,25 @@ internal static class TypeMapperPipeline
 
         if (leaf.MapNewFactory is { } factory)
         {
-            result.Add(factory.DestinationLocalName);
+            AddUsedLocalName(
+                result,
+                factory.DestinationLocalName);
 
             if (factory.NullableValueLocalName is
                 { } nullableValueLocalName)
             {
-                result.Add(nullableValueLocalName);
+                AddUsedLocalName(
+                    result,
+                    nullableValueLocalName);
             }
         }
 
         if (leaf.MapExistingDestinationLocalName is
             { } destinationLocalName)
         {
-            result.Add(destinationLocalName);
+            AddUsedLocalName(
+                result,
+                destinationLocalName);
         }
 
         if (leaf.MapNewConstructor is { } constructor)
@@ -928,7 +1277,9 @@ internal static class TypeMapperPipeline
                 if (argument.ValueLocalName is
                     { } valueLocalName)
                 {
-                    result.Add(valueLocalName);
+                    AddUsedLocalName(
+                        result,
+                        valueLocalName);
                 }
             }
         }
@@ -940,13 +1291,17 @@ internal static class TypeMapperPipeline
             if (mapping.SourceValueLocalName is
                 { } sourceValueLocalName)
             {
-                result.Add(sourceValueLocalName);
+                AddUsedLocalName(
+                    result,
+                    sourceValueLocalName);
             }
 
             if (mapping.ValueLocalName is
                 { } valueLocalName)
             {
-                result.Add(valueLocalName);
+                AddUsedLocalName(
+                    result,
+                    valueLocalName);
             }
         }
     }
