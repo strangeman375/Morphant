@@ -117,14 +117,35 @@ internal static class ConventionConstructorMappingPlanner
             }
 
             explicitParameterNames.Add(parameter.Name);
+
+            string explicitValueExpression;
+
+            if (mapping.NestedMap is { } nestedMap)
+            {
+                if (!TemplateNestedMapMappingPlanner
+                    .TryBuildValueExpression(
+                        nestedMap,
+                        parameter.Type.WithNullableAnnotation(
+                            parameter.NullableAnnotation),
+                        out explicitValueExpression))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                explicitValueExpression =
+                    mapping.ExplicitValueExpression ??
+                    throw new InvalidOperationException(
+                        "Explicit constructor mapping requires a value.");
+            }
+
             explicitArguments.Add(
                 new TypeMapperConstructorArgumentMappingModel(
                     parameter.Name,
                     SourceMemberName: string.Empty,
                     ValueLocalName: null,
-                    mapping.ExplicitValueExpression ??
-                    throw new InvalidOperationException(
-                        "Explicit constructor mapping requires a value."),
+                    explicitValueExpression,
                     ValueLocalTypeName:
                         BuildExplicitValueLocalTypeName(
                             parameter)));
@@ -590,7 +611,9 @@ internal static class ConventionConstructorMappingPlanner
                     $"private static {destinationTypeName} " +
                     "__MorphantConstructorTypeCompatibilityProbe(");
                 writer.Indent();
-                writer.Line($"{sourceTypeName} source)");
+                writer.Line($"{sourceTypeName} source,");
+                writer.Line(
+                    "global::Morphant.MappingContext context)");
                 writer.Unindent();
                 writer.Line("{");
                 writer.Indent();

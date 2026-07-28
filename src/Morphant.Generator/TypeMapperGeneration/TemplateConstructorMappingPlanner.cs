@@ -216,6 +216,42 @@ internal static class TemplateConstructorMappingPlanner
                 continue;
             }
 
+            if (TemplateNestedMapMappingPlanner.TryRecognize(
+                    templateArgument.Expression,
+                    sourceType,
+                    compilation,
+                    mapperType,
+                    templateSemanticModel,
+                    rewriteExpression,
+                    cancellationToken,
+                    out var nestedMap))
+            {
+                if (nestedMap is not { } nestedMapValue ||
+                    !TemplateNestedMapMappingPlanner
+                        .TryBuildValueExpression(
+                            nestedMapValue,
+                            destinationParameter.Type
+                                .WithNullableAnnotation(
+                                    destinationParameter
+                                        .NullableAnnotation),
+                            out var nestedMapExpression))
+                {
+                    return null;
+                }
+
+                arguments.Add(
+                    new TypeMapperConstructorArgumentMappingModel(
+                        destinationParameter.Name,
+                        SourceMemberName: string.Empty,
+                        ValueLocalName: null,
+                        nestedMapExpression,
+                        ValueLocalTypeName:
+                            ConventionConstructorMappingPlanner
+                                .BuildExplicitValueLocalTypeName(
+                                    destinationParameter)));
+                continue;
+            }
+
             arguments.Add(
                 new TypeMapperConstructorArgumentMappingModel(
                     destinationParameter.Name,
@@ -404,7 +440,9 @@ internal static class TemplateConstructorMappingPlanner
             {
                 writer.Line(
                     $"private {destinationTypeName} " +
-                    $"{probeMethodName}({sourceTypeName} source)");
+                    $"{probeMethodName}(" +
+                    $"{sourceTypeName} source, " +
+                    "global::Morphant.MappingContext context)");
                 writer.Line("{");
                 writer.Indent();
 

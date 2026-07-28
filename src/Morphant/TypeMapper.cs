@@ -87,6 +87,6 @@ public abstract class TypeMapper
     protected static MapMarker<T> Map<T>(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    protected static MapMarker<T> Map<T>(object? source, T? destination) =>
+    protected static MapMarker<T> Map<T>(object? source, object? destination) =>
         throw new RuntimeInvocationNotSupportedException();
 }

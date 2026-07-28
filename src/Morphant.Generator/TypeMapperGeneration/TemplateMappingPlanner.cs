@@ -151,15 +151,45 @@ internal static class TemplateMappingPlanner
                 continue;
             }
 
+            string explicitValueExpression;
+
+            if (TemplateNestedMapMappingPlanner.TryRecognize(
+                    value,
+                    registration.SourceType,
+                    compilation,
+                    mapperType,
+                    semanticModel,
+                    expression => RewriteSource(
+                        expression,
+                        parameterSymbol,
+                        semanticModel),
+                    cancellationToken,
+                    out var nestedMap))
+            {
+                if (nestedMap is not { } nestedMapValue ||
+                    !TemplateNestedMapMappingPlanner
+                        .TryBuildValueExpression(
+                            nestedMapValue,
+                            member.Type,
+                            out explicitValueExpression))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                explicitValueExpression = RewriteSource(
+                    value,
+                    parameterSymbol,
+                    semanticModel);
+            }
+
             var mapping = new TypeMapperMemberMappingModel(
                 SourceMemberName: string.Empty,
                 member.Name,
                 member.IsRequired,
                 SourceValueLocalName: null,
-                RewriteSource(
-                    value,
-                    parameterSymbol,
-                    semanticModel));
+                explicitValueExpression);
 
             memberMappings.Add(
                 new TemplateMemberMappingModel(
@@ -178,6 +208,9 @@ internal static class TemplateMappingPlanner
 
         if (TemplateByConventionMappingPlanner.TryBuild(
                 objectCreation,
+                registration.SourceType,
+                compilation,
+                mapperType,
                 semanticModel,
                 expression => RewriteSource(
                     expression,
@@ -381,6 +414,8 @@ internal static class TemplateMappingPlanner
                 {
                     return new TemplateWritableMember(
                         property.Name,
+                        property.Type.WithNullableAnnotation(
+                            property.NullableAnnotation),
                         property.IsRequired,
                         CanAssign: !setter.IsInitOnly);
                 }
@@ -400,6 +435,8 @@ internal static class TemplateMappingPlanner
                 {
                     return new TemplateWritableMember(
                         field.Name,
+                        field.Type.WithNullableAnnotation(
+                            field.NullableAnnotation),
                         field.IsRequired,
                         CanAssign: true);
                 }
@@ -943,6 +980,7 @@ internal static class TemplateMappingPlanner
 
     private readonly record struct TemplateWritableMember(
         string Name,
+        ITypeSymbol Type,
         bool IsRequired,
         bool CanAssign);
 }

@@ -23,11 +23,11 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → вложенный `Map()` в `Template()`.** Следующий самостоятельный срез
-добавляет generic и выводимые перегрузки `Map()` для создания нового вложенного
-объекта и маппинга в существующий. До написания тестов нужно согласовать выбор
-вложенной mapping-пары, null-handling на пока не реализованных настройках и
-границу между прямым member-выражением и рекурсивным вызовом generated mapper-а.
+**Фаза 3 → Template с текущим destination.** Следующий самостоятельный срез
+добавляет вторую перегрузку
+`Template((source, destination) => ...)`. Перед тестами нужно согласовать её
+семантику во внешнем `MapNew`, nullable-контракт destination-параметра и
+отношение к construction strategies.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -364,10 +364,42 @@ TDD-среза, но детали могут уточняться перед р�
   automatic-фазу и порядок параметров. `Ignore()` опускает только разрешённый
   параметр. В `MapExisting` вся constructor-часть и её выражения игнорируются.
 
-- [ ] Вложенный `Map()`.
+- [x] Вложенный `Map()`.
 
-  Generic и выводимые перегрузки, создание нового вложенного объекта и маппинг
-  в существующий.
+  Поддерживаются прямые вызовы четырёх форм:
+  `Map(source)`, `Map(source, destination)`, `Map<T>(source)` и
+  `Map<T>(source, destination)`. Форма без существующего destination всегда
+  вызывает вложенный `MapNew`, а форма с ним — вложенный `MapExisting` и
+  присваивает возвращённый результат обратно. Это не зависит от режима
+  внешнего mapping-а.
+
+  Source-тип mapping-пары определяется по статическому типу первого аргумента.
+  Destination берётся из целевого member/constructor parameter для non-generic
+  формы либо из явно указанного `T`; runtime-типы аргументов на выбор пары не
+  влияют. Nullable-аннотации сохраняются, включая method-return expressions,
+  nullable generic arguments и типизированный `null`. `Map(null)` без
+  типизирующего cast остаётся неподдерживаемым.
+
+  Все вложенные вызовы делегируются в
+  `context.Mapper.Map<TSource, TDestination>(...)` без внешних null-проверок,
+  подстановок или обработки результата. Для existing-формы порядок
+  вычисления named arguments сохраняется даже при перестановке
+  `destination:` перед `source:`.
+
+  Внешние initializer mappings работают в уже согласованном порядке Template
+  в обоих режимах и после factory creation. Explicit destination-constructor
+  и `ByConvention(..., members)` mappings работают только в `MapNew`, как и
+  остальная constructor-часть. Настоящий marker распознаётся по API
+  `TypeMapper`; одноимённые пользовательские методы остаются обычными
+  expressions.
+
+  Generic existing-overload принимает второй аргумент как `object?`, поэтому
+  C# не может случайно вывести `T` из существующего destination:
+  `Map(source, destination)` остаётся target-inferred формой, а `T` задаётся
+  только явно написанным `Map<T>(...)`.
+
+  Conditional expressions, локальные marker-значения и вложение `Map()` в
+  более сложное выражение остаются до среза управляющих конструкций.
 
 - [ ] Template с текущим destination.
 

@@ -12,6 +12,9 @@ internal static class TemplateByConventionMappingPlanner
 
     public static bool TryBuild(
         ImplicitObjectCreationExpressionSyntax objectCreation,
+        ITypeSymbol sourceType,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
         SemanticModel semanticModel,
         Func<ExpressionSyntax, string> rewriteExpression,
         CancellationToken cancellationToken,
@@ -119,6 +122,28 @@ internal static class TemplateByConventionMappingPlanner
                         markerKind,
                         ExplicitValueExpression: null));
             }
+            else if (TemplateNestedMapMappingPlanner.TryRecognize(
+                         value,
+                         sourceType,
+                         compilation,
+                         mapperType,
+                         semanticModel,
+                         rewriteExpression,
+                         cancellationToken,
+                         out var nestedMap))
+            {
+                if (nestedMap is not { } nestedMapValue)
+                {
+                    return true;
+                }
+
+                result.Add(
+                    new TemplateConstructorMemberMappingModel(
+                        memberName.Identifier.ValueText,
+                        MarkerKind: null,
+                        ExplicitValueExpression: null,
+                        nestedMapValue));
+            }
             else
             {
                 result.Add(
@@ -217,4 +242,5 @@ internal static class TemplateByConventionMappingPlanner
 internal readonly record struct TemplateConstructorMemberMappingModel(
     string ParameterName,
     TemplateMemberMarkerKind? MarkerKind,
-    string? ExplicitValueExpression);
+    string? ExplicitValueExpression,
+    TemplateNestedMapMapping? NestedMap = null);
