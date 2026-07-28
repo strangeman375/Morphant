@@ -323,10 +323,14 @@ internal static class TypeMapperPipeline
             templateMapping,
             destinationPlan.MemberType,
             cancellationToken);
+        var factoryMapNewMemberMappings =
+            BuildFactoryMapNewMemberMappings(
+                memberMappings,
+                templateMapping);
         var factoryMapping = BuildFactoryMapping(
             destinationPlan,
             templateMapping,
-            memberMappings,
+            factoryMapNewMemberMappings,
             mapperType);
         var constructorMapping = BuildConstructorMapping(
             registration.SourceType,
@@ -336,10 +340,15 @@ internal static class TypeMapperPipeline
             compilation,
             mapperType,
             cancellationToken);
+        var mapExistingMemberMappings =
+            BuildMapExistingMemberMappings(
+                memberMappings.MapExisting,
+                templateMapping,
+                mapperType);
         var mapExistingDestinationLocalName =
             destinationPlan.MapExistingKind ==
                 TypeMapperMapExistingKind.NullableValue &&
-            !memberMappings.MapExisting.IsEmpty
+            !mapExistingMemberMappings.IsEmpty
                 ? AllocateDestinationValueLocalName(mapperType)
                 : null;
 
@@ -361,17 +370,97 @@ internal static class TypeMapperPipeline
             destinationPlan.MapExistingKind,
             mapExistingDestinationLocalName,
             factoryMapping is not null
-                ? memberMappings.MapExisting
+                ? factoryMapNewMemberMappings
                 : constructorMapping?.MapNewMemberMappings ??
                   memberMappings.MapNew,
-            memberMappings.MapExisting);
+            mapExistingMemberMappings);
+    }
+
+    private static ImmutableArray<TypeMapperMemberMappingModel>
+        BuildFactoryMapNewMemberMappings(
+            ConventionMemberMappingPlan memberMappings,
+            TemplateMappingPlan? template)
+    {
+        if (template is not
+            {
+                ConstructionKind:
+                    TemplateConstructionKind.ByFactory
+            })
+        {
+            return [];
+        }
+
+        var assignableMemberNames =
+            new HashSet<string>(
+                memberMappings.MapExisting.Select(
+                    static mapping =>
+                        mapping.DestinationMemberName),
+                StringComparer.Ordinal);
+
+        return memberMappings.MapNew
+            .Where(mapping =>
+                assignableMemberNames.Contains(
+                    mapping.DestinationMemberName))
+            .ToImmutableArray();
+    }
+
+    private static ImmutableArray<TypeMapperMemberMappingModel>
+        BuildMapExistingMemberMappings(
+            ImmutableArray<TypeMapperMemberMappingModel> mappings,
+            TemplateMappingPlan? template,
+            INamedTypeSymbol mapperType)
+    {
+        if (template is not
+            {
+                HasDestinationParameter: true,
+                MapExistingDirectExpression: null
+            })
+        {
+            return mappings;
+        }
+
+        var result = mappings.ToArray();
+        var usedNames =
+            ConventionConstructorMappingPlanner
+                .BuildUsedValueLocalNames(mapperType);
+
+        usedNames.Add("destination");
+
+        for (var index = 0; index < result.Length; index++)
+        {
+            var mapping = result[index];
+
+            if (mapping.ExplicitValueExpression is null)
+            {
+                continue;
+            }
+
+            if (mapping.ExplicitValueTypeName is null)
+            {
+                throw new InvalidOperationException(
+                    "Explicit member mapping requires a value type.");
+            }
+
+            result[index] = mapping with
+            {
+                ValueLocalName =
+                    ConventionConstructorMappingPlanner
+                        .MakeUniqueValueLocalName(
+                            "template",
+                            mapping.DestinationMemberName,
+                            usedNames)
+            };
+        }
+
+        return result.ToImmutableArray();
     }
 
     private static TypeMapperFactoryMappingModel?
         BuildFactoryMapping(
             DestinationPlan destinationPlan,
             TemplateMappingPlan? template,
-            ConventionMemberMappingPlan memberMappings,
+            ImmutableArray<TypeMapperMemberMappingModel>
+                mapNewMemberMappings,
             INamedTypeSymbol mapperType)
     {
         if (template is not
@@ -389,7 +478,7 @@ internal static class TypeMapperPipeline
             AllocateFactoryDestinationLocalName(mapperType),
             destinationPlan.MapExistingKind ==
                 TypeMapperMapExistingKind.NullableValue &&
-            !memberMappings.MapExisting.IsEmpty
+            !mapNewMemberMappings.IsEmpty
                 ? AllocateDestinationValueLocalName(mapperType)
                 : null);
     }

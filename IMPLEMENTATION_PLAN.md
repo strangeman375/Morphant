@@ -23,11 +23,11 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → Template с текущим destination.** Следующий самостоятельный срез
-добавляет вторую перегрузку
-`Template((source, destination) => ...)`. Перед тестами нужно согласовать её
-семантику во внешнем `MapNew`, nullable-контракт destination-параметра и
-отношение к construction strategies.
+**Фаза 3 → Управляющие конструкции DSL.** Следующий самостоятельный срез
+добавляет conditional expressions, простые block-lambda, локальные переменные
+и `with`-overlay. Перед тестами нужно согласовать точную границу допустимого
+control flow, порядок вычислений и сочетание ветвлений с constructor/member
+markers.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -401,10 +401,34 @@ TDD-среза, но детали могут уточняться перед р�
   Conditional expressions, локальные marker-значения и вложение `Map()` в
   более сложное выражение остаются до среза управляющих конструкций.
 
-- [ ] Template с текущим destination.
+- [x] Template с предыдущим destination.
 
-  Вторая перегрузка `Template((source, destination) => ...)`. Отдельно
-  согласовать её отношение к MapNew.
+  Поддерживается вторая expression-lambda перегрузка
+  `Template((source, destination) => ...)`. Параметр `destination` означает
+  предыдущее состояние: в `MapNew` каждое его использование заменяется на
+  типизированный `default` (`null` для reference destination, нулевое значение
+  для struct), а в `MapExisting` — на переданный destination. Direct-template
+  expression выполняется в обоих режимах с соответствующим значением.
+
+  В `MapNew` parameterless/explicit constructor, `ByConvention()` и
+  `ByFactory()` сохраняют обычную семантику создания, но все их ссылки на
+  destination получают `default`. В `MapExisting` construction-часть и её
+  выражения не вычисляются. Init-only outer member также применяется только в
+  `MapNew`.
+
+  В `MapExisting` все explicit assignable member expressions сначала
+  вычисляются в порядке template initializer-а и сохраняются в типизированные
+  collision-safe локальные переменные. Только после этого выполняются внешние
+  присваивания в полном пользовательском порядке, включая `Auto()`, а затем
+  оставшиеся convention mappings. Поэтому более позднее explicit-выражение
+  видит предыдущее состояние destination, а не результат более раннего
+  mapping-а. `Ignore()` по-прежнему исключает member из обоих режимов.
+
+  Правило действует для reference, value и nullable value destinations.
+  Nullable struct сохраняет текущую раннюю null-проверку и изменяемую локальную
+  копию. Вложенный `Map()` отдельно переносится для каждого внешнего режима:
+  его source и existing-destination arguments также получают `default` либо
+  переданный destination согласно описанному правилу.
 
 - [ ] Управляющие конструкции DSL.
 

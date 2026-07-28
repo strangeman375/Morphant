@@ -251,7 +251,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Leaves_later_template_forms_for_their_own_slices()
+    public async Task Leaves_block_lambdas_for_the_control_flow_slice()
     {
         // lang=c#
         const string source =
@@ -283,11 +283,6 @@ namespace TestCase
         public int Value { get; set; }
     }
 
-    public sealed class ExistingDestination
-    {
-        public int Value { get; set; }
-    }
-
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
@@ -304,12 +299,6 @@ namespace TestCase
                         Value = s.Value + 1
                     };
                 });
-
-            builder.Map<Source, ExistingDestination>()
-                .Template((s, destination) => new()
-                {
-                    Value = s.Value + destination!.Value
-                });
         }
     }
 }
@@ -320,15 +309,6 @@ namespace TestCase.Morphant.Generated
         global::Morphant.Members.ConstructorMember<int> value);
 
     internal sealed record BlockDestinationMorphantTemplate
-    {
-        public global::Morphant.Members.Member<int> Value
-        {
-            get => null!;
-            set { }
-        }
-    }
-
-    internal sealed record ExistingDestinationMorphantTemplate
     {
         public global::Morphant.Members.Member<int> Value
         {
@@ -349,8 +329,7 @@ namespace TestCase
 {
     public partial class TestMapper :
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ConstructorDestination>,
-        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.BlockDestination>,
-        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ExistingDestination>
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.BlockDestination>
     {
         /// <inheritdoc/>
         global::TestCase.ConstructorDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ConstructorDestination>.Map(
@@ -393,28 +372,6 @@ namespace TestCase
 
             return destination;
         }
-
-        /// <inheritdoc/>
-        global::TestCase.ExistingDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ExistingDestination>.Map(
-            global::TestCase.Source? source,
-            global::Morphant.MappingContext context)
-        {
-            return new global::TestCase.ExistingDestination()
-            {
-                Value = source!.Value
-            };
-        }
-
-        /// <inheritdoc/>
-        global::TestCase.ExistingDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ExistingDestination>.Map(
-            global::TestCase.Source? source,
-            global::TestCase.ExistingDestination? destination,
-            global::Morphant.MappingContext context)
-        {
-            destination!.Value = source!.Value;
-
-            return destination;
-        }
     }
 }
 """;
@@ -437,14 +394,6 @@ namespace TestCase
                     "global::TestCase.ConstructorDestination?",
                     "global::TestCase.Morphant.Generated." +
                     "ConstructorDestinationMorphantTemplate")
-            ),
-            (
-                "Morphant.Generated.TemplateExtension.TestCase_ExistingDestination.g.cs",
-                BuildExpectedExtension(
-                    "global::TestCase.ExistingDestination",
-                    "global::TestCase.ExistingDestination?",
-                    "global::TestCase.Morphant.Generated." +
-                    "ExistingDestinationMorphantTemplate")
             ),
             (
                 "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",

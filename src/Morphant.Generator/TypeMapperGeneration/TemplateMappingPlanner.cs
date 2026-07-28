@@ -62,7 +62,8 @@ internal static class TemplateMappingPlanner
     {
         if (!TryGetLambda(
                 registration.TemplateSyntax,
-                out var parameter,
+                out var sourceParameter,
+                out var destinationParameter,
                 out var body))
         {
             return null;
@@ -72,8 +73,9 @@ internal static class TemplateMappingPlanner
             registration.Syntax.SyntaxTree);
 
         if (semanticModel.GetDeclaredSymbol(
-                parameter,
-                cancellationToken) is not IParameterSymbol parameterSymbol ||
+                sourceParameter,
+                cancellationToken) is not
+                IParameterSymbol sourceParameterSymbol ||
             ContainsConfigureLocalCapture(
                 body,
                 semanticModel,
@@ -82,22 +84,70 @@ internal static class TemplateMappingPlanner
             return null;
         }
 
+        IParameterSymbol? destinationParameterSymbol = null;
+
+        if (destinationParameter is not null)
+        {
+            if (semanticModel.GetDeclaredSymbol(
+                    destinationParameter,
+                    cancellationToken) is not
+                    IParameterSymbol declaredDestinationParameter)
+            {
+                return null;
+            }
+
+            destinationParameterSymbol =
+                declaredDestinationParameter;
+        }
+
+        var mapNewDestinationExpression =
+            destinationParameterSymbol is null
+                ? null
+                : SyntaxFactory.ParseExpression(
+                    "default(" +
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedMaybeNullTypeName(
+                            registration.DestinationType) +
+                    ")");
+        var mapExistingDestinationExpression =
+            destinationParameterSymbol is null
+                ? null
+                : SyntaxFactory.IdentifierName("destination");
+
+        string RewriteMapNew(ExpressionSyntax expression) =>
+            RewriteParameters(
+                expression,
+                sourceParameterSymbol,
+                destinationParameterSymbol,
+                mapNewDestinationExpression,
+                semanticModel);
+
+        string RewriteMapExisting(ExpressionSyntax expression) =>
+            RewriteParameters(
+                expression,
+                sourceParameterSymbol,
+                destinationParameterSymbol,
+                mapExistingDestinationExpression,
+                semanticModel);
+
         if (registration.DestinationType is INamedTypeSymbol namedDestination &&
             DirectDestinationTypePolicy.IsDirect(namedDestination))
         {
-            var expression = RewriteSource(
-                body,
-                parameterSymbol,
-                semanticModel);
+            var mapNewDirectExpression =
+                RewriteMapNew(body);
 
             return new TemplateMappingPlan(
-                expression,
-                expression,
+                mapNewDirectExpression,
+                destinationParameterSymbol is null
+                    ? mapNewDirectExpression
+                    : RewriteMapExisting(body),
                 [],
                 TemplateConstructionKind.None,
                 Constructor: null,
                 FactoryExpression: null,
-                ConventionConstructorMappings: []);
+                ConventionConstructorMappings: [],
+                HasDestinationParameter:
+                    destinationParameterSymbol is not null);
         }
 
         if (memberType is null ||
@@ -151,52 +201,65 @@ internal static class TemplateMappingPlanner
                 continue;
             }
 
-            string explicitValueExpression;
-
-            if (TemplateNestedMapMappingPlanner.TryRecognize(
+            if (!TryBuildExplicitValueExpression(
                     value,
+                    member.Type,
                     registration.SourceType,
                     compilation,
                     mapperType,
                     semanticModel,
-                    expression => RewriteSource(
-                        expression,
-                        parameterSymbol,
-                        semanticModel),
+                    RewriteMapNew,
                     cancellationToken,
-                    out var nestedMap))
+                    out var mapNewValueExpression))
             {
-                if (nestedMap is not { } nestedMapValue ||
-                    !TemplateNestedMapMappingPlanner
-                        .TryBuildValueExpression(
-                            nestedMapValue,
-                            member.Type,
-                            out explicitValueExpression))
-                {
-                    return null;
-                }
-            }
-            else
-            {
-                explicitValueExpression = RewriteSource(
-                    value,
-                    parameterSymbol,
-                    semanticModel);
+                return null;
             }
 
-            var mapping = new TypeMapperMemberMappingModel(
+            var mapExistingValueExpression =
+                mapNewValueExpression;
+
+            if (destinationParameterSymbol is not null &&
+                !TryBuildExplicitValueExpression(
+                    value,
+                    member.Type,
+                    registration.SourceType,
+                    compilation,
+                    mapperType,
+                    semanticModel,
+                    RewriteMapExisting,
+                    cancellationToken,
+                    out mapExistingValueExpression))
+            {
+                return null;
+            }
+
+            var explicitValueTypeName =
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    member.Type);
+            var mapNewMapping = new TypeMapperMemberMappingModel(
                 SourceMemberName: string.Empty,
                 member.Name,
                 member.IsRequired,
                 SourceValueLocalName: null,
-                explicitValueExpression);
+                mapNewValueExpression,
+                explicitValueTypeName);
+            TypeMapperMemberMappingModel? mapExistingMapping =
+                member.CanAssign
+                    ? new TypeMapperMemberMappingModel(
+                        SourceMemberName: string.Empty,
+                        member.Name,
+                        member.IsRequired,
+                        SourceValueLocalName: null,
+                        mapExistingValueExpression,
+                        explicitValueTypeName)
+                    : null;
 
             memberMappings.Add(
                 new TemplateMemberMappingModel(
                     member.Name,
                     TemplateMemberMappingKind.Explicit,
-                    mapping,
-                    member.CanAssign ? mapping : null));
+                    mapNewMapping,
+                    mapExistingMapping));
         }
 
         var constructionKind =
@@ -212,10 +275,7 @@ internal static class TemplateMappingPlanner
                 compilation,
                 mapperType,
                 semanticModel,
-                expression => RewriteSource(
-                    expression,
-                    parameterSymbol,
-                    semanticModel),
+                RewriteMapNew,
                 cancellationToken,
                 out conventionConstructorMappings))
         {
@@ -225,10 +285,7 @@ internal static class TemplateMappingPlanner
         else if (TemplateByFactoryMappingPlanner.TryBuild(
                      objectCreation,
                      semanticModel,
-                     expression => RewriteSource(
-                         expression,
-                         parameterSymbol,
-                         semanticModel),
+                     RewriteMapNew,
                      cancellationToken,
                      out factoryExpression))
         {
@@ -250,10 +307,7 @@ internal static class TemplateMappingPlanner
                 compilation,
                 mapperType,
                 semanticModel,
-                expression => RewriteSource(
-                    expression,
-                    parameterSymbol,
-                    semanticModel),
+                RewriteMapNew,
                 cancellationToken);
         }
 
@@ -264,15 +318,19 @@ internal static class TemplateMappingPlanner
             constructionKind,
             constructor,
             factoryExpression,
-            conventionConstructorMappings);
+            conventionConstructorMappings,
+            HasDestinationParameter:
+                destinationParameterSymbol is not null);
     }
 
     private static bool TryGetLambda(
         InvocationExpressionSyntax? templateInvocation,
-        out ParameterSyntax parameter,
+        out ParameterSyntax sourceParameter,
+        out ParameterSyntax? destinationParameter,
         out ExpressionSyntax body)
     {
-        parameter = null!;
+        sourceParameter = null!;
+        destinationParameter = null;
         body = null!;
 
         if (templateInvocation is null ||
@@ -290,15 +348,20 @@ internal static class TemplateMappingPlanner
                     Parameter: var simpleParameter,
                     ExpressionBody: { } expression
                 }:
-                parameter = simpleParameter;
+                sourceParameter = simpleParameter;
                 body = expression;
                 return true;
 
             case ParenthesizedLambdaExpressionSyntax parenthesized
-                when parenthesized.ParameterList.Parameters.Count == 1 &&
+                when parenthesized.ParameterList.Parameters.Count
+                         is 1 or 2 &&
                      parenthesized.ExpressionBody is { } expression:
-                parameter =
+                sourceParameter =
                     parenthesized.ParameterList.Parameters[0];
+                destinationParameter =
+                    parenthesized.ParameterList.Parameters.Count == 2
+                        ? parenthesized.ParameterList.Parameters[1]
+                        : null;
                 body = expression;
                 return true;
 
@@ -307,19 +370,57 @@ internal static class TemplateMappingPlanner
         }
     }
 
-    private static string RewriteSource(
+    private static bool TryBuildExplicitValueExpression(
         ExpressionSyntax expression,
-        IParameterSymbol parameter,
+        ITypeSymbol targetDestinationType,
+        ITypeSymbol containingSourceType,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        SemanticModel semanticModel,
+        Func<ExpressionSyntax, string> rewriteExpression,
+        CancellationToken cancellationToken,
+        out string valueExpression)
+    {
+        valueExpression = string.Empty;
+
+        if (!TemplateNestedMapMappingPlanner.TryRecognize(
+                expression,
+                containingSourceType,
+                compilation,
+                mapperType,
+                semanticModel,
+                rewriteExpression,
+                cancellationToken,
+                out var nestedMap))
+        {
+            valueExpression = rewriteExpression(expression);
+            return true;
+        }
+
+        return nestedMap is { } nestedMapValue &&
+               TemplateNestedMapMappingPlanner.TryBuildValueExpression(
+                   nestedMapValue,
+                   targetDestinationType,
+                   out valueExpression);
+    }
+
+    private static string RewriteParameters(
+        ExpressionSyntax expression,
+        IParameterSymbol sourceParameter,
+        IParameterSymbol? destinationParameter,
+        ExpressionSyntax? destinationExpression,
         SemanticModel semanticModel)
     {
-        var rewritten = new SourceParameterRewriter(
-                parameter,
+        var rewritten = new TemplateParameterRewriter(
+                sourceParameter,
+                destinationParameter,
+                destinationExpression,
                 semanticModel)
             .Visit(expression)!
             .WithoutTrivia()
             .NormalizeWhitespace();
 
-        return new NullableSuppressionTriviaRewriter()
+        return new NullableSyntaxTriviaRewriter()
             .Visit(rewritten)!
             .ToFullString();
     }
@@ -448,8 +549,10 @@ internal static class TemplateMappingPlanner
         return null;
     }
 
-    private sealed class SourceParameterRewriter(
-        IParameterSymbol parameter,
+    private sealed class TemplateParameterRewriter(
+        IParameterSymbol sourceParameter,
+        IParameterSymbol? destinationParameter,
+        ExpressionSyntax? destinationExpression,
         SemanticModel semanticModel)
         : CSharpSyntaxRewriter
     {
@@ -746,12 +849,20 @@ internal static class TemplateMappingPlanner
 
             if (SymbolEqualityComparer.Default.Equals(
                     symbol,
-                    parameter))
+                    sourceParameter))
             {
                 return SyntaxFactory.PostfixUnaryExpression(
                         SyntaxKind.SuppressNullableWarningExpression,
                         SyntaxFactory.IdentifierName("source"))
                     .WithTriviaFrom(node);
+            }
+
+            if (destinationExpression is not null &&
+                SymbolEqualityComparer.Default.Equals(
+                    symbol,
+                    destinationParameter))
+            {
+                return destinationExpression;
             }
 
             if (symbol is INamedTypeSymbol type)
@@ -950,9 +1061,20 @@ internal static class TemplateMappingPlanner
         }
     }
 
-    private sealed class NullableSuppressionTriviaRewriter :
+    private sealed class NullableSyntaxTriviaRewriter :
         CSharpSyntaxRewriter
     {
+        public override SyntaxNode? VisitNullableType(
+            NullableTypeSyntax node)
+        {
+            var rewritten =
+                (NullableTypeSyntax)base.VisitNullableType(node)!;
+
+            return rewritten.WithQuestionToken(
+                rewritten.QuestionToken.WithTrailingTrivia(
+                    default(SyntaxTriviaList)));
+        }
+
         public override SyntaxNode? VisitPostfixUnaryExpression(
             PostfixUnaryExpressionSyntax node)
         {
@@ -993,7 +1115,8 @@ internal readonly record struct TemplateMappingPlan(
     TemplateConstructorMappingPlan? Constructor,
     string? FactoryExpression,
     ImmutableArray<TemplateConstructorMemberMappingModel>
-        ConventionConstructorMappings);
+        ConventionConstructorMappings,
+    bool HasDestinationParameter);
 
 internal readonly record struct TemplateMemberMappingModel(
     string MemberName,

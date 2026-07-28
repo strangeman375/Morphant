@@ -333,6 +333,10 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
+        WriteMemberValueLocals(
+            writer,
+            mapping.MapExistingMemberMappings);
+
         var destinationExpression =
             mapping.MapExistingKind ==
                 TypeMapperMapExistingKind.Reference
@@ -385,6 +389,10 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"var {destinationLocalName} = destination.Value;");
 
+        WriteMemberValueLocals(
+            writer,
+            mapping.MapExistingMemberMappings);
+
         foreach (var memberMapping in mapping.MapExistingMemberMappings)
         {
             writer.Line(
@@ -410,10 +418,46 @@ internal static class TypeMapperEmitter
     private static string MemberValueExpression(
         TypeMapperMemberMappingModel mapping)
     {
-        return mapping.ExplicitValueExpression ??
+        return mapping.ValueLocalName ??
+               mapping.ExplicitValueExpression ??
                SourceValueExpression(
                    mapping.SourceMemberName,
                    mapping.SourceValueLocalName);
+    }
+
+    private static void WriteMemberValueLocals(
+        CodeWriter writer,
+        IEnumerable<TypeMapperMemberMappingModel> mappings)
+    {
+        var wroteLocal = false;
+
+        foreach (var mapping in mappings)
+        {
+            if (mapping.ValueLocalName is not { } valueLocalName)
+            {
+                continue;
+            }
+
+            var valueTypeName =
+                mapping.ExplicitValueTypeName ??
+                throw new InvalidOperationException(
+                    "A member value local requires a value type.");
+            var valueExpression =
+                mapping.ExplicitValueExpression ??
+                throw new InvalidOperationException(
+                    "A member value local requires an explicit expression.");
+
+            writer.Line(
+                $"{valueTypeName} {valueLocalName} = " +
+                valueExpression +
+                ";");
+            wroteLocal = true;
+        }
+
+        if (wroteLocal)
+        {
+            writer.Line();
+        }
     }
 
     private static string ConstructorArgumentValueExpression(
