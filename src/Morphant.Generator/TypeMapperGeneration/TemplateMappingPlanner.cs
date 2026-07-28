@@ -109,13 +109,21 @@ internal static class TemplateMappingPlanner
                 INamedTypeSymbol namedDestination &&
             DirectDestinationTypePolicy.IsDirect(
                 namedDestination);
-        var controlFlow = TemplateControlFlowPlanner.Build(
+        var controlFlowResult = TemplateControlFlowPlanner.Build(
             lambda,
             semanticModel,
             directTemplate,
             cancellationToken);
 
-        if (controlFlow is null)
+        if (controlFlowResult is UnsupportedTemplateControlFlow
+            unsupportedControlFlow)
+        {
+            return new UnsupportedTemplateMappingPlanResult(
+                unsupportedControlFlow.Message);
+        }
+
+        if (controlFlowResult is not TemplateControlFlowProgram
+            controlFlow)
         {
             return null;
         }
@@ -414,7 +422,7 @@ internal static class TemplateMappingPlanner
             return null;
         }
 
-        return new TemplateMappingPlanResult(
+        return new SupportedTemplateMappingPlanResult(
             root,
             runtimeLocals);
     }
@@ -1470,9 +1478,16 @@ internal static class TemplateMappingPlanner
         bool CanAssign);
 }
 
-internal sealed record TemplateMappingPlanResult(
+internal abstract record TemplateMappingPlanResult;
+
+internal sealed record UnsupportedTemplateMappingPlanResult(
+    string Message)
+    : TemplateMappingPlanResult;
+
+internal sealed record SupportedTemplateMappingPlanResult(
     TemplateMappingPlanNode Root,
-    ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals);
+    ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals)
+    : TemplateMappingPlanResult;
 
 internal abstract record TemplateMappingPlanNode;
 

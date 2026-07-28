@@ -312,14 +312,14 @@ internal static class TypeMapperPipeline
             compilation,
             mapperType,
             cancellationToken);
-        var templateMapping = TemplateMappingPlanner.Build(
+        var templateMappingResult = TemplateMappingPlanner.Build(
             registration,
             destinationPlan.MemberType,
             compilation,
             mapperType,
             cancellationToken);
 
-        if (templateMapping is null)
+        if (templateMappingResult is null)
         {
             return BuildFlatMapping(
                 registration,
@@ -332,6 +332,18 @@ internal static class TypeMapperPipeline
                 cancellationToken);
         }
 
+        if (templateMappingResult is
+            UnsupportedTemplateMappingPlanResult unsupported)
+        {
+            return BuildUnsupportedMapping(
+                registration,
+                destinationPlan,
+                unsupported.Message);
+        }
+
+        var templateMapping =
+            (SupportedTemplateMappingPlanResult)
+            templateMappingResult;
         var plannedRoot = BuildPlannedControlFlow(
             templateMapping.Root,
             leaf => BuildFlatMapping(
@@ -375,6 +387,38 @@ internal static class TypeMapperPipeline
         {
             ControlFlow = controlFlow
         };
+    }
+
+    private static TypeMapperMappingModel BuildUnsupportedMapping(
+        MapperBuilderMapRegistrationInfo registration,
+        DestinationPlan destinationPlan,
+        string exceptionMessage)
+    {
+        return new TypeMapperMappingModel(
+            SourceTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    registration.SourceType),
+            MaybeNullSourceTypeName:
+                TypeMapperMappingTypePolicy
+                    .GetGeneratedMaybeNullTypeName(
+                        registration.SourceType),
+            DestinationTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    registration.DestinationType),
+            MaybeNullDestinationTypeName:
+                TypeMapperMappingTypePolicy
+                    .GetGeneratedMaybeNullTypeName(
+                        registration.DestinationType),
+            MapNewDirectExpression: null,
+            MapExistingDirectExpression: null,
+            MapNewFactory: null,
+            MapNewConstructor: null,
+            MapExistingKind: destinationPlan.MapExistingKind,
+            MapExistingDestinationLocalName: null,
+            MapNewMemberMappings: [],
+            MapExistingMemberMappings: [],
+            ControlFlow: null,
+            UnsupportedExceptionMessage: exceptionMessage);
     }
 
     private static TypeMapperMappingModel BuildFlatMapping(

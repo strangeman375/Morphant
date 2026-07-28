@@ -33,7 +33,8 @@ internal readonly record struct TypeMapperMappingModel
     string? MapExistingDestinationLocalName,
     ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
-    TypeMapperControlFlowMappingModel? ControlFlow = null
+    TypeMapperControlFlowMappingModel? ControlFlow = null,
+    string? UnsupportedExceptionMessage = null
 )
 {
     public string InterfaceTypeName =>

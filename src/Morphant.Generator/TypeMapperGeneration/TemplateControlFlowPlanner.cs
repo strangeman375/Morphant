@@ -7,6 +7,11 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TemplateControlFlowPlanner
 {
+    private const string UnsupportedBlockMessage =
+        "Template block lambdas currently support only local " +
+        "variable declarations followed by a single return " +
+        "statement.";
+
     private const string MemberMetadataName =
         "Morphant.Members.Member`1";
 
@@ -19,7 +24,7 @@ internal static class TemplateControlFlowPlanner
     private const string TypeMapperMetadataName =
         "Morphant.TypeMapper";
 
-    public static TemplateControlFlowProgram? Build(
+    public static TemplateControlFlowBuildResult? Build(
         LambdaExpressionSyntax lambda,
         SemanticModel semanticModel,
         bool directTemplate,
@@ -30,10 +35,8 @@ internal static class TemplateControlFlowPlanner
                 out var localDeclarations,
                 out var resultExpression))
         {
-            throw new NotSupportedException(
-                "Template block lambdas currently support only local " +
-                "variable declarations followed by a single return " +
-                "statement.");
+            return new UnsupportedTemplateControlFlow(
+                UnsupportedBlockMessage);
         }
 
         var convertedResultType =
@@ -1244,10 +1247,17 @@ internal static class TemplateControlFlowPlanner
     }
 }
 
+internal abstract record TemplateControlFlowBuildResult;
+
+internal sealed record UnsupportedTemplateControlFlow(
+    string Message)
+    : TemplateControlFlowBuildResult;
+
 internal sealed record TemplateControlFlowProgram(
     TemplateControlFlowSyntaxNode Root,
     ImmutableArray<TemplateRuntimeLocalSyntax> RuntimeLocals,
-    IReadOnlyDictionary<ISymbol, string> RuntimeLocalPlaceholders);
+    IReadOnlyDictionary<ISymbol, string> RuntimeLocalPlaceholders)
+    : TemplateControlFlowBuildResult;
 
 internal readonly record struct TemplateRuntimeLocalSyntax(
     string PlaceholderName,

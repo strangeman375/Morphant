@@ -108,6 +108,16 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.MappingContext context)");
 
+        if (mapping.UnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                unsupportedExceptionMessage);
+            writer.Unindent();
+            return;
+        }
+
         if (mapping.ControlFlow is { } controlFlow)
         {
             WriteControlFlowMapNew(
@@ -410,6 +420,16 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
 
+        if (mapping.UnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                unsupportedExceptionMessage);
+            writer.Unindent();
+            return;
+        }
+
         if (mapping.ControlFlow is { } controlFlow)
         {
             WriteControlFlowMapExisting(
@@ -639,6 +659,23 @@ internal static class TypeMapperEmitter
 
         writer.Line();
         writer.Line($"return {destinationLocalName};");
+    }
+
+    private static void WriteUnsupportedMapping(
+        CodeWriter writer,
+        string exceptionMessage)
+    {
+        var messageLiteral =
+            SyntaxFactory.LiteralExpression(
+                    SyntaxKind.StringLiteralExpression,
+                    SyntaxFactory.Literal(exceptionMessage))
+                .ToString();
+
+        writer.Line(
+            "=> throw new global::System.NotSupportedException(");
+        writer.Indent();
+        writer.Line($"{messageLiteral});");
+        writer.Unindent();
     }
 
     private static void WriteLocalValues(
