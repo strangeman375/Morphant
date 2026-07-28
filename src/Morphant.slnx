@@ -11,5 +11,4 @@
   </Folder>
   <Project Path="Morphant.Generator/Morphant.Generator.csproj" />
   <Project Path="Morphant/Morphant.csproj" />
-  <Project Path="Sample/Sample.csproj" />
 </Solution>
