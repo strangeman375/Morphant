@@ -24,6 +24,7 @@ internal static class ConventionConstructorMappingPlanner
             destination,
             memberMappings,
             [],
+            [],
             compilation,
             mapperType,
             cancellationToken);
@@ -35,6 +36,7 @@ internal static class ConventionConstructorMappingPlanner
         ConventionMemberMappingPlan memberMappings,
         ImmutableArray<TemplateConstructorMemberMappingModel>
             explicitMappings,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
@@ -207,6 +209,7 @@ internal static class ConventionConstructorMappingPlanner
             constructor,
             explicitArgumentArray,
             candidateArray,
+            runtimeLocals,
             compilation,
             mapperType,
             cancellationToken);
@@ -251,6 +254,7 @@ internal static class ConventionConstructorMappingPlanner
                     constructor,
                     explicitArgumentArray,
                     argumentArray,
+                    runtimeLocals,
                     compilation,
                     mapperType,
                     cancellationToken))
@@ -430,6 +434,7 @@ internal static class ConventionConstructorMappingPlanner
             ImmutableArray<TypeMapperConstructorArgumentMappingModel>
                 explicitArguments,
             ImmutableArray<ConstructorArgumentCandidate> candidates,
+            ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
             CancellationToken cancellationToken)
@@ -439,6 +444,7 @@ internal static class ConventionConstructorMappingPlanner
             destination,
             explicitArguments,
             candidates,
+            runtimeLocals,
             compilation,
             mapperType,
             cancellationToken);
@@ -492,6 +498,7 @@ internal static class ConventionConstructorMappingPlanner
         ImmutableArray<TypeMapperConstructorArgumentMappingModel>
             explicitArguments,
         ImmutableArray<ConstructorArgumentCandidate> arguments,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
@@ -501,6 +508,7 @@ internal static class ConventionConstructorMappingPlanner
             destination,
             explicitArguments,
             arguments,
+            runtimeLocals,
             compilation,
             mapperType,
             cancellationToken);
@@ -546,6 +554,7 @@ internal static class ConventionConstructorMappingPlanner
         ImmutableArray<TypeMapperConstructorArgumentMappingModel>
             explicitArguments,
         ImmutableArray<ConstructorArgumentCandidate> arguments,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
@@ -555,6 +564,7 @@ internal static class ConventionConstructorMappingPlanner
             destination,
             explicitArguments,
             arguments,
+            runtimeLocals,
             mapperType);
         var probeCompilation = compilation
             .WithOptions(
@@ -563,11 +573,24 @@ internal static class ConventionConstructorMappingPlanner
             .AddSyntaxTrees(probeTree);
         var semanticModel =
             probeCompilation.GetSemanticModel(probeTree);
-        var objectCreation = probeTree
+        var probeMethod = probeTree
             .GetRoot(cancellationToken)
             .DescendantNodes()
-            .OfType<ObjectCreationExpressionSyntax>()
-            .Single();
+            .OfType<MethodDeclarationSyntax>()
+            .Single(method =>
+                method.Identifier.ValueText ==
+                "__MorphantConstructorTypeCompatibilityProbe");
+
+        if (probeMethod.Body?.Statements.LastOrDefault() is not
+            ReturnStatementSyntax
+            {
+                Expression:
+                    ObjectCreationExpressionSyntax objectCreation
+            })
+        {
+            return null;
+        }
+
         var constructor = semanticModel
             .GetSymbolInfo(
                 objectCreation,
@@ -593,6 +616,7 @@ internal static class ConventionConstructorMappingPlanner
         ImmutableArray<TypeMapperConstructorArgumentMappingModel>
             explicitArguments,
         ImmutableArray<ConstructorArgumentCandidate> arguments,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         INamedTypeSymbol mapperType)
     {
         var sourceTypeName =
@@ -617,6 +641,19 @@ internal static class ConventionConstructorMappingPlanner
                 writer.Unindent();
                 writer.Line("{");
                 writer.Indent();
+
+                foreach (var local in runtimeLocals)
+                {
+                    writer.Line(
+                        $"{local.DeclarationType} " +
+                        $"{local.PlaceholderName} = " +
+                        $"{local.MapNewExpression};");
+                }
+
+                if (!runtimeLocals.IsEmpty)
+                {
+                    writer.Line();
+                }
 
                 var argumentCount =
                     explicitArguments.Length + arguments.Length;

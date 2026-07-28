@@ -11,7 +11,7 @@ internal static class TemplateByConventionMappingPlanner
         "Morphant.Markers.ByConventionMarker";
 
     public static bool TryBuild(
-        ImplicitObjectCreationExpressionSyntax objectCreation,
+        ImmutableArray<TemplateObjectArgumentSyntax> arguments,
         ITypeSymbol sourceType,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -26,33 +26,33 @@ internal static class TemplateByConventionMappingPlanner
         mappings = default;
 
         if (!ContainsMarker(
-                objectCreation,
+                arguments,
                 semanticModel,
                 cancellationToken))
         {
             return false;
         }
 
-        if (objectCreation.ArgumentList.Arguments.Count is < 1 or > 2)
+        if (arguments.Length is < 1 or > 2)
         {
             return true;
         }
 
-        ArgumentSyntax? markerArgument = null;
-        ArgumentSyntax? membersArgument = null;
+        TemplateObjectArgumentSyntax? markerArgument = null;
+        TemplateObjectArgumentSyntax? membersArgument = null;
 
         foreach (var argument in
-                 objectCreation.ArgumentList.Arguments)
+                 arguments)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (IsMarker(
-                    argument.Expression,
+                    argument.Value,
                     semanticModel,
                     cancellationToken))
             {
                 if (markerArgument is not null ||
-                    argument.NameColon is
+                    argument.Syntax.NameColon is
                         { Name.Identifier.ValueText: not "marker" })
                 {
                     return true;
@@ -63,7 +63,7 @@ internal static class TemplateByConventionMappingPlanner
             }
 
             if (membersArgument is not null ||
-                argument.NameColon is
+                argument.Syntax.NameColon is
                     { Name.Identifier.ValueText: not "members" })
             {
                 return true;
@@ -77,16 +77,18 @@ internal static class TemplateByConventionMappingPlanner
             return true;
         }
 
-        if (membersArgument is null ||
-            IsOmittedMembersValue(membersArgument.Expression))
+        if (membersArgument is not { } members ||
+            IsOmittedMembersValue(members.Value))
         {
             mappings = [];
             return true;
         }
 
-        if (UnwrapParentheses(membersArgument.Expression) is not
+        if (UnwrapParentheses(members.Value) is not
                 BaseObjectCreationExpressionSyntax membersCreation ||
-            membersCreation.ArgumentList?.Arguments.Count > 0)
+            membersCreation.ArgumentList?.Arguments.Count > 0 ||
+            members.MemberAssignments is not
+                { } memberAssignments)
         {
             return true;
         }
@@ -94,38 +96,24 @@ internal static class TemplateByConventionMappingPlanner
         var result =
             ImmutableArray.CreateBuilder<
                 TemplateConstructorMemberMappingModel>();
-        var seenNames = new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (var expression in
-                 membersCreation.Initializer?.Expressions ?? default)
+        foreach (var assignment in memberAssignments)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (expression is not AssignmentExpressionSyntax
-                {
-                    RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
-                    Left: IdentifierNameSyntax memberName,
-                    Right: var value
-                } ||
-                !seenNames.Add(memberName.Identifier.ValueText))
-            {
-                return true;
-            }
-
             if (TemplateMemberMarker.TryGetKind(
-                    value,
+                    assignment.Value,
                     semanticModel,
                     cancellationToken,
                     out var markerKind))
             {
                 result.Add(
                     new TemplateConstructorMemberMappingModel(
-                        memberName.Identifier.ValueText,
+                        assignment.MemberName,
                         markerKind,
                         ExplicitValueExpression: null));
             }
             else if (TemplateNestedMapMappingPlanner.TryRecognize(
-                         value,
+                         assignment.Value,
                          sourceType,
                          compilation,
                          mapperType,
@@ -142,7 +130,7 @@ internal static class TemplateByConventionMappingPlanner
 
                 result.Add(
                     new TemplateConstructorMemberMappingModel(
-                        memberName.Identifier.ValueText,
+                        assignment.MemberName,
                         MarkerKind: null,
                         ExplicitValueExpression: null,
                         nestedMapValue));
@@ -151,9 +139,9 @@ internal static class TemplateByConventionMappingPlanner
             {
                 result.Add(
                     new TemplateConstructorMemberMappingModel(
-                        memberName.Identifier.ValueText,
+                        assignment.MemberName,
                         MarkerKind: null,
-                        rewriteExpression(value)));
+                        rewriteExpression(assignment.Value)));
             }
         }
 
@@ -162,17 +150,17 @@ internal static class TemplateByConventionMappingPlanner
     }
 
     private static bool ContainsMarker(
-        ImplicitObjectCreationExpressionSyntax objectCreation,
+        ImmutableArray<TemplateObjectArgumentSyntax> arguments,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
         foreach (var argument in
-                 objectCreation.ArgumentList.Arguments)
+                 arguments)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (IsMarker(
-                    argument.Expression,
+                    argument.Value,
                     semanticModel,
                     cancellationToken))
             {

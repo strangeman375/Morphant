@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -12,7 +13,7 @@ internal static class TemplateByFactoryMappingPlanner
         "Morphant.TypeMapper";
 
     public static bool TryBuild(
-        ImplicitObjectCreationExpressionSyntax objectCreation,
+        ImmutableArray<TemplateObjectArgumentSyntax> arguments,
         SemanticModel semanticModel,
         Func<ExpressionSyntax, string> rewriteExpression,
         CancellationToken cancellationToken,
@@ -21,28 +22,28 @@ internal static class TemplateByFactoryMappingPlanner
         factoryExpression = null;
 
         if (!ContainsMarker(
-                objectCreation,
+                arguments,
                 semanticModel,
                 cancellationToken))
         {
             return false;
         }
 
-        if (objectCreation.ArgumentList.Arguments.Count != 1)
+        if (arguments.Length != 1)
         {
             return true;
         }
 
         var markerArgument =
-            objectCreation.ArgumentList.Arguments[0];
+            arguments[0];
 
-        if (markerArgument.NameColon is
+        if (markerArgument.Syntax.NameColon is
                 { Name.Identifier.ValueText: not "marker" } ||
             !IsMarker(
-                markerArgument.Expression,
+                markerArgument.Value,
                 semanticModel,
                 cancellationToken) ||
-            UnwrapParentheses(markerArgument.Expression) is not
+            UnwrapParentheses(markerArgument.Value) is not
                 InvocationExpressionSyntax markerInvocation ||
             !IsByFactoryInvocation(
                 markerInvocation,
@@ -73,17 +74,16 @@ internal static class TemplateByFactoryMappingPlanner
     }
 
     private static bool ContainsMarker(
-        ImplicitObjectCreationExpressionSyntax objectCreation,
+        ImmutableArray<TemplateObjectArgumentSyntax> arguments,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        foreach (var argument in
-                 objectCreation.ArgumentList.Arguments)
+        foreach (var argument in arguments)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (IsMarker(
-                    argument.Expression,
+                    argument.Value,
                     semanticModel,
                     cancellationToken))
             {

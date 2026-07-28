@@ -318,6 +318,73 @@ internal static class TypeMapperPipeline
             compilation,
             mapperType,
             cancellationToken);
+
+        if (templateMapping is null)
+        {
+            return BuildFlatMapping(
+                registration,
+                destinationPlan,
+                conventionMemberMappings,
+                templateMapping: null,
+                runtimeLocals: [],
+                compilation,
+                mapperType,
+                cancellationToken);
+        }
+
+        var plannedRoot = BuildPlannedControlFlow(
+            templateMapping.Root,
+            leaf => BuildFlatMapping(
+                registration,
+                destinationPlan,
+                conventionMemberMappings,
+                leaf,
+                templateMapping.RuntimeLocals,
+                compilation,
+                mapperType,
+                cancellationToken));
+        var mapNewRoot = BuildModeControlFlow(
+            plannedRoot,
+            mapNew: true);
+        var mapExistingRoot = BuildModeControlFlow(
+            plannedRoot,
+            mapNew: false);
+        var controlFlow = BuildControlFlowModel(
+            templateMapping.RuntimeLocals,
+            mapNewRoot,
+            mapExistingRoot,
+            mapperType);
+
+        if (controlFlow.MapNewLocals.IsEmpty &&
+            controlFlow.MapExistingLocals.IsEmpty &&
+            mapNewRoot.Leaf is { } mapNewLeaf &&
+            mapExistingRoot.Leaf is { } mapExistingLeaf &&
+            AreSameFlatMapping(
+                mapNewLeaf,
+                mapExistingLeaf))
+        {
+            return mapNewLeaf;
+        }
+
+        var representative =
+            FindFirstLeaf(mapNewRoot);
+
+        return representative with
+        {
+            ControlFlow = controlFlow
+        };
+    }
+
+    private static TypeMapperMappingModel BuildFlatMapping(
+        MapperBuilderMapRegistrationInfo registration,
+        DestinationPlan destinationPlan,
+        ConventionMemberMappingPlan conventionMemberMappings,
+        TemplateMappingPlan? templateMapping,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
         var memberMappings = MergeMemberMappings(
             conventionMemberMappings,
             templateMapping,
@@ -337,6 +404,7 @@ internal static class TypeMapperPipeline
             destinationPlan.MemberType,
             memberMappings,
             templateMapping,
+            runtimeLocals,
             compilation,
             mapperType,
             cancellationToken);
@@ -375,6 +443,659 @@ internal static class TypeMapperPipeline
                 : constructorMapping?.MapNewMemberMappings ??
                   memberMappings.MapNew,
             mapExistingMemberMappings);
+    }
+
+    private static PlannedControlFlowNode BuildPlannedControlFlow(
+        TemplateMappingPlanNode node,
+        Func<TemplateMappingPlan, TypeMapperMappingModel>
+            buildLeaf)
+    {
+        if (node is TemplateLeafMappingPlanNode leaf)
+        {
+            return new PlannedControlFlowNode(
+                MapNewCondition: null,
+                MapExistingCondition: null,
+                WhenTrue: null,
+                WhenFalse: null,
+                buildLeaf(leaf.Plan));
+        }
+
+        var conditional =
+            (TemplateConditionalMappingPlanNode)node;
+
+        return new PlannedControlFlowNode(
+            conditional.MapNewCondition,
+            conditional.MapExistingCondition,
+            BuildPlannedControlFlow(
+                conditional.WhenTrue,
+                buildLeaf),
+            BuildPlannedControlFlow(
+                conditional.WhenFalse,
+                buildLeaf),
+            Leaf: null);
+    }
+
+    private static TypeMapperControlFlowNode BuildModeControlFlow(
+        PlannedControlFlowNode node,
+        bool mapNew)
+    {
+        if (node.Leaf is { } leaf)
+        {
+            return new TypeMapperControlFlowNode(
+                Condition: null,
+                WhenTrue: null,
+                WhenFalse: null,
+                leaf);
+        }
+
+        var whenTrue = BuildModeControlFlow(
+            node.WhenTrue!,
+            mapNew);
+        var whenFalse = BuildModeControlFlow(
+            node.WhenFalse!,
+            mapNew);
+
+        if (AreEquivalentControlFlow(
+                whenTrue,
+                whenFalse,
+                mapNew))
+        {
+            return whenTrue;
+        }
+
+        var condition =
+            mapNew
+                ? node.MapNewCondition!
+                : node.MapExistingCondition!;
+
+        if (StringComparer.Ordinal.Equals(
+                condition,
+                "true"))
+        {
+            return whenTrue;
+        }
+
+        if (StringComparer.Ordinal.Equals(
+                condition,
+                "false"))
+        {
+            return whenFalse;
+        }
+
+        return new TypeMapperControlFlowNode(
+            condition,
+            whenTrue,
+            whenFalse,
+            Leaf: null);
+    }
+
+    private static bool AreEquivalentControlFlow(
+        TypeMapperControlFlowNode left,
+        TypeMapperControlFlowNode right,
+        bool mapNew)
+    {
+        if (left.Leaf is { } leftLeaf &&
+            right.Leaf is { } rightLeaf)
+        {
+            return mapNew
+                ? AreEquivalentMapNew(
+                    leftLeaf,
+                    rightLeaf)
+                : AreEquivalentMapExisting(
+                    leftLeaf,
+                    rightLeaf);
+        }
+
+        return left.Leaf is null &&
+               right.Leaf is null &&
+               StringComparer.Ordinal.Equals(
+                   left.Condition,
+                   right.Condition) &&
+               AreEquivalentControlFlow(
+                   left.WhenTrue!,
+                   right.WhenTrue!,
+                   mapNew) &&
+               AreEquivalentControlFlow(
+                   left.WhenFalse!,
+                   right.WhenFalse!,
+                   mapNew);
+    }
+
+    private static bool AreEquivalentMapNew(
+        TypeMapperMappingModel left,
+        TypeMapperMappingModel right)
+    {
+        return StringComparer.Ordinal.Equals(
+                   left.MapNewDirectExpression,
+                   right.MapNewDirectExpression) &&
+               Equals(
+                   left.MapNewFactory,
+                   right.MapNewFactory) &&
+               Equals(
+                   left.MapNewConstructor,
+                   right.MapNewConstructor) &&
+               left.MapNewMemberMappings.SequenceEqual(
+                   right.MapNewMemberMappings);
+    }
+
+    private static bool AreEquivalentMapExisting(
+        TypeMapperMappingModel left,
+        TypeMapperMappingModel right)
+    {
+        return StringComparer.Ordinal.Equals(
+                   left.MapExistingDirectExpression,
+                   right.MapExistingDirectExpression) &&
+               left.MapExistingKind ==
+               right.MapExistingKind &&
+               StringComparer.Ordinal.Equals(
+                   left.MapExistingDestinationLocalName,
+                   right.MapExistingDestinationLocalName) &&
+               left.MapExistingMemberMappings.SequenceEqual(
+                   right.MapExistingMemberMappings);
+    }
+
+    private static bool AreSameFlatMapping(
+        TypeMapperMappingModel left,
+        TypeMapperMappingModel right)
+    {
+        return left.Equals(right);
+    }
+
+    private static TypeMapperMappingModel FindFirstLeaf(
+        TypeMapperControlFlowNode node)
+    {
+        return node.Leaf ??
+               FindFirstLeaf(node.WhenTrue!);
+    }
+
+    private static TypeMapperControlFlowMappingModel
+        BuildControlFlowModel(
+            ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+            TypeMapperControlFlowNode mapNewRoot,
+            TypeMapperControlFlowNode mapExistingRoot,
+            INamedTypeSymbol mapperType)
+    {
+        var mapNewRequiredLocals =
+            CollectRequiredLocals(
+                runtimeLocals,
+                mapNewRoot,
+                mapNew: true);
+        var mapExistingRequiredLocals =
+            CollectRequiredLocals(
+                runtimeLocals,
+                mapExistingRoot,
+                mapNew: false);
+        var mapNewNames =
+            AllocateRuntimeLocalNames(
+                runtimeLocals,
+                mapNewRequiredLocals,
+                mapNewRoot,
+                mapperType,
+                hasDestinationParameter: false);
+        var mapExistingNames =
+            AllocateRuntimeLocalNames(
+                runtimeLocals,
+                mapExistingRequiredLocals,
+                mapExistingRoot,
+                mapperType,
+                hasDestinationParameter: true);
+        var renamedMapNewRoot =
+            RenameControlFlow(
+                mapNewRoot,
+                mapNewNames);
+        var renamedMapExistingRoot =
+            RenameControlFlow(
+                mapExistingRoot,
+                mapExistingNames);
+        var mapNewLocals =
+            runtimeLocals
+                .Where(local =>
+                    mapNewRequiredLocals.Contains(
+                        local.PlaceholderName))
+                .Select(local =>
+                    new TypeMapperLocalValueModel(
+                        local.DeclarationType,
+                        mapNewNames[
+                            local.PlaceholderName],
+                        RenameExpression(
+                            local.MapNewExpression,
+                            mapNewNames)))
+                .ToImmutableArray();
+        var mapExistingLocals =
+            runtimeLocals
+                .Where(local =>
+                    mapExistingRequiredLocals.Contains(
+                        local.PlaceholderName))
+                .Select(local =>
+                    new TypeMapperLocalValueModel(
+                        local.DeclarationType,
+                        mapExistingNames[
+                            local.PlaceholderName],
+                        RenameExpression(
+                            local.MapExistingExpression,
+                            mapExistingNames)))
+                .ToImmutableArray();
+
+        return new TypeMapperControlFlowMappingModel(
+            mapNewLocals,
+            mapExistingLocals,
+            renamedMapNewRoot,
+            renamedMapExistingRoot);
+    }
+
+    private static IReadOnlyDictionary<string, string>
+        AllocateRuntimeLocalNames(
+            ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+            HashSet<string> requiredLocals,
+            TypeMapperControlFlowNode root,
+            INamedTypeSymbol mapperType,
+            bool hasDestinationParameter)
+    {
+        var usedNames =
+            ConventionConstructorMappingPlanner
+                .BuildUsedValueLocalNames(mapperType);
+
+        if (hasDestinationParameter)
+        {
+            usedNames.Add("destination");
+        }
+
+        CollectGeneratedLocalNames(
+            root,
+            usedNames);
+
+        var allocatedNames =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+
+        foreach (var local in runtimeLocals)
+        {
+            if (!requiredLocals.Contains(
+                    local.PlaceholderName))
+            {
+                continue;
+            }
+
+            allocatedNames.Add(
+                local.PlaceholderName,
+                AllocateUserLocalName(
+                    local.PreferredName,
+                    usedNames));
+        }
+
+        return allocatedNames;
+    }
+
+    private static HashSet<string> CollectRequiredLocals(
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+        TypeMapperControlFlowNode root,
+        bool mapNew)
+    {
+        var result =
+            new HashSet<string>(StringComparer.Ordinal);
+        var expressions =
+            EnumerateControlFlowExpressions(
+                    root,
+                    mapNew)
+                .ToArray();
+
+        foreach (var local in runtimeLocals)
+        {
+            if (expressions.Any(expression =>
+                    ReferencesIdentifier(
+                        expression,
+                        local.PlaceholderName)))
+            {
+                result.Add(local.PlaceholderName);
+            }
+        }
+
+        var changed = true;
+
+        while (changed)
+        {
+            changed = false;
+
+            foreach (var local in runtimeLocals)
+            {
+                if (!result.Contains(
+                        local.PlaceholderName))
+                {
+                    continue;
+                }
+
+                var initializer =
+                    mapNew
+                        ? local.MapNewExpression
+                        : local.MapExistingExpression;
+
+                foreach (var dependency in runtimeLocals)
+                {
+                    if (!result.Contains(
+                            dependency.PlaceholderName) &&
+                        ReferencesIdentifier(
+                            initializer,
+                            dependency.PlaceholderName))
+                    {
+                        result.Add(
+                            dependency.PlaceholderName);
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static IEnumerable<string>
+        EnumerateControlFlowExpressions(
+            TypeMapperControlFlowNode node,
+            bool mapNew)
+    {
+        if (node.Condition is { } condition)
+        {
+            yield return condition;
+
+            foreach (var expression in
+                     EnumerateControlFlowExpressions(
+                         node.WhenTrue!,
+                         mapNew))
+            {
+                yield return expression;
+            }
+
+            foreach (var expression in
+                     EnumerateControlFlowExpressions(
+                         node.WhenFalse!,
+                         mapNew))
+            {
+                yield return expression;
+            }
+
+            yield break;
+        }
+
+        var leaf = node.Leaf!.Value;
+        var directExpression =
+            mapNew
+                ? leaf.MapNewDirectExpression
+                : leaf.MapExistingDirectExpression;
+
+        if (directExpression is not null)
+        {
+            yield return directExpression;
+        }
+
+        if (mapNew)
+        {
+            if (leaf.MapNewFactory is
+                { } factory)
+            {
+                yield return factory.ValueExpression;
+            }
+
+            if (leaf.MapNewConstructor is
+                { } constructor)
+            {
+                foreach (var argument in
+                         constructor.Arguments)
+                {
+                    if (argument.ExplicitValueExpression is
+                        { } argumentExpression)
+                    {
+                        yield return argumentExpression;
+                    }
+                }
+            }
+
+            foreach (var mapping in
+                     leaf.MapNewMemberMappings)
+            {
+                if (mapping.ExplicitValueExpression is
+                    { } memberExpression)
+                {
+                    yield return memberExpression;
+                }
+            }
+
+            yield break;
+        }
+
+        foreach (var mapping in
+                 leaf.MapExistingMemberMappings)
+        {
+            if (mapping.ExplicitValueExpression is
+                { } memberExpression)
+            {
+                yield return memberExpression;
+            }
+        }
+    }
+
+    private static bool ReferencesIdentifier(
+        string expression,
+        string identifier)
+    {
+        return SyntaxFactory.ParseExpression(expression)
+            .DescendantTokens()
+            .Any(token =>
+                token.IsKind(
+                    SyntaxKind.IdentifierToken) &&
+                StringComparer.Ordinal.Equals(
+                    token.ValueText,
+                    identifier));
+    }
+
+    private static void CollectGeneratedLocalNames(
+        TypeMapperControlFlowNode node,
+        HashSet<string> result)
+    {
+        if (node.Condition is not null)
+        {
+            CollectGeneratedLocalNames(
+                node.WhenTrue!,
+                result);
+            CollectGeneratedLocalNames(
+                node.WhenFalse!,
+                result);
+            return;
+        }
+
+        var leaf = node.Leaf!.Value;
+
+        if (leaf.MapNewFactory is { } factory)
+        {
+            result.Add(factory.DestinationLocalName);
+
+            if (factory.NullableValueLocalName is
+                { } nullableValueLocalName)
+            {
+                result.Add(nullableValueLocalName);
+            }
+        }
+
+        if (leaf.MapExistingDestinationLocalName is
+            { } destinationLocalName)
+        {
+            result.Add(destinationLocalName);
+        }
+
+        if (leaf.MapNewConstructor is { } constructor)
+        {
+            foreach (var argument in constructor.Arguments)
+            {
+                if (argument.ValueLocalName is
+                    { } valueLocalName)
+                {
+                    result.Add(valueLocalName);
+                }
+            }
+        }
+
+        foreach (var mapping in
+                 leaf.MapNewMemberMappings.Concat(
+                     leaf.MapExistingMemberMappings))
+        {
+            if (mapping.SourceValueLocalName is
+                { } sourceValueLocalName)
+            {
+                result.Add(sourceValueLocalName);
+            }
+
+            if (mapping.ValueLocalName is
+                { } valueLocalName)
+            {
+                result.Add(valueLocalName);
+            }
+        }
+    }
+
+    private static string AllocateUserLocalName(
+        string preferredName,
+        HashSet<string> usedNames)
+    {
+        if (usedNames.Add(preferredName))
+        {
+            return EscapeIdentifier(preferredName);
+        }
+
+        for (var suffix = 1;; suffix++)
+        {
+            var candidate =
+                preferredName +
+                suffix.ToString(
+                    CultureInfo.InvariantCulture);
+
+            if (usedNames.Add(candidate))
+            {
+                return EscapeIdentifier(candidate);
+            }
+        }
+    }
+
+    private static TypeMapperControlFlowNode
+        RenameControlFlow(
+            TypeMapperControlFlowNode node,
+            IReadOnlyDictionary<string, string> names)
+    {
+        if (node.Condition is { } condition)
+        {
+            return node with
+            {
+                Condition = RenameExpression(
+                    condition,
+                    names),
+                WhenTrue = RenameControlFlow(
+                    node.WhenTrue!,
+                    names),
+                WhenFalse = RenameControlFlow(
+                    node.WhenFalse!,
+                    names)
+            };
+        }
+
+        return node with
+        {
+            Leaf = RenameMappingExpressions(
+                node.Leaf!.Value,
+                names)
+        };
+    }
+
+    private static TypeMapperMappingModel
+        RenameMappingExpressions(
+            TypeMapperMappingModel mapping,
+            IReadOnlyDictionary<string, string> names)
+    {
+        return mapping with
+        {
+            MapNewDirectExpression =
+                RenameNullableExpression(
+                    mapping.MapNewDirectExpression,
+                    names),
+            MapExistingDirectExpression =
+                RenameNullableExpression(
+                    mapping.MapExistingDirectExpression,
+                    names),
+            MapNewFactory =
+                mapping.MapNewFactory is { } factory
+                    ? factory with
+                    {
+                        ValueExpression =
+                            RenameExpression(
+                                factory.ValueExpression,
+                                names)
+                    }
+                    : null,
+            MapNewConstructor =
+                mapping.MapNewConstructor is
+                    { } constructor
+                    ? constructor with
+                    {
+                        Arguments = constructor.Arguments
+                            .Select(argument =>
+                                argument with
+                                {
+                                    ExplicitValueExpression =
+                                        RenameNullableExpression(
+                                            argument
+                                                .ExplicitValueExpression,
+                                            names)
+                                })
+                            .ToImmutableArray()
+                    }
+                    : null,
+            MapNewMemberMappings =
+                RenameMemberMappingExpressions(
+                    mapping.MapNewMemberMappings,
+                    names),
+            MapExistingMemberMappings =
+                RenameMemberMappingExpressions(
+                    mapping.MapExistingMemberMappings,
+                    names)
+        };
+    }
+
+    private static ImmutableArray<
+            TypeMapperMemberMappingModel>
+        RenameMemberMappingExpressions(
+            ImmutableArray<TypeMapperMemberMappingModel> mappings,
+            IReadOnlyDictionary<string, string> names)
+    {
+        return mappings
+            .Select(mapping =>
+                mapping with
+                {
+                    ExplicitValueExpression =
+                        RenameNullableExpression(
+                            mapping.ExplicitValueExpression,
+                            names)
+                })
+            .ToImmutableArray();
+    }
+
+    private static string? RenameNullableExpression(
+        string? expression,
+        IReadOnlyDictionary<string, string> names)
+    {
+        return expression is null
+            ? null
+            : RenameExpression(
+                expression,
+                names);
+    }
+
+    private static string RenameExpression(
+        string expression,
+        IReadOnlyDictionary<string, string> names)
+    {
+        return new PlaceholderExpressionRewriter(
+                    names)
+            .Visit(
+                SyntaxFactory.ParseExpression(
+                    expression))!
+            .ToFullString();
     }
 
     private static ImmutableArray<TypeMapperMemberMappingModel>
@@ -531,6 +1252,7 @@ internal static class TypeMapperPipeline
             ITypeSymbol? destination,
             ConventionMemberMappingPlan memberMappings,
             TemplateMappingPlan? template,
+            ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
             CancellationToken cancellationToken)
@@ -567,6 +1289,7 @@ internal static class TypeMapperPipeline
                     destination,
                     memberMappings,
                     templateValue.ConventionConstructorMappings,
+                    runtimeLocals,
                     compilation,
                     mapperType,
                     cancellationToken);
@@ -1119,6 +1842,32 @@ internal static class TypeMapperPipeline
     private readonly record struct TypeMapperGenerationInput(
         string StableIdentity,
         TypeMapperModel Model);
+
+    private sealed record PlannedControlFlowNode(
+        string? MapNewCondition,
+        string? MapExistingCondition,
+        PlannedControlFlowNode? WhenTrue,
+        PlannedControlFlowNode? WhenFalse,
+        TypeMapperMappingModel? Leaf);
+
+    private sealed class PlaceholderExpressionRewriter(
+        IReadOnlyDictionary<string, string> names)
+        : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitIdentifierName(
+            IdentifierNameSyntax node)
+        {
+            if (!names.TryGetValue(
+                    node.Identifier.ValueText,
+                    out var name))
+            {
+                return base.VisitIdentifierName(node);
+            }
+
+            return SyntaxFactory.IdentifierName(name)
+                .WithTriviaFrom(node);
+        }
+    }
 
     private readonly record struct DestinationPlan(
         ITypeSymbol? MemberType,

@@ -32,7 +32,8 @@ internal readonly record struct TypeMapperMappingModel
     TypeMapperMapExistingKind MapExistingKind,
     string? MapExistingDestinationLocalName,
     ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
-    ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings
+    ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
+    TypeMapperControlFlowMappingModel? ControlFlow = null
 )
 {
     public string InterfaceTypeName =>
@@ -79,4 +80,27 @@ internal readonly record struct TypeMapperMemberMappingModel
     string? ExplicitValueTypeName = null,
     string? ValueLocalName = null,
     bool RequiresPreviousDestinationValueLocal = false
+);
+
+internal sealed record TypeMapperControlFlowMappingModel
+(
+    ImmutableArray<TypeMapperLocalValueModel> MapNewLocals,
+    ImmutableArray<TypeMapperLocalValueModel> MapExistingLocals,
+    TypeMapperControlFlowNode MapNewRoot,
+    TypeMapperControlFlowNode MapExistingRoot
+);
+
+internal readonly record struct TypeMapperLocalValueModel
+(
+    string DeclarationType,
+    string Name,
+    string ValueExpression
+);
+
+internal sealed record TypeMapperControlFlowNode
+(
+    string? Condition,
+    TypeMapperControlFlowNode? WhenTrue,
+    TypeMapperControlFlowNode? WhenFalse,
+    TypeMapperMappingModel? Leaf
 );

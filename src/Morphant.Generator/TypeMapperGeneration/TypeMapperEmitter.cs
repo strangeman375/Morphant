@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -107,6 +108,14 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.MappingContext context)");
 
+        if (mapping.ControlFlow is { } controlFlow)
+        {
+            WriteControlFlowMapNew(
+                writer,
+                controlFlow);
+            return;
+        }
+
         if (mapping.MapNewDirectExpression is { } directExpression)
         {
             writer.Line($"=> {directExpression};");
@@ -129,93 +138,10 @@ internal static class TypeMapperEmitter
             writer.Unindent();
             writer.Line("{");
             writer.Indent();
-
-            var hasValueLocals = false;
-
-            foreach (var argument in constructor.Arguments)
-            {
-                if (argument.ValueLocalName is not
-                    { } valueLocalName)
-                {
-                    continue;
-                }
-
-                hasValueLocals = true;
-                writer.Line(
-                    (argument.ValueLocalTypeName ?? "var") +
-                    $" {valueLocalName} = " +
-                    ConstructorArgumentUncachedValueExpression(
-                        argument) +
-                    ";");
-            }
-
-            if (hasValueLocals)
-            {
-                writer.Line();
-            }
-
-            if (constructor.Arguments.IsEmpty)
-            {
-                writer.Line(
-                    $"return new {constructor.ConstructedTypeName}()" +
-                    (mapping.MapNewMemberMappings.IsEmpty
-                        ? ";"
-                        : string.Empty));
-            }
-            else
-            {
-                writer.Line(
-                    $"return new {constructor.ConstructedTypeName}(");
-                writer.Indent();
-
-                for (var index = 0;
-                     index < constructor.Arguments.Length;
-                     index++)
-                {
-                    var argument = constructor.Arguments[index];
-                    var isLast =
-                        index == constructor.Arguments.Length - 1;
-                    var suffix = isLast
-                        ? mapping.MapNewMemberMappings.IsEmpty
-                            ? ");"
-                            : ")"
-                        : ",";
-
-                    writer.Line(
-                        $"{Identifier(argument.ParameterName)}: " +
-                        ConstructorArgumentValueExpression(argument) +
-                        suffix);
-                }
-
-                writer.Unindent();
-            }
-
-            if (!mapping.MapNewMemberMappings.IsEmpty)
-            {
-                writer.Line("{");
-                writer.Indent();
-
-                for (var index = 0;
-                     index < mapping.MapNewMemberMappings.Length;
-                     index++)
-                {
-                    var memberMapping =
-                        mapping.MapNewMemberMappings[index];
-                    var suffix =
-                        index < mapping.MapNewMemberMappings.Length - 1
-                            ? ","
-                            : string.Empty;
-
-                    writer.Line(
-                        $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                        MemberValueExpression(memberMapping) +
-                        suffix);
-                }
-
-                writer.Unindent();
-                writer.Line("};");
-            }
-
+            WriteConstructorMapNewStatements(
+                writer,
+                mapping,
+                constructor);
             writer.Unindent();
             writer.Line("}");
             return;
@@ -234,7 +160,196 @@ internal static class TypeMapperEmitter
         writer.Unindent();
         writer.Line("{");
         writer.Indent();
+        WriteFactoryMapNewStatements(
+            writer,
+            mapping,
+            factory);
+        writer.Unindent();
+        writer.Line("}");
+    }
 
+    private static void WriteControlFlowMapNew(
+        CodeWriter writer,
+        TypeMapperControlFlowMappingModel controlFlow)
+    {
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        WriteLocalValues(
+            writer,
+            controlFlow.MapNewLocals);
+        WriteControlFlowMapNewNode(
+            writer,
+            controlFlow.MapNewRoot);
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteControlFlowMapNewNode(
+        CodeWriter writer,
+        TypeMapperControlFlowNode node)
+    {
+        if (node.Condition is { } condition)
+        {
+            writer.Line($"if ({condition})");
+            writer.Line("{");
+            writer.Indent();
+            WriteControlFlowMapNewNode(
+                writer,
+                node.WhenTrue!);
+            writer.Unindent();
+            writer.Line("}");
+            writer.Line("else");
+            writer.Line("{");
+            writer.Indent();
+            WriteControlFlowMapNewNode(
+                writer,
+                node.WhenFalse!);
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
+
+        WriteControlFlowMapNewLeaf(
+            writer,
+            node.Leaf!.Value);
+    }
+
+    private static void WriteControlFlowMapNewLeaf(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        if (mapping.MapNewDirectExpression is
+            { } directExpression)
+        {
+            writer.Line($"return {directExpression};");
+            return;
+        }
+
+        if (mapping.MapNewFactory is { } factory)
+        {
+            WriteFactoryMapNewStatements(
+                writer,
+                mapping,
+                factory);
+            return;
+        }
+
+        if (mapping.MapNewConstructor is
+            { } constructor)
+        {
+            WriteConstructorMapNewStatements(
+                writer,
+                mapping,
+                constructor);
+            return;
+        }
+
+        writer.Line(
+            "throw new global::System.NotImplementedException();");
+    }
+
+    private static void WriteConstructorMapNewStatements(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperConstructorMappingModel constructor)
+    {
+        var hasValueLocals = false;
+
+        foreach (var argument in constructor.Arguments)
+        {
+            if (argument.ValueLocalName is not
+                { } valueLocalName)
+            {
+                continue;
+            }
+
+            hasValueLocals = true;
+            writer.Line(
+                (argument.ValueLocalTypeName ?? "var") +
+                $" {valueLocalName} = " +
+                ConstructorArgumentUncachedValueExpression(
+                    argument) +
+                ";");
+        }
+
+        if (hasValueLocals)
+        {
+            writer.Line();
+        }
+
+        if (constructor.Arguments.IsEmpty)
+        {
+            writer.Line(
+                $"return new {constructor.ConstructedTypeName}()" +
+                (mapping.MapNewMemberMappings.IsEmpty
+                    ? ";"
+                    : string.Empty));
+        }
+        else
+        {
+            writer.Line(
+                $"return new {constructor.ConstructedTypeName}(");
+            writer.Indent();
+
+            for (var index = 0;
+                 index < constructor.Arguments.Length;
+                 index++)
+            {
+                var argument = constructor.Arguments[index];
+                var isLast =
+                    index == constructor.Arguments.Length - 1;
+                var suffix = isLast
+                    ? mapping.MapNewMemberMappings.IsEmpty
+                        ? ");"
+                        : ")"
+                    : ",";
+
+                writer.Line(
+                    $"{Identifier(argument.ParameterName)}: " +
+                    ConstructorArgumentValueExpression(argument) +
+                    suffix);
+            }
+
+            writer.Unindent();
+        }
+
+        if (mapping.MapNewMemberMappings.IsEmpty)
+        {
+            return;
+        }
+
+        writer.Line("{");
+        writer.Indent();
+
+        for (var index = 0;
+             index < mapping.MapNewMemberMappings.Length;
+             index++)
+        {
+            var memberMapping =
+                mapping.MapNewMemberMappings[index];
+            var suffix =
+                index < mapping.MapNewMemberMappings.Length - 1
+                    ? ","
+                    : string.Empty;
+
+            writer.Line(
+                $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                MemberValueExpression(memberMapping) +
+                suffix);
+        }
+
+        writer.Unindent();
+        writer.Line("};");
+    }
+
+    private static void WriteFactoryMapNewStatements(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperFactoryMappingModel factory)
+    {
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);
 
@@ -278,8 +393,6 @@ internal static class TypeMapperEmitter
 
         writer.Line();
         writer.Line($"return {returnExpression};");
-        writer.Unindent();
-        writer.Line("}");
     }
 
     private static void WriteMapExisting(
@@ -296,6 +409,15 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
+
+        if (mapping.ControlFlow is { } controlFlow)
+        {
+            WriteControlFlowMapExisting(
+                writer,
+                mapping,
+                controlFlow);
+            return;
+        }
 
         if (mapping.MapExistingDirectExpression is { } directExpression)
         {
@@ -332,27 +454,9 @@ internal static class TypeMapperEmitter
         writer.Unindent();
         writer.Line("{");
         writer.Indent();
-
-        WriteMemberValueLocals(
+        WriteMapExistingLeafStatements(
             writer,
-            mapping.MapExistingMemberMappings);
-
-        var destinationExpression =
-            mapping.MapExistingKind ==
-                TypeMapperMapExistingKind.Reference
-                ? "destination!"
-                : "destination";
-
-        foreach (var memberMapping in mapping.MapExistingMemberMappings)
-        {
-            writer.Line(
-                $"{destinationExpression}.{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(memberMapping) +
-                ";");
-        }
-
-        writer.Line();
-        writer.Line("return destination;");
+            mapping);
         writer.Unindent();
         writer.Line("}");
     }
@@ -373,11 +477,142 @@ internal static class TypeMapperEmitter
         writer.Line("}");
         writer.Line();
 
+        WriteNullableValueMapExistingLeafStatements(
+            writer,
+            mapping);
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteControlFlowMapExisting(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperControlFlowMappingModel controlFlow)
+    {
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        if (mapping.MapExistingKind ==
+            TypeMapperMapExistingKind.NullableValue)
+        {
+            writer.Line("if (destination is null)");
+            writer.Line("{");
+            writer.Indent();
+            writer.Line(
+                "throw new global::System.NotImplementedException();");
+            writer.Unindent();
+            writer.Line("}");
+            writer.Line();
+        }
+
+        WriteLocalValues(
+            writer,
+            controlFlow.MapExistingLocals);
+        WriteControlFlowMapExistingNode(
+            writer,
+            controlFlow.MapExistingRoot);
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteControlFlowMapExistingNode(
+        CodeWriter writer,
+        TypeMapperControlFlowNode node)
+    {
+        if (node.Condition is { } condition)
+        {
+            writer.Line($"if ({condition})");
+            writer.Line("{");
+            writer.Indent();
+            WriteControlFlowMapExistingNode(
+                writer,
+                node.WhenTrue!);
+            writer.Unindent();
+            writer.Line("}");
+            writer.Line("else");
+            writer.Line("{");
+            writer.Indent();
+            WriteControlFlowMapExistingNode(
+                writer,
+                node.WhenFalse!);
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
+
+        WriteMapExistingLeafStatements(
+            writer,
+            node.Leaf!.Value);
+    }
+
+    private static void WriteMapExistingLeafStatements(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        if (mapping.MapExistingDirectExpression is
+            { } directExpression)
+        {
+            writer.Line($"return {directExpression};");
+            return;
+        }
+
+        if (mapping.MapExistingKind ==
+            TypeMapperMapExistingKind.Unsupported)
+        {
+            writer.Line(
+                "throw new global::System.NotImplementedException();");
+            return;
+        }
+
+        if (mapping.MapExistingKind ==
+            TypeMapperMapExistingKind.NullableValue)
+        {
+            WriteNullableValueMapExistingLeafStatements(
+                writer,
+                mapping);
+            return;
+        }
+
         if (mapping.MapExistingMemberMappings.IsEmpty)
         {
             writer.Line("return destination;");
-            writer.Unindent();
-            writer.Line("}");
+            return;
+        }
+
+        WriteMemberValueLocals(
+            writer,
+            mapping.MapExistingMemberMappings);
+
+        var destinationExpression =
+            mapping.MapExistingKind ==
+                TypeMapperMapExistingKind.Reference
+                ? "destination!"
+                : "destination";
+
+        foreach (var memberMapping in
+                 mapping.MapExistingMemberMappings)
+        {
+            writer.Line(
+                $"{destinationExpression}." +
+                $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                MemberValueExpression(memberMapping) +
+                ";");
+        }
+
+        writer.Line();
+        writer.Line("return destination;");
+    }
+
+    private static void
+        WriteNullableValueMapExistingLeafStatements(
+            CodeWriter writer,
+            TypeMapperMappingModel mapping)
+    {
+        if (mapping.MapExistingMemberMappings.IsEmpty)
+        {
+            writer.Line("return destination;");
             return;
         }
 
@@ -388,23 +623,40 @@ internal static class TypeMapperEmitter
 
         writer.Line(
             $"var {destinationLocalName} = destination.Value;");
-
         WriteMemberValueLocals(
             writer,
             mapping.MapExistingMemberMappings);
 
-        foreach (var memberMapping in mapping.MapExistingMemberMappings)
+        foreach (var memberMapping in
+                 mapping.MapExistingMemberMappings)
         {
             writer.Line(
-                $"{destinationLocalName}.{Identifier(memberMapping.DestinationMemberName)} = " +
+                $"{destinationLocalName}." +
+                $"{Identifier(memberMapping.DestinationMemberName)} = " +
                 MemberValueExpression(memberMapping) +
                 ";");
         }
 
         writer.Line();
         writer.Line($"return {destinationLocalName};");
-        writer.Unindent();
-        writer.Line("}");
+    }
+
+    private static void WriteLocalValues(
+        CodeWriter writer,
+        ImmutableArray<TypeMapperLocalValueModel> locals)
+    {
+        foreach (var local in locals)
+        {
+            writer.Line(
+                $"{local.DeclarationType} {local.Name} = " +
+                local.ValueExpression +
+                ";");
+        }
+
+        if (!locals.IsEmpty)
+        {
+            writer.Line();
+        }
     }
 
     private static string SourceValueExpression(

@@ -12,7 +12,8 @@ internal static class TemplateConstructorMappingPlanner
         "Morphant.Members.ConstructorMember`1";
 
     public static TemplateConstructorMappingPlan? Build(
-        ImplicitObjectCreationExpressionSyntax objectCreation,
+        ImmutableArray<TemplateObjectArgumentSyntax> templateArguments,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         ITypeSymbol sourceType,
         INamedTypeSymbol destination,
         CSharpCompilation compilation,
@@ -25,9 +26,10 @@ internal static class TemplateConstructorMappingPlanner
     {
         if (destination.TypeKind == TypeKind.Interface ||
             destination.IsAbstract ||
-            objectCreation.ArgumentList.Arguments.Any(
+            templateArguments.Any(
                 static argument =>
-                    !argument.RefKindKeyword.IsKind(SyntaxKind.None)))
+                    !argument.Syntax.RefKindKeyword.IsKind(
+                        SyntaxKind.None)))
         {
             return null;
         }
@@ -55,7 +57,8 @@ internal static class TemplateConstructorMappingPlanner
         var probeTree = BuildProbeTree(
             sourceType,
             constructors,
-            objectCreation.ArgumentList.Arguments,
+            templateArguments,
+            runtimeLocals,
             mapperType,
             probeTypeName,
             probeMethodName,
@@ -83,10 +86,15 @@ internal static class TemplateConstructorMappingPlanner
             .OfType<MethodDeclarationSyntax>()
             .Single(method =>
                 method.Identifier.ValueText == probeMethodName);
-        var probeObjectCreation = probeMethod
-            .DescendantNodes()
-            .OfType<ObjectCreationExpressionSyntax>()
-            .First();
+        if (probeMethod.Body?.Statements.LastOrDefault() is not
+            ReturnStatementSyntax
+            {
+                Expression:
+                    ObjectCreationExpressionSyntax probeObjectCreation
+            })
+        {
+            return null;
+        }
         var selectedProbeConstructor = probeSemanticModel
             .GetSymbolInfo(
                 probeObjectCreation,
@@ -131,7 +139,7 @@ internal static class TemplateConstructorMappingPlanner
 
         if (probeArgumentList is null ||
             probeArgumentList.Arguments.Count !=
-                objectCreation.ArgumentList.Arguments.Count)
+                templateArguments.Length)
         {
             return null;
         }
@@ -139,7 +147,7 @@ internal static class TemplateConstructorMappingPlanner
         var arguments =
             ImmutableArray.CreateBuilder<
                 TypeMapperConstructorArgumentMappingModel>(
-                objectCreation.ArgumentList.Arguments.Count);
+                templateArguments.Length);
         var ignoredParameterNames =
             ImmutableArray.CreateBuilder<string>();
         var sourceMembers =
@@ -175,10 +183,10 @@ internal static class TemplateConstructorMappingPlanner
                 destinationConstructor.Parameters[
                     probeParameter.Ordinal];
             var templateArgument =
-                objectCreation.ArgumentList.Arguments[index];
+                templateArguments[index];
 
             if (TemplateMemberMarker.TryGetKind(
-                    templateArgument.Expression,
+                    templateArgument.Value,
                     templateSemanticModel,
                     cancellationToken,
                     out var markerKind))
@@ -219,7 +227,7 @@ internal static class TemplateConstructorMappingPlanner
             }
 
             if (TemplateNestedMapMappingPlanner.TryRecognize(
-                    templateArgument.Expression,
+                    templateArgument.Value,
                     sourceType,
                     compilation,
                     mapperType,
@@ -261,7 +269,7 @@ internal static class TemplateConstructorMappingPlanner
                     SourceMemberName: string.Empty,
                     ValueLocalName: null,
                     BuildArgumentExpression(
-                        templateArgument.Expression,
+                        templateArgument.Value,
                         destinationParameter,
                         compilation,
                         templateSemanticModel,
@@ -280,6 +288,7 @@ internal static class TemplateConstructorMappingPlanner
                 destination,
                 destinationConstructor,
                 argumentModels,
+                runtimeLocals,
                 compilation,
                 mapperType,
                 destinationProbeMethodName,
@@ -325,7 +334,8 @@ internal static class TemplateConstructorMappingPlanner
     private static SyntaxTree BuildProbeTree(
         ITypeSymbol sourceType,
         ImmutableArray<IMethodSymbol> constructors,
-        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        ImmutableArray<TemplateObjectArgumentSyntax> arguments,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         INamedTypeSymbol mapperType,
         string probeTypeName,
         string probeMethodName,
@@ -360,11 +370,17 @@ internal static class TemplateConstructorMappingPlanner
                 writer.Line();
                 writer.Line(
                     $"private {probeTypeName} " +
-                    $"{probeMethodName}({sourceTypeName} source)");
+                    $"{probeMethodName}(" +
+                    $"{sourceTypeName} source, " +
+                    "global::Morphant.MappingContext context)");
                 writer.Line("{");
                 writer.Indent();
 
-                if (arguments.Count == 0)
+                WriteRuntimeLocals(
+                    writer,
+                    runtimeLocals);
+
+                if (arguments.IsEmpty)
                 {
                     writer.Line(
                         $"return new {probeTypeName}();");
@@ -376,20 +392,21 @@ internal static class TemplateConstructorMappingPlanner
                     writer.Indent();
 
                     for (var index = 0;
-                         index < arguments.Count;
+                         index < arguments.Length;
                          index++)
                     {
                         var argument = arguments[index];
-                        var prefix = argument.NameColon is { } nameColon
-                            ? nameColon.Name.Identifier.Text + ": "
-                            : string.Empty;
-                        var suffix = index < arguments.Count - 1
+                        var prefix =
+                            argument.Syntax.NameColon is { } nameColon
+                                ? nameColon.Name.Identifier.Text + ": "
+                                : string.Empty;
+                        var suffix = index < arguments.Length - 1
                             ? ","
                             : ");";
 
                         writer.Line(
                             prefix +
-                            rewriteExpression(argument.Expression) +
+                            rewriteExpression(argument.Value) +
                             suffix);
                     }
 
@@ -425,6 +442,7 @@ internal static class TemplateConstructorMappingPlanner
         INamedTypeSymbol destination,
         IMethodSymbol selectedConstructor,
         ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         string probeMethodName,
@@ -448,6 +466,10 @@ internal static class TemplateConstructorMappingPlanner
                     "global::Morphant.MappingContext context)");
                 writer.Line("{");
                 writer.Indent();
+
+                WriteRuntimeLocals(
+                    writer,
+                    runtimeLocals);
 
                 if (arguments.IsEmpty)
                 {
@@ -489,11 +511,22 @@ internal static class TemplateConstructorMappingPlanner
             .AddSyntaxTrees(probeTree);
         var semanticModel =
             probeCompilation.GetSemanticModel(probeTree);
-        var objectCreation = probeTree
+        var probeMethod = probeTree
             .GetRoot(cancellationToken)
             .DescendantNodes()
-            .OfType<ObjectCreationExpressionSyntax>()
-            .First();
+            .OfType<MethodDeclarationSyntax>()
+            .Single(method =>
+                method.Identifier.ValueText == probeMethodName);
+
+        if (probeMethod.Body?.Statements.LastOrDefault() is not
+            ReturnStatementSyntax
+            {
+                Expression:
+                    ObjectCreationExpressionSyntax objectCreation
+            })
+        {
+            return false;
+        }
         var boundConstructor = semanticModel
             .GetSymbolInfo(
                 objectCreation,
@@ -526,6 +559,24 @@ internal static class TemplateConstructorMappingPlanner
         }
 
         return true;
+    }
+
+    private static void WriteRuntimeLocals(
+        CodeWriter writer,
+        ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals)
+    {
+        foreach (var local in runtimeLocals)
+        {
+            writer.Line(
+                $"{local.DeclarationType} " +
+                $"{local.PlaceholderName} = " +
+                $"{local.MapNewExpression};");
+        }
+
+        if (!runtimeLocals.IsEmpty)
+        {
+            writer.Line();
+        }
     }
 
     private static string BuildArgumentExpression(

@@ -251,7 +251,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Leaves_block_lambdas_for_the_control_flow_slice()
+    public async Task Maps_block_lambdas_with_a_final_return()
     {
         // lang=c#
         const string source =
@@ -358,7 +358,7 @@ namespace TestCase
         {
             return new global::TestCase.BlockDestination()
             {
-                Value = source!.Value
+                Value = source!.Value + 1
             };
         }
 
@@ -368,7 +368,7 @@ namespace TestCase
             global::TestCase.BlockDestination? destination,
             global::Morphant.MappingContext context)
         {
-            destination!.Value = source!.Value;
+            destination!.Value = source!.Value + 1;
 
             return destination;
         }

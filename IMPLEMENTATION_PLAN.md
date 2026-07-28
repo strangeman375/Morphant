@@ -23,11 +23,11 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → Управляющие конструкции DSL.** Следующий самостоятельный срез
-добавляет conditional expressions, простые block-lambda, локальные переменные
-и `with`-overlay. Перед тестами нужно согласовать точную границу допустимого
-control flow, порядок вычислений и сочетание ветвлений с constructor/member
-markers.
+**Фаза 3 → Расширенные формы factory.** Следующий самостоятельный срез
+рассматривает method groups, заранее созданные `Func<TDestination>`,
+block-lambda factory и captures Configure-local значений, параметров и local
+functions. Перед тестами нужно отдельно согласовать переносимость каждой формы,
+порядок вычисления и границу допустимых captures.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -247,7 +247,8 @@ markers.
   а ссылки на типы, static-члены и extension methods переносятся в
   fully-qualified форме, чтобы generated-код не зависел от `using` исходного
   файла. Compile-time результат `nameof` сохраняется строковым литералом.
-  Configure-local captures и управляющие формы lambda остаются отложенными.
+  Configure-local captures остаются отложенными. Поддерживаемая граница
+  block-lambda и управляющих форм описана отдельным завершённым пунктом ниже.
 
 - [x] Явный конструктор в `Template()`.
 
@@ -334,8 +335,8 @@ markers.
   Поддерживаются прямые вызовы generic и non-generic вариантов `Auto()` и
   `Ignore()`; обе формы каждого маркера имеют одинаковую семантику. Marker
   распознаётся по фактическому API `TypeMapper`, а не по имени метода.
-  Conditional expressions, локальные marker-значения и остальные управляющие
-  формы остаются в отдельном запланированном срезе.
+  Conditional expressions и локальные marker-значения поддерживаются в
+  завершённом срезе управляющих конструкций ниже.
 
   Во внешнем initializer-е `Auto()` явно запрашивает обычный automatic mapping
   с теми же правилами имени, доступности и совместимости. Explicit expressions
@@ -398,8 +399,9 @@ markers.
   `Map(source, destination)` остаётся target-inferred формой, а `T` задаётся
   только явно написанным `Map<T>(...)`.
 
-  Conditional expressions, локальные marker-значения и вложение `Map()` в
-  более сложное выражение остаются до среза управляющих конструкций.
+  Conditional expressions и локальные marker-значения для `Map()` поддержаны
+  завершённым срезом управляющих конструкций ниже. Произвольное вложение
+  marker-а в обычное вычисляемое выражение по-прежнему не поддерживается.
 
 - [x] Template с предыдущим destination.
 
@@ -430,10 +432,45 @@ markers.
   его source и existing-destination arguments также получают `default` либо
   переданный destination согласно описанному правилу.
 
-- [ ] Управляющие конструкции DSL.
+- [x] Управляющие конструкции DSL.
 
-  Conditional expressions, простые block-lambda, локальные переменные и
-  with-overlay.
+  Поддерживается block-lambda из последовательных объявлений локальных
+  переменных и одного финального `return`. Direct templates и object templates
+  используют одинаковую модель locals. Обычная локальная переменная
+  вычисляется ровно один раз, в порядке объявления и только в тех generated-
+  режимах, где от неё зависит итоговый mapping. Транзитивные зависимости
+  сохраняются. Пользовательское имя сохраняется отдельно в `MapNew` и
+  `MapExisting`; числовой суффикс добавляется только при реальном конфликте в
+  соответствующем generated-методе.
+
+  Conditional expression `?:` может выбирать целый template и способ создания,
+  explicit member/constructor value, `Auto()`, `Ignore()`, `Map()` либо
+  локальное DSL-значение. Ветви планируются независимо для `MapNew` и
+  `MapExisting`: construction-only условия и locals исчезают из
+  `MapExisting`, а одинаковые ветви сворачиваются без вычисления условия.
+  Условия, влияющие на member mappings, выполняются до первых присваиваний.
+  Значения, читающие предыдущий destination, по-прежнему фиксируются в locals
+  до его изменения. Conditional `Ignore()` для required/init-only member
+  оставляет недопустимую ветвь `MapNew` неподдерживаемой по обычным правилам
+  required construction.
+
+  `with` сохраняет способ создания базового template и накладывает outer member
+  mappings. Более поздний overlay заменяет прежнее правило того же member;
+  заменённое выражение не попадает в generated-код. Overlay применяется к
+  каждой ветви условного базового template.
+
+  Условные значения поддерживаются как во внешнем initializer-е, так и в
+  аргументах явного конструктора и в
+  `ByConvention(..., constructorMembers)`. Constructor/factory expressions
+  вычисляются только в `MapNew`; compiler probes получают необходимые обычные
+  locals, не разворачивая их в итоговом коде.
+
+  На будущий отдельный срез отложены statement-level `if` и `switch`, циклы,
+  присваивания, local functions, несколько `return` и прочий общий control
+  flow. DSL-shaping `switch` expressions также отложены; обычный switch-
+  expression внутри уже поддерживаемого explicit C#-значения не меняет
+  семантику Template. До фазы диагностик неподдерживаемый block сохраняет
+  прежний fallback на convention mapping.
 
 - [ ] Расширенные формы factory.
 
