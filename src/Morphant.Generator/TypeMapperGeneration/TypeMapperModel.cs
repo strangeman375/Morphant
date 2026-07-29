@@ -37,8 +37,7 @@ internal readonly record struct TypeMapperMappingModel
     string? MapNewUnsupportedExceptionMessage = null,
     string? MapExistingUnsupportedExceptionMessage = null,
     string? UnsupportedExceptionMessage = null,
-    TypeMapperDirectBlockMappingModel? MapNewDirectBlock = null,
-    TypeMapperDirectBlockMappingModel? MapExistingDirectBlock = null
+    TypeMapperDirectBlockMappingModel? DirectBlock = null
 )
 {
     public string InterfaceTypeName =>
@@ -46,8 +45,9 @@ internal readonly record struct TypeMapperMappingModel
 }
 
 internal readonly record struct TypeMapperDirectBlockMappingModel(
-    string LocalFunctionDeclaration,
-    string ValueExpression);
+    string MethodDeclaration,
+    string MapNewValueExpression,
+    string MapExistingValueExpression);
 
 internal readonly record struct TypeMapperFactoryMappingModel
 (

@@ -93,6 +93,14 @@ internal static class TypeMapperEmitter
         WriteMapNew(writer, mapping);
         writer.Line();
         WriteMapExisting(writer, mapping);
+
+        if (mapping.DirectBlock is { } directBlock)
+        {
+            writer.Line();
+            WriteMultilineDeclaration(
+                writer,
+                directBlock.MethodDeclaration);
+        }
     }
 
     private static void WriteMapNew(
@@ -136,11 +144,11 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.MapNewDirectBlock is { } directBlock)
+        if (mapping.DirectBlock is { } directBlock)
         {
-            WriteDirectBlock(
-                writer,
-                directBlock);
+            writer.Line(
+                $"=> {directBlock.MapNewValueExpression};");
+            writer.Unindent();
             return;
         }
 
@@ -178,22 +186,6 @@ internal static class TypeMapperEmitter
         writer.Line(
             "=> throw new global::System.NotImplementedException();");
         writer.Unindent();
-    }
-
-    private static void WriteDirectBlock(
-        CodeWriter writer,
-        TypeMapperDirectBlockMappingModel directBlock)
-    {
-        writer.Unindent();
-        writer.Line("{");
-        writer.Indent();
-        WriteLocalFunction(
-            writer,
-            directBlock.LocalFunctionDeclaration);
-        writer.Line(
-            $"return {directBlock.ValueExpression};");
-        writer.Unindent();
-        writer.Line("}");
     }
 
     private static void WriteFactoryMapNew(
@@ -554,11 +546,11 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.MapExistingDirectBlock is { } directBlock)
+        if (mapping.DirectBlock is { } directBlock)
         {
-            WriteDirectBlock(
-                writer,
-                directBlock);
+            writer.Line(
+                $"=> {directBlock.MapExistingValueExpression};");
+            writer.Unindent();
             return;
         }
 
@@ -897,6 +889,16 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         string declaration)
     {
+        WriteMultilineDeclaration(
+            writer,
+            declaration);
+        writer.Line();
+    }
+
+    private static void WriteMultilineDeclaration(
+        CodeWriter writer,
+        string declaration)
+    {
         foreach (var line in declaration
                      .Replace("\r\n", "\n")
                      .Replace('\r', '\n')
@@ -904,8 +906,6 @@ internal static class TypeMapperEmitter
         {
             writer.Line(line);
         }
-
-        writer.Line();
     }
 
     private static string SourceValueExpression(

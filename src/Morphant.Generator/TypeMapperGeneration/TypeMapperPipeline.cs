@@ -285,20 +285,33 @@ internal static class TypeMapperPipeline
             }
         }
 
-        return registrations
-            .Select(registration =>
+        var usedDirectBlockMethodNames =
+            BuildUsedDirectBlockMethodNames(mapperType);
+        var mappings =
+            ImmutableArray.CreateBuilder<TypeMapperMappingModel>(
+                registrations.Count);
+
+        foreach (var registration in registrations)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            mappings.Add(
                 BuildMapping(
                     registration,
                     compilation,
                     mapperType,
-                    cancellationToken))
-            .ToImmutableArray();
+                    usedDirectBlockMethodNames,
+                    cancellationToken));
+        }
+
+        return mappings.ToImmutable();
     }
 
     private static TypeMapperMappingModel BuildMapping(
         MapperBuilderMapRegistrationInfo registration,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        HashSet<string> usedDirectBlockMethodNames,
         CancellationToken cancellationToken)
     {
         var destinationPlan =
@@ -349,7 +362,7 @@ internal static class TypeMapperPipeline
                 registration,
                 destinationPlan,
                 directBlock.Plan,
-                mapperType);
+                usedDirectBlockMethodNames);
         }
 
         var templateMapping =
@@ -423,7 +436,7 @@ internal static class TypeMapperPipeline
         MapperBuilderMapRegistrationInfo registration,
         DestinationPlan destinationPlan,
         TemplateDirectBlockPlan directBlock,
-        INamedTypeSymbol mapperType)
+        HashSet<string> usedDirectBlockMethodNames)
     {
         return new TypeMapperMappingModel(
             SourceTypeName:
@@ -448,32 +461,19 @@ internal static class TypeMapperPipeline
             MapExistingDestinationLocalName: null,
             MapNewMemberMappings: [],
             MapExistingMemberMappings: [],
-            MapNewDirectBlock:
-                BuildDirectBlockMode(
+            DirectBlock:
+                BuildDirectBlock(
                     directBlock,
-                    mapperType,
-                    mapExisting: false),
-            MapExistingDirectBlock:
-                BuildDirectBlockMode(
-                    directBlock,
-                    mapperType,
-                    mapExisting: true));
+                    usedDirectBlockMethodNames));
     }
 
     private static TypeMapperDirectBlockMappingModel
-        BuildDirectBlockMode(
+        BuildDirectBlock(
             TemplateDirectBlockPlan directBlock,
-            INamedTypeSymbol mapperType,
-            bool mapExisting)
+            HashSet<string> usedDirectBlockMethodNames)
     {
         var usedNames =
-            ConventionConstructorMappingPlanner
-                .BuildUsedValueLocalNames(mapperType);
-
-        if (mapExisting)
-        {
-            usedNames.Add("destination");
-        }
+            new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var token in SyntaxFactory
                      .ParseStatement(
@@ -495,26 +495,70 @@ internal static class TypeMapperPipeline
         {
             localNames.Add(
                 capture.PlaceholderName,
-                AllocateUserLocalName(
-                    capture.PreferredName,
-                    usedNames));
+                EscapeIdentifier(
+                    capture.PreferredName));
+            usedNames.Add(
+                capture.PreferredName);
         }
 
-        localNames.Add(
-            directBlock.LocalFunctionPlaceholderName,
+        var usedMethodNames =
+            new HashSet<string>(
+                usedNames,
+                StringComparer.Ordinal);
+        usedMethodNames.UnionWith(
+            usedDirectBlockMethodNames);
+        var methodName =
             AllocateUserLocalName(
                 "MapByTemplate",
-                usedNames));
+                usedMethodNames);
+
+        usedDirectBlockMethodNames.Add(methodName);
+        localNames.Add(
+            directBlock.LocalFunctionPlaceholderName,
+            methodName);
 
         return new TypeMapperDirectBlockMappingModel(
+            "private " +
             RenameLocalFunctionDeclaration(
                 directBlock.LocalFunctionDeclaration,
                 localNames),
             RenameExpression(
-                mapExisting
-                    ? directBlock.MapExistingValueExpression
-                    : directBlock.MapNewValueExpression,
+                directBlock.MapNewValueExpression,
+                localNames),
+            RenameExpression(
+                directBlock.MapExistingValueExpression,
                 localNames));
+    }
+
+    private static HashSet<string> BuildUsedDirectBlockMethodNames(
+        INamedTypeSymbol mapperType)
+    {
+        var result =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        for (var type = mapperType;
+             type is not null;
+             type = type.ContainingType)
+        {
+            result.Add(type.Name);
+
+            foreach (var typeParameter in type.TypeParameters)
+            {
+                result.Add(typeParameter.Name);
+            }
+        }
+
+        for (var type = mapperType;
+             type is not null;
+             type = type.BaseType)
+        {
+            foreach (var member in type.GetMembers())
+            {
+                result.Add(member.Name);
+            }
+        }
+
+        return result;
     }
 
     private static TypeMapperMappingModel BuildUnsupportedMapping(

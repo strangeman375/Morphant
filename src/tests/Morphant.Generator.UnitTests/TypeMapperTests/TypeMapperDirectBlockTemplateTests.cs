@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperTests;
 internal sealed class TypeMapperDirectBlockTemplateTests
 {
     [Test]
-    public async Task Copies_arbitrary_synchronous_block_to_local_function_in_both_modes()
+    public async Task Copies_arbitrary_synchronous_block_to_shared_helper()
     {
         // lang=c#
         const string source =
@@ -101,105 +101,57 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-        {
-            int MapByTemplate(global::TestCase.Source input)
-            {
-                static int Normalize(int value) => value < 0 ? -value : value;
-                var result = 1;
-                for (var index = 0; index < input.Count; index++)
-                {
-                    if (index % 2 == 0)
-                    {
-                        continue;
-                    }
-
-                    result += index;
-                }
-
-                lock (_gate)
-                {
-                    try
-                    {
-                        if (input.Fail)
-                        {
-                            throw new global::System.InvalidOperationException();
-                        }
-
-                        result = Normalize(result);
-                    }
-                    catch (global::System.InvalidOperationException)
-                    {
-                        return -1;
-                    }
-                    finally
-                    {
-                        result++;
-                    }
-                }
-
-                var values = new[]
-                {
-                    result
-                };
-                ref var current = ref values[0];
-                current++;
-                return current;
-            }
-
-            return MapByTemplate(source!);
-        }
+            => MapByTemplate(source!);
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
+            => MapByTemplate(source!);
+
+        private int MapByTemplate(global::TestCase.Source input)
         {
-            int MapByTemplate(global::TestCase.Source input)
+            static int Normalize(int value) => value < 0 ? -value : value;
+            var result = 1;
+            for (var index = 0; index < input.Count; index++)
             {
-                static int Normalize(int value) => value < 0 ? -value : value;
-                var result = 1;
-                for (var index = 0; index < input.Count; index++)
+                if (index % 2 == 0)
                 {
-                    if (index % 2 == 0)
-                    {
-                        continue;
-                    }
-
-                    result += index;
+                    continue;
                 }
 
-                lock (_gate)
-                {
-                    try
-                    {
-                        if (input.Fail)
-                        {
-                            throw new global::System.InvalidOperationException();
-                        }
-
-                        result = Normalize(result);
-                    }
-                    catch (global::System.InvalidOperationException)
-                    {
-                        return -1;
-                    }
-                    finally
-                    {
-                        result++;
-                    }
-                }
-
-                var values = new[]
-                {
-                    result
-                };
-                ref var current = ref values[0];
-                current++;
-                return current;
+                result += index;
             }
 
-            return MapByTemplate(source!);
+            lock (_gate)
+            {
+                try
+                {
+                    if (input.Fail)
+                    {
+                        throw new global::System.InvalidOperationException();
+                    }
+
+                    result = Normalize(result);
+                }
+                catch (global::System.InvalidOperationException)
+                {
+                    return -1;
+                }
+                finally
+                {
+                    result++;
+                }
+            }
+
+            var values = new[]
+            {
+                result
+            };
+            ref var current = ref values[0];
+            current++;
+            return current;
         }
     }
 }
@@ -274,37 +226,23 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-        {
-            static int MapByTemplate(global::TestCase.Source input, int previous)
-            {
-                if (previous != 0)
-                {
-                    return previous;
-                }
-
-                return input.Value;
-            }
-
-            return MapByTemplate(source!, default(int));
-        }
+            => MapByTemplate(source!, default(int));
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
-        {
-            static int MapByTemplate(global::TestCase.Source input, int previous)
-            {
-                if (previous != 0)
-                {
-                    return previous;
-                }
+            => MapByTemplate(source!, destination);
 
-                return input.Value;
+        private static int MapByTemplate(global::TestCase.Source input, int previous)
+        {
+            if (previous != 0)
+            {
+                return previous;
             }
 
-            return MapByTemplate(source!, destination);
+            return input.Value;
         }
     }
 }
@@ -327,7 +265,120 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Allocates_collision_safe_helper_and_parameter_names_per_mode()
+    public async Task Allocates_unique_shared_helpers_for_multiple_mappings()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public int Value { get; set; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, int>()
+                .Template(input =>
+                {
+                    return input.Value;
+                });
+
+            builder.Map<Source, long>()
+                .Template(input =>
+                {
+                    return input.Value;
+                });
+        }
+    }
+}
+""";
+
+        // lang=c#
+        const string expectedMapper =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace TestCase
+{
+    public partial class TestMapper :
+        global::Morphant.ITypeMapper<global::TestCase.Source, int>,
+        global::Morphant.ITypeMapper<global::TestCase.Source, long>
+    {
+        /// <inheritdoc/>
+        int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
+            global::TestCase.Source? source,
+            global::Morphant.MappingContext context)
+            => MapByTemplate(source!);
+
+        /// <inheritdoc/>
+        int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
+            global::TestCase.Source? source,
+            int destination,
+            global::Morphant.MappingContext context)
+            => MapByTemplate(source!);
+
+        private int MapByTemplate(global::TestCase.Source input)
+        {
+            return input.Value;
+        }
+
+        /// <inheritdoc/>
+        long global::Morphant.ITypeMapper<global::TestCase.Source, long>.Map(
+            global::TestCase.Source? source,
+            global::Morphant.MappingContext context)
+            => MapByTemplate1(source!);
+
+        /// <inheritdoc/>
+        long global::Morphant.ITypeMapper<global::TestCase.Source, long>.Map(
+            global::TestCase.Source? source,
+            long destination,
+            global::Morphant.MappingContext context)
+            => MapByTemplate1(source!);
+
+        private long MapByTemplate1(global::TestCase.Source input)
+        {
+            return input.Value;
+        }
+    }
+}
+""";
+
+        await TemplateMappingGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.TemplateExtension.System_Int32.g.cs",
+                BuildExpectedExtension(
+                    "int",
+                    "int",
+                    "int")
+            ),
+            (
+                "Morphant.Generated.TemplateExtension.System_Int64.g.cs",
+                BuildExpectedExtension(
+                    "long",
+                    "long",
+                    "long")
+            ),
+            (
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                expectedMapper
+            ));
+    }
+
+    [Test]
+    public async Task Allocates_collision_safe_shared_helper_and_parameter_names()
     {
         // lang=c#
         const string source =
@@ -349,6 +400,8 @@ namespace TestCase
     {
         private readonly int context = 1;
 
+        private int MapByTemplate1() => 0;
+
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, int>()
@@ -358,7 +411,8 @@ namespace TestCase
                         value + 1;
 
                     return MapByTemplate(
-                        source.Value + destination + context);
+                        source.Value + destination + context) +
+                        nameof(source).Length;
                 });
         }
     }
@@ -380,29 +434,19 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-        {
-            int MapByTemplate1(global::TestCase.Source source1, int destination)
-            {
-                static int MapByTemplate(int value) => value + 1;
-                return MapByTemplate(source1.Value + destination + this.context);
-            }
-
-            return MapByTemplate1(source!, default(int));
-        }
+            => MapByTemplate2(source!, default(int));
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
-        {
-            int MapByTemplate1(global::TestCase.Source source1, int destination1)
-            {
-                static int MapByTemplate(int value) => value + 1;
-                return MapByTemplate(source1.Value + destination1 + this.context);
-            }
+            => MapByTemplate2(source!, destination);
 
-            return MapByTemplate1(source!, destination);
+        private int MapByTemplate2(global::TestCase.Source source, int destination)
+        {
+            static int MapByTemplate(int value) => value + 1;
+            return MapByTemplate(source.Value + destination + this.context) + "source".Length;
         }
     }
 }
@@ -481,54 +525,36 @@ namespace TestCase
         string? global::Morphant.ITypeMapper<global::TestCase.Source, string>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-        {
-            string MapByTemplate(global::TestCase.Source input, string? previous)
-            {
-                return previous ?? input.Text;
-            }
-
-            return MapByTemplate(source!, default(string?));
-        }
+            => MapByTemplate(source!, default(string?));
 
         /// <inheritdoc/>
         string? global::Morphant.ITypeMapper<global::TestCase.Source, string>.Map(
             global::TestCase.Source? source,
             string? destination,
             global::Morphant.MappingContext context)
-        {
-            string MapByTemplate(global::TestCase.Source input, string? previous)
-            {
-                return previous ?? input.Text;
-            }
+            => MapByTemplate(source!, destination);
 
-            return MapByTemplate(source!, destination);
+        private string MapByTemplate(global::TestCase.Source input, string? previous)
+        {
+            return previous ?? input.Text;
         }
 
         /// <inheritdoc/>
         int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-        {
-            int? MapByTemplate(global::TestCase.Source input, int? previous)
-            {
-                return previous ?? input.Number;
-            }
-
-            return MapByTemplate(source!, default(int?));
-        }
+            => MapByTemplate1(source!, default(int?));
 
         /// <inheritdoc/>
         int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Map(
             global::TestCase.Source? source,
             int? destination,
             global::Morphant.MappingContext context)
-        {
-            int? MapByTemplate(global::TestCase.Source input, int? previous)
-            {
-                return previous ?? input.Number;
-            }
+            => MapByTemplate1(source!, destination);
 
-            return MapByTemplate(source!, destination);
+        private int? MapByTemplate1(global::TestCase.Source input, int? previous)
+        {
+            return previous ?? input.Number;
         }
     }
 }
@@ -538,19 +564,19 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.TemplateExtension.System_String.g.cs",
-                BuildExpectedExtension(
-                    "string",
-                    "string?",
-                    "string")
-            ),
-            (
                 "Morphant.Generated.TemplateExtension." +
                 "System_Nullable_1_int_.g.cs",
                 BuildExpectedExtension(
                     "int?",
                     "int?",
                     "int?")
+            ),
+            (
+                "Morphant.Generated.TemplateExtension.System_String.g.cs",
+                BuildExpectedExtension(
+                    "string",
+                    "string?",
+                    "string")
             ),
             (
                 "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",

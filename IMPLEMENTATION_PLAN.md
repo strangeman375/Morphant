@@ -560,17 +560,18 @@ TDD-среза, но детали могут уточняться перед р�
 
     Direct-template возвращает настоящий destination, поэтому его тело
     переносится целиком и отдаётся обычному C#-компилятору без анализа control
-    flow генератором. Block-body становится collision-safe local function
-    внутри каждой generated-перегрузки `Map`; source и предыдущий destination
-    передаются параметрами в порядке, записанном в lambda. `MapNew` передаёт
-    типизированный `default`, а `MapExisting` — существующий destination.
+    flow генератором. Block-body становится единым collision-safe private
+    helper-методом generated mapper-а, который вызывают обе перегрузки `Map`;
+    source и предыдущий destination передаются параметрами в порядке,
+    записанном в lambda. `MapNew` передаёт типизированный `default`, а
+    `MapExisting` — существующий destination.
 
     Сохраняются `static` lambda, mapper members, Configure-константы и обычные
     синхронные конструкции C#, включая изменяемые и `ref` locals, циклы,
     `break` / `continue`, несколько `return`, `throw`, вложенные local
-    functions, `try` / `catch` / `finally` и `lock`. Имена helper-а и его
-    параметров выделяются отдельно для каждого режима без конфликтов с
-    generated-параметрами и пользовательскими именами. Неконстантные
+    functions, `try` / `catch` / `finally` и `lock`. Имена helper-ов уникальны
+    в пределах mapper-а и не конфликтуют с пользовательскими members. Имена
+    параметров lambda сохраняются, включая семантику `nameof`. Неконстантные
     Configure-locals и Configure-local functions по-прежнему не переносятся.
     Expression-bodied direct-template сохраняет компактную generated-форму.
 
