@@ -8,6 +8,10 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TemplateMappingPlanner
 {
+    private const string UnsupportedCaptureMessage =
+        "Template contains a capture that cannot be transferred " +
+        "to the generated mapper.";
+
     private static readonly SyntaxAnnotation
         KnownNullMapNewExpressionAnnotation =
             new(nameof(KnownNullMapNewExpressionAnnotation));
@@ -109,6 +113,34 @@ internal static class TemplateMappingPlanner
                 INamedTypeSymbol namedDestination &&
             DirectDestinationTypePolicy.IsDirect(
                 namedDestination);
+        var mapNewDestinationIsKnownNull =
+            HasKnownNullDefault(registration.DestinationType);
+        var mapNewDestinationExpression =
+            destinationParameterSymbol is null
+                ? null
+                : BuildMapNewDestinationExpression(
+                    registration.DestinationType,
+                    mapNewDestinationIsKnownNull);
+        var mapExistingDestinationExpression =
+            destinationParameterSymbol is null
+                ? null
+                : SyntaxFactory.IdentifierName("destination");
+
+        if (directTemplate &&
+            lambda.Block is { } directBlock)
+        {
+            return BuildDirectBlockPlan(
+                lambda,
+                directBlock,
+                sourceParameterSymbol,
+                registration.SourceType,
+                destinationParameterSymbol,
+                registration.DestinationType,
+                mapNewDestinationExpression,
+                semanticModel,
+                cancellationToken);
+        }
+
         var controlFlowResult = TemplateControlFlowPlanner.Build(
             lambda,
             semanticModel,
@@ -128,18 +160,6 @@ internal static class TemplateMappingPlanner
             return null;
         }
 
-        var mapNewDestinationIsKnownNull =
-            HasKnownNullDefault(registration.DestinationType);
-        var mapNewDestinationExpression =
-            destinationParameterSymbol is null
-                ? null
-                : BuildMapNewDestinationExpression(
-                    registration.DestinationType,
-                    mapNewDestinationIsKnownNull);
-        var mapExistingDestinationExpression =
-            destinationParameterSymbol is null
-                ? null
-                : SyntaxFactory.IdentifierName("destination");
         var runtimeLocalPlaceholderNames =
             controlFlow.RuntimeLocals
                 .Select(
@@ -507,6 +527,206 @@ internal static class TemplateMappingPlanner
                 .ToImmutableArray());
     }
 
+    private static TemplateMappingPlanResult BuildDirectBlockPlan(
+        LambdaExpressionSyntax lambda,
+        BlockSyntax block,
+        IParameterSymbol sourceParameter,
+        ITypeSymbol sourceType,
+        IParameterSymbol? destinationParameter,
+        ITypeSymbol destinationType,
+        ExpressionSyntax? mapNewDestinationExpression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var allowedCapturedSymbols =
+            new HashSet<ISymbol>(
+                SymbolEqualityComparer.Default)
+            {
+                sourceParameter
+            };
+
+        if (destinationParameter is not null)
+        {
+            allowedCapturedSymbols.Add(
+                destinationParameter);
+        }
+
+        if (!TransferableLambdaSyntax.TryGetCaptures(
+                block,
+                semanticModel,
+                allowedCapturedSymbols,
+                "__morphantTemplateCapture",
+                cancellationToken,
+                out var captures))
+        {
+            return new UnsupportedTemplateMappingPlanResult(
+                UnsupportedCaptureMessage);
+        }
+
+        captures = captures
+            .OrderBy(capture =>
+                SymbolEqualityComparer.Default.Equals(
+                    capture.Symbol,
+                    sourceParameter)
+                    ? 0
+                    : 1)
+            .ToImmutableArray();
+
+        var capturePlaceholders =
+            captures.ToDictionary(
+                static capture => capture.Symbol,
+                static capture => capture.PlaceholderName,
+                SymbolEqualityComparer.Default);
+        var parameters =
+            ImmutableArray.CreateBuilder<(
+                TransferableLambdaCaptureSyntax Capture,
+                string TypeName,
+                string MapNewExpression,
+                string MapExistingExpression
+            )>(captures.Length);
+
+        foreach (var capture in captures)
+        {
+            if (SymbolEqualityComparer.Default.Equals(
+                    capture.Symbol,
+                    sourceParameter))
+            {
+                parameters.Add((
+                    capture,
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedTypeName(sourceType),
+                    "source!",
+                    "source!"
+                ));
+                continue;
+            }
+
+            if (destinationParameter is not null &&
+                SymbolEqualityComparer.Default.Equals(
+                    capture.Symbol,
+                    destinationParameter) &&
+                mapNewDestinationExpression is not null)
+            {
+                parameters.Add((
+                    capture,
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedMaybeNullTypeName(
+                            destinationType),
+                    NormalizeTransferredExpression(
+                        mapNewDestinationExpression),
+                    "destination"
+                ));
+                continue;
+            }
+
+            throw new InvalidOperationException(
+                "Direct template capture does not have a generated value.");
+        }
+
+        ExpressionSyntax CaptureExpression(
+            IParameterSymbol parameter)
+        {
+            return capturePlaceholders.TryGetValue(
+                    parameter,
+                    out var placeholder)
+                ? SyntaxFactory.IdentifierName(placeholder)
+                : SyntaxFactory.IdentifierName(
+                    "__morphantUnusedTemplateCapture");
+        }
+
+        var rewrittenBlock =
+            RewriteTransferredSyntax(
+                block,
+                sourceParameter,
+                sourceType,
+                CaptureExpression(sourceParameter),
+                destinationParameter,
+                destinationType,
+                destinationParameter is null
+                    ? null
+                    : CaptureExpression(
+                        destinationParameter),
+                semanticModel,
+                capturePlaceholders,
+                capturePlaceholders.Values.ToImmutableArray(),
+                rewriteUnresolvedCaptureNames: false);
+        var reservedNames =
+            BuildTransferredReservedNames(
+                rewrittenBlock,
+                capturePlaceholders.Values.ToImmutableArray());
+        var functionOrdinal = 0;
+        var functionPlaceholder =
+            AllocateTransferredPlaceholder(
+                "__morphantTemplateFunction",
+                ref functionOrdinal,
+                reservedNames);
+        var parameterList =
+            SyntaxFactory.ParameterList(
+                SyntaxFactory.SeparatedList(
+                    parameters.Select(item =>
+                        SyntaxFactory.Parameter(
+                                SyntaxFactory.Identifier(
+                                    item.Capture
+                                        .PlaceholderName))
+                            .WithType(
+                                SyntaxFactory.ParseTypeName(
+                                    item.TypeName)))));
+        var localFunction =
+            SyntaxFactory.LocalFunctionStatement(
+                    SyntaxFactory.ParseTypeName(
+                        TypeMapperMappingTypePolicy
+                            .GetGeneratedTypeName(
+                                destinationType)),
+                    SyntaxFactory.Identifier(
+                        functionPlaceholder))
+                .WithParameterList(parameterList)
+                .WithBody(rewrittenBlock);
+
+        if (lambda.Modifiers.Any(
+                static modifier =>
+                    modifier.IsKind(
+                        SyntaxKind.StaticKeyword)))
+        {
+            localFunction = localFunction.WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(
+                        SyntaxKind.StaticKeyword)));
+        }
+
+        var mapNewValueExpression =
+            functionPlaceholder +
+            "(" +
+            string.Join(
+                ", ",
+                parameters.Select(
+                    static item =>
+                        item.MapNewExpression)) +
+            ")";
+        var mapExistingValueExpression =
+            functionPlaceholder +
+            "(" +
+            string.Join(
+                ", ",
+                parameters.Select(
+                    static item =>
+                        item.MapExistingExpression)) +
+            ")";
+
+        return new SupportedDirectBlockTemplateMappingPlanResult(
+            new TemplateDirectBlockPlan(
+                functionPlaceholder,
+                NormalizeTransferredLocalFunction(
+                    localFunction),
+                parameters
+                    .Select(item =>
+                        new TemplateDirectBlockCapturePlan(
+                            item.Capture.PlaceholderName,
+                            item.Capture.PreferredName))
+                    .ToImmutableArray(),
+                mapNewValueExpression,
+                mapExistingValueExpression));
+    }
+
     private static TemplateFactoryPlan? BuildFactoryPlan(
         TemplateFactorySyntaxPlan? syntax,
         Func<ExpressionSyntax, string> rewriteExpression,
@@ -549,7 +769,7 @@ internal static class TemplateMappingPlanner
                 SymbolEqualityComparer.Default);
         var parameterCaptures =
             ImmutableArray.CreateBuilder<(
-                TemplateFactoryCaptureSyntax Capture,
+                TransferableLambdaCaptureSyntax Capture,
                 string TypeName,
                 string InvocationExpression
             )>();
@@ -588,7 +808,7 @@ internal static class TemplateMappingPlanner
                     TypeMapperMappingTypePolicy
                         .GetGeneratedMaybeNullTypeName(
                             destinationType),
-                    NormalizeFactoryExpression(
+                    NormalizeTransferredExpression(
                         mapNewDestinationExpression)
                 ));
                 continue;
@@ -627,7 +847,7 @@ internal static class TemplateMappingPlanner
                 .ToImmutableArray();
         var rewrittenExpressionBody =
             syntax.ExpressionBody is { } expressionBody
-                ? RewriteFactorySyntax(
+                ? RewriteTransferredSyntax(
                     expressionBody,
                     sourceParameter,
                     sourceType,
@@ -644,7 +864,7 @@ internal static class TemplateMappingPlanner
                 : null;
         var rewrittenBlockBody =
             syntax.BlockBody is { } blockBody
-                ? RewriteFactorySyntax(
+                ? RewriteTransferredSyntax(
                     blockBody,
                     sourceParameter,
                     sourceType,
@@ -669,12 +889,12 @@ internal static class TemplateMappingPlanner
         }
 
         var reservedNames =
-            BuildFactoryReservedNames(
+            BuildTransferredReservedNames(
                 transferredBody,
                 capturePlaceholderNames);
         var functionOrdinal = 0;
         var functionPlaceholder =
-            AllocateFactoryPlaceholder(
+            AllocateTransferredPlaceholder(
                 "__morphantFactoryFunction",
                 ref functionOrdinal,
                 reservedNames);
@@ -722,7 +942,7 @@ internal static class TemplateMappingPlanner
         }
 
         var declaration =
-            NormalizeFactoryLocalFunction(
+            NormalizeTransferredLocalFunction(
                 localFunction);
         var captures =
             parameterCaptures
@@ -773,14 +993,14 @@ internal static class TemplateMappingPlanner
             LocalFunctionPlaceholderName: null,
             LocalFunctionDeclaration: null,
             Captures: [],
-            NormalizeFactoryExpression(
+            NormalizeTransferredExpression(
                 rewrittenExpression),
             syntax.ConvertedTypeName,
             RuntimeLocalDependencies: [],
             UnsupportedMessage: null);
     }
 
-    private static TNode RewriteFactorySyntax<TNode>(
+    private static TNode RewriteTransferredSyntax<TNode>(
         TNode syntax,
         IParameterSymbol sourceParameter,
         ITypeSymbol sourceType,
@@ -792,7 +1012,8 @@ internal static class TemplateMappingPlanner
         IReadOnlyDictionary<ISymbol, string>
             capturePlaceholders,
         IReadOnlyCollection<string>
-            capturePlaceholderNames)
+            capturePlaceholderNames,
+        bool rewriteUnresolvedCaptureNames = true)
         where TNode : CSharpSyntaxNode
     {
         var rewritten =
@@ -807,18 +1028,24 @@ internal static class TemplateMappingPlanner
                 capturePlaceholders,
                 capturePlaceholderNames)
             .Visit(syntax)!;
+
+        if (!rewriteUnresolvedCaptureNames)
+        {
+            return (TNode)rewritten;
+        }
+
         var placeholdersByName =
             capturePlaceholders.ToDictionary(
                 static pair => pair.Key.Name,
                 static pair => pair.Value,
                 StringComparer.Ordinal);
 
-        return (TNode)new FactoryCaptureNameRewriter(
+        return (TNode)new UnresolvedCaptureNameRewriter(
                 placeholdersByName)
             .Visit(rewritten)!;
     }
 
-    private static HashSet<string> BuildFactoryReservedNames(
+    private static HashSet<string> BuildTransferredReservedNames(
         SyntaxNode transferredBody,
         IReadOnlyCollection<string> capturePlaceholderNames)
     {
@@ -839,7 +1066,7 @@ internal static class TemplateMappingPlanner
         return result;
     }
 
-    private static string AllocateFactoryPlaceholder(
+    private static string AllocateTransferredPlaceholder(
         string prefix,
         ref int ordinal,
         HashSet<string> reservedNames)
@@ -858,7 +1085,7 @@ internal static class TemplateMappingPlanner
         }
     }
 
-    private static string NormalizeFactoryLocalFunction(
+    private static string NormalizeTransferredLocalFunction(
         LocalFunctionStatementSyntax localFunction)
     {
         var rewritten = localFunction
@@ -872,7 +1099,7 @@ internal static class TemplateMappingPlanner
             .ToFullString();
     }
 
-    private static string NormalizeFactoryExpression(
+    private static string NormalizeTransferredExpression(
         ExpressionSyntax expression)
     {
         var rewritten = expression
@@ -1815,7 +2042,12 @@ internal static class TemplateMappingPlanner
         public override SyntaxNode? VisitVariableDeclaration(
             VariableDeclarationSyntax node)
         {
-            if (node.Type.IsVar)
+            if (node.Type.IsVar ||
+                node.Type is RefTypeSyntax
+                {
+                    Type: var referencedType
+                } &&
+                referencedType.IsVar)
             {
                 return node.WithVariables(
                     VisitList(node.Variables));
@@ -2214,6 +2446,17 @@ internal static class TemplateMappingPlanner
                 return node;
             }
 
+            if (IsImplicitMapperMemberShadowedByMapParameter(
+                    node,
+                    symbol))
+            {
+                return SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.ThisExpression(),
+                        node.WithoutTrivia())
+                    .WithTriviaFrom(node);
+            }
+
             if (symbol is ILocalSymbol
                 {
                     IsConst: true,
@@ -2283,7 +2526,7 @@ internal static class TemplateMappingPlanner
                     return node;
                 }
 
-                return SyntaxFactory.ParseExpression(
+                return SyntaxFactory.ParseTypeName(
                         type.ToDisplayString(
                             SymbolDisplayFormats.FullyQualifiedNullable))
                     .WithTriviaFrom(node);
@@ -2305,6 +2548,67 @@ internal static class TemplateMappingPlanner
             }
 
             return base.VisitIdentifierName(node);
+        }
+
+        private bool
+            IsImplicitMapperMemberShadowedByMapParameter(
+                IdentifierNameSyntax node,
+                ISymbol? symbol)
+        {
+            if (node.Identifier.ValueText is not
+                    ("source" or "destination" or "context") ||
+                node.Parent is MemberAccessExpressionSyntax
+                {
+                    Name: var memberName
+                } &&
+                ReferenceEquals(memberName, node))
+            {
+                return false;
+            }
+
+            var containingType = symbol switch
+            {
+                IFieldSymbol
+                {
+                    IsStatic: false
+                } field => field.ContainingType,
+                IPropertySymbol
+                {
+                    IsStatic: false
+                } property => property.ContainingType,
+                IEventSymbol
+                {
+                    IsStatic: false
+                } @event => @event.ContainingType,
+                IMethodSymbol
+                {
+                    IsStatic: false,
+                    MethodKind: MethodKind.Ordinary
+                } method => method.ContainingType,
+                _ => null
+            };
+
+            if (containingType is null)
+            {
+                return false;
+            }
+
+            for (var current =
+                     semanticModel.GetEnclosingSymbol(
+                             node.SpanStart)?
+                         .ContainingType;
+                 current is not null;
+                 current = current.BaseType)
+            {
+                if (SymbolEqualityComparer.Default.Equals(
+                        current,
+                        containingType))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool RequiresConstantCast(
@@ -2361,7 +2665,7 @@ internal static class TemplateMappingPlanner
 
             if (symbol is INamedTypeSymbol type)
             {
-                return SyntaxFactory.ParseExpression(
+                return SyntaxFactory.ParseTypeName(
                         type.ToDisplayString(
                             SymbolDisplayFormats.FullyQualifiedNullable))
                     .WithTriviaFrom(node);
@@ -2523,7 +2827,7 @@ internal static class TemplateMappingPlanner
         }
     }
 
-    private sealed class FactoryCaptureNameRewriter(
+    private sealed class UnresolvedCaptureNameRewriter(
         IReadOnlyDictionary<string, string> placeholders)
         : CSharpSyntaxRewriter
     {
@@ -2625,6 +2929,22 @@ internal sealed record SupportedTemplateMappingPlanResult(
     ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals,
     ImmutableArray<TemplateBoundLocalPlan> BoundLocals)
     : TemplateMappingPlanResult;
+
+internal sealed record
+    SupportedDirectBlockTemplateMappingPlanResult(
+        TemplateDirectBlockPlan Plan)
+    : TemplateMappingPlanResult;
+
+internal readonly record struct TemplateDirectBlockPlan(
+    string LocalFunctionPlaceholderName,
+    string LocalFunctionDeclaration,
+    ImmutableArray<TemplateDirectBlockCapturePlan> Captures,
+    string MapNewValueExpression,
+    string MapExistingValueExpression);
+
+internal readonly record struct TemplateDirectBlockCapturePlan(
+    string PlaceholderName,
+    string PreferredName);
 
 internal abstract record TemplateMappingPlanNode;
 

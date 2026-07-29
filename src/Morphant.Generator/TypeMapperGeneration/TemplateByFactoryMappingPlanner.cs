@@ -95,10 +95,11 @@ internal static class TemplateByFactoryMappingPlanner
                 ? (SyntaxNode)lambda
                 : factoryArgument.Expression;
 
-        if (!TryBuildCaptures(
+        if (!TransferableLambdaSyntax.TryGetCaptures(
                 transferredSyntax,
                 semanticModel,
                 allowedCapturedSymbols,
+                "__morphantFactoryCapture",
                 cancellationToken,
                 out var captures))
         {
@@ -160,163 +161,6 @@ internal static class TemplateByFactoryMappingPlanner
             captures,
             UnsupportedMessage: null);
         return true;
-    }
-
-    private static bool TryBuildCaptures(
-        SyntaxNode transferredSyntax,
-        SemanticModel semanticModel,
-        HashSet<ISymbol> allowedCapturedSymbols,
-        CancellationToken cancellationToken,
-        out ImmutableArray<TemplateFactoryCaptureSyntax>
-            captures)
-    {
-        var result =
-            ImmutableArray.CreateBuilder<
-                TemplateFactoryCaptureSyntax>();
-        var seen =
-            new HashSet<ISymbol>(
-                SymbolEqualityComparer.Default);
-        var reservedNames = BuildReservedNames(
-            transferredSyntax);
-        var captureOrdinal = 0;
-
-        foreach (var identifier in transferredSyntax
-                     .DescendantNodesAndSelf()
-                     .OfType<SimpleNameSyntax>())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var symbol = semanticModel.GetSymbolInfo(
-                    identifier,
-                    cancellationToken)
-                .Symbol;
-
-            if (symbol is ILocalSymbol
-                {
-                    IsConst: true
-                })
-            {
-                continue;
-            }
-
-            if (symbol is IMethodSymbol
-                {
-                    MethodKind: MethodKind.LocalFunction
-                })
-            {
-                if (!IsDeclaredWithin(
-                        symbol,
-                        transferredSyntax))
-                {
-                    captures = default;
-                    return false;
-                }
-
-                continue;
-            }
-
-            if (symbol is IRangeVariableSymbol)
-            {
-                if (!IsDeclaredWithin(
-                        symbol,
-                        transferredSyntax))
-                {
-                    captures = default;
-                    return false;
-                }
-
-                continue;
-            }
-
-            if (symbol is not ILocalSymbol &&
-                symbol is not IParameterSymbol)
-            {
-                continue;
-            }
-
-            if (IsDeclaredWithin(
-                    symbol,
-                    transferredSyntax))
-            {
-                continue;
-            }
-
-            if (!allowedCapturedSymbols.Contains(symbol))
-            {
-                captures = default;
-                return false;
-            }
-
-            if (!seen.Add(symbol))
-            {
-                continue;
-            }
-
-            var placeholder = AllocateName(
-                "__morphantFactoryCapture",
-                ref captureOrdinal,
-                reservedNames);
-            result.Add(
-                new TemplateFactoryCaptureSyntax(
-                    symbol,
-                    placeholder,
-                    symbol.Name));
-        }
-
-        captures = result.ToImmutable();
-        return true;
-    }
-
-    private static bool IsDeclaredWithin(
-        ISymbol symbol,
-        SyntaxNode syntax)
-    {
-        foreach (var reference in
-                 symbol.DeclaringSyntaxReferences)
-        {
-            if (ReferenceEquals(
-                    reference.SyntaxTree,
-                    syntax.SyntaxTree) &&
-                syntax.FullSpan.Contains(
-                    reference.Span))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static HashSet<string> BuildReservedNames(
-        SyntaxNode syntax)
-    {
-        return new HashSet<string>(
-            syntax.DescendantTokens()
-                .Where(static token =>
-                    token.IsKind(
-                        SyntaxKind.IdentifierToken))
-                .Select(static token =>
-                    token.ValueText),
-            StringComparer.Ordinal);
-    }
-
-    private static string AllocateName(
-        string prefix,
-        ref int ordinal,
-        HashSet<string> reservedNames)
-    {
-        while (true)
-        {
-            var candidate =
-                prefix +
-                ordinal++.ToString(
-                    System.Globalization.CultureInfo.InvariantCulture);
-
-            if (reservedNames.Add(candidate))
-            {
-                return candidate;
-            }
-        }
     }
 
     private static bool ContainsMarker(
@@ -407,7 +251,7 @@ internal sealed record TemplateFactorySyntaxPlan(
     BlockSyntax? BlockBody,
     ExpressionSyntax? DelegateExpression,
     bool IsStatic,
-    ImmutableArray<TemplateFactoryCaptureSyntax> Captures,
+    ImmutableArray<TransferableLambdaCaptureSyntax> Captures,
     string? UnsupportedMessage)
 {
     public static TemplateFactorySyntaxPlan Unsupported(
@@ -424,8 +268,3 @@ internal sealed record TemplateFactorySyntaxPlan(
             UnsupportedMessage: message);
     }
 }
-
-internal readonly record struct TemplateFactoryCaptureSyntax(
-    ISymbol Symbol,
-    string PlaceholderName,
-    string PreferredName);

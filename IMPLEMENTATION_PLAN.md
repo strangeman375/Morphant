@@ -23,9 +23,9 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → произвольная синхронная block-lambda direct-template.** Следующий
-самостоятельный срез переносит тело direct-template целиком и отдаёт его
-обычному C#-компилятору без анализа control flow генератором.
+**Фаза 4 → `MappingMode`.** Перед тестами отдельно согласовать поведение обеих
+интерфейсных перегрузок для `MapNew`, `MapExisting` и
+`MapNewAndExisting`.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -522,7 +522,7 @@ TDD-среза, но детали могут уточняться перед р�
   с прямыми builder-chain, но по-прежнему не следует за aliases, delegates,
   helper/local-function calls или иным непрямым кодом регистрации.
 
-- [ ] Statement-level управляющие конструкции `Template`.
+- [x] Statement-level управляющие конструкции `Template`.
 
   Full-template остаётся анализируемым DSL и поддерживает конечное ветвление
   без изменяемого состояния. Согласованная реализация разделена на три
@@ -556,11 +556,23 @@ TDD-среза, но детали могут уточняться перед р�
     `MapNew` и `MapExisting`; неисчерпывающий DSL-switch сохраняет runtime
     fallback обычного C# switch-expression.
 
-  - [ ] Произвольная синхронная block-lambda direct-template.
+  - [x] Произвольная синхронная block-lambda direct-template.
 
     Direct-template возвращает настоящий destination, поэтому его тело
     переносится целиком и отдаётся обычному C#-компилятору без анализа control
-    flow генератором.
+    flow генератором. Block-body становится collision-safe local function
+    внутри каждой generated-перегрузки `Map`; source и предыдущий destination
+    передаются параметрами в порядке, записанном в lambda. `MapNew` передаёт
+    типизированный `default`, а `MapExisting` — существующий destination.
+
+    Сохраняются `static` lambda, mapper members, Configure-константы и обычные
+    синхронные конструкции C#, включая изменяемые и `ref` locals, циклы,
+    `break` / `continue`, несколько `return`, `throw`, вложенные local
+    functions, `try` / `catch` / `finally` и `lock`. Имена helper-а и его
+    параметров выделяются отдельно для каждого режима без конфликтов с
+    generated-параметрами и пользовательскими именами. Неконстантные
+    Configure-locals и Configure-local functions по-прежнему не переносятся.
+    Expression-bodied direct-template сохраняет компактную generated-форму.
 
   В full-template намеренно не поддерживаются locals без инициализатора,
   последующие и deconstruction assignments, compound assignments,

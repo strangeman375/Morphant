@@ -341,6 +341,17 @@ internal static class TypeMapperPipeline
                 unsupported.Message);
         }
 
+        if (templateMappingResult is
+            SupportedDirectBlockTemplateMappingPlanResult
+                directBlock)
+        {
+            return BuildDirectBlockMapping(
+                registration,
+                destinationPlan,
+                directBlock.Plan,
+                mapperType);
+        }
+
         var templateMapping =
             (SupportedTemplateMappingPlanResult)
             templateMappingResult;
@@ -406,6 +417,104 @@ internal static class TypeMapperPipeline
         {
             ControlFlow = controlFlow
         };
+    }
+
+    private static TypeMapperMappingModel BuildDirectBlockMapping(
+        MapperBuilderMapRegistrationInfo registration,
+        DestinationPlan destinationPlan,
+        TemplateDirectBlockPlan directBlock,
+        INamedTypeSymbol mapperType)
+    {
+        return new TypeMapperMappingModel(
+            SourceTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    registration.SourceType),
+            MaybeNullSourceTypeName:
+                TypeMapperMappingTypePolicy
+                    .GetGeneratedMaybeNullTypeName(
+                        registration.SourceType),
+            DestinationTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    registration.DestinationType),
+            MaybeNullDestinationTypeName:
+                TypeMapperMappingTypePolicy
+                    .GetGeneratedMaybeNullTypeName(
+                        registration.DestinationType),
+            MapNewDirectExpression: null,
+            MapExistingDirectExpression: null,
+            MapNewFactory: null,
+            MapNewConstructor: null,
+            MapExistingKind: destinationPlan.MapExistingKind,
+            MapExistingDestinationLocalName: null,
+            MapNewMemberMappings: [],
+            MapExistingMemberMappings: [],
+            MapNewDirectBlock:
+                BuildDirectBlockMode(
+                    directBlock,
+                    mapperType,
+                    mapExisting: false),
+            MapExistingDirectBlock:
+                BuildDirectBlockMode(
+                    directBlock,
+                    mapperType,
+                    mapExisting: true));
+    }
+
+    private static TypeMapperDirectBlockMappingModel
+        BuildDirectBlockMode(
+            TemplateDirectBlockPlan directBlock,
+            INamedTypeSymbol mapperType,
+            bool mapExisting)
+    {
+        var usedNames =
+            ConventionConstructorMappingPlanner
+                .BuildUsedValueLocalNames(mapperType);
+
+        if (mapExisting)
+        {
+            usedNames.Add("destination");
+        }
+
+        foreach (var token in SyntaxFactory
+                     .ParseStatement(
+                         directBlock.LocalFunctionDeclaration)
+                     .DescendantTokens())
+        {
+            if (token.IsKind(
+                    SyntaxKind.IdentifierToken))
+            {
+                usedNames.Add(token.ValueText);
+            }
+        }
+
+        var localNames =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+
+        foreach (var capture in directBlock.Captures)
+        {
+            localNames.Add(
+                capture.PlaceholderName,
+                AllocateUserLocalName(
+                    capture.PreferredName,
+                    usedNames));
+        }
+
+        localNames.Add(
+            directBlock.LocalFunctionPlaceholderName,
+            AllocateUserLocalName(
+                "MapByTemplate",
+                usedNames));
+
+        return new TypeMapperDirectBlockMappingModel(
+            RenameLocalFunctionDeclaration(
+                directBlock.LocalFunctionDeclaration,
+                localNames),
+            RenameExpression(
+                mapExisting
+                    ? directBlock.MapExistingValueExpression
+                    : directBlock.MapNewValueExpression,
+                localNames));
     }
 
     private static TypeMapperMappingModel BuildUnsupportedMapping(

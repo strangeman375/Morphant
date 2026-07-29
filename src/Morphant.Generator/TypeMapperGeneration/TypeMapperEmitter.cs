@@ -136,6 +136,14 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (mapping.MapNewDirectBlock is { } directBlock)
+        {
+            WriteDirectBlock(
+                writer,
+                directBlock);
+            return;
+        }
+
         if (mapping.MapNewDirectExpression is { } directExpression)
         {
             writer.Line($"=> {directExpression};");
@@ -170,6 +178,22 @@ internal static class TypeMapperEmitter
         writer.Line(
             "=> throw new global::System.NotImplementedException();");
         writer.Unindent();
+    }
+
+    private static void WriteDirectBlock(
+        CodeWriter writer,
+        TypeMapperDirectBlockMappingModel directBlock)
+    {
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+        WriteLocalFunction(
+            writer,
+            directBlock.LocalFunctionDeclaration);
+        writer.Line(
+            $"return {directBlock.ValueExpression};");
+        writer.Unindent();
+        writer.Line("}");
     }
 
     private static void WriteFactoryMapNew(
@@ -527,6 +551,14 @@ internal static class TypeMapperEmitter
                 writer,
                 mapExistingUnsupportedExceptionMessage);
             writer.Unindent();
+            return;
+        }
+
+        if (mapping.MapExistingDirectBlock is { } directBlock)
+        {
+            WriteDirectBlock(
+                writer,
+                directBlock);
             return;
         }
 

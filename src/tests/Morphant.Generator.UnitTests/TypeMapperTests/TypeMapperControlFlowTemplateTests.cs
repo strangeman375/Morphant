@@ -64,10 +64,14 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            var offset = source!.Offset + 1;
-            var value = source!.UseOffset ? offset : source!.Value;
+            int MapByTemplate(global::TestCase.Source source1)
+            {
+                var offset = source1.Offset + 1;
+                var value = source1.UseOffset ? offset : source1.Value;
+                return value;
+            }
 
-            return value;
+            return MapByTemplate(source!);
         }
 
         /// <inheritdoc/>
@@ -76,10 +80,14 @@ namespace TestCase
             int destination,
             global::Morphant.MappingContext context)
         {
-            var offset = source!.Offset + 1;
-            var value = source!.UseOffset ? offset : source!.Value;
+            int MapByTemplate(global::TestCase.Source source1)
+            {
+                var offset = source1.Offset + 1;
+                var value = source1.UseOffset ? offset : source1.Value;
+                return value;
+            }
 
-            return value;
+            return MapByTemplate(source!);
         }
     }
 }
