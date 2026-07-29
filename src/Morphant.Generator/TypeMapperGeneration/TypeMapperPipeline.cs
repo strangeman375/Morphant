@@ -1329,9 +1329,14 @@ internal static class TypeMapperPipeline
 
         if (leaf.MapNewFactory is { } factory)
         {
-            AddUsedLocalName(
-                result,
-                factory.LocalFunctionName);
+            if (factory.LocalFunctionName is
+                { } localFunctionName)
+            {
+                AddUsedLocalName(
+                    result,
+                    localFunctionName);
+            }
+
             AddUsedLocalName(
                 result,
                 factory.DestinationLocalName);
@@ -1461,10 +1466,12 @@ internal static class TypeMapperPipeline
                     ? factory with
                     {
                         LocalFunctionDeclaration =
-                            RenameLocalFunctionDeclaration(
-                                factory
-                                    .LocalFunctionDeclaration,
-                                names),
+                            factory.LocalFunctionDeclaration is
+                                { } localFunctionDeclaration
+                                ? RenameLocalFunctionDeclaration(
+                                    localFunctionDeclaration,
+                                    names)
+                                : null,
                         ValueExpression =
                             RenameExpression(
                                 factory.ValueExpression,
@@ -1697,10 +1704,9 @@ internal static class TypeMapperPipeline
                     TemplateConstructionKind.ByFactory,
                 Factory:
                 {
-                    LocalFunctionPlaceholderName:
-                        { } functionPlaceholder,
-                    LocalFunctionDeclaration:
-                        { } functionDeclaration
+                    ValueExpression:
+                        { } factoryValueExpression,
+                    UnsupportedMessage: null
                 } factory
             })
         {
@@ -1716,39 +1722,61 @@ internal static class TypeMapperPipeline
             usedNames.Add(runtimeLocal.PreferredName);
         }
 
-        foreach (var token in SyntaxFactory
-                     .ParseStatement(functionDeclaration)
-                     .DescendantTokens())
+        if (factory.LocalFunctionDeclaration is
+            { } localFunctionDeclaration)
         {
-            if (token.IsKind(SyntaxKind.IdentifierToken))
+            foreach (var token in SyntaxFactory
+                         .ParseStatement(
+                             localFunctionDeclaration)
+                         .DescendantTokens())
             {
-                usedNames.Add(token.ValueText);
+                if (token.IsKind(
+                        SyntaxKind.IdentifierToken))
+                {
+                    usedNames.Add(token.ValueText);
+                }
             }
         }
 
         var localNames =
             new Dictionary<string, string>(
                 StringComparer.Ordinal);
+        string? functionName = null;
+        string? functionDeclaration = null;
 
-        foreach (var capture in factory.Captures)
+        if (factory.LocalFunctionPlaceholderName is
+                { } functionPlaceholder &&
+            factory.LocalFunctionDeclaration is
+                { } localFunction)
         {
-            var name = AllocateUserLocalName(
-                capture.PreferredName,
-                usedNames);
+            foreach (var capture in factory.Captures)
+            {
+                var name = AllocateUserLocalName(
+                    capture.PreferredName,
+                    usedNames);
 
-            localNames.Add(
-                capture.PlaceholderName,
-                name);
-        }
+                localNames.Add(
+                    capture.PlaceholderName,
+                    name);
+            }
 
-        var functionName =
-            AllocateUserLocalName(
+            functionName = AllocateUserLocalName(
                 "CreateByFactory",
                 usedNames);
 
-        localNames.Add(
-            functionPlaceholder,
-            functionName);
+            localNames.Add(
+                functionPlaceholder,
+                functionName);
+            functionDeclaration =
+                RenameLocalFunctionDeclaration(
+                    localFunction,
+                    localNames);
+        }
+
+        var valueExpression =
+            RenameExpression(
+                factoryValueExpression,
+                localNames);
 
         var destinationLocalName =
             AllocateUserLocalName(
@@ -1762,22 +1790,11 @@ internal static class TypeMapperPipeline
                     "destinationValue",
                     usedNames)
                 : null;
-        var invocationExpression =
-            functionName +
-            "(" +
-            string.Join(
-                ", ",
-                factory.Captures.Select(
-                    static capture =>
-                        capture.InvocationExpression)) +
-            ")";
 
         return new TypeMapperFactoryMappingModel(
             functionName,
-            RenameLocalFunctionDeclaration(
-                functionDeclaration,
-                localNames),
-            invocationExpression,
+            functionDeclaration,
+            valueExpression,
             factory.RuntimeLocalDependencies,
             destinationLocalName,
             nullableValueLocalName);

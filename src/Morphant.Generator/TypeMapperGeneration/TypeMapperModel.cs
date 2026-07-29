@@ -45,8 +45,8 @@ internal readonly record struct TypeMapperMappingModel
 
 internal readonly record struct TypeMapperFactoryMappingModel
 (
-    string LocalFunctionName,
-    string LocalFunctionDeclaration,
+    string? LocalFunctionName,
+    string? LocalFunctionDeclaration,
     string ValueExpression,
     ImmutableArray<string> RuntimeLocalDependencies,
     string DestinationLocalName,

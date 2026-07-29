@@ -379,9 +379,13 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         TypeMapperFactoryMappingModel factory)
     {
-        WriteLocalFunction(
-            writer,
-            factory.LocalFunctionDeclaration);
+        if (factory.LocalFunctionDeclaration is
+            { } localFunctionDeclaration)
+        {
+            WriteLocalFunction(
+                writer,
+                localFunctionDeclaration);
+        }
 
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);

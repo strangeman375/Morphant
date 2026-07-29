@@ -247,10 +247,11 @@ TDD-среза, но детали могут уточняться перед р�
   а ссылки на типы, static-члены и extension methods переносятся в
   fully-qualified форме, чтобы generated-код не зависел от `using` исходного
   файла. Compile-time результат `nameof` сохраняется строковым литералом.
-  Из Configure-контекста переносятся compile-time constants и поддерживаемые
-  `static` local functions; обычные locals, `builder` и non-static local
-  functions не переносятся. Общая граница block-lambda и управляющих форм
-  описана отдельным завершённым пунктом ниже.
+  Из Configure-контекста переносятся compile-time constants. Обычные locals,
+  `builder` и любые local functions из `Configure()` не переносятся;
+  переиспользуемая логика выносится в обычный instance/static метод mapper-а.
+  Общая граница block-lambda и управляющих форм описана отдельным завершённым
+  пунктом ниже.
 
 - [x] Явный конструктор в `Template()`.
 
@@ -495,10 +496,11 @@ TDD-среза, но детали могут уточняться перед р�
   Template-locals не попадают в `MapExisting`.
 
   `ByFactory` дополнительно принимает method group и заранее созданный
-  `Func<TDestination>` из поля или свойства mapper-а. Эти формы проходят через
-  тот же generated helper: выражение receiver-а либо delegate-member читается
-  в типизированный local при каждом `MapNew`, после чего delegate вызывается
-  ровно один раз. Между mapping-вызовами receiver или delegate не кешируется.
+  `Func<TDestination>` из поля или свойства mapper-а. Они вызываются
+  непосредственно в выражении создания destination без generated helper-а.
+  Явное преобразование к исходному `Func<TDestination>` сохраняет target
+  typing, overload resolution и семантику value-type receiver-а. Между
+  mapping-вызовами receiver или delegate не кешируется.
 
   Переносимые factory-выражения могут использовать source, предыдущее
   destination, Template-locals, instance/static members mapper-а, static API и

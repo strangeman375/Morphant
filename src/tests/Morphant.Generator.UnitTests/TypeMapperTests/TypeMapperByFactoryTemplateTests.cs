@@ -53,12 +53,17 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .Template(s => new(
-                    ByFactory(() =>
-                        CreateDestination(Abs(s.FactoryValue))))
+                .Template(s =>
                 {
-                    Explicit = Adjust(s.Explicit),
-                    IgnoredInit = s.IgnoredInit
+                    var factoryValue = Abs(s.FactoryValue);
+
+                    return new(
+                        ByFactory(() =>
+                            CreateDestination(factoryValue)))
+                    {
+                        Explicit = Adjust(s.Explicit),
+                        IgnoredInit = s.IgnoredInit
+                    };
                 });
         }
 
@@ -113,9 +118,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::TestCase.Destination CreateByFactory(global::TestCase.Source s) => CreateDestination(global::System.Math.Abs(s.FactoryValue));
+            var factoryValue = global::System.Math.Abs(source!.FactoryValue);
 
-            global::TestCase.Destination destination = CreateByFactory(source!);
+            global::TestCase.Destination CreateByFactory() => CreateDestination(factoryValue);
+
+            global::TestCase.Destination destination = CreateByFactory();
             destination!.Explicit = Adjust(source!.Explicit);
             destination!.Remaining = source!.Remaining;
 
@@ -1043,7 +1050,7 @@ namespace TestCase
         public int Value { get; set; }
     }
 
-    public sealed class LocalFunctionSource
+    public sealed class ConfigureLocalFunctionSource
     {
         public int Value { get; set; }
     }
@@ -1053,7 +1060,7 @@ namespace TestCase
         public int Value { get; set; }
     }
 
-    public sealed class StaticFunctionSource
+    public sealed class ConfigureStaticLocalFunctionSource
     {
         public int Value { get; set; }
     }
@@ -1079,9 +1086,9 @@ namespace TestCase
         {
             var seed = GetSeed();
 
-            Destination CreateDestination<T>() => new();
+            Destination CreateFromConfigureLocalFunction<T>() => new();
 
-            static Destination CreateWithStatement()
+            static Destination CreateFromConfigureStaticLocalFunction()
             {
                 if (global::System.DateTime.UtcNow.Ticks > 0)
                 {
@@ -1106,9 +1113,9 @@ namespace TestCase
                     Value = s.Value + 2
                 });
 
-            builder.Map<LocalFunctionSource, Destination>()
+            builder.Map<ConfigureLocalFunctionSource, Destination>()
                 .Template(s => new(
-                    ByFactory(CreateDestination<int>))
+                    ByFactory(CreateFromConfigureLocalFunction<int>))
                 {
                     Value = s.Value + 3
                 });
@@ -1128,9 +1135,9 @@ namespace TestCase
                     Value = s.Value + 4
                 });
 
-            builder.Map<StaticFunctionSource, Destination>()
+            builder.Map<ConfigureStaticLocalFunctionSource, Destination>()
                 .Template(s => new(
-                    ByFactory(CreateWithStatement))
+                    ByFactory(CreateFromConfigureStaticLocalFunction))
                 {
                     Value = s.Value + 5
                 });
@@ -1174,9 +1181,9 @@ namespace TestCase
     public partial class TestMapper :
         global::Morphant.ITypeMapper<global::TestCase.LocalSource, global::TestCase.Destination>,
         global::Morphant.ITypeMapper<global::TestCase.BuilderSource, global::TestCase.Destination>,
-        global::Morphant.ITypeMapper<global::TestCase.LocalFunctionSource, global::TestCase.Destination>,
+        global::Morphant.ITypeMapper<global::TestCase.ConfigureLocalFunctionSource, global::TestCase.Destination>,
         global::Morphant.ITypeMapper<global::TestCase.StatementSource, global::TestCase.Destination>,
-        global::Morphant.ITypeMapper<global::TestCase.StaticFunctionSource, global::TestCase.Destination>
+        global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>
     {
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.LocalSource, global::TestCase.Destination>.Map(
@@ -1215,15 +1222,15 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.LocalFunctionSource, global::TestCase.Destination>.Map(
-            global::TestCase.LocalFunctionSource? source,
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureLocalFunctionSource, global::TestCase.Destination>.Map(
+            global::TestCase.ConfigureLocalFunctionSource? source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "ByFactory contains a capture that cannot be transferred to the generated mapper.");
 
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.LocalFunctionSource, global::TestCase.Destination>.Map(
-            global::TestCase.LocalFunctionSource? source,
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureLocalFunctionSource, global::TestCase.Destination>.Map(
+            global::TestCase.ConfigureLocalFunctionSource? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
@@ -1265,15 +1272,15 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.StaticFunctionSource, global::TestCase.Destination>.Map(
-            global::TestCase.StaticFunctionSource? source,
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>.Map(
+            global::TestCase.ConfigureStaticLocalFunctionSource? source,
             global::Morphant.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "ByFactory contains a capture that cannot be transferred to the generated mapper.");
 
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.StaticFunctionSource, global::TestCase.Destination>.Map(
-            global::TestCase.StaticFunctionSource? source,
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>.Map(
+            global::TestCase.ConfigureStaticLocalFunctionSource? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
@@ -1542,7 +1549,8 @@ namespace TestCase
                 });
 
             builder.Map<Source, DelegateDestination>()
-                .Template(s => new(ByFactory(Factory))
+                .Template(s => new(ByFactory(
+                    s.Value > 0 ? Factory : _factory))
                 {
                     Value = s.Value + 2
                 });
@@ -1648,13 +1656,7 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::TestCase.MethodGroupDestination CreateByFactory()
-            {
-                global::System.Func<global::TestCase.MethodGroupDestination> __morphantFactoryDelegate0 = Provider.CreateMethodGroup;
-                return __morphantFactoryDelegate0();
-            }
-
-            global::TestCase.MethodGroupDestination destination = CreateByFactory();
+            global::TestCase.MethodGroupDestination destination = ((global::System.Func<global::TestCase.MethodGroupDestination>)Provider.CreateMethodGroup)();
             destination!.Value = source!.Value + 1;
 
             return destination;
@@ -1676,13 +1678,7 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::TestCase.DelegateDestination CreateByFactory()
-            {
-                global::System.Func<global::TestCase.DelegateDestination> __morphantFactoryDelegate0 = Factory;
-                return __morphantFactoryDelegate0();
-            }
-
-            global::TestCase.DelegateDestination destination = CreateByFactory();
+            global::TestCase.DelegateDestination destination = ((global::System.Func<global::TestCase.DelegateDestination>)(source!.Value > 0 ? Factory : _factory))();
             destination!.Value = source!.Value + 2;
 
             return destination;

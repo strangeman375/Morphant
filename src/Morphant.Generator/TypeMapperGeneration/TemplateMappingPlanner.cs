@@ -391,6 +391,7 @@ internal static class TemplateMappingPlanner
                     TemplateConstructionKind.ByFactory;
                 factory = BuildFactoryPlan(
                     factorySyntax,
+                    RewriteMapNew,
                     sourceParameterSymbol,
                     registration.SourceType,
                     destinationParameterSymbol,
@@ -452,6 +453,7 @@ internal static class TemplateMappingPlanner
 
     private static TemplateFactoryPlan? BuildFactoryPlan(
         TemplateFactorySyntaxPlan? syntax,
+        Func<ExpressionSyntax, string> rewriteExpression,
         IParameterSymbol sourceParameter,
         ITypeSymbol sourceType,
         IParameterSymbol? destinationParameter,
@@ -473,8 +475,16 @@ internal static class TemplateMappingPlanner
                 LocalFunctionPlaceholderName: null,
                 LocalFunctionDeclaration: null,
                 Captures: [],
+                ValueExpression: null,
                 RuntimeLocalDependencies: [],
                 unsupportedMessage);
+        }
+
+        if (syntax.DelegateExpression is not null)
+        {
+            return BuildDelegateFactoryPlan(
+                syntax,
+                rewriteExpression);
         }
 
         var capturePlaceholders =
@@ -588,26 +598,18 @@ internal static class TemplateMappingPlanner
                     capturePlaceholders,
                     capturePlaceholderNames)
                 : null;
-        var rewrittenDelegateExpression =
-            syntax.DelegateExpression is { } delegateExpression
-                ? RewriteFactorySyntax(
-                    delegateExpression,
-                    sourceParameter,
-                    CaptureExpression(sourceParameter),
-                    destinationParameter,
-                    destinationParameter is null
-                        ? null
-                        : CaptureExpression(
-                            destinationParameter),
-                    semanticModel,
-                    capturePlaceholders,
-                    capturePlaceholderNames)
-                : null;
+        var transferredBody =
+            (SyntaxNode?)rewrittenExpressionBody ??
+            rewrittenBlockBody;
+
+        if (transferredBody is null)
+        {
+            return null;
+        }
+
         var reservedNames =
             BuildFactoryReservedNames(
-                rewrittenExpressionBody,
-                rewrittenBlockBody,
-                rewrittenDelegateExpression,
+                transferredBody,
                 capturePlaceholderNames);
         var functionOrdinal = 0;
         var functionPlaceholder =
@@ -652,47 +654,10 @@ internal static class TemplateMappingPlanner
                     SyntaxFactory.Token(
                         SyntaxKind.SemicolonToken));
         }
-        else if (rewrittenBlockBody is not null)
-        {
-            localFunction = localFunction.WithBody(
-                rewrittenBlockBody);
-        }
-        else if (rewrittenDelegateExpression is not null &&
-                 syntax.ConvertedTypeName is not null)
-        {
-            var delegateOrdinal = 0;
-            var delegateName =
-                AllocateFactoryPlaceholder(
-                    "__morphantFactoryDelegate",
-                    ref delegateOrdinal,
-                    reservedNames);
-            var delegateDeclaration =
-                SyntaxFactory.LocalDeclarationStatement(
-                    SyntaxFactory.VariableDeclaration(
-                            SyntaxFactory.ParseTypeName(
-                                syntax.ConvertedTypeName))
-                        .WithVariables(
-                            SyntaxFactory.SingletonSeparatedList(
-                                SyntaxFactory.VariableDeclarator(
-                                        SyntaxFactory.Identifier(
-                                            delegateName))
-                                    .WithInitializer(
-                                        SyntaxFactory.EqualsValueClause(
-                                            rewrittenDelegateExpression)))));
-            var returnStatement =
-                SyntaxFactory.ReturnStatement(
-                    SyntaxFactory.InvocationExpression(
-                        SyntaxFactory.IdentifierName(
-                            delegateName)));
-
-            localFunction = localFunction.WithBody(
-                SyntaxFactory.Block(
-                    delegateDeclaration,
-                    returnStatement));
-        }
         else
         {
-            return null;
+            localFunction = localFunction.WithBody(
+                rewrittenBlockBody!);
         }
 
         var declaration =
@@ -706,12 +671,65 @@ internal static class TemplateMappingPlanner
                         item.Capture.PreferredName,
                         item.InvocationExpression))
                 .ToImmutableArray();
+        var valueExpression =
+            functionPlaceholder +
+            "(" +
+            string.Join(
+                ", ",
+                captures.Select(
+                    static capture =>
+                        capture.InvocationExpression)) +
+            ")";
 
         return new TemplateFactoryPlan(
             functionPlaceholder,
             declaration,
             captures,
+            valueExpression,
             runtimeLocalDependencies.ToImmutable(),
+            UnsupportedMessage: null);
+    }
+
+    private static TemplateFactoryPlan?
+        BuildDelegateFactoryPlan(
+            TemplateFactorySyntaxPlan syntax,
+            Func<ExpressionSyntax, string>
+                rewriteExpression)
+    {
+        if (syntax.DelegateExpression is not
+            { } factoryExpression ||
+            syntax.ConvertedTypeName is null)
+        {
+            return null;
+        }
+
+        var rewrittenExpression =
+            SyntaxFactory.ParseExpression(
+                rewriteExpression(
+                    factoryExpression));
+        var castOperand =
+            rewrittenExpression is
+                SimpleNameSyntax or
+                MemberAccessExpressionSyntax
+                ? rewrittenExpression
+                : SyntaxFactory.ParenthesizedExpression(
+                    rewrittenExpression);
+
+        rewrittenExpression =
+            SyntaxFactory.InvocationExpression(
+                SyntaxFactory.ParenthesizedExpression(
+                    SyntaxFactory.CastExpression(
+                        SyntaxFactory.ParseTypeName(
+                            syntax.ConvertedTypeName),
+                        castOperand)));
+
+        return new TemplateFactoryPlan(
+            LocalFunctionPlaceholderName: null,
+            LocalFunctionDeclaration: null,
+            Captures: [],
+            NormalizeFactoryExpression(
+                rewrittenExpression),
+            RuntimeLocalDependencies: [],
             UnsupportedMessage: null);
     }
 
@@ -750,9 +768,7 @@ internal static class TemplateMappingPlanner
     }
 
     private static HashSet<string> BuildFactoryReservedNames(
-        ExpressionSyntax? expressionBody,
-        BlockSyntax? blockBody,
-        ExpressionSyntax? delegateExpression,
+        SyntaxNode transferredBody,
         IReadOnlyCollection<string> capturePlaceholderNames)
     {
         var result =
@@ -760,25 +776,12 @@ internal static class TemplateMappingPlanner
                 capturePlaceholderNames,
                 StringComparer.Ordinal);
 
-        foreach (var syntax in new SyntaxNode?[]
-                 {
-                     expressionBody,
-                     blockBody,
-                     delegateExpression
-                 })
+        foreach (var token in transferredBody.DescendantTokens())
         {
-            if (syntax is null)
+            if (token.IsKind(
+                    SyntaxKind.IdentifierToken))
             {
-                continue;
-            }
-
-            foreach (var token in syntax.DescendantTokens())
-            {
-                if (token.IsKind(
-                        SyntaxKind.IdentifierToken))
-                {
-                    result.Add(token.ValueText);
-                }
+                result.Add(token.ValueText);
             }
         }
 
@@ -2214,6 +2217,7 @@ internal readonly record struct TemplateFactoryPlan(
     string? LocalFunctionPlaceholderName,
     string? LocalFunctionDeclaration,
     ImmutableArray<TemplateFactoryCapturePlan> Captures,
+    string? ValueExpression,
     ImmutableArray<string> RuntimeLocalDependencies,
     string? UnsupportedMessage);
 
