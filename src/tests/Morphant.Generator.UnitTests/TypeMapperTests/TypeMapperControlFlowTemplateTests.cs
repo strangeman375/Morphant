@@ -63,31 +63,20 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-        {
-            int MapByTemplate(global::TestCase.Source source1)
-            {
-                var offset = source1.Offset + 1;
-                var value = source1.UseOffset ? offset : source1.Value;
-                return value;
-            }
-
-            return MapByTemplate(source!);
-        }
+            => MapByTemplate(source!);
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
-        {
-            int MapByTemplate(global::TestCase.Source source1)
-            {
-                var offset = source1.Offset + 1;
-                var value = source1.UseOffset ? offset : source1.Value;
-                return value;
-            }
+            => MapByTemplate(source!);
 
-            return MapByTemplate(source!);
+        private int MapByTemplate(global::TestCase.Source source)
+        {
+            var offset = source.Offset + 1;
+            var value = source.UseOffset ? offset : source.Value;
+            return value;
         }
     }
 }
