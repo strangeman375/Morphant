@@ -144,7 +144,10 @@ internal static class TemplateTypeTestHarness
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Morphant;
+using Morphant.Members;
+using TestCase.Morphant.Generated;
 
 namespace TestCase
 {

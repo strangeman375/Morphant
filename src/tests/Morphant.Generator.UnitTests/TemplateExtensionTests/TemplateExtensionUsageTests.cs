@@ -38,17 +38,17 @@ namespace TestCase
             builder
                 .Map<Source, Destination>()
                 .NullSourceHandling(
-                    global::Morphant.NullSourceHandling.Throw)
+                    NullSourceHandling.Throw)
                 .Template(static (Source source) =>
                     new(source.Value))
                 .MemberMatching(
-                    global::Morphant.MemberMatching.Explicit)
+                    MemberMatching.Explicit)
                 .Template(static (Source source, Destination? destination) =>
                     new(
                         source.Value,
                         destination?.Value))
                 .UnmappedMemberValidation(
-                    global::Morphant.UnmappedMemberValidation.None);
+                    UnmappedMemberValidation.None);
         }
     }
 }
@@ -102,7 +102,7 @@ namespace TestCase
                         source.Value,
                         destination.Value))
                 .MemberMatching(
-                    global::Morphant.MemberMatching.Explicit);
+                    MemberMatching.Explicit);
         }
     }
 }
@@ -147,7 +147,7 @@ namespace TestCase
                 .Template(static (source, destination) =>
                     destination ?? source.Value)
                 .UnmappedMemberValidation(
-                    global::Morphant.UnmappedMemberValidation.None);
+                    UnmappedMemberValidation.None);
         }
     }
 }
@@ -194,7 +194,7 @@ namespace TestCase
                 .Template(static (source, destination) =>
                     source.Value + destination)
                 .ConstructorSelection(
-                    global::Morphant.ConstructorSelection.Explicit);
+                    ConstructorSelection.Explicit);
         }
     }
 }

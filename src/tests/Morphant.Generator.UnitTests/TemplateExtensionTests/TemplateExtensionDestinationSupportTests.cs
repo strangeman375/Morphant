@@ -193,13 +193,13 @@ internal sealed class TemplateExtensionDestinationSupportTests
         const string destinationDeclaration =
 """
     public sealed class Destination :
-        global::System.Collections.Generic.IEnumerable<int>
+        IEnumerable<int>
     {
-        public global::System.Collections.Generic.IEnumerator<int> GetEnumerator() =>
-            throw new global::System.NotImplementedException();
+        public IEnumerator<int> GetEnumerator() =>
+            throw new NotImplementedException();
 
-        global::System.Collections.IEnumerator
-            global::System.Collections.IEnumerable.GetEnumerator() =>
+        IEnumerator
+            IEnumerable.GetEnumerator() =>
                 GetEnumerator();
     }
 """;
@@ -233,13 +233,13 @@ internal sealed class TemplateExtensionDestinationSupportTests
     }
 
     public sealed class CustomCollection :
-        global::System.Collections.Generic.IEnumerable<int>
+        IEnumerable<int>
     {
-        public global::System.Collections.Generic.IEnumerator<int> GetEnumerator() =>
-            throw new global::System.NotImplementedException();
+        public IEnumerator<int> GetEnumerator() =>
+            throw new NotImplementedException();
 
-        global::System.Collections.IEnumerator
-            global::System.Collections.IEnumerable.GetEnumerator() =>
+        IEnumerator
+            IEnumerable.GetEnumerator() =>
                 GetEnumerator();
     }
 
@@ -251,7 +251,7 @@ internal sealed class TemplateExtensionDestinationSupportTests
 """
             builder.Map<(int Id, string Name), Destination>();
             builder.Map<int[], Destination>();
-            builder.Map<global::System.Collections.Generic.List<int>, Destination>();
+            builder.Map<List<int>, Destination>();
             builder.Map<CustomCollection, Destination>();
             builder.Map<CustomDelegate, Destination>();
 """;
@@ -1486,6 +1486,9 @@ namespace TestCase
                  #pragma warning disable CS1591
                  #nullable enable
 
+                 using System;
+                 using System.Collections;
+                 using System.Collections.Generic;
                  using Morphant;
 
                  namespace TestCase

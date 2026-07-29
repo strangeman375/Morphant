@@ -14,8 +14,8 @@ internal sealed class TemplateTypeConstructorNullabilityTests
         public Destination(
             string? nullableReference,
             DateTime? nullableValue,
-            [global::System.Diagnostics.CodeAnalysis.AllowNull] string allowsNull,
-            [global::System.Diagnostics.CodeAnalysis.DisallowNull] string? disallowsNull)
+            [AllowNull] string allowsNull,
+            [DisallowNull] string? disallowsNull)
         {
         }
 """;
@@ -74,7 +74,7 @@ internal sealed class TemplateTypeConstructorNullabilityTests
 """
     internal static class TemplateUsage
     {
-        internal static global::TestCase.Morphant.Generated.DestinationMorphantTemplate Create() =>
+        internal static DestinationMorphantTemplate Create() =>
             new(null, null, null, string.Empty);
     }
 """;
@@ -135,7 +135,7 @@ internal sealed class TemplateTypeConstructorNullabilityTests
 """
     internal static class TemplateUsage
     {
-        internal static global::TestCase.Morphant.Generated.DestinationMorphantTemplate Create() =>
+        internal static DestinationMorphantTemplate Create() =>
             new(legacy: null);
     }
 """;
@@ -268,7 +268,7 @@ internal sealed class TemplateTypeConstructorNullabilityTests
 """
     internal static class MixedTemplateUsage
     {
-        internal static global::TestCase.Morphant.Generated.DestinationMorphantTemplate Create() =>
+        internal static DestinationMorphantTemplate Create() =>
             new(strict: string.Empty, legacy: null, nullable: null);
     }
 """;

@@ -18,11 +18,11 @@ internal sealed class TemplateTypeConstructorUsageTests
         }
 
         public object ByConventionUsage() =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(
+            new DestinationMorphantTemplate(
                 ByConvention());
 
         public object ByFactoryUsage() =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(
+            new DestinationMorphantTemplate(
                 ByFactory(() => new Destination()));
     }
 """;
@@ -62,10 +62,10 @@ internal sealed class TemplateTypeConstructorUsageTests
     public static class Usage
     {
         public static object FromRawValues(int id, string name) =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(id, name);
+            new DestinationMorphantTemplate(id, name);
 
         public static object FromNamedArguments(int id, string name) =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(name: name, id: id);
+            new DestinationMorphantTemplate(name: name, id: id);
     }
 """;
 
@@ -131,10 +131,10 @@ internal sealed class TemplateTypeConstructorUsageTests
     public static class Usage
     {
         public static object RequiredOnly() =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(1);
+            new DestinationMorphantTemplate(1);
 
         public static object WithNamedParams() =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(
+            new DestinationMorphantTemplate(
                 1,
                 tags: new[] { "first", "second" });
     }
@@ -210,10 +210,10 @@ internal sealed class TemplateTypeConstructorUsageTests
     public static class Usage
     {
         public static object ShortOverload() =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(1);
+            new DestinationMorphantTemplate(1);
 
         public static object LongOverload() =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(1, true);
+            new DestinationMorphantTemplate(1, true);
     }
 """;
 
@@ -290,12 +290,12 @@ internal sealed class TemplateTypeConstructorUsageTests
         // Numeric overloads require an explicit wrapper type because
         // both user-defined conversions are otherwise applicable.
         public static object IntOverload() =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(
-                (global::Morphant.Members.ConstructorMember<int>)1);
+            new DestinationMorphantTemplate(
+                (ConstructorMember<int>)1);
 
         public static object LongOverload() =>
-            new global::TestCase.Morphant.Generated.DestinationMorphantTemplate(
-                (global::Morphant.Members.ConstructorMember<long>)1L);
+            new DestinationMorphantTemplate(
+                (ConstructorMember<long>)1L);
     }
 """;
 

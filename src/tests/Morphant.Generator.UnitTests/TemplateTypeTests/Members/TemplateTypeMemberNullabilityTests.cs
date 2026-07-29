@@ -40,10 +40,10 @@ internal sealed class TemplateTypeMemberNullabilityTests
         // lang=c#
         const string destinationMembers =
 """
-        [global::System.Diagnostics.CodeAnalysis.AllowNull]
+        [AllowNull]
         public string AllowsNull { get; set; } = null!;
 
-        [global::System.Diagnostics.CodeAnalysis.DisallowNull]
+        [DisallowNull]
         public string? DisallowsNull { get; set; }
 """;
 
@@ -82,10 +82,10 @@ internal sealed class TemplateTypeMemberNullabilityTests
 
         public int? NullableField;
 
-        [global::System.Diagnostics.CodeAnalysis.AllowNull]
+        [AllowNull]
         public string AllowsNullField = null!;
 
-        [global::System.Diagnostics.CodeAnalysis.DisallowNull]
+        [DisallowNull]
         public string? DisallowsNullField;
 """;
 
@@ -134,7 +134,7 @@ internal sealed class TemplateTypeMemberNullabilityTests
 """
     internal static class TemplateUsage
     {
-        internal static global::TestCase.Morphant.Generated.DestinationMorphantTemplate Create() =>
+        internal static DestinationMorphantTemplate Create() =>
             new()
             {
                 NullableProperty = null,

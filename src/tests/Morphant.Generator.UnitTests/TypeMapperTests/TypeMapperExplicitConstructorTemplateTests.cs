@@ -16,6 +16,7 @@ internal sealed class TypeMapperExplicitConstructorTemplateTests
 #pragma warning disable CS1591
 
 using Morphant;
+using System;
 using static System.Math;
 
 namespace TestCase
@@ -30,7 +31,7 @@ namespace TestCase
 
         public bool Enabled { get; set; }
 
-        public string[] Tags { get; set; } = global::System.Array.Empty<string>();
+        public string[] Tags { get; set; } = Array.Empty<string>();
 
         public int Explicit { get; set; }
 
@@ -184,6 +185,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using Morphant.Members;
 
 namespace TestCase
 {
@@ -214,7 +216,7 @@ namespace TestCase
         {
             builder.Map<Source, Destination>()
                 .Template(s => new(
-                    (global::Morphant.Members.ConstructorMember<long>)s.Value));
+                    (ConstructorMember<long>)s.Value));
         }
     }
 }
@@ -833,6 +835,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TestCase
 {
@@ -856,7 +859,7 @@ namespace TestCase
 
     public sealed class SetsRequiredDestination
     {
-        [global::System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
+        [SetsRequiredMembers]
         public SetsRequiredDestination(int value)
         {
             Value = value;

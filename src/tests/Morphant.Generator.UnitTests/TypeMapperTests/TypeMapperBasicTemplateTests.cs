@@ -533,6 +533,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TestCase
 {
@@ -562,7 +563,7 @@ namespace TestCase
 
     public sealed class SetsRequiredDestination
     {
-        [global::System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
+        [SetsRequiredMembers]
         public SetsRequiredDestination()
         {
         }

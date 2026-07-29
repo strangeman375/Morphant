@@ -843,6 +843,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using System;
 
 namespace TestCase
 {
@@ -850,7 +851,7 @@ namespace TestCase
     {
         public int Value { get; set; }
 
-        public string[] Tags { get; set; } = global::System.Array.Empty<string>();
+        public string[] Tags { get; set; } = Array.Empty<string>();
 
         public int Remaining { get; set; }
     }
