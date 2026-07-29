@@ -106,11 +106,13 @@ namespace TestCase
     {
         protected override void Configure(BuilderAlias configuration)
         {
-            configuration.Map<FirstSource, FirstDestination>(
+            var falseRegistration =
                 OtherApi.Map<FalseStaticSource, FalseStaticDestination>(
                     new OtherBuilder().Map<
                         FalseInstanceSource,
-                        FalseInstanceDestination>()));
+                        FalseInstanceDestination>());
+
+            configuration.Map<FirstSource, FirstDestination>();
 
             configuration
                 .MappingMode(MappingMode.MapNewAndExisting)
@@ -192,7 +194,8 @@ namespace TestCase
             global::TestCase.SecondSource? source,
             global::TestCase.SecondDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+            => throw new global::System.NotSupportedException(
+                "The effective MappingMode does not include MapExisting.");
     }
 }
 """;
@@ -263,12 +266,12 @@ namespace TestCase
                 expectedBlockMapper
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_ExpressionMapper.g.cs",
-                expectedExpressionMapper
-            ),
-            (
                 "Morphant.Generated.TypeMapper.TestCase_DeclarativeMapper.g.cs",
                 expectedDeclarativeMapper
+            ),
+            (
+                "Morphant.Generated.TypeMapper.TestCase_ExpressionMapper.g.cs",
+                expectedExpressionMapper
             ));
     }
 
@@ -343,7 +346,8 @@ namespace TestCase
             global::TestCase.FirstSource? source,
             global::TestCase.FirstDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+            => throw new global::System.NotSupportedException(
+                "The effective MappingMode does not include MapExisting.");
 
         /// <inheritdoc/>
         global::TestCase.SecondDestination? global::Morphant.ITypeMapper<global::TestCase.FirstSource, global::TestCase.SecondDestination>.Map(

@@ -74,6 +74,17 @@
   before committing or pushing. Use the focused-test command supplied by the
   enclosing workspace instructions when available.
 
+## Settings documentation
+
+- Every settings implementation slice must update the public XML
+  documentation and the user-facing documentation in `docs/settings`.
+- Document the default, inheritance and precedence rules, behavior at each
+  supported configuration level, disabled or unsupported operations, and a
+  minimal usage example.
+- Treat the documented design as revisable under the implementation-plan
+  rules above. Propose improvements when implementation reveals a clearer
+  contract, and agree user-visible changes before applying them.
+
 ## Repository workflow
 
 - Preserve unrelated user changes.

@@ -116,6 +116,15 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.MappingContext context)");
 
+        if (!mapping.EffectiveSettings.SupportsMapNew)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                "The effective MappingMode does not include MapNew.");
+            writer.Unindent();
+            return;
+        }
+
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
@@ -516,6 +525,15 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
+
+        if (!mapping.EffectiveSettings.SupportsMapExisting)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                "The effective MappingMode does not include MapExisting.");
+            writer.Unindent();
+            return;
+        }
 
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)

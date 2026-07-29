@@ -29,6 +29,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// non-nullable value type, according to the effective null-handling
     /// settings.
     /// </returns>
+    /// <exception cref="NotSupportedException">
+    /// The effective <see cref="MappingMode"/> does not include
+    /// <see cref="MappingMode.MapNew"/>.
+    /// </exception>
     TDestination? Map(TSource? source, MappingContext context);
 
     /// <summary>
@@ -50,6 +54,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// non-nullable value type, according to the effective null-handling
     /// settings.
     /// </returns>
+    /// <exception cref="NotSupportedException">
+    /// The effective <see cref="MappingMode"/> does not include
+    /// <see cref="MappingMode.MapExisting"/>.
+    /// </exception>
     TDestination? Map(
         TSource? source,
         TDestination? destination,

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.Settings;
 using Morphant.Generator.TypeMapperConfigure;
 
 namespace Morphant.Generator.MapperBuilderMap;
@@ -65,6 +66,7 @@ internal static class MapperBuilderMapPipeline
         var registrations =
             ImmutableArray.CreateBuilder<MapperBuilderMapRegistrationInfo>();
         var seen = new HashSet<MapperBuilderMapIdentity>();
+        var settings = MappingSettings.Default;
 
         for (var invocationIndex = 0;
              invocationIndex < invocations.Length;
@@ -73,11 +75,43 @@ internal static class MapperBuilderMapPipeline
             cancellationToken.ThrowIfCancellationRequested();
             var invocation = invocations[invocationIndex];
 
-            if (!IsMapInvocationCandidate(invocation) ||
-                semanticModel.GetSymbolInfo(
+            if (semanticModel.GetSymbolInfo(
                     invocation,
-                    cancellationToken).Symbol is not IMethodSymbol method ||
+                    cancellationToken).Symbol is not IMethodSymbol method)
+            {
+                continue;
+            }
+
+            if (IsMapperBuilderMappingModeMethod(
+                    method,
+                    knownSymbols))
+            {
+                if (!TryGetMappingMode(
+                        invocation,
+                        method,
+                        semanticModel,
+                        cancellationToken,
+                        out var rootMappingMode))
+                {
+                    return null;
+                }
+
+                settings = new MappingSettings(rootMappingMode);
+                continue;
+            }
+
+            if (!IsMapInvocationCandidate(invocation) ||
                 !IsMapperBuilderMapMethod(method, knownSymbols))
+            {
+                continue;
+            }
+
+            if (!TryGetMappingMode(
+                    invocation,
+                    method,
+                    semanticModel,
+                    cancellationToken,
+                    out var mappingMode))
             {
                 continue;
             }
@@ -101,13 +135,72 @@ internal static class MapperBuilderMapPipeline
                             invocationIndex + 1,
                             invocation),
                         sourceType,
-                        destinationType));
+                        destinationType,
+                        new MappingSettings(mappingMode)));
             }
         }
 
         return new MapperBuilderMapInfo(
             configureInfo.Syntax,
+            settings,
             registrations.ToImmutable());
+    }
+
+    private static bool TryGetMappingMode(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out MappingModeValue mappingMode)
+    {
+        object? value;
+
+        if (invocation.ArgumentList.Arguments.Count == 0)
+        {
+            if (method.Parameters.Length != 1 ||
+                !method.Parameters[0].HasExplicitDefaultValue ||
+                method.Parameters[0].ExplicitDefaultValue is not
+                    { } defaultValue)
+            {
+                mappingMode = default;
+                return false;
+            }
+
+            value = defaultValue;
+        }
+        else if (invocation.ArgumentList.Arguments.Count == 1)
+        {
+            var expression =
+                invocation.ArgumentList.Arguments[0].Expression;
+            var constantValue =
+                semanticModel.GetConstantValue(
+                    expression,
+                    cancellationToken);
+
+            if (!constantValue.HasValue)
+            {
+                mappingMode = default;
+                return false;
+            }
+
+            value = constantValue.Value;
+        }
+        else
+        {
+            mappingMode = default;
+            return false;
+        }
+
+        if (value is not int numericValue ||
+            (numericValue &
+             ~(int)MappingModeValue.MapNewAndExisting) != 0)
+        {
+            mappingMode = default;
+            return false;
+        }
+
+        mappingMode = (MappingModeValue)numericValue;
+        return true;
     }
 
     private static InvocationExpressionSyntax? FindTemplateInvocation(
@@ -450,6 +543,20 @@ internal static class MapperBuilderMapPipeline
                !method.IsStatic &&
                method.Parameters.Length == 1 &&
                method.TypeArguments.Length == 2 &&
+               SymbolEqualityComparer.Default.Equals(
+                   method.ContainingType,
+                   knownSymbols.MapperBuilder);
+    }
+
+    private static bool IsMapperBuilderMappingModeMethod(
+        IMethodSymbol method,
+        KnownSymbols knownSymbols)
+    {
+        return method.Name == "MappingMode" &&
+               method.MethodKind == MethodKind.Ordinary &&
+               !method.IsStatic &&
+               method.Parameters.Length == 1 &&
+               method.TypeArguments.Length == 0 &&
                SymbolEqualityComparer.Default.Equals(
                    method.ContainingType,
                    knownSymbols.MapperBuilder);

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MapperBuilderMap;
+using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -295,13 +296,23 @@ internal static class TypeMapperPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            mappings.Add(
+            var effectiveSettings =
+                EffectiveMappingSettings.Resolve(
+                    mapInfo.Settings,
+                    registration.Settings);
+            var mapping =
                 BuildMapping(
                     registration,
                     compilation,
                     mapperType,
                     usedDirectBlockMethodNames,
-                    cancellationToken));
+                    cancellationToken);
+
+            mappings.Add(
+                mapping with
+                {
+                    EffectiveSettings = effectiveSettings
+                });
         }
 
         return mappings.ToImmutable();

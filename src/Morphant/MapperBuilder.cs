@@ -37,9 +37,30 @@ public abstract class MapperBuilder : MapperBuilderBase<MapperBuilder>
     {
     }
 
+    /// <summary>
+    /// Configures the default mapping mode for mappings registered by this
+    /// mapper.
+    /// </summary>
+    /// <param name="mappingMode">
+    /// The mapping operations to support. <see cref="Morphant.MappingMode.Default"/>
+    /// uses Morphant's default,
+    /// <see cref="Morphant.MappingMode.MapNewAndExisting"/>.
+    /// </param>
+    /// <returns>This builder.</returns>
     public MapperBuilder MappingMode(MappingMode mappingMode) =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Registers a mapping from <typeparamref name="TSource"/> to
+    /// <typeparamref name="TDestination"/>.
+    /// </summary>
+    /// <typeparam name="TSource">The source type.</typeparam>
+    /// <typeparam name="TDestination">The destination type.</typeparam>
+    /// <param name="mappingMode">
+    /// The mapping operations to support. <see cref="Morphant.MappingMode.Default"/>
+    /// inherits the mapper-level setting.
+    /// </param>
+    /// <returns>The builder for the registered mapping.</returns>
     public MapperBuilder<TSource, TDestination> Map<TSource, TDestination>(MappingMode mappingMode = Morphant.MappingMode.Default) =>
         throw new RuntimeInvocationNotSupportedException();
 }

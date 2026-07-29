@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -37,7 +38,8 @@ internal readonly record struct TypeMapperMappingModel
     string? MapNewUnsupportedExceptionMessage = null,
     string? MapExistingUnsupportedExceptionMessage = null,
     string? UnsupportedExceptionMessage = null,
-    TypeMapperDirectBlockMappingModel? DirectBlock = null
+    TypeMapperDirectBlockMappingModel? DirectBlock = null,
+    EffectiveMappingSettings EffectiveSettings = default
 )
 {
     public string InterfaceTypeName =>
