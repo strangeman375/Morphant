@@ -847,6 +847,13 @@ internal static class TypeMapperPipeline
     {
         if (mapping.MapNewFactory is { } factory)
         {
+            if (factory.Delegate is { } factoryDelegate)
+            {
+                AddUsedLocalName(
+                    result,
+                    factoryDelegate.LocalName);
+            }
+
             AddUsedLocalName(
                 result,
                 factory.DestinationLocalName);
@@ -1255,7 +1262,10 @@ internal static class TypeMapperPipeline
                     yield return dependency;
                 }
 
-                yield return factory.ValueExpression;
+                yield return factory.Delegate is
+                    { } factoryDelegate
+                        ? factoryDelegate.ValueExpression
+                        : factory.ValueExpression;
             }
 
             if (leaf.MapNewConstructor is
@@ -1335,6 +1345,13 @@ internal static class TypeMapperPipeline
                 AddUsedLocalName(
                     result,
                     localFunctionName);
+            }
+
+            if (factory.Delegate is { } factoryDelegate)
+            {
+                AddUsedLocalName(
+                    result,
+                    factoryDelegate.LocalName);
             }
 
             AddUsedLocalName(
@@ -1476,6 +1493,18 @@ internal static class TypeMapperPipeline
                             RenameExpression(
                                 factory.ValueExpression,
                                 names),
+                        Delegate =
+                            factory.Delegate is
+                                { } factoryDelegate
+                                ? factoryDelegate with
+                                {
+                                    ValueExpression =
+                                        RenameExpression(
+                                            factoryDelegate
+                                                .ValueExpression,
+                                            names)
+                                }
+                                : null,
                         RuntimeLocalDependencies =
                             factory
                                 .RuntimeLocalDependencies
@@ -1777,6 +1806,34 @@ internal static class TypeMapperPipeline
             RenameExpression(
                 factoryValueExpression,
                 localNames);
+        TypeMapperFactoryDelegateModel? factoryDelegate = null;
+
+        if (factory.DelegateTypeName is
+            { } factoryDelegateTypeName)
+        {
+            foreach (var token in SyntaxFactory
+                         .ParseExpression(valueExpression)
+                         .DescendantTokens())
+            {
+                if (token.IsKind(
+                        SyntaxKind.IdentifierToken))
+                {
+                    usedNames.Add(token.ValueText);
+                }
+            }
+
+            var factoryLocalName =
+                AllocateUserLocalName(
+                    "factory",
+                    usedNames);
+            factoryDelegate =
+                new TypeMapperFactoryDelegateModel(
+                    factoryDelegateTypeName,
+                    factoryLocalName,
+                    valueExpression);
+            valueExpression =
+                factoryLocalName + "()";
+        }
 
         var destinationLocalName =
             AllocateUserLocalName(
@@ -1795,6 +1852,7 @@ internal static class TypeMapperPipeline
             functionName,
             functionDeclaration,
             valueExpression,
+            factoryDelegate,
             factory.RuntimeLocalDependencies,
             destinationLocalName,
             nullableValueLocalName);

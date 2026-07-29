@@ -496,11 +496,12 @@ TDD-среза, но детали могут уточняться перед р�
   Template-locals не попадают в `MapExisting`.
 
   `ByFactory` дополнительно принимает method group и заранее созданный
-  `Func<TDestination>` из поля или свойства mapper-а. Они вызываются
-  непосредственно в выражении создания destination без generated helper-а.
-  Явное преобразование к исходному `Func<TDestination>` сохраняет target
-  typing, overload resolution и семантику value-type receiver-а. Между
-  mapping-вызовами receiver или delegate не кешируется.
+  `Func<TDestination>` из поля или свойства mapper-а. В `MapNew` factory
+  сначала сохраняется в collision-safe локальную переменную исходного типа
+  `Func<TDestination>`, а затем вызывается без generated helper-а. Такое
+  target-typed присваивание сохраняет overload resolution и семантику
+  value-type receiver-а, включая boxing структуры. Между mapping-вызовами
+  receiver или delegate не кешируется.
 
   Переносимые factory-выражения могут использовать source, предыдущее
   destination, Template-locals, instance/static members mapper-а, static API и

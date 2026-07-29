@@ -476,6 +476,7 @@ internal static class TemplateMappingPlanner
                 LocalFunctionDeclaration: null,
                 Captures: [],
                 ValueExpression: null,
+                DelegateTypeName: null,
                 RuntimeLocalDependencies: [],
                 unsupportedMessage);
         }
@@ -686,6 +687,7 @@ internal static class TemplateMappingPlanner
             declaration,
             captures,
             valueExpression,
+            DelegateTypeName: null,
             runtimeLocalDependencies.ToImmutable(),
             UnsupportedMessage: null);
     }
@@ -707,28 +709,13 @@ internal static class TemplateMappingPlanner
             SyntaxFactory.ParseExpression(
                 rewriteExpression(
                     factoryExpression));
-        var castOperand =
-            rewrittenExpression is
-                SimpleNameSyntax or
-                MemberAccessExpressionSyntax
-                ? rewrittenExpression
-                : SyntaxFactory.ParenthesizedExpression(
-                    rewrittenExpression);
-
-        rewrittenExpression =
-            SyntaxFactory.InvocationExpression(
-                SyntaxFactory.ParenthesizedExpression(
-                    SyntaxFactory.CastExpression(
-                        SyntaxFactory.ParseTypeName(
-                            syntax.ConvertedTypeName),
-                        castOperand)));
-
         return new TemplateFactoryPlan(
             LocalFunctionPlaceholderName: null,
             LocalFunctionDeclaration: null,
             Captures: [],
             NormalizeFactoryExpression(
                 rewrittenExpression),
+            syntax.ConvertedTypeName,
             RuntimeLocalDependencies: [],
             UnsupportedMessage: null);
     }
@@ -2218,6 +2205,7 @@ internal readonly record struct TemplateFactoryPlan(
     string? LocalFunctionDeclaration,
     ImmutableArray<TemplateFactoryCapturePlan> Captures,
     string? ValueExpression,
+    string? DelegateTypeName,
     ImmutableArray<string> RuntimeLocalDependencies,
     string? UnsupportedMessage);
 

@@ -387,6 +387,15 @@ internal static class TypeMapperEmitter
                 localFunctionDeclaration);
         }
 
+        if (factory.Delegate is { } factoryDelegate)
+        {
+            writer.Line(
+                $"{factoryDelegate.TypeName} " +
+                $"{Identifier(factoryDelegate.LocalName)} = " +
+                factoryDelegate.ValueExpression +
+                ";");
+        }
+
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);
 
