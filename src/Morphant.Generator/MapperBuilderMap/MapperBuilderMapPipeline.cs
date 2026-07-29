@@ -86,17 +86,15 @@ internal static class MapperBuilderMapPipeline
                     method,
                     knownSymbols))
             {
-                if (!TryGetMappingMode(
+                settings =
+                    TryGetMappingMode(
                         invocation,
                         method,
                         semanticModel,
                         cancellationToken,
-                        out var rootMappingMode))
-                {
-                    return null;
-                }
-
-                settings = new MappingSettings(rootMappingMode);
+                        out var rootMappingMode)
+                        ? new MappingSettings(rootMappingMode)
+                        : MappingSettings.Invalid;
                 continue;
             }
 
@@ -106,15 +104,15 @@ internal static class MapperBuilderMapPipeline
                 continue;
             }
 
-            if (!TryGetMappingMode(
+            var mappingSettings =
+                TryGetMappingMode(
                     invocation,
                     method,
                     semanticModel,
                     cancellationToken,
-                    out var mappingMode))
-            {
-                continue;
-            }
+                    out var mappingMode)
+                    ? new MappingSettings(mappingMode)
+                    : MappingSettings.Invalid;
 
             var sourceType = method.TypeArguments[0];
             var destinationType = method.TypeArguments[1];
@@ -136,7 +134,7 @@ internal static class MapperBuilderMapPipeline
                             invocation),
                         sourceType,
                         destinationType,
-                        new MappingSettings(mappingMode)));
+                        mappingSettings));
             }
         }
 

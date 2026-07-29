@@ -14,6 +14,12 @@ namespace Morphant;
 /// implements both mapping overloads. An overload excluded by the effective
 /// mode throws <see cref="NotSupportedException"/> when invoked.
 /// </para>
+/// <para>
+/// Mapping mode expressions must be compile-time constants composed only from
+/// the defined flags. If the effective value is invalid, the generated mapper
+/// still implements both overloads, but both throw
+/// <see cref="NotSupportedException"/> when invoked.
+/// </para>
 /// </remarks>
 [Flags]
 public enum MappingMode

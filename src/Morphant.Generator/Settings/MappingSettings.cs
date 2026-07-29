@@ -13,29 +13,47 @@ internal enum MappingModeValue
 }
 
 internal readonly record struct MappingSettings(
-    MappingModeValue MappingMode)
+    MappingModeValue? MappingMode)
 {
     public static MappingSettings Default =>
         new(MappingModeValue.Default);
+
+    public static MappingSettings Invalid =>
+        new(null);
 }
 
 internal readonly record struct EffectiveMappingSettings(
-    MappingModeValue MappingMode)
+    MappingModeValue? MappingMode)
 {
+    public bool IsMappingModeValid =>
+        MappingMode.HasValue;
+
     public bool SupportsMapNew =>
-        (MappingMode & MappingModeValue.MapNew) != 0;
+        MappingMode is { } mappingMode &&
+        (mappingMode & MappingModeValue.MapNew) != 0;
 
     public bool SupportsMapExisting =>
-        (MappingMode & MappingModeValue.MapExisting) != 0;
+        MappingMode is { } mappingMode &&
+        (mappingMode & MappingModeValue.MapExisting) != 0;
 
     public static EffectiveMappingSettings Resolve(
         MappingSettings rootSettings,
         MappingSettings mappingSettings)
     {
-        var mappingMode =
-            mappingSettings.MappingMode != MappingModeValue.Default
-                ? mappingSettings.MappingMode
-                : rootSettings.MappingMode;
+        if (mappingSettings.MappingMode is not { } mappingMode)
+        {
+            return new EffectiveMappingSettings(null);
+        }
+
+        if (mappingMode == MappingModeValue.Default)
+        {
+            if (rootSettings.MappingMode is not { } rootMappingMode)
+            {
+                return new EffectiveMappingSettings(null);
+            }
+
+            mappingMode = rootMappingMode;
+        }
 
         if (mappingMode == MappingModeValue.Default)
         {

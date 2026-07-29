@@ -61,3 +61,14 @@ mode fails immediately in the generated mapper.
 
 Mapping mode expressions must be compile-time constants composed only from
 the defined `MapNew` and `MapExisting` flags.
+
+## Invalid values
+
+If the effective mode is not a compile-time constant or contains undefined
+flags, Morphant still generates the `ITypeMapper<TSource, TDestination>`
+implementation for the registered pair. Both mapping overloads throw
+`NotSupportedException` when invoked.
+
+An explicit valid mapping-level mode still overrides an invalid mapper-level
+value. A mapping that uses `Default` inherits the invalid mapper-level value
+and therefore has two throwing overloads.

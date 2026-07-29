@@ -30,7 +30,7 @@ public interface ITypeMapper<in TSource, TDestination>
     /// settings.
     /// </returns>
     /// <exception cref="NotSupportedException">
-    /// The effective <see cref="MappingMode"/> does not include
+    /// The effective <see cref="MappingMode"/> is invalid or does not include
     /// <see cref="MappingMode.MapNew"/>.
     /// </exception>
     TDestination? Map(TSource? source, MappingContext context);
@@ -55,7 +55,7 @@ public interface ITypeMapper<in TSource, TDestination>
     /// settings.
     /// </returns>
     /// <exception cref="NotSupportedException">
-    /// The effective <see cref="MappingMode"/> does not include
+    /// The effective <see cref="MappingMode"/> is invalid or does not include
     /// <see cref="MappingMode.MapExisting"/>.
     /// </exception>
     TDestination? Map(

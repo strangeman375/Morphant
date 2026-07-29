@@ -7,6 +7,9 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TypeMapperEmitter
 {
+    private const string InvalidMappingModeExceptionMessage =
+        "The effective MappingMode is invalid.";
+
     public static SourceText Emit(TypeMapperModel model)
     {
         var writer = new CodeWriter();
@@ -94,7 +97,8 @@ internal static class TypeMapperEmitter
         writer.Line();
         WriteMapExisting(writer, mapping);
 
-        if (mapping.DirectBlock is { } directBlock)
+        if (mapping.EffectiveSettings.IsMappingModeValid &&
+            mapping.DirectBlock is { } directBlock)
         {
             writer.Line();
             WriteMultilineDeclaration(
@@ -115,6 +119,15 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.MappingContext context)");
+
+        if (!mapping.EffectiveSettings.IsMappingModeValid)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                InvalidMappingModeExceptionMessage);
+            writer.Unindent();
+            return;
+        }
 
         if (!mapping.EffectiveSettings.SupportsMapNew)
         {
@@ -525,6 +538,15 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.MappingContext context)");
+
+        if (!mapping.EffectiveSettings.IsMappingModeValid)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                InvalidMappingModeExceptionMessage);
+            writer.Unindent();
+            return;
+        }
 
         if (!mapping.EffectiveSettings.SupportsMapExisting)
         {

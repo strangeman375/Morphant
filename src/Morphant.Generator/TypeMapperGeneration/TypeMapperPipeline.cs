@@ -301,12 +301,18 @@ internal static class TypeMapperPipeline
                     mapInfo.Settings,
                     registration.Settings);
             var mapping =
-                BuildMapping(
-                    registration,
-                    compilation,
-                    mapperType,
-                    usedDirectBlockMethodNames,
-                    cancellationToken);
+                effectiveSettings.IsMappingModeValid
+                    ? BuildMapping(
+                        registration,
+                        compilation,
+                        mapperType,
+                        usedDirectBlockMethodNames,
+                        cancellationToken)
+                    : BuildEmptyMapping(
+                        registration,
+                        BuildDestinationPlan(
+                            registration.DestinationType,
+                            cancellationToken));
 
             mappings.Add(
                 mapping with
@@ -359,7 +365,7 @@ internal static class TypeMapperPipeline
         if (templateMappingResult is
             UnsupportedTemplateMappingPlanResult unsupported)
         {
-            return BuildUnsupportedMapping(
+            return BuildEmptyMapping(
                 registration,
                 destinationPlan,
                 unsupported.Message);
@@ -572,10 +578,10 @@ internal static class TypeMapperPipeline
         return result;
     }
 
-    private static TypeMapperMappingModel BuildUnsupportedMapping(
+    private static TypeMapperMappingModel BuildEmptyMapping(
         MapperBuilderMapRegistrationInfo registration,
         DestinationPlan destinationPlan,
-        string exceptionMessage)
+        string? unsupportedExceptionMessage = null)
     {
         return new TypeMapperMappingModel(
             SourceTypeName:
@@ -601,7 +607,7 @@ internal static class TypeMapperPipeline
             MapNewMemberMappings: [],
             MapExistingMemberMappings: [],
             ControlFlow: null,
-            UnsupportedExceptionMessage: exceptionMessage);
+            UnsupportedExceptionMessage: unsupportedExceptionMessage);
     }
 
     private static TypeMapperMappingModel BuildFlatMapping(
