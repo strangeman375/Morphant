@@ -1369,18 +1369,28 @@ internal static class TypeMapperPipeline
             root,
             usedNames,
             mapNew: !hasDestinationParameter);
+        var reusableSwitchValueLocals =
+            new HashSet<string>(
+                runtimeLocals
+                    .Where(static local =>
+                        local.CanReuseForSwitchFallback)
+                    .Select(static local =>
+                        local.PlaceholderName),
+                StringComparer.Ordinal);
 
         return MaterializeSwitchFallbacks(
             root,
             compilation,
-            usedNames);
+            usedNames,
+            reusableSwitchValueLocals);
     }
 
     private static TypeMapperControlFlowNode
         MaterializeSwitchFallbacks(
             TypeMapperControlFlowNode node,
             CSharpCompilation compilation,
-            HashSet<string> usedNames)
+            HashSet<string> usedNames,
+            HashSet<string> reusableSwitchValueLocals)
     {
         if (node.SwitchExpression is
                 { } switchExpression)
@@ -1392,7 +1402,8 @@ internal static class TypeMapperPipeline
                         Branch = MaterializeSwitchFallbacks(
                             section.Branch,
                             compilation,
-                            usedNames)
+                            usedNames,
+                            reusableSwitchValueLocals)
                     })
                 .ToImmutableArray();
             var continuation =
@@ -1401,7 +1412,8 @@ internal static class TypeMapperPipeline
                     ? MaterializeSwitchFallbacks(
                         originalContinuation,
                         compilation,
-                        usedNames)
+                        usedNames,
+                        reusableSwitchValueLocals)
                     : null;
             var rewritten = node with
             {
@@ -1414,8 +1426,13 @@ internal static class TypeMapperPipeline
                 return rewritten;
             }
 
-            var switchValueName =
-                AllocateUserLocalName(
+            var canReuseSwitchValue =
+                IsReusableSwitchValue(
+                    switchExpression,
+                    reusableSwitchValueLocals);
+            var switchValueName = canReuseSwitchValue
+                ? switchExpression
+                : AllocateUserLocalName(
                     "switchValue",
                     usedNames);
             var fallback = new TypeMapperControlFlowNode(
@@ -1432,13 +1449,15 @@ internal static class TypeMapperPipeline
 
             return rewritten with
             {
-                Locals = rewritten.Locals.Add(
-                    new TypeMapperLocalValueModel(
-                        "var",
-                        switchValueName,
-                        switchExpression,
-                        IsConst: false,
-                        IsSynthetic: true)),
+                Locals = canReuseSwitchValue
+                    ? rewritten.Locals
+                    : rewritten.Locals.Add(
+                        new TypeMapperLocalValueModel(
+                            "var",
+                            switchValueName,
+                            switchExpression,
+                            IsConst: false,
+                            IsSynthetic: true)),
                 SwitchExpression = switchValueName,
                 SwitchContinuation = fallback,
                 SwitchRequiresFallback = false
@@ -1452,15 +1471,37 @@ internal static class TypeMapperPipeline
                 WhenTrue = MaterializeSwitchFallbacks(
                     node.WhenTrue!,
                     compilation,
-                    usedNames),
+                    usedNames,
+                    reusableSwitchValueLocals),
                 WhenFalse = MaterializeSwitchFallbacks(
                     node.WhenFalse!,
                     compilation,
-                    usedNames)
+                    usedNames,
+                    reusableSwitchValueLocals)
             };
         }
 
         return node;
+    }
+
+    private static bool IsReusableSwitchValue(
+        string expression,
+        HashSet<string> reusableSwitchValueLocals)
+    {
+        ExpressionSyntax parsed =
+            SyntaxFactory.ParseExpression(expression);
+
+        while (parsed is ParenthesizedExpressionSyntax
+               {
+                   Expression: var nested
+               })
+        {
+            parsed = nested;
+        }
+
+        return parsed is IdentifierNameSyntax identifier &&
+               reusableSwitchValueLocals.Contains(
+                   identifier.Identifier.ValueText);
     }
 
     private static string BuildUnmatchedSwitchException(

@@ -168,7 +168,9 @@ internal static class TemplateMappingPlanner
             RewriteParameters(
                 expression,
                 sourceParameterSymbol,
+                registration.SourceType,
                 destinationParameterSymbol,
+                registration.DestinationType,
                 mapNewDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
@@ -178,7 +180,9 @@ internal static class TemplateMappingPlanner
             RewriteParameters(
                 expression,
                 sourceParameterSymbol,
+                registration.SourceType,
                 destinationParameterSymbol,
+                registration.DestinationType,
                 mapExistingDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
@@ -188,7 +192,9 @@ internal static class TemplateMappingPlanner
             RewritePattern(
                 pattern,
                 sourceParameterSymbol,
+                registration.SourceType,
                 destinationParameterSymbol,
+                registration.DestinationType,
                 mapNewDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
@@ -198,7 +204,9 @@ internal static class TemplateMappingPlanner
             RewritePattern(
                 pattern,
                 sourceParameterSymbol,
+                registration.SourceType,
                 destinationParameterSymbol,
+                registration.DestinationType,
                 mapExistingDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
@@ -232,7 +240,8 @@ internal static class TemplateMappingPlanner
                                 local.Initializer)
                             : RewriteMapExisting(
                                 local.Initializer),
-                        local.IsConst))
+                        local.IsConst,
+                        local.CanReuseForSwitchFallback))
                 .ToImmutableArray();
 
         bool IsMapNewDestinationKnownAbsent(
@@ -621,8 +630,10 @@ internal static class TemplateMappingPlanner
                 ? RewriteFactorySyntax(
                     expressionBody,
                     sourceParameter,
+                    sourceType,
                     CaptureExpression(sourceParameter),
                     destinationParameter,
+                    destinationType,
                     destinationParameter is null
                         ? null
                         : CaptureExpression(
@@ -636,8 +647,10 @@ internal static class TemplateMappingPlanner
                 ? RewriteFactorySyntax(
                     blockBody,
                     sourceParameter,
+                    sourceType,
                     CaptureExpression(sourceParameter),
                     destinationParameter,
+                    destinationType,
                     destinationParameter is null
                         ? null
                         : CaptureExpression(
@@ -770,8 +783,10 @@ internal static class TemplateMappingPlanner
     private static TNode RewriteFactorySyntax<TNode>(
         TNode syntax,
         IParameterSymbol sourceParameter,
+        ITypeSymbol sourceType,
         ExpressionSyntax sourceExpression,
         IParameterSymbol? destinationParameter,
+        ITypeSymbol destinationType,
         ExpressionSyntax? destinationExpression,
         SemanticModel semanticModel,
         IReadOnlyDictionary<ISymbol, string>
@@ -783,8 +798,10 @@ internal static class TemplateMappingPlanner
         var rewritten =
             new TemplateParameterRewriter(
                 sourceParameter,
+                sourceType,
                 sourceExpression,
                 destinationParameter,
+                destinationType,
                 destinationExpression,
                 semanticModel,
                 capturePlaceholders,
@@ -1230,7 +1247,9 @@ internal static class TemplateMappingPlanner
     private static string RewriteParameters(
         ExpressionSyntax expression,
         IParameterSymbol sourceParameter,
+        ITypeSymbol sourceType,
         IParameterSymbol? destinationParameter,
+        ITypeSymbol destinationType,
         ExpressionSyntax? destinationExpression,
         SemanticModel semanticModel,
         IReadOnlyDictionary<ISymbol, string>
@@ -1240,10 +1259,12 @@ internal static class TemplateMappingPlanner
     {
         var rewritten = new TemplateParameterRewriter(
                 sourceParameter,
+                sourceType,
                 SyntaxFactory.PostfixUnaryExpression(
                     SyntaxKind.SuppressNullableWarningExpression,
                     SyntaxFactory.IdentifierName("source")),
                 destinationParameter,
+                destinationType,
                 destinationExpression,
                 semanticModel,
                 runtimeLocalPlaceholders,
@@ -1260,7 +1281,9 @@ internal static class TemplateMappingPlanner
     private static string RewritePattern(
         PatternSyntax pattern,
         IParameterSymbol sourceParameter,
+        ITypeSymbol sourceType,
         IParameterSymbol? destinationParameter,
+        ITypeSymbol destinationType,
         ExpressionSyntax? destinationExpression,
         SemanticModel semanticModel,
         IReadOnlyDictionary<ISymbol, string>
@@ -1270,10 +1293,12 @@ internal static class TemplateMappingPlanner
     {
         var rewritten = new TemplateParameterRewriter(
                 sourceParameter,
+                sourceType,
                 SyntaxFactory.PostfixUnaryExpression(
                     SyntaxKind.SuppressNullableWarningExpression,
                     SyntaxFactory.IdentifierName("source")),
                 destinationParameter,
+                destinationType,
                 destinationExpression,
                 semanticModel,
                 runtimeLocalPlaceholders,
@@ -1410,8 +1435,10 @@ internal static class TemplateMappingPlanner
 
     private sealed class TemplateParameterRewriter(
         IParameterSymbol sourceParameter,
+        ITypeSymbol sourceType,
         ExpressionSyntax sourceExpression,
         IParameterSymbol? destinationParameter,
+        ITypeSymbol destinationType,
         ExpressionSyntax? destinationExpression,
         SemanticModel semanticModel,
         IReadOnlyDictionary<ISymbol, string>
@@ -1854,16 +1881,146 @@ internal static class TemplateMappingPlanner
                 return type;
             }
 
-            return semanticModel.GetSymbolInfo(expression).Symbol switch
+            var symbol =
+                semanticModel.GetSymbolInfo(expression).Symbol;
+            var symbolType = symbol switch
             {
                 IFieldSymbol field => field.Type,
                 ILocalSymbol local => local.Type,
+                IParameterSymbol expressionParameter
+                    when SymbolEqualityComparer.Default.Equals(
+                        expressionParameter,
+                        sourceParameter) =>
+                    sourceType,
+                IParameterSymbol expressionParameter
+                    when destinationParameter is not null &&
+                         SymbolEqualityComparer.Default.Equals(
+                             expressionParameter,
+                             destinationParameter) =>
+                    destinationType,
                 IParameterSymbol expressionParameter =>
                     expressionParameter.Type,
                 IPropertySymbol property => property.Type,
                 IMethodSymbol method => method.ReturnType,
                 _ => null
             };
+
+            return symbolType is
+                {
+                    TypeKind: not TypeKind.Error
+                }
+                ? symbolType
+                : TryGetTransferredExpressionType(expression);
+        }
+
+        private ITypeSymbol? TryGetTransferredExpressionType(
+            ExpressionSyntax expression)
+        {
+            while (true)
+            {
+                if (expression is ParenthesizedExpressionSyntax
+                    {
+                        Expression: var parenthesized
+                    })
+                {
+                    expression = parenthesized;
+                    continue;
+                }
+
+                if (expression is PostfixUnaryExpressionSyntax
+                    {
+                        RawKind:
+                            (int)SyntaxKind
+                                .SuppressNullableWarningExpression,
+                        Operand: var suppressed
+                    })
+                {
+                    expression = suppressed;
+                    continue;
+                }
+
+                break;
+            }
+
+            if (expression is IdentifierNameSyntax identifier)
+            {
+                var symbol = GetReferencedSymbol(identifier);
+
+                if (SymbolEqualityComparer.Default.Equals(
+                        symbol,
+                        sourceParameter))
+                {
+                    return sourceType;
+                }
+
+                if (destinationParameter is not null &&
+                    SymbolEqualityComparer.Default.Equals(
+                        symbol,
+                        destinationParameter))
+                {
+                    return destinationType;
+                }
+
+                return null;
+            }
+
+            if (expression is not MemberAccessExpressionSyntax
+                {
+                    Expression: var receiver,
+                    Name: var memberName
+                } ||
+                GetExpressionType(receiver) is not
+                    { } receiverType)
+            {
+                return null;
+            }
+
+            return GetUniqueType(
+                semanticModel.LookupSymbols(
+                        expression.SpanStart,
+                        receiverType,
+                        memberName.Identifier.ValueText,
+                        includeReducedExtensionMethods: false)
+                    .Select(static member =>
+                        member switch
+                        {
+                            IFieldSymbol
+                            {
+                                IsStatic: false
+                            } field =>
+                                field.Type,
+                            IPropertySymbol
+                            {
+                                IsStatic: false,
+                                IsIndexer: false
+                            } property =>
+                                property.Type,
+                            _ => null
+                        })
+                    .Where(static type =>
+                        type is not null)
+                    .Cast<ITypeSymbol>());
+        }
+
+        private static ITypeSymbol? GetUniqueType(
+            IEnumerable<ITypeSymbol> types)
+        {
+            ITypeSymbol? result = null;
+
+            foreach (var type in types)
+            {
+                if (result is not null &&
+                    !SymbolEqualityComparer.IncludeNullability.Equals(
+                        result,
+                        type))
+                {
+                    return null;
+                }
+
+                result = type;
+            }
+
+            return result;
         }
 
         private INamedTypeSymbol? TryResolveExtensionContainer(
@@ -1880,6 +2037,15 @@ internal static class TemplateMappingPlanner
                     .Any(static method =>
                         !method.IsExtensionMethod &&
                         method.ReducedFrom is null))
+            {
+                return null;
+            }
+
+            if (receiverType is not null &&
+                HasAccessibleInstanceMethod(
+                    invocation,
+                    receiverType,
+                    methodName))
             {
                 return null;
             }
@@ -1933,6 +2099,21 @@ internal static class TemplateMappingPlanner
             }
 
             return result;
+        }
+
+        private bool HasAccessibleInstanceMethod(
+            InvocationExpressionSyntax invocation,
+            ITypeSymbol receiverType,
+            string methodName)
+        {
+            return semanticModel.LookupSymbols(
+                    invocation.SpanStart,
+                    receiverType,
+                    methodName,
+                    includeReducedExtensionMethods: false)
+                .OfType<IMethodSymbol>()
+                .Any(static method =>
+                    !method.IsStatic);
         }
 
         private static bool TryAddExtensionContainer(
@@ -2491,7 +2672,8 @@ internal readonly record struct TemplateRuntimeLocalPlan(
     string DeclarationType,
     string MapNewExpression,
     string MapExistingExpression,
-    bool IsConst);
+    bool IsConst,
+    bool CanReuseForSwitchFallback);
 
 internal readonly record struct TemplateBoundLocalPlan(
     string PlaceholderName,

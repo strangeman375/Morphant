@@ -213,7 +213,8 @@ internal static class TemplateControlFlowPlanner
                                 local.Name,
                                 "var",
                                 selector,
-                                IsConst: false));
+                                IsConst: false,
+                                CanReuseForSwitchFallback: true));
                         declarationRuntimeLocalPlaceholders.Add(
                             local,
                             placeholder);
@@ -233,6 +234,8 @@ internal static class TemplateControlFlowPlanner
                             .GetGeneratedTypeName(
                                 local.Type.WithNullableAnnotation(
                                     local.NullableAnnotation));
+                var isConst = declaration.Modifiers.Any(
+                    SyntaxKind.ConstKeyword);
 
                 runtimeLocalPlaceholders.Add(
                     local,
@@ -243,8 +246,13 @@ internal static class TemplateControlFlowPlanner
                         local.Name,
                         declarationType,
                         initializer,
-                        declaration.Modifiers.Any(
-                            SyntaxKind.ConstKeyword)));
+                        isConst,
+                        isConst ||
+                        CanReuseForSwitchFallback(
+                            local,
+                            lambda,
+                            semanticModel,
+                            cancellationToken)));
                 declarationRuntimeLocalPlaceholders.Add(
                     local,
                     runtimePlaceholder);
@@ -368,6 +376,78 @@ internal static class TemplateControlFlowPlanner
             runtimeLocals.ToImmutable(),
             runtimeLocalPlaceholders,
             boundLocals.ToImmutable());
+    }
+
+    private static bool CanReuseForSwitchFallback(
+        ILocalSymbol local,
+        LambdaExpressionSyntax lambda,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        foreach (var identifier in lambda
+                     .DescendantNodes()
+                     .OfType<IdentifierNameSyntax>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!SymbolEqualityComparer.Default.Equals(
+                    semanticModel.GetSymbolInfo(
+                            identifier,
+                            cancellationToken)
+                        .Symbol,
+                    local))
+            {
+                continue;
+            }
+
+            var ancestors = identifier.Ancestors()
+                .TakeWhile(node =>
+                    !ReferenceEquals(node, lambda))
+                .ToArray();
+
+            if (ancestors.Any(node =>
+                    node is AssignmentExpressionSyntax assignment &&
+                    assignment.Left.Span.Contains(identifier.Span) ||
+                    node is PrefixUnaryExpressionSyntax prefix &&
+                    (prefix.IsKind(
+                         SyntaxKind.PreIncrementExpression) ||
+                     prefix.IsKind(
+                         SyntaxKind.PreDecrementExpression)) &&
+                    prefix.Operand.Span.Contains(identifier.Span) ||
+                    node is PostfixUnaryExpressionSyntax postfix &&
+                    (postfix.IsKind(
+                         SyntaxKind.PostIncrementExpression) ||
+                     postfix.IsKind(
+                         SyntaxKind.PostDecrementExpression)) &&
+                    postfix.Operand.Span.Contains(identifier.Span) ||
+                    node is ArgumentSyntax argument &&
+                    (argument.RefKindKeyword.IsKind(
+                         SyntaxKind.RefKeyword) ||
+                     argument.RefKindKeyword.IsKind(
+                         SyntaxKind.OutKeyword)) &&
+                    argument.Expression.Span.Contains(
+                        identifier.Span) ||
+                    node is RefExpressionSyntax refExpression &&
+                    refExpression.Expression.Span.Contains(
+                        identifier.Span)))
+            {
+                return false;
+            }
+
+            if (ancestors
+                .OfType<MemberAccessExpressionSyntax>()
+                .Any(memberAccess =>
+                    memberAccess.Expression.Span.Contains(
+                        identifier.Span) &&
+                    (!local.Type.IsReferenceType ||
+                     memberAccess.Parent is
+                         InvocationExpressionSyntax)))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool TryCollectSupportedLocalDeclarations(
@@ -2623,7 +2703,8 @@ internal readonly record struct TemplateRuntimeLocalSyntax(
     string PreferredName,
     string DeclarationType,
     ExpressionSyntax Initializer,
-    bool IsConst);
+    bool IsConst,
+    bool CanReuseForSwitchFallback);
 
 internal readonly record struct TemplateBoundLocalSyntax(
     string PlaceholderName,
