@@ -122,6 +122,9 @@ internal static class TemplateControlFlowPlanner
         var runtimeLocals =
             ImmutableArray.CreateBuilder<
                 TemplateRuntimeLocalSyntax>();
+        var boundLocals =
+            ImmutableArray.CreateBuilder<
+                TemplateBoundLocalSyntax>();
         var allLocals =
             new HashSet<ISymbol>(
                 SymbolEqualityComparer.Default);
@@ -183,8 +186,18 @@ internal static class TemplateControlFlowPlanner
                 {
                     dslLocals.Add(local);
 
-                    if (UnwrapParentheses(initializer) is
-                        ConditionalExpressionSyntax conditional)
+                    var unwrappedInitializer =
+                        UnwrapParentheses(initializer);
+                    var selector = unwrappedInitializer switch
+                    {
+                        ConditionalExpressionSyntax conditional =>
+                            conditional.Condition,
+                        SwitchExpressionSyntax switchExpression =>
+                            switchExpression.GoverningExpression,
+                        _ => null
+                    };
+
+                    if (selector is not null)
                     {
                         var placeholder =
                             AllocatePlaceholder(
@@ -199,7 +212,7 @@ internal static class TemplateControlFlowPlanner
                                 placeholder,
                                 local.Name,
                                 "var",
-                                conditional.Condition,
+                                selector,
                                 IsConst: false));
                         declarationRuntimeLocalPlaceholders.Add(
                             local,
@@ -236,6 +249,34 @@ internal static class TemplateControlFlowPlanner
                     local,
                     runtimePlaceholder);
             }
+        }
+
+        foreach (var designation in
+                 EnumeratePatternVariableDesignations(lambda))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (semanticModel.GetDeclaredSymbol(
+                    designation,
+                    cancellationToken) is not
+                    ILocalSymbol local ||
+                runtimeLocalPlaceholders.ContainsKey(local))
+            {
+                continue;
+            }
+
+            var placeholder = AllocatePlaceholder(
+                ref placeholderOrdinal,
+                reservedPlaceholderNames);
+
+            allLocals.Add(local);
+            runtimeLocalPlaceholders.Add(
+                local,
+                placeholder);
+            boundLocals.Add(
+                new TemplateBoundLocalSyntax(
+                    placeholder,
+                    local.Name));
         }
 
         var transferableExpressions =
@@ -325,7 +366,8 @@ internal static class TemplateControlFlowPlanner
         return new TemplateControlFlowProgram(
             root,
             runtimeLocals.ToImmutable(),
-            runtimeLocalPlaceholders);
+            runtimeLocalPlaceholders,
+            boundLocals.ToImmutable());
     }
 
     private static bool TryCollectSupportedLocalDeclarations(
@@ -394,6 +436,24 @@ internal static class TemplateControlFlowPlanner
                             ifStatement.Else.Statement,
                             localDeclarations));
 
+            case SwitchStatementSyntax switchStatement:
+                foreach (var section in
+                         switchStatement.Sections)
+                {
+                    foreach (var nestedStatement in
+                             section.Statements)
+                    {
+                        if (!TryCollectSupportedLocalDeclarations(
+                                nestedStatement,
+                                localDeclarations))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+
             case ReturnStatementSyntax
                 {
                     Expression: not null
@@ -449,6 +509,20 @@ internal static class TemplateControlFlowPlanner
                                  EnumerateReturnExpressions(
                                      SyntaxFactory.SingletonList(
                                          @else.Statement)))
+                        {
+                            yield return nestedExpression;
+                        }
+                    }
+
+                    break;
+
+                case SwitchStatementSyntax switchStatement:
+                    foreach (var section in
+                             switchStatement.Sections)
+                    {
+                        foreach (var nestedExpression in
+                                 EnumerateReturnExpressions(
+                                     section.Statements))
                         {
                             yield return nestedExpression;
                         }
@@ -517,6 +591,40 @@ internal static class TemplateControlFlowPlanner
                     foreach (var expression in
                              EnumerateStatementExpressions(
                                  @else.Statement))
+                    {
+                        yield return expression;
+                    }
+                }
+
+                yield break;
+
+            case SwitchStatementSyntax switchStatement:
+                yield return switchStatement.Expression;
+
+                foreach (var section in
+                         switchStatement.Sections)
+                {
+                    foreach (var label in section.Labels)
+                    {
+                        switch (label)
+                        {
+                            case CaseSwitchLabelSyntax valueLabel:
+                                yield return valueLabel.Value;
+                                break;
+
+                            case CasePatternSwitchLabelSyntax
+                                {
+                                    WhenClause.Condition:
+                                        { } whenCondition
+                                }:
+                                yield return whenCondition;
+                                break;
+                        }
+                    }
+
+                    foreach (var expression in
+                             EnumerateStatementExpressions(
+                                 section.Statements))
                     {
                         yield return expression;
                     }
@@ -662,6 +770,24 @@ internal static class TemplateControlFlowPlanner
                         whenFalse);
                     break;
 
+                case SwitchStatementSyntax switchStatement:
+                    if (!TryBuildSwitchStatement(
+                            switchStatement,
+                            root,
+                            templateResultType,
+                            localInitializers,
+                            dslLocals,
+                            dslConditionPlaceholders,
+                            declarationRuntimeLocalPlaceholders,
+                            semanticModel,
+                            cancellationToken,
+                            out root))
+                    {
+                        return false;
+                    }
+
+                    break;
+
                 default:
                     return false;
             }
@@ -734,6 +860,131 @@ internal static class TemplateControlFlowPlanner
             semanticModel,
             cancellationToken,
             out root);
+    }
+
+    private static bool TryBuildSwitchStatement(
+        SwitchStatementSyntax switchStatement,
+        TemplateControlFlowSyntaxNode? continuation,
+        ITypeSymbol? templateResultType,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax>
+            localInitializers,
+        HashSet<ISymbol> dslLocals,
+        IReadOnlyDictionary<ISymbol, string>
+            dslConditionPlaceholders,
+        IReadOnlyDictionary<ISymbol, string>
+            declarationRuntimeLocalPlaceholders,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out TemplateControlFlowSyntaxNode? root)
+    {
+        var sections =
+            ImmutableArray.CreateBuilder<
+                TemplateSwitchSectionSyntax>();
+        var hasDefault = false;
+
+        foreach (var section in switchStatement.Sections)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!TryBuildStatementList(
+                    section.Statements,
+                    continuation: null,
+                    templateResultType,
+                    localInitializers,
+                    dslLocals,
+                    dslConditionPlaceholders,
+                    declarationRuntimeLocalPlaceholders,
+                    semanticModel,
+                    cancellationToken,
+                    out var branch) ||
+                branch is null)
+            {
+                root = null;
+                return false;
+            }
+
+            var labels =
+                ImmutableArray.CreateBuilder<
+                    TemplateSwitchLabelSyntax>();
+
+            foreach (var label in section.Labels)
+            {
+                if (!TryBuildSwitchLabel(
+                        label,
+                        out var switchLabel))
+                {
+                    root = null;
+                    return false;
+                }
+
+                hasDefault |=
+                    switchLabel.Kind ==
+                    TemplateSwitchLabelKind.Default;
+                labels.Add(switchLabel);
+            }
+
+            if (labels.Count == 0)
+            {
+                root = null;
+                return false;
+            }
+
+            sections.Add(
+                new TemplateSwitchSectionSyntax(
+                    labels.ToImmutable(),
+                    branch));
+        }
+
+        if (sections.Count == 0 ||
+            !hasDefault && continuation is null)
+        {
+            root = null;
+            return false;
+        }
+
+        root = new TemplateSwitchSyntaxNode(
+            switchStatement.Expression,
+            sections.ToImmutable(),
+            hasDefault
+                ? null
+                : continuation);
+        return true;
+    }
+
+    private static bool TryBuildSwitchLabel(
+        SwitchLabelSyntax label,
+        out TemplateSwitchLabelSyntax switchLabel)
+    {
+        switch (label)
+        {
+            case DefaultSwitchLabelSyntax:
+                switchLabel = new TemplateSwitchLabelSyntax(
+                    TemplateSwitchLabelKind.Default,
+                    Value: null,
+                    Pattern: null,
+                    WhenCondition: null);
+                return true;
+
+            case CaseSwitchLabelSyntax valueLabel:
+                switchLabel = new TemplateSwitchLabelSyntax(
+                    TemplateSwitchLabelKind.Value,
+                    valueLabel.Value,
+                    Pattern: null,
+                    WhenCondition: null);
+                return true;
+
+            case CasePatternSwitchLabelSyntax patternLabel:
+                switchLabel = new TemplateSwitchLabelSyntax(
+                    TemplateSwitchLabelKind.Pattern,
+                    Value: null,
+                    patternLabel.Pattern,
+                    patternLabel.WhenClause?.Condition);
+                return true;
+
+            default:
+                switchLabel = default;
+                return false;
+        }
     }
 
     private static TemplateControlFlowSyntaxNode
@@ -860,6 +1111,24 @@ internal static class TemplateControlFlowPlanner
                             whenTrue,
                             whenFalse);
             }
+            else if (UnwrapParentheses(localInitializer) is
+                         SwitchExpressionSyntax localSwitchExpression &&
+                     dslConditionPlaceholders.TryGetValue(
+                         localSymbol,
+                         out var switchPlaceholder))
+            {
+                localResult = ResolveTemplateSwitchExpression(
+                    localSwitchExpression,
+                    SyntaxFactory.IdentifierName(
+                        switchPlaceholder),
+                    templateResultType,
+                    localInitializers,
+                    dslLocals,
+                    dslConditionPlaceholders,
+                    semanticModel,
+                    cancellationToken,
+                    resolvingLocals);
+            }
             else
             {
                 localResult = ResolveTemplateExpression(
@@ -904,6 +1173,20 @@ internal static class TemplateControlFlowPlanner
                 conditionalExpression.Condition,
                 whenTrue,
                 whenFalse);
+        }
+
+        if (expression is SwitchExpressionSyntax switchExpression)
+        {
+            return ResolveTemplateSwitchExpression(
+                switchExpression,
+                governingExpression: null,
+                templateResultType,
+                localInitializers,
+                dslLocals,
+                dslConditionPlaceholders,
+                semanticModel,
+                cancellationToken,
+                resolvingLocals);
         }
 
         if (expression is ThrowExpressionSyntax throwExpression)
@@ -953,6 +1236,111 @@ internal static class TemplateControlFlowPlanner
             assignments);
     }
 
+    private static TemplateControlFlowSyntaxNode?
+        ResolveTemplateSwitchExpression(
+            SwitchExpressionSyntax switchExpression,
+            ExpressionSyntax? governingExpression,
+            ITypeSymbol? templateResultType,
+            IReadOnlyDictionary<ISymbol, ExpressionSyntax>
+                localInitializers,
+            HashSet<ISymbol> dslLocals,
+            IReadOnlyDictionary<ISymbol, string>
+                dslConditionPlaceholders,
+            SemanticModel semanticModel,
+            CancellationToken cancellationToken,
+            HashSet<ISymbol> resolvingLocals)
+    {
+        var sections =
+            ImmutableArray.CreateBuilder<
+                TemplateSwitchSectionSyntax>();
+        var hasCatchAll = false;
+
+        foreach (var arm in switchExpression.Arms)
+        {
+            var branch = ResolveTemplateExpression(
+                arm.Expression,
+                templateResultType,
+                localInitializers,
+                dslLocals,
+                dslConditionPlaceholders,
+                semanticModel,
+                cancellationToken,
+                resolvingLocals);
+
+            if (branch is null)
+            {
+                return null;
+            }
+
+            var catchAll =
+                arm.WhenClause is null &&
+                IsUnconditionalCatchAllPattern(
+                    arm.Pattern);
+            hasCatchAll |= catchAll;
+
+            sections.Add(
+                new TemplateSwitchSectionSyntax(
+                    [
+                        catchAll &&
+                        arm.Pattern is DiscardPatternSyntax
+                            ? new TemplateSwitchLabelSyntax(
+                                TemplateSwitchLabelKind.Default,
+                                Value: null,
+                                Pattern: null,
+                                WhenCondition: null)
+                            : new TemplateSwitchLabelSyntax(
+                                TemplateSwitchLabelKind.Pattern,
+                                Value: null,
+                                arm.Pattern,
+                                arm.WhenClause?.Condition)
+                    ],
+                    branch));
+        }
+
+        return sections.Count == 0
+            ? null
+            : new TemplateSwitchSyntaxNode(
+                governingExpression ??
+                switchExpression.GoverningExpression,
+                sections.ToImmutable(),
+                Continuation: null,
+                RequiresFallback: !hasCatchAll,
+                CanPassUnmatchedValue:
+                    CanPassUnmatchedSwitchValue(
+                        switchExpression,
+                        semanticModel,
+                        cancellationToken));
+    }
+
+    private static bool IsUnconditionalCatchAllPattern(
+        PatternSyntax pattern)
+    {
+        while (pattern is ParenthesizedPatternSyntax
+               {
+                   Pattern: var nested
+               })
+        {
+            pattern = nested;
+        }
+
+        return pattern is DiscardPatternSyntax or
+            VarPatternSyntax;
+    }
+
+    private static bool CanPassUnmatchedSwitchValue(
+        SwitchExpressionSyntax switchExpression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        return semanticModel.GetTypeInfo(
+                   switchExpression.GoverningExpression,
+                   cancellationToken)
+               .Type is not INamedTypeSymbol
+               {
+                   IsRefLikeType: true
+               };
+    }
+
     private static TemplateControlFlowSyntaxNode ApplyOverlay(
         TemplateControlFlowSyntaxNode node,
         ImmutableArray<TemplateMemberAssignmentSyntax> overlay)
@@ -960,6 +1348,16 @@ internal static class TemplateControlFlowPlanner
         if (node is TemplateThrowSyntaxNode)
         {
             return node;
+        }
+
+        if (node is TemplateLocalDeclarationsSyntaxNode localDeclarations)
+        {
+            return localDeclarations with
+            {
+                Next = ApplyOverlay(
+                    localDeclarations.Next,
+                    overlay)
+            };
         }
 
         if (node is TemplateConditionalSyntaxNode conditional)
@@ -972,6 +1370,28 @@ internal static class TemplateControlFlowPlanner
                 WhenFalse = ApplyOverlay(
                     conditional.WhenFalse,
                     overlay)
+            };
+        }
+
+        if (node is TemplateSwitchSyntaxNode switchNode)
+        {
+            return switchNode with
+            {
+                Sections = switchNode.Sections
+                    .Select(section =>
+                        section with
+                        {
+                            Branch = ApplyOverlay(
+                                section.Branch,
+                                overlay)
+                        })
+                    .ToImmutableArray(),
+                Continuation = switchNode.Continuation is
+                    { } continuation
+                    ? ApplyOverlay(
+                        continuation,
+                        overlay)
+                    : null
             };
         }
 
@@ -1052,6 +1472,61 @@ internal static class TemplateControlFlowPlanner
                     WhenTrue = whenTrue,
                     WhenFalse = whenFalse
                 };
+        }
+
+        if (node is TemplateSwitchSyntaxNode switchNode)
+        {
+            var sections =
+                ImmutableArray.CreateBuilder<
+                    TemplateSwitchSectionSyntax>(
+                    switchNode.Sections.Length);
+
+            foreach (var section in switchNode.Sections)
+            {
+                var branch = ExpandMemberConditions(
+                    section.Branch,
+                    localInitializers,
+                    dslLocals,
+                    dslConditionPlaceholders,
+                    semanticModel,
+                    cancellationToken);
+
+                if (branch is null)
+                {
+                    return null;
+                }
+
+                sections.Add(
+                    section with
+                    {
+                        Branch = branch
+                    });
+            }
+
+            TemplateControlFlowSyntaxNode? continuation = null;
+
+            if (switchNode.Continuation is
+                    { } originalContinuation)
+            {
+                continuation = ExpandMemberConditions(
+                    originalContinuation,
+                    localInitializers,
+                    dslLocals,
+                    dslConditionPlaceholders,
+                    semanticModel,
+                    cancellationToken);
+
+                if (continuation is null)
+                {
+                    return null;
+                }
+            }
+
+            return switchNode with
+            {
+                Sections = sections.ToImmutable(),
+                Continuation = continuation
+            };
         }
 
         var leaf = (TemplateLeafSyntaxNode)node;
@@ -1294,6 +1769,38 @@ internal static class TemplateControlFlowPlanner
             return applyLeaf(leaf.Value);
         }
 
+        if (value is TemplateMemberValueSwitchSyntaxNode switchValue)
+        {
+            var sections =
+                ImmutableArray.CreateBuilder<
+                    TemplateSwitchSectionSyntax>(
+                    switchValue.Sections.Length);
+
+            foreach (var section in switchValue.Sections)
+            {
+                var branch = ApplyMemberValue(
+                    section.Value,
+                    applyLeaf);
+
+                if (branch is null)
+                {
+                    return null;
+                }
+
+                sections.Add(
+                    new TemplateSwitchSectionSyntax(
+                        [section.Label],
+                        branch));
+            }
+
+            return new TemplateSwitchSyntaxNode(
+                switchValue.GoverningExpression,
+                sections.ToImmutable(),
+                Continuation: null,
+                switchValue.RequiresFallback,
+                switchValue.CanPassUnmatchedValue);
+        }
+
         var conditional =
             (TemplateMemberValueConditionalSyntaxNode)value;
         var whenTrue = ApplyMemberValue(
@@ -1378,6 +1885,24 @@ internal static class TemplateControlFlowPlanner
                                 whenTrue,
                                 whenFalse);
             }
+            else if (UnwrapParentheses(localInitializer) is
+                         SwitchExpressionSyntax localSwitchExpression &&
+                     dslConditionPlaceholders.TryGetValue(
+                         localSymbol,
+                         out var switchPlaceholder))
+            {
+                result = ResolveMemberSwitchValue(
+                    localSwitchExpression,
+                    SyntaxFactory.IdentifierName(
+                        switchPlaceholder),
+                    localInitializers,
+                    dslLocals,
+                    dslConditionPlaceholders,
+                    semanticModel,
+                    cancellationToken,
+                    resolvingLocals,
+                    forceConditional: true);
+            }
             else
             {
                 result = ResolveMemberValue(
@@ -1437,6 +1962,20 @@ internal static class TemplateControlFlowPlanner
                 whenFalse);
         }
 
+        if (unwrapped is SwitchExpressionSyntax switchExpression)
+        {
+            return ResolveMemberSwitchValue(
+                switchExpression,
+                governingExpression: null,
+                localInitializers,
+                dslLocals,
+                dslConditionPlaceholders,
+                semanticModel,
+                cancellationToken,
+                resolvingLocals,
+                forceConditional);
+        }
+
         var isDsl = IsMemberDslExpression(
             unwrapped,
             semanticModel,
@@ -1447,6 +1986,90 @@ internal static class TemplateControlFlowPlanner
             isDsl);
     }
 
+    private static TemplateMemberValueSyntaxNode?
+        ResolveMemberSwitchValue(
+            SwitchExpressionSyntax switchExpression,
+            ExpressionSyntax? governingExpression,
+            IReadOnlyDictionary<ISymbol, ExpressionSyntax>
+                localInitializers,
+            HashSet<ISymbol> dslLocals,
+            IReadOnlyDictionary<ISymbol, string>
+                dslConditionPlaceholders,
+            SemanticModel semanticModel,
+            CancellationToken cancellationToken,
+            HashSet<ISymbol> resolvingLocals,
+            bool forceConditional)
+    {
+        var sections =
+            ImmutableArray.CreateBuilder<
+                TemplateMemberValueSwitchSectionSyntax>();
+        var hasCatchAll = false;
+        var containsDsl = false;
+
+        foreach (var arm in switchExpression.Arms)
+        {
+            var value = ResolveMemberValue(
+                arm.Expression,
+                localInitializers,
+                dslLocals,
+                dslConditionPlaceholders,
+                semanticModel,
+                cancellationToken,
+                resolvingLocals,
+                forceConditional);
+
+            if (value is null)
+            {
+                return null;
+            }
+
+            containsDsl |= ContainsDslMemberValue(value);
+
+            var catchAll =
+                arm.WhenClause is null &&
+                IsUnconditionalCatchAllPattern(
+                    arm.Pattern);
+            hasCatchAll |= catchAll;
+
+            sections.Add(
+                new TemplateMemberValueSwitchSectionSyntax(
+                    catchAll &&
+                    arm.Pattern is DiscardPatternSyntax
+                        ? new TemplateSwitchLabelSyntax(
+                            TemplateSwitchLabelKind.Default,
+                            Value: null,
+                            Pattern: null,
+                            WhenCondition: null)
+                        : new TemplateSwitchLabelSyntax(
+                            TemplateSwitchLabelKind.Pattern,
+                            Value: null,
+                            arm.Pattern,
+                            arm.WhenClause?.Condition),
+                    value));
+        }
+
+        if (sections.Count == 0)
+        {
+            return null;
+        }
+
+        return !forceConditional &&
+               !containsDsl
+            ? new TemplateMemberValueLeafSyntaxNode(
+                switchExpression,
+                IsDsl: false)
+            : new TemplateMemberValueSwitchSyntaxNode(
+                governingExpression ??
+                switchExpression.GoverningExpression,
+                sections.ToImmutable(),
+                RequiresFallback: !hasCatchAll,
+                CanPassUnmatchedValue:
+                    CanPassUnmatchedSwitchValue(
+                        switchExpression,
+                        semanticModel,
+                        cancellationToken));
+    }
+
     private static bool ContainsDslMemberValue(
         TemplateMemberValueSyntaxNode node)
     {
@@ -1455,6 +2078,8 @@ internal static class TemplateControlFlowPlanner
             TemplateMemberValueLeafSyntaxNode leaf =>
                 leaf.IsDsl,
             TemplateMemberValueConditionalSyntaxNode =>
+                true,
+            TemplateMemberValueSwitchSyntaxNode =>
                 true,
             _ => false
         };
@@ -1693,6 +2318,17 @@ internal static class TemplateControlFlowPlanner
                        cancellationToken);
         }
 
+        if (expression is SwitchExpressionSyntax switchExpression)
+        {
+            return switchExpression.Arms.Any(
+                arm => ContainsDslLocalInitializer(
+                    arm.Expression,
+                    templateResultType,
+                    dslLocals,
+                    semanticModel,
+                    cancellationToken));
+        }
+
         if (expression is WithExpressionSyntax withExpression)
         {
             return ContainsDslLocalInitializer(
@@ -1874,6 +2510,29 @@ internal static class TemplateControlFlowPlanner
         return false;
     }
 
+    private static ImmutableArray<
+        SingleVariableDesignationSyntax>
+        EnumeratePatternVariableDesignations(
+            LambdaExpressionSyntax lambda)
+    {
+        var result =
+            ImmutableArray.CreateBuilder<
+                SingleVariableDesignationSyntax>();
+        var walker =
+            new PatternVariableDesignationWalker(result);
+
+        if (lambda.Block is { } block)
+        {
+            walker.Visit(block);
+        }
+        else if (lambda.ExpressionBody is { } expression)
+        {
+            walker.Visit(expression);
+        }
+
+        return result.ToImmutable();
+    }
+
     private static string AllocatePlaceholder(
         ref int ordinal,
         HashSet<string> reservedNames)
@@ -1905,6 +2564,45 @@ internal static class TemplateControlFlowPlanner
 
         return expression;
     }
+
+    private sealed class PatternVariableDesignationWalker(
+        ImmutableArray<SingleVariableDesignationSyntax>.Builder
+            result)
+        : CSharpSyntaxWalker
+    {
+        public override void VisitSingleVariableDesignation(
+            SingleVariableDesignationSyntax node)
+        {
+            if (node.Ancestors()
+                .OfType<PatternSyntax>()
+                .Any())
+            {
+                result.Add(node);
+            }
+
+            base.VisitSingleVariableDesignation(node);
+        }
+
+        public override void VisitSimpleLambdaExpression(
+            SimpleLambdaExpressionSyntax node)
+        {
+        }
+
+        public override void VisitParenthesizedLambdaExpression(
+            ParenthesizedLambdaExpressionSyntax node)
+        {
+        }
+
+        public override void VisitAnonymousMethodExpression(
+            AnonymousMethodExpressionSyntax node)
+        {
+        }
+
+        public override void VisitLocalFunctionStatement(
+            LocalFunctionStatementSyntax node)
+        {
+        }
+    }
 }
 
 internal abstract record TemplateControlFlowBuildResult;
@@ -1916,7 +2614,8 @@ internal sealed record UnsupportedTemplateControlFlow(
 internal sealed record TemplateControlFlowProgram(
     TemplateControlFlowSyntaxNode Root,
     ImmutableArray<TemplateRuntimeLocalSyntax> RuntimeLocals,
-    IReadOnlyDictionary<ISymbol, string> RuntimeLocalPlaceholders)
+    IReadOnlyDictionary<ISymbol, string> RuntimeLocalPlaceholders,
+    ImmutableArray<TemplateBoundLocalSyntax> BoundLocals)
     : TemplateControlFlowBuildResult;
 
 internal readonly record struct TemplateRuntimeLocalSyntax(
@@ -1925,6 +2624,10 @@ internal readonly record struct TemplateRuntimeLocalSyntax(
     string DeclarationType,
     ExpressionSyntax Initializer,
     bool IsConst);
+
+internal readonly record struct TemplateBoundLocalSyntax(
+    string PlaceholderName,
+    string PreferredName);
 
 internal abstract record TemplateControlFlowSyntaxNode;
 
@@ -1938,6 +2641,31 @@ internal sealed record TemplateConditionalSyntaxNode(
     TemplateControlFlowSyntaxNode WhenTrue,
     TemplateControlFlowSyntaxNode WhenFalse)
     : TemplateControlFlowSyntaxNode;
+
+internal sealed record TemplateSwitchSyntaxNode(
+    ExpressionSyntax GoverningExpression,
+    ImmutableArray<TemplateSwitchSectionSyntax> Sections,
+    TemplateControlFlowSyntaxNode? Continuation,
+    bool RequiresFallback = false,
+    bool CanPassUnmatchedValue = true)
+    : TemplateControlFlowSyntaxNode;
+
+internal readonly record struct TemplateSwitchSectionSyntax(
+    ImmutableArray<TemplateSwitchLabelSyntax> Labels,
+    TemplateControlFlowSyntaxNode Branch);
+
+internal readonly record struct TemplateSwitchLabelSyntax(
+    TemplateSwitchLabelKind Kind,
+    ExpressionSyntax? Value,
+    PatternSyntax? Pattern,
+    ExpressionSyntax? WhenCondition);
+
+internal enum TemplateSwitchLabelKind
+{
+    Default,
+    Value,
+    Pattern
+}
 
 internal sealed record TemplateLeafSyntaxNode(
     ExpressionSyntax? DirectExpression,
@@ -1966,6 +2694,18 @@ internal sealed record TemplateMemberValueConditionalSyntaxNode(
     TemplateMemberValueSyntaxNode WhenTrue,
     TemplateMemberValueSyntaxNode WhenFalse)
     : TemplateMemberValueSyntaxNode;
+
+internal sealed record TemplateMemberValueSwitchSyntaxNode(
+    ExpressionSyntax GoverningExpression,
+    ImmutableArray<TemplateMemberValueSwitchSectionSyntax> Sections,
+    bool RequiresFallback = false,
+    bool CanPassUnmatchedValue = true)
+    : TemplateMemberValueSyntaxNode;
+
+internal readonly record struct
+    TemplateMemberValueSwitchSectionSyntax(
+        TemplateSwitchLabelSyntax Label,
+        TemplateMemberValueSyntaxNode Value);
 
 internal sealed record TemplateMemberValueLeafSyntaxNode(
     ExpressionSyntax Value,

@@ -722,6 +722,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using TestCase.Morphant.Generated;
 
 namespace TestCase
 {
@@ -757,7 +758,7 @@ namespace TestCase
 
                     return (source.Value == 0
                         ? throw new global::System.InvalidOperationException()
-                        : new TestCase.Morphant.Generated.DestinationMorphantTemplate()) with
+                        : new DestinationMorphantTemplate()) with
                     {
                         Value = source.Value - 1
                     };

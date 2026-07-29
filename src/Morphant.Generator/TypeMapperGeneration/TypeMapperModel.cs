@@ -108,7 +108,8 @@ internal readonly record struct TypeMapperLocalValueModel
     string DeclarationType,
     string Name,
     string ValueExpression,
-    bool IsConst
+    bool IsConst,
+    bool IsSynthetic = false
 );
 
 internal sealed record TypeMapperControlFlowNode
@@ -118,5 +119,16 @@ internal sealed record TypeMapperControlFlowNode
     TypeMapperControlFlowNode? WhenTrue,
     TypeMapperControlFlowNode? WhenFalse,
     TypeMapperMappingModel? Leaf,
-    string? ThrowExpression
+    string? ThrowExpression,
+    string? SwitchExpression = null,
+    ImmutableArray<TypeMapperSwitchSectionModel> SwitchSections = default,
+    TypeMapperControlFlowNode? SwitchContinuation = null,
+    bool SwitchRequiresFallback = false,
+    bool SwitchCanPassUnmatchedValue = true
+);
+
+internal readonly record struct TypeMapperSwitchSectionModel
+(
+    ImmutableArray<string> Labels,
+    TypeMapperControlFlowNode Branch
 );

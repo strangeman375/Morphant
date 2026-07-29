@@ -11,13 +11,21 @@ internal sealed class CodeWriter
 
     public void Line(string value = "")
     {
-        if (value.Length > 0)
-        {
-            _builder.Append(' ', _indent * 4);
-            _builder.Append(value);
-        }
+        var lines = value
+            .Replace("\r\n", "\n")
+            .Replace('\r', '\n')
+            .Split('\n');
 
-        _builder.Append(NewLine);
+        foreach (var line in lines)
+        {
+            if (line.Length > 0)
+            {
+                _builder.Append(' ', _indent * 4);
+                _builder.Append(line);
+            }
+
+            _builder.Append(NewLine);
+        }
     }
 
     public void OpenBlock(string declaration)

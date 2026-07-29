@@ -145,6 +145,10 @@ internal static class TemplateMappingPlanner
                 .Select(
                     static local =>
                         local.PlaceholderName)
+                .Concat(
+                    controlFlow.BoundLocals.Select(
+                        static local =>
+                            local.PlaceholderName))
                 .ToImmutableArray();
         var allowedFactoryCaptureSymbols =
             new HashSet<ISymbol>(
@@ -179,6 +183,40 @@ internal static class TemplateMappingPlanner
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
                 runtimeLocalPlaceholderNames);
+
+        string RewriteMapNewPattern(PatternSyntax pattern) =>
+            RewritePattern(
+                pattern,
+                sourceParameterSymbol,
+                destinationParameterSymbol,
+                mapNewDestinationExpression,
+                semanticModel,
+                controlFlow.RuntimeLocalPlaceholders,
+                runtimeLocalPlaceholderNames);
+
+        string RewriteMapExistingPattern(PatternSyntax pattern) =>
+            RewritePattern(
+                pattern,
+                sourceParameterSymbol,
+                destinationParameterSymbol,
+                mapExistingDestinationExpression,
+                semanticModel,
+                controlFlow.RuntimeLocalPlaceholders,
+                runtimeLocalPlaceholderNames);
+
+        string RewriteMapNewSwitchLabel(
+            TemplateSwitchLabelSyntax label) =>
+            RewriteSwitchLabel(
+                label,
+                RewriteMapNew,
+                RewriteMapNewPattern);
+
+        string RewriteMapExistingSwitchLabel(
+            TemplateSwitchLabelSyntax label) =>
+            RewriteSwitchLabel(
+                label,
+                RewriteMapExisting,
+                RewriteMapExistingPattern);
 
         var runtimeLocals =
             controlFlow.RuntimeLocals
@@ -442,6 +480,8 @@ internal static class TemplateMappingPlanner
                 BuildLeaf,
                 RewriteMapNew,
                 RewriteMapExisting,
+                RewriteMapNewSwitchLabel,
+                RewriteMapExistingSwitchLabel,
                 out var root))
         {
             return null;
@@ -449,7 +489,13 @@ internal static class TemplateMappingPlanner
 
         return new SupportedTemplateMappingPlanResult(
             root,
-            runtimeLocals);
+            runtimeLocals,
+            controlFlow.BoundLocals
+                .Select(local =>
+                    new TemplateBoundLocalPlan(
+                        local.PlaceholderName,
+                        local.PreferredName))
+                .ToImmutableArray());
     }
 
     private static TemplateFactoryPlan? BuildFactoryPlan(
@@ -872,6 +918,10 @@ internal static class TemplateMappingPlanner
             buildLeaf,
         Func<ExpressionSyntax, string> rewriteMapNew,
         Func<ExpressionSyntax, string> rewriteMapExisting,
+        Func<TemplateSwitchLabelSyntax, string>
+            rewriteMapNewSwitchLabel,
+        Func<TemplateSwitchLabelSyntax, string>
+            rewriteMapExistingSwitchLabel,
         out TemplateMappingPlanNode node)
     {
         if (syntax is
@@ -882,6 +932,8 @@ internal static class TemplateMappingPlanner
                     buildLeaf,
                     rewriteMapNew,
                     rewriteMapExisting,
+                    rewriteMapNewSwitchLabel,
+                    rewriteMapExistingSwitchLabel,
                     out var next))
             {
                 node = null!;
@@ -915,6 +967,68 @@ internal static class TemplateMappingPlanner
             return true;
         }
 
+        if (syntax is TemplateSwitchSyntaxNode switchNode)
+        {
+            var sections =
+                ImmutableArray.CreateBuilder<
+                    TemplateSwitchSectionMappingPlan>(
+                    switchNode.Sections.Length);
+
+            foreach (var section in switchNode.Sections)
+            {
+                if (!TryBuildPlanNode(
+                        section.Branch,
+                        buildLeaf,
+                        rewriteMapNew,
+                        rewriteMapExisting,
+                        rewriteMapNewSwitchLabel,
+                        rewriteMapExistingSwitchLabel,
+                        out var branch))
+                {
+                    node = null!;
+                    return false;
+                }
+
+                sections.Add(
+                    new TemplateSwitchSectionMappingPlan(
+                        section.Labels
+                            .Select(label =>
+                                new TemplateSwitchLabelMappingPlan(
+                                    rewriteMapNewSwitchLabel(label),
+                                    rewriteMapExistingSwitchLabel(label)))
+                            .ToImmutableArray(),
+                        branch));
+            }
+
+            TemplateMappingPlanNode? continuation = null;
+
+            if (switchNode.Continuation is
+                    { } continuationSyntax &&
+                !TryBuildPlanNode(
+                    continuationSyntax,
+                    buildLeaf,
+                    rewriteMapNew,
+                    rewriteMapExisting,
+                    rewriteMapNewSwitchLabel,
+                    rewriteMapExistingSwitchLabel,
+                    out continuation))
+            {
+                node = null!;
+                return false;
+            }
+
+            node = new TemplateSwitchMappingPlanNode(
+                rewriteMapNew(
+                    switchNode.GoverningExpression),
+                rewriteMapExisting(
+                    switchNode.GoverningExpression),
+                sections.ToImmutable(),
+                continuation,
+                switchNode.RequiresFallback,
+                switchNode.CanPassUnmatchedValue);
+            return true;
+        }
+
         var conditional =
             (TemplateConditionalSyntaxNode)syntax;
 
@@ -923,12 +1037,16 @@ internal static class TemplateMappingPlanner
                 buildLeaf,
                 rewriteMapNew,
                 rewriteMapExisting,
+                rewriteMapNewSwitchLabel,
+                rewriteMapExistingSwitchLabel,
                 out var whenTrue) ||
             !TryBuildPlanNode(
                 conditional.WhenFalse,
                 buildLeaf,
                 rewriteMapNew,
                 rewriteMapExisting,
+                rewriteMapNewSwitchLabel,
+                rewriteMapExistingSwitchLabel,
                 out var whenFalse))
         {
             node = null!;
@@ -1139,6 +1257,62 @@ internal static class TemplateMappingPlanner
             .ToFullString();
     }
 
+    private static string RewritePattern(
+        PatternSyntax pattern,
+        IParameterSymbol sourceParameter,
+        IParameterSymbol? destinationParameter,
+        ExpressionSyntax? destinationExpression,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, string>
+            runtimeLocalPlaceholders,
+        IReadOnlyCollection<string>
+            runtimeLocalPlaceholderNames)
+    {
+        var rewritten = new TemplateParameterRewriter(
+                sourceParameter,
+                SyntaxFactory.PostfixUnaryExpression(
+                    SyntaxKind.SuppressNullableWarningExpression,
+                    SyntaxFactory.IdentifierName("source")),
+                destinationParameter,
+                destinationExpression,
+                semanticModel,
+                runtimeLocalPlaceholders,
+                runtimeLocalPlaceholderNames)
+            .Visit(pattern)!
+            .WithoutTrivia()
+            .NormalizeWhitespace();
+
+        return new NullableSyntaxTriviaRewriter()
+            .Visit(rewritten)!
+            .ToFullString();
+    }
+
+    private static string RewriteSwitchLabel(
+        TemplateSwitchLabelSyntax label,
+        Func<ExpressionSyntax, string> rewriteExpression,
+        Func<PatternSyntax, string> rewritePattern)
+    {
+        return label.Kind switch
+        {
+            TemplateSwitchLabelKind.Default =>
+                "default:",
+            TemplateSwitchLabelKind.Value =>
+                "case " +
+                rewriteExpression(label.Value!) +
+                ":",
+            TemplateSwitchLabelKind.Pattern =>
+                "case " +
+                rewritePattern(label.Pattern!) +
+                (label.WhenCondition is { } condition
+                    ? " when " +
+                      rewriteExpression(condition)
+                    : string.Empty) +
+                ":",
+            _ => throw new InvalidOperationException(
+                "Unsupported switch label.")
+        };
+    }
+
     private static TemplateWritableMember? TryFindWritableMember(
         ITypeSymbol destination,
         string memberName,
@@ -1307,6 +1481,64 @@ internal static class TemplateMappingPlanner
             }
 
             return rewritten.WithTriviaFrom(node);
+        }
+
+        public override SyntaxNode? VisitDeclarationPattern(
+            DeclarationPatternSyntax node)
+        {
+            return node
+                .WithType(
+                    RewritePatternType(node.Type))
+                .WithDesignation(
+                    (VariableDesignationSyntax)
+                    Visit(node.Designation)!);
+        }
+
+        public override SyntaxNode? VisitRecursivePattern(
+            RecursivePatternSyntax node)
+        {
+            return node
+                .WithType(
+                    node.Type is { } type
+                        ? RewritePatternType(type)
+                        : null)
+                .WithPositionalPatternClause(
+                    node.PositionalPatternClause is
+                        { } positional
+                        ? (PositionalPatternClauseSyntax)
+                        Visit(positional)!
+                        : null)
+                .WithPropertyPatternClause(
+                    node.PropertyPatternClause is
+                        { } property
+                        ? (PropertyPatternClauseSyntax)
+                        Visit(property)!
+                        : null)
+                .WithDesignation(
+                    node.Designation is
+                        { } designation
+                        ? (VariableDesignationSyntax)
+                        Visit(designation)!
+                        : null);
+        }
+
+        public override SyntaxNode? VisitTypePattern(
+            TypePatternSyntax node)
+        {
+            return node.WithType(
+                RewritePatternType(node.Type));
+        }
+
+        private TypeSyntax RewritePatternType(
+            TypeSyntax syntax)
+        {
+            return semanticModel.GetTypeInfo(syntax).Type is
+                    { } type
+                ? SyntaxFactory.ParseTypeName(
+                        TypeMapperMappingTypePolicy
+                            .GetGeneratedTypeName(type))
+                    .WithTriviaFrom(syntax)
+                : (TypeSyntax)base.Visit(syntax)!;
         }
 
         private static bool IsKnownNullMapNewExpression(
@@ -1576,6 +1808,20 @@ internal static class TemplateMappingPlanner
                         .WithTriviaFrom(node.Type))
                 .WithVariables(
                     VisitList(node.Variables));
+        }
+
+        public override SyntaxNode? VisitSingleVariableDesignation(
+            SingleVariableDesignationSyntax node)
+        {
+            return semanticModel.GetDeclaredSymbol(node) is
+                    { } local &&
+                runtimeLocalPlaceholders.TryGetValue(
+                    local,
+                    out var placeholder)
+                ? node.WithIdentifier(
+                    SyntaxFactory.Identifier(placeholder)
+                        .WithTriviaFrom(node.Identifier))
+                : base.VisitSingleVariableDesignation(node);
         }
 
         private TypeParameterConstraintSyntax RewriteConstraint(
@@ -2195,7 +2441,8 @@ internal sealed record UnsupportedTemplateMappingPlanResult(
 
 internal sealed record SupportedTemplateMappingPlanResult(
     TemplateMappingPlanNode Root,
-    ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals)
+    ImmutableArray<TemplateRuntimeLocalPlan> RuntimeLocals,
+    ImmutableArray<TemplateBoundLocalPlan> BoundLocals)
     : TemplateMappingPlanResult;
 
 internal abstract record TemplateMappingPlanNode;
@@ -2211,6 +2458,23 @@ internal sealed record TemplateConditionalMappingPlanNode(
     TemplateMappingPlanNode WhenTrue,
     TemplateMappingPlanNode WhenFalse)
     : TemplateMappingPlanNode;
+
+internal sealed record TemplateSwitchMappingPlanNode(
+    string MapNewGoverningExpression,
+    string MapExistingGoverningExpression,
+    ImmutableArray<TemplateSwitchSectionMappingPlan> Sections,
+    TemplateMappingPlanNode? Continuation,
+    bool RequiresFallback,
+    bool CanPassUnmatchedValue)
+    : TemplateMappingPlanNode;
+
+internal readonly record struct TemplateSwitchSectionMappingPlan(
+    ImmutableArray<TemplateSwitchLabelMappingPlan> Labels,
+    TemplateMappingPlanNode Branch);
+
+internal readonly record struct TemplateSwitchLabelMappingPlan(
+    string MapNewLabel,
+    string MapExistingLabel);
 
 internal sealed record TemplateLeafMappingPlanNode(
     TemplateMappingPlan Plan)
@@ -2228,6 +2492,10 @@ internal readonly record struct TemplateRuntimeLocalPlan(
     string MapNewExpression,
     string MapExistingExpression,
     bool IsConst);
+
+internal readonly record struct TemplateBoundLocalPlan(
+    string PlaceholderName,
+    string PreferredName);
 
 internal readonly record struct TemplateMappingPlan(
     string? MapNewDirectExpression,

@@ -212,6 +212,44 @@ internal static class TypeMapperEmitter
             writer,
             node.Locals);
 
+        if (node.SwitchExpression is
+                { } switchExpression)
+        {
+            writer.Line($"switch ({switchExpression})");
+            writer.Line("{");
+            writer.Indent();
+
+            foreach (var section in node.SwitchSections)
+            {
+                foreach (var label in section.Labels)
+                {
+                    writer.Line(label);
+                }
+
+                writer.Line("{");
+                writer.Indent();
+                WriteControlFlowMapNewNode(
+                    writer,
+                    section.Branch);
+                writer.Unindent();
+                writer.Line("}");
+            }
+
+            writer.Unindent();
+            writer.Line("}");
+
+            if (node.SwitchContinuation is
+                    { } continuation)
+            {
+                writer.Line();
+                WriteControlFlowMapNewNode(
+                    writer,
+                    continuation);
+            }
+
+            return;
+        }
+
         if (node.Condition is { } condition)
         {
             writer.Line($"if ({condition})");
@@ -594,6 +632,44 @@ internal static class TypeMapperEmitter
         WriteLocalValues(
             writer,
             node.Locals);
+
+        if (node.SwitchExpression is
+                { } switchExpression)
+        {
+            writer.Line($"switch ({switchExpression})");
+            writer.Line("{");
+            writer.Indent();
+
+            foreach (var section in node.SwitchSections)
+            {
+                foreach (var label in section.Labels)
+                {
+                    writer.Line(label);
+                }
+
+                writer.Line("{");
+                writer.Indent();
+                WriteControlFlowMapExistingNode(
+                    writer,
+                    section.Branch);
+                writer.Unindent();
+                writer.Line("}");
+            }
+
+            writer.Unindent();
+            writer.Line("}");
+
+            if (node.SwitchContinuation is
+                    { } continuation)
+            {
+                writer.Line();
+                WriteControlFlowMapExistingNode(
+                    writer,
+                    continuation);
+            }
+
+            return;
+        }
 
         if (node.Condition is { } condition)
         {

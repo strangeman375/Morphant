@@ -23,9 +23,9 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → `switch` в `Template`.** Следующий самостоятельный срез добавляет
-statement-level `switch` и DSL-shaping switch-expression в согласованной ниже
-границе.
+**Фаза 3 → произвольная синхронная block-lambda direct-template.** Следующий
+самостоятельный срез переносит тело direct-template целиком и отдаёт его
+обычному C#-компилятору без анализа control flow генератором.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -538,18 +538,23 @@ statement-level `switch` и DSL-shaping switch-expression в согласова�
     `MapExisting`; эквивалентная в конкретном режиме ветка и зависящие только
     от неё locals сворачиваются по общим правилам DSL.
 
-  - [ ] Statement-level `switch` и DSL-shaping switch-expression.
+  - [x] Statement-level `switch` и DSL-shaping switch-expression.
 
     `switch` statement поддерживает patterns, `when` и несколько labels, если
     каждая выбранная секция завершается `return` либо `throw`. Отсутствующий
     `default` допустим, когда unmatched-путь продолжает выполнение после
-    `switch`.
+    `switch`. Pattern-переменные перепривязываются collision-safe отдельно для
+    каждого generated-метода, а типы и static-ссылки переносятся в
+    fully-qualified форме.
 
     DSL-shaping switch-expression разрешён в тех же позициях, что и текущий
     `?:`: целый template, способ создания, member/constructor value и маркеры
     `Auto()`, `Ignore()`, `Map()`. Обычный switch-expression внутри уже
     поддерживаемого explicit C#-значения не меняет семантику Template и
-    остаётся обычным переносимым выражением.
+    остаётся обычным переносимым выражением. Selector вычисляется ровно один
+    раз. Ветви независимо планируются и при необходимости сворачиваются для
+    `MapNew` и `MapExisting`; неисчерпывающий DSL-switch сохраняет runtime
+    fallback обычного C# switch-expression.
 
   - [ ] Произвольная синхронная block-lambda direct-template.
 

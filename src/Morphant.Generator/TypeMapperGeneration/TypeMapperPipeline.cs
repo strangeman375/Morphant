@@ -372,9 +372,11 @@ internal static class TypeMapperPipeline
             mapNew: false);
         var controlFlow = BuildControlFlowModel(
             templateMapping.RuntimeLocals,
+            templateMapping.BoundLocals,
             mapNewRoot,
             mapExistingRoot,
-            mapperType);
+            mapperType,
+            compilation);
 
         if (controlFlow.MapNewRoot.Locals.IsEmpty &&
             controlFlow.MapExistingRoot.Locals.IsEmpty &&
@@ -562,6 +564,37 @@ internal static class TypeMapperPipeline
                 throwNode.MapExistingExpression);
         }
 
+        if (node is TemplateSwitchMappingPlanNode switchNode)
+        {
+            return new PlannedControlFlowNode(
+                RuntimeLocalPlaceholders: [],
+                MapNewCondition: null,
+                MapExistingCondition: null,
+                WhenTrue: null,
+                WhenFalse: null,
+                Leaf: null,
+                MapNewThrowExpression: null,
+                MapExistingThrowExpression: null,
+                switchNode.MapNewGoverningExpression,
+                switchNode.MapExistingGoverningExpression,
+                switchNode.Sections
+                    .Select(section =>
+                        new PlannedSwitchSection(
+                            section.Labels,
+                            BuildPlannedControlFlow(
+                                section.Branch,
+                                buildLeaf)))
+                    .ToImmutableArray(),
+                switchNode.Continuation is
+                    { } continuation
+                    ? BuildPlannedControlFlow(
+                        continuation,
+                        buildLeaf)
+                    : null,
+                switchNode.RequiresFallback,
+                switchNode.CanPassUnmatchedValue);
+        }
+
         var conditional =
             (TemplateConditionalMappingPlanNode)node;
 
@@ -610,6 +643,68 @@ internal static class TypeMapperPipeline
                 WhenFalse: null,
                 Leaf: null,
                 throwExpression);
+        }
+        else if ((mapNew
+                     ? node.MapNewSwitchExpression
+                     : node.MapExistingSwitchExpression) is
+                 { } switchExpression)
+        {
+            var sections = node.SwitchSections
+                .Select(section =>
+                    new TypeMapperSwitchSectionModel(
+                        section.Labels
+                            .Select(label =>
+                                mapNew
+                                    ? label.MapNewLabel
+                                    : label.MapExistingLabel)
+                            .ToImmutableArray(),
+                        BuildModeControlFlow(
+                            section.Branch,
+                            runtimeLocals,
+                            mapNew)))
+                .ToImmutableArray();
+            var continuation =
+                node.SwitchContinuation is
+                    { } plannedContinuation
+                    ? BuildModeControlFlow(
+                        plannedContinuation,
+                        runtimeLocals,
+                        mapNew)
+                    : null;
+            var branches = sections
+                .Select(static section =>
+                    section.Branch)
+                .Concat(
+                    continuation is null
+                        ? []
+                        : [continuation])
+                .ToImmutableArray();
+
+            if (!node.SwitchRequiresFallback &&
+                branches.Length > 0 &&
+                branches.Skip(1).All(branch =>
+                    AreEquivalentControlFlow(
+                        branches[0],
+                        branch,
+                        mapNew)))
+            {
+                result = branches[0];
+            }
+            else
+            {
+                result = new TypeMapperControlFlowNode(
+                    Locals: [],
+                    Condition: null,
+                    WhenTrue: null,
+                    WhenFalse: null,
+                    Leaf: null,
+                    ThrowExpression: null,
+                    switchExpression,
+                    sections,
+                    continuation,
+                    node.SwitchRequiresFallback,
+                    node.SwitchCanPassUnmatchedValue);
+            }
         }
         else
         {
@@ -712,10 +807,41 @@ internal static class TypeMapperPipeline
                 rightThrow);
         }
 
-        return left.Leaf is null &&
-               right.Leaf is null &&
-               left.ThrowExpression is null &&
-               right.ThrowExpression is null &&
+        if (left.SwitchExpression is { } leftSwitch &&
+            right.SwitchExpression is { } rightSwitch)
+        {
+            return StringComparer.Ordinal.Equals(
+                       leftSwitch,
+                       rightSwitch) &&
+                   left.SwitchRequiresFallback ==
+                   right.SwitchRequiresFallback &&
+                   left.SwitchCanPassUnmatchedValue ==
+                   right.SwitchCanPassUnmatchedValue &&
+                   left.SwitchSections.Length ==
+                   right.SwitchSections.Length &&
+                   left.SwitchSections
+                       .Zip(
+                           right.SwitchSections,
+                           (leftSection, rightSection) =>
+                               leftSection.Labels.SequenceEqual(
+                                   rightSection.Labels) &&
+                               AreEquivalentControlFlow(
+                                   leftSection.Branch,
+                                   rightSection.Branch,
+                                   mapNew))
+                       .All(static equivalent =>
+                           equivalent) &&
+                   (left.SwitchContinuation is null) ==
+                   (right.SwitchContinuation is null) &&
+                   (left.SwitchContinuation is null ||
+                    AreEquivalentControlFlow(
+                        left.SwitchContinuation,
+                        right.SwitchContinuation!,
+                        mapNew));
+        }
+
+        return left.Condition is not null &&
+               right.Condition is not null &&
                StringComparer.Ordinal.Equals(
                    left.Condition,
                    right.Condition) &&
@@ -773,6 +899,30 @@ internal static class TypeMapperPipeline
             TypeMapperControlFlowNode node,
             INamedTypeSymbol mapperType)
     {
+        if (node.SwitchExpression is not null)
+        {
+            return node with
+            {
+                SwitchSections = node.SwitchSections
+                    .Select(section =>
+                        section with
+                        {
+                            Branch =
+                                HoistConditionalConstructorValues(
+                                    section.Branch,
+                                    mapperType)
+                        })
+                    .ToImmutableArray(),
+                SwitchContinuation =
+                    node.SwitchContinuation is
+                        { } continuation
+                        ? HoistConditionalConstructorValues(
+                            continuation,
+                            mapperType)
+                        : null
+            };
+        }
+
         if (node.Condition is null)
         {
             return node;
@@ -1143,6 +1293,23 @@ internal static class TypeMapperPipeline
             return leaf;
         }
 
+        if (node.SwitchExpression is not null)
+        {
+            foreach (var section in node.SwitchSections)
+            {
+                if (FindFirstLeaf(section.Branch) is
+                    { } sectionLeaf)
+                {
+                    return sectionLeaf;
+                }
+            }
+
+            return node.SwitchContinuation is
+                { } continuation
+                ? FindFirstLeaf(continuation)
+                : null;
+        }
+
         if (node.Condition is null)
         {
             return null;
@@ -1152,13 +1319,218 @@ internal static class TypeMapperPipeline
                FindFirstLeaf(node.WhenFalse!);
     }
 
+    private static TypeMapperControlFlowNode
+        MaterializeSwitchFallbacks(
+            TypeMapperControlFlowNode root,
+            ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+            ImmutableArray<TemplateBoundLocalPlan> boundLocals,
+            INamedTypeSymbol mapperType,
+            CSharpCompilation compilation,
+            bool hasDestinationParameter)
+    {
+        var usedNames =
+            ConventionConstructorMappingPlanner
+                .BuildUsedValueLocalNames(mapperType);
+
+        if (hasDestinationParameter)
+        {
+            usedNames.Add("destination");
+        }
+
+        foreach (var local in runtimeLocals)
+        {
+            usedNames.Add(local.PreferredName);
+            usedNames.Add(local.PlaceholderName);
+        }
+
+        foreach (var local in boundLocals)
+        {
+            usedNames.Add(local.PreferredName);
+            usedNames.Add(local.PlaceholderName);
+        }
+
+        foreach (var expression in
+                 EnumerateControlFlowExpressions(
+                     root,
+                     mapNew: !hasDestinationParameter))
+        {
+            foreach (var token in
+                     SyntaxFactory.ParseTokens(expression))
+            {
+                if (token.IsKind(
+                        SyntaxKind.IdentifierToken))
+                {
+                    usedNames.Add(token.ValueText);
+                }
+            }
+        }
+
+        CollectGeneratedLocalNames(
+            root,
+            usedNames,
+            mapNew: !hasDestinationParameter);
+
+        return MaterializeSwitchFallbacks(
+            root,
+            compilation,
+            usedNames);
+    }
+
+    private static TypeMapperControlFlowNode
+        MaterializeSwitchFallbacks(
+            TypeMapperControlFlowNode node,
+            CSharpCompilation compilation,
+            HashSet<string> usedNames)
+    {
+        if (node.SwitchExpression is
+                { } switchExpression)
+        {
+            var sections = node.SwitchSections
+                .Select(section =>
+                    section with
+                    {
+                        Branch = MaterializeSwitchFallbacks(
+                            section.Branch,
+                            compilation,
+                            usedNames)
+                    })
+                .ToImmutableArray();
+            var continuation =
+                node.SwitchContinuation is
+                    { } originalContinuation
+                    ? MaterializeSwitchFallbacks(
+                        originalContinuation,
+                        compilation,
+                        usedNames)
+                    : null;
+            var rewritten = node with
+            {
+                SwitchSections = sections,
+                SwitchContinuation = continuation
+            };
+
+            if (!node.SwitchRequiresFallback)
+            {
+                return rewritten;
+            }
+
+            var switchValueName =
+                AllocateUserLocalName(
+                    "switchValue",
+                    usedNames);
+            var fallback = new TypeMapperControlFlowNode(
+                Locals: [],
+                Condition: null,
+                WhenTrue: null,
+                WhenFalse: null,
+                Leaf: null,
+                ThrowExpression:
+                    BuildUnmatchedSwitchException(
+                        switchValueName,
+                        node.SwitchCanPassUnmatchedValue,
+                        compilation));
+
+            return rewritten with
+            {
+                Locals = rewritten.Locals.Add(
+                    new TypeMapperLocalValueModel(
+                        "var",
+                        switchValueName,
+                        switchExpression,
+                        IsConst: false,
+                        IsSynthetic: true)),
+                SwitchExpression = switchValueName,
+                SwitchContinuation = fallback,
+                SwitchRequiresFallback = false
+            };
+        }
+
+        if (node.Condition is { })
+        {
+            return node with
+            {
+                WhenTrue = MaterializeSwitchFallbacks(
+                    node.WhenTrue!,
+                    compilation,
+                    usedNames),
+                WhenFalse = MaterializeSwitchFallbacks(
+                    node.WhenFalse!,
+                    compilation,
+                    usedNames)
+            };
+        }
+
+        return node;
+    }
+
+    private static string BuildUnmatchedSwitchException(
+        string valueExpression,
+        bool canPassUnmatchedValue,
+        CSharpCompilation compilation)
+    {
+        const string switchExceptionMetadataName =
+            "System.Runtime.CompilerServices.SwitchExpressionException";
+        var switchException =
+            compilation.GetTypeByMetadataName(
+                switchExceptionMetadataName);
+
+        if (switchException is not null)
+        {
+            if (canPassUnmatchedValue &&
+                switchException.InstanceConstructors.Any(
+                    constructor =>
+                        constructor.DeclaredAccessibility ==
+                        Accessibility.Public &&
+                        constructor.Parameters.Length == 1 &&
+                        constructor.Parameters[0].Type.SpecialType ==
+                        SpecialType.System_Object))
+            {
+                return
+                    "new global::" +
+                    switchExceptionMetadataName +
+                    $"({valueExpression})";
+            }
+
+            if (switchException.InstanceConstructors.Any(
+                    static constructor =>
+                        constructor.DeclaredAccessibility ==
+                        Accessibility.Public &&
+                        constructor.Parameters.IsEmpty))
+            {
+                return
+                    "new global::" +
+                    switchExceptionMetadataName +
+                    "()";
+            }
+        }
+
+        return "new global::System.InvalidOperationException()";
+    }
+
     private static TypeMapperControlFlowMappingModel
         BuildControlFlowModel(
             ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
+            ImmutableArray<TemplateBoundLocalPlan> boundLocals,
             TypeMapperControlFlowNode mapNewRoot,
             TypeMapperControlFlowNode mapExistingRoot,
-            INamedTypeSymbol mapperType)
+            INamedTypeSymbol mapperType,
+            CSharpCompilation compilation)
     {
+        mapNewRoot = MaterializeSwitchFallbacks(
+            mapNewRoot,
+            runtimeLocals,
+            boundLocals,
+            mapperType,
+            compilation,
+            hasDestinationParameter: false);
+        mapExistingRoot = MaterializeSwitchFallbacks(
+            mapExistingRoot,
+            runtimeLocals,
+            boundLocals,
+            mapperType,
+            compilation,
+            hasDestinationParameter: true);
+
         var mapNewRequiredLocals =
             CollectRequiredLocals(
                 runtimeLocals,
@@ -1169,10 +1541,22 @@ internal static class TypeMapperPipeline
                 runtimeLocals,
                 mapExistingRoot,
                 mapNew: false);
+        var mapNewRequiredBoundLocals =
+            CollectRequiredBoundLocals(
+                boundLocals,
+                mapNewRoot,
+                mapNew: true);
+        var mapExistingRequiredBoundLocals =
+            CollectRequiredBoundLocals(
+                boundLocals,
+                mapExistingRoot,
+                mapNew: false);
         var mapNewNames =
             AllocateRuntimeLocalNames(
                 runtimeLocals,
                 mapNewRequiredLocals,
+                boundLocals,
+                mapNewRequiredBoundLocals,
                 mapNewRoot,
                 mapperType,
                 hasDestinationParameter: false,
@@ -1181,6 +1565,8 @@ internal static class TypeMapperPipeline
             AllocateRuntimeLocalNames(
                 runtimeLocals,
                 mapExistingRequiredLocals,
+                boundLocals,
+                mapExistingRequiredBoundLocals,
                 mapExistingRoot,
                 mapperType,
                 hasDestinationParameter: true,
@@ -1205,6 +1591,8 @@ internal static class TypeMapperPipeline
         AllocateRuntimeLocalNames(
             ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
             HashSet<string> requiredLocals,
+            ImmutableArray<TemplateBoundLocalPlan> boundLocals,
+            HashSet<string> requiredBoundLocals,
             TypeMapperControlFlowNode root,
             INamedTypeSymbol mapperType,
             bool hasDestinationParameter,
@@ -1228,6 +1616,11 @@ internal static class TypeMapperPipeline
             requiredLocals,
             mapNew,
             generatedNamesByPlaceholder);
+        CollectBoundLocalGeneratedNameConstraints(
+            root,
+            requiredBoundLocals,
+            mapNew,
+            generatedNamesByPlaceholder);
         var preferredNames =
             new HashSet<string>(
                 runtimeLocals
@@ -1235,7 +1628,14 @@ internal static class TypeMapperPipeline
                         requiredLocals.Contains(
                             local.PlaceholderName))
                     .Select(static local =>
-                        local.PreferredName),
+                        local.PreferredName)
+                    .Concat(
+                        boundLocals
+                            .Where(local =>
+                                requiredBoundLocals.Contains(
+                                    local.PlaceholderName))
+                            .Select(static local =>
+                                local.PreferredName)),
                 StringComparer.Ordinal);
         var allocatedNames =
             new Dictionary<string, string>(
@@ -1244,14 +1644,28 @@ internal static class TypeMapperPipeline
             new Dictionary<string, HashSet<string>>(
                 StringComparer.Ordinal);
 
-        foreach (var local in runtimeLocals)
-        {
-            if (!requiredLocals.Contains(
+        var userLocals = runtimeLocals
+            .Where(local =>
+                requiredLocals.Contains(
                     local.PlaceholderName))
-            {
-                continue;
-            }
+            .Select(local =>
+                (
+                    local.PlaceholderName,
+                    local.PreferredName
+                ))
+            .Concat(
+                boundLocals
+                    .Where(local =>
+                        requiredBoundLocals.Contains(
+                            local.PlaceholderName))
+                    .Select(local =>
+                        (
+                            local.PlaceholderName,
+                            local.PreferredName
+                        )));
 
+        foreach (var local in userLocals)
+        {
             var usedNames =
                 new HashSet<string>(
                     reservedNames,
@@ -1350,6 +1764,29 @@ internal static class TypeMapperPipeline
 
         if (node.Condition is null)
         {
+            if (node.SwitchExpression is not null)
+            {
+                foreach (var section in
+                         node.SwitchSections)
+                {
+                    CollectRuntimeLocalGeneratedNameConstraints(
+                        section.Branch,
+                        requiredLocals,
+                        mapNew,
+                        generatedNamesByPlaceholder);
+                }
+
+                if (node.SwitchContinuation is
+                        { } continuation)
+                {
+                    CollectRuntimeLocalGeneratedNameConstraints(
+                        continuation,
+                        requiredLocals,
+                        mapNew,
+                        generatedNamesByPlaceholder);
+                }
+            }
+
             return;
         }
 
@@ -1363,6 +1800,82 @@ internal static class TypeMapperPipeline
             requiredLocals,
             mapNew,
             generatedNamesByPlaceholder);
+    }
+
+    private static void
+        CollectBoundLocalGeneratedNameConstraints(
+            TypeMapperControlFlowNode node,
+            HashSet<string> requiredBoundLocals,
+            bool mapNew,
+            Dictionary<string, HashSet<string>>
+                generatedNamesByPlaceholder)
+    {
+        if (node.SwitchExpression is { })
+        {
+            foreach (var section in node.SwitchSections)
+            {
+                foreach (var placeholder in
+                         requiredBoundLocals)
+                {
+                    if (!section.Labels.Any(label =>
+                            ReferencesIdentifier(
+                                label,
+                                placeholder)))
+                    {
+                        continue;
+                    }
+
+                    if (!generatedNamesByPlaceholder.TryGetValue(
+                            placeholder,
+                            out var generatedNames))
+                    {
+                        generatedNames =
+                            new HashSet<string>(
+                                StringComparer.Ordinal);
+                        generatedNamesByPlaceholder.Add(
+                            placeholder,
+                            generatedNames);
+                    }
+
+                    CollectGeneratedLocalNames(
+                        section.Branch,
+                        generatedNames,
+                        mapNew);
+                }
+
+                CollectBoundLocalGeneratedNameConstraints(
+                    section.Branch,
+                    requiredBoundLocals,
+                    mapNew,
+                    generatedNamesByPlaceholder);
+            }
+
+            if (node.SwitchContinuation is
+                    { } continuation)
+            {
+                CollectBoundLocalGeneratedNameConstraints(
+                    continuation,
+                    requiredBoundLocals,
+                    mapNew,
+                    generatedNamesByPlaceholder);
+            }
+
+            return;
+        }
+
+        if (node.Condition is not null)
+        {
+            CollectBoundLocalGeneratedNameConstraints(
+                node.WhenTrue!,
+                requiredBoundLocals,
+                mapNew,
+                generatedNamesByPlaceholder);
+            CollectBoundLocalGeneratedNameConstraints(
+                node.WhenFalse!,
+                requiredBoundLocals,
+                mapNew,
+                generatedNamesByPlaceholder);
+        }
     }
 
     private static HashSet<string> CollectRequiredLocals(
@@ -1427,11 +1940,84 @@ internal static class TypeMapperPipeline
         return result;
     }
 
+    private static HashSet<string> CollectRequiredBoundLocals(
+        ImmutableArray<TemplateBoundLocalPlan> boundLocals,
+        TypeMapperControlFlowNode root,
+        bool mapNew)
+    {
+        var expressions =
+            EnumerateControlFlowExpressions(
+                    root,
+                    mapNew)
+                .ToArray();
+
+        var result =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var local in boundLocals)
+        {
+            if (expressions.Any(expression =>
+                    ReferencesIdentifier(
+                        expression,
+                        local.PlaceholderName)))
+            {
+                result.Add(local.PlaceholderName);
+            }
+        }
+
+        return result;
+    }
+
     private static IEnumerable<string>
         EnumerateControlFlowExpressions(
             TypeMapperControlFlowNode node,
             bool mapNew)
     {
+        foreach (var local in node.Locals)
+        {
+            if (local.IsSynthetic)
+            {
+                yield return local.ValueExpression;
+            }
+        }
+
+        if (node.SwitchExpression is
+                { } switchExpression)
+        {
+            yield return switchExpression;
+
+            foreach (var section in
+                     node.SwitchSections)
+            {
+                foreach (var label in section.Labels)
+                {
+                    yield return label;
+                }
+
+                foreach (var expression in
+                         EnumerateControlFlowExpressions(
+                             section.Branch,
+                             mapNew))
+                {
+                    yield return expression;
+                }
+            }
+
+            if (node.SwitchContinuation is
+                    { } continuation)
+            {
+                foreach (var expression in
+                         EnumerateControlFlowExpressions(
+                             continuation,
+                             mapNew))
+                {
+                    yield return expression;
+                }
+            }
+
+            yield break;
+        }
+
         if (node.Condition is { } condition)
         {
             yield return condition;
@@ -1544,8 +2130,7 @@ internal static class TypeMapperPipeline
         string expression,
         string identifier)
     {
-        return SyntaxFactory.ParseExpression(expression)
-            .DescendantTokens()
+        return SyntaxFactory.ParseTokens(expression)
             .Any(token =>
                 token.IsKind(
                     SyntaxKind.IdentifierToken) &&
@@ -1559,6 +2144,28 @@ internal static class TypeMapperPipeline
         HashSet<string> result,
         bool mapNew)
     {
+        if (node.SwitchExpression is not null)
+        {
+            foreach (var section in node.SwitchSections)
+            {
+                CollectGeneratedLocalNames(
+                    section.Branch,
+                    result,
+                    mapNew);
+            }
+
+            if (node.SwitchContinuation is
+                    { } continuation)
+            {
+                CollectGeneratedLocalNames(
+                    continuation,
+                    result,
+                    mapNew);
+            }
+
+            return;
+        }
+
         if (node.Condition is not null)
         {
             CollectGeneratedLocalNames(
@@ -1690,16 +2297,55 @@ internal static class TypeMapperPipeline
     {
         var locals = node.Locals
             .Where(local =>
+                local.IsSynthetic ||
                 requiredLocals.Contains(local.Name))
             .Select(local =>
                 local with
                 {
-                    Name = names[local.Name],
+                    Name = local.IsSynthetic
+                        ? local.Name
+                        : names[local.Name],
                     ValueExpression = RenameExpression(
                         local.ValueExpression,
                         names)
                 })
             .ToImmutableArray();
+
+        if (node.SwitchExpression is
+                { } switchExpression)
+        {
+            return node with
+            {
+                Locals = locals,
+                SwitchExpression = RenameExpression(
+                    switchExpression,
+                    names),
+                SwitchSections = node.SwitchSections
+                    .Select(section =>
+                        section with
+                        {
+                            Labels = section.Labels
+                                .Select(label =>
+                                    RenameSwitchLabel(
+                                        label,
+                                        names))
+                                .ToImmutableArray(),
+                            Branch = RenameControlFlow(
+                                section.Branch,
+                                names,
+                                requiredLocals)
+                        })
+                    .ToImmutableArray(),
+                SwitchContinuation =
+                    node.SwitchContinuation is
+                        { } continuation
+                        ? RenameControlFlow(
+                            continuation,
+                            names,
+                            requiredLocals)
+                        : null
+            };
+        }
 
         if (node.Condition is { } condition)
         {
@@ -1738,6 +2384,29 @@ internal static class TypeMapperPipeline
                 node.Leaf!.Value,
                 names)
         };
+    }
+
+    private static string RenameSwitchLabel(
+        string label,
+        IReadOnlyDictionary<string, string> names)
+    {
+        var statement = SyntaxFactory.ParseStatement(
+            "switch (default(object)) { " +
+            label +
+            " break; }");
+        var rewritten =
+            new PlaceholderExpressionRewriter(names)
+                .Visit(statement)!;
+        var switchStatement = rewritten
+            .DescendantNodesAndSelf()
+            .OfType<SwitchStatementSyntax>()
+            .Single();
+
+        return switchStatement.Sections[0]
+            .Labels[0]
+            .WithoutTrivia()
+            .NormalizeWhitespace()
+            .ToFullString();
     }
 
     private static TypeMapperMappingModel
@@ -2701,7 +3370,17 @@ internal static class TypeMapperPipeline
         PlannedControlFlowNode? WhenFalse,
         TypeMapperMappingModel? Leaf,
         string? MapNewThrowExpression,
-        string? MapExistingThrowExpression);
+        string? MapExistingThrowExpression,
+        string? MapNewSwitchExpression = null,
+        string? MapExistingSwitchExpression = null,
+        ImmutableArray<PlannedSwitchSection> SwitchSections = default,
+        PlannedControlFlowNode? SwitchContinuation = null,
+        bool SwitchRequiresFallback = false,
+        bool SwitchCanPassUnmatchedValue = true);
+
+    private readonly record struct PlannedSwitchSection(
+        ImmutableArray<TemplateSwitchLabelMappingPlan> Labels,
+        PlannedControlFlowNode Branch);
 
     private sealed class PlaceholderExpressionRewriter(
         IReadOnlyDictionary<string, string> names)
@@ -2721,6 +3400,18 @@ internal static class TypeMapperPipeline
                         .WithTriviaFrom(
                             rewritten.Identifier))
                 : rewritten;
+        }
+
+        public override SyntaxNode? VisitSingleVariableDesignation(
+            SingleVariableDesignationSyntax node)
+        {
+            return names.TryGetValue(
+                    node.Identifier.ValueText,
+                    out var name)
+                ? node.WithIdentifier(
+                    SyntaxFactory.Identifier(name)
+                        .WithTriviaFrom(node.Identifier))
+                : base.VisitSingleVariableDesignation(node);
         }
 
         public override SyntaxNode? VisitLocalFunctionStatement(
