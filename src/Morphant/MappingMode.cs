@@ -6,8 +6,15 @@ namespace Morphant;
 /// <remarks>
 /// <para>
 /// A mapping-level <see cref="Default"/> value inherits the mapper-level
-/// setting. If neither level specifies a mode, the effective mode is
-/// <see cref="MapNewAndExisting"/>.
+/// setting. A mapper-level <see cref="Default"/> value inherits the
+/// assembly-level <c>MorphantMappingMode</c> MSBuild property. If no level
+/// specifies a mode, the effective mode is <see cref="MapNewAndExisting"/>.
+/// </para>
+/// <para>
+/// The <c>MorphantMappingMode</c> property accepts <c>Default</c>,
+/// <c>MapNew</c>, <c>MapExisting</c>, or <c>MapNewAndExisting</c>,
+/// case-insensitively. A missing or empty property is equivalent to
+/// <c>Default</c>.
 /// </para>
 /// <para>
 /// A generated <see cref="ITypeMapper{TSource, TDestination}"/> always
@@ -15,9 +22,9 @@ namespace Morphant;
 /// mode throws <see cref="NotSupportedException"/> when invoked.
 /// </para>
 /// <para>
-/// Mapping mode expressions must be compile-time constants composed only from
-/// the defined flags. If the effective value is invalid, the generated mapper
-/// still implements both overloads, but both throw
+/// C# mapping mode expressions must be compile-time constants composed only
+/// from the defined flags. If the effective C# or MSBuild value is invalid,
+/// the generated mapper still implements both overloads, but both throw
 /// <see cref="NotSupportedException"/> when invoked.
 /// </para>
 /// </remarks>

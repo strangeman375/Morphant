@@ -66,6 +66,28 @@ internal sealed class TypeMapperGeneratorTest : CSharpSourceGeneratorTest<TestTy
             expectedSources);
     }
 
+    public static async Task RunAndAssertWithAnalyzerConfig(
+        LanguageVersion languageVersion,
+        string sourceFileContent,
+        string analyzerConfigContent,
+        params (string FileName, string Content)[] expectedSources)
+    {
+        var test = new TypeMapperGeneratorTest(languageVersion)
+        {
+            TestCode = sourceFileContent
+        };
+
+        test.TestState.AnalyzerConfigFiles.Add(
+        (
+            "/.globalconfig",
+            analyzerConfigContent
+        ));
+
+        AddExpectedSources(test, expectedSources);
+
+        await test.RunAsync();
+    }
+
     private static async Task RunAndAssert(
         LanguageVersion languageVersion,
         string sourceFileContent,
@@ -100,6 +122,15 @@ internal sealed class TypeMapperGeneratorTest : CSharpSourceGeneratorTest<TestTy
                 additionalReference);
         }
 
+        AddExpectedSources(test, expectedSources);
+
+        await test.RunAsync();
+    }
+
+    private static void AddExpectedSources(
+        TypeMapperGeneratorTest test,
+        IEnumerable<(string FileName, string Content)> expectedSources)
+    {
         foreach (var expectedSource in expectedSources)
         {
             test.TestState.GeneratedSources.Add(
@@ -109,8 +140,6 @@ internal sealed class TypeMapperGeneratorTest : CSharpSourceGeneratorTest<TestTy
                 NormalizeGeneratedSource(expectedSource.Content)
             ));
         }
-
-        await test.RunAsync();
     }
 
     private static string NormalizeGeneratedSource(string source)

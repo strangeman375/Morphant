@@ -3,6 +3,7 @@ namespace Morphant.Generator;
 internal static class MorphantGeneratorStageNames
 {
     public const string BuildCompilationContext = nameof(BuildCompilationContext);
+    public const string BuildAssemblyMappingSettings = nameof(BuildAssemblyMappingSettings);
 
     public const string FindMorphantMapperDeclarations = nameof(FindMorphantMapperDeclarations);
 

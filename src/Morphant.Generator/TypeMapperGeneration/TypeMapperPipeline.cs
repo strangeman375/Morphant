@@ -13,10 +13,12 @@ internal static class TypeMapperPipeline
     public static void Register(
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
+        IncrementalValueProvider<MappingSettings> assemblySettings,
         IncrementalValuesProvider<MapperBuilderMapInfo> mapInfos)
     {
         var requests = mapInfos
             .Combine(compilationContext)
+            .Combine(assemblySettings)
             .Select(static (source, cancellationToken) =>
                 TryBuildGenerationInput(source, cancellationToken))
             .WhereHasValue()
@@ -38,12 +40,15 @@ internal static class TypeMapperPipeline
 
     private static TypeMapperGenerationInput? TryBuildGenerationInput(
         (
-            MapperBuilderMapInfo MapInfo,
-            CompilationContext Context
+            (
+                MapperBuilderMapInfo MapInfo,
+                CompilationContext Context
+            ) Input,
+            MappingSettings AssemblySettings
         ) source,
         CancellationToken cancellationToken)
     {
-        var (mapInfo, context) = source;
+        var ((mapInfo, context), assemblySettings) = source;
 
         var semanticModel = context.Compilation.GetSemanticModel(
             mapInfo.ConfigureSyntax.SyntaxTree);
@@ -61,6 +66,7 @@ internal static class TypeMapperPipeline
 
         var mappings = BuildMappings(
             mapInfo,
+            assemblySettings,
             context.Compilation,
             mapperType,
             cancellationToken);
@@ -231,6 +237,7 @@ internal static class TypeMapperPipeline
 
     private static ImmutableArray<TypeMapperMappingModel> BuildMappings(
         MapperBuilderMapInfo mapInfo,
+        MappingSettings assemblySettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
@@ -298,6 +305,7 @@ internal static class TypeMapperPipeline
 
             var effectiveSettings =
                 EffectiveMappingSettings.Resolve(
+                    assemblySettings,
                     mapInfo.Settings,
                     registration.Settings);
             var mapping =

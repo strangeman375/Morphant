@@ -43,8 +43,9 @@ public abstract class MapperBuilder : MapperBuilderBase<MapperBuilder>
     /// </summary>
     /// <param name="mappingMode">
     /// The mapping operations to support. <see cref="Morphant.MappingMode.Default"/>
-    /// uses Morphant's default,
-    /// <see cref="Morphant.MappingMode.MapNewAndExisting"/>.
+    /// inherits the assembly-level <c>MorphantMappingMode</c> MSBuild
+    /// property. If that property is not set or is also <c>Default</c>,
+    /// Morphant uses <see cref="Morphant.MappingMode.MapNewAndExisting"/>.
     /// The argument expression must be a compile-time constant composed only
     /// from the defined mapping mode flags.
     /// </param>
@@ -60,7 +61,8 @@ public abstract class MapperBuilder : MapperBuilderBase<MapperBuilder>
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="mappingMode">
     /// The mapping operations to support. <see cref="Morphant.MappingMode.Default"/>
-    /// inherits the mapper-level setting.
+    /// inherits the mapper-level setting, then the assembly-level
+    /// <c>MorphantMappingMode</c> MSBuild property.
     /// The argument expression must be a compile-time constant composed only
     /// from the defined mapping mode flags.
     /// </param>

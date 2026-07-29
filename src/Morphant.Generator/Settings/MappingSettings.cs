@@ -37,29 +37,15 @@ internal readonly record struct EffectiveMappingSettings(
         (mappingMode & MappingModeValue.MapExisting) != 0;
 
     public static EffectiveMappingSettings Resolve(
+        MappingSettings assemblySettings,
         MappingSettings rootSettings,
         MappingSettings mappingSettings)
     {
-        if (mappingSettings.MappingMode is not { } mappingMode)
-        {
-            return new EffectiveMappingSettings(null);
-        }
-
-        if (mappingMode == MappingModeValue.Default)
-        {
-            if (rootSettings.MappingMode is not { } rootMappingMode)
-            {
-                return new EffectiveMappingSettings(null);
-            }
-
-            mappingMode = rootMappingMode;
-        }
-
-        if (mappingMode == MappingModeValue.Default)
-        {
-            mappingMode = MappingModeValue.MapNewAndExisting;
-        }
-
-        return new EffectiveMappingSettings(mappingMode);
+        return new EffectiveMappingSettings(
+            SettingValueResolver.Resolve(
+                assemblySettings.MappingMode,
+                rootSettings.MappingMode,
+                mappingSettings.MappingMode,
+                MappingModeValue.MapNewAndExisting));
     }
 }
