@@ -196,9 +196,6 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
-        WriteLocalValues(
-            writer,
-            controlFlow.MapNewLocals);
         WriteControlFlowMapNewNode(
             writer,
             controlFlow.MapNewRoot);
@@ -211,6 +208,10 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperControlFlowNode node)
     {
+        WriteLocalValues(
+            writer,
+            node.Locals);
+
         if (node.Condition is { } condition)
         {
             writer.Line($"if ({condition})");
@@ -229,6 +230,12 @@ internal static class TypeMapperEmitter
                 node.WhenFalse!);
             writer.Unindent();
             writer.Line("}");
+            return;
+        }
+
+        if (node.ThrowExpression is { } throwExpression)
+        {
+            writer.Line($"throw {throwExpression};");
             return;
         }
 
@@ -572,9 +579,6 @@ internal static class TypeMapperEmitter
             writer.Line();
         }
 
-        WriteLocalValues(
-            writer,
-            controlFlow.MapExistingLocals);
         WriteControlFlowMapExistingNode(
             writer,
             controlFlow.MapExistingRoot);
@@ -587,6 +591,10 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperControlFlowNode node)
     {
+        WriteLocalValues(
+            writer,
+            node.Locals);
+
         if (node.Condition is { } condition)
         {
             writer.Line($"if ({condition})");
@@ -605,6 +613,12 @@ internal static class TypeMapperEmitter
                 node.WhenFalse!);
             writer.Unindent();
             writer.Line("}");
+            return;
+        }
+
+        if (node.ThrowExpression is { } throwExpression)
+        {
+            writer.Line($"throw {throwExpression};");
             return;
         }
 
@@ -757,6 +771,9 @@ internal static class TypeMapperEmitter
         foreach (var local in locals)
         {
             writer.Line(
+                (local.IsConst
+                    ? "const "
+                    : string.Empty) +
                 $"{local.DeclarationType} {local.Name} = " +
                 local.ValueExpression +
                 ";");

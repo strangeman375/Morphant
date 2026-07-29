@@ -23,11 +23,9 @@ TDD-среза, но детали могут уточняться перед р�
 
 ## Следующий срез
 
-**Фаза 3 → Statement-level управляющие конструкции `Template`.** Следующий
-самостоятельный срез определяет поддержку `if`, `switch`, циклов,
-присваиваний, нескольких `return`, объявлений local functions внутри
-`Template` lambda и общего control flow. Точную границу нужно отдельно
-согласовать до тестов и production-кода.
+**Фаза 3 → `switch` в `Template`.** Следующий самостоятельный срез добавляет
+statement-level `switch` и DSL-shaping switch-expression в согласованной ниже
+границе.
 
 ## Фаза 1. Контракт generated mapper-а
 
@@ -437,8 +435,9 @@ TDD-среза, но детали могут уточняться перед р�
 
 - [x] Управляющие конструкции DSL.
 
-  Поддерживается block-lambda из последовательных объявлений локальных
-  переменных и одного финального `return`. Direct templates и object templates
+  Базовый срез поддержал block-lambda из последовательных объявлений локальных
+  переменных и одного финального `return`; расширенные statement-формы
+  описаны отдельным текущим этапом ниже. Direct templates и object templates
   используют одинаковую модель locals. Обычная локальная переменная
   вычисляется ровно один раз, в порядке объявления и только в тех generated-
   режимах, где от неё зависит итоговый mapping. Транзитивные зависимости
@@ -474,11 +473,11 @@ TDD-среза, но детали могут уточняться перед р�
   вычисляются только в `MapNew`; compiler probes получают необходимые обычные
   locals, не разворачивая их в итоговом коде.
 
-  Statement-level control flow вынесен в отдельный будущий этап ниже. До его
-  реализации и фазы диагностик генератор успешно создаёт mapper для
-  неподдерживаемого block, но обе generated-перегрузки `Map` бросают
-  `NotSupportedException` при вызове. Такой ввод не маскируется fallback-ом на
-  convention mapping и не приводит к исключению внутри самого генератора.
+  Расширенный statement-level control flow реализуется отдельным этапом ниже.
+  До фазы диагностик неподдерживаемый block по-прежнему успешно создаёт mapper,
+  но обе generated-перегрузки `Map` бросают `NotSupportedException` при вызове.
+  Такой ввод не маскируется fallback-ом на convention mapping и не приводит к
+  исключению внутри самого генератора.
 
 - [x] Расширенные формы factory.
 
@@ -525,12 +524,47 @@ TDD-среза, но детали могут уточняться перед р�
 
 - [ ] Statement-level управляющие конструкции `Template`.
 
-  Отдельно определить и реализовать statement-level `if` и `switch`, циклы,
-  присваивания, объявления local functions внутри `Template` lambda,
-  несколько `return` и прочий общий control flow. В этот же этап входит
-  DSL-shaping `switch` expression. Обычный
-  switch-expression внутри уже поддерживаемого explicit C#-значения не меняет
-  семантику Template и остаётся обычным переносимым выражением.
+  Full-template остаётся анализируемым DSL и поддерживает конечное ветвление
+  без изменяемого состояния. Согласованная реализация разделена на три
+  самостоятельных среза:
+
+  - [x] `if`, несколько `return` и `throw`.
+
+    Поддержаны локальные переменные с инициализатором, `const`, вложенные блоки,
+    `if` / `else if` / `else`, ранние и множественные `return expression`,
+    `throw` statement и DSL-shaping throw-expression. Local вычисляется только
+    на своём execution path и только в тех generated-режимах, где от него
+    зависит mapping. Ветви по-прежнему планируются независимо для `MapNew` и
+    `MapExisting`; эквивалентная в конкретном режиме ветка и зависящие только
+    от неё locals сворачиваются по общим правилам DSL.
+
+  - [ ] Statement-level `switch` и DSL-shaping switch-expression.
+
+    `switch` statement поддерживает patterns, `when` и несколько labels, если
+    каждая выбранная секция завершается `return` либо `throw`. Отсутствующий
+    `default` допустим, когда unmatched-путь продолжает выполнение после
+    `switch`.
+
+    DSL-shaping switch-expression разрешён в тех же позициях, что и текущий
+    `?:`: целый template, способ создания, member/constructor value и маркеры
+    `Auto()`, `Ignore()`, `Map()`. Обычный switch-expression внутри уже
+    поддерживаемого explicit C#-значения не меняет семантику Template и
+    остаётся обычным переносимым выражением.
+
+  - [ ] Произвольная синхронная block-lambda direct-template.
+
+    Direct-template возвращает настоящий destination, поэтому его тело
+    переносится целиком и отдаётся обычному C#-компилятору без анализа control
+    flow генератором.
+
+  В full-template намеренно не поддерживаются locals без инициализатора,
+  последующие и deconstruction assignments, compound assignments,
+  `++` / `--`, циклы и `break` / `continue`, local functions во внешнем теле
+  `Template`, standalone-вызовы ради побочного эффекта, `try` / `catch` /
+  `finally`, `using`, `lock`, labels / `goto`, `ref` / `using` locals,
+  `unsafe` / `fixed`, `async` / `await` и `yield`. Сложное обычное значение
+  выносится в метод mapper-а, а сложное создание destination — в
+  `ByFactory()`.
 
 ## Фаза 4. Настройки и композиция
 

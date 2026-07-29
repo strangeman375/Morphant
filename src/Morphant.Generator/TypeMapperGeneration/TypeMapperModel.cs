@@ -99,8 +99,6 @@ internal readonly record struct TypeMapperMemberMappingModel
 
 internal sealed record TypeMapperControlFlowMappingModel
 (
-    ImmutableArray<TypeMapperLocalValueModel> MapNewLocals,
-    ImmutableArray<TypeMapperLocalValueModel> MapExistingLocals,
     TypeMapperControlFlowNode MapNewRoot,
     TypeMapperControlFlowNode MapExistingRoot
 );
@@ -109,13 +107,16 @@ internal readonly record struct TypeMapperLocalValueModel
 (
     string DeclarationType,
     string Name,
-    string ValueExpression
+    string ValueExpression,
+    bool IsConst
 );
 
 internal sealed record TypeMapperControlFlowNode
 (
+    ImmutableArray<TypeMapperLocalValueModel> Locals,
     string? Condition,
     TypeMapperControlFlowNode? WhenTrue,
     TypeMapperControlFlowNode? WhenFalse,
-    TypeMapperMappingModel? Leaf
+    TypeMapperMappingModel? Leaf,
+    string? ThrowExpression
 );

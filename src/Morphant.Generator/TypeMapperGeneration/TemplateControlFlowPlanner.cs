@@ -8,9 +8,7 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class TemplateControlFlowPlanner
 {
     private const string UnsupportedBlockMessage =
-        "Template block lambdas currently support only local " +
-        "variable declarations followed by a single return " +
-        "statement.";
+        "Template block lambda contains a statement that is not supported.";
 
     private const string UnsupportedCaptureMessage =
         "Template contains a capture that cannot be transferred " +
@@ -34,10 +32,36 @@ internal static class TemplateControlFlowPlanner
         bool directTemplate,
         CancellationToken cancellationToken)
     {
-        if (!TransferableLambdaSyntax.TryGetResult(
-                lambda,
-                out var localDeclarations,
-                out var resultExpression))
+        ImmutableArray<LocalDeclarationStatementSyntax>
+            localDeclarations;
+        ExpressionSyntax? resultExpression = null;
+        var statementBlock = false;
+
+        if (directTemplate)
+        {
+            if (!TransferableLambdaSyntax.TryGetResult(
+                    lambda,
+                    out localDeclarations,
+                    out resultExpression))
+            {
+                return new UnsupportedTemplateControlFlow(
+                    UnsupportedBlockMessage);
+            }
+        }
+        else if (lambda.ExpressionBody is
+                 { } expressionBody)
+        {
+            localDeclarations = [];
+            resultExpression = expressionBody;
+        }
+        else if (lambda.Block is { } block &&
+                 TryCollectSupportedLocalDeclarations(
+                     block.Statements,
+                     out localDeclarations))
+        {
+            statementBlock = true;
+        }
+        else
         {
             return new UnsupportedTemplateControlFlow(
                 UnsupportedBlockMessage);
@@ -51,10 +75,23 @@ internal static class TemplateControlFlowPlanner
             .DelegateInvokeMethod?
             .ReturnType;
         var expressionResultType =
-            semanticModel.GetTypeInfo(
-                    resultExpression,
-                    cancellationToken)
-                .Type;
+            resultExpression is not null
+                ? semanticModel.GetTypeInfo(
+                        resultExpression,
+                        cancellationToken)
+                    .Type
+                : EnumerateReturnExpressions(
+                        lambda.Block!.Statements)
+                    .Select(expression =>
+                        semanticModel.GetTypeInfo(
+                                expression,
+                                cancellationToken)
+                            .Type)
+                    .FirstOrDefault(static type =>
+                        type is
+                        {
+                            TypeKind: not TypeKind.Error
+                        });
         var templateResultType =
             convertedResultType is
                 {
@@ -77,6 +114,9 @@ internal static class TemplateControlFlowPlanner
             new Dictionary<ISymbol, string>(
                 SymbolEqualityComparer.Default);
         var runtimeLocalPlaceholders =
+            new Dictionary<ISymbol, string>(
+                SymbolEqualityComparer.Default);
+        var declarationRuntimeLocalPlaceholders =
             new Dictionary<ISymbol, string>(
                 SymbolEqualityComparer.Default);
         var runtimeLocals =
@@ -159,7 +199,11 @@ internal static class TemplateControlFlowPlanner
                                 placeholder,
                                 local.Name,
                                 "var",
-                                conditional.Condition));
+                                conditional.Condition,
+                                IsConst: false));
+                        declarationRuntimeLocalPlaceholders.Add(
+                            local,
+                            placeholder);
                     }
 
                     continue;
@@ -185,13 +229,24 @@ internal static class TemplateControlFlowPlanner
                         runtimePlaceholder,
                         local.Name,
                         declarationType,
-                        initializer));
+                        initializer,
+                        declaration.Modifiers.Any(
+                            SyntaxKind.ConstKeyword)));
+                declarationRuntimeLocalPlaceholders.Add(
+                    local,
+                    runtimePlaceholder);
             }
         }
 
+        var transferableExpressions =
+            statementBlock
+                ? EnumerateStatementExpressions(
+                    lambda.Block!.Statements)
+                : localInitializers.Values.Append(
+                    resultExpression!);
+
         if (ContainsUnsupportedCapture(
-                localInitializers.Values.Append(
-                    resultExpression),
+                transferableExpressions,
                 allLocals,
                 semanticModel,
                 cancellationToken))
@@ -200,15 +255,36 @@ internal static class TemplateControlFlowPlanner
                 UnsupportedCaptureMessage);
         }
 
-        TemplateControlFlowSyntaxNode? root =
-            directTemplate
+        TemplateControlFlowSyntaxNode? root;
+
+        if (statementBlock)
+        {
+            if (!TryBuildStatementList(
+                    lambda.Block!.Statements,
+                    continuation: null,
+                    templateResultType,
+                    localInitializers,
+                    dslLocals,
+                    dslConditionPlaceholders,
+                    declarationRuntimeLocalPlaceholders,
+                    semanticModel,
+                    cancellationToken,
+                    out root))
+            {
+                return new UnsupportedTemplateControlFlow(
+                    UnsupportedBlockMessage);
+            }
+        }
+        else
+        {
+            root = directTemplate
                 ? new TemplateLeafSyntaxNode(
                     resultExpression,
                     ObjectCreation: null,
                     Arguments: [],
                     MemberAssignments: [])
                 : ResolveTemplateExpression(
-                    resultExpression,
+                    resultExpression!,
                     templateResultType,
                     localInitializers,
                     dslLocals,
@@ -217,6 +293,17 @@ internal static class TemplateControlFlowPlanner
                     cancellationToken,
                     new HashSet<ISymbol>(
                         SymbolEqualityComparer.Default));
+
+            if (root is not null)
+            {
+                root = WrapRuntimeLocalDeclarations(
+                    localDeclarations,
+                    root,
+                    declarationRuntimeLocalPlaceholders,
+                    semanticModel,
+                    cancellationToken);
+            }
+        }
 
         if (root is not null &&
             !directTemplate)
@@ -239,6 +326,472 @@ internal static class TemplateControlFlowPlanner
             root,
             runtimeLocals.ToImmutable(),
             runtimeLocalPlaceholders);
+    }
+
+    private static bool TryCollectSupportedLocalDeclarations(
+        SyntaxList<StatementSyntax> statements,
+        out ImmutableArray<LocalDeclarationStatementSyntax>
+            localDeclarations)
+    {
+        var result =
+            ImmutableArray.CreateBuilder<
+                LocalDeclarationStatementSyntax>();
+
+        foreach (var statement in statements)
+        {
+            if (!TryCollectSupportedLocalDeclarations(
+                    statement,
+                    result))
+            {
+                localDeclarations = default;
+                return false;
+            }
+        }
+
+        localDeclarations = result.ToImmutable();
+        return true;
+    }
+
+    private static bool TryCollectSupportedLocalDeclarations(
+        StatementSyntax statement,
+        ImmutableArray<LocalDeclarationStatementSyntax>.Builder
+            localDeclarations)
+    {
+        switch (statement)
+        {
+            case LocalDeclarationStatementSyntax declaration
+                when declaration.UsingKeyword.IsKind(
+                         SyntaxKind.None) &&
+                     declaration.Declaration.Type is not
+                         RefTypeSyntax &&
+                     declaration.Declaration.Variables.Count > 0 &&
+                     declaration.Declaration.Variables.All(
+                         static variable =>
+                             variable.Initializer is not null):
+                localDeclarations.Add(declaration);
+                return true;
+
+            case BlockSyntax block:
+                foreach (var nestedStatement in
+                         block.Statements)
+                {
+                    if (!TryCollectSupportedLocalDeclarations(
+                            nestedStatement,
+                            localDeclarations))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+
+            case IfStatementSyntax ifStatement:
+                return TryCollectSupportedLocalDeclarations(
+                           ifStatement.Statement,
+                           localDeclarations) &&
+                       (ifStatement.Else is null ||
+                        TryCollectSupportedLocalDeclarations(
+                            ifStatement.Else.Statement,
+                            localDeclarations));
+
+            case ReturnStatementSyntax
+                {
+                    Expression: not null
+                }:
+            case ThrowStatementSyntax
+                {
+                    Expression: not null
+                }:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    private static IEnumerable<ExpressionSyntax>
+        EnumerateReturnExpressions(
+            SyntaxList<StatementSyntax> statements)
+    {
+        foreach (var statement in statements)
+        {
+            switch (statement)
+            {
+                case ReturnStatementSyntax
+                    {
+                        Expression: { } expression
+                    }:
+                    yield return expression;
+                    break;
+
+                case BlockSyntax block:
+                    foreach (var nestedExpression in
+                             EnumerateReturnExpressions(
+                                 block.Statements))
+                    {
+                        yield return nestedExpression;
+                    }
+
+                    break;
+
+                case IfStatementSyntax ifStatement:
+                    foreach (var nestedExpression in
+                             EnumerateReturnExpressions(
+                                 SyntaxFactory.SingletonList(
+                                     ifStatement.Statement)))
+                    {
+                        yield return nestedExpression;
+                    }
+
+                    if (ifStatement.Else is { } @else)
+                    {
+                        foreach (var nestedExpression in
+                                 EnumerateReturnExpressions(
+                                     SyntaxFactory.SingletonList(
+                                         @else.Statement)))
+                        {
+                            yield return nestedExpression;
+                        }
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    private static IEnumerable<ExpressionSyntax>
+        EnumerateStatementExpressions(
+            SyntaxList<StatementSyntax> statements)
+    {
+        foreach (var statement in statements)
+        {
+            foreach (var expression in
+                     EnumerateStatementExpressions(statement))
+            {
+                yield return expression;
+            }
+        }
+    }
+
+    private static IEnumerable<ExpressionSyntax>
+        EnumerateStatementExpressions(
+            StatementSyntax statement)
+    {
+        switch (statement)
+        {
+            case LocalDeclarationStatementSyntax declaration:
+                foreach (var variable in
+                         declaration.Declaration.Variables)
+                {
+                    if (variable.Initializer?.Value is
+                        { } initializer)
+                    {
+                        yield return initializer;
+                    }
+                }
+
+                yield break;
+
+            case BlockSyntax block:
+                foreach (var expression in
+                         EnumerateStatementExpressions(
+                             block.Statements))
+                {
+                    yield return expression;
+                }
+
+                yield break;
+
+            case IfStatementSyntax ifStatement:
+                yield return ifStatement.Condition;
+
+                foreach (var expression in
+                         EnumerateStatementExpressions(
+                             ifStatement.Statement))
+                {
+                    yield return expression;
+                }
+
+                if (ifStatement.Else is { } @else)
+                {
+                    foreach (var expression in
+                             EnumerateStatementExpressions(
+                                 @else.Statement))
+                    {
+                        yield return expression;
+                    }
+                }
+
+                yield break;
+
+            case ReturnStatementSyntax
+                {
+                    Expression: { } returnExpression
+                }:
+                yield return returnExpression;
+                yield break;
+
+            case ThrowStatementSyntax
+                {
+                    Expression: { } throwExpression
+                }:
+                yield return throwExpression;
+                yield break;
+        }
+    }
+
+    private static bool TryBuildStatementList(
+        SyntaxList<StatementSyntax> statements,
+        TemplateControlFlowSyntaxNode? continuation,
+        ITypeSymbol? templateResultType,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax>
+            localInitializers,
+        HashSet<ISymbol> dslLocals,
+        IReadOnlyDictionary<ISymbol, string>
+            dslConditionPlaceholders,
+        IReadOnlyDictionary<ISymbol, string>
+            declarationRuntimeLocalPlaceholders,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out TemplateControlFlowSyntaxNode? root)
+    {
+        root = continuation;
+
+        for (var index = statements.Count - 1;
+             index >= 0;
+             index--)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            switch (statements[index])
+            {
+                case ReturnStatementSyntax
+                    {
+                        Expression: { } returnExpression
+                    }:
+                    root = ResolveTemplateExpression(
+                        returnExpression,
+                        templateResultType,
+                        localInitializers,
+                        dslLocals,
+                        dslConditionPlaceholders,
+                        semanticModel,
+                        cancellationToken,
+                        new HashSet<ISymbol>(
+                            SymbolEqualityComparer.Default));
+
+                    if (root is null)
+                    {
+                        return false;
+                    }
+
+                    break;
+
+                case ThrowStatementSyntax
+                    {
+                        Expression: { } throwExpression
+                    }:
+                    root = new TemplateThrowSyntaxNode(
+                        throwExpression);
+                    break;
+
+                case LocalDeclarationStatementSyntax declaration:
+                    if (root is null)
+                    {
+                        return false;
+                    }
+
+                    root = WrapRuntimeLocalDeclaration(
+                        declaration,
+                        root,
+                        declarationRuntimeLocalPlaceholders,
+                        semanticModel,
+                        cancellationToken);
+                    break;
+
+                case BlockSyntax block:
+                    if (!TryBuildStatementList(
+                            block.Statements,
+                            root,
+                            templateResultType,
+                            localInitializers,
+                            dslLocals,
+                            dslConditionPlaceholders,
+                            declarationRuntimeLocalPlaceholders,
+                            semanticModel,
+                            cancellationToken,
+                            out root))
+                    {
+                        return false;
+                    }
+
+                    break;
+
+                case IfStatementSyntax ifStatement:
+                    if (!TryBuildEmbeddedStatement(
+                            ifStatement.Statement,
+                            root,
+                            templateResultType,
+                            localInitializers,
+                            dslLocals,
+                            dslConditionPlaceholders,
+                            declarationRuntimeLocalPlaceholders,
+                            semanticModel,
+                            cancellationToken,
+                            out var whenTrue) ||
+                        !TryBuildElseStatement(
+                            ifStatement.Else,
+                            root,
+                            templateResultType,
+                            localInitializers,
+                            dslLocals,
+                            dslConditionPlaceholders,
+                            declarationRuntimeLocalPlaceholders,
+                            semanticModel,
+                            cancellationToken,
+                            out var whenFalse) ||
+                        whenTrue is null ||
+                        whenFalse is null)
+                    {
+                        return false;
+                    }
+
+                    root = new TemplateConditionalSyntaxNode(
+                        ifStatement.Condition,
+                        whenTrue,
+                        whenFalse);
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        return root is not null;
+    }
+
+    private static bool TryBuildEmbeddedStatement(
+        StatementSyntax statement,
+        TemplateControlFlowSyntaxNode? continuation,
+        ITypeSymbol? templateResultType,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax>
+            localInitializers,
+        HashSet<ISymbol> dslLocals,
+        IReadOnlyDictionary<ISymbol, string>
+            dslConditionPlaceholders,
+        IReadOnlyDictionary<ISymbol, string>
+            declarationRuntimeLocalPlaceholders,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out TemplateControlFlowSyntaxNode? root)
+    {
+        var statements = statement is BlockSyntax block
+            ? block.Statements
+            : SyntaxFactory.SingletonList(statement);
+
+        return TryBuildStatementList(
+            statements,
+            continuation,
+            templateResultType,
+            localInitializers,
+            dslLocals,
+            dslConditionPlaceholders,
+            declarationRuntimeLocalPlaceholders,
+            semanticModel,
+            cancellationToken,
+            out root);
+    }
+
+    private static bool TryBuildElseStatement(
+        ElseClauseSyntax? @else,
+        TemplateControlFlowSyntaxNode? continuation,
+        ITypeSymbol? templateResultType,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax>
+            localInitializers,
+        HashSet<ISymbol> dslLocals,
+        IReadOnlyDictionary<ISymbol, string>
+            dslConditionPlaceholders,
+        IReadOnlyDictionary<ISymbol, string>
+            declarationRuntimeLocalPlaceholders,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out TemplateControlFlowSyntaxNode? root)
+    {
+        if (@else is null)
+        {
+            root = continuation;
+            return true;
+        }
+
+        return TryBuildEmbeddedStatement(
+            @else.Statement,
+            continuation,
+            templateResultType,
+            localInitializers,
+            dslLocals,
+            dslConditionPlaceholders,
+            declarationRuntimeLocalPlaceholders,
+            semanticModel,
+            cancellationToken,
+            out root);
+    }
+
+    private static TemplateControlFlowSyntaxNode
+        WrapRuntimeLocalDeclarations(
+            ImmutableArray<LocalDeclarationStatementSyntax>
+                declarations,
+            TemplateControlFlowSyntaxNode root,
+            IReadOnlyDictionary<ISymbol, string>
+                declarationRuntimeLocalPlaceholders,
+            SemanticModel semanticModel,
+            CancellationToken cancellationToken)
+    {
+        for (var index = declarations.Length - 1;
+             index >= 0;
+             index--)
+        {
+            root = WrapRuntimeLocalDeclaration(
+                declarations[index],
+                root,
+                declarationRuntimeLocalPlaceholders,
+                semanticModel,
+                cancellationToken);
+        }
+
+        return root;
+    }
+
+    private static TemplateControlFlowSyntaxNode
+        WrapRuntimeLocalDeclaration(
+            LocalDeclarationStatementSyntax declaration,
+            TemplateControlFlowSyntaxNode next,
+            IReadOnlyDictionary<ISymbol, string>
+                declarationRuntimeLocalPlaceholders,
+            SemanticModel semanticModel,
+            CancellationToken cancellationToken)
+    {
+        var placeholders =
+            ImmutableArray.CreateBuilder<string>();
+
+        foreach (var variable in
+                 declaration.Declaration.Variables)
+        {
+            if (semanticModel.GetDeclaredSymbol(
+                    variable,
+                    cancellationToken) is { } local &&
+                declarationRuntimeLocalPlaceholders.TryGetValue(
+                    local,
+                    out var placeholder))
+            {
+                placeholders.Add(placeholder);
+            }
+        }
+
+        return placeholders.Count == 0
+            ? next
+            : new TemplateLocalDeclarationsSyntaxNode(
+                placeholders.ToImmutable(),
+                next);
     }
 
     private static TemplateControlFlowSyntaxNode?
@@ -348,9 +901,15 @@ internal static class TemplateControlFlowPlanner
             return whenTrue is null || whenFalse is null
                 ? null
                 : new TemplateConditionalSyntaxNode(
-                    conditionalExpression.Condition,
-                    whenTrue,
-                    whenFalse);
+                conditionalExpression.Condition,
+                whenTrue,
+                whenFalse);
+        }
+
+        if (expression is ThrowExpressionSyntax throwExpression)
+        {
+            return new TemplateThrowSyntaxNode(
+                throwExpression.Expression);
         }
 
         if (expression is WithExpressionSyntax withExpression)
@@ -398,6 +957,11 @@ internal static class TemplateControlFlowPlanner
         TemplateControlFlowSyntaxNode node,
         ImmutableArray<TemplateMemberAssignmentSyntax> overlay)
     {
+        if (node is TemplateThrowSyntaxNode)
+        {
+            return node;
+        }
+
         if (node is TemplateConditionalSyntaxNode conditional)
         {
             return conditional with
@@ -441,6 +1005,29 @@ internal static class TemplateControlFlowPlanner
             SemanticModel semanticModel,
             CancellationToken cancellationToken)
     {
+        if (node is TemplateLocalDeclarationsSyntaxNode localDeclarations)
+        {
+            var next = ExpandMemberConditions(
+                localDeclarations.Next,
+                localInitializers,
+                dslLocals,
+                dslConditionPlaceholders,
+                semanticModel,
+                cancellationToken);
+
+            return next is null
+                ? null
+                : localDeclarations with
+                {
+                    Next = next
+                };
+        }
+
+        if (node is TemplateThrowSyntaxNode)
+        {
+            return node;
+        }
+
         if (node is TemplateConditionalSyntaxNode conditional)
         {
             var whenTrue = ExpandMemberConditions(
@@ -1336,9 +1923,15 @@ internal readonly record struct TemplateRuntimeLocalSyntax(
     string PlaceholderName,
     string PreferredName,
     string DeclarationType,
-    ExpressionSyntax Initializer);
+    ExpressionSyntax Initializer,
+    bool IsConst);
 
 internal abstract record TemplateControlFlowSyntaxNode;
+
+internal sealed record TemplateLocalDeclarationsSyntaxNode(
+    ImmutableArray<string> RuntimeLocalPlaceholders,
+    TemplateControlFlowSyntaxNode Next)
+    : TemplateControlFlowSyntaxNode;
 
 internal sealed record TemplateConditionalSyntaxNode(
     ExpressionSyntax Condition,
@@ -1351,6 +1944,10 @@ internal sealed record TemplateLeafSyntaxNode(
     BaseObjectCreationExpressionSyntax? ObjectCreation,
     ImmutableArray<TemplateObjectArgumentSyntax> Arguments,
     ImmutableArray<TemplateMemberAssignmentSyntax> MemberAssignments)
+    : TemplateControlFlowSyntaxNode;
+
+internal sealed record TemplateThrowSyntaxNode(
+    ExpressionSyntax Expression)
     : TemplateControlFlowSyntaxNode;
 
 internal readonly record struct TemplateObjectArgumentSyntax(

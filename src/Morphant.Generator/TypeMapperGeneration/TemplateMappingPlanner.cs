@@ -193,7 +193,8 @@ internal static class TemplateMappingPlanner
                             ? RewriteMapNew(
                                 local.Initializer)
                             : RewriteMapExisting(
-                                local.Initializer)))
+                                local.Initializer),
+                        local.IsConst))
                 .ToImmutableArray();
 
         bool IsMapNewDestinationKnownAbsent(
@@ -873,6 +874,26 @@ internal static class TemplateMappingPlanner
         Func<ExpressionSyntax, string> rewriteMapExisting,
         out TemplateMappingPlanNode node)
     {
+        if (syntax is
+            TemplateLocalDeclarationsSyntaxNode localDeclarations)
+        {
+            if (!TryBuildPlanNode(
+                    localDeclarations.Next,
+                    buildLeaf,
+                    rewriteMapNew,
+                    rewriteMapExisting,
+                    out var next))
+            {
+                node = null!;
+                return false;
+            }
+
+            node = new TemplateLocalDeclarationsMappingPlanNode(
+                localDeclarations.RuntimeLocalPlaceholders,
+                next);
+            return true;
+        }
+
         if (syntax is TemplateLeafSyntaxNode leaf)
         {
             if (buildLeaf(leaf) is not { } leafPlan)
@@ -883,6 +904,14 @@ internal static class TemplateMappingPlanner
 
             node = new TemplateLeafMappingPlanNode(
                 leafPlan);
+            return true;
+        }
+
+        if (syntax is TemplateThrowSyntaxNode throwNode)
+        {
+            node = new TemplateThrowMappingPlanNode(
+                rewriteMapNew(throwNode.Expression),
+                rewriteMapExisting(throwNode.Expression));
             return true;
         }
 
@@ -2171,6 +2200,11 @@ internal sealed record SupportedTemplateMappingPlanResult(
 
 internal abstract record TemplateMappingPlanNode;
 
+internal sealed record TemplateLocalDeclarationsMappingPlanNode(
+    ImmutableArray<string> RuntimeLocalPlaceholders,
+    TemplateMappingPlanNode Next)
+    : TemplateMappingPlanNode;
+
 internal sealed record TemplateConditionalMappingPlanNode(
     string MapNewCondition,
     string MapExistingCondition,
@@ -2182,12 +2216,18 @@ internal sealed record TemplateLeafMappingPlanNode(
     TemplateMappingPlan Plan)
     : TemplateMappingPlanNode;
 
+internal sealed record TemplateThrowMappingPlanNode(
+    string MapNewExpression,
+    string MapExistingExpression)
+    : TemplateMappingPlanNode;
+
 internal readonly record struct TemplateRuntimeLocalPlan(
     string PlaceholderName,
     string PreferredName,
     string DeclarationType,
     string MapNewExpression,
-    string MapExistingExpression);
+    string MapExistingExpression,
+    bool IsConst);
 
 internal readonly record struct TemplateMappingPlan(
     string? MapNewDirectExpression,
