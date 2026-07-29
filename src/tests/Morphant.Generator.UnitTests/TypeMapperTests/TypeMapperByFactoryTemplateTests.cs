@@ -912,6 +912,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using System;
 
 namespace TestCase
 {
@@ -944,7 +945,7 @@ namespace TestCase
                 return new Destination(factoryValue);
             }
 
-            static int Adjust(int value) => Identity<int>(global::System.Math.Abs(value)) + 20;
+            static int Adjust(int value) => Identity<int>(Math.Abs(value)) + 20;
 
             static T Identity<T>(T value) => value;
 
@@ -1037,6 +1038,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using System;
 
 namespace TestCase
 {
@@ -1090,7 +1092,7 @@ namespace TestCase
 
             static Destination CreateFromConfigureStaticLocalFunction()
             {
-                if (global::System.DateTime.UtcNow.Ticks > 0)
+                if (DateTime.UtcNow.Ticks > 0)
                 {
                     return new Destination();
                 }
@@ -1319,6 +1321,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using System;
 
 namespace TestCase
 {
@@ -1369,7 +1372,7 @@ namespace TestCase
                         switch (factoryValue)
                         {
                             case 13:
-                                throw new System.InvalidOperationException();
+                                throw new InvalidOperationException();
 
                             default:
                                 return new Destination(factoryValue + 1);

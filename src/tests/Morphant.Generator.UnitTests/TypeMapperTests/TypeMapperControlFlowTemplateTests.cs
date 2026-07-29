@@ -722,6 +722,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using System;
 using TestCase.Morphant.Generated;
 
 namespace TestCase
@@ -757,7 +758,7 @@ namespace TestCase
                     }
 
                     return (source.Value == 0
-                        ? throw new global::System.InvalidOperationException()
+                        ? throw new InvalidOperationException()
                         : new DestinationMorphantTemplate()) with
                     {
                         Value = source.Value - 1
@@ -767,7 +768,7 @@ namespace TestCase
             builder.Map<AlwaysThrowSource, Destination>()
                 .Template(source =>
                 {
-                    throw new global::System.InvalidOperationException();
+                    throw new InvalidOperationException();
                 });
         }
     }
@@ -1376,6 +1377,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using System;
 
 namespace TestCase
 {
@@ -1403,7 +1405,7 @@ namespace TestCase
 
             static bool SelectBranch()
             {
-                if (global::System.DateTime.UtcNow.Ticks > 0)
+                if (DateTime.UtcNow.Ticks > 0)
                 {
                     return true;
                 }
