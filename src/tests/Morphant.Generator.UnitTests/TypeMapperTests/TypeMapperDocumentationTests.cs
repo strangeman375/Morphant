@@ -53,6 +53,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination();
         }
 
@@ -61,7 +66,19 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination();
+            }
+
+            return destination;
+        }
     }
 }
 """;

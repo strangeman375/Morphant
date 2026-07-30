@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Morphant.Generator.Settings;
 
@@ -7,66 +8,82 @@ internal static class AssemblyMappingSettingsPipeline
     private const string MappingModePropertyName =
         "build_property.MorphantMappingMode";
 
+    private const string NullSourceHandlingPropertyName =
+        "build_property.MorphantNullSourceHandling";
+
+    private const string NullDestinationHandlingPropertyName =
+        "build_property.MorphantNullDestinationHandling";
+
     public static IncrementalValueProvider<MappingSettings> Build(
         IncrementalGeneratorInitializationContext context)
     {
         return context.AnalyzerConfigOptionsProvider
             .Select(static (options, _) =>
-                ParseMappingMode(
-                    options.GlobalOptions.TryGetValue(
-                        MappingModePropertyName,
-                        out var value)
-                        ? value
-                        : null))
+            {
+                var globalOptions = options.GlobalOptions;
+
+                return new MappingSettings(
+                    ParseNamedValue<MappingModeValue>(
+                        GetValue(
+                            globalOptions,
+                            MappingModePropertyName)),
+                    ParseNamedValue<NullSourceHandlingValue>(
+                        GetValue(
+                            globalOptions,
+                            NullSourceHandlingPropertyName)),
+                    ParseNamedValue<NullDestinationHandlingValue>(
+                        GetValue(
+                            globalOptions,
+                            NullDestinationHandlingPropertyName)));
+            })
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildAssemblyMappingSettings);
     }
 
-    private static MappingSettings ParseMappingMode(string? value)
+    private static string? GetValue(
+        AnalyzerConfigOptions options,
+        string propertyName)
+    {
+        return options.TryGetValue(
+            propertyName,
+            out var value)
+                ? value
+                : null;
+    }
+
+    private static TValue? ParseNamedValue<TValue>(
+        string? value)
+        where TValue : struct, Enum
     {
         if (value is null)
         {
-            return MappingSettings.Default;
+            return default(TValue);
         }
 
         var normalizedValue = value.Trim();
 
         if (normalizedValue.Length == 0)
         {
-            return MappingSettings.Default;
+            return default(TValue);
         }
 
-        MappingModeValue mappingMode;
-
-        if (normalizedValue.Equals(
-                nameof(MappingModeValue.Default),
+        if (!Enum.TryParse<TValue>(
+                normalizedValue,
+                ignoreCase: true,
+                out var parsedValue) ||
+            !Enum.IsDefined(
+                typeof(TValue),
+                parsedValue) ||
+            Enum.GetName(
+                typeof(TValue),
+                parsedValue) is not { } name ||
+            !normalizedValue.Equals(
+                name,
                 StringComparison.OrdinalIgnoreCase))
         {
-            mappingMode = MappingModeValue.Default;
-        }
-        else if (normalizedValue.Equals(
-                     nameof(MappingModeValue.MapNew),
-                     StringComparison.OrdinalIgnoreCase))
-        {
-            mappingMode = MappingModeValue.MapNew;
-        }
-        else if (normalizedValue.Equals(
-                     nameof(MappingModeValue.MapExisting),
-                     StringComparison.OrdinalIgnoreCase))
-        {
-            mappingMode = MappingModeValue.MapExisting;
-        }
-        else if (normalizedValue.Equals(
-                     nameof(MappingModeValue.MapNewAndExisting),
-                     StringComparison.OrdinalIgnoreCase))
-        {
-            mappingMode = MappingModeValue.MapNewAndExisting;
-        }
-        else
-        {
-            return MappingSettings.Invalid;
+            return null;
         }
 
-        return new MappingSettings(mappingMode);
+        return parsedValue;
     }
 }

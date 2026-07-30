@@ -171,6 +171,11 @@ namespace TestCase
             global::TestCase.FirstSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.FirstDestination();
         }
 
@@ -179,13 +184,30 @@ namespace TestCase
             global::TestCase.FirstSource? source,
             global::TestCase.FirstDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.FirstDestination();
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.SecondDestination? global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.SecondDestination>.Map(
             global::TestCase.SecondSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.SecondDestination();
         }
 
@@ -216,6 +238,11 @@ namespace TestCase
             global::TestCase.ExpressionSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.ExpressionDestination();
         }
 
@@ -224,7 +251,19 @@ namespace TestCase
             global::TestCase.ExpressionSource? source,
             global::TestCase.ExpressionDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.ExpressionDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -245,6 +284,11 @@ namespace TestCase
             global::TestCase.DeclarativeSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.DeclarativeDestination();
         }
 
@@ -253,7 +297,19 @@ namespace TestCase
             global::TestCase.DeclarativeSource? source,
             global::TestCase.DeclarativeDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.DeclarativeDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -338,6 +394,11 @@ namespace TestCase
             global::TestCase.FirstSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.FirstDestination();
         }
 
@@ -354,6 +415,11 @@ namespace TestCase
             global::TestCase.FirstSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.SecondDestination();
         }
 
@@ -362,13 +428,30 @@ namespace TestCase
             global::TestCase.FirstSource? source,
             global::TestCase.SecondDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.SecondDestination();
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.FirstDestination? global::Morphant.ITypeMapper<global::TestCase.SecondSource, global::TestCase.FirstDestination>.Map(
             global::TestCase.SecondSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.FirstDestination();
         }
 
@@ -377,7 +460,19 @@ namespace TestCase
             global::TestCase.SecondSource? source,
             global::TestCase.FirstDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.FirstDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;

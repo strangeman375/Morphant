@@ -89,14 +89,33 @@ namespace TestCase
         global::TestCase.IInterfaceDestination? global::Morphant.ITypeMapper<global::TestCase.ClassSource, global::TestCase.IInterfaceDestination>.Map(
             global::TestCase.ClassSource? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         global::TestCase.IInterfaceDestination? global::Morphant.ITypeMapper<global::TestCase.ClassSource, global::TestCase.IInterfaceDestination>.Map(
             global::TestCase.ClassSource? source,
             global::TestCase.IInterfaceDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotImplementedException();
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.StructDestination global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.StructDestination>.Map(
@@ -117,20 +136,44 @@ namespace TestCase
         int? global::Morphant.ITypeMapper<global::TestCase.SourceEnum?, int?>.Map(
             global::TestCase.SourceEnum? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         int? global::Morphant.ITypeMapper<global::TestCase.SourceEnum?, int?>.Map(
             global::TestCase.SourceEnum? source,
             int? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotImplementedException();
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>? global::Morphant.ITypeMapper<global::TestCase.Generic<global::System.Collections.Generic.List<string?>>, global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>>.Map(
             global::TestCase.Generic<global::System.Collections.Generic.List<string?>>? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>();
         }
 
@@ -139,20 +182,46 @@ namespace TestCase
             global::TestCase.Generic<global::System.Collections.Generic.List<string?>>? source,
             global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Outer<int>.Nested<global::TestCase.ClassSource>();
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::System.Guid global::Morphant.ITypeMapper<object, global::System.Guid>.Map(
             object? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         global::System.Guid global::Morphant.ITypeMapper<object, global::System.Guid>.Map(
             object? source,
             global::System.Guid destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
     }
 }
 """;
@@ -257,6 +326,11 @@ namespace TestCase
             string? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.SafeDestination();
         }
 
@@ -265,7 +339,19 @@ namespace TestCase
             string? source,
             global::TestCase.SafeDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.SafeDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -333,6 +419,11 @@ namespace TestCase
                 global::TestCase.Source<TOuter, TValue>? source,
                 global::Morphant.MappingContext context)
             {
+                if (source is null)
+                {
+                    return default;
+                }
+
                 return new global::TestCase.Destination<TOuter, TValue>();
             }
 
@@ -341,7 +432,19 @@ namespace TestCase
                 global::TestCase.Source<TOuter, TValue>? source,
                 global::TestCase.Destination<TOuter, TValue>? destination,
                 global::Morphant.MappingContext context)
-                => destination;
+            {
+                if (source is null)
+                {
+                    return default;
+                }
+
+                if (destination is null)
+                {
+                    return new global::TestCase.Destination<TOuter, TValue>();
+                }
+
+                return destination;
+            }
         }
     }
 }
@@ -413,20 +516,44 @@ namespace TestCase
         object? global::Morphant.ITypeMapper<object, object?>.Map(
             object? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         object? global::Morphant.ITypeMapper<object, object?>.Map(
             object? source,
             object? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotImplementedException();
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         global::TestCase.Pair<object?, string?>? global::Morphant.ITypeMapper<global::TestCase.Box<object>, global::TestCase.Pair<object?, string?>>.Map(
             global::TestCase.Box<object>? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Pair<object?, string?>();
         }
 
@@ -435,7 +562,19 @@ namespace TestCase
             global::TestCase.Box<object>? source,
             global::TestCase.Pair<object?, string?>? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Pair<object?, string?>();
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         nuint global::Morphant.ITypeMapper<nint, nuint>.Map(
@@ -538,6 +677,11 @@ namespace TestCase
             global::TestCase.SafeSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.SafeDestination();
         }
 
@@ -546,7 +690,19 @@ namespace TestCase
             global::TestCase.SafeSource? source,
             global::TestCase.SafeDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.SafeDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -619,6 +775,11 @@ namespace TestCase
             global::TestCase.SafeSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.SafeDestination();
         }
 
@@ -627,7 +788,19 @@ namespace TestCase
             global::TestCase.SafeSource? source,
             global::TestCase.SafeDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.SafeDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -836,14 +1009,33 @@ namespace TestCase
         T? global::Morphant.ITypeMapper<T, T>.Map(
             T? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         T? global::Morphant.ITypeMapper<T, T>.Map(
             T? source,
             T? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotImplementedException();
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         string? global::Morphant.ITypeMapper<int, string>.Map(
@@ -856,13 +1048,25 @@ namespace TestCase
             int source,
             string? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (destination is null)
+            {
+                throw new global::System.NotImplementedException();
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         global::TestCase.Box<T>? global::Morphant.ITypeMapper<T, global::TestCase.Box<T>>.Map(
             T? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Box<T>();
         }
 
@@ -871,33 +1075,78 @@ namespace TestCase
             T? source,
             global::TestCase.Box<T>? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Box<T>();
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         U? global::Morphant.ITypeMapper<global::TestCase.Box<U>, U>.Map(
             global::TestCase.Box<U>? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         U? global::Morphant.ITypeMapper<global::TestCase.Box<U>, U>.Map(
             global::TestCase.Box<U>? source,
             U? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotImplementedException();
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Pair<T, U>, int>.Map(
             global::TestCase.Pair<T, U>? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Pair<T, U>, int>.Map(
             global::TestCase.Pair<T, U>? source,
             int destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
     }
 }
 """;

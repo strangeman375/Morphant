@@ -83,6 +83,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.DefaultDestination();
         }
 
@@ -91,13 +96,30 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.DefaultDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.DefaultDestination();
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.CombinedDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.CombinedDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.CombinedDestination();
         }
 
@@ -106,7 +128,19 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.CombinedDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.CombinedDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -190,6 +224,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.RootDestination();
         }
 
@@ -206,6 +245,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.ExplicitDefaultDestination();
         }
 
@@ -229,13 +273,30 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.ExistingDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.ExistingDestination();
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.BothDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.BothDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.BothDestination();
         }
 
@@ -244,7 +305,19 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.BothDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.BothDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -313,7 +386,19 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -392,7 +477,14 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!);
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
@@ -420,7 +512,19 @@ namespace TestCase
             global::TestCase.Source? source,
             string? destination,
             global::Morphant.MappingContext context)
-            => source!.Text;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return source!.Text;
+            }
+
+            return source!.Text;
+        }
     }
 }
 """;
@@ -514,7 +618,14 @@ namespace TestCase
         long global::Morphant.ITypeMapper<global::TestCase.Source, long>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!);
+        }
 
         /// <inheritdoc/>
         long global::Morphant.ITypeMapper<global::TestCase.Source, long>.Map(
@@ -632,6 +743,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.ValidDestination();
         }
 
@@ -715,7 +831,19 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.ExplicitDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.ExplicitDestination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -753,12 +881,12 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             (
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
-                testMapperExpected
-            ),
-            (
                 "Morphant.Generated.TypeMapper.TestCase_InvalidRootMapper.g.cs",
                 invalidRootMapperExpected
+            ),
+            (
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                testMapperExpected
             ),
             (
                 "Morphant.Generated.TypeMapper.TestCase_UndefinedRootMapper.g.cs",

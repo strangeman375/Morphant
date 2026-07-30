@@ -629,6 +629,29 @@ parameters, затем добавить строгий opt-in режим без 
   более конкретный уровень переопределяет некорректный внешний. Наследование
   настроек между mapper-ами остаётся отдельным поздним срезом.
 
+- [x] Null-handling.
+
+  Реализованы независимые `NullSourceHandling` и
+  `NullDestinationHandling` с общим наследованием
+  `map → mapper root → assembly → library default`. MSBuild-свойства
+  `MorphantNullSourceHandling` и `MorphantNullDestinationHandling` можно
+  задавать в `.csproj` и `Directory.Build.props`; библиотечные значения по
+  умолчанию — `ReturnNull` и `CreateNew`.
+
+  Source обрабатывается раньше destination. `ReturnNull` возвращает
+  `default(TDestination)`, `ReturnDestination` сохраняет исходный destination
+  только в `MapExisting`, а `Throw` бросает `ArgumentNullException`.
+  `CreateNew` выполняет полный MapNew-план внутри `MapExisting`, в том числе
+  при `MappingMode.MapExisting`; двухаргументный `Template` при этом видит
+  исходный `null`/`default` previous destination.
+
+  Невалидный effective `NullSourceHandling` делает обе операции unsupported,
+  а невалидный `NullDestinationHandling` — только `MapExisting`. Более
+  конкретное валидное значение переопределяет невалидное внешнее. Для
+  заведомо non-nullable value types лишние runtime-проверки не генерируются.
+  XML docs и пользовательская страница находятся в
+  `docs/settings/null-handling.md`.
+
 - [ ] Настройка boxing-преобразований.
 
   По умолчанию сохранять автоматический convention mapping с boxing. Добавить
@@ -641,13 +664,6 @@ parameters, затем добавить строгий opt-in режим без 
 
   `MemberMatching` и все стратегии `ConstructorSelection`, каждая как отдельный
   TDD-срез.
-
-- [ ] Null-handling.
-
-  `NullSourceHandling` и `NullDestinationHandling` для reference types,
-  nullable/value types и двух режимов маппинга. В этом же срезе уточнить
-  nullable-аннотации входов и результата `Template()`-лямбд по их фактической
-  семантике после применения effective settings.
 
 - [ ] Наследование конфигурации.
 

@@ -892,7 +892,7 @@ namespace A_B.Morphant.Generated
                                 /// <typeparam name="TSource">The source type.</typeparam>
                                 /// <param name="builder">The mapping builder to configure.</param>
                                 /// <param name="template">
-                                /// A lambda expression that receives the source value and describes the mapping.
+                                /// A lambda expression that receives the non-null source value and describes the mapping.
                                 /// </param>
                                 /// <returns>The <paramref name="builder"/> instance.</returns>
                                 public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
@@ -906,8 +906,9 @@ namespace A_B.Morphant.Generated
                                 /// <typeparam name="TSource">The source type.</typeparam>
                                 /// <param name="builder">The mapping builder to configure.</param>
                                 /// <param name="template">
-                                /// A lambda expression that receives the source value and the previous destination value
-                                /// and describes the mapping.
+                                /// A lambda expression that receives the non-null source value and the destination's
+                                /// previous value and describes the mapping. The previous value is
+                                /// <see langword="default"/> when no destination exists.
                                 /// </param>
                                 /// <returns>The <paramref name="builder"/> instance.</returns>
                                 public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(

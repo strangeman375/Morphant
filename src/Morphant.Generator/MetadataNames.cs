@@ -10,4 +10,7 @@ internal static class MetadataNames
 
     public const string MapperBuilder =
         "Morphant.MapperBuilder";
+
+    public const string MapperBuilderBase =
+        "Morphant.MapperBuilderBase`1";
 }

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -9,6 +10,12 @@ internal static class TypeMapperEmitter
 {
     private const string InvalidMappingModeExceptionMessage =
         "The effective MappingMode is invalid.";
+
+    private const string InvalidNullSourceHandlingExceptionMessage =
+        "The effective NullSourceHandling is invalid.";
+
+    private const string InvalidNullDestinationHandlingExceptionMessage =
+        "The effective NullDestinationHandling is invalid.";
 
     public static SourceText Emit(TypeMapperModel model)
     {
@@ -138,6 +145,23 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (!mapping.EffectiveSettings.IsNullSourceHandlingValid)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                InvalidNullSourceHandlingExceptionMessage);
+            writer.Unindent();
+            return;
+        }
+
+        if (mapping.SourceCanBeNull)
+        {
+            WriteMapNewBody(
+                writer,
+                mapping);
+            return;
+        }
+
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
@@ -208,6 +232,60 @@ internal static class TypeMapperEmitter
         writer.Line(
             "=> throw new global::System.NotImplementedException();");
         writer.Unindent();
+    }
+
+    private static void WriteMapNewBody(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        WriteSourceNullHandling(
+            writer,
+            mapping,
+            mapExisting: false);
+        writer.Line();
+        WriteMapNewStatements(
+            writer,
+            mapping);
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteMapNewStatements(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        if (mapping.UnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMappingStatement(
+                writer,
+                unsupportedExceptionMessage);
+            return;
+        }
+
+        if (mapping.ControlFlow is { } controlFlow)
+        {
+            WriteControlFlowMapNewNode(
+                writer,
+                controlFlow.MapNewRoot);
+            return;
+        }
+
+        if (mapping.DirectBlock is { } directBlock)
+        {
+            writer.Line(
+                $"return {directBlock.MapNewValueExpression};");
+            return;
+        }
+
+        WriteControlFlowMapNewLeaf(
+            writer,
+            mapping);
     }
 
     private static void WriteFactoryMapNew(
@@ -557,6 +635,33 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (!mapping.EffectiveSettings.IsNullSourceHandlingValid)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                InvalidNullSourceHandlingExceptionMessage);
+            writer.Unindent();
+            return;
+        }
+
+        if (!mapping.EffectiveSettings.IsNullDestinationHandlingValid)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                InvalidNullDestinationHandlingExceptionMessage);
+            writer.Unindent();
+            return;
+        }
+
+        if (mapping.SourceCanBeNull ||
+            mapping.DestinationCanBeNull)
+        {
+            WriteMapExistingBody(
+                writer,
+                mapping);
+            return;
+        }
+
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
@@ -636,6 +741,151 @@ internal static class TypeMapperEmitter
         writer.Line("}");
     }
 
+    private static void WriteMapExistingBody(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        if (mapping.SourceCanBeNull)
+        {
+            WriteSourceNullHandling(
+                writer,
+                mapping,
+                mapExisting: true);
+            writer.Line();
+        }
+
+        if (mapping.DestinationCanBeNull)
+        {
+            WriteDestinationNullHandling(
+                writer,
+                mapping);
+            writer.Line();
+        }
+
+        WriteMapExistingStatements(
+            writer,
+            mapping);
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteMapExistingStatements(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        if (mapping.UnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMappingStatement(
+                writer,
+                unsupportedExceptionMessage);
+            return;
+        }
+
+        if (mapping.ControlFlow is { } controlFlow)
+        {
+            WriteControlFlowMapExistingNode(
+                writer,
+                controlFlow.MapExistingRoot);
+            return;
+        }
+
+        if (mapping.DirectBlock is { } directBlock)
+        {
+            writer.Line(
+                $"return {directBlock.MapExistingValueExpression};");
+            return;
+        }
+
+        WriteMapExistingLeafStatements(
+            writer,
+            mapping);
+    }
+
+    private static void WriteSourceNullHandling(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        bool mapExisting)
+    {
+        writer.Line("if (source is null)");
+        writer.Line("{");
+        writer.Indent();
+
+        switch (mapping.EffectiveSettings.NullSourceHandling)
+        {
+            case NullSourceHandlingValue.ReturnNull:
+                writer.Line("return default;");
+                break;
+
+            case NullSourceHandlingValue.ReturnDestination
+                when mapExisting:
+                writer.Line("return destination;");
+                break;
+
+            case NullSourceHandlingValue.ReturnDestination:
+                writer.Line("return default;");
+                break;
+
+            case NullSourceHandlingValue.Throw:
+                WriteArgumentNullException(
+                    writer,
+                    "source");
+                break;
+
+            default:
+                throw new InvalidOperationException(
+                    "A valid effective NullSourceHandling value is required.");
+        }
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteDestinationNullHandling(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        writer.Line("if (destination is null)");
+        writer.Line("{");
+        writer.Indent();
+
+        switch (mapping.EffectiveSettings.NullDestinationHandling)
+        {
+            case NullDestinationHandlingValue.CreateNew:
+                WriteMapNewStatements(
+                    writer,
+                    mapping);
+                break;
+
+            case NullDestinationHandlingValue.Throw:
+                WriteArgumentNullException(
+                    writer,
+                    "destination");
+                break;
+
+            default:
+                throw new InvalidOperationException(
+                    "A valid effective NullDestinationHandling value is required.");
+        }
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteArgumentNullException(
+        CodeWriter writer,
+        string parameterName)
+    {
+        writer.Line(
+            "throw new global::System.ArgumentNullException(" +
+            $"nameof({parameterName}));");
+    }
+
     private static void WriteNullableValueMapExistingBody(
         CodeWriter writer,
         TypeMapperMappingModel mapping)
@@ -643,14 +893,6 @@ internal static class TypeMapperEmitter
         writer.Unindent();
         writer.Line("{");
         writer.Indent();
-        writer.Line("if (destination is null)");
-        writer.Line("{");
-        writer.Indent();
-        writer.Line(
-            "throw new global::System.NotImplementedException();");
-        writer.Unindent();
-        writer.Line("}");
-        writer.Line();
 
         WriteNullableValueMapExistingLeafStatements(
             writer,
@@ -667,19 +909,6 @@ internal static class TypeMapperEmitter
         writer.Unindent();
         writer.Line("{");
         writer.Indent();
-
-        if (mapping.MapExistingKind ==
-            TypeMapperMapExistingKind.NullableValue)
-        {
-            writer.Line("if (destination is null)");
-            writer.Line("{");
-            writer.Indent();
-            writer.Line(
-                "throw new global::System.NotImplementedException();");
-            writer.Unindent();
-            writer.Line("}");
-            writer.Line();
-        }
 
         WriteControlFlowMapExistingNode(
             writer,

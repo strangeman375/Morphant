@@ -1,12 +1,35 @@
 namespace Morphant;
 
+/// <summary>
+/// Specifies how a mapping handles a <see langword="null"/> source.
+/// </summary>
 public enum NullSourceHandling
 {
-    Default = 0, // ReturnNull
+    /// <summary>
+    /// Inherits the next less specific setting. If no level specifies a
+    /// value, Morphant uses <see cref="ReturnNull"/>.
+    /// </summary>
+    Default = 0,
 
-    ReturnNull, // вернуть null
+    /// <summary>
+    /// Returns <see langword="default"/> for the destination type.
+    /// </summary>
+    /// <remarks>
+    /// The result is <see langword="null"/> for a reference or nullable value
+    /// destination and <see langword="default"/> for a non-nullable value
+    /// destination.
+    /// </remarks>
+    ReturnNull,
 
-    ReturnDestination, // вернуть destination, если он есть, иначе null
+    /// <summary>
+    /// Returns the supplied destination when mapping to an existing
+    /// destination; when mapping to a new destination, returns
+    /// <see langword="default"/>.
+    /// </summary>
+    ReturnDestination,
 
-    Throw // бросить исключение
+    /// <summary>
+    /// Throws <see cref="ArgumentNullException"/>.
+    /// </summary>
+    Throw
 }

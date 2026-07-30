@@ -49,14 +49,33 @@ namespace TestCase
             object? global::Morphant.ITypeMapper<object, object>.Map(
                 object? source,
                 global::Morphant.MappingContext context)
-                => throw new global::System.NotImplementedException();
+            {
+                if (source is null)
+                {
+                    return default;
+                }
+
+                throw new global::System.NotImplementedException();
+            }
 
             /// <inheritdoc/>
             object? global::Morphant.ITypeMapper<object, object>.Map(
                 object? source,
                 object? destination,
                 global::Morphant.MappingContext context)
-                => throw new global::System.NotImplementedException();
+            {
+                if (source is null)
+                {
+                    return default;
+                }
+
+                if (destination is null)
+                {
+                    throw new global::System.NotImplementedException();
+                }
+
+                throw new global::System.NotImplementedException();
+            }
         }
     }
 }
@@ -130,6 +149,11 @@ namespace A
             global::Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::Destination();
         }
 
@@ -138,7 +162,19 @@ namespace A
             global::Source? source,
             global::Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::Destination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -159,6 +195,11 @@ namespace A_B
             global::Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::Destination();
         }
 
@@ -167,7 +208,19 @@ namespace A_B
             global::Source? source,
             global::Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::Destination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -241,6 +294,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination();
         }
 
@@ -249,7 +307,19 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -270,6 +340,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination();
         }
 
@@ -278,7 +353,19 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination();
+            }
+
+            return destination;
+        }
     }
 }
 """;

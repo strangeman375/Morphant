@@ -143,6 +143,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context),
@@ -159,6 +164,23 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination()
+                {
+                    GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context),
+                    InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context),
+                    GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context),
+                    InferredExisting = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredExistingSource, source!.InferredExistingDestination, context),
+                    Remaining = source!.Remaining
+                };
+            }
+
             destination!.GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context);
             destination!.InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context);
             destination!.GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context);
@@ -300,6 +322,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination(
                 inferredNew: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context),
                 genericNew: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context),
@@ -312,7 +339,23 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination(
+                    inferredNew: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context),
+                    genericNew: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context),
+                    inferredExisting: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredExistingSource, source!.InferredExistingDestination, context),
+                    genericExisting: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context));
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -442,6 +485,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination(
                 existing: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(destination: source!.ExistingDestination, source: source!.ExistingSource, context: context),
                 mapped: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.MappedSource, context),
@@ -453,7 +501,22 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination(
+                    existing: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(destination: source!.ExistingDestination, source: source!.ExistingSource, context: context),
+                    mapped: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.MappedSource, context),
+                    automatic: source!.Automatic);
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -571,13 +634,18 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.Destination CreateByFactory() => Create();
 
-            global::TestCase.Destination destination = CreateByFactory();
-            destination!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.ChildSource, context);
-            destination!.Remaining = source!.Remaining;
+            global::TestCase.Destination destination1 = CreateByFactory();
+            destination1!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.ChildSource, context);
+            destination1!.Remaining = source!.Remaining;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -586,6 +654,22 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::TestCase.Destination CreateByFactory() => Create();
+
+                global::TestCase.Destination destination1 = CreateByFactory();
+                destination1!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.ChildSource, context);
+                destination1!.Remaining = source!.Remaining;
+
+                return destination1;
+            }
+
             destination!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.ChildSource, context);
             destination!.Remaining = source!.Remaining;
 
@@ -726,6 +810,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 Lookalike = global::TestCase.MarkerLookalikes.Map(source!.Child),
@@ -740,6 +829,21 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination()
+                {
+                    Lookalike = global::TestCase.MarkerLookalikes.Map(source!.Child),
+                    Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source!), context),
+                    TypedNull = context.Mapper.Map<global::TestCase.NestedSource?, global::TestCase.NestedDestination?>((global::TestCase.NestedSource?)null, (global::TestCase.NestedDestination?)null, context)
+                };
+            }
+
             destination!.Lookalike = global::TestCase.MarkerLookalikes.Map(source!.Child);
             destination!.Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source!), context);
             destination!.TypedNull = context.Mapper.Map<global::TestCase.NestedSource?, global::TestCase.NestedDestination?>((global::TestCase.NestedSource?)null, (global::TestCase.NestedDestination?)null, context);
@@ -839,14 +943,33 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotImplementedException();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -887,7 +1010,7 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
@@ -901,8 +1024,9 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and the previous destination value
-                         /// and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and the destination's
+                         /// previous value and describes the mapping. The previous value is
+                         /// <see langword="default"/> when no destination exists.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(

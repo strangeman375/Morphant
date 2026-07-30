@@ -12,10 +12,41 @@ public abstract class MapperBuilderBase<T>
     public T TemplateSurface(TemplateSurface templateSurface) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T NullSourceHandling(NullSourceHandling nullSourceHandling) =>
+    /// <summary>
+    /// Configures how this builder handles a
+    /// <see langword="null"/> source.
+    /// </summary>
+    /// <param name="nullSourceHandling">
+    /// The behavior to apply. <see cref="Morphant.NullSourceHandling.Default"/>
+    /// inherits the mapper-level setting for a mapping builder, or the
+    /// assembly-level <c>MorphantNullSourceHandling</c> MSBuild property for
+    /// the mapper builder. If all levels inherit, Morphant uses
+    /// <see cref="Morphant.NullSourceHandling.ReturnNull"/>.
+    /// The argument expression must be a compile-time constant whose value is
+    /// defined by <see cref="Morphant.NullSourceHandling"/>.
+    /// </param>
+    /// <returns>This builder.</returns>
+    public T NullSourceHandling(
+        NullSourceHandling nullSourceHandling) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T NullDestinationHandling(NullDestinationHandling nullDestinationHandling) =>
+    /// <summary>
+    /// Configures how this builder handles a
+    /// <see langword="null"/> existing destination.
+    /// </summary>
+    /// <param name="nullDestinationHandling">
+    /// The behavior to apply.
+    /// <see cref="Morphant.NullDestinationHandling.Default"/> inherits the
+    /// mapper-level setting for a mapping builder, or the assembly-level
+    /// <c>MorphantNullDestinationHandling</c> MSBuild property for the mapper
+    /// builder. If all levels inherit, Morphant uses
+    /// <see cref="Morphant.NullDestinationHandling.CreateNew"/>.
+    /// The argument expression must be a compile-time constant whose value is
+    /// defined by <see cref="Morphant.NullDestinationHandling"/>.
+    /// </param>
+    /// <returns>This builder.</returns>
+    public T NullDestinationHandling(
+        NullDestinationHandling nullDestinationHandling) =>
         throw new RuntimeInvocationNotSupportedException();
 
     public T ConstructorSelection(ConstructorSelection constructorSelection) =>

@@ -132,6 +132,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 First = 10 + source!.First,
@@ -148,6 +153,23 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination()
+                {
+                    First = 10 + source!.First,
+                    Automatic = source!.Automatic,
+                    Second = 20 + source!.Second,
+                    Cleared = (string?)null,
+                    Remaining = source!.Remaining
+                };
+            }
+
             int first = (destination?.First ?? 10) + source!.First;
             int second = (destination?.Second ?? 20) + source!.Second;
 
@@ -233,27 +255,60 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => source!.Number + default(int);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return source!.Number + default(int);
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
-            => source!.Number + destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return source!.Number + destination;
+        }
 
         /// <inheritdoc/>
         string? global::Morphant.ITypeMapper<global::TestCase.Source, string>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => source!.Text;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return source!.Text;
+        }
 
         /// <inheritdoc/>
         string? global::Morphant.ITypeMapper<global::TestCase.Source, string>.Map(
             global::TestCase.Source? source,
             string? destination,
             global::Morphant.MappingContext context)
-            => destination ?? source!.Text;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return source!.Text;
+            }
+
+            return destination ?? source!.Text;
+        }
     }
 }
 """;
@@ -443,6 +498,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.ConstructorDestination(
                 seed: source!.Seed)
             {
@@ -456,6 +516,20 @@ namespace TestCase
             global::TestCase.ConstructorDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.ConstructorDestination(
+                    seed: source!.Seed)
+                {
+                    Value = 1 + source!.Value
+                };
+            }
+
             int value = (destination?.Value ?? 1) + source!.Value;
 
             destination!.Value = value;
@@ -468,6 +542,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.ConventionDestination(
                 seed: source!.Seed)
             {
@@ -481,6 +560,20 @@ namespace TestCase
             global::TestCase.ConventionDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.ConventionDestination(
+                    seed: source!.Seed)
+                {
+                    Value = 2 + source!.Value
+                };
+            }
+
             int value = (destination?.Value ?? 2) + source!.Value;
 
             destination!.Value = value;
@@ -493,12 +586,17 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.FactoryDestination CreateByFactory(global::TestCase.FactoryDestination? previous, global::TestCase.Source source1) => previous ?? new global::TestCase.FactoryDestination(source1.Seed);
 
-            global::TestCase.FactoryDestination destination = CreateByFactory(default(global::TestCase.FactoryDestination?), source!);
-            destination!.Value = 3 + source!.Value;
+            global::TestCase.FactoryDestination destination1 = CreateByFactory(default(global::TestCase.FactoryDestination?), source!);
+            destination1!.Value = 3 + source!.Value;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -507,6 +605,21 @@ namespace TestCase
             global::TestCase.FactoryDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::TestCase.FactoryDestination CreateByFactory(global::TestCase.FactoryDestination? previous, global::TestCase.Source source1) => previous ?? new global::TestCase.FactoryDestination(source1.Seed);
+
+                global::TestCase.FactoryDestination destination1 = CreateByFactory(default(global::TestCase.FactoryDestination?), source!);
+                destination1!.Value = 3 + source!.Value;
+
+                return destination1;
+            }
+
             int value = (destination?.Value ?? 3) + source!.Value;
 
             destination!.Value = value;
@@ -633,6 +746,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 Child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source!.Child, context)
@@ -645,6 +763,19 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination()
+                {
+                    Child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source!.Child, context)
+                };
+            }
+
             global::TestCase.ChildDestination? child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source!.Child, destination?.Child, context);
 
             destination!.Child = child;
@@ -760,6 +891,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.ValueDestination()
             {
                 Value = default(global::TestCase.ValueDestination).Value + source!.Value
@@ -772,6 +908,11 @@ namespace TestCase
             global::TestCase.ValueDestination destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             int value = destination.Value + source!.Value;
 
             destination.Value = value;
@@ -784,6 +925,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.NullableDestination()
             {
                 Value = -1 + source!.Value
@@ -796,9 +942,17 @@ namespace TestCase
             global::TestCase.NullableDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                return new global::TestCase.NullableDestination()
+                {
+                    Value = -1 + source!.Value
+                };
             }
 
             var destinationValue = destination.Value;
@@ -933,6 +1087,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination(
                 construction: 0 + source!.Construction)
             {
@@ -947,6 +1106,21 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination(
+                    construction: 0 + source!.Construction)
+                {
+                    InitOnly = 0 + source!.InitOnly,
+                    Assignable = 0 + source!.Assignable
+                };
+            }
+
             int assignable = (destination?.Assignable ?? 0) + source!.Assignable;
 
             destination!.Assignable = assignable;
@@ -1046,6 +1220,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 DestinationValue = 0 + source!.DestinationValue
@@ -1058,9 +1237,17 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                return new global::TestCase.Destination()
+                {
+                    DestinationValue = 0 + source!.DestinationValue
+                };
             }
 
             var destinationValue1 = destination.Value;
@@ -1111,7 +1298,7 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
@@ -1125,8 +1312,9 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and the previous destination value
-                         /// and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and the destination's
+                         /// previous value and describes the mapping. The previous value is
+                         /// <see langword="default"/> when no destination exists.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(

@@ -883,6 +883,8 @@ internal static class ConventionConstructorMappingPlanner
         var result = new HashSet<string>(StringComparer.Ordinal)
         {
             "source",
+            "destination",
+            "destinationValue",
             "context"
         };
 

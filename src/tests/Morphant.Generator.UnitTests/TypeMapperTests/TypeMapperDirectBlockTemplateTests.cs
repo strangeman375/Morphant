@@ -101,14 +101,28 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!);
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!);
+        }
 
         private int MapByTemplate(global::TestCase.Source input)
         {
@@ -226,14 +240,28 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!, default(int));
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!, default(int));
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!, destination);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!, destination);
+        }
 
         private static int MapByTemplate(global::TestCase.Source input, int previous)
         {
@@ -319,14 +347,28 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!);
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!);
+        }
 
         private int MapByTemplate(global::TestCase.Source input)
         {
@@ -337,14 +379,28 @@ namespace TestCase
         long global::Morphant.ITypeMapper<global::TestCase.Source, long>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate1(source!);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate1(source!);
+        }
 
         /// <inheritdoc/>
         long global::Morphant.ITypeMapper<global::TestCase.Source, long>.Map(
             global::TestCase.Source? source,
             long destination,
             global::Morphant.MappingContext context)
-            => MapByTemplate1(source!);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate1(source!);
+        }
 
         private long MapByTemplate1(global::TestCase.Source input)
         {
@@ -434,14 +490,28 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate2(source!, default(int));
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate2(source!, default(int));
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Map(
             global::TestCase.Source? source,
             int destination,
             global::Morphant.MappingContext context)
-            => MapByTemplate2(source!, destination);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate2(source!, destination);
+        }
 
         private int MapByTemplate2(global::TestCase.Source source, int destination)
         {
@@ -525,14 +595,33 @@ namespace TestCase
         string? global::Morphant.ITypeMapper<global::TestCase.Source, string>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!, default(string?));
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate(source!, default(string?));
+        }
 
         /// <inheritdoc/>
         string? global::Morphant.ITypeMapper<global::TestCase.Source, string>.Map(
             global::TestCase.Source? source,
             string? destination,
             global::Morphant.MappingContext context)
-            => MapByTemplate(source!, destination);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return MapByTemplate(source!, default(string?));
+            }
+
+            return MapByTemplate(source!, destination);
+        }
 
         private string MapByTemplate(global::TestCase.Source input, string? previous)
         {
@@ -543,14 +632,33 @@ namespace TestCase
         int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => MapByTemplate1(source!, default(int?));
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapByTemplate1(source!, default(int?));
+        }
 
         /// <inheritdoc/>
         int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Map(
             global::TestCase.Source? source,
             int? destination,
             global::Morphant.MappingContext context)
-            => MapByTemplate1(source!, destination);
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return MapByTemplate1(source!, default(int?));
+            }
+
+            return MapByTemplate1(source!, destination);
+        }
 
         private int? MapByTemplate1(global::TestCase.Source input, int? previous)
         {
@@ -675,31 +783,65 @@ namespace TestCase
         int global::Morphant.ITypeMapper<global::TestCase.CapturedSource, int>.Map(
             global::TestCase.CapturedSource? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotSupportedException(
                 "Template contains a capture that cannot be transferred to the generated mapper.");
+        }
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.CapturedSource, int>.Map(
             global::TestCase.CapturedSource? source,
             int destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotSupportedException(
                 "Template contains a capture that cannot be transferred to the generated mapper.");
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.FullTemplateSource, global::TestCase.Destination>.Map(
             global::TestCase.FullTemplateSource? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotSupportedException(
                 "Template block lambda contains a statement that is not supported.");
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.FullTemplateSource, global::TestCase.Destination>.Map(
             global::TestCase.FullTemplateSource? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotSupportedException(
+                    "Template block lambda contains a statement that is not supported.");
+            }
+
+            throw new global::System.NotSupportedException(
                 "Template block lambda contains a statement that is not supported.");
+        }
     }
 }
 """;
@@ -747,7 +889,7 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
@@ -761,8 +903,9 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and the previous destination value
-                         /// and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and the destination's
+                         /// previous value and describes the mapping. The previous value is
+                         /// <see langword="default"/> when no destination exists.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(

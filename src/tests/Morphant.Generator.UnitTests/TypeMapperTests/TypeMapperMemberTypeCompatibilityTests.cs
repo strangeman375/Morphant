@@ -117,6 +117,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 Numeric = source!.Numeric,
@@ -141,6 +146,31 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination()
+                {
+                    Numeric = source!.Numeric,
+                    LiftedNumeric = source!.LiftedNumeric,
+                    NullableNumeric = source!.NullableNumeric,
+                    Reference = source!.Reference,
+                    Interface = source!.Interface,
+                    Boxed = source!.Boxed,
+                    NullableBoxed = source!.NullableBoxed,
+                    Covariant = source!.Covariant,
+                    Collection = source!.Collection,
+                    Array = source!.Array,
+                    Tuple = source!.Tuple,
+                    NullableTarget = source!.NullableTarget,
+                    ToDynamic = source!.ToDynamic
+                };
+            }
+
             destination!.Numeric = source!.Numeric;
             destination!.LiftedNumeric = source!.LiftedNumeric;
             destination!.NullableNumeric = source!.NullableNumeric;
@@ -269,6 +299,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 DynamicToObject = source!.DynamicToObject,
@@ -282,6 +317,20 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination()
+                {
+                    DynamicToObject = source!.DynamicToObject,
+                    Included = source!.Included
+                };
+            }
+
             destination!.DynamicToObject = source!.DynamicToObject;
             destination!.Included = source!.Included;
 
@@ -385,6 +434,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 Safe = source!.Safe,
@@ -399,6 +453,21 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination()
+                {
+                    Safe = source!.Safe,
+                    SafeNullableTarget = source!.SafeNullableTarget,
+                    MaybeNullNullableTarget = source!.MaybeNullNullableTarget
+                };
+            }
+
             destination!.Safe = source!.Safe;
             destination!.SafeNullableTarget = source!.SafeNullableTarget;
             destination!.MaybeNullNullableTarget = source!.MaybeNullNullableTarget;
@@ -516,6 +585,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.Destination()
             {
                 NotNull = source!.NotNull,
@@ -533,6 +607,24 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.Destination()
+                {
+                    NotNull = source!.NotNull,
+                    AcceptedByAllowNull = source!.AcceptedByAllowNull,
+                    MaybeNullAcceptedByAllowNull = source!.MaybeNullAcceptedByAllowNull,
+                    NonNullAcceptedByDisallowNull = source!.NonNullAcceptedByDisallowNull,
+                    NotNullField = source!.NotNullField,
+                    AcceptedByAllowNullField = source!.AcceptedByAllowNullField
+                };
+            }
+
             destination!.NotNull = source!.NotNull;
             destination!.AcceptedByAllowNull = source!.AcceptedByAllowNull;
             destination!.MaybeNullAcceptedByAllowNull = source!.MaybeNullAcceptedByAllowNull;
@@ -622,6 +714,11 @@ namespace TestCase
             global::TestCase.LegacySource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.ModernDestination()
             {
                 ToNonNullable = source!.ToNonNullable,
@@ -635,6 +732,20 @@ namespace TestCase
             global::TestCase.ModernDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.ModernDestination()
+                {
+                    ToNonNullable = source!.ToNonNullable,
+                    ToNullable = source!.ToNullable
+                };
+            }
+
             destination!.ToNonNullable = source!.ToNonNullable;
             destination!.ToNullable = source!.ToNullable;
 
@@ -646,6 +757,11 @@ namespace TestCase
             global::TestCase.ModernSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.LegacyDestination()
             {
                 FromNullable = source!.FromNullable
@@ -658,6 +774,19 @@ namespace TestCase
             global::TestCase.LegacyDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.LegacyDestination()
+                {
+                    FromNullable = source!.FromNullable
+                };
+            }
+
             destination!.FromNullable = source!.FromNullable;
 
             return destination;
@@ -736,6 +865,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             return new global::TestCase.SafeInitDestination()
             {
                 Compatible = source!.Compatible
@@ -747,20 +881,54 @@ namespace TestCase
             global::TestCase.Source? source,
             global::TestCase.SafeInitDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return new global::TestCase.SafeInitDestination()
+                {
+                    Compatible = source!.Compatible
+                };
+            }
+
+            return destination;
+        }
 
         /// <inheritdoc/>
         global::TestCase.RequiredDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RequiredDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotImplementedException();
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotImplementedException();
+        }
 
         /// <inheritdoc/>
         global::TestCase.RequiredDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RequiredDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.RequiredDestination? destination,
             global::Morphant.MappingContext context)
-            => destination;
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotImplementedException();
+            }
+
+            return destination;
+        }
     }
 }
 """;
@@ -840,6 +1008,11 @@ namespace TestCase
                 global::TestCase.Source<TValue>? source,
                 global::Morphant.MappingContext context)
             {
+                if (source is null)
+                {
+                    return default;
+                }
+
                 return new global::TestCase.Destination()
                 {
                     Reference = source!.Reference,
@@ -853,6 +1026,20 @@ namespace TestCase
                 global::TestCase.Destination? destination,
                 global::Morphant.MappingContext context)
             {
+                if (source is null)
+                {
+                    return default;
+                }
+
+                if (destination is null)
+                {
+                    return new global::TestCase.Destination()
+                    {
+                        Reference = source!.Reference,
+                        Boxed = source!.Boxed
+                    };
+                }
+
                 destination!.Reference = source!.Reference;
                 destination!.Boxed = source!.Boxed;
 

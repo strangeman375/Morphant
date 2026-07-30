@@ -26,6 +26,8 @@ internal readonly record struct TypeMapperMappingModel
     string MaybeNullSourceTypeName,
     string DestinationTypeName,
     string MaybeNullDestinationTypeName,
+    bool SourceCanBeNull,
+    bool DestinationCanBeNull,
     string? MapNewDirectExpression,
     string? MapExistingDirectExpression,
     TypeMapperFactoryMappingModel? MapNewFactory,

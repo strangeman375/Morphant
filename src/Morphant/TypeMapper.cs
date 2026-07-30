@@ -31,7 +31,13 @@ public interface ITypeMapper<in TSource, TDestination>
     /// </returns>
     /// <exception cref="NotSupportedException">
     /// The effective <see cref="MappingMode"/> is invalid or does not include
-    /// <see cref="MappingMode.MapNew"/>.
+    /// <see cref="MappingMode.MapNew"/>, or the effective
+    /// <see cref="NullSourceHandling"/> is invalid.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="source"/> is <see langword="null"/> and the effective
+    /// <see cref="NullSourceHandling"/> is
+    /// <see cref="Morphant.NullSourceHandling.Throw"/>.
     /// </exception>
     TDestination? Map(TSource? source, MappingContext context);
 
@@ -56,7 +62,16 @@ public interface ITypeMapper<in TSource, TDestination>
     /// </returns>
     /// <exception cref="NotSupportedException">
     /// The effective <see cref="MappingMode"/> is invalid or does not include
-    /// <see cref="MappingMode.MapExisting"/>.
+    /// <see cref="MappingMode.MapExisting"/>, or an effective null-handling
+    /// setting is invalid.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="source"/> is <see langword="null"/> and the effective
+    /// <see cref="NullSourceHandling"/> is
+    /// <see cref="Morphant.NullSourceHandling.Throw"/>, or
+    /// <paramref name="destination"/> is <see langword="null"/> and the
+    /// effective <see cref="NullDestinationHandling"/> is
+    /// <see cref="Morphant.NullDestinationHandling.Throw"/>.
     /// </exception>
     TDestination? Map(
         TSource? source,

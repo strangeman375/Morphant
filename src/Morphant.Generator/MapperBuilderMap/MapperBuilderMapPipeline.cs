@@ -86,15 +86,64 @@ internal static class MapperBuilderMapPipeline
                     method,
                     knownSymbols))
             {
-                settings =
-                    TryGetMappingMode(
+                settings = settings with
+                {
+                    MappingMode =
+                        TryGetMappingMode(
+                            invocation,
+                            method,
+                            semanticModel,
+                            cancellationToken,
+                            out var rootMappingMode)
+                            ? rootMappingMode
+                            : null
+                };
+                continue;
+            }
+
+            if (IsMapperBuilderNullSourceHandlingMethod(
+                    method,
+                    knownSymbols))
+            {
+                var nullSourceHandling =
+                    TryGetNullSourceHandling(
                         invocation,
                         method,
                         semanticModel,
                         cancellationToken,
-                        out var rootMappingMode)
-                        ? new MappingSettings(rootMappingMode)
-                        : MappingSettings.Invalid;
+                        out var parsedNullSourceHandling)
+                        ? parsedNullSourceHandling
+                        : (NullSourceHandlingValue?)null;
+
+                ApplyNullSourceHandling(
+                    invocation,
+                    nullSourceHandling,
+                    settings,
+                    registrations,
+                    out settings);
+                continue;
+            }
+
+            if (IsMapperBuilderNullDestinationHandlingMethod(
+                    method,
+                    knownSymbols))
+            {
+                var nullDestinationHandling =
+                    TryGetNullDestinationHandling(
+                        invocation,
+                        method,
+                        semanticModel,
+                        cancellationToken,
+                        out var parsedNullDestinationHandling)
+                        ? parsedNullDestinationHandling
+                        : (NullDestinationHandlingValue?)null;
+
+                ApplyNullDestinationHandling(
+                    invocation,
+                    nullDestinationHandling,
+                    settings,
+                    registrations,
+                    out settings);
                 continue;
             }
 
@@ -104,15 +153,18 @@ internal static class MapperBuilderMapPipeline
                 continue;
             }
 
-            var mappingSettings =
-                TryGetMappingMode(
-                    invocation,
-                    method,
-                    semanticModel,
-                    cancellationToken,
-                    out var mappingMode)
-                    ? new MappingSettings(mappingMode)
-                    : MappingSettings.Invalid;
+            var mappingSettings = MappingSettings.Default with
+            {
+                MappingMode =
+                    TryGetMappingMode(
+                        invocation,
+                        method,
+                        semanticModel,
+                        cancellationToken,
+                        out var mappingMode)
+                        ? mappingMode
+                        : null
+            };
 
             var sourceType = method.TypeArguments[0];
             var destinationType = method.TypeArguments[1];
@@ -144,12 +196,193 @@ internal static class MapperBuilderMapPipeline
             registrations.ToImmutable());
     }
 
+    private static void ApplyNullSourceHandling(
+        InvocationExpressionSyntax invocation,
+        NullSourceHandlingValue? value,
+        MappingSettings rootSettings,
+        ImmutableArray<MapperBuilderMapRegistrationInfo>.Builder
+            registrations,
+        out MappingSettings updatedRootSettings)
+    {
+        if (TryFindRegistration(
+                invocation,
+                registrations,
+                out var registrationIndex))
+        {
+            var registration = registrations[registrationIndex];
+
+            registrations[registrationIndex] = registration with
+            {
+                Settings = registration.Settings with
+                {
+                    NullSourceHandling = value
+                }
+            };
+            updatedRootSettings = rootSettings;
+            return;
+        }
+
+        if (invocation
+            .DescendantNodesAndSelf()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(IsMapInvocationCandidate))
+        {
+            updatedRootSettings = rootSettings;
+            return;
+        }
+
+        updatedRootSettings = rootSettings with
+        {
+            NullSourceHandling = value
+        };
+    }
+
+    private static void ApplyNullDestinationHandling(
+        InvocationExpressionSyntax invocation,
+        NullDestinationHandlingValue? value,
+        MappingSettings rootSettings,
+        ImmutableArray<MapperBuilderMapRegistrationInfo>.Builder
+            registrations,
+        out MappingSettings updatedRootSettings)
+    {
+        if (TryFindRegistration(
+                invocation,
+                registrations,
+                out var registrationIndex))
+        {
+            var registration = registrations[registrationIndex];
+
+            registrations[registrationIndex] = registration with
+            {
+                Settings = registration.Settings with
+                {
+                    NullDestinationHandling = value
+                }
+            };
+            updatedRootSettings = rootSettings;
+            return;
+        }
+
+        if (invocation
+            .DescendantNodesAndSelf()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(IsMapInvocationCandidate))
+        {
+            updatedRootSettings = rootSettings;
+            return;
+        }
+
+        updatedRootSettings = rootSettings with
+        {
+            NullDestinationHandling = value
+        };
+    }
+
+    private static bool TryFindRegistration(
+        InvocationExpressionSyntax settingInvocation,
+        ImmutableArray<MapperBuilderMapRegistrationInfo>.Builder
+            registrations,
+        out int registrationIndex)
+    {
+        for (var index = registrations.Count - 1;
+             index >= 0;
+             index--)
+        {
+            if (settingInvocation
+                .DescendantNodesAndSelf()
+                .Contains(registrations[index].Syntax))
+            {
+                registrationIndex = index;
+                return true;
+            }
+        }
+
+        registrationIndex = -1;
+        return false;
+    }
+
     private static bool TryGetMappingMode(
         InvocationExpressionSyntax invocation,
         IMethodSymbol method,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
         out MappingModeValue mappingMode)
+    {
+        if (!TryGetInt32Constant(
+                invocation,
+                method,
+                semanticModel,
+                cancellationToken,
+                out var numericValue) ||
+            (numericValue &
+             ~(int)MappingModeValue.MapNewAndExisting) != 0)
+        {
+            mappingMode = default;
+            return false;
+        }
+
+        mappingMode = (MappingModeValue)numericValue;
+        return true;
+    }
+
+    private static bool TryGetNullSourceHandling(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out NullSourceHandlingValue nullSourceHandling)
+    {
+        if (!TryGetInt32Constant(
+                invocation,
+                method,
+                semanticModel,
+                cancellationToken,
+                out var numericValue) ||
+            !Enum.IsDefined(
+                typeof(NullSourceHandlingValue),
+                numericValue))
+        {
+            nullSourceHandling = default;
+            return false;
+        }
+
+        nullSourceHandling =
+            (NullSourceHandlingValue)numericValue;
+        return true;
+    }
+
+    private static bool TryGetNullDestinationHandling(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out NullDestinationHandlingValue nullDestinationHandling)
+    {
+        if (!TryGetInt32Constant(
+                invocation,
+                method,
+                semanticModel,
+                cancellationToken,
+                out var numericValue) ||
+            !Enum.IsDefined(
+                typeof(NullDestinationHandlingValue),
+                numericValue))
+        {
+            nullDestinationHandling = default;
+            return false;
+        }
+
+        nullDestinationHandling =
+            (NullDestinationHandlingValue)numericValue;
+        return true;
+    }
+
+    private static bool TryGetInt32Constant(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out int numericValue)
     {
         object? value;
 
@@ -160,7 +393,7 @@ internal static class MapperBuilderMapPipeline
                 method.Parameters[0].ExplicitDefaultValue is not
                     { } defaultValue)
             {
-                mappingMode = default;
+                numericValue = default;
                 return false;
             }
 
@@ -177,7 +410,7 @@ internal static class MapperBuilderMapPipeline
 
             if (!constantValue.HasValue)
             {
-                mappingMode = default;
+                numericValue = default;
                 return false;
             }
 
@@ -185,19 +418,17 @@ internal static class MapperBuilderMapPipeline
         }
         else
         {
-            mappingMode = default;
+            numericValue = default;
             return false;
         }
 
-        if (value is not int numericValue ||
-            (numericValue &
-             ~(int)MappingModeValue.MapNewAndExisting) != 0)
+        if (value is not int parsedValue)
         {
-            mappingMode = default;
+            numericValue = default;
             return false;
         }
 
-        mappingMode = (MappingModeValue)numericValue;
+        numericValue = parsedValue;
         return true;
     }
 
@@ -558,6 +789,41 @@ internal static class MapperBuilderMapPipeline
                SymbolEqualityComparer.Default.Equals(
                    method.ContainingType,
                    knownSymbols.MapperBuilder);
+    }
+
+    private static bool IsMapperBuilderNullSourceHandlingMethod(
+        IMethodSymbol method,
+        KnownSymbols knownSymbols)
+    {
+        return IsMapperBuilderBaseSettingMethod(
+            method,
+            knownSymbols,
+            "NullSourceHandling");
+    }
+
+    private static bool IsMapperBuilderNullDestinationHandlingMethod(
+        IMethodSymbol method,
+        KnownSymbols knownSymbols)
+    {
+        return IsMapperBuilderBaseSettingMethod(
+            method,
+            knownSymbols,
+            "NullDestinationHandling");
+    }
+
+    private static bool IsMapperBuilderBaseSettingMethod(
+        IMethodSymbol method,
+        KnownSymbols knownSymbols,
+        string methodName)
+    {
+        return method.Name == methodName &&
+               method.MethodKind == MethodKind.Ordinary &&
+               !method.IsStatic &&
+               method.Parameters.Length == 1 &&
+               method.TypeArguments.Length == 0 &&
+               SymbolEqualityComparer.Default.Equals(
+                   method.ContainingType.OriginalDefinition,
+                   knownSymbols.MapperBuilderBase);
     }
 
     private readonly record struct MapperBuilderMapIdentity(

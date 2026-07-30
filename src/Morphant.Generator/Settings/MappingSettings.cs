@@ -12,21 +12,51 @@ internal enum MappingModeValue
     MapNewAndExisting = MapNew | MapExisting
 }
 
+internal enum NullSourceHandlingValue
+{
+    Default = 0,
+
+    ReturnNull,
+
+    ReturnDestination,
+
+    Throw
+}
+
+internal enum NullDestinationHandlingValue
+{
+    Default = 0,
+
+    CreateNew,
+
+    Throw
+}
+
 internal readonly record struct MappingSettings(
-    MappingModeValue? MappingMode)
+    MappingModeValue? MappingMode,
+    NullSourceHandlingValue? NullSourceHandling,
+    NullDestinationHandlingValue? NullDestinationHandling)
 {
     public static MappingSettings Default =>
-        new(MappingModeValue.Default);
-
-    public static MappingSettings Invalid =>
-        new(null);
+        new(
+            MappingModeValue.Default,
+            NullSourceHandlingValue.Default,
+            NullDestinationHandlingValue.Default);
 }
 
 internal readonly record struct EffectiveMappingSettings(
-    MappingModeValue? MappingMode)
+    MappingModeValue? MappingMode,
+    NullSourceHandlingValue? NullSourceHandling,
+    NullDestinationHandlingValue? NullDestinationHandling)
 {
     public bool IsMappingModeValid =>
         MappingMode.HasValue;
+
+    public bool IsNullSourceHandlingValid =>
+        NullSourceHandling.HasValue;
+
+    public bool IsNullDestinationHandlingValid =>
+        NullDestinationHandling.HasValue;
 
     public bool SupportsMapNew =>
         MappingMode is { } mappingMode &&
@@ -35,6 +65,13 @@ internal readonly record struct EffectiveMappingSettings(
     public bool SupportsMapExisting =>
         MappingMode is { } mappingMode &&
         (mappingMode & MappingModeValue.MapExisting) != 0;
+
+    public bool HasExecutableOperation =>
+        IsMappingModeValid &&
+        IsNullSourceHandlingValid &&
+        (SupportsMapNew ||
+         SupportsMapExisting &&
+         IsNullDestinationHandlingValid);
 
     public static EffectiveMappingSettings Resolve(
         MappingSettings assemblySettings,
@@ -46,6 +83,16 @@ internal readonly record struct EffectiveMappingSettings(
                 assemblySettings.MappingMode,
                 rootSettings.MappingMode,
                 mappingSettings.MappingMode,
-                MappingModeValue.MapNewAndExisting));
+                MappingModeValue.MapNewAndExisting),
+            SettingValueResolver.Resolve(
+                assemblySettings.NullSourceHandling,
+                rootSettings.NullSourceHandling,
+                mappingSettings.NullSourceHandling,
+                NullSourceHandlingValue.ReturnNull),
+            SettingValueResolver.Resolve(
+                assemblySettings.NullDestinationHandling,
+                rootSettings.NullDestinationHandling,
+                mappingSettings.NullDestinationHandling,
+                NullDestinationHandlingValue.CreateNew));
     }
 }

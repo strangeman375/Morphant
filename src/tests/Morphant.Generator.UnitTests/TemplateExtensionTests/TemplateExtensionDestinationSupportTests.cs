@@ -1404,7 +1404,7 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{type}}> Template<TSource>(
@@ -1418,8 +1418,9 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and the previous destination value
-                         /// and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and the destination's
+                         /// previous value and describes the mapping. The previous value is
+                         /// <see langword="default"/> when no destination exists.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{type}}> Template<TSource>(
@@ -1450,7 +1451,7 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
@@ -1464,8 +1465,9 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and the previous destination value
-                         /// and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and the destination's
+                         /// previous value and describes the mapping. The previous value is
+                         /// <see langword="default"/> when no destination exists.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
@@ -1556,7 +1558,7 @@ namespace Morphant
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the source value and describes the mapping.
+        /// A lambda expression that receives the non-null source value and describes the mapping.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<global::TestCase.User?>> Template<TSource>(
@@ -1570,8 +1572,9 @@ namespace Morphant
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the source value and the previous destination value
-        /// and describes the mapping.
+        /// A lambda expression that receives the non-null source value and the destination's
+        /// previous value and describes the mapping. The previous value is
+        /// <see langword="default"/> when no destination exists.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<global::TestCase.User?>> Template<TSource>(
@@ -1598,7 +1601,7 @@ namespace Morphant
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the source value and describes the mapping.
+        /// A lambda expression that receives the non-null source value and describes the mapping.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<int>> Template<TSource>(
@@ -1612,8 +1615,9 @@ namespace Morphant
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the source value and the previous destination value
-        /// and describes the mapping.
+        /// A lambda expression that receives the non-null source value and the destination's
+        /// previous value and describes the mapping. The previous value is
+        /// <see langword="default"/> when no destination exists.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<int>> Template<TSource>(
@@ -1640,7 +1644,7 @@ namespace Morphant
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the source value and describes the mapping.
+        /// A lambda expression that receives the non-null source value and describes the mapping.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<string>> Template<TSource>(
@@ -1654,8 +1658,9 @@ namespace Morphant
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the source value and the previous destination value
-        /// and describes the mapping.
+        /// A lambda expression that receives the non-null source value and the destination's
+        /// previous value and describes the mapping. The previous value is
+        /// <see langword="default"/> when no destination exists.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Destination<string>> Template<TSource>(
@@ -1682,7 +1687,7 @@ namespace Morphant
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the source value and describes the mapping.
+        /// A lambda expression that receives the non-null source value and describes the mapping.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Outer<int>.Destination<string?>> Template<TSource>(
@@ -1696,8 +1701,9 @@ namespace Morphant
         /// <typeparam name="TSource">The source type.</typeparam>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the source value and the previous destination value
-        /// and describes the mapping.
+        /// A lambda expression that receives the non-null source value and the destination's
+        /// previous value and describes the mapping. The previous value is
+        /// <see langword="default"/> when no destination exists.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, global::TestCase.Outer<int>.Destination<string?>> Template<TSource>(

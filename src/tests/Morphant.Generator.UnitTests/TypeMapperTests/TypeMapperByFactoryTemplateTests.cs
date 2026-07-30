@@ -118,15 +118,20 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             var factoryValue = global::System.Math.Abs(source!.FactoryValue);
 
             global::TestCase.Destination CreateByFactory() => CreateDestination(factoryValue);
 
-            global::TestCase.Destination destination = CreateByFactory();
-            destination!.Explicit = Adjust(source!.Explicit);
-            destination!.Remaining = source!.Remaining;
+            global::TestCase.Destination destination1 = CreateByFactory();
+            destination1!.Explicit = Adjust(source!.Explicit);
+            destination1!.Remaining = source!.Remaining;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -135,6 +140,24 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                var factoryValue = global::System.Math.Abs(source!.FactoryValue);
+
+                global::TestCase.Destination CreateByFactory() => CreateDestination(factoryValue);
+
+                global::TestCase.Destination destination1 = CreateByFactory();
+                destination1!.Explicit = Adjust(source!.Explicit);
+                destination1!.Remaining = source!.Remaining;
+
+                return destination1;
+            }
+
             destination!.Explicit = Adjust(source!.Explicit);
             destination!.Remaining = source!.Remaining;
 
@@ -256,13 +279,18 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.ConcreteInterfaceDestination CreateByFactory(global::TestCase.Source s) => new global::TestCase.ConcreteInterfaceDestination(s.Id);
 
-            global::TestCase.IInterfaceDestination destination = CreateByFactory(source!);
-            destination!.Name = source!.Name + " interface";
-            destination!.Id = source!.Id;
+            global::TestCase.IInterfaceDestination destination1 = CreateByFactory(source!);
+            destination1!.Name = source!.Name + " interface";
+            destination1!.Id = source!.Id;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -271,6 +299,22 @@ namespace TestCase
             global::TestCase.IInterfaceDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::TestCase.ConcreteInterfaceDestination CreateByFactory(global::TestCase.Source s) => new global::TestCase.ConcreteInterfaceDestination(s.Id);
+
+                global::TestCase.IInterfaceDestination destination1 = CreateByFactory(source!);
+                destination1!.Name = source!.Name + " interface";
+                destination1!.Id = source!.Id;
+
+                return destination1;
+            }
+
             destination!.Name = source!.Name + " interface";
             destination!.Id = source!.Id;
 
@@ -399,13 +443,18 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.Destination CreateByFactory(global::TestCase.Source s) => new global::TestCase.Destination(s.Name, 1);
 
-            global::TestCase.Destination destination = CreateByFactory(source!);
-            destination!.Code = source!.Code;
-            destination!.Remaining = source!.Remaining;
+            global::TestCase.Destination destination1 = CreateByFactory(source!);
+            destination1!.Code = source!.Code;
+            destination1!.Remaining = source!.Remaining;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -414,6 +463,22 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::TestCase.Destination CreateByFactory(global::TestCase.Source s) => new global::TestCase.Destination(s.Name, 1);
+
+                global::TestCase.Destination destination1 = CreateByFactory(source!);
+                destination1!.Code = source!.Code;
+                destination1!.Remaining = source!.Remaining;
+
+                return destination1;
+            }
+
             destination!.Code = source!.Code;
             destination!.Remaining = source!.Remaining;
 
@@ -573,14 +638,19 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.ValueDestination CreateByFactory() => new global::TestCase.ValueDestination();
 
-            global::TestCase.ValueDestination? destination = CreateByFactory();
-            var destinationValue = destination.Value;
-            destinationValue.Value = source!.Value + 1;
-            destinationValue.Remaining = source!.Remaining;
+            global::TestCase.ValueDestination? destination1 = CreateByFactory();
+            var destinationValue1 = destination1.Value;
+            destinationValue1.Value = source!.Value + 1;
+            destinationValue1.Remaining = source!.Remaining;
 
-            return destinationValue;
+            return destinationValue1;
         }
 
         /// <inheritdoc/>
@@ -589,9 +659,21 @@ namespace TestCase
             global::TestCase.ValueDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                global::TestCase.ValueDestination CreateByFactory() => new global::TestCase.ValueDestination();
+
+                global::TestCase.ValueDestination? destination1 = CreateByFactory();
+                var destinationValue1 = destination1.Value;
+                destinationValue1.Value = source!.Value + 1;
+                destinationValue1.Remaining = source!.Remaining;
+
+                return destinationValue1;
             }
 
             var destinationValue = destination.Value;
@@ -606,13 +688,18 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.GenericDestination<int> CreateByFactory(global::TestCase.Source s) => new global::TestCase.GenericDestination<int>(s.Value + 2);
 
-            global::TestCase.GenericDestination<int> destination = CreateByFactory(source!);
-            destination!.Remaining = source!.Remaining + 2;
-            destination!.Value = source!.Value;
+            global::TestCase.GenericDestination<int> destination1 = CreateByFactory(source!);
+            destination1!.Remaining = source!.Remaining + 2;
+            destination1!.Value = source!.Value;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -621,6 +708,22 @@ namespace TestCase
             global::TestCase.GenericDestination<int>? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::TestCase.GenericDestination<int> CreateByFactory(global::TestCase.Source s) => new global::TestCase.GenericDestination<int>(s.Value + 2);
+
+                global::TestCase.GenericDestination<int> destination1 = CreateByFactory(source!);
+                destination1!.Remaining = source!.Remaining + 2;
+                destination1!.Value = source!.Value;
+
+                return destination1;
+            }
+
             destination!.Remaining = source!.Remaining + 2;
             destination!.Value = source!.Value;
 
@@ -735,12 +838,17 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             static global::TestCase.Destination CreateByFactory() => null!;
 
-            global::TestCase.Destination destination = CreateByFactory();
-            destination!.Value = source!.Value + 1;
+            global::TestCase.Destination destination1 = CreateByFactory();
+            destination1!.Value = source!.Value + 1;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -749,6 +857,21 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                static global::TestCase.Destination CreateByFactory() => null!;
+
+                global::TestCase.Destination destination1 = CreateByFactory();
+                destination1!.Value = source!.Value + 1;
+
+                return destination1;
+            }
+
             destination!.Value = source!.Value + 1;
 
             return destination;
@@ -863,12 +986,17 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.Destination CreateByFactory() => new global::TestCase.Destination((byte)10);
 
-            global::TestCase.Destination destination = CreateByFactory();
-            destination!.Value = source!.Value + 20;
+            global::TestCase.Destination destination1 = CreateByFactory();
+            destination1!.Value = source!.Value + 20;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -877,6 +1005,21 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::TestCase.Destination CreateByFactory() => new global::TestCase.Destination((byte)10);
+
+                global::TestCase.Destination destination1 = CreateByFactory();
+                destination1!.Value = source!.Value + 20;
+
+                return destination1;
+            }
+
             destination!.Value = source!.Value + 20;
 
             return destination;
@@ -997,16 +1140,36 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotSupportedException(
                 "Template contains a capture that cannot be transferred to the generated mapper.");
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotSupportedException(
+                    "Template contains a capture that cannot be transferred to the generated mapper.");
+            }
+
+            throw new global::System.NotSupportedException(
                 "Template contains a capture that cannot be transferred to the generated mapper.");
+        }
     }
 }
 """;
@@ -1191,8 +1354,15 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.LocalSource, global::TestCase.Destination>.Map(
             global::TestCase.LocalSource? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotSupportedException(
                 "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.LocalSource, global::TestCase.Destination>.Map(
@@ -1200,6 +1370,17 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotSupportedException(
+                    "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+            }
+
             destination!.Value = source!.Value + 1;
 
             return destination;
@@ -1209,8 +1390,15 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.BuilderSource, global::TestCase.Destination>.Map(
             global::TestCase.BuilderSource? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotSupportedException(
                 "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.BuilderSource, global::TestCase.Destination>.Map(
@@ -1218,6 +1406,17 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotSupportedException(
+                    "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+            }
+
             destination!.Value = source!.Value + 2;
 
             return destination;
@@ -1227,8 +1426,15 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureLocalFunctionSource, global::TestCase.Destination>.Map(
             global::TestCase.ConfigureLocalFunctionSource? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotSupportedException(
                 "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureLocalFunctionSource, global::TestCase.Destination>.Map(
@@ -1236,6 +1442,17 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotSupportedException(
+                    "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+            }
+
             destination!.Value = source!.Value + 3;
 
             return destination;
@@ -1246,6 +1463,11 @@ namespace TestCase
             global::TestCase.StatementSource? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.Destination CreateByFactory(global::TestCase.StatementSource s)
             {
                 if (s.Value > 0)
@@ -1256,10 +1478,10 @@ namespace TestCase
                 return new global::TestCase.Destination();
             }
 
-            global::TestCase.Destination destination = CreateByFactory(source!);
-            destination!.Value = source!.Value + 4;
+            global::TestCase.Destination destination1 = CreateByFactory(source!);
+            destination1!.Value = source!.Value + 4;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -1268,6 +1490,29 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::TestCase.Destination CreateByFactory(global::TestCase.StatementSource s)
+                {
+                    if (s.Value > 0)
+                    {
+                        return new global::TestCase.Destination(s.Value);
+                    }
+
+                    return new global::TestCase.Destination();
+                }
+
+                global::TestCase.Destination destination1 = CreateByFactory(source!);
+                destination1!.Value = source!.Value + 4;
+
+                return destination1;
+            }
+
             destination!.Value = source!.Value + 4;
 
             return destination;
@@ -1277,8 +1522,15 @@ namespace TestCase
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>.Map(
             global::TestCase.ConfigureStaticLocalFunctionSource? source,
             global::Morphant.MappingContext context)
-            => throw new global::System.NotSupportedException(
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            throw new global::System.NotSupportedException(
                 "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+        }
 
         /// <inheritdoc/>
         global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>.Map(
@@ -1286,6 +1538,17 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                throw new global::System.NotSupportedException(
+                    "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+            }
+
             destination!.Value = source!.Value + 5;
 
             return destination;
@@ -1425,6 +1688,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             var offset = source!.Value + 10;
 
             global::TestCase.Destination CreateByFactory(global::TestCase.Source s)
@@ -1450,10 +1718,10 @@ namespace TestCase
                 }
             }
 
-            global::TestCase.Destination destination = CreateByFactory(source!);
-            destination!.Value = source!.Value;
+            global::TestCase.Destination destination1 = CreateByFactory(source!);
+            destination1!.Value = source!.Value;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -1462,6 +1730,44 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                var offset = source!.Value + 10;
+
+                global::TestCase.Destination CreateByFactory(global::TestCase.Source s)
+                {
+                    static int Normalize(int value) => value < 0 ? -value : value;
+                    var factoryValue = Normalize(s.Value) + offset;
+                    for (var index = 0; index < 2; index++)
+                    {
+                        factoryValue++;
+                    }
+
+                    if (factoryValue == 12)
+                    {
+                        return new global::TestCase.Destination(factoryValue);
+                    }
+
+                    switch (factoryValue)
+                    {
+                        case 13:
+                            throw new global::System.InvalidOperationException();
+                        default:
+                            return new global::TestCase.Destination(factoryValue + 1);
+                    }
+                }
+
+                global::TestCase.Destination destination1 = CreateByFactory(source!);
+                destination1!.Value = source!.Value;
+
+                return destination1;
+            }
+
             destination!.Value = source!.Value;
 
             return destination;
@@ -1585,11 +1891,16 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::System.Func<global::TestCase.Destination> factory = _provider.Create;
-            global::TestCase.Destination destination = factory();
-            destination!.ReceiverCalls = _provider.Calls;
+            if (source is null)
+            {
+                return default;
+            }
 
-            return destination;
+            global::System.Func<global::TestCase.Destination> factory = _provider.Create;
+            global::TestCase.Destination destination1 = factory();
+            destination1!.ReceiverCalls = _provider.Calls;
+
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -1598,6 +1909,20 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::System.Func<global::TestCase.Destination> factory = _provider.Create;
+                global::TestCase.Destination destination1 = factory();
+                destination1!.ReceiverCalls = _provider.Calls;
+
+                return destination1;
+            }
+
             destination!.ReceiverCalls = _provider.Calls;
 
             return destination;
@@ -1796,11 +2121,16 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::System.Func<global::TestCase.MethodGroupDestination> factory = Provider.CreateMethodGroup;
-            global::TestCase.MethodGroupDestination destination = factory();
-            destination!.Value = source!.Value + 1;
+            if (source is null)
+            {
+                return default;
+            }
 
-            return destination;
+            global::System.Func<global::TestCase.MethodGroupDestination> factory = Provider.CreateMethodGroup;
+            global::TestCase.MethodGroupDestination destination1 = factory();
+            destination1!.Value = source!.Value + 1;
+
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -1809,6 +2139,20 @@ namespace TestCase
             global::TestCase.MethodGroupDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::System.Func<global::TestCase.MethodGroupDestination> factory = Provider.CreateMethodGroup;
+                global::TestCase.MethodGroupDestination destination1 = factory();
+                destination1!.Value = source!.Value + 1;
+
+                return destination1;
+            }
+
             destination!.Value = source!.Value + 1;
 
             return destination;
@@ -1819,11 +2163,16 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
-            global::System.Func<global::TestCase.DelegateDestination> factory = source!.Value > 0 ? Factory : _factory;
-            global::TestCase.DelegateDestination destination = factory();
-            destination!.Value = source!.Value + 2;
+            if (source is null)
+            {
+                return default;
+            }
 
-            return destination;
+            global::System.Func<global::TestCase.DelegateDestination> factory = source!.Value > 0 ? Factory : _factory;
+            global::TestCase.DelegateDestination destination1 = factory();
+            destination1!.Value = source!.Value + 2;
+
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -1832,6 +2181,20 @@ namespace TestCase
             global::TestCase.DelegateDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::System.Func<global::TestCase.DelegateDestination> factory = source!.Value > 0 ? Factory : _factory;
+                global::TestCase.DelegateDestination destination1 = factory();
+                destination1!.Value = source!.Value + 2;
+
+                return destination1;
+            }
+
             destination!.Value = source!.Value + 2;
 
             return destination;
@@ -1842,6 +2205,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             var offset = source!.Value + 10;
 
             global::TestCase.BlockLambdaDestination CreateByFactory(global::TestCase.Source s)
@@ -1850,10 +2218,10 @@ namespace TestCase
                 return new global::TestCase.BlockLambdaDestination(factoryValue);
             }
 
-            global::TestCase.BlockLambdaDestination destination = CreateByFactory(source!);
-            destination!.Value = source!.Value + 3;
+            global::TestCase.BlockLambdaDestination destination1 = CreateByFactory(source!);
+            destination1!.Value = source!.Value + 3;
 
-            return destination;
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -1862,6 +2230,27 @@ namespace TestCase
             global::TestCase.BlockLambdaDestination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                var offset = source!.Value + 10;
+
+                global::TestCase.BlockLambdaDestination CreateByFactory(global::TestCase.Source s)
+                {
+                    var factoryValue = s.Value > 0 ? offset + 1 : offset - 1;
+                    return new global::TestCase.BlockLambdaDestination(factoryValue);
+                }
+
+                global::TestCase.BlockLambdaDestination destination1 = CreateByFactory(source!);
+                destination1!.Value = source!.Value + 3;
+
+                return destination1;
+            }
+
             destination!.Value = source!.Value + 3;
 
             return destination;
@@ -1985,6 +2374,11 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
             global::TestCase.Destination CreateByFactory1() => CreateByFactory();
 
             global::TestCase.Destination destination1 = CreateByFactory1();
@@ -1999,6 +2393,21 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                global::TestCase.Destination CreateByFactory1() => CreateByFactory();
+
+                global::TestCase.Destination destination1 = CreateByFactory1();
+                destination1!.Value = source!.Value + 1;
+
+                return destination1;
+            }
+
             destination!.Value = source!.Value + 1;
 
             return destination;
@@ -2044,7 +2453,7 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
@@ -2058,8 +2467,9 @@ namespace TestCase
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the source value and the previous destination value
-                         /// and describes the mapping.
+                         /// A lambda expression that receives the non-null source value and the destination's
+                         /// previous value and describes the mapping. The previous value is
+                         /// <see langword="default"/> when no destination exists.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(

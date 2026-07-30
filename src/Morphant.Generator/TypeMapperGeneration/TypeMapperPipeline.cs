@@ -309,7 +309,7 @@ internal static class TypeMapperPipeline
                     mapInfo.Settings,
                     registration.Settings);
             var mapping =
-                effectiveSettings.IsMappingModeValid
+                effectiveSettings.HasExecutableOperation
                     ? BuildMapping(
                         registration,
                         compilation,
@@ -478,6 +478,10 @@ internal static class TypeMapperPipeline
                 TypeMapperMappingTypePolicy
                     .GetGeneratedMaybeNullTypeName(
                         registration.DestinationType),
+            SourceCanBeNull:
+                CanBeNull(registration.SourceType),
+            DestinationCanBeNull:
+                CanBeNull(registration.DestinationType),
             MapNewDirectExpression: null,
             MapExistingDirectExpression: null,
             MapNewFactory: null,
@@ -606,6 +610,10 @@ internal static class TypeMapperPipeline
                 TypeMapperMappingTypePolicy
                     .GetGeneratedMaybeNullTypeName(
                         registration.DestinationType),
+            SourceCanBeNull:
+                CanBeNull(registration.SourceType),
+            DestinationCanBeNull:
+                CanBeNull(registration.DestinationType),
             MapNewDirectExpression: null,
             MapExistingDirectExpression: null,
             MapNewFactory: null,
@@ -676,6 +684,8 @@ internal static class TypeMapperPipeline
             TypeMapperMappingTypePolicy
                 .GetGeneratedMaybeNullTypeName(
                     registration.DestinationType),
+            CanBeNull(registration.SourceType),
+            CanBeNull(registration.DestinationType),
             templateMapping?.MapNewDirectExpression,
             templateMapping?.MapExistingDirectExpression,
             factoryMapping,
@@ -693,6 +703,25 @@ internal static class TypeMapperPipeline
                     .UnsupportedMessage);
 
         return mapping;
+    }
+
+    private static bool CanBeNull(ITypeSymbol type)
+    {
+        if (type.IsReferenceType)
+        {
+            return true;
+        }
+
+        if (type is INamedTypeSymbol namedType &&
+            namedType.OriginalDefinition.SpecialType ==
+                SpecialType.System_Nullable_T)
+        {
+            return true;
+        }
+
+        return type is ITypeParameterSymbol typeParameter &&
+               !typeParameter.HasValueTypeConstraint &&
+               !typeParameter.HasUnmanagedTypeConstraint;
     }
 
     private static PlannedControlFlowNode BuildPlannedControlFlow(
@@ -1504,11 +1533,15 @@ internal static class TypeMapperPipeline
             ImmutableArray<TemplateBoundLocalPlan> boundLocals,
             INamedTypeSymbol mapperType,
             CSharpCompilation compilation,
-            bool hasDestinationParameter)
+            bool hasDestinationParameter,
+            IEnumerable<string> additionalReservedNames)
     {
         var usedNames =
             ConventionConstructorMappingPlanner
                 .BuildUsedValueLocalNames(mapperType);
+
+        usedNames.UnionWith(
+            additionalReservedNames);
 
         if (hasDestinationParameter)
         {
@@ -1741,14 +1774,24 @@ internal static class TypeMapperPipeline
             boundLocals,
             mapperType,
             compilation,
-            hasDestinationParameter: false);
+            hasDestinationParameter: false,
+            additionalReservedNames: []);
+        var mapNewMaterializedNames =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        CollectSyntheticLocalNames(
+            mapNewRoot,
+            mapNewMaterializedNames);
+
         mapExistingRoot = MaterializeSwitchFallbacks(
             mapExistingRoot,
             runtimeLocals,
             boundLocals,
             mapperType,
             compilation,
-            hasDestinationParameter: true);
+            hasDestinationParameter: true,
+            additionalReservedNames:
+                mapNewMaterializedNames);
 
         var mapNewRequiredLocals =
             CollectRequiredLocals(
@@ -1779,7 +1822,32 @@ internal static class TypeMapperPipeline
                 mapNewRoot,
                 mapperType,
                 hasDestinationParameter: false,
-                mapNew: true);
+                mapNew: true,
+                additionalReservedNames: []);
+        var mapNewGeneratedNames =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var mapNewName in mapNewNames.Values)
+        {
+            AddUsedLocalName(
+                mapNewGeneratedNames,
+                mapNewName);
+        }
+
+        var renamedMapNewRoot =
+            RenameControlFlow(
+                mapNewRoot,
+                mapNewNames,
+                mapNewRequiredLocals);
+
+        CollectGeneratedLocalNames(
+            renamedMapNewRoot,
+            mapNewGeneratedNames,
+            mapNew: true);
+        CollectSyntheticLocalNames(
+            renamedMapNewRoot,
+            mapNewGeneratedNames);
+
         var mapExistingNames =
             AllocateRuntimeLocalNames(
                 runtimeLocals,
@@ -1789,12 +1857,9 @@ internal static class TypeMapperPipeline
                 mapExistingRoot,
                 mapperType,
                 hasDestinationParameter: true,
-                mapNew: false);
-        var renamedMapNewRoot =
-            RenameControlFlow(
-                mapNewRoot,
-                mapNewNames,
-                mapNewRequiredLocals);
+                mapNew: false,
+                additionalReservedNames:
+                    mapNewGeneratedNames);
         var renamedMapExistingRoot =
             RenameControlFlow(
                 mapExistingRoot,
@@ -1815,11 +1880,18 @@ internal static class TypeMapperPipeline
             TypeMapperControlFlowNode root,
             INamedTypeSymbol mapperType,
             bool hasDestinationParameter,
-            bool mapNew)
+            bool mapNew,
+            IEnumerable<string> additionalReservedNames)
     {
         var reservedNames =
             ConventionConstructorMappingPlanner
                 .BuildUsedValueLocalNames(mapperType);
+
+        reservedNames.UnionWith(
+            additionalReservedNames);
+        CollectSyntheticLocalNames(
+            root,
+            reservedNames);
 
         if (hasDestinationParameter)
         {
@@ -2483,6 +2555,53 @@ internal static class TypeMapperPipeline
                     valueLocalName);
             }
         }
+    }
+
+    private static void CollectSyntheticLocalNames(
+        TypeMapperControlFlowNode node,
+        HashSet<string> result)
+    {
+        foreach (var local in node.Locals)
+        {
+            if (local.IsSynthetic)
+            {
+                AddUsedLocalName(
+                    result,
+                    local.Name);
+            }
+        }
+
+        if (node.SwitchExpression is not null)
+        {
+            foreach (var section in node.SwitchSections)
+            {
+                CollectSyntheticLocalNames(
+                    section.Branch,
+                    result);
+            }
+
+            if (node.SwitchContinuation is
+                    { } continuation)
+            {
+                CollectSyntheticLocalNames(
+                    continuation,
+                    result);
+            }
+
+            return;
+        }
+
+        if (node.Condition is null)
+        {
+            return;
+        }
+
+        CollectSyntheticLocalNames(
+            node.WhenTrue!,
+            result);
+        CollectSyntheticLocalNames(
+            node.WhenFalse!,
+            result);
     }
 
     private static string AllocateUserLocalName(
