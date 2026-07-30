@@ -104,6 +104,12 @@ internal static class TypeMapperEmitter
         writer.Line();
         WriteMapExisting(writer, mapping);
 
+        if (mapping.MapNewImplMethodName is not null)
+        {
+            writer.Line();
+            WriteMapNewImpl(writer, mapping);
+        }
+
         if (mapping.EffectiveSettings.IsMappingModeValid &&
             mapping.DirectBlock is { } directBlock)
         {
@@ -159,6 +165,15 @@ internal static class TypeMapperEmitter
             WriteMapNewBody(
                 writer,
                 mapping);
+            return;
+        }
+
+        if (mapping.MapNewImplMethodName is
+            { } mapNewImplMethodName)
+        {
+            writer.Line(
+                $"=> {mapNewImplMethodName}(source, context);");
+            writer.Unindent();
             return;
         }
 
@@ -247,12 +262,29 @@ internal static class TypeMapperEmitter
             mapping,
             mapExisting: false);
         writer.Line();
-        WriteMapNewStatements(
+        WriteMapNewCallOrStatements(
             writer,
             mapping);
 
         writer.Unindent();
         writer.Line("}");
+    }
+
+    private static void WriteMapNewCallOrStatements(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        if (mapping.MapNewImplMethodName is
+            { } mapNewImplMethodName)
+        {
+            writer.Line(
+                $"return {mapNewImplMethodName}(source, context);");
+            return;
+        }
+
+        WriteMapNewStatements(
+            writer,
+            mapping);
     }
 
     private static void WriteMapNewStatements(
@@ -857,7 +889,7 @@ internal static class TypeMapperEmitter
         switch (mapping.EffectiveSettings.NullDestinationHandling)
         {
             case NullDestinationHandlingValue.CreateNew:
-                WriteMapNewStatements(
+                WriteMapNewCallOrStatements(
                     writer,
                     mapping);
                 break;
@@ -872,6 +904,35 @@ internal static class TypeMapperEmitter
                 throw new InvalidOperationException(
                     "A valid effective NullDestinationHandling value is required.");
         }
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteMapNewImpl(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        var methodName =
+            mapping.MapNewImplMethodName ??
+            throw new InvalidOperationException(
+                "A MapNew implementation method name is required.");
+
+        writer.Line(
+            $"private {mapping.MaybeNullDestinationTypeName} " +
+            $"{methodName}(");
+        writer.Indent();
+        writer.Line(
+            $"{mapping.NonNullSourceTypeName} source,");
+        writer.Line(
+            "global::Morphant.MappingContext context)");
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        WriteMapNewStatements(
+            writer,
+            mapping);
 
         writer.Unindent();
         writer.Line("}");
@@ -1182,7 +1243,7 @@ internal static class TypeMapperEmitter
         string? sourceValueLocalName)
     {
         return sourceValueLocalName ??
-               $"source!.{Identifier(sourceMemberName)}";
+               $"source.{Identifier(sourceMemberName)}";
     }
 
     private static string MemberValueExpression(

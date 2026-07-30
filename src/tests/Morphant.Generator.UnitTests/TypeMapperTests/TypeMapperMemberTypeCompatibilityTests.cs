@@ -122,22 +122,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination()
-            {
-                Numeric = source!.Numeric,
-                LiftedNumeric = source!.LiftedNumeric,
-                NullableNumeric = source!.NullableNumeric,
-                Reference = source!.Reference,
-                Interface = source!.Interface,
-                Boxed = source!.Boxed,
-                NullableBoxed = source!.NullableBoxed,
-                Covariant = source!.Covariant,
-                Collection = source!.Collection,
-                Array = source!.Array,
-                Tuple = source!.Tuple,
-                NullableTarget = source!.NullableTarget,
-                ToDynamic = source!.ToDynamic
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -153,39 +138,46 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination()
-                {
-                    Numeric = source!.Numeric,
-                    LiftedNumeric = source!.LiftedNumeric,
-                    NullableNumeric = source!.NullableNumeric,
-                    Reference = source!.Reference,
-                    Interface = source!.Interface,
-                    Boxed = source!.Boxed,
-                    NullableBoxed = source!.NullableBoxed,
-                    Covariant = source!.Covariant,
-                    Collection = source!.Collection,
-                    Array = source!.Array,
-                    Tuple = source!.Tuple,
-                    NullableTarget = source!.NullableTarget,
-                    ToDynamic = source!.ToDynamic
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.Numeric = source!.Numeric;
-            destination!.LiftedNumeric = source!.LiftedNumeric;
-            destination!.NullableNumeric = source!.NullableNumeric;
-            destination!.Reference = source!.Reference;
-            destination!.Interface = source!.Interface;
-            destination!.Boxed = source!.Boxed;
-            destination!.NullableBoxed = source!.NullableBoxed;
-            destination!.Covariant = source!.Covariant;
-            destination!.Collection = source!.Collection;
-            destination!.Array = source!.Array;
-            destination!.Tuple = source!.Tuple;
-            destination!.NullableTarget = source!.NullableTarget;
-            destination!.ToDynamic = source!.ToDynamic;
+            destination!.Numeric = source.Numeric;
+            destination!.LiftedNumeric = source.LiftedNumeric;
+            destination!.NullableNumeric = source.NullableNumeric;
+            destination!.Reference = source.Reference;
+            destination!.Interface = source.Interface;
+            destination!.Boxed = source.Boxed;
+            destination!.NullableBoxed = source.NullableBoxed;
+            destination!.Covariant = source.Covariant;
+            destination!.Collection = source.Collection;
+            destination!.Array = source.Array;
+            destination!.Tuple = source.Tuple;
+            destination!.NullableTarget = source.NullableTarget;
+            destination!.ToDynamic = source.ToDynamic;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination()
+            {
+                Numeric = source.Numeric,
+                LiftedNumeric = source.LiftedNumeric,
+                NullableNumeric = source.NullableNumeric,
+                Reference = source.Reference,
+                Interface = source.Interface,
+                Boxed = source.Boxed,
+                NullableBoxed = source.NullableBoxed,
+                Covariant = source.Covariant,
+                Collection = source.Collection,
+                Array = source.Array,
+                Tuple = source.Tuple,
+                NullableTarget = source.NullableTarget,
+                ToDynamic = source.ToDynamic
+            };
         }
     }
 }
@@ -304,11 +296,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination()
-            {
-                DynamicToObject = source!.DynamicToObject,
-                Included = source!.Included
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -324,17 +312,24 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination()
-                {
-                    DynamicToObject = source!.DynamicToObject,
-                    Included = source!.Included
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.DynamicToObject = source!.DynamicToObject;
-            destination!.Included = source!.Included;
+            destination!.DynamicToObject = source.DynamicToObject;
+            destination!.Included = source.Included;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination()
+            {
+                DynamicToObject = source.DynamicToObject,
+                Included = source.Included
+            };
         }
     }
 }
@@ -439,12 +434,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination()
-            {
-                Safe = source!.Safe,
-                SafeNullableTarget = source!.SafeNullableTarget,
-                MaybeNullNullableTarget = source!.MaybeNullNullableTarget
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -460,19 +450,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination()
-                {
-                    Safe = source!.Safe,
-                    SafeNullableTarget = source!.SafeNullableTarget,
-                    MaybeNullNullableTarget = source!.MaybeNullNullableTarget
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.Safe = source!.Safe;
-            destination!.SafeNullableTarget = source!.SafeNullableTarget;
-            destination!.MaybeNullNullableTarget = source!.MaybeNullNullableTarget;
+            destination!.Safe = source.Safe;
+            destination!.SafeNullableTarget = source.SafeNullableTarget;
+            destination!.MaybeNullNullableTarget = source.MaybeNullNullableTarget;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination()
+            {
+                Safe = source.Safe,
+                SafeNullableTarget = source.SafeNullableTarget,
+                MaybeNullNullableTarget = source.MaybeNullNullableTarget
+            };
         }
     }
 }
@@ -590,15 +587,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination()
-            {
-                NotNull = source!.NotNull,
-                AcceptedByAllowNull = source!.AcceptedByAllowNull,
-                MaybeNullAcceptedByAllowNull = source!.MaybeNullAcceptedByAllowNull,
-                NonNullAcceptedByDisallowNull = source!.NonNullAcceptedByDisallowNull,
-                NotNullField = source!.NotNullField,
-                AcceptedByAllowNullField = source!.AcceptedByAllowNullField
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -614,25 +603,32 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination()
-                {
-                    NotNull = source!.NotNull,
-                    AcceptedByAllowNull = source!.AcceptedByAllowNull,
-                    MaybeNullAcceptedByAllowNull = source!.MaybeNullAcceptedByAllowNull,
-                    NonNullAcceptedByDisallowNull = source!.NonNullAcceptedByDisallowNull,
-                    NotNullField = source!.NotNullField,
-                    AcceptedByAllowNullField = source!.AcceptedByAllowNullField
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.NotNull = source!.NotNull;
-            destination!.AcceptedByAllowNull = source!.AcceptedByAllowNull;
-            destination!.MaybeNullAcceptedByAllowNull = source!.MaybeNullAcceptedByAllowNull;
-            destination!.NonNullAcceptedByDisallowNull = source!.NonNullAcceptedByDisallowNull;
-            destination!.NotNullField = source!.NotNullField;
-            destination!.AcceptedByAllowNullField = source!.AcceptedByAllowNullField;
+            destination!.NotNull = source.NotNull;
+            destination!.AcceptedByAllowNull = source.AcceptedByAllowNull;
+            destination!.MaybeNullAcceptedByAllowNull = source.MaybeNullAcceptedByAllowNull;
+            destination!.NonNullAcceptedByDisallowNull = source.NonNullAcceptedByDisallowNull;
+            destination!.NotNullField = source.NotNullField;
+            destination!.AcceptedByAllowNullField = source.AcceptedByAllowNullField;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination()
+            {
+                NotNull = source.NotNull,
+                AcceptedByAllowNull = source.AcceptedByAllowNull,
+                MaybeNullAcceptedByAllowNull = source.MaybeNullAcceptedByAllowNull,
+                NonNullAcceptedByDisallowNull = source.NonNullAcceptedByDisallowNull,
+                NotNullField = source.NotNullField,
+                AcceptedByAllowNullField = source.AcceptedByAllowNullField
+            };
         }
     }
 }
@@ -719,11 +715,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.ModernDestination()
-            {
-                ToNonNullable = source!.ToNonNullable,
-                ToNullable = source!.ToNullable
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -739,17 +731,24 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.ModernDestination()
-                {
-                    ToNonNullable = source!.ToNonNullable,
-                    ToNullable = source!.ToNullable
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.ToNonNullable = source!.ToNonNullable;
-            destination!.ToNullable = source!.ToNullable;
+            destination!.ToNonNullable = source.ToNonNullable;
+            destination!.ToNullable = source.ToNullable;
 
             return destination;
+        }
+
+        private global::TestCase.ModernDestination? MapNewImpl(
+            global::TestCase.LegacySource source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.ModernDestination()
+            {
+                ToNonNullable = source.ToNonNullable,
+                ToNullable = source.ToNullable
+            };
         }
 
         /// <inheritdoc/>
@@ -762,10 +761,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.LegacyDestination()
-            {
-                FromNullable = source!.FromNullable
-            };
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -781,15 +777,22 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.LegacyDestination()
-                {
-                    FromNullable = source!.FromNullable
-                };
+                return MapNewImpl1(source, context);
             }
 
-            destination!.FromNullable = source!.FromNullable;
+            destination!.FromNullable = source.FromNullable;
 
             return destination;
+        }
+
+        private global::TestCase.LegacyDestination? MapNewImpl1(
+            global::TestCase.ModernSource source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.LegacyDestination()
+            {
+                FromNullable = source.FromNullable
+            };
         }
     }
 }
@@ -870,10 +873,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.SafeInitDestination()
-            {
-                Compatible = source!.Compatible
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -889,13 +889,20 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.SafeInitDestination()
-                {
-                    Compatible = source!.Compatible
-                };
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.SafeInitDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.SafeInitDestination()
+            {
+                Compatible = source.Compatible
+            };
         }
 
         /// <inheritdoc/>
@@ -908,7 +915,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotImplementedException();
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -924,10 +931,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                return MapNewImpl1(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.RequiredDestination? MapNewImpl1(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotImplementedException();
         }
     }
 }
@@ -1013,11 +1027,7 @@ namespace TestCase
                     return default;
                 }
 
-                return new global::TestCase.Destination()
-                {
-                    Reference = source!.Reference,
-                    Boxed = source!.Boxed
-                };
+                return MapNewImpl(source, context);
             }
 
             /// <inheritdoc/>
@@ -1033,17 +1043,24 @@ namespace TestCase
 
                 if (destination is null)
                 {
-                    return new global::TestCase.Destination()
-                    {
-                        Reference = source!.Reference,
-                        Boxed = source!.Boxed
-                    };
+                    return MapNewImpl(source, context);
                 }
 
-                destination!.Reference = source!.Reference;
-                destination!.Boxed = source!.Boxed;
+                destination!.Reference = source.Reference;
+                destination!.Boxed = source.Boxed;
 
                 return destination;
+            }
+
+            private global::TestCase.Destination? MapNewImpl(
+                global::TestCase.Source<TValue> source,
+                global::Morphant.MappingContext context)
+            {
+                return new global::TestCase.Destination()
+                {
+                    Reference = source.Reference,
+                    Boxed = source.Boxed
+                };
             }
         }
     }

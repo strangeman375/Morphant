@@ -595,8 +595,8 @@ internal static class TemplateMappingPlanner
                     capture,
                     TypeMapperMappingTypePolicy
                         .GetGeneratedTypeName(sourceType),
-                    "source!",
-                    "source!"
+                    "source",
+                    "source"
                 ));
                 continue;
             }
@@ -789,7 +789,7 @@ internal static class TemplateMappingPlanner
                     capture,
                     TypeMapperMappingTypePolicy
                         .GetGeneratedTypeName(sourceType),
-                    "source!"
+                    "source"
                 ));
                 continue;
             }
@@ -1487,9 +1487,7 @@ internal static class TemplateMappingPlanner
         var rewritten = new TemplateParameterRewriter(
                 sourceParameter,
                 sourceType,
-                SyntaxFactory.PostfixUnaryExpression(
-                    SyntaxKind.SuppressNullableWarningExpression,
-                    SyntaxFactory.IdentifierName("source")),
+                SyntaxFactory.IdentifierName("source"),
                 destinationParameter,
                 destinationType,
                 destinationExpression,
@@ -1521,9 +1519,7 @@ internal static class TemplateMappingPlanner
         var rewritten = new TemplateParameterRewriter(
                 sourceParameter,
                 sourceType,
-                SyntaxFactory.PostfixUnaryExpression(
-                    SyntaxKind.SuppressNullableWarningExpression,
-                    SyntaxFactory.IdentifierName("source")),
+                SyntaxFactory.IdentifierName("source"),
                 destinationParameter,
                 destinationType,
                 destinationExpression,

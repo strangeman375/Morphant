@@ -55,7 +55,7 @@ namespace TestCase
                     return default;
                 }
 
-                throw new global::System.NotImplementedException();
+                return MapNewImpl(source, context);
             }
 
             /// <inheritdoc/>
@@ -71,9 +71,16 @@ namespace TestCase
 
                 if (destination is null)
                 {
-                    throw new global::System.NotImplementedException();
+                    return MapNewImpl(source, context);
                 }
 
+                throw new global::System.NotImplementedException();
+            }
+
+            private object? MapNewImpl(
+                object source,
+                global::Morphant.MappingContext context)
+            {
                 throw new global::System.NotImplementedException();
             }
         }
@@ -154,7 +161,7 @@ namespace A
                 return default;
             }
 
-            return new global::Destination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -170,10 +177,17 @@ namespace A
 
             if (destination is null)
             {
-                return new global::Destination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::Destination? MapNewImpl(
+            global::Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::Destination();
         }
     }
 }
@@ -200,7 +214,7 @@ namespace A_B
                 return default;
             }
 
-            return new global::Destination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -216,10 +230,17 @@ namespace A_B
 
             if (destination is null)
             {
-                return new global::Destination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::Destination? MapNewImpl(
+            global::Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::Destination();
         }
     }
 }
@@ -299,7 +320,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -315,10 +336,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination();
         }
     }
 }
@@ -345,7 +373,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -361,10 +389,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination();
         }
     }
 }

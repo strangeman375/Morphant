@@ -107,7 +107,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!);
+            return MapByTemplate(source);
         }
 
         /// <inheritdoc/>
@@ -121,7 +121,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!);
+            return MapByTemplate(source);
         }
 
         private int MapByTemplate(global::TestCase.Source input)
@@ -246,7 +246,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!, default(int));
+            return MapByTemplate(source, default(int));
         }
 
         /// <inheritdoc/>
@@ -260,7 +260,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!, destination);
+            return MapByTemplate(source, destination);
         }
 
         private static int MapByTemplate(global::TestCase.Source input, int previous)
@@ -353,7 +353,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!);
+            return MapByTemplate(source);
         }
 
         /// <inheritdoc/>
@@ -367,7 +367,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!);
+            return MapByTemplate(source);
         }
 
         private int MapByTemplate(global::TestCase.Source input)
@@ -385,7 +385,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate1(source!);
+            return MapByTemplate1(source);
         }
 
         /// <inheritdoc/>
@@ -399,7 +399,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate1(source!);
+            return MapByTemplate1(source);
         }
 
         private long MapByTemplate1(global::TestCase.Source input)
@@ -496,7 +496,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate2(source!, default(int));
+            return MapByTemplate2(source, default(int));
         }
 
         /// <inheritdoc/>
@@ -510,7 +510,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate2(source!, destination);
+            return MapByTemplate2(source, destination);
         }
 
         private int MapByTemplate2(global::TestCase.Source source, int destination)
@@ -601,7 +601,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!, default(string?));
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -617,10 +617,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return MapByTemplate(source!, default(string?));
+                return MapNewImpl(source, context);
             }
 
-            return MapByTemplate(source!, destination);
+            return MapByTemplate(source, destination);
+        }
+
+        private string? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return MapByTemplate(source, default(string?));
         }
 
         private string MapByTemplate(global::TestCase.Source input, string? previous)
@@ -638,7 +645,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate1(source!, default(int?));
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -654,10 +661,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return MapByTemplate1(source!, default(int?));
+                return MapNewImpl1(source, context);
             }
 
-            return MapByTemplate1(source!, destination);
+            return MapByTemplate1(source, destination);
+        }
+
+        private int? MapNewImpl1(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return MapByTemplate1(source, default(int?));
         }
 
         private int? MapByTemplate1(global::TestCase.Source input, int? previous)
@@ -818,8 +832,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotSupportedException(
-                "Template block lambda contains a statement that is not supported.");
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -835,10 +848,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotSupportedException(
-                    "Template block lambda contains a statement that is not supported.");
+                return MapNewImpl(source, context);
             }
 
+            throw new global::System.NotSupportedException(
+                "Template block lambda contains a statement that is not supported.");
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.FullTemplateSource source,
+            global::Morphant.MappingContext context)
+        {
             throw new global::System.NotSupportedException(
                 "Template block lambda contains a statement that is not supported.");
         }

@@ -24,6 +24,7 @@ internal readonly record struct TypeMapperMappingModel
 (
     string SourceTypeName,
     string MaybeNullSourceTypeName,
+    string NonNullSourceTypeName,
     string DestinationTypeName,
     string MaybeNullDestinationTypeName,
     bool SourceCanBeNull,
@@ -41,7 +42,8 @@ internal readonly record struct TypeMapperMappingModel
     string? MapExistingUnsupportedExceptionMessage = null,
     string? UnsupportedExceptionMessage = null,
     TypeMapperDirectBlockMappingModel? DirectBlock = null,
-    EffectiveMappingSettings EffectiveSettings = default
+    EffectiveMappingSettings EffectiveSettings = default,
+    string? MapNewImplMethodName = null
 )
 {
     public string InterfaceTypeName =>

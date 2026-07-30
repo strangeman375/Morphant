@@ -88,7 +88,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.DefaultDestination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -104,10 +104,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.DefaultDestination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.DefaultDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.DefaultDestination();
         }
 
         /// <inheritdoc/>
@@ -120,7 +127,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.CombinedDestination();
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -136,10 +143,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.CombinedDestination();
+                return MapNewImpl1(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.CombinedDestination? MapNewImpl1(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.CombinedDestination();
         }
     }
 }
@@ -297,7 +311,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.BothDestination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -313,10 +327,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.BothDestination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.BothDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.BothDestination();
         }
     }
 }
@@ -483,7 +504,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!);
+            return MapByTemplate(source);
         }
 
         /// <inheritdoc/>
@@ -520,10 +541,10 @@ namespace TestCase
 
             if (destination is null)
             {
-                return source!.Text;
+                return source.Text;
             }
 
-            return source!.Text;
+            return source.Text;
         }
     }
 }
@@ -624,7 +645,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source!);
+            return MapByTemplate(source);
         }
 
         /// <inheritdoc/>

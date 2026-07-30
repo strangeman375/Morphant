@@ -251,30 +251,41 @@ namespace TestCase
             destinationMethodType.EndsWith(
                 "?",
                 StringComparison.Ordinal);
-        var mapNewImplementation = sourceCanBeNull
-            ? """
-              {
-                  if (source is null)
+        const string mapNewStatement =
+            "throw new global::System.NotImplementedException();";
+        var mapNewImplementation = destinationCanBeNull
+            ? BuildExpectedMapNewInvocation(
+                sourceCanBeNull)
+            : sourceCanBeNull
+                ? """
                   {
-                      return default;
-                  }
+                      if (source is null)
+                      {
+                          return default;
+                      }
 
-                  throw new global::System.NotImplementedException();
-              }
-              """
-            : """
-              => throw new global::System.NotImplementedException();
-              """;
+                      throw new global::System.NotImplementedException();
+                  }
+                  """
+                : """
+                  => throw new global::System.NotImplementedException();
+                  """;
         var mapExistingImplementation =
             BuildExpectedMapExistingImplementation(
                 sourceCanBeNull,
                 destinationCanBeNull,
-                """
-                throw new global::System.NotImplementedException();
-                """,
+                destinationCanBeNull
+                    ? "return MapNewImpl(source, context);"
+                    : mapNewStatement,
                 """
                 throw new global::System.NotImplementedException();
                 """);
+        var mapNewImpl = destinationCanBeNull
+            ? BuildExpectedMapNewImpl(
+                sourceType,
+                destinationMethodType,
+                mapNewStatement)
+            : string.Empty;
 
         // lang=c#
         return $$"""
@@ -297,7 +308,7 @@ namespace TestCase
                              {{sourceParameterType}} source,
                              {{destinationMethodType}} destination,
                              global::Morphant.MappingContext context)
-                 {{IndentGeneratedImplementation(mapExistingImplementation)}}
+                 {{IndentGeneratedImplementation(mapExistingImplementation)}}{{mapNewImpl}}
                      }
                  }
                  """;
@@ -319,29 +330,34 @@ namespace TestCase
             destinationMethodType.EndsWith(
                 "?",
                 StringComparison.Ordinal);
-        var mapNewImplementation = sourceCanBeNull
-            ? $$"""
-                {
-                    if (source is null)
+        var mapNewStatement =
+            $"return new {destinationType}();";
+        var mapNewImplementation = destinationCanBeNull
+            ? BuildExpectedMapNewInvocation(
+                sourceCanBeNull)
+            : sourceCanBeNull
+                ? $$"""
                     {
-                        return default;
-                    }
+                        if (source is null)
+                        {
+                            return default;
+                        }
 
-                    return new {{destinationType}}();
-                }
-                """
-            : $$"""
-                {
-                    return new {{destinationType}}();
-                }
-                """;
+                        {{mapNewStatement}}
+                    }
+                    """
+                : $$"""
+                    {
+                        {{mapNewStatement}}
+                    }
+                    """;
         var mapExistingImplementation =
             BuildExpectedMapExistingImplementation(
                 sourceCanBeNull,
                 destinationCanBeNull,
-                $$"""
-                return new {{destinationType}}();
-                """,
+                destinationCanBeNull
+                    ? "return MapNewImpl(source, context);"
+                    : mapNewStatement,
                 canMapExisting
                     ? """
                       return destination;
@@ -349,6 +365,12 @@ namespace TestCase
                     : """
                       throw new global::System.NotImplementedException();
                       """);
+        var mapNewImpl = destinationCanBeNull
+            ? BuildExpectedMapNewImpl(
+                sourceType,
+                destinationMethodType,
+                mapNewStatement)
+            : string.Empty;
 
         // lang=c#
         return $$"""
@@ -371,10 +393,53 @@ namespace TestCase
                              {{sourceParameterType}} source,
                              {{destinationMethodType}} destination,
                              global::Morphant.MappingContext context)
-                 {{IndentGeneratedImplementation(mapExistingImplementation)}}
+                 {{IndentGeneratedImplementation(mapExistingImplementation)}}{{mapNewImpl}}
                      }
                  }
                  """;
+    }
+
+    private static string BuildExpectedMapNewInvocation(
+        bool sourceCanBeNull)
+    {
+        return sourceCanBeNull
+            ? """
+              {
+                  if (source is null)
+                  {
+                      return default;
+                  }
+
+                  return MapNewImpl(source, context);
+              }
+              """
+            : "=> MapNewImpl(source, context);";
+    }
+
+    private static string BuildExpectedMapNewImpl(
+        string sourceType,
+        string destinationMethodType,
+        string statement)
+    {
+        var lines = new List<string>
+        {
+            string.Empty,
+            string.Empty,
+            $"        private {destinationMethodType} MapNewImpl(",
+            $"            {sourceType} source,",
+            "            global::Morphant.MappingContext context)",
+            "        {"
+        };
+
+        AddIndentedLines(
+            lines,
+            statement,
+            "            ");
+        lines.Add("        }");
+
+        return string.Join(
+            Environment.NewLine,
+            lines);
     }
 
     private static string BuildExpectedMapExistingImplementation(

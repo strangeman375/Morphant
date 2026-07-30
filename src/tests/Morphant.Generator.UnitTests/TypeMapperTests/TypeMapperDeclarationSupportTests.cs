@@ -67,7 +67,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -83,10 +83,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination();
         }
     }
 }
@@ -113,7 +120,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -129,10 +136,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination();
         }
     }
 }
@@ -197,7 +211,7 @@ namespace TestCase
                 return default;
             }
 
-            return new TDestination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -213,10 +227,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new TDestination();
+                return MapNewImpl(source, context);
             }
 
             throw new global::System.NotImplementedException();
+        }
+
+        private TDestination? MapNewImpl(
+            TSource source,
+            global::Morphant.MappingContext context)
+        {
+            return new TDestination();
         }
     }
 }
@@ -304,7 +325,7 @@ namespace TestCase
                             return default;
                         }
 
-                        return new global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper>();
+                        return MapNewImpl(source, context);
                     }
 
                     /// <inheritdoc/>
@@ -320,10 +341,17 @@ namespace TestCase
 
                         if (destination is null)
                         {
-                            return new global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper>();
+                            return MapNewImpl(source, context);
                         }
 
                         return destination;
+                    }
+
+                    private global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper>? MapNewImpl(
+                        global::TestCase.Source<TOuter, TMiddle, TInner, TMapper> source,
+                        global::Morphant.MappingContext context)
+                    {
+                        return new global::TestCase.Destination<TOuter, TMiddle, TInner, TMapper>();
                     }
                 }
             }
@@ -403,7 +431,7 @@ namespace TestCase
                         return default;
                     }
 
-                    return new global::TestCase.Destination();
+                    return MapNewImpl(source, context);
                 }
 
                 /// <inheritdoc/>
@@ -419,10 +447,17 @@ namespace TestCase
 
                     if (destination is null)
                     {
-                        return new global::TestCase.Destination();
+                        return MapNewImpl(source, context);
                     }
 
                     return destination;
+                }
+
+                private global::TestCase.Destination? MapNewImpl(
+                    global::TestCase.Source source,
+                    global::Morphant.MappingContext context)
+                {
+                    return new global::TestCase.Destination();
                 }
             }
         }

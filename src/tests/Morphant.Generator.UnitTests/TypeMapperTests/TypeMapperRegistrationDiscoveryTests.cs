@@ -176,7 +176,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.FirstDestination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -192,10 +192,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.FirstDestination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.FirstDestination? MapNewImpl(
+            global::TestCase.FirstSource source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.FirstDestination();
         }
 
         /// <inheritdoc/>
@@ -243,7 +250,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.ExpressionDestination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -259,10 +266,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.ExpressionDestination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.ExpressionDestination? MapNewImpl(
+            global::TestCase.ExpressionSource source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.ExpressionDestination();
         }
     }
 }
@@ -289,7 +303,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.DeclarativeDestination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -305,10 +319,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.DeclarativeDestination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.DeclarativeDestination? MapNewImpl(
+            global::TestCase.DeclarativeSource source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.DeclarativeDestination();
         }
     }
 }
@@ -420,7 +441,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.SecondDestination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -436,10 +457,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.SecondDestination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.SecondDestination? MapNewImpl(
+            global::TestCase.FirstSource source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.SecondDestination();
         }
 
         /// <inheritdoc/>
@@ -452,7 +480,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.FirstDestination();
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -468,10 +496,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.FirstDestination();
+                return MapNewImpl1(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.FirstDestination? MapNewImpl1(
+            global::TestCase.SecondSource source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.FirstDestination();
         }
     }
 }

@@ -242,8 +242,9 @@ parameters, затем добавить строгий opt-in режим без 
   Явные initializer-выражения перекрывают convention mappings и вычисляются в
   порядке initializer-а; оставшиеся convention mappings следуют после них в
   обычном порядке destination-членов. Init-only destination-член применяется
-  только в `MapNew`. Lambda-параметр переносится как nullable-safe `source!`,
-  а ссылки на типы, static-члены и extension methods переносятся в
+  только в `MapNew`. После generated null-проверки lambda-параметр переносится
+  как non-null `source` без null-forgiving operator, а ссылки на типы,
+  static-члены и extension methods переносятся в
   fully-qualified форме, чтобы generated-код не зависел от `using` исходного
   файла. Compile-time результат `nameof` сохраняется строковым литералом.
   Из Configure-контекста переносятся compile-time constants. Обычные locals,

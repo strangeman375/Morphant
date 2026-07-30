@@ -148,14 +148,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination()
-            {
-                GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context),
-                InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context),
-                GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context),
-                InferredExisting = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredExistingSource, source!.InferredExistingDestination, context),
-                Remaining = source!.Remaining
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -171,23 +164,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination()
-                {
-                    GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context),
-                    InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context),
-                    GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context),
-                    InferredExisting = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredExistingSource, source!.InferredExistingDestination, context),
-                    Remaining = source!.Remaining
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context);
-            destination!.InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context);
-            destination!.GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context);
-            destination!.InferredExisting = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredExistingSource, source!.InferredExistingDestination, context);
-            destination!.Remaining = source!.Remaining;
+            destination!.GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericExistingSource, source.GenericExistingDestination, context);
+            destination!.InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredNewSource, context);
+            destination!.GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericNewSource, context);
+            destination!.InferredExisting = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredExistingSource, source.InferredExistingDestination, context);
+            destination!.Remaining = source.Remaining;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination()
+            {
+                GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericExistingSource, source.GenericExistingDestination, context),
+                InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredNewSource, context),
+                GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericNewSource, context),
+                InferredExisting = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredExistingSource, source.InferredExistingDestination, context),
+                Remaining = source.Remaining
+            };
         }
     }
 }
@@ -327,11 +327,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination(
-                inferredNew: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context),
-                genericNew: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context),
-                inferredExisting: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredExistingSource, source!.InferredExistingDestination, context),
-                genericExisting: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context));
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -347,14 +343,21 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination(
-                    inferredNew: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredNewSource, context),
-                    genericNew: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericNewSource, context),
-                    inferredExisting: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source!.InferredExistingSource, source!.InferredExistingDestination, context),
-                    genericExisting: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.GenericExistingSource, source!.GenericExistingDestination, context));
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination(
+                inferredNew: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredNewSource, context),
+                genericNew: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericNewSource, context),
+                inferredExisting: context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredExistingSource, source.InferredExistingDestination, context),
+                genericExisting: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericExistingSource, source.GenericExistingDestination, context));
         }
     }
 }
@@ -490,10 +493,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination(
-                existing: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(destination: source!.ExistingDestination, source: source!.ExistingSource, context: context),
-                mapped: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.MappedSource, context),
-                automatic: source!.Automatic);
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -509,13 +509,20 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination(
-                    existing: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(destination: source!.ExistingDestination, source: source!.ExistingSource, context: context),
-                    mapped: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.MappedSource, context),
-                    automatic: source!.Automatic);
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination(
+                existing: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(destination: source.ExistingDestination, source: source.ExistingSource, context: context),
+                mapped: context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.MappedSource, context),
+                automatic: source.Automatic);
         }
     }
 }
@@ -639,13 +646,7 @@ namespace TestCase
                 return default;
             }
 
-            global::TestCase.Destination CreateByFactory() => Create();
-
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.ChildSource, context);
-            destination1!.Remaining = source!.Remaining;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -661,19 +662,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::TestCase.Destination CreateByFactory() => Create();
-
-                global::TestCase.Destination destination1 = CreateByFactory();
-                destination1!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.ChildSource, context);
-                destination1!.Remaining = source!.Remaining;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
-            destination!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source!.ChildSource, context);
-            destination!.Remaining = source!.Remaining;
+            destination!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.ChildSource, context);
+            destination!.Remaining = source.Remaining;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::TestCase.Destination CreateByFactory() => Create();
+
+            global::TestCase.Destination destination1 = CreateByFactory();
+            destination1!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.ChildSource, context);
+            destination1!.Remaining = source.Remaining;
+
+            return destination1;
         }
     }
 }
@@ -815,12 +823,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination()
-            {
-                Lookalike = global::TestCase.MarkerLookalikes.Map(source!.Child),
-                Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source!), context),
-                TypedNull = context.Mapper.Map<global::TestCase.NestedSource?, global::TestCase.NestedDestination?>((global::TestCase.NestedSource?)null, (global::TestCase.NestedDestination?)null, context)
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -836,19 +839,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination()
-                {
-                    Lookalike = global::TestCase.MarkerLookalikes.Map(source!.Child),
-                    Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source!), context),
-                    TypedNull = context.Mapper.Map<global::TestCase.NestedSource?, global::TestCase.NestedDestination?>((global::TestCase.NestedSource?)null, (global::TestCase.NestedDestination?)null, context)
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.Lookalike = global::TestCase.MarkerLookalikes.Map(source!.Child);
-            destination!.Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source!), context);
+            destination!.Lookalike = global::TestCase.MarkerLookalikes.Map(source.Child);
+            destination!.Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source), context);
             destination!.TypedNull = context.Mapper.Map<global::TestCase.NestedSource?, global::TestCase.NestedDestination?>((global::TestCase.NestedSource?)null, (global::TestCase.NestedDestination?)null, context);
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination()
+            {
+                Lookalike = global::TestCase.MarkerLookalikes.Map(source.Child),
+                Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source), context),
+                TypedNull = context.Mapper.Map<global::TestCase.NestedSource?, global::TestCase.NestedDestination?>((global::TestCase.NestedSource?)null, (global::TestCase.NestedDestination?)null, context)
+            };
         }
     }
 }
@@ -949,7 +959,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotImplementedException();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -965,10 +975,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotImplementedException();
         }
     }
 }

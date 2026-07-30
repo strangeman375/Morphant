@@ -58,7 +58,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -74,10 +74,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination();
         }
     }
 }

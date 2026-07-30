@@ -123,15 +123,7 @@ namespace TestCase
                 return default;
             }
 
-            var factoryValue = global::System.Math.Abs(source!.FactoryValue);
-
-            global::TestCase.Destination CreateByFactory() => CreateDestination(factoryValue);
-
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Explicit = Adjust(source!.Explicit);
-            destination1!.Remaining = source!.Remaining;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -147,21 +139,28 @@ namespace TestCase
 
             if (destination is null)
             {
-                var factoryValue = global::System.Math.Abs(source!.FactoryValue);
-
-                global::TestCase.Destination CreateByFactory() => CreateDestination(factoryValue);
-
-                global::TestCase.Destination destination1 = CreateByFactory();
-                destination1!.Explicit = Adjust(source!.Explicit);
-                destination1!.Remaining = source!.Remaining;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
-            destination!.Explicit = Adjust(source!.Explicit);
-            destination!.Remaining = source!.Remaining;
+            destination!.Explicit = Adjust(source.Explicit);
+            destination!.Remaining = source.Remaining;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            var factoryValue = global::System.Math.Abs(source.FactoryValue);
+
+            global::TestCase.Destination CreateByFactory() => CreateDestination(factoryValue);
+
+            global::TestCase.Destination destination1 = CreateByFactory();
+            destination1!.Explicit = Adjust(source.Explicit);
+            destination1!.Remaining = source.Remaining;
+
+            return destination1;
         }
     }
 }
@@ -284,13 +283,7 @@ namespace TestCase
                 return default;
             }
 
-            global::TestCase.ConcreteInterfaceDestination CreateByFactory(global::TestCase.Source s) => new global::TestCase.ConcreteInterfaceDestination(s.Id);
-
-            global::TestCase.IInterfaceDestination destination1 = CreateByFactory(source!);
-            destination1!.Name = source!.Name + " interface";
-            destination1!.Id = source!.Id;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -306,19 +299,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::TestCase.ConcreteInterfaceDestination CreateByFactory(global::TestCase.Source s) => new global::TestCase.ConcreteInterfaceDestination(s.Id);
-
-                global::TestCase.IInterfaceDestination destination1 = CreateByFactory(source!);
-                destination1!.Name = source!.Name + " interface";
-                destination1!.Id = source!.Id;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
-            destination!.Name = source!.Name + " interface";
-            destination!.Id = source!.Id;
+            destination!.Name = source.Name + " interface";
+            destination!.Id = source.Id;
 
             return destination;
+        }
+
+        private global::TestCase.IInterfaceDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::TestCase.ConcreteInterfaceDestination CreateByFactory(global::TestCase.Source s) => new global::TestCase.ConcreteInterfaceDestination(s.Id);
+
+            global::TestCase.IInterfaceDestination destination1 = CreateByFactory(source);
+            destination1!.Name = source.Name + " interface";
+            destination1!.Id = source.Id;
+
+            return destination1;
         }
     }
 }
@@ -448,13 +448,7 @@ namespace TestCase
                 return default;
             }
 
-            global::TestCase.Destination CreateByFactory(global::TestCase.Source s) => new global::TestCase.Destination(s.Name, 1);
-
-            global::TestCase.Destination destination1 = CreateByFactory(source!);
-            destination1!.Code = source!.Code;
-            destination1!.Remaining = source!.Remaining;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -470,19 +464,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::TestCase.Destination CreateByFactory(global::TestCase.Source s) => new global::TestCase.Destination(s.Name, 1);
-
-                global::TestCase.Destination destination1 = CreateByFactory(source!);
-                destination1!.Code = source!.Code;
-                destination1!.Remaining = source!.Remaining;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
-            destination!.Code = source!.Code;
-            destination!.Remaining = source!.Remaining;
+            destination!.Code = source.Code;
+            destination!.Remaining = source.Remaining;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::TestCase.Destination CreateByFactory(global::TestCase.Source s) => new global::TestCase.Destination(s.Name, 1);
+
+            global::TestCase.Destination destination1 = CreateByFactory(source);
+            destination1!.Code = source.Code;
+            destination1!.Remaining = source.Remaining;
+
+            return destination1;
         }
     }
 }
@@ -643,14 +644,7 @@ namespace TestCase
                 return default;
             }
 
-            global::TestCase.ValueDestination CreateByFactory() => new global::TestCase.ValueDestination();
-
-            global::TestCase.ValueDestination? destination1 = CreateByFactory();
-            var destinationValue1 = destination1.Value;
-            destinationValue1.Value = source!.Value + 1;
-            destinationValue1.Remaining = source!.Remaining;
-
-            return destinationValue1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -666,21 +660,28 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::TestCase.ValueDestination CreateByFactory() => new global::TestCase.ValueDestination();
-
-                global::TestCase.ValueDestination? destination1 = CreateByFactory();
-                var destinationValue1 = destination1.Value;
-                destinationValue1.Value = source!.Value + 1;
-                destinationValue1.Remaining = source!.Remaining;
-
-                return destinationValue1;
+                return MapNewImpl(source, context);
             }
 
             var destinationValue = destination.Value;
-            destinationValue.Value = source!.Value + 1;
-            destinationValue.Remaining = source!.Remaining;
+            destinationValue.Value = source.Value + 1;
+            destinationValue.Remaining = source.Remaining;
 
             return destinationValue;
+        }
+
+        private global::TestCase.ValueDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::TestCase.ValueDestination CreateByFactory() => new global::TestCase.ValueDestination();
+
+            global::TestCase.ValueDestination? destination1 = CreateByFactory();
+            var destinationValue1 = destination1.Value;
+            destinationValue1.Value = source.Value + 1;
+            destinationValue1.Remaining = source.Remaining;
+
+            return destinationValue1;
         }
 
         /// <inheritdoc/>
@@ -693,13 +694,7 @@ namespace TestCase
                 return default;
             }
 
-            global::TestCase.GenericDestination<int> CreateByFactory(global::TestCase.Source s) => new global::TestCase.GenericDestination<int>(s.Value + 2);
-
-            global::TestCase.GenericDestination<int> destination1 = CreateByFactory(source!);
-            destination1!.Remaining = source!.Remaining + 2;
-            destination1!.Value = source!.Value;
-
-            return destination1;
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -715,19 +710,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::TestCase.GenericDestination<int> CreateByFactory(global::TestCase.Source s) => new global::TestCase.GenericDestination<int>(s.Value + 2);
-
-                global::TestCase.GenericDestination<int> destination1 = CreateByFactory(source!);
-                destination1!.Remaining = source!.Remaining + 2;
-                destination1!.Value = source!.Value;
-
-                return destination1;
+                return MapNewImpl1(source, context);
             }
 
-            destination!.Remaining = source!.Remaining + 2;
-            destination!.Value = source!.Value;
+            destination!.Remaining = source.Remaining + 2;
+            destination!.Value = source.Value;
 
             return destination;
+        }
+
+        private global::TestCase.GenericDestination<int>? MapNewImpl1(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::TestCase.GenericDestination<int> CreateByFactory(global::TestCase.Source s) => new global::TestCase.GenericDestination<int>(s.Value + 2);
+
+            global::TestCase.GenericDestination<int> destination1 = CreateByFactory(source);
+            destination1!.Remaining = source.Remaining + 2;
+            destination1!.Value = source.Value;
+
+            return destination1;
         }
     }
 }
@@ -843,12 +845,7 @@ namespace TestCase
                 return default;
             }
 
-            static global::TestCase.Destination CreateByFactory() => null!;
-
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Value = source!.Value + 1;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -864,17 +861,24 @@ namespace TestCase
 
             if (destination is null)
             {
-                static global::TestCase.Destination CreateByFactory() => null!;
-
-                global::TestCase.Destination destination1 = CreateByFactory();
-                destination1!.Value = source!.Value + 1;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
-            destination!.Value = source!.Value + 1;
+            destination!.Value = source.Value + 1;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            static global::TestCase.Destination CreateByFactory() => null!;
+
+            global::TestCase.Destination destination1 = CreateByFactory();
+            destination1!.Value = source.Value + 1;
+
+            return destination1;
         }
     }
 }
@@ -991,12 +995,7 @@ namespace TestCase
                 return default;
             }
 
-            global::TestCase.Destination CreateByFactory() => new global::TestCase.Destination((byte)10);
-
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Value = source!.Value + 20;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -1012,17 +1011,24 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::TestCase.Destination CreateByFactory() => new global::TestCase.Destination((byte)10);
-
-                global::TestCase.Destination destination1 = CreateByFactory();
-                destination1!.Value = source!.Value + 20;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
-            destination!.Value = source!.Value + 20;
+            destination!.Value = source.Value + 20;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::TestCase.Destination CreateByFactory() => new global::TestCase.Destination((byte)10);
+
+            global::TestCase.Destination destination1 = CreateByFactory();
+            destination1!.Value = source.Value + 20;
+
+            return destination1;
         }
     }
 }
@@ -1146,8 +1152,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotSupportedException(
-                "Template contains a capture that cannot be transferred to the generated mapper.");
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -1163,10 +1168,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotSupportedException(
-                    "Template contains a capture that cannot be transferred to the generated mapper.");
+                return MapNewImpl(source, context);
             }
 
+            throw new global::System.NotSupportedException(
+                "Template contains a capture that cannot be transferred to the generated mapper.");
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
             throw new global::System.NotSupportedException(
                 "Template contains a capture that cannot be transferred to the generated mapper.");
         }
@@ -1360,8 +1372,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotSupportedException(
-                "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -1377,13 +1388,20 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotSupportedException(
-                    "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+                return MapNewImpl(source, context);
             }
 
-            destination!.Value = source!.Value + 1;
+            destination!.Value = source.Value + 1;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.LocalSource source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotSupportedException(
+                "ByFactory contains a capture that cannot be transferred to the generated mapper.");
         }
 
         /// <inheritdoc/>
@@ -1396,8 +1414,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotSupportedException(
-                "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -1413,13 +1430,20 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotSupportedException(
-                    "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+                return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source!.Value + 2;
+            destination!.Value = source.Value + 2;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl1(
+            global::TestCase.BuilderSource source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotSupportedException(
+                "ByFactory contains a capture that cannot be transferred to the generated mapper.");
         }
 
         /// <inheritdoc/>
@@ -1432,8 +1456,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotSupportedException(
-                "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+            return MapNewImpl2(source, context);
         }
 
         /// <inheritdoc/>
@@ -1449,13 +1472,20 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotSupportedException(
-                    "ByFactory contains a capture that cannot be transferred to the generated mapper.");
+                return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source!.Value + 3;
+            destination!.Value = source.Value + 3;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl2(
+            global::TestCase.ConfigureLocalFunctionSource source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotSupportedException(
+                "ByFactory contains a capture that cannot be transferred to the generated mapper.");
         }
 
         /// <inheritdoc/>
@@ -1468,6 +1498,34 @@ namespace TestCase
                 return default;
             }
 
+            return MapNewImpl3(source, context);
+        }
+
+        /// <inheritdoc/>
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.StatementSource, global::TestCase.Destination>.Map(
+            global::TestCase.StatementSource? source,
+            global::TestCase.Destination? destination,
+            global::Morphant.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return MapNewImpl3(source, context);
+            }
+
+            destination!.Value = source.Value + 4;
+
+            return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl3(
+            global::TestCase.StatementSource source,
+            global::Morphant.MappingContext context)
+        {
             global::TestCase.Destination CreateByFactory(global::TestCase.StatementSource s)
             {
                 if (s.Value > 0)
@@ -1478,15 +1536,28 @@ namespace TestCase
                 return new global::TestCase.Destination();
             }
 
-            global::TestCase.Destination destination1 = CreateByFactory(source!);
-            destination1!.Value = source!.Value + 4;
+            global::TestCase.Destination destination1 = CreateByFactory(source);
+            destination1!.Value = source.Value + 4;
 
             return destination1;
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.StatementSource, global::TestCase.Destination>.Map(
-            global::TestCase.StatementSource? source,
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>.Map(
+            global::TestCase.ConfigureStaticLocalFunctionSource? source,
+            global::Morphant.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            return MapNewImpl4(source, context);
+        }
+
+        /// <inheritdoc/>
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>.Map(
+            global::TestCase.ConfigureStaticLocalFunctionSource? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
@@ -1497,61 +1568,20 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::TestCase.Destination CreateByFactory(global::TestCase.StatementSource s)
-                {
-                    if (s.Value > 0)
-                    {
-                        return new global::TestCase.Destination(s.Value);
-                    }
-
-                    return new global::TestCase.Destination();
-                }
-
-                global::TestCase.Destination destination1 = CreateByFactory(source!);
-                destination1!.Value = source!.Value + 4;
-
-                return destination1;
+                return MapNewImpl4(source, context);
             }
 
-            destination!.Value = source!.Value + 4;
+            destination!.Value = source.Value + 5;
 
             return destination;
         }
 
-        /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>.Map(
-            global::TestCase.ConfigureStaticLocalFunctionSource? source,
+        private global::TestCase.Destination? MapNewImpl4(
+            global::TestCase.ConfigureStaticLocalFunctionSource source,
             global::Morphant.MappingContext context)
         {
-            if (source is null)
-            {
-                return default;
-            }
-
             throw new global::System.NotSupportedException(
                 "ByFactory contains a capture that cannot be transferred to the generated mapper.");
-        }
-
-        /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.ConfigureStaticLocalFunctionSource, global::TestCase.Destination>.Map(
-            global::TestCase.ConfigureStaticLocalFunctionSource? source,
-            global::TestCase.Destination? destination,
-            global::Morphant.MappingContext context)
-        {
-            if (source is null)
-            {
-                return default;
-            }
-
-            if (destination is null)
-            {
-                throw new global::System.NotSupportedException(
-                    "ByFactory contains a capture that cannot be transferred to the generated mapper.");
-            }
-
-            destination!.Value = source!.Value + 5;
-
-            return destination;
         }
     }
 }
@@ -1693,7 +1723,35 @@ namespace TestCase
                 return default;
             }
 
-            var offset = source!.Value + 10;
+            return MapNewImpl(source, context);
+        }
+
+        /// <inheritdoc/>
+        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+            global::TestCase.Source? source,
+            global::TestCase.Destination? destination,
+            global::Morphant.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default;
+            }
+
+            if (destination is null)
+            {
+                return MapNewImpl(source, context);
+            }
+
+            destination!.Value = source.Value;
+
+            return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            var offset = source.Value + 10;
 
             global::TestCase.Destination CreateByFactory(global::TestCase.Source s)
             {
@@ -1718,59 +1776,10 @@ namespace TestCase
                 }
             }
 
-            global::TestCase.Destination destination1 = CreateByFactory(source!);
-            destination1!.Value = source!.Value;
+            global::TestCase.Destination destination1 = CreateByFactory(source);
+            destination1!.Value = source.Value;
 
             return destination1;
-        }
-
-        /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
-            global::TestCase.Source? source,
-            global::TestCase.Destination? destination,
-            global::Morphant.MappingContext context)
-        {
-            if (source is null)
-            {
-                return default;
-            }
-
-            if (destination is null)
-            {
-                var offset = source!.Value + 10;
-
-                global::TestCase.Destination CreateByFactory(global::TestCase.Source s)
-                {
-                    static int Normalize(int value) => value < 0 ? -value : value;
-                    var factoryValue = Normalize(s.Value) + offset;
-                    for (var index = 0; index < 2; index++)
-                    {
-                        factoryValue++;
-                    }
-
-                    if (factoryValue == 12)
-                    {
-                        return new global::TestCase.Destination(factoryValue);
-                    }
-
-                    switch (factoryValue)
-                    {
-                        case 13:
-                            throw new global::System.InvalidOperationException();
-                        default:
-                            return new global::TestCase.Destination(factoryValue + 1);
-                    }
-                }
-
-                global::TestCase.Destination destination1 = CreateByFactory(source!);
-                destination1!.Value = source!.Value;
-
-                return destination1;
-            }
-
-            destination!.Value = source!.Value;
-
-            return destination;
         }
     }
 }
@@ -1896,11 +1905,7 @@ namespace TestCase
                 return default;
             }
 
-            global::System.Func<global::TestCase.Destination> factory = _provider.Create;
-            global::TestCase.Destination destination1 = factory();
-            destination1!.ReceiverCalls = _provider.Calls;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -1916,16 +1921,23 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::System.Func<global::TestCase.Destination> factory = _provider.Create;
-                global::TestCase.Destination destination1 = factory();
-                destination1!.ReceiverCalls = _provider.Calls;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
             destination!.ReceiverCalls = _provider.Calls;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::System.Func<global::TestCase.Destination> factory = _provider.Create;
+            global::TestCase.Destination destination1 = factory();
+            destination1!.ReceiverCalls = _provider.Calls;
+
+            return destination1;
         }
     }
 }
@@ -2126,11 +2138,7 @@ namespace TestCase
                 return default;
             }
 
-            global::System.Func<global::TestCase.MethodGroupDestination> factory = Provider.CreateMethodGroup;
-            global::TestCase.MethodGroupDestination destination1 = factory();
-            destination1!.Value = source!.Value + 1;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -2146,16 +2154,23 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::System.Func<global::TestCase.MethodGroupDestination> factory = Provider.CreateMethodGroup;
-                global::TestCase.MethodGroupDestination destination1 = factory();
-                destination1!.Value = source!.Value + 1;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
-            destination!.Value = source!.Value + 1;
+            destination!.Value = source.Value + 1;
 
             return destination;
+        }
+
+        private global::TestCase.MethodGroupDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::System.Func<global::TestCase.MethodGroupDestination> factory = Provider.CreateMethodGroup;
+            global::TestCase.MethodGroupDestination destination1 = factory();
+            destination1!.Value = source.Value + 1;
+
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -2168,11 +2183,7 @@ namespace TestCase
                 return default;
             }
 
-            global::System.Func<global::TestCase.DelegateDestination> factory = source!.Value > 0 ? Factory : _factory;
-            global::TestCase.DelegateDestination destination1 = factory();
-            destination1!.Value = source!.Value + 2;
-
-            return destination1;
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -2188,16 +2199,23 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::System.Func<global::TestCase.DelegateDestination> factory = source!.Value > 0 ? Factory : _factory;
-                global::TestCase.DelegateDestination destination1 = factory();
-                destination1!.Value = source!.Value + 2;
-
-                return destination1;
+                return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source!.Value + 2;
+            destination!.Value = source.Value + 2;
 
             return destination;
+        }
+
+        private global::TestCase.DelegateDestination? MapNewImpl1(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::System.Func<global::TestCase.DelegateDestination> factory = source.Value > 0 ? Factory : _factory;
+            global::TestCase.DelegateDestination destination1 = factory();
+            destination1!.Value = source.Value + 2;
+
+            return destination1;
         }
 
         /// <inheritdoc/>
@@ -2210,18 +2228,7 @@ namespace TestCase
                 return default;
             }
 
-            var offset = source!.Value + 10;
-
-            global::TestCase.BlockLambdaDestination CreateByFactory(global::TestCase.Source s)
-            {
-                var factoryValue = s.Value > 0 ? offset + 1 : offset - 1;
-                return new global::TestCase.BlockLambdaDestination(factoryValue);
-            }
-
-            global::TestCase.BlockLambdaDestination destination1 = CreateByFactory(source!);
-            destination1!.Value = source!.Value + 3;
-
-            return destination1;
+            return MapNewImpl2(source, context);
         }
 
         /// <inheritdoc/>
@@ -2237,23 +2244,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                var offset = source!.Value + 10;
-
-                global::TestCase.BlockLambdaDestination CreateByFactory(global::TestCase.Source s)
-                {
-                    var factoryValue = s.Value > 0 ? offset + 1 : offset - 1;
-                    return new global::TestCase.BlockLambdaDestination(factoryValue);
-                }
-
-                global::TestCase.BlockLambdaDestination destination1 = CreateByFactory(source!);
-                destination1!.Value = source!.Value + 3;
-
-                return destination1;
+                return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source!.Value + 3;
+            destination!.Value = source.Value + 3;
 
             return destination;
+        }
+
+        private global::TestCase.BlockLambdaDestination? MapNewImpl2(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            var offset = source.Value + 10;
+
+            global::TestCase.BlockLambdaDestination CreateByFactory(global::TestCase.Source s)
+            {
+                var factoryValue = s.Value > 0 ? offset + 1 : offset - 1;
+                return new global::TestCase.BlockLambdaDestination(factoryValue);
+            }
+
+            global::TestCase.BlockLambdaDestination destination1 = CreateByFactory(source);
+            destination1!.Value = source.Value + 3;
+
+            return destination1;
         }
     }
 }
@@ -2379,12 +2393,7 @@ namespace TestCase
                 return default;
             }
 
-            global::TestCase.Destination CreateByFactory1() => CreateByFactory();
-
-            global::TestCase.Destination destination1 = CreateByFactory1();
-            destination1!.Value = source!.Value + 1;
-
-            return destination1;
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -2400,17 +2409,24 @@ namespace TestCase
 
             if (destination is null)
             {
-                global::TestCase.Destination CreateByFactory1() => CreateByFactory();
-
-                global::TestCase.Destination destination1 = CreateByFactory1();
-                destination1!.Value = source!.Value + 1;
-
-                return destination1;
+                return MapNewImpl(source, context);
             }
 
-            destination!.Value = source!.Value + 1;
+            destination!.Value = source.Value + 1;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            global::TestCase.Destination CreateByFactory1() => CreateByFactory();
+
+            global::TestCase.Destination destination1 = CreateByFactory1();
+            destination1!.Value = source.Value + 1;
+
+            return destination1;
         }
     }
 }

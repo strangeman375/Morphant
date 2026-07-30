@@ -79,12 +79,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination(
-                id: source!.Id,
-                name: source!.Name)
-            {
-                Remaining = source!.Remaining
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -100,19 +95,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination(
-                    id: source!.Id,
-                    name: source!.Name)
-                {
-                    Remaining = source!.Remaining
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.Id = source!.Id;
-            destination!.Name = source!.Name;
-            destination!.Remaining = source!.Remaining;
+            destination!.Id = source.Id;
+            destination!.Name = source.Name;
+            destination!.Remaining = source.Remaining;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination(
+                id: source.Id,
+                name: source.Name)
+            {
+                Remaining = source.Remaining
+            };
         }
     }
 }
@@ -200,10 +202,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination(
-                id: source!.id,
-                name: source!.Name,
-                mode: source!.Mode);
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -219,13 +218,20 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination(
-                    id: source!.id,
-                    name: source!.Name,
-                    mode: source!.Mode);
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination(
+                id: source.id,
+                name: source.Name,
+                mode: source.Mode);
         }
     }
 }
@@ -351,7 +357,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotImplementedException();
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -367,10 +373,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.AmbiguousDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotImplementedException();
         }
 
         /// <inheritdoc/>
@@ -383,7 +396,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotImplementedException();
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -399,10 +412,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                return MapNewImpl1(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.UnmappableDestination? MapNewImpl1(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotImplementedException();
         }
 
         /// <inheritdoc/>
@@ -415,7 +435,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.ParameterlessDestination();
+            return MapNewImpl2(source, context);
         }
 
         /// <inheritdoc/>
@@ -431,10 +451,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.ParameterlessDestination();
+                return MapNewImpl2(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.ParameterlessDestination? MapNewImpl2(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.ParameterlessDestination();
         }
     }
 }
@@ -546,11 +573,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.CompatibleDestination(
-                numeric: source!.Numeric,
-                converted: source!.Converted,
-                allowNull: source!.AllowNull,
-                notNull: source!.NotNull);
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -566,14 +589,21 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.CompatibleDestination(
-                    numeric: source!.Numeric,
-                    converted: source!.Converted,
-                    allowNull: source!.AllowNull,
-                    notNull: source!.NotNull);
+                return MapNewImpl(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.CompatibleDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.CompatibleDestination(
+                numeric: source.Numeric,
+                converted: source.Converted,
+                allowNull: source.AllowNull,
+                notNull: source.NotNull);
         }
 
         /// <inheritdoc/>
@@ -586,7 +616,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotImplementedException();
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -602,10 +632,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                return MapNewImpl1(source, context);
             }
 
             return destination;
+        }
+
+        private global::TestCase.IncompatibleDestination? MapNewImpl1(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotImplementedException();
         }
     }
 }
@@ -712,14 +749,7 @@ namespace TestCase
                 return default;
             }
 
-            var sourceId = source!.Id;
-
-            return new global::TestCase.RequiredDestination(
-                id: sourceId)
-            {
-                Id = sourceId,
-                Remaining = source!.Remaining
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -735,20 +765,27 @@ namespace TestCase
 
             if (destination is null)
             {
-                var sourceId = source!.Id;
-
-                return new global::TestCase.RequiredDestination(
-                    id: sourceId)
-                {
-                    Id = sourceId,
-                    Remaining = source!.Remaining
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.Id = source!.Id;
-            destination!.Remaining = source!.Remaining;
+            destination!.Id = source.Id;
+            destination!.Remaining = source.Remaining;
 
             return destination;
+        }
+
+        private global::TestCase.RequiredDestination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            var sourceId = source.Id;
+
+            return new global::TestCase.RequiredDestination(
+                id: sourceId)
+            {
+                Id = sourceId,
+                Remaining = source.Remaining
+            };
         }
 
         /// <inheritdoc/>
@@ -761,11 +798,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.SetsRequiredDestination(
-                id: source!.Id)
-            {
-                Remaining = source!.Remaining
-            };
+            return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -781,17 +814,24 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.SetsRequiredDestination(
-                    id: source!.Id)
-                {
-                    Remaining = source!.Remaining
-                };
+                return MapNewImpl1(source, context);
             }
 
-            destination!.Id = source!.Id;
-            destination!.Remaining = source!.Remaining;
+            destination!.Id = source.Id;
+            destination!.Remaining = source.Remaining;
 
             return destination;
+        }
+
+        private global::TestCase.SetsRequiredDestination? MapNewImpl1(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.SetsRequiredDestination(
+                id: source.Id)
+            {
+                Remaining = source.Remaining
+            };
         }
 
         /// <inheritdoc/>
@@ -804,7 +844,7 @@ namespace TestCase
                 return default;
             }
 
-            throw new global::System.NotImplementedException();
+            return MapNewImpl2(source, context);
         }
 
         /// <inheritdoc/>
@@ -820,12 +860,19 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.NotImplementedException();
+                return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source!.Value;
+            destination!.Value = source.Value;
 
             return destination;
+        }
+
+        private global::TestCase.IncompleteRequiredDestination? MapNewImpl2(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            throw new global::System.NotImplementedException();
         }
     }
 }
@@ -907,19 +954,7 @@ namespace TestCase
                 return default;
             }
 
-            var sourceId = source!.Id;
-            var sourceId1 = source!.id;
-            var sourceClass1 = source!.@class;
-
-            return new global::TestCase.Destination(
-                Id: sourceId,
-                id: sourceId1,
-                @class: sourceClass1)
-            {
-                Id = sourceId,
-                id = sourceId1,
-                @class = sourceClass1
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -935,26 +970,33 @@ namespace TestCase
 
             if (destination is null)
             {
-                var sourceId = source!.Id;
-                var sourceId1 = source!.id;
-                var sourceClass1 = source!.@class;
-
-                return new global::TestCase.Destination(
-                    Id: sourceId,
-                    id: sourceId1,
-                    @class: sourceClass1)
-                {
-                    Id = sourceId,
-                    id = sourceId1,
-                    @class = sourceClass1
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.Id = source!.Id;
-            destination!.id = source!.id;
-            destination!.@class = source!.@class;
+            destination!.Id = source.Id;
+            destination!.id = source.id;
+            destination!.@class = source.@class;
 
             return destination;
+        }
+
+        private global::TestCase.Destination? MapNewImpl(
+            global::TestCase.Source source,
+            global::Morphant.MappingContext context)
+        {
+            var sourceId = source.Id;
+            var sourceId1 = source.id;
+            var sourceClass1 = source.@class;
+
+            return new global::TestCase.Destination(
+                Id: sourceId,
+                id: sourceId1,
+                @class: sourceClass1)
+            {
+                Id = sourceId,
+                id = sourceId1,
+                @class = sourceClass1
+            };
         }
     }
 }
@@ -1033,11 +1075,7 @@ namespace TestCase
                 return default;
             }
 
-            return new global::TestCase.Destination<T>(
-                value: source!.Value)
-            {
-                Remaining = source!.Remaining
-            };
+            return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -1053,17 +1091,24 @@ namespace TestCase
 
             if (destination is null)
             {
-                return new global::TestCase.Destination<T>(
-                    value: source!.Value)
-                {
-                    Remaining = source!.Remaining
-                };
+                return MapNewImpl(source, context);
             }
 
-            destination!.Value = source!.Value;
-            destination!.Remaining = source!.Remaining;
+            destination!.Value = source.Value;
+            destination!.Remaining = source.Remaining;
 
             return destination;
+        }
+
+        private global::TestCase.Destination<T>? MapNewImpl(
+            global::TestCase.Source<T> source,
+            global::Morphant.MappingContext context)
+        {
+            return new global::TestCase.Destination<T>(
+                value: source.Value)
+            {
+                Remaining = source.Remaining
+            };
         }
     }
 }

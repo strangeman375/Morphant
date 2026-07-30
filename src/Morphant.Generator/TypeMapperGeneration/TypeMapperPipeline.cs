@@ -293,8 +293,8 @@ internal static class TypeMapperPipeline
             }
         }
 
-        var usedDirectBlockMethodNames =
-            BuildUsedDirectBlockMethodNames(mapperType);
+        var usedGeneratedMethodNames =
+            BuildUsedGeneratedMethodNames(mapperType);
         var mappings =
             ImmutableArray.CreateBuilder<TypeMapperMappingModel>(
                 registrations.Count);
@@ -314,7 +314,7 @@ internal static class TypeMapperPipeline
                         registration,
                         compilation,
                         mapperType,
-                        usedDirectBlockMethodNames,
+                        usedGeneratedMethodNames,
                         cancellationToken)
                     : BuildEmptyMapping(
                         registration,
@@ -322,21 +322,44 @@ internal static class TypeMapperPipeline
                             registration.DestinationType,
                             cancellationToken));
 
+            var mapNewImplMethodName =
+                RequiresMapNewImpl(
+                    mapping,
+                    effectiveSettings)
+                    ? AllocateUserLocalName(
+                        "MapNewImpl",
+                        usedGeneratedMethodNames)
+                    : null;
+
             mappings.Add(
                 mapping with
                 {
-                    EffectiveSettings = effectiveSettings
+                    EffectiveSettings = effectiveSettings,
+                    MapNewImplMethodName =
+                        mapNewImplMethodName
                 });
         }
 
         return mappings.ToImmutable();
     }
 
+    private static bool RequiresMapNewImpl(
+        TypeMapperMappingModel mapping,
+        EffectiveMappingSettings settings)
+    {
+        return mapping.DestinationCanBeNull &&
+               settings.IsNullSourceHandlingValid &&
+               settings.SupportsMapNew &&
+               settings.SupportsMapExisting &&
+               settings.NullDestinationHandling ==
+                   NullDestinationHandlingValue.CreateNew;
+    }
+
     private static TypeMapperMappingModel BuildMapping(
         MapperBuilderMapRegistrationInfo registration,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
-        HashSet<string> usedDirectBlockMethodNames,
+        HashSet<string> usedGeneratedMethodNames,
         CancellationToken cancellationToken)
     {
         var destinationPlan =
@@ -387,7 +410,7 @@ internal static class TypeMapperPipeline
                 registration,
                 destinationPlan,
                 directBlock.Plan,
-                usedDirectBlockMethodNames);
+                usedGeneratedMethodNames);
         }
 
         var templateMapping =
@@ -461,7 +484,7 @@ internal static class TypeMapperPipeline
         MapperBuilderMapRegistrationInfo registration,
         DestinationPlan destinationPlan,
         TemplateDirectBlockPlan directBlock,
-        HashSet<string> usedDirectBlockMethodNames)
+        HashSet<string> usedGeneratedMethodNames)
     {
         return new TypeMapperMappingModel(
             SourceTypeName:
@@ -470,6 +493,10 @@ internal static class TypeMapperPipeline
             MaybeNullSourceTypeName:
                 TypeMapperMappingTypePolicy
                     .GetGeneratedMaybeNullTypeName(
+                        registration.SourceType),
+            NonNullSourceTypeName:
+                TypeMapperMappingTypePolicy
+                    .GetGeneratedNonNullTypeName(
                         registration.SourceType),
             DestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
@@ -493,13 +520,13 @@ internal static class TypeMapperPipeline
             DirectBlock:
                 BuildDirectBlock(
                     directBlock,
-                    usedDirectBlockMethodNames));
+                    usedGeneratedMethodNames));
     }
 
     private static TypeMapperDirectBlockMappingModel
         BuildDirectBlock(
             TemplateDirectBlockPlan directBlock,
-            HashSet<string> usedDirectBlockMethodNames)
+            HashSet<string> usedGeneratedMethodNames)
     {
         var usedNames =
             new HashSet<string>(StringComparer.Ordinal);
@@ -535,13 +562,13 @@ internal static class TypeMapperPipeline
                 usedNames,
                 StringComparer.Ordinal);
         usedMethodNames.UnionWith(
-            usedDirectBlockMethodNames);
+            usedGeneratedMethodNames);
         var methodName =
             AllocateUserLocalName(
                 "MapByTemplate",
                 usedMethodNames);
 
-        usedDirectBlockMethodNames.Add(methodName);
+        usedGeneratedMethodNames.Add(methodName);
         localNames.Add(
             directBlock.LocalFunctionPlaceholderName,
             methodName);
@@ -559,7 +586,7 @@ internal static class TypeMapperPipeline
                 localNames));
     }
 
-    private static HashSet<string> BuildUsedDirectBlockMethodNames(
+    private static HashSet<string> BuildUsedGeneratedMethodNames(
         INamedTypeSymbol mapperType)
     {
         var result =
@@ -602,6 +629,10 @@ internal static class TypeMapperPipeline
             MaybeNullSourceTypeName:
                 TypeMapperMappingTypePolicy
                     .GetGeneratedMaybeNullTypeName(
+                        registration.SourceType),
+            NonNullSourceTypeName:
+                TypeMapperMappingTypePolicy
+                    .GetGeneratedNonNullTypeName(
                         registration.SourceType),
             DestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
@@ -678,6 +709,9 @@ internal static class TypeMapperPipeline
                 registration.SourceType),
             TypeMapperMappingTypePolicy
                 .GetGeneratedMaybeNullTypeName(
+                    registration.SourceType),
+            TypeMapperMappingTypePolicy
+                .GetGeneratedNonNullTypeName(
                     registration.SourceType),
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                 registration.DestinationType),
@@ -1442,7 +1476,7 @@ internal static class TypeMapperPipeline
         }
 
         return
-            $"source!.{EscapeIdentifier(argument.SourceMemberName)}";
+            $"source.{EscapeIdentifier(argument.SourceMemberName)}";
     }
 
     private static string BuildConditionalValueExpression(
