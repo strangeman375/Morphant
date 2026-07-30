@@ -97,5 +97,26 @@
   the user explicitly requests a branch or pull request, if remote `main` has
   conflicting concurrent changes, or if fast-forward publication is not
   possible.
+- Keep publication proportional to the change. The normal direct-to-`main`
+  connector flow is:
+  1. In one local pass, verify the intended file set, create the commit, and
+     record its tree SHA.
+  2. Read the remote `main` head once and use its cached or returned tree as the
+     base tree.
+  3. Create one remote tree. Put changed UTF-8 text content directly in its tree
+     entries; create separate blobs only for binary, oversized, or
+     connector-incompatible files.
+  4. Compare the resulting remote tree SHA with the local commit tree SHA.
+  5. Create one remote commit with the previously read head as its sole parent,
+     then update `main` with `force: false`.
+  6. Update the local publication cache and report the result once.
+- Do not probe known-unavailable `git push` or `gh` transports on every
+  publication, invoke a branch/PR workflow for normal Morphant changes, verify
+  every text blob separately, repeatedly reread an unchanged remote head, or
+  publish per-file progress reports. The final non-force ref update is the
+  concurrency and fast-forward guard.
+- Do not rerun tests or repeat a completed diff review merely because
+  publication is starting. Run the focused validation once for the final tree;
+  if the tree changes afterward, rerun only the affected validation.
 - Keep tool output focused: use filtered test runs and avoid returning entire
   files or build logs when a smaller excerpt establishes the result.
