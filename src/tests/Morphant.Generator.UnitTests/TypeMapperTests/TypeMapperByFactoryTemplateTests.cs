@@ -142,8 +142,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Explicit = Adjust(source.Explicit);
-            destination!.Remaining = source.Remaining;
+            destination.Explicit = Adjust(source.Explicit);
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -156,11 +156,11 @@ namespace TestCase
 
             global::TestCase.Destination CreateByFactory() => CreateDestination(factoryValue);
 
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Explicit = Adjust(source.Explicit);
-            destination1!.Remaining = source.Remaining;
+            global::TestCase.Destination destination = CreateByFactory();
+            destination.Explicit = Adjust(source.Explicit);
+            destination.Remaining = source.Remaining;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -302,8 +302,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Name = source.Name + " interface";
-            destination!.Id = source.Id;
+            destination.Name = source.Name + " interface";
+            destination.Id = source.Id;
 
             return destination;
         }
@@ -314,11 +314,11 @@ namespace TestCase
         {
             global::TestCase.ConcreteInterfaceDestination CreateByFactory(global::TestCase.Source s) => new global::TestCase.ConcreteInterfaceDestination(s.Id);
 
-            global::TestCase.IInterfaceDestination destination1 = CreateByFactory(source);
-            destination1!.Name = source.Name + " interface";
-            destination1!.Id = source.Id;
+            global::TestCase.IInterfaceDestination destination = CreateByFactory(source);
+            destination.Name = source.Name + " interface";
+            destination.Id = source.Id;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -467,8 +467,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Code = source.Code;
-            destination!.Remaining = source.Remaining;
+            destination.Code = source.Code;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -479,11 +479,11 @@ namespace TestCase
         {
             global::TestCase.Destination CreateByFactory(global::TestCase.Source s) => new global::TestCase.Destination(s.Name, 1);
 
-            global::TestCase.Destination destination1 = CreateByFactory(source);
-            destination1!.Code = source.Code;
-            destination1!.Remaining = source.Remaining;
+            global::TestCase.Destination destination = CreateByFactory(source);
+            destination.Code = source.Code;
+            destination.Remaining = source.Remaining;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -676,12 +676,12 @@ namespace TestCase
         {
             global::TestCase.ValueDestination CreateByFactory() => new global::TestCase.ValueDestination();
 
-            global::TestCase.ValueDestination? destination1 = CreateByFactory();
-            var destinationValue1 = destination1.Value;
-            destinationValue1.Value = source.Value + 1;
-            destinationValue1.Remaining = source.Remaining;
+            global::TestCase.ValueDestination? destination = CreateByFactory();
+            var destinationValue = destination.Value;
+            destinationValue.Value = source.Value + 1;
+            destinationValue.Remaining = source.Remaining;
 
-            return destinationValue1;
+            return destinationValue;
         }
 
         /// <inheritdoc/>
@@ -713,8 +713,8 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Remaining = source.Remaining + 2;
-            destination!.Value = source.Value;
+            destination.Remaining = source.Remaining + 2;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -725,11 +725,11 @@ namespace TestCase
         {
             global::TestCase.GenericDestination<int> CreateByFactory(global::TestCase.Source s) => new global::TestCase.GenericDestination<int>(s.Value + 2);
 
-            global::TestCase.GenericDestination<int> destination1 = CreateByFactory(source);
-            destination1!.Remaining = source.Remaining + 2;
-            destination1!.Value = source.Value;
+            global::TestCase.GenericDestination<int> destination = CreateByFactory(source);
+            destination.Remaining = source.Remaining + 2;
+            destination.Value = source.Value;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -864,7 +864,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value + 1;
+            destination.Value = source.Value + 1;
 
             return destination;
         }
@@ -875,10 +875,10 @@ namespace TestCase
         {
             static global::TestCase.Destination CreateByFactory() => null!;
 
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Value = source.Value + 1;
+            global::TestCase.Destination destination = CreateByFactory();
+            destination.Value = source.Value + 1;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -1014,7 +1014,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value + 20;
+            destination.Value = source.Value + 20;
 
             return destination;
         }
@@ -1025,10 +1025,10 @@ namespace TestCase
         {
             global::TestCase.Destination CreateByFactory() => new global::TestCase.Destination((byte)10);
 
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Value = source.Value + 20;
+            global::TestCase.Destination destination = CreateByFactory();
+            destination.Value = source.Value + 20;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -1391,7 +1391,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value + 1;
+            destination.Value = source.Value + 1;
 
             return destination;
         }
@@ -1433,7 +1433,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value + 2;
+            destination.Value = source.Value + 2;
 
             return destination;
         }
@@ -1475,7 +1475,7 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source.Value + 3;
+            destination.Value = source.Value + 3;
 
             return destination;
         }
@@ -1517,7 +1517,7 @@ namespace TestCase
                 return MapNewImpl3(source, context);
             }
 
-            destination!.Value = source.Value + 4;
+            destination.Value = source.Value + 4;
 
             return destination;
         }
@@ -1536,10 +1536,10 @@ namespace TestCase
                 return new global::TestCase.Destination();
             }
 
-            global::TestCase.Destination destination1 = CreateByFactory(source);
-            destination1!.Value = source.Value + 4;
+            global::TestCase.Destination destination = CreateByFactory(source);
+            destination.Value = source.Value + 4;
 
-            return destination1;
+            return destination;
         }
 
         /// <inheritdoc/>
@@ -1571,7 +1571,7 @@ namespace TestCase
                 return MapNewImpl4(source, context);
             }
 
-            destination!.Value = source.Value + 5;
+            destination.Value = source.Value + 5;
 
             return destination;
         }
@@ -1742,7 +1742,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -1776,10 +1776,10 @@ namespace TestCase
                 }
             }
 
-            global::TestCase.Destination destination1 = CreateByFactory(source);
-            destination1!.Value = source.Value;
+            global::TestCase.Destination destination = CreateByFactory(source);
+            destination.Value = source.Value;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -1924,7 +1924,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.ReceiverCalls = _provider.Calls;
+            destination.ReceiverCalls = _provider.Calls;
 
             return destination;
         }
@@ -1934,10 +1934,10 @@ namespace TestCase
             global::Morphant.MappingContext context)
         {
             global::System.Func<global::TestCase.Destination> factory = _provider.Create;
-            global::TestCase.Destination destination1 = factory();
-            destination1!.ReceiverCalls = _provider.Calls;
+            global::TestCase.Destination destination = factory();
+            destination.ReceiverCalls = _provider.Calls;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -2157,7 +2157,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value + 1;
+            destination.Value = source.Value + 1;
 
             return destination;
         }
@@ -2167,10 +2167,10 @@ namespace TestCase
             global::Morphant.MappingContext context)
         {
             global::System.Func<global::TestCase.MethodGroupDestination> factory = Provider.CreateMethodGroup;
-            global::TestCase.MethodGroupDestination destination1 = factory();
-            destination1!.Value = source.Value + 1;
+            global::TestCase.MethodGroupDestination destination = factory();
+            destination.Value = source.Value + 1;
 
-            return destination1;
+            return destination;
         }
 
         /// <inheritdoc/>
@@ -2202,7 +2202,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value + 2;
+            destination.Value = source.Value + 2;
 
             return destination;
         }
@@ -2212,10 +2212,10 @@ namespace TestCase
             global::Morphant.MappingContext context)
         {
             global::System.Func<global::TestCase.DelegateDestination> factory = source.Value > 0 ? Factory : _factory;
-            global::TestCase.DelegateDestination destination1 = factory();
-            destination1!.Value = source.Value + 2;
+            global::TestCase.DelegateDestination destination = factory();
+            destination.Value = source.Value + 2;
 
-            return destination1;
+            return destination;
         }
 
         /// <inheritdoc/>
@@ -2247,7 +2247,7 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source.Value + 3;
+            destination.Value = source.Value + 3;
 
             return destination;
         }
@@ -2264,10 +2264,10 @@ namespace TestCase
                 return new global::TestCase.BlockLambdaDestination(factoryValue);
             }
 
-            global::TestCase.BlockLambdaDestination destination1 = CreateByFactory(source);
-            destination1!.Value = source.Value + 3;
+            global::TestCase.BlockLambdaDestination destination = CreateByFactory(source);
+            destination.Value = source.Value + 3;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -2412,7 +2412,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value + 1;
+            destination.Value = source.Value + 1;
 
             return destination;
         }
@@ -2424,7 +2424,7 @@ namespace TestCase
             global::TestCase.Destination CreateByFactory1() => CreateByFactory();
 
             global::TestCase.Destination destination1 = CreateByFactory1();
-            destination1!.Value = source.Value + 1;
+            destination1.Value = source.Value + 1;
 
             return destination1;
         }

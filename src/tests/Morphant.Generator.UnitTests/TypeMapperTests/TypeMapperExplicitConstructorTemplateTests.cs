@@ -151,13 +151,13 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Explicit = source.Explicit + 1;
-            destination!.First = source.First;
-            destination!.Second = source.Second;
-            destination!.Label = source.Label;
-            destination!.Enabled = source.Enabled;
-            destination!.Tags = source.Tags;
-            destination!.Remaining = source.Remaining;
+            destination.Explicit = source.Explicit + 1;
+            destination.First = source.First;
+            destination.Second = source.Second;
+            destination.Label = source.Label;
+            destination.Enabled = source.Enabled;
+            destination.Tags = source.Tags;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -300,7 +300,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -581,9 +581,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.SuppliedSet = source.SuppliedSet;
-            destination!.OmittedSet = source.OmittedSet;
-            destination!.Remaining = source.Remaining;
+            destination.SuppliedSet = source.SuppliedSet;
+            destination.OmittedSet = source.OmittedSet;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -805,8 +805,8 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Remaining = source.Remaining + 2;
-            destination!.Value = source.Value;
+            destination.Remaining = source.Remaining + 2;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -943,7 +943,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -1099,7 +1099,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Remaining = source.Remaining;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -1145,8 +1145,8 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value;
-            destination!.Remaining = source.Remaining;
+            destination.Value = source.Value;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }

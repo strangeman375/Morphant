@@ -161,10 +161,10 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.AutomaticFirst = source.AutomaticFirst;
-            destination!.ExplicitFirst = Observe(source.ExplicitFirst);
-            destination!.GenericAutomatic = source.GenericAutomatic;
-            destination!.Remaining = source.Remaining;
+            destination.AutomaticFirst = source.AutomaticFirst;
+            destination.ExplicitFirst = Observe(source.ExplicitFirst);
+            destination.GenericAutomatic = source.GenericAutomatic;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -334,12 +334,12 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.RequiredAuto = source.RequiredAuto;
-            destination!.IgnoredOptional = source.IgnoredOptional;
-            destination!.GenericAuto = source.GenericAuto;
-            destination!.GenericIgnored = source.GenericIgnored;
-            destination!.ExplicitLast = source.ExplicitLast;
-            destination!.Remaining = source.Remaining;
+            destination.RequiredAuto = source.RequiredAuto;
+            destination.IgnoredOptional = source.IgnoredOptional;
+            destination.GenericAuto = source.GenericAuto;
+            destination.GenericIgnored = source.GenericIgnored;
+            destination.ExplicitLast = source.ExplicitLast;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -524,12 +524,12 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.FirstAuto = source.FirstAuto;
-            destination!.ExplicitValue = source.ExplicitValue;
-            destination!.IgnoredOptional = source.IgnoredOptional;
-            destination!.GenericAuto = source.GenericAuto;
-            destination!.GenericIgnored = source.GenericIgnored;
-            destination!.Remaining = source.Remaining;
+            destination.FirstAuto = source.FirstAuto;
+            destination.ExplicitValue = source.ExplicitValue;
+            destination.IgnoredOptional = source.IgnoredOptional;
+            destination.GenericAuto = source.GenericAuto;
+            destination.GenericIgnored = source.GenericIgnored;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -693,7 +693,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -734,7 +734,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -912,7 +912,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -953,7 +953,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -1097,9 +1097,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
-            destination!.Tags = source.Tags;
-            destination!.Remaining = source.Remaining;
+            destination.Value = source.Value;
+            destination.Tags = source.Tags;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -1302,10 +1302,10 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Automatic = source.Automatic;
-            destination!.RequiredAuto = source.RequiredAuto;
-            destination!.GenericAuto = source.GenericAuto;
-            destination!.Remaining = source.Remaining;
+            destination.Automatic = source.Automatic;
+            destination.RequiredAuto = source.RequiredAuto;
+            destination.GenericAuto = source.GenericAuto;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -1316,13 +1316,13 @@ namespace TestCase
         {
             global::TestCase.Destination CreateByFactory() => global::TestCase.TestMapper.Create();
 
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Automatic = source.Automatic;
-            destination1!.RequiredAuto = source.RequiredAuto;
-            destination1!.GenericAuto = source.GenericAuto;
-            destination1!.Remaining = source.Remaining;
+            global::TestCase.Destination destination = CreateByFactory();
+            destination.Automatic = source.Automatic;
+            destination.RequiredAuto = source.RequiredAuto;
+            destination.GenericAuto = source.GenericAuto;
+            destination.Remaining = source.Remaining;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -1457,9 +1457,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.First = global::TestCase.MarkerLookalikes.Auto();
-            destination!.Second = global::TestCase.MarkerLookalikes.Ignore();
-            destination!.Remaining = source.Remaining;
+            destination.First = global::TestCase.MarkerLookalikes.Auto();
+            destination.Second = global::TestCase.MarkerLookalikes.Ignore();
+            destination.Remaining = source.Remaining;
 
             return destination;
         }

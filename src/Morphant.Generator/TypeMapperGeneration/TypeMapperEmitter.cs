@@ -614,8 +614,7 @@ internal static class TypeMapperEmitter
             assignmentTarget = valueLocalName;
             returnExpression = valueLocalName;
         }
-        else if (mapping.MapExistingKind ==
-                 TypeMapperMapExistingKind.Reference)
+        else if (factory.DestinationRequiresNullForgivingOperator)
         {
             assignmentTarget += "!";
         }
@@ -1104,17 +1103,11 @@ internal static class TypeMapperEmitter
             writer,
             mapping.MapExistingMemberMappings);
 
-        var destinationExpression =
-            mapping.MapExistingKind ==
-                TypeMapperMapExistingKind.Reference
-                ? "destination!"
-                : "destination";
-
         foreach (var memberMapping in
                  mapping.MapExistingMemberMappings)
         {
             writer.Line(
-                $"{destinationExpression}." +
+                "destination." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
                 MemberValueExpression(memberMapping) +
                 ";");

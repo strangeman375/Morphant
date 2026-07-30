@@ -121,14 +121,14 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.PropertyToProperty = source.PropertyToProperty;
-            destination!.PropertyToField = source.PropertyToField;
-            destination!.FieldToProperty = source.FieldToProperty;
-            destination!.FieldToField = source.FieldToField;
-            destination!.GetOnlySource = source.GetOnlySource;
-            destination!.ReadonlySourceField = source.ReadonlySourceField;
-            destination!.SetOnlyDestination = source.SetOnlyDestination;
-            destination!.RequiredField = source.RequiredField;
+            destination.PropertyToProperty = source.PropertyToProperty;
+            destination.PropertyToField = source.PropertyToField;
+            destination.FieldToProperty = source.FieldToProperty;
+            destination.FieldToField = source.FieldToField;
+            destination.GetOnlySource = source.GetOnlySource;
+            destination.ReadonlySourceField = source.ReadonlySourceField;
+            destination.SetOnlyDestination = source.SetOnlyDestination;
+            destination.RequiredField = source.RequiredField;
 
             return destination;
         }
@@ -302,7 +302,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Included = source.Included;
+            destination.Included = source.Included;
 
             return destination;
         }
@@ -421,7 +421,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Included = source.Included;
+            destination.Included = source.Included;
 
             return destination;
         }
@@ -462,7 +462,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Included = source.Included;
+            destination.Included = source.Included;
 
             return destination;
         }
@@ -649,16 +649,16 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.BaseProperty = source.BaseProperty;
-            destination!.BaseField = source.BaseField;
-            destination!.InternalProperty = source.InternalProperty;
-            destination!.ProtectedInternalProperty = source.ProtectedInternalProperty;
-            destination!.HiddenBySourceType = source.HiddenBySourceType;
-            destination!.SourceCrossKind = source.SourceCrossKind;
-            destination!.DestinationCrossKind = source.DestinationCrossKind;
-            destination!.Overridden = source.Overridden;
-            destination!.DerivedProperty = source.DerivedProperty;
-            destination!.DerivedField = source.DerivedField;
+            destination.BaseProperty = source.BaseProperty;
+            destination.BaseField = source.BaseField;
+            destination.InternalProperty = source.InternalProperty;
+            destination.ProtectedInternalProperty = source.ProtectedInternalProperty;
+            destination.HiddenBySourceType = source.HiddenBySourceType;
+            destination.SourceCrossKind = source.SourceCrossKind;
+            destination.DestinationCrossKind = source.DestinationCrossKind;
+            destination.Overridden = source.Overridden;
+            destination.DerivedProperty = source.DerivedProperty;
+            destination.DerivedField = source.DerivedField;
 
             return destination;
         }
@@ -800,11 +800,11 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Base = source.Base;
-            destination!.Left = source.Left;
-            destination!.Right = source.Right;
-            destination!.Hidden = source.Hidden;
-            destination!.Derived = source.Derived;
+            destination.Base = source.Base;
+            destination.Left = source.Left;
+            destination.Right = source.Right;
+            destination.Hidden = source.Hidden;
+            destination.Derived = source.Derived;
 
             return destination;
         }
@@ -917,11 +917,11 @@ namespace TestCase
                     return MapNewImpl(source, context);
                 }
 
-                destination!.ProtectedValue = source.ProtectedValue;
-                destination!.ProtectedField = source.ProtectedField;
-                destination!.PrivateProtectedValue = source.PrivateProtectedValue;
-                destination!.Value = source.Value;
-                destination!.Field = source.Field;
+                destination.ProtectedValue = source.ProtectedValue;
+                destination.ProtectedField = source.ProtectedField;
+                destination.PrivateProtectedValue = source.PrivateProtectedValue;
+                destination.Value = source.Value;
+                destination.Field = source.Field;
 
                 return destination;
             }
@@ -1046,7 +1046,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -1065,9 +1065,7 @@ namespace TestCase
         global::TestCase.Outer<int>.Destination<int>? global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.Outer<int>.Destination<int>>.Map(
             global::TestCase.StructSource source,
             global::Morphant.MappingContext context)
-        {
-            return MapNewImpl1(source, context);
-        }
+            => MapNewImpl1(source, context);
 
         /// <inheritdoc/>
         global::TestCase.Outer<int>.Destination<int>? global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.Outer<int>.Destination<int>>.Map(
@@ -1080,7 +1078,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -1124,7 +1122,7 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -1217,8 +1215,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.PublicField = source.PublicField;
-            destination!.PublicProperty = source.PublicProperty;
+            destination.PublicField = source.PublicField;
+            destination.PublicProperty = source.PublicProperty;
 
             return destination;
         }

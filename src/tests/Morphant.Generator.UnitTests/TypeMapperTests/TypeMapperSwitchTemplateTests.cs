@@ -142,17 +142,17 @@ namespace TestCase
 
             switch (source.Payload)
             {
-                case global::TestCase.Payload { Value: > 0 } source2 when source.Offset >= 0:
+                case global::TestCase.Payload { Value: > 0 } source1 when source.Offset >= 0:
                 {
-                    var value1 = source2.Value + source.Offset;
+                    var value = source1.Value + source.Offset;
 
-                    destination!.Value = value1;
+                    destination.Value = value;
 
                     return destination;
                 }
-                case int number1 when number1 > 0:
+                case int number when number > 0:
                 {
-                    destination!.Value = number1;
+                    destination.Value = number;
 
                     return destination;
                 }
@@ -163,9 +163,9 @@ namespace TestCase
                 }
             }
 
-            var fallback1 = source.Fallback;
+            var fallback = source.Fallback;
 
-            destination!.Value = fallback1;
+            destination.Value = fallback;
 
             return destination;
         }
@@ -385,9 +385,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            var value1 = source.ObserveValue();
+            var value = source.ObserveValue();
 
-            destination!.Value = value1;
+            destination.Value = value;
 
             return destination;
         }
@@ -405,10 +405,10 @@ namespace TestCase
                 {
                     global::TestCase.Destination CreateByFactory(global::TestCase.Source source1) => new global::TestCase.Destination(source1.Id + 1);
 
-                    global::TestCase.Destination destination1 = CreateByFactory(source);
-                    destination1!.Value = value;
+                    global::TestCase.Destination destination = CreateByFactory(source);
+                    destination.Value = value;
 
-                    return destination1;
+                    return destination;
                 }
                 case global::TestCase.CreationKind.Convention:
                 {
@@ -584,7 +584,7 @@ namespace TestCase
             {
                 case global::TestCase.MemberKind.Auto:
                 {
-                    destination!.Child = source.Child;
+                    destination.Child = source.Child;
 
                     return destination;
                 }
@@ -594,13 +594,13 @@ namespace TestCase
                 }
                 case global::TestCase.MemberKind.Nested:
                 {
-                    destination!.Child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source.NestedChild, context);
+                    destination.Child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source.NestedChild, context);
 
                     return destination;
                 }
                 default:
                 {
-                    destination!.Child = source.ExplicitChild;
+                    destination.Child = source.ExplicitChild;
 
                     return destination;
                 }
@@ -935,7 +935,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Kind switch
+            destination.Value = source.Kind switch
             {
                 global::TestCase.ValueKind.Positive => source.Value,
                 _ => -source.Value
@@ -1095,19 +1095,19 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            var switchValue1 = source.Payload;
+            var switchValue = source.Payload;
 
-            switch (switchValue1)
+            switch (switchValue)
             {
-                case global::TestCase.ChildSource source2 when source2.Enabled:
+                case global::TestCase.ChildSource source1 when source1.Enabled:
                 {
-                    destination!.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination?>(source2, context);
+                    destination.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination?>(source1, context);
 
                     return destination;
                 }
-                case global::TestCase.ChildDestination child1:
+                case global::TestCase.ChildDestination child:
                 {
-                    destination!.Child = child1;
+                    destination.Child = child;
 
                     return destination;
                 }
@@ -1117,7 +1117,7 @@ namespace TestCase
                 }
             }
 
-            throw new global::System.Runtime.CompilerServices.SwitchExpressionException(switchValue1);
+            throw new global::System.Runtime.CompilerServices.SwitchExpressionException(switchValue);
         }
 
         private global::TestCase.Destination? MapNewImpl(
@@ -1293,14 +1293,14 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            var switchValue3 = source.Payload;
-            var switchValue2 = switchValue3;
+            var switchValue = source.Payload;
+            var switchValue1 = switchValue;
 
-            switch (switchValue2)
+            switch (switchValue1)
             {
-                case global::TestCase.ChildSource child1 when RejectAndReplace(ref switchValue3):
+                case global::TestCase.ChildSource child when RejectAndReplace(ref switchValue):
                 {
-                    destination!.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination?>(child1, context);
+                    destination.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination?>(child, context);
 
                     return destination;
                 }
@@ -1310,7 +1310,7 @@ namespace TestCase
                 }
             }
 
-            throw new global::System.Runtime.CompilerServices.SwitchExpressionException(switchValue2);
+            throw new global::System.Runtime.CompilerServices.SwitchExpressionException(switchValue1);
         }
 
         private global::TestCase.Destination? MapNewImpl(

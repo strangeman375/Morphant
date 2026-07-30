@@ -141,19 +141,19 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Numeric = source.Numeric;
-            destination!.LiftedNumeric = source.LiftedNumeric;
-            destination!.NullableNumeric = source.NullableNumeric;
-            destination!.Reference = source.Reference;
-            destination!.Interface = source.Interface;
-            destination!.Boxed = source.Boxed;
-            destination!.NullableBoxed = source.NullableBoxed;
-            destination!.Covariant = source.Covariant;
-            destination!.Collection = source.Collection;
-            destination!.Array = source.Array;
-            destination!.Tuple = source.Tuple;
-            destination!.NullableTarget = source.NullableTarget;
-            destination!.ToDynamic = source.ToDynamic;
+            destination.Numeric = source.Numeric;
+            destination.LiftedNumeric = source.LiftedNumeric;
+            destination.NullableNumeric = source.NullableNumeric;
+            destination.Reference = source.Reference;
+            destination.Interface = source.Interface;
+            destination.Boxed = source.Boxed;
+            destination.NullableBoxed = source.NullableBoxed;
+            destination.Covariant = source.Covariant;
+            destination.Collection = source.Collection;
+            destination.Array = source.Array;
+            destination.Tuple = source.Tuple;
+            destination.NullableTarget = source.NullableTarget;
+            destination.ToDynamic = source.ToDynamic;
 
             return destination;
         }
@@ -315,8 +315,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.DynamicToObject = source.DynamicToObject;
-            destination!.Included = source.Included;
+            destination.DynamicToObject = source.DynamicToObject;
+            destination.Included = source.Included;
 
             return destination;
         }
@@ -453,9 +453,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Safe = source.Safe;
-            destination!.SafeNullableTarget = source.SafeNullableTarget;
-            destination!.MaybeNullNullableTarget = source.MaybeNullNullableTarget;
+            destination.Safe = source.Safe;
+            destination.SafeNullableTarget = source.SafeNullableTarget;
+            destination.MaybeNullNullableTarget = source.MaybeNullNullableTarget;
 
             return destination;
         }
@@ -606,12 +606,12 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.NotNull = source.NotNull;
-            destination!.AcceptedByAllowNull = source.AcceptedByAllowNull;
-            destination!.MaybeNullAcceptedByAllowNull = source.MaybeNullAcceptedByAllowNull;
-            destination!.NonNullAcceptedByDisallowNull = source.NonNullAcceptedByDisallowNull;
-            destination!.NotNullField = source.NotNullField;
-            destination!.AcceptedByAllowNullField = source.AcceptedByAllowNullField;
+            destination.NotNull = source.NotNull;
+            destination.AcceptedByAllowNull = source.AcceptedByAllowNull;
+            destination.MaybeNullAcceptedByAllowNull = source.MaybeNullAcceptedByAllowNull;
+            destination.NonNullAcceptedByDisallowNull = source.NonNullAcceptedByDisallowNull;
+            destination.NotNullField = source.NotNullField;
+            destination.AcceptedByAllowNullField = source.AcceptedByAllowNullField;
 
             return destination;
         }
@@ -734,8 +734,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.ToNonNullable = source.ToNonNullable;
-            destination!.ToNullable = source.ToNullable;
+            destination.ToNonNullable = source.ToNonNullable;
+            destination.ToNullable = source.ToNullable;
 
             return destination;
         }
@@ -780,7 +780,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.FromNullable = source.FromNullable;
+            destination.FromNullable = source.FromNullable;
 
             return destination;
         }
@@ -1046,8 +1046,8 @@ namespace TestCase
                     return MapNewImpl(source, context);
                 }
 
-                destination!.Reference = source.Reference;
-                destination!.Boxed = source.Boxed;
+                destination.Reference = source.Reference;
+                destination.Boxed = source.Boxed;
 
                 return destination;
             }

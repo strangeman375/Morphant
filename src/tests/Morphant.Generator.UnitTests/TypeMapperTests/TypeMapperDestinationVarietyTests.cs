@@ -110,7 +110,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Id = source.Id;
+            destination.Id = source.Id;
 
             return destination;
         }
@@ -154,7 +154,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Name = source.Name;
+            destination.Name = source.Name;
 
             return destination;
         }
@@ -199,7 +199,7 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            destination!.Id = source.Id;
+            destination.Id = source.Id;
 
             return destination;
         }
@@ -240,7 +240,7 @@ namespace TestCase
                 return MapNewImpl3(source, context);
             }
 
-            destination!.Id = source.Id;
+            destination.Id = source.Id;
 
             return destination;
         }
@@ -281,7 +281,7 @@ namespace TestCase
                 return MapNewImpl4(source, context);
             }
 
-            destination!.Id = source.Id;
+            destination.Id = source.Id;
 
             return destination;
         }
@@ -515,7 +515,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -871,7 +871,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -915,7 +915,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -956,7 +956,7 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }

@@ -94,10 +94,10 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Optional = source.Optional;
-            destination!.Number = source.Number;
-            destination!.Name = source.Name;
-            destination!.@event = source.@event;
+            destination.Optional = source.Optional;
+            destination.Number = source.Number;
+            destination.Name = source.Name;
+            destination.@event = source.@event;
 
             return destination;
         }
@@ -279,11 +279,11 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Inherited = source.Inherited;
-            destination!.Included = source.Included;
-            destination!.NullableIncluded = source.NullableIncluded;
-            destination!.CompatibleType = source.CompatibleType;
-            destination!.SourceField = source.SourceField;
+            destination.Inherited = source.Inherited;
+            destination.Included = source.Included;
+            destination.NullableIncluded = source.NullableIncluded;
+            destination.CompatibleType = source.CompatibleType;
+            destination.SourceField = source.SourceField;
 
             return destination;
         }
@@ -402,7 +402,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -443,7 +443,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -562,7 +562,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -638,7 +638,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -679,7 +679,7 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -811,7 +811,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -830,9 +830,7 @@ namespace TestCase
         global::TestCase.StructDestination? global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.StructDestination>.Map(
             global::TestCase.StructSource source,
             global::Morphant.MappingContext context)
-        {
-            return MapNewImpl1(source, context);
-        }
+            => MapNewImpl1(source, context);
 
         /// <inheritdoc/>
         global::TestCase.StructDestination? global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.StructDestination>.Map(
@@ -845,7 +843,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -889,7 +887,7 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -993,8 +991,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.RequiredValue = source.RequiredValue;
-            destination!.Included = source.Included;
+            destination.RequiredValue = source.RequiredValue;
+            destination.Included = source.Included;
 
             return destination;
         }

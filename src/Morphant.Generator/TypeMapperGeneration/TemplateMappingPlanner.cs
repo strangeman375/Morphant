@@ -20,6 +20,10 @@ internal static class TemplateMappingPlanner
         SimplifiedMapNewExpressionAnnotation =
             new(nameof(SimplifiedMapNewExpressionAnnotation));
 
+    private static readonly SyntaxAnnotation
+        NonNullableValueDestinationAccessAnnotation =
+            new(nameof(NonNullableValueDestinationAccessAnnotation));
+
     public static bool HasUnmappedRequiredMembers(
         ITypeSymbol? destination,
         ImmutableArray<TypeMapperMemberMappingModel> mappings,
@@ -125,6 +129,9 @@ internal static class TemplateMappingPlanner
             destinationParameterSymbol is null
                 ? null
                 : SyntaxFactory.IdentifierName("destination");
+        var mapExistingDestinationIsKnownNonNull =
+            destinationParameterSymbol is not null &&
+            registration.DestinationType.IsReferenceType;
 
         if (directTemplate &&
             lambda.Block is { } directBlock)
@@ -194,7 +201,8 @@ internal static class TemplateMappingPlanner
                 mapNewDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames);
+                runtimeLocalPlaceholderNames,
+                destinationIsKnownNonNull: false);
 
         string RewriteMapExisting(ExpressionSyntax expression) =>
             RewriteParameters(
@@ -206,7 +214,9 @@ internal static class TemplateMappingPlanner
                 mapExistingDestinationExpression,
                 semanticModel,
                 controlFlow.RuntimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames);
+                runtimeLocalPlaceholderNames,
+                destinationIsKnownNonNull:
+                    mapExistingDestinationIsKnownNonNull);
 
         string RewriteMapNewPattern(PatternSyntax pattern) =>
             RewritePattern(
@@ -1026,7 +1036,8 @@ internal static class TemplateMappingPlanner
                 destinationExpression,
                 semanticModel,
                 capturePlaceholders,
-                capturePlaceholderNames)
+                capturePlaceholderNames,
+                destinationIsKnownNonNull: false)
             .Visit(syntax)!;
 
         if (!rewriteUnresolvedCaptureNames)
@@ -1482,7 +1493,8 @@ internal static class TemplateMappingPlanner
         IReadOnlyDictionary<ISymbol, string>
             runtimeLocalPlaceholders,
         IReadOnlyCollection<string>
-            runtimeLocalPlaceholderNames)
+            runtimeLocalPlaceholderNames,
+        bool destinationIsKnownNonNull)
     {
         var rewritten = new TemplateParameterRewriter(
                 sourceParameter,
@@ -1493,7 +1505,8 @@ internal static class TemplateMappingPlanner
                 destinationExpression,
                 semanticModel,
                 runtimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames)
+                runtimeLocalPlaceholderNames,
+                destinationIsKnownNonNull)
             .Visit(expression)!
             .WithoutTrivia()
             .NormalizeWhitespace();
@@ -1525,7 +1538,8 @@ internal static class TemplateMappingPlanner
                 destinationExpression,
                 semanticModel,
                 runtimeLocalPlaceholders,
-                runtimeLocalPlaceholderNames)
+                runtimeLocalPlaceholderNames,
+                destinationIsKnownNonNull: false)
             .Visit(pattern)!
             .WithoutTrivia()
             .NormalizeWhitespace();
@@ -1667,7 +1681,8 @@ internal static class TemplateMappingPlanner
         IReadOnlyDictionary<ISymbol, string>
             runtimeLocalPlaceholders,
         IReadOnlyCollection<string>
-            runtimeLocalPlaceholderNames)
+            runtimeLocalPlaceholderNames,
+        bool destinationIsKnownNonNull)
         : CSharpSyntaxRewriter
     {
         public override SyntaxNode? VisitBinaryExpression(
@@ -1684,7 +1699,47 @@ internal static class TemplateMappingPlanner
                     rewritten.Right.WithTriviaFrom(node));
             }
 
+            if (node.IsKind(SyntaxKind.CoalesceExpression) &&
+                UnwrapParentheses(rewritten.Left).HasAnnotation(
+                    NonNullableValueDestinationAccessAnnotation))
+            {
+                return rewritten.Left.WithTriviaFrom(node);
+            }
+
             return rewritten;
+        }
+
+        public override SyntaxNode? VisitConditionalAccessExpression(
+            ConditionalAccessExpressionSyntax node)
+        {
+            if (!destinationIsKnownNonNull ||
+                !IsDestinationParameterExpression(
+                    node.Expression))
+            {
+                return base.VisitConditionalAccessExpression(
+                    node);
+            }
+
+            var receiver =
+                (ExpressionSyntax)Visit(node.Expression)!;
+            var whenNotNull =
+                (ExpressionSyntax)Visit(node.WhenNotNull)!;
+            var rewritten =
+                SyntaxFactory.ParseExpression(
+                        receiver.WithoutTrivia().ToFullString() +
+                        whenNotNull.WithoutTrivia().ToFullString())
+                    .WithTriviaFrom(node);
+            var resultType =
+                GetExpressionType(node.WhenNotNull);
+
+            return resultType is
+                {
+                    IsValueType: true
+                } &&
+                !IsNullableValueType(resultType)
+                    ? rewritten.WithAdditionalAnnotations(
+                        NonNullableValueDestinationAccessAnnotation)
+                    : rewritten;
         }
 
         public override SyntaxNode? VisitParenthesizedExpression(
@@ -1696,8 +1751,10 @@ internal static class TemplateMappingPlanner
             var expression = rewritten.Expression;
 
             return node.Parent is BinaryExpressionSyntax &&
-                   expression.HasAnnotation(
-                       SimplifiedMapNewExpressionAnnotation) &&
+                   (expression.HasAnnotation(
+                        SimplifiedMapNewExpressionAnnotation) ||
+                    expression.HasAnnotation(
+                        NonNullableValueDestinationAccessAnnotation)) &&
                    CanRemoveParentheses(expression)
                 ? expression.WithTriviaFrom(node)
                 : rewritten;
@@ -1839,6 +1896,37 @@ internal static class TemplateMappingPlanner
             }
 
             return expression;
+        }
+
+        private bool IsDestinationParameterExpression(
+            ExpressionSyntax expression)
+        {
+            expression = UnwrapParentheses(expression);
+
+            while (expression is PostfixUnaryExpressionSyntax
+                   {
+                       RawKind:
+                           (int)SyntaxKind
+                               .SuppressNullableWarningExpression,
+                       Operand: var operand
+                   })
+            {
+                expression = UnwrapParentheses(operand);
+            }
+
+            return expression is IdentifierNameSyntax identifier &&
+                   destinationParameter is not null &&
+                   SymbolEqualityComparer.Default.Equals(
+                       GetReferencedSymbol(identifier),
+                       destinationParameter);
+        }
+
+        private static bool IsNullableValueType(
+            ITypeSymbol type)
+        {
+            return type is INamedTypeSymbol namedType &&
+                   namedType.OriginalDefinition.SpecialType ==
+                   SpecialType.System_Nullable_T;
         }
 
         private static ExpressionSyntax MarkSimplified(
@@ -2192,6 +2280,24 @@ internal static class TemplateMappingPlanner
                 return null;
             }
 
+            if (expression is MemberBindingExpressionSyntax
+                {
+                    Name: var boundMemberName,
+                    Parent:
+                    ConditionalAccessExpressionSyntax
+                    {
+                        Expression: var conditionalReceiver
+                    }
+                } &&
+                GetExpressionType(conditionalReceiver) is
+                    { } conditionalReceiverType)
+            {
+                return GetInstanceMemberType(
+                    expression,
+                    conditionalReceiverType,
+                    boundMemberName);
+            }
+
             if (expression is not MemberAccessExpressionSyntax
                 {
                     Expression: var receiver,
@@ -2203,6 +2309,17 @@ internal static class TemplateMappingPlanner
                 return null;
             }
 
+            return GetInstanceMemberType(
+                expression,
+                receiverType,
+                memberName);
+        }
+
+        private ITypeSymbol? GetInstanceMemberType(
+            ExpressionSyntax expression,
+            ITypeSymbol receiverType,
+            SimpleNameSyntax memberName)
+        {
             return GetUniqueType(
                 semanticModel.LookupSymbols(
                         expression.SpanStart,

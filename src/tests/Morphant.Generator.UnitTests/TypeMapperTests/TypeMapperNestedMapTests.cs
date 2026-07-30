@@ -167,11 +167,11 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericExistingSource, source.GenericExistingDestination, context);
-            destination!.InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredNewSource, context);
-            destination!.GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericNewSource, context);
-            destination!.InferredExisting = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredExistingSource, source.InferredExistingDestination, context);
-            destination!.Remaining = source.Remaining;
+            destination.GenericExisting = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericExistingSource, source.GenericExistingDestination, context);
+            destination.InferredNew = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredNewSource, context);
+            destination.GenericNew = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.GenericNewSource, context);
+            destination.InferredExisting = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(source.InferredExistingSource, source.InferredExistingDestination, context);
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -665,8 +665,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.ChildSource, context);
-            destination!.Remaining = source.Remaining;
+            destination.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.ChildSource, context);
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -677,11 +677,11 @@ namespace TestCase
         {
             global::TestCase.Destination CreateByFactory() => Create();
 
-            global::TestCase.Destination destination1 = CreateByFactory();
-            destination1!.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.ChildSource, context);
-            destination1!.Remaining = source.Remaining;
+            global::TestCase.Destination destination = CreateByFactory();
+            destination.Child = context.Mapper.Map<global::TestCase.NestedSource, global::TestCase.NestedDestination>(source.ChildSource, context);
+            destination.Remaining = source.Remaining;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -842,9 +842,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Lookalike = global::TestCase.MarkerLookalikes.Map(source.Child);
-            destination!.Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source), context);
-            destination!.TypedNull = context.Mapper.Map<global::TestCase.NestedSource?, global::TestCase.NestedDestination?>((global::TestCase.NestedSource?)null, (global::TestCase.NestedDestination?)null, context);
+            destination.Lookalike = global::TestCase.MarkerLookalikes.Map(source.Child);
+            destination.Computed = context.Mapper.Map<global::TestCase.INestedSource?, global::TestCase.INestedDestination?>(global::TestCase.TestMapper.GetNestedSource(source), context);
+            destination.TypedNull = context.Mapper.Map<global::TestCase.NestedSource?, global::TestCase.NestedDestination?>((global::TestCase.NestedSource?)null, (global::TestCase.NestedDestination?)null, context);
 
             return destination;
         }

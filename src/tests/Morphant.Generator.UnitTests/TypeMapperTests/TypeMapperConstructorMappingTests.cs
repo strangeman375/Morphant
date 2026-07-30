@@ -98,9 +98,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Id = source.Id;
-            destination!.Name = source.Name;
-            destination!.Remaining = source.Remaining;
+            destination.Id = source.Id;
+            destination.Name = source.Name;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -768,8 +768,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Id = source.Id;
-            destination!.Remaining = source.Remaining;
+            destination.Id = source.Id;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -817,8 +817,8 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Id = source.Id;
-            destination!.Remaining = source.Remaining;
+            destination.Id = source.Id;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -863,7 +863,7 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -973,9 +973,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Id = source.Id;
-            destination!.id = source.id;
-            destination!.@class = source.@class;
+            destination.Id = source.Id;
+            destination.id = source.id;
+            destination.@class = source.@class;
 
             return destination;
         }
@@ -1094,8 +1094,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
-            destination!.Remaining = source.Remaining;
+            destination.Value = source.Value;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }

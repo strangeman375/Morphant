@@ -136,9 +136,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Second = global::System.Math.Abs(source.Second);
-            destination!.First = source.First + 10;
-            destination!.Remaining = source.Remaining;
+            destination.Second = global::System.Math.Abs(source.Second);
+            destination.First = source.First + 10;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -422,7 +422,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -464,7 +464,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value + 1;
+            destination.Value = source.Value + 1;
 
             return destination;
         }
@@ -804,8 +804,8 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.ConventionRequired = source.ConventionRequired;
-            destination!.Remaining = source.Remaining;
+            destination.ConventionRequired = source.ConventionRequired;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -852,7 +852,7 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            destination!.Value = source.Value + 3;
+            destination.Value = source.Value + 3;
 
             return destination;
         }

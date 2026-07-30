@@ -266,11 +266,11 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            var displayName1 = source.UseFirstName ? source.FirstName : source.LastName;
+            var displayName = source.UseFirstName ? source.FirstName : source.LastName;
 
-            destination!.DisplayName = displayName1;
-            destination!.Replaced = source.Replacement;
-            destination!.Id = source.Id;
+            destination.DisplayName = displayName;
+            destination.Replaced = source.Replacement;
+            destination.Id = source.Id;
 
             return destination;
         }
@@ -286,12 +286,12 @@ namespace TestCase
             {
                 global::TestCase.Destination CreateByFactory(global::TestCase.Source source1) => new global::TestCase.Destination(source1.FactoryId);
 
-                global::TestCase.Destination destination1 = CreateByFactory(source);
-                destination1!.DisplayName = displayName;
-                destination1!.Replaced = source.Replacement;
-                destination1!.Id = source.Id;
+                global::TestCase.Destination destination = CreateByFactory(source);
+                destination.DisplayName = displayName;
+                destination.Replaced = source.Replacement;
+                destination.Id = source.Id;
 
-                return destination1;
+                return destination;
             }
             else
             {
@@ -578,15 +578,15 @@ namespace TestCase
 
             if (source.UseExistingChild)
             {
-                global::TestCase.ChildDestination? child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source.Child, destination?.Child, context);
+                global::TestCase.ChildDestination? child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source.Child, destination.Child, context);
 
-                destination!.Child = child;
+                destination.Child = child;
 
                 return destination;
             }
             else
             {
-                destination!.Child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source.Child, context);
+                destination.Child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source.Child, context);
 
                 return destination;
             }
@@ -746,22 +746,22 @@ namespace TestCase
 
             if (source.UseAutomatic)
             {
-                int first = (destination?.First ?? 0) + source.First;
+                int first = destination.First + source.First;
 
-                destination!.First = first;
-                destination!.Value = source.Value;
-                destination!.Remaining = source.Remaining;
+                destination.First = first;
+                destination.Value = source.Value;
+                destination.Remaining = source.Remaining;
 
                 return destination;
             }
             else
             {
-                int first = (destination?.First ?? 0) + source.First;
-                int value = destination?.Value ?? source.Fallback;
+                int first = destination.First + source.First;
+                int value = destination.Value;
 
-                destination!.First = first;
-                destination!.Value = value;
-                destination!.Remaining = source.Remaining;
+                destination.First = first;
+                destination.Value = value;
+                destination.Remaining = source.Remaining;
 
                 return destination;
             }
@@ -933,7 +933,7 @@ namespace TestCase
 
             if (source.Value > 0)
             {
-                destination!.Value = source.Value + 1;
+                destination.Value = source.Value + 1;
 
                 return destination;
             }
@@ -945,7 +945,7 @@ namespace TestCase
                 }
                 else
                 {
-                    destination!.Value = source.Value - 1;
+                    destination.Value = source.Value - 1;
 
                     return destination;
                 }
@@ -1182,7 +1182,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            destination!.Value = source.Value;
+            destination.Value = source.Value;
 
             return destination;
         }
@@ -1197,10 +1197,10 @@ namespace TestCase
 
                 global::TestCase.Destination CreateByFactory() => new global::TestCase.Destination(factoryId);
 
-                global::TestCase.Destination destination1 = CreateByFactory();
-                destination1!.Value = source.Value;
+                global::TestCase.Destination destination = CreateByFactory();
+                destination.Value = source.Value;
 
-                return destination1;
+                return destination;
             }
             else
             {
@@ -1362,28 +1362,28 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            var value1 = source.Observe(source.Value);
+            var value = source.Observe(source.Value);
 
             if (source.Reject)
             {
-                throw new global::System.InvalidOperationException(value1.ToString());
+                throw new global::System.InvalidOperationException(value.ToString());
             }
             else
             {
                 if (source.Increment)
                 {
-                    const int offset1 = 1;
-                    var adjusted1 = source.Observe(value1 + offset1);
+                    const int offset = 1;
+                    var adjusted = source.Observe(value + offset);
 
-                    destination!.Value = adjusted1;
+                    destination.Value = adjusted;
 
                     return destination;
                 }
                 else
                 {
-                    var adjusted1 = source.Observe(value1 - 1);
+                    var adjusted = source.Observe(value - 1);
 
-                    destination!.Value = adjusted1;
+                    destination.Value = adjusted;
 
                     return destination;
                 }
@@ -2453,10 +2453,10 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            var __morphantTemplateLocal01 = source.Value;
-            var destination2 = __morphantTemplateLocal01 + 1;
+            var __morphantTemplateLocal0 = source.Value;
+            var destination1 = __morphantTemplateLocal0 + 1;
 
-            destination!.Value = destination2;
+            destination.Value = destination1;
 
             return destination;
         }
@@ -2466,11 +2466,11 @@ namespace TestCase
             global::Morphant.MappingContext context)
         {
             var __morphantTemplateLocal0 = source.Value;
-            var destination1 = __morphantTemplateLocal0 + 1;
+            var destination = __morphantTemplateLocal0 + 1;
 
             return new global::TestCase.Destination()
             {
-                Value = destination1
+                Value = destination
             };
         }
     }

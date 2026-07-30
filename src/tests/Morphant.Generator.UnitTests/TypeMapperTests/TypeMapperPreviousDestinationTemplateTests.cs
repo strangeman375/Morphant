@@ -27,6 +27,8 @@ namespace TestCase
 
         public int Second { get; set; }
 
+        public int Optional { get; set; }
+
         public int Ignored { get; set; }
 
         public int Remaining { get; set; }
@@ -39,6 +41,8 @@ namespace TestCase
         public int Automatic { get; set; }
 
         public int Second { get; set; }
+
+        public int? Optional { get; set; }
 
         public string? Cleared { get; set; }
 
@@ -62,6 +66,9 @@ namespace TestCase
                     Automatic = Auto(),
                     Second =
                         (previous?.Second ?? 20) + source.Second,
+                    Optional =
+                        (previous?.Optional ?? 30) +
+                        source.Optional,
                     Cleared = (string?)null,
                     Ignored = Ignore()
                 });
@@ -90,6 +97,12 @@ namespace TestCase.Morphant.Generated
         }
 
         public global::Morphant.Members.Member<int> Second
+        {
+            get => null!;
+            set { }
+        }
+
+        public global::Morphant.Members.Member<int?> Optional
         {
             get => null!;
             set { }
@@ -156,14 +169,16 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            int first = (destination?.First ?? 10) + source.First;
-            int second = (destination?.Second ?? 20) + source.Second;
+            int first = destination.First + source.First;
+            int second = destination.Second + source.Second;
+            int? optional = (destination.Optional ?? 30) + source.Optional;
 
-            destination!.First = first;
-            destination!.Automatic = source.Automatic;
-            destination!.Second = second;
-            destination!.Cleared = (string?)null;
-            destination!.Remaining = source.Remaining;
+            destination.First = first;
+            destination.Automatic = source.Automatic;
+            destination.Second = second;
+            destination.Optional = optional;
+            destination.Cleared = (string?)null;
+            destination.Remaining = source.Remaining;
 
             return destination;
         }
@@ -177,6 +192,7 @@ namespace TestCase
                 First = 10 + source.First,
                 Automatic = source.Automatic,
                 Second = 20 + source.Second,
+                Optional = 30 + source.Optional,
                 Cleared = (string?)null,
                 Remaining = source.Remaining
             };
@@ -529,9 +545,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            int value = (destination?.Value ?? 1) + source.Value;
+            int value = destination.Value + source.Value;
 
-            destination!.Value = value;
+            destination.Value = value;
 
             return destination;
         }
@@ -576,9 +592,9 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            int value = (destination?.Value ?? 2) + source.Value;
+            int value = destination.Value + source.Value;
 
-            destination!.Value = value;
+            destination.Value = value;
 
             return destination;
         }
@@ -623,9 +639,9 @@ namespace TestCase
                 return MapNewImpl2(source, context);
             }
 
-            int value = (destination?.Value ?? 3) + source.Value;
+            int value = destination.Value + source.Value;
 
-            destination!.Value = value;
+            destination.Value = value;
 
             return destination;
         }
@@ -636,10 +652,10 @@ namespace TestCase
         {
             global::TestCase.FactoryDestination CreateByFactory(global::TestCase.FactoryDestination? previous, global::TestCase.Source source1) => previous ?? new global::TestCase.FactoryDestination(source1.Seed);
 
-            global::TestCase.FactoryDestination destination1 = CreateByFactory(default(global::TestCase.FactoryDestination?), source);
-            destination1!.Value = 3 + source.Value;
+            global::TestCase.FactoryDestination destination = CreateByFactory(default(global::TestCase.FactoryDestination?), source);
+            destination.Value = 3 + source.Value;
 
-            return destination1;
+            return destination;
         }
     }
 }
@@ -785,9 +801,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            global::TestCase.ChildDestination? child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source.Child, destination?.Child, context);
+            global::TestCase.ChildDestination? child = context.Mapper.Map<global::TestCase.ChildSource?, global::TestCase.ChildDestination?>(source.Child, destination.Child, context);
 
-            destination!.Child = child;
+            destination.Child = child;
 
             return destination;
         }
@@ -1134,9 +1150,9 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            int assignable = (destination?.Assignable ?? 0) + source.Assignable;
+            int assignable = destination.Assignable + source.Assignable;
 
-            destination!.Assignable = assignable;
+            destination.Assignable = assignable;
 
             return destination;
         }

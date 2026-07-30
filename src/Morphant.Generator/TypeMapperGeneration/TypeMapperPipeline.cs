@@ -677,6 +677,7 @@ internal static class TypeMapperPipeline
                 memberMappings,
                 templateMapping);
         var factoryMapping = BuildFactoryMapping(
+            registration.DestinationType,
             destinationPlan,
             templateMapping,
             factoryMapNewMemberMappings,
@@ -1567,15 +1568,11 @@ internal static class TypeMapperPipeline
             ImmutableArray<TemplateBoundLocalPlan> boundLocals,
             INamedTypeSymbol mapperType,
             CSharpCompilation compilation,
-            bool hasDestinationParameter,
-            IEnumerable<string> additionalReservedNames)
+            bool hasDestinationParameter)
     {
         var usedNames =
             ConventionConstructorMappingPlanner
                 .BuildUsedValueLocalNames(mapperType);
-
-        usedNames.UnionWith(
-            additionalReservedNames);
 
         if (hasDestinationParameter)
         {
@@ -1808,14 +1805,7 @@ internal static class TypeMapperPipeline
             boundLocals,
             mapperType,
             compilation,
-            hasDestinationParameter: false,
-            additionalReservedNames: []);
-        var mapNewMaterializedNames =
-            new HashSet<string>(StringComparer.Ordinal);
-
-        CollectSyntheticLocalNames(
-            mapNewRoot,
-            mapNewMaterializedNames);
+            hasDestinationParameter: false);
 
         mapExistingRoot = MaterializeSwitchFallbacks(
             mapExistingRoot,
@@ -1823,9 +1813,7 @@ internal static class TypeMapperPipeline
             boundLocals,
             mapperType,
             compilation,
-            hasDestinationParameter: true,
-            additionalReservedNames:
-                mapNewMaterializedNames);
+            hasDestinationParameter: true);
 
         var mapNewRequiredLocals =
             CollectRequiredLocals(
@@ -1856,31 +1844,13 @@ internal static class TypeMapperPipeline
                 mapNewRoot,
                 mapperType,
                 hasDestinationParameter: false,
-                mapNew: true,
-                additionalReservedNames: []);
-        var mapNewGeneratedNames =
-            new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (var mapNewName in mapNewNames.Values)
-        {
-            AddUsedLocalName(
-                mapNewGeneratedNames,
-                mapNewName);
-        }
+                mapNew: true);
 
         var renamedMapNewRoot =
             RenameControlFlow(
                 mapNewRoot,
                 mapNewNames,
                 mapNewRequiredLocals);
-
-        CollectGeneratedLocalNames(
-            renamedMapNewRoot,
-            mapNewGeneratedNames,
-            mapNew: true);
-        CollectSyntheticLocalNames(
-            renamedMapNewRoot,
-            mapNewGeneratedNames);
 
         var mapExistingNames =
             AllocateRuntimeLocalNames(
@@ -1891,9 +1861,7 @@ internal static class TypeMapperPipeline
                 mapExistingRoot,
                 mapperType,
                 hasDestinationParameter: true,
-                mapNew: false,
-                additionalReservedNames:
-                    mapNewGeneratedNames);
+                mapNew: false);
         var renamedMapExistingRoot =
             RenameControlFlow(
                 mapExistingRoot,
@@ -1914,15 +1882,12 @@ internal static class TypeMapperPipeline
             TypeMapperControlFlowNode root,
             INamedTypeSymbol mapperType,
             bool hasDestinationParameter,
-            bool mapNew,
-            IEnumerable<string> additionalReservedNames)
+            bool mapNew)
     {
         var reservedNames =
             ConventionConstructorMappingPlanner
                 .BuildUsedValueLocalNames(mapperType);
 
-        reservedNames.UnionWith(
-            additionalReservedNames);
         CollectSyntheticLocalNames(
             root,
             reservedNames);
@@ -3037,6 +3002,7 @@ internal static class TypeMapperPipeline
 
     private static TypeMapperFactoryMappingModel?
         BuildFactoryMapping(
+            ITypeSymbol destinationType,
             DestinationPlan destinationPlan,
             TemplateMappingPlan? template,
             ImmutableArray<TypeMapperMemberMappingModel>
@@ -3173,7 +3139,10 @@ internal static class TypeMapperPipeline
             factoryDelegate,
             factory.RuntimeLocalDependencies,
             destinationLocalName,
-            nullableValueLocalName);
+            nullableValueLocalName,
+            destinationType.IsReferenceType &&
+            destinationType.NullableAnnotation ==
+                NullableAnnotation.Annotated);
     }
 
     private static ConventionConstructorMappingPlan?
