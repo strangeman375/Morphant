@@ -308,8 +308,8 @@ internal static class TypeMapperPipeline
                     assemblySettings,
                     mapInfo.Settings,
                     registration.Settings);
-            var effectiveTemplateSurface =
-                EffectiveTemplateSurface.Resolve(
+            var effectiveTemplateMode =
+                EffectiveTemplateMode.Resolve(
                     assemblySettings,
                     mapInfo.Settings,
                     registration.Settings);
@@ -317,7 +317,7 @@ internal static class TypeMapperPipeline
                 effectiveSettings.HasExecutableOperation
                     ? BuildMapping(
                         registration,
-                        effectiveTemplateSurface,
+                        effectiveTemplateMode,
                         compilation,
                         mapperType,
                         usedGeneratedMethodNames,
@@ -363,7 +363,7 @@ internal static class TypeMapperPipeline
 
     private static TypeMapperMappingModel BuildMapping(
         MapperBuilderMapRegistrationInfo registration,
-        TemplateSurfaceValue? effectiveTemplateSurface,
+        TemplateModeValue? effectiveTemplateMode,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
@@ -381,16 +381,15 @@ internal static class TypeMapperPipeline
             mapperType,
             cancellationToken);
         var templateMappingResult =
-            effectiveTemplateSurface is null or
-                TemplateSurfaceValue.Default or
-                TemplateSurfaceValue.None
+            effectiveTemplateMode is null or
+                TemplateModeValue.Default
                 ? null
                 : TemplateMappingPlanner.Build(
                     registration,
                     destinationPlan.MemberType,
                     directTemplate:
-                        effectiveTemplateSurface ==
-                            TemplateSurfaceValue.Direct ||
+                        effectiveTemplateMode ==
+                            TemplateModeValue.Raw ||
                         registration.DestinationType is
                             INamedTypeSymbol namedDestination &&
                         DirectDestinationTypePolicy.IsDirect(

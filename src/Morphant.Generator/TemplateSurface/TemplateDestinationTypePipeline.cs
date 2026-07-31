@@ -67,14 +67,14 @@ internal static class TemplateDestinationTypePipeline
                 continue;
             }
 
-            var effectiveSurface = EffectiveTemplateSurface.Resolve(
+            var effectiveMode = EffectiveTemplateMode.Resolve(
                 assemblySettings,
                 mapInfo.Settings,
                 registration.Settings);
 
             if (TryGetDestinationType(
                     registration.Syntax,
-                    effectiveSurface,
+                    effectiveMode,
                     semanticModel,
                     cancellationToken) is { } destinationType)
             {
@@ -87,7 +87,7 @@ internal static class TemplateDestinationTypePipeline
 
     private static TemplateDestinationTypeInfo? TryGetDestinationType(
         InvocationExpressionSyntax invocation,
-        TemplateSurfaceValue? effectiveSurface,
+        TemplateModeValue? effectiveMode,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
@@ -138,7 +138,7 @@ internal static class TemplateDestinationTypePipeline
         if (destinationType is not INamedTypeSymbol namedDestinationType ||
             !TryGetDestinationTypeKind(
                 namedDestinationType,
-                effectiveSurface,
+                effectiveMode,
                 semanticModel.Compilation,
                 out var kind))
         {
@@ -617,7 +617,7 @@ internal static class TemplateDestinationTypePipeline
 
     private static bool TryGetDestinationTypeKind(
         INamedTypeSymbol destinationType,
-        TemplateSurfaceValue? effectiveSurface,
+        TemplateModeValue? effectiveMode,
         Compilation compilation,
         out TemplateDestinationTypeKind kind)
     {
@@ -637,15 +637,14 @@ internal static class TemplateDestinationTypePipeline
             return false;
         }
 
-        if (effectiveSurface is null or
-            TemplateSurfaceValue.Default or
-            TemplateSurfaceValue.None)
+        if (effectiveMode is null or
+            TemplateModeValue.Default)
         {
             kind = TemplateDestinationTypeKind.None;
             return true;
         }
 
-        if (effectiveSurface == TemplateSurfaceValue.Direct)
+        if (effectiveMode == TemplateModeValue.Raw)
         {
             kind = IsDirectTemplateSupported(templateDestinationType)
                 ? TemplateDestinationTypeKind.DirectTemplate

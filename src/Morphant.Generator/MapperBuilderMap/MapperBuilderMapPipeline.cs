@@ -147,23 +147,23 @@ internal static class MapperBuilderMapPipeline
                 continue;
             }
 
-            if (IsMapperBuilderTemplateSurfaceMethod(
+            if (IsMapperBuilderTemplateModeMethod(
                     method,
                     knownSymbols))
             {
-                var templateSurface =
-                    TryGetTemplateSurface(
+                var templateMode =
+                    TryGetTemplateMode(
                         invocation,
                         method,
                         semanticModel,
                         cancellationToken,
-                        out var parsedTemplateSurface)
-                        ? parsedTemplateSurface
-                        : (TemplateSurfaceValue?)null;
+                        out var parsedTemplateMode)
+                        ? parsedTemplateMode
+                        : (TemplateModeValue?)null;
 
-                ApplyTemplateSurface(
+                ApplyTemplateMode(
                     invocation,
-                    templateSurface,
+                    templateMode,
                     settings,
                     registrations,
                     out settings);
@@ -301,9 +301,9 @@ internal static class MapperBuilderMapPipeline
         };
     }
 
-    private static void ApplyTemplateSurface(
+    private static void ApplyTemplateMode(
         InvocationExpressionSyntax invocation,
-        TemplateSurfaceValue? value,
+        TemplateModeValue? value,
         MappingSettings rootSettings,
         ImmutableArray<MapperBuilderMapRegistrationInfo>.Builder
             registrations,
@@ -320,7 +320,7 @@ internal static class MapperBuilderMapPipeline
             {
                 Settings = registration.Settings with
                 {
-                    TemplateSurface = value
+                    TemplateMode = value
                 }
             };
             updatedRootSettings = rootSettings;
@@ -338,7 +338,7 @@ internal static class MapperBuilderMapPipeline
 
         updatedRootSettings = rootSettings with
         {
-            TemplateSurface = value
+            TemplateMode = value
         };
     }
 
@@ -441,12 +441,12 @@ internal static class MapperBuilderMapPipeline
         return true;
     }
 
-    private static bool TryGetTemplateSurface(
+    private static bool TryGetTemplateMode(
         InvocationExpressionSyntax invocation,
         IMethodSymbol method,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
-        out TemplateSurfaceValue templateSurface)
+        out TemplateModeValue templateMode)
     {
         if (!TryGetInt32Constant(
                 invocation,
@@ -455,14 +455,14 @@ internal static class MapperBuilderMapPipeline
                 cancellationToken,
                 out var numericValue) ||
             !Enum.IsDefined(
-                typeof(TemplateSurfaceValue),
+                typeof(TemplateModeValue),
                 numericValue))
         {
-            templateSurface = default;
+            templateMode = default;
             return false;
         }
 
-        templateSurface = (TemplateSurfaceValue)numericValue;
+        templateMode = (TemplateModeValue)numericValue;
         return true;
     }
 
@@ -900,14 +900,14 @@ internal static class MapperBuilderMapPipeline
             "NullDestinationHandling");
     }
 
-    private static bool IsMapperBuilderTemplateSurfaceMethod(
+    private static bool IsMapperBuilderTemplateModeMethod(
         IMethodSymbol method,
         KnownSymbols knownSymbols)
     {
         return IsMapperBuilderBaseSettingMethod(
             method,
             knownSymbols,
-            "TemplateSurface");
+            "TemplateMode");
     }
 
     private static bool IsMapperBuilderBaseSettingMethod(

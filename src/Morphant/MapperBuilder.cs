@@ -10,20 +10,21 @@ public abstract class MapperBuilderBase<T>
     }
 
     /// <summary>
-    /// Configures the compile-time template API for this builder.
+    /// Configures how <c>Template()</c> lambdas are interpreted for this
+    /// builder.
     /// </summary>
-    /// <param name="templateSurface">
-    /// The surface to generate.
-    /// <see cref="Morphant.TemplateSurface.Default"/> inherits the
+    /// <param name="templateMode">
+    /// The template mode to use.
+    /// <see cref="Morphant.TemplateMode.Default"/> inherits the
     /// mapper-level setting for a mapping builder, or the assembly-level
-    /// <c>TemplateSurface</c> MSBuild property for the mapper builder. If all
-    /// levels inherit, Morphant uses
-    /// <see cref="Morphant.TemplateSurface.Full"/>.
+    /// <c>MorphantTemplateMode</c> MSBuild property for the mapper builder. If
+    /// all levels inherit, Morphant uses
+    /// <see cref="Morphant.TemplateMode.Dsl"/>.
     /// The argument expression must be a compile-time constant whose value is
-    /// defined by <see cref="Morphant.TemplateSurface"/>.
+    /// defined by <see cref="Morphant.TemplateMode"/>.
     /// </param>
     /// <returns>This builder.</returns>
-    public T TemplateSurface(TemplateSurface templateSurface) =>
+    public T TemplateMode(TemplateMode templateMode) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>

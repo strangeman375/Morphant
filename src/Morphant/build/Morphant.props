@@ -1,6 +1,6 @@
 <Project>
   <ItemGroup>
-    <CompilerVisibleProperty Include="TemplateSurface" />
+    <CompilerVisibleProperty Include="MorphantTemplateMode" />
     <CompilerVisibleProperty Include="MorphantMappingMode" />
     <CompilerVisibleProperty Include="MorphantNullSourceHandling" />
     <CompilerVisibleProperty Include="MorphantNullDestinationHandling" />

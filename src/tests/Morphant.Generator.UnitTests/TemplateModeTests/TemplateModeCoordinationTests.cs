@@ -1,13 +1,13 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TemplateSurfaceTests;
+namespace Morphant.Generator.UnitTests.TemplateModeTests;
 
 [TestFixture]
-internal sealed class TemplateSurfacePairSpecificTests
+internal sealed class TemplateModeCoordinationTests
 {
     [Test]
-    public async Task Uses_direct_surface_when_planning_custom_destination_mapping()
+    public async Task Uses_Raw_template_as_final_result_without_convention_mapping()
     {
         // lang=c#
         const string source =
@@ -20,10 +20,12 @@ namespace TestCase
 {
     public sealed class Source
     {
+        public int Value { get; set; }
     }
 
     public sealed class Destination
     {
+        public int Value { get; set; }
     }
 
     [MorphantMapper]
@@ -32,7 +34,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .TemplateSurface(TemplateSurface.Direct)
+                .TemplateMode(TemplateMode.Raw)
                 .Template(static _ => new Destination());
         }
     }
@@ -98,7 +100,7 @@ namespace TestCase
             (
                 "Morphant.Generated.TemplateExtension." +
                 "TestCase_Destination.g.cs",
-                TemplateSurfaceExpectedSources.GenericExtension(
+                TemplateModeExpectedSources.GenericExtension(
                     "global::TestCase.Destination",
                     "global::TestCase.Destination?",
                     "global::TestCase.Destination")
@@ -111,7 +113,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Generates_pair_specific_surfaces_for_mixed_destination()
+    public async Task Generates_pair_specific_extensions_for_mixed_modes()
     {
         // lang=c#
         const string source =
@@ -122,15 +124,11 @@ using Morphant;
 
 namespace TestCase
 {
-    public sealed class FullSource
+    public sealed class DslSource
     {
     }
 
-    public sealed class DirectSource
-    {
-    }
-
-    public sealed class NoneSource
+    public sealed class RawSource
     {
     }
 
@@ -143,16 +141,13 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<FullSource, Destination>()
-                .TemplateSurface(TemplateSurface.Full)
+            builder.Map<DslSource, Destination>()
+                .TemplateMode(TemplateMode.Dsl)
                 .Template(static _ => new());
 
-            builder.Map<DirectSource, Destination>()
-                .TemplateSurface(TemplateSurface.Direct)
+            builder.Map<RawSource, Destination>()
+                .TemplateMode(TemplateMode.Raw)
                 .Template(static _ => new());
-
-            builder.Map<NoneSource, Destination>()
-                .TemplateSurface(TemplateSurface.None);
         }
     }
 }
@@ -176,9 +171,9 @@ namespace Morphant
         /// A lambda expression that receives the non-null source value and describes the mapping.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
-        public static global::Morphant.MapperBuilder<global::TestCase.DirectSource, global::TestCase.Destination> Template(
-            this global::Morphant.MapperBuilder<global::TestCase.DirectSource, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.DirectSource, global::TestCase.Destination> template)
+        public static global::Morphant.MapperBuilder<global::TestCase.DslSource, global::TestCase.Destination> Template(
+            this global::Morphant.MapperBuilder<global::TestCase.DslSource, global::TestCase.Destination> builder,
+            global::System.Func<global::TestCase.DslSource, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -191,9 +186,9 @@ namespace Morphant
         /// <see langword="default"/> when no destination exists.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
-        public static global::Morphant.MapperBuilder<global::TestCase.DirectSource, global::TestCase.Destination> Template(
-            this global::Morphant.MapperBuilder<global::TestCase.DirectSource, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.DirectSource, global::TestCase.Destination?, global::TestCase.Destination> template)
+        public static global::Morphant.MapperBuilder<global::TestCase.DslSource, global::TestCase.Destination> Template(
+            this global::Morphant.MapperBuilder<global::TestCase.DslSource, global::TestCase.Destination> builder,
+            global::System.Func<global::TestCase.DslSource, global::TestCase.Destination?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -204,9 +199,9 @@ namespace Morphant
         /// A lambda expression that receives the non-null source value and describes the mapping.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
-        public static global::Morphant.MapperBuilder<global::TestCase.FullSource, global::TestCase.Destination> Template(
-            this global::Morphant.MapperBuilder<global::TestCase.FullSource, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.FullSource, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
+        public static global::Morphant.MapperBuilder<global::TestCase.RawSource, global::TestCase.Destination> Template(
+            this global::Morphant.MapperBuilder<global::TestCase.RawSource, global::TestCase.Destination> builder,
+            global::System.Func<global::TestCase.RawSource, global::TestCase.Destination> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -219,9 +214,9 @@ namespace Morphant
         /// <see langword="default"/> when no destination exists.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
-        public static global::Morphant.MapperBuilder<global::TestCase.FullSource, global::TestCase.Destination> Template(
-            this global::Morphant.MapperBuilder<global::TestCase.FullSource, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.FullSource, global::TestCase.Destination?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
+        public static global::Morphant.MapperBuilder<global::TestCase.RawSource, global::TestCase.Destination> Template(
+            this global::Morphant.MapperBuilder<global::TestCase.RawSource, global::TestCase.Destination> builder,
+            global::System.Func<global::TestCase.RawSource, global::TestCase.Destination?, global::TestCase.Destination> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -233,7 +228,7 @@ namespace Morphant
             (
                 "Morphant.Generated.TemplateType." +
                 "TestCase_Destination.g.cs",
-                TemplateSurfaceExpectedSources.EmptyTemplateType(
+                TemplateModeExpectedSources.EmptyTemplateType(
                     "Destination")
             ),
             (
@@ -272,13 +267,13 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.TemplateSurface(TemplateSurface.Full);
+            builder.TemplateMode(TemplateMode.Dsl);
 
             builder.Map<FirstSource, Destination>()
                 .Template(static _ => new());
 
             builder.Map<SecondSource, Destination>()
-                .TemplateSurface(TemplateSurface.Default)
+                .TemplateMode(TemplateMode.Default)
                 .Template(static _ => new());
         }
     }
@@ -291,13 +286,13 @@ namespace TestCase
             (
                 "Morphant.Generated.TemplateType." +
                 "TestCase_Destination.g.cs",
-                TemplateSurfaceExpectedSources.EmptyTemplateType(
+                TemplateModeExpectedSources.EmptyTemplateType(
                     "Destination")
             ),
             (
                 "Morphant.Generated.TemplateExtension." +
                 "TestCase_Destination.g.cs",
-                TemplateSurfaceExpectedSources.GenericExtension(
+                TemplateModeExpectedSources.GenericExtension(
                     "global::TestCase.Destination",
                     "global::TestCase.Destination?",
                     "global::TestCase.Morphant.Generated." +
@@ -339,10 +334,10 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<HiddenSource, HiddenMixedDestination>()
-                .TemplateSurface(TemplateSurface.Full);
+                .TemplateMode(TemplateMode.Dsl);
 
             builder.Map<VisibleSource, HiddenMixedDestination>()
-                .TemplateSurface(TemplateSurface.Direct)
+                .TemplateMode(TemplateMode.Raw)
                 .Template(static _ => new());
         }
     }
@@ -353,7 +348,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<TSource, GenericMixedDestination>()
-                .TemplateSurface(TemplateSurface.Full);
+                .TemplateMode(TemplateMode.Dsl);
         }
     }
 
@@ -363,7 +358,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<VisibleSource, GenericMixedDestination>()
-                .TemplateSurface(TemplateSurface.Direct)
+                .TemplateMode(TemplateMode.Raw)
                 .Template(static _ => new());
         }
     }
@@ -376,19 +371,19 @@ namespace TestCase
             (
                 "Morphant.Generated.TemplateType." +
                 "TestCase_GenericMixedDestination.g.cs",
-                TemplateSurfaceExpectedSources.EmptyTemplateType(
+                TemplateModeExpectedSources.EmptyTemplateType(
                     "GenericMixedDestination")
             ),
             (
                 "Morphant.Generated.TemplateType." +
                 "TestCase_HiddenMixedDestination.g.cs",
-                TemplateSurfaceExpectedSources.EmptyTemplateType(
+                TemplateModeExpectedSources.EmptyTemplateType(
                     "HiddenMixedDestination")
             ),
             (
                 "Morphant.Generated.TemplateExtension." +
                 "TestCase_GenericMixedDestination.g.cs",
-                TemplateSurfaceExpectedSources.SinglePairSpecificExtension(
+                TemplateModeExpectedSources.SinglePairSpecificExtension(
                     "global::TestCase.VisibleSource",
                     "global::TestCase.GenericMixedDestination",
                     "global::TestCase.GenericMixedDestination?",
@@ -397,7 +392,7 @@ namespace TestCase
             (
                 "Morphant.Generated.TemplateExtension." +
                 "TestCase_HiddenMixedDestination.g.cs",
-                TemplateSurfaceExpectedSources.SinglePairSpecificExtension(
+                TemplateModeExpectedSources.SinglePairSpecificExtension(
                     "global::TestCase.VisibleSource",
                     "global::TestCase.HiddenMixedDestination",
                     "global::TestCase.HiddenMixedDestination?",

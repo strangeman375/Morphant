@@ -1,6 +1,6 @@
-namespace Morphant.Generator.UnitTests.TemplateSurfaceTests;
+namespace Morphant.Generator.UnitTests.TemplateModeTests;
 
-internal static class TemplateSurfaceExpectedSources
+internal static class TemplateModeExpectedSources
 {
     public static string EmptyTemplateType(
         string destinationName)

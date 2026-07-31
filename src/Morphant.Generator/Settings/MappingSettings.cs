@@ -32,29 +32,27 @@ internal enum NullDestinationHandlingValue
     Throw
 }
 
-internal enum TemplateSurfaceValue
+internal enum TemplateModeValue
 {
     Default = 0,
 
-    Full,
+    Dsl,
 
-    Direct,
-
-    None
+    Raw
 }
 
 internal readonly record struct MappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,
     NullDestinationHandlingValue? NullDestinationHandling,
-    TemplateSurfaceValue? TemplateSurface)
+    TemplateModeValue? TemplateMode)
 {
     public static MappingSettings Default =>
         new(
             MappingModeValue.Default,
             NullSourceHandlingValue.Default,
             NullDestinationHandlingValue.Default,
-            TemplateSurfaceValue.Default);
+            TemplateModeValue.Default);
 }
 
 internal readonly record struct EffectiveMappingSettings(
@@ -110,17 +108,17 @@ internal readonly record struct EffectiveMappingSettings(
     }
 }
 
-internal static class EffectiveTemplateSurface
+internal static class EffectiveTemplateMode
 {
-    public static TemplateSurfaceValue? Resolve(
+    public static TemplateModeValue? Resolve(
         MappingSettings assemblySettings,
         MappingSettings rootSettings,
         MappingSettings mappingSettings)
     {
         return SettingValueResolver.Resolve(
-            assemblySettings.TemplateSurface,
-            rootSettings.TemplateSurface,
-            mappingSettings.TemplateSurface,
-            TemplateSurfaceValue.Full);
+            assemblySettings.TemplateMode,
+            rootSettings.TemplateMode,
+            mappingSettings.TemplateMode,
+            TemplateModeValue.Dsl);
     }
 }

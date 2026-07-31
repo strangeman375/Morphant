@@ -653,22 +653,28 @@ parameters, затем добавить строгий opt-in режим без 
   XML docs и пользовательская страница находятся в
   `docs/settings/null-handling.md`.
 
-- [x] `TemplateSurface`.
+- [x] `TemplateMode`.
 
-  Effective surface разрешается общим порядком
-  `map → mapper root → assembly → Full`; assembly-level значение задаётся
-  compiler-visible MSBuild-свойством `TemplateSurface`. Поддерживаются три
-  результата: `Full`, `Direct` и `None`. `Full` сохраняет direct surface для
-  встроенных и остальных direct-only destination-типов, а `None` отключает
-  только template DSL и не влияет на convention mapping.
+  Effective mode разрешается общим порядком
+  `map → mapper root → assembly → Dsl`; assembly-level значение задаётся
+  compiler-visible MSBuild-свойством `MorphantTemplateMode`. Поддерживаются
+  `Dsl` и `Raw`. В `Dsl` lambda возвращает интерпретируемый template record, а
+  Morphant применяет оставшиеся effective mapping rules. В `Raw` lambda
+  возвращает окончательный destination: constructor/member mappings поверх
+  результата не применяются, а `MapExisting` может сохранить или заменить
+  переданный экземпляр. Если `Template()` отсутствует, оба режима сохраняют
+  обычный convention mapping.
 
-  Surface является контрактом уникальной канонической пары
+  Для встроенных и остальных direct-only destination-типов `Dsl` сохраняет
+  direct surface, потому что template record для них не имеет смысла.
+
+  Mode является контрактом уникальной канонической пары
   `TSource → TDestination` в пределах compilation. Если все пары одного
-  destination имеют одинаковый surface, сохраняется компактный generic
-  `Template<TSource>()`. При смешанных surface генерируются exact
-  pair-specific overloads; `None`-пары overload не получают. Template record
+  destination требуют одинаковую generated surface, сохраняется компактный
+  generic `Template<TSource>()`. При смешанных `Dsl`/`Raw` для custom
+  destination генерируются exact pair-specific overloads. Template record
   остаётся общим для destination и создаётся, если хотя бы одна пара использует
-  `Full`.
+  `Dsl`.
 
   Одна каноническая пара может быть зарегистрирована только один раз, включая
   разные mapper-классы; диагностика дубликатов отложена. В mixed-сценарии
@@ -679,7 +685,7 @@ parameters, затем добавить строгий opt-in режим без 
   этой границы также отложена.
 
   XML docs публичного API и полное пользовательское описание находятся в
-  `docs/settings/template-surface.md`.
+  `docs/settings/template-mode.md`.
 
 - [ ] Настройка boxing-преобразований.
 
@@ -705,7 +711,7 @@ parameters, затем добавить строгий opt-in режим без 
 
   Unsupported DSL, неоднозначные конструкторы, unmapped members, nullability
   mismatch, конфликтующие registrations. Отдельно сообщать о повторённой
-  канонической mapping-паре, о mixed `TemplateSurface`, для которого source
+  канонической mapping-паре, о mixed `TemplateMode`, для которого source
   нельзя назвать из top-level generated-кода, и о явно заданном init-only
   member, который не может быть применён после `ByFactory()` в `MapNew` и не
   может присваиваться в `MapExisting`. Оставить поздним этапом, как и было
