@@ -4,10 +4,10 @@ using Morphant.Generator.UnitTests.TestUtils;
 namespace Morphant.Generator.UnitTests.TypeMapperTests;
 
 [TestFixture]
-internal sealed class TypeMapperPreviousDestinationTemplateTests
+internal sealed class TypeMapperDestinationTemplateTests
 {
     [Test]
-    public async Task Uses_default_for_MapNew_and_caches_previous_reference_state_before_MapExisting_assignments()
+    public async Task Uses_source_template_for_MapNew_and_caches_existing_state_before_MapExisting_assignments()
     {
         // lang=c#
         const string source =
@@ -57,17 +57,26 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
+                .Template(source => new()
+                {
+                    First = 10 + source.First,
+                    Automatic = Auto(),
+                    Second = 20 + source.Second,
+                    Optional = 30 + source.Optional,
+                    Cleared = (string?)null,
+                    Ignored = Ignore()
+                })
                 .Template((
                     Source source,
-                    Destination? previous) => new()
+                    Destination destination) => new()
                 {
                     First =
-                        (previous?.First ?? 10) + source.First,
+                        destination.First + source.First,
                     Automatic = Auto(),
                     Second =
-                        (previous?.Second ?? 20) + source.Second,
+                        destination.Second + source.Second,
                     Optional =
-                        (previous?.Optional ?? 30) +
+                        (destination.Optional ?? 30) +
                         source.Optional,
                     Cleared = (string?)null,
                     Ignored = Ignore()
@@ -219,7 +228,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Passes_default_or_existing_destination_to_direct_templates()
+    public async Task Uses_source_and_destination_direct_templates_for_their_respective_scenarios()
     {
         // lang=c#
         const string source =
@@ -244,12 +253,15 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, int>()
-                .Template((source, previous) =>
-                    source.Number + previous);
+                .Template(source =>
+                    source.Number + default(int))
+                .Template((source, destination) =>
+                    source.Number + destination);
 
             builder.Map<Source, string>()
-                .Template((source, previous) =>
-                    previous ?? source.Text);
+                .Template(source => source.Text)
+                .Template((source, destination) =>
+                    destination);
         }
     }
 }
@@ -323,7 +335,7 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            return destination ?? source.Text;
+            return destination;
         }
 
         private string? MapNewImpl(
@@ -421,35 +433,46 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, ConstructorDestination>()
-                .Template((source, previous) =>
-                    new(previous?.Seed ?? source.Seed)
+                .Template(source =>
+                    new(source.Seed)
+                    {
+                        Value = 1 + source.Value
+                    })
+                .Template((source, destination) =>
+                    new(destination.Seed)
                     {
                         Value =
-                            (previous?.Value ?? 1) + source.Value
+                            destination.Value + source.Value
                     });
 
             builder.Map<Source, ConventionDestination>()
-                .Template((source, previous) =>
+                .Template(source =>
                     new(
                         ByConvention(),
                         new()
                         {
-                            seed =
-                                previous?.Seed ?? source.Seed
+                            seed = source.Seed
                         })
                     {
-                        Value =
-                            (previous?.Value ?? 2) + source.Value
+                        Value = 2 + source.Value
+                    })
+                .Template((source, destination) =>
+                    new(ByConvention())
+                    {
+                        Value = destination.Value + source.Value
                     });
 
             builder.Map<Source, FactoryDestination>()
-                .Template((source, previous) =>
+                .Template(source =>
                     new(ByFactory(() =>
-                        previous ??
                         new FactoryDestination(source.Seed)))
                     {
-                        Value =
-                            (previous?.Value ?? 3) + source.Value
+                        Value = 3 + source.Value
+                    })
+                .Template((source, destination) =>
+                    new(ByFactory(() => destination))
+                    {
+                        Value = destination.Value + source.Value
                     });
         }
     }
@@ -650,9 +673,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
-            global::TestCase.FactoryDestination CreateByFactory(global::TestCase.FactoryDestination? previous, global::TestCase.Source source1) => previous ?? new global::TestCase.FactoryDestination(source1.Seed);
+            global::TestCase.FactoryDestination CreateByFactory(global::TestCase.Source source1) => new global::TestCase.FactoryDestination(source1.Seed);
 
-            global::TestCase.FactoryDestination destination = CreateByFactory(default(global::TestCase.FactoryDestination?), source);
+            global::TestCase.FactoryDestination destination = CreateByFactory(source);
             destination.Value = 3 + source.Value;
 
             return destination;
@@ -698,7 +721,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Rewrites_previous_destination_inside_nested_Map_marker_for_both_outer_modes()
+    public async Task Rewrites_existing_destination_inside_nested_Map_marker()
     {
         // lang=c#
         const string source =
@@ -734,11 +757,15 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .Template((source, previous) => new()
+                .Template(source => new()
+                {
+                    Child = Map(source.Child)
+                })
+                .Template((source, destination) => new()
                 {
                     Child = Map(
                         source.Child,
-                        previous?.Child)
+                        destination.Child)
                 });
         }
     }
@@ -839,7 +866,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Supports_value_and_nullable_value_previous_destinations()
+    public async Task Supports_value_and_nullable_value_existing_destinations()
     {
         // lang=c#
         const string source =
@@ -872,16 +899,25 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, ValueDestination>()
-                .Template((source, previous) => new()
+                .Template(source => new()
                 {
-                    Value = previous.Value + source.Value
+                    Value =
+                        default(ValueDestination).Value +
+                        source.Value
+                })
+                .Template((source, destination) => new()
+                {
+                    Value = destination.Value + source.Value
                 });
 
             builder.Map<Source, NullableDestination?>()
-                .Template((source, previous) => new()
+                .Template(source => new()
                 {
-                    Value =
-                        (previous?.Value ?? -1) + source.Value
+                    Value = -1 + source.Value
+                })
+                .Template((source, destination) => new()
+                {
+                    Value = destination.Value + source.Value
                 });
         }
     }
@@ -985,7 +1021,7 @@ namespace TestCase
             }
 
             var destinationValue = destination.Value;
-            int value = (destination?.Value ?? -1) + source.Value;
+            int value = destination.Value.Value + source.Value;
 
             destinationValue.Value = value;
 
@@ -1074,17 +1110,19 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .Template((source, previous) =>
+                .Template(source =>
                     new(
-                        (previous?.Construction ?? 0) +
-                        source.Construction)
+                        0 + source.Construction)
                     {
-                        InitOnly =
-                            (previous?.InitOnly ?? 0) +
-                            source.InitOnly,
+                        InitOnly = 0 + source.InitOnly,
+                        Assignable = 0 + source.Assignable
+                    })
+                .Template((source, destination) =>
+                    new(destination.Construction)
+                    {
+                        InitOnly = destination.InitOnly + source.InitOnly,
                         Assignable =
-                            (previous?.Assignable ?? 0) +
-                            source.Assignable
+                            destination.Assignable + source.Assignable
                     });
         }
     }
@@ -1190,7 +1228,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Keeps_previous_destination_value_local_names_collision_safe()
+    public async Task Keeps_existing_destination_value_local_names_collision_safe()
     {
         // lang=c#
         const string source =
@@ -1218,10 +1256,15 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination?>()
-                .Template((source, previous) => new()
+                .Template(source => new()
                 {
                     DestinationValue =
-                        (previous?.DestinationValue ?? 0) +
+                        0 + source.DestinationValue
+                })
+                .Template((source, destination) => new()
+                {
+                    DestinationValue =
+                        destination.DestinationValue +
                         source.DestinationValue
                 });
         }
@@ -1286,7 +1329,7 @@ namespace TestCase
             }
 
             var destinationValue1 = destination.Value;
-            int destinationValue2 = (destination?.DestinationValue ?? 0) + source.DestinationValue;
+            int destinationValue2 = destination.Value.DestinationValue + source.DestinationValue;
 
             destinationValue1.DestinationValue = destinationValue2;
 
@@ -1352,19 +1395,18 @@ namespace TestCase
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
                          /// <summary>
-                         /// Configures a mapping template that depends on the destination's previous state.
+                         /// Configures a mapping template for an existing destination.
                          /// </summary>
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the non-null source value and the destination's
-                         /// previous value and describes the mapping. The previous value is
-                         /// <see langword="default"/> when no destination exists.
+                         /// A lambda expression that receives the non-null source value and the non-null
+                         /// existing destination and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{destinationType}}> builder,
-                             global::System.Func<TSource, {{existingDestinationType}}, {{templateResultType}}> template)
+                             global::System.Func<TSource, {{existingDestinationType.TrimEnd('?')}}, {{templateResultType}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
                      }
                  }

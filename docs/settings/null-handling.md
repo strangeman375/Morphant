@@ -115,17 +115,22 @@ because the source check runs first.
 prevent the supported `MapExisting` overload from creating a replacement for
 a missing destination.
 
-For a two-parameter template:
+For a destination-aware template:
 
 ```csharp
 builder.Map<Source, Destination>()
-    .Template((source, previous) => /* ... */);
+    .Template(source => Create(source))
+    .Template((source, destination) => Update(source, destination));
 ```
 
-`previous` always means the original destination value. When `CreateNew`
-handles a missing destination, the template receives `null` or
-`default(TDestination)` rather than the newly created object. The source
-parameter is non-null because source handling runs before the template.
+The destination-aware lambda runs only after Morphant has established that
+`destination` is non-null. `Throw` throws before template selection.
+`CreateNew` switches to the new mapping plan, which uses the source-only
+template when one is configured and otherwise uses ordinary `MapNew` mapping.
+This rule is the same for `TemplateMode.Dsl` and `TemplateMode.Raw`.
+
+The source parameter is also non-null because source handling runs before
+template selection.
 
 No source or destination runtime null check is generated for a definitely
 non-nullable value type.

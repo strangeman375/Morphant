@@ -203,7 +203,7 @@ internal static class MapperBuilderMapPipeline
                 registrations.Add(
                     new MapperBuilderMapRegistrationInfo(
                         invocation,
-                        FindTemplateInvocation(
+                        FindTemplateInvocations(
                             invocations,
                             invocationIndex + 1,
                             invocation),
@@ -521,11 +521,16 @@ internal static class MapperBuilderMapPipeline
         return true;
     }
 
-    private static InvocationExpressionSyntax? FindTemplateInvocation(
+    private static MapperBuilderMapTemplateInfo FindTemplateInvocations(
         ImmutableArray<InvocationExpressionSyntax> invocations,
         int startIndex,
         InvocationExpressionSyntax mapInvocation)
     {
+        InvocationExpressionSyntax? sourceTemplate = null;
+        InvocationExpressionSyntax? destinationTemplate = null;
+        var hasDuplicateSourceTemplate = false;
+        var hasDuplicateDestinationTemplate = false;
+
         for (var index = startIndex;
              index < invocations.Length;
              index++)
@@ -534,20 +539,72 @@ internal static class MapperBuilderMapPipeline
 
             if (IsMapInvocationCandidate(invocation))
             {
-                return null;
+                break;
             }
 
             if (invocation.Expression is MemberAccessExpressionSyntax
                 {
                     Name.Identifier.ValueText: "Template"
                 } &&
-                invocation.DescendantNodes().Contains(mapInvocation))
+                invocation.DescendantNodes().Contains(mapInvocation) &&
+                TryGetTemplateParameterCount(
+                    invocation,
+                    out var parameterCount))
             {
-                return invocation;
+                if (parameterCount == 1)
+                {
+                    if (sourceTemplate is null)
+                    {
+                        sourceTemplate = invocation;
+                    }
+                    else
+                    {
+                        hasDuplicateSourceTemplate = true;
+                    }
+                }
+                else if (destinationTemplate is null)
+                {
+                    destinationTemplate = invocation;
+                }
+                else
+                {
+                    hasDuplicateDestinationTemplate = true;
+                }
             }
         }
 
-        return null;
+        return new MapperBuilderMapTemplateInfo(
+            sourceTemplate,
+            destinationTemplate,
+            hasDuplicateSourceTemplate,
+            hasDuplicateDestinationTemplate);
+    }
+
+    private static bool TryGetTemplateParameterCount(
+        InvocationExpressionSyntax invocation,
+        out int parameterCount)
+    {
+        parameterCount = default;
+
+        if (invocation.ArgumentList.Arguments.Count != 1)
+        {
+            return false;
+        }
+
+        switch (invocation.ArgumentList.Arguments[0].Expression)
+        {
+            case SimpleLambdaExpressionSyntax:
+                parameterCount = 1;
+                return true;
+
+            case ParenthesizedLambdaExpressionSyntax lambda
+                when lambda.ParameterList.Parameters.Count is 1 or 2:
+                parameterCount = lambda.ParameterList.Parameters.Count;
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     private static bool TryGetLinearInvocations(

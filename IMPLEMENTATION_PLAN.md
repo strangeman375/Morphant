@@ -77,9 +77,12 @@ parameters, затем добавить строгий opt-in режим без 
   валидным явно заданным значением; для optional non-nullable constructor
   mappings `null!` остаётся только внутренним omission sentinel.
 
-  Nullable-аннотации параметров и результата `Template()`-лямбд, чья точная
-  семантика зависит от effective null-handling settings, намеренно оставлены
-  до реализации настроек.
+  Source-параметр обеих `Template()`-перегрузок non-null после применения
+  `NullSourceHandling`. Destination-aware перегрузка используется только для
+  `MapExisting` после `NullDestinationHandling`, поэтому её destination-
+  параметр также non-null. Для nullable struct она принимает underlying value,
+  а не `Nullable<T>`; пользователю не нужны null-check или null-forgiving
+  operator.
 
 ## Фаза 2. Минимальное исполняемое маппирование
 
@@ -406,20 +409,24 @@ parameters, затем добавить строгий opt-in режим без 
   завершённым срезом управляющих конструкций ниже. Произвольное вложение
   marker-а в обычное вычисляемое выражение по-прежнему не поддерживается.
 
-- [x] Template с предыдущим destination.
+- [x] Template для существующего destination.
 
   Поддерживается вторая expression-lambda перегрузка
-  `Template((source, destination) => ...)`. Параметр `destination` означает
-  предыдущее состояние: в `MapNew` каждое его использование заменяется на
-  типизированный `default` (`null` для reference destination, нулевое значение
-  для struct), а в `MapExisting` — на переданный destination. Direct-template
-  expression выполняется в обоих режимах с соответствующим значением.
+  `Template((source, destination) => ...)`. Она специализирует только
+  `MapExisting` и получает гарантированно non-null существующий destination.
+  Для nullable struct параметр имеет underlying value type. Если настроена
+  только эта перегрузка, `MapNew` использует обычный mapping без template.
 
-  В `MapNew` parameterless/explicit constructor, `ByConvention()` и
-  `ByFactory()` сохраняют обычную семантику создания, но все их ссылки на
-  destination получают `default`. В `MapExisting` construction-часть и её
-  выражения не вычисляются. Init-only outer member также применяется только в
-  `MapNew`.
+  Source-only `Template(source => ...)` может обслуживать оба сценария. При
+  наличии обеих перегрузок source-only lambda используется для `MapNew`, а
+  destination-aware lambda — для `MapExisting`; порядок fluent-вызовов не
+  влияет на выбор. Lambda являются самостоятельными описаниями и не
+  объединяются. Каждую форму можно настроить не более одного раза; повтор —
+  ошибочная конфигурация, диагностика которой остаётся поздним этапом.
+
+  В destination-aware DSL-template construction-часть и её выражения не
+  вычисляются, поскольку template применяется только к уже существующему
+  объекту. Init-only outer member также не применяется.
 
   В `MapExisting` все explicit assignable member expressions сначала
   вычисляются в порядке template initializer-а и сохраняются в типизированные
@@ -430,10 +437,10 @@ parameters, затем добавить строгий opt-in режим без 
   mapping-а. `Ignore()` по-прежнему исключает member из обоих режимов.
 
   Правило действует для reference, value и nullable value destinations.
-  Nullable struct сохраняет текущую раннюю null-проверку и изменяемую локальную
-  копию. Вложенный `Map()` отдельно переносится для каждого внешнего режима:
-  его source и existing-destination arguments также получают `default` либо
-  переданный destination согласно описанному правилу.
+  Nullable struct сохраняет раннюю null-проверку и изменяемую локальную копию;
+  template видит underlying non-null value. Вложенный `Map()` переносится
+  отдельно для source-only и destination-aware template и получает existing
+  destination только во втором сценарии.
 
 - [x] Управляющие конструкции DSL.
 
@@ -562,11 +569,11 @@ parameters, затем добавить строгий opt-in режим без 
 
     Direct-template возвращает настоящий destination, поэтому его тело
     переносится целиком и отдаётся обычному C#-компилятору без анализа control
-    flow генератором. Block-body становится единым collision-safe private
-    helper-методом generated mapper-а, который вызывают обе перегрузки `Map`;
-    source и предыдущий destination передаются параметрами в порядке,
-    записанном в lambda. `MapNew` передаёт типизированный `default`, а
-    `MapExisting` — существующий destination.
+    flow генератором. Block-body становится collision-safe private helper-
+    методом generated mapper-а. Source-only block вызывается в обоих
+    сценариях, если нет destination-aware специализации; destination-aware
+    block вызывается только из `MapExisting` с non-null destination. При
+    наличии обеих форм генерируются два независимых helper-а.
 
     Сохраняются `static` lambda, mapper members, Configure-константы и обычные
     синхронные конструкции C#, включая изменяемые и `ref` locals, циклы,
@@ -643,8 +650,9 @@ parameters, затем добавить строгий opt-in режим без 
   `default(TDestination)`, `ReturnDestination` сохраняет исходный destination
   только в `MapExisting`, а `Throw` бросает `ArgumentNullException`.
   `CreateNew` выполняет полный MapNew-план внутри `MapExisting`, в том числе
-  при `MappingMode.MapExisting`; двухаргументный `Template` при этом видит
-  исходный `null`/`default` previous destination.
+  при `MappingMode.MapExisting`. Он выбирает source-only template, если тот
+  задан, иначе обычный MapNew mapping. Destination-aware template никогда не
+  вызывается с `null`. `Throw` завершается до выбора template.
 
   Невалидный effective `NullSourceHandling` делает обе операции unsupported,
   а невалидный `NullDestinationHandling` — только `MapExisting`. Более
@@ -664,6 +672,12 @@ parameters, затем добавить строгий opt-in режим без 
   результата не применяются, а `MapExisting` может сохранить или заменить
   переданный экземпляр. Если `Template()` отсутствует, оба режима сохраняют
   обычный convention mapping.
+
+  Выбор перегрузки одинаков для обоих режимов: source-only template является
+  общим, destination-aware template специализирует `MapExisting`, а при
+  наличии обеих форм они разделяют `MapNew` и `MapExisting`. `TemplateMode` не
+  отключает независимые null-handling settings; они выбирают new/existing-
+  сценарий до template. Порядок fluent-вызовов не влияет на выбор.
 
   Для встроенных и остальных direct-only destination-типов `Dsl` сохраняет
   direct surface, потому что template record для них не имеет смысла.

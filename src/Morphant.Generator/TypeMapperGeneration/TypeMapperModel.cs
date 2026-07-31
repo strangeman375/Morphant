@@ -41,19 +41,14 @@ internal readonly record struct TypeMapperMappingModel
     string? MapNewUnsupportedExceptionMessage = null,
     string? MapExistingUnsupportedExceptionMessage = null,
     string? UnsupportedExceptionMessage = null,
-    TypeMapperDirectBlockMappingModel? DirectBlock = null,
     EffectiveMappingSettings EffectiveSettings = default,
-    string? MapNewImplMethodName = null
+    string? MapNewImplMethodName = null,
+    ImmutableArray<string> TemplateHelperMethodDeclarations = default
 )
 {
     public string InterfaceTypeName =>
         $"global::Morphant.ITypeMapper<{SourceTypeName}, {DestinationTypeName}>";
 }
-
-internal readonly record struct TypeMapperDirectBlockMappingModel(
-    string MethodDeclaration,
-    string MapNewValueExpression,
-    string MapExistingValueExpression);
 
 internal readonly record struct TypeMapperFactoryMappingModel
 (

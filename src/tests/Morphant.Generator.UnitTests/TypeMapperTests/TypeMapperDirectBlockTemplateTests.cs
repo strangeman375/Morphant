@@ -188,7 +188,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Passes_default_or_existing_destination_and_preserves_static_lambda()
+    public async Task Uses_distinct_static_helpers_for_source_and_destination_blocks()
     {
         // lang=c#
         const string source =
@@ -211,11 +211,15 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, int>()
-                .Template(static (input, previous) =>
+                .Template(static input =>
                 {
-                    if (previous != 0)
+                    return input.Value;
+                })
+                .Template(static (input, destination) =>
+                {
+                    if (destination != 0)
                     {
-                        return previous;
+                        return destination;
                     }
 
                     return input.Value;
@@ -246,7 +250,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source, default(int));
+            return MapByTemplate(source);
         }
 
         /// <inheritdoc/>
@@ -260,14 +264,19 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate(source, destination);
+            return MapByTemplate1(source, destination);
         }
 
-        private static int MapByTemplate(global::TestCase.Source input, int previous)
+        private static int MapByTemplate(global::TestCase.Source input)
         {
-            if (previous != 0)
+            return input.Value;
+        }
+
+        private static int MapByTemplate1(global::TestCase.Source input, int destination)
+        {
+            if (destination != 0)
             {
-                return previous;
+                return destination;
             }
 
             return input.Value;
@@ -434,7 +443,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Allocates_collision_safe_shared_helper_and_parameter_names()
+    public async Task Allocates_collision_safe_destination_helper_and_parameter_names()
     {
         // lang=c#
         const string source =
@@ -496,7 +505,7 @@ namespace TestCase
                 return default;
             }
 
-            return MapByTemplate2(source, default(int));
+            throw new global::System.NotImplementedException();
         }
 
         /// <inheritdoc/>
@@ -539,7 +548,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Preserves_reference_and_nullable_value_destination_types()
+    public async Task Uses_non_null_reference_and_nullable_value_destination_types()
     {
         // lang=c#
         const string source =
@@ -564,15 +573,15 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, string>()
-                .Template((input, previous) =>
+                .Template((input, destination) =>
                 {
-                    return previous ?? input.Text;
+                    return destination;
                 });
 
             builder.Map<Source, int?>()
-                .Template((input, previous) =>
+                .Template((input, destination) =>
                 {
-                    return previous ?? input.Number;
+                    return destination;
                 });
         }
     }
@@ -620,19 +629,19 @@ namespace TestCase
                 return MapNewImpl(source, context);
             }
 
-            return MapByTemplate(source, destination);
+            return MapByTemplate(destination);
         }
 
         private string? MapNewImpl(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
-            return MapByTemplate(source, default(string?));
+            throw new global::System.NotImplementedException();
         }
 
-        private string MapByTemplate(global::TestCase.Source input, string? previous)
+        private string MapByTemplate(string destination)
         {
-            return previous ?? input.Text;
+            return destination;
         }
 
         /// <inheritdoc/>
@@ -664,19 +673,19 @@ namespace TestCase
                 return MapNewImpl1(source, context);
             }
 
-            return MapByTemplate1(source, destination);
+            return MapByTemplate1(destination.Value);
         }
 
         private int? MapNewImpl1(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
-            return MapByTemplate1(source, default(int?));
+            throw new global::System.NotImplementedException();
         }
 
-        private int? MapByTemplate1(global::TestCase.Source input, int? previous)
+        private int? MapByTemplate1(int destination)
         {
-            return previous ?? input.Number;
+            return destination;
         }
     }
 }
@@ -918,19 +927,18 @@ namespace TestCase
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
                          /// <summary>
-                         /// Configures a mapping template that depends on the destination's previous state.
+                         /// Configures a mapping template for an existing destination.
                          /// </summary>
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the non-null source value and the destination's
-                         /// previous value and describes the mapping. The previous value is
-                         /// <see langword="default"/> when no destination exists.
+                         /// A lambda expression that receives the non-null source value and the non-null
+                         /// existing destination and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{destinationType}}> builder,
-                             global::System.Func<TSource, {{existingDestinationType}}, {{templateResultType}}> template)
+                             global::System.Func<TSource, {{existingDestinationType.TrimEnd('?')}}, {{templateResultType}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
                      }
                  }

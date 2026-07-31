@@ -10,6 +10,9 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TypeMapperPipeline
 {
+    private const string DuplicateTemplateMessage =
+        "A mapping can configure each Template overload only once.";
+
     public static void Register(
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
@@ -380,23 +383,97 @@ internal static class TypeMapperPipeline
             compilation,
             mapperType,
             cancellationToken);
-        var templateMappingResult =
-            effectiveTemplateMode is null or
-                TemplateModeValue.Default
-                ? null
-                : TemplateMappingPlanner.Build(
+
+        if (registration.Templates.HasDuplicate)
+        {
+            return BuildEmptyMapping(
+                registration,
+                destinationPlan,
+                DuplicateTemplateMessage);
+        }
+
+        var ordinaryMapping = BuildMappingForTemplate(
+            registration,
+            templateSyntax: null,
+            destinationPlan,
+            conventionMemberMappings,
+            directTemplate: false,
+            compilation,
+            mapperType,
+            usedGeneratedMethodNames,
+            cancellationToken);
+
+        if (effectiveTemplateMode is null or
+            TemplateModeValue.Default)
+        {
+            return ordinaryMapping;
+        }
+
+        var directTemplate =
+            effectiveTemplateMode == TemplateModeValue.Raw ||
+            registration.DestinationType is
+                INamedTypeSymbol namedDestination &&
+            DirectDestinationTypePolicy.IsDirect(
+                namedDestination);
+        TypeMapperMappingModel? sourceTemplateMapping =
+            registration.Templates.SourceTemplateSyntax is
+                { } sourceTemplateSyntax
+                ? BuildMappingForTemplate(
                     registration,
-                    destinationPlan.MemberType,
-                    directTemplate:
-                        effectiveTemplateMode ==
-                            TemplateModeValue.Raw ||
-                        registration.DestinationType is
-                            INamedTypeSymbol namedDestination &&
-                        DirectDestinationTypePolicy.IsDirect(
-                            namedDestination),
+                    sourceTemplateSyntax,
+                    destinationPlan,
+                    conventionMemberMappings,
+                    directTemplate,
                     compilation,
                     mapperType,
-                    cancellationToken);
+                    usedGeneratedMethodNames,
+                    cancellationToken)
+                : null;
+        TypeMapperMappingModel? destinationTemplateMapping =
+            registration.Templates.DestinationTemplateSyntax is
+                { } destinationTemplateSyntax
+                ? BuildMappingForTemplate(
+                    registration,
+                    destinationTemplateSyntax,
+                    destinationPlan,
+                    conventionMemberMappings,
+                    directTemplate,
+                    compilation,
+                    mapperType,
+                    usedGeneratedMethodNames,
+                    cancellationToken)
+                : null;
+
+        if (destinationTemplateMapping is null)
+        {
+            return sourceTemplateMapping ?? ordinaryMapping;
+        }
+
+        return CombineScenarioMappings(
+            sourceTemplateMapping ?? ordinaryMapping,
+            destinationTemplateMapping.Value);
+    }
+
+    private static TypeMapperMappingModel BuildMappingForTemplate(
+        MapperBuilderMapRegistrationInfo registration,
+        InvocationExpressionSyntax? templateSyntax,
+        DestinationPlan destinationPlan,
+        ConventionMemberMappingPlan conventionMemberMappings,
+        bool directTemplate,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        HashSet<string> usedGeneratedMethodNames,
+        CancellationToken cancellationToken)
+    {
+        var templateMappingResult =
+            TemplateMappingPlanner.Build(
+                registration,
+                templateSyntax,
+                destinationPlan.MemberType,
+                directTemplate,
+                compilation,
+                mapperType,
+                cancellationToken);
 
         if (templateMappingResult is null)
         {
@@ -498,12 +575,126 @@ internal static class TypeMapperPipeline
         };
     }
 
+    private static TypeMapperMappingModel CombineScenarioMappings(
+        TypeMapperMappingModel mapNewMapping,
+        TypeMapperMappingModel mapExistingMapping)
+    {
+        var selectedMapNew = SelectMapNew(mapNewMapping);
+        var selectedMapExisting = SelectMapExisting(
+            mapExistingMapping);
+        var helpers = MergeTemplateHelperDeclarations(
+            mapNewMapping,
+            mapExistingMapping);
+
+        if (mapNewMapping.ControlFlow is null &&
+            mapExistingMapping.ControlFlow is null)
+        {
+            return CombineModeMappings(
+                    selectedMapNew,
+                    selectedMapExisting)
+                with
+                {
+                    TemplateHelperMethodDeclarations = helpers
+                };
+        }
+
+        var mapNewRoot =
+            mapNewMapping.ControlFlow?.MapNewRoot ??
+            BuildLeafControlFlow(selectedMapNew);
+        var mapExistingRoot =
+            mapExistingMapping.ControlFlow?.MapExistingRoot ??
+            BuildLeafControlFlow(selectedMapExisting);
+        var representative = CombineModeMappings(
+            FindFirstLeaf(mapNewRoot) ?? selectedMapNew,
+            FindFirstLeaf(mapExistingRoot) ?? selectedMapExisting);
+
+        return representative with
+        {
+            ControlFlow = new TypeMapperControlFlowMappingModel(
+                mapNewRoot,
+                mapExistingRoot),
+            TemplateHelperMethodDeclarations = helpers
+        };
+    }
+
+    private static TypeMapperMappingModel SelectMapNew(
+        TypeMapperMappingModel mapping)
+    {
+        return mapping with
+        {
+            MapNewUnsupportedExceptionMessage =
+                mapping.UnsupportedExceptionMessage ??
+                mapping.MapNewUnsupportedExceptionMessage,
+            UnsupportedExceptionMessage = null,
+            ControlFlow = null
+        };
+    }
+
+    private static TypeMapperMappingModel SelectMapExisting(
+        TypeMapperMappingModel mapping)
+    {
+        return mapping with
+        {
+            MapExistingUnsupportedExceptionMessage =
+                mapping.UnsupportedExceptionMessage ??
+                mapping.MapExistingUnsupportedExceptionMessage,
+            UnsupportedExceptionMessage = null,
+            ControlFlow = null
+        };
+    }
+
+    private static TypeMapperControlFlowNode BuildLeafControlFlow(
+        TypeMapperMappingModel mapping)
+    {
+        return new TypeMapperControlFlowNode(
+            Locals: [],
+            Condition: null,
+            WhenTrue: null,
+            WhenFalse: null,
+            mapping,
+            ThrowExpression: null);
+    }
+
+    private static ImmutableArray<string>
+        MergeTemplateHelperDeclarations(
+            TypeMapperMappingModel mapNewMapping,
+            TypeMapperMappingModel mapExistingMapping)
+    {
+        var result = ImmutableArray.CreateBuilder<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        Add(mapNewMapping.TemplateHelperMethodDeclarations);
+        Add(mapExistingMapping.TemplateHelperMethodDeclarations);
+
+        return result.ToImmutable();
+
+        void Add(ImmutableArray<string> declarations)
+        {
+            if (declarations.IsDefaultOrEmpty)
+            {
+                return;
+            }
+
+            foreach (var declaration in declarations)
+            {
+                if (seen.Add(declaration))
+                {
+                    result.Add(declaration);
+                }
+            }
+        }
+    }
+
     private static TypeMapperMappingModel BuildDirectBlockMapping(
         MapperBuilderMapRegistrationInfo registration,
         DestinationPlan destinationPlan,
         TemplateDirectBlockPlan directBlock,
         HashSet<string> usedGeneratedMethodNames)
     {
+        var builtDirectBlock = BuildDirectBlock(
+            directBlock,
+            usedGeneratedMethodNames);
+
         return new TypeMapperMappingModel(
             SourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
@@ -527,21 +718,24 @@ internal static class TypeMapperPipeline
                 CanBeNull(registration.SourceType),
             DestinationCanBeNull:
                 CanBeNull(registration.DestinationType),
-            MapNewDirectExpression: null,
-            MapExistingDirectExpression: null,
+            MapNewDirectExpression:
+                builtDirectBlock.MapNewValueExpression,
+            MapExistingDirectExpression:
+                builtDirectBlock.MapExistingValueExpression,
             MapNewFactory: null,
             MapNewConstructor: null,
             MapExistingKind: destinationPlan.MapExistingKind,
             MapExistingDestinationLocalName: null,
             MapNewMemberMappings: [],
             MapExistingMemberMappings: [],
-            DirectBlock:
-                BuildDirectBlock(
-                    directBlock,
-                    usedGeneratedMethodNames));
+            TemplateHelperMethodDeclarations:
+                [builtDirectBlock.MethodDeclaration]);
     }
 
-    private static TypeMapperDirectBlockMappingModel
+    private static (
+        string MethodDeclaration,
+        string MapNewValueExpression,
+        string MapExistingValueExpression)
         BuildDirectBlock(
             TemplateDirectBlockPlan directBlock,
             HashSet<string> usedGeneratedMethodNames)
@@ -591,7 +785,7 @@ internal static class TypeMapperPipeline
             directBlock.LocalFunctionPlaceholderName,
             methodName);
 
-        return new TypeMapperDirectBlockMappingModel(
+        return (
             "private " +
             RenameLocalFunctionDeclaration(
                 directBlock.LocalFunctionDeclaration,

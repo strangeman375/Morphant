@@ -177,18 +177,17 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a mapping template that depends on the destination's previous state.
+        /// Configures a mapping template for an existing destination.
         /// </summary>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the non-null source value and the destination's
-        /// previous value and describes the mapping. The previous value is
-        /// <see langword="default"/> when no destination exists.
+        /// A lambda expression that receives the non-null source value and the non-null
+        /// existing destination and describes the mapping.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.DslSource, global::TestCase.Destination> Template(
             this global::Morphant.MapperBuilder<global::TestCase.DslSource, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.DslSource, global::TestCase.Destination?, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
+            global::System.Func<global::TestCase.DslSource, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationMorphantTemplate> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -205,18 +204,17 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a mapping template that depends on the destination's previous state.
+        /// Configures a mapping template for an existing destination.
         /// </summary>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="template">
-        /// A lambda expression that receives the non-null source value and the destination's
-        /// previous value and describes the mapping. The previous value is
-        /// <see langword="default"/> when no destination exists.
+        /// A lambda expression that receives the non-null source value and the non-null
+        /// existing destination and describes the mapping.
         /// </param>
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.RawSource, global::TestCase.Destination> Template(
             this global::Morphant.MapperBuilder<global::TestCase.RawSource, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.RawSource, global::TestCase.Destination?, global::TestCase.Destination> template)
+            global::System.Func<global::TestCase.RawSource, global::TestCase.Destination, global::TestCase.Destination> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

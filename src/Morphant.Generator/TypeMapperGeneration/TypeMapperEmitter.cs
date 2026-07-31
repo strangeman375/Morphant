@@ -111,12 +111,16 @@ internal static class TypeMapperEmitter
         }
 
         if (mapping.EffectiveSettings.IsMappingModeValid &&
-            mapping.DirectBlock is { } directBlock)
+            !mapping.TemplateHelperMethodDeclarations.IsDefaultOrEmpty)
         {
-            writer.Line();
-            WriteMultilineDeclaration(
-                writer,
-                directBlock.MethodDeclaration);
+            foreach (var declaration in
+                     mapping.TemplateHelperMethodDeclarations)
+            {
+                writer.Line();
+                WriteMultilineDeclaration(
+                    writer,
+                    declaration);
+            }
         }
     }
 
@@ -201,14 +205,6 @@ internal static class TypeMapperEmitter
             WriteUnsupportedMapping(
                 writer,
                 mapNewUnsupportedExceptionMessage);
-            writer.Unindent();
-            return;
-        }
-
-        if (mapping.DirectBlock is { } directBlock)
-        {
-            writer.Line(
-                $"=> {directBlock.MapNewValueExpression};");
             writer.Unindent();
             return;
         }
@@ -305,13 +301,6 @@ internal static class TypeMapperEmitter
             WriteControlFlowMapNewNode(
                 writer,
                 controlFlow.MapNewRoot);
-            return;
-        }
-
-        if (mapping.DirectBlock is { } directBlock)
-        {
-            writer.Line(
-                $"return {directBlock.MapNewValueExpression};");
             return;
         }
 
@@ -722,14 +711,6 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.DirectBlock is { } directBlock)
-        {
-            writer.Line(
-                $"=> {directBlock.MapExistingValueExpression};");
-            writer.Unindent();
-            return;
-        }
-
         if (mapping.MapExistingDirectExpression is { } directExpression)
         {
             writer.Line($"=> {directExpression};");
@@ -823,13 +804,6 @@ internal static class TypeMapperEmitter
             WriteControlFlowMapExistingNode(
                 writer,
                 controlFlow.MapExistingRoot);
-            return;
-        }
-
-        if (mapping.DirectBlock is { } directBlock)
-        {
-            writer.Line(
-                $"return {directBlock.MapExistingValueExpression};");
             return;
         }
 

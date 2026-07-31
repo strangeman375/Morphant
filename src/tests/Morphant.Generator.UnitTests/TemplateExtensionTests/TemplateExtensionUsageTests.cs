@@ -43,10 +43,10 @@ namespace TestCase
                     new(source.Value))
                 .MemberMatching(
                     MemberMatching.Explicit)
-                .Template(static (Source source, Destination? destination) =>
+                .Template(static (Source source, Destination destination) =>
                     new(
                         source.Value,
-                        destination?.Value))
+                        destination.Value))
                 .UnmappedMemberValidation(
                     UnmappedMemberValidation.None);
         }
@@ -252,7 +252,7 @@ namespace TestCase
                 {
                     var value =
                         source.Value +
-                        (destination?.Value ?? 0);
+                        destination.Value;
 
                     return new(value);
                 });
@@ -376,7 +376,7 @@ namespace TestCase
                 .Template(static (source, destination) =>
                     new(
                         GetValue(source) +
-                        (destination?.Value ?? 0)));
+                        destination.Value));
         }
 
         private static int GetValue(TSource source) => 0;
@@ -441,19 +441,18 @@ namespace TestCase.Morphant.Generated
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
                          /// <summary>
-                         /// Configures a mapping template that depends on the destination's previous state.
+                         /// Configures a mapping template for an existing destination.
                          /// </summary>
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the non-null source value and the destination's
-                         /// previous value and describes the mapping. The previous value is
-                         /// <see langword="default"/> when no destination exists.
+                         /// A lambda expression that receives the non-null source value and the non-null
+                         /// existing destination and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{destinationType}}> builder,
-                             global::System.Func<TSource, {{existingDestinationType}}, {{templateResultType}}> template)
+                             global::System.Func<TSource, {{existingDestinationType.TrimEnd('?')}}, {{templateResultType}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
                      }
                  }

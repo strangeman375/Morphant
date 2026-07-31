@@ -12,7 +12,18 @@ internal readonly record struct MapperBuilderMapInfo(
 
 internal readonly record struct MapperBuilderMapRegistrationInfo(
     InvocationExpressionSyntax Syntax,
-    InvocationExpressionSyntax? TemplateSyntax,
+    MapperBuilderMapTemplateInfo Templates,
     ITypeSymbol SourceType,
     ITypeSymbol DestinationType,
     MappingSettings Settings);
+
+internal readonly record struct MapperBuilderMapTemplateInfo(
+    InvocationExpressionSyntax? SourceTemplateSyntax,
+    InvocationExpressionSyntax? DestinationTemplateSyntax,
+    bool HasDuplicateSourceTemplate,
+    bool HasDuplicateDestinationTemplate)
+{
+    public bool HasDuplicate =>
+        HasDuplicateSourceTemplate ||
+        HasDuplicateDestinationTemplate;
+}

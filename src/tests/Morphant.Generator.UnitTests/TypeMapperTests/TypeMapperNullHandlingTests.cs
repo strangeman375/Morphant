@@ -439,7 +439,7 @@ build_property.MorphantNullDestinationHandling = Throw
     }
 
     [Test]
-    public async Task Creates_new_destination_inside_MapExisting_and_keeps_previous_null()
+    public async Task Creates_new_with_source_template_and_never_passes_null_to_destination_template()
     {
         // lang=c#
         const string source =
@@ -465,8 +465,9 @@ namespace TestCase
                     NullSourceHandling.ReturnDestination)
                 .NullDestinationHandling(
                     NullDestinationHandling.CreateNew)
-                .Template((source, previous) =>
-                    (previous ?? -1) + source.Value);
+                .Template(source => -1 + source.Value)
+                .Template((source, destination) =>
+                    destination + source.Value);
     }
 }
 """;
@@ -505,7 +506,7 @@ namespace TestCase
                 return -1 + source.Value;
             }
 
-            return (destination ?? -1) + source.Value;
+            return destination.Value + source.Value;
         }
     }
 }
@@ -953,19 +954,18 @@ namespace TestCase
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
                          /// <summary>
-                         /// Configures a mapping template that depends on the destination's previous state.
+                         /// Configures a mapping template for an existing destination.
                          /// </summary>
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the non-null source value and the destination's
-                         /// previous value and describes the mapping. The previous value is
-                         /// <see langword="default"/> when no destination exists.
+                         /// A lambda expression that receives the non-null source value and the non-null
+                         /// existing destination and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{destinationType}}> builder,
-                             global::System.Func<TSource, {{existingDestinationType}}, {{templateResultType}}> template)
+                             global::System.Func<TSource, {{existingDestinationType.TrimEnd('?')}}, {{templateResultType}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
                      }
                  }

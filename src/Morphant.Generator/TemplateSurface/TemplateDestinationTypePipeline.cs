@@ -191,13 +191,9 @@ internal static class TemplateDestinationTypePipeline
         var fullyQualifiedName = destinationType.ToDisplayString(
             SymbolDisplayFormats.FullyQualifiedNullable);
 
-        var existingDestinationTypeFullyQualifiedName =
-            destinationType.IsReferenceType
-                ? destinationType
-                    .WithNullableAnnotation(NullableAnnotation.Annotated)
-                    .ToDisplayString(
-                        SymbolDisplayFormats.FullyQualifiedNullable)
-                : fullyQualifiedName;
+        var nonNullDestinationTypeFullyQualifiedName =
+            GetNonNullDestinationTypeName(
+                destinationType);
 
         var canGenerateTemplateExtension =
             CanGenerateTopLevelTypeReference(destinationType);
@@ -220,7 +216,7 @@ internal static class TemplateDestinationTypePipeline
                 sourceTypeFullyQualifiedName,
                 usageIdentity,
                 fullyQualifiedName,
-                existingDestinationTypeFullyQualifiedName,
+                nonNullDestinationTypeFullyQualifiedName,
                 fullyQualifiedName,
                 canGenerateTemplateExtension,
                 canGeneratePairSpecificTemplateExtension);
@@ -262,7 +258,7 @@ internal static class TemplateDestinationTypePipeline
             sourceTypeFullyQualifiedName,
             usageIdentity,
             fullyQualifiedName,
-            existingDestinationTypeFullyQualifiedName,
+            nonNullDestinationTypeFullyQualifiedName,
             templateTypeFullyQualifiedName,
             canGenerateTemplateExtension,
             canGeneratePairSpecificTemplateExtension);
@@ -281,6 +277,25 @@ internal static class TemplateDestinationTypePipeline
             preference.DynamicTypeCount,
             preference.NullableReferenceTypeCount,
             preference.ExplicitTupleElementNameCount);
+    }
+
+    private static string GetNonNullDestinationTypeName(
+        INamedTypeSymbol destinationType)
+    {
+        ITypeSymbol nonNullType = destinationType;
+
+        if (IsNullableValueType(destinationType))
+        {
+            nonNullType = destinationType.TypeArguments[0];
+        }
+        else if (destinationType.IsReferenceType)
+        {
+            nonNullType = destinationType.WithNullableAnnotation(
+                NullableAnnotation.NotAnnotated);
+        }
+
+        return nonNullType.ToDisplayString(
+            SymbolDisplayFormats.FullyQualifiedNullable);
     }
 
     private static TemplateExtensionSignaturePreference

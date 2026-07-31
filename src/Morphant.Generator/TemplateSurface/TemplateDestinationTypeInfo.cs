@@ -9,7 +9,7 @@ public readonly record struct TemplateDestinationTypeInfo
     string SourceTypeFullyQualifiedName,
     string UsageIdentity,
     string FullyQualifiedName,
-    string ExistingDestinationTypeFullyQualifiedName,
+    string NonNullDestinationTypeFullyQualifiedName,
     string TemplateResultTypeFullyQualifiedName,
     bool CanGenerateTemplateExtension,
     bool CanGeneratePairSpecificTemplateExtension

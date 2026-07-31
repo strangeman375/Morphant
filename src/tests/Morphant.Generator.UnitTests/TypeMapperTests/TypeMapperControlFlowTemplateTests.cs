@@ -508,10 +508,14 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .Template((source, previous) => new()
+                .Template(source => new()
+                {
+                    Child = Map(source.Child)
+                })
+                .Template((source, destination) => new()
                 {
                     Child = source.UseExistingChild
-                        ? Map(source.Child, previous?.Child)
+                        ? Map(source.Child, destination.Child)
                         : Map(source.Child)
                 });
         }
@@ -623,7 +627,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Branches_Auto_and_explicit_values_while_caching_previous_state_before_assignments()
+    public async Task Branches_Auto_and_explicit_values_while_caching_existing_state_before_assignments()
     {
         // lang=c#
         const string source =
@@ -663,13 +667,20 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .Template((source, previous) => new()
+                .Template(source => new()
                 {
-                    First =
-                        (previous?.First ?? 0) + source.First,
+                    First = 0 + source.First,
                     Value = source.UseAutomatic
                         ? Auto()
-                        : previous?.Value ?? source.Fallback
+                        : source.Fallback
+                })
+                .Template((source, destination) => new()
+                {
+                    First =
+                        destination.First + source.First,
+                    Value = source.UseAutomatic
+                        ? Auto()
+                        : destination.Value
                 });
         }
     }
@@ -2522,19 +2533,18 @@ namespace TestCase
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
                          /// <summary>
-                         /// Configures a mapping template that depends on the destination's previous state.
+                         /// Configures a mapping template for an existing destination.
                          /// </summary>
                          /// <typeparam name="TSource">The source type.</typeparam>
                          /// <param name="builder">The mapping builder to configure.</param>
                          /// <param name="template">
-                         /// A lambda expression that receives the non-null source value and the destination's
-                         /// previous value and describes the mapping. The previous value is
-                         /// <see langword="default"/> when no destination exists.
+                         /// A lambda expression that receives the non-null source value and the non-null
+                         /// existing destination and describes the mapping.
                          /// </param>
                          /// <returns>The <paramref name="builder"/> instance.</returns>
                          public static global::Morphant.MapperBuilder<TSource, {{destinationType}}> Template<TSource>(
                              this global::Morphant.MapperBuilder<TSource, {{destinationType}}> builder,
-                             global::System.Func<TSource, {{existingDestinationType}}, {{templateResultType}}> template)
+                             global::System.Func<TSource, {{existingDestinationType.TrimEnd('?')}}, {{templateResultType}}> template)
                              => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
                      }
                  }

@@ -40,7 +40,8 @@ public enum TemplateMode
     /// <remarks>
     /// Morphant does not apply constructor or member mappings to the returned
     /// value. When mapping to an existing destination, the lambda may return
-    /// the supplied destination or replace it with another instance.
+    /// the supplied destination or replace it with another instance. Source
+    /// and destination null handling still applies before template selection.
     /// </remarks>
     Raw
 }

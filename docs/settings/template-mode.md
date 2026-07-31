@@ -58,6 +58,64 @@ If no `Template()` is configured, both modes leave ordinary convention mapping
 unchanged. `Raw` defines how a present template is interpreted; it does not
 turn convention mapping off globally.
 
+`Raw` also does not disable `NullSourceHandling` or
+`NullDestinationHandling`. Null handling selects the mapping scenario before
+Morphant chooses a template; `TemplateMode` only controls how the selected
+lambda result is processed.
+
+## Template overloads
+
+The overload determines which mapping scenario can use a lambda:
+
+```csharp
+Template(source => /* ... */)
+```
+
+This form does not require an existing destination, so it can serve both
+`MapNew` and `MapExisting`.
+
+```csharp
+Template((source, destination) => /* ... */)
+```
+
+This form specializes `MapExisting`. Its `destination` parameter is always
+non-null. For a nullable value destination such as `OrderDto?`, the parameter
+type is the underlying `OrderDto`.
+
+The selection table is identical for `Dsl` and `Raw`:
+
+| Configured templates | `MapNew` | `MapExisting` |
+|---|---|---|
+| None | Ordinary mapping | Ordinary mapping |
+| Source-only | Source-only template | Source-only template |
+| Destination-aware only | Ordinary mapping | Destination-aware template |
+| Both | Source-only template | Destination-aware template |
+
+Call order does not affect selection. When both forms are present, each lambda
+is a complete description of its own scenario; Morphant does not merge or
+overlay them. A mapping can configure each form at most once.
+
+For example, a raw mapping can create and update with separate lambdas:
+
+```csharp
+builder.Map<Order, OrderDto>()
+    .TemplateMode(TemplateMode.Raw)
+    .Template(source => Create(source))
+    .Template((source, destination) =>
+        UpdateOrReplace(source, destination));
+```
+
+`NullDestinationHandling` runs before destination-aware template selection.
+`Throw` throws without invoking a template. `CreateNew` switches to the new
+scenario, which uses the source-only template when present and otherwise uses
+ordinary `MapNew` mapping. The destination-aware lambda therefore never needs
+a null check or null-forgiving operator.
+
+`MappingMode` only enables or disables public mapping operations. It does not
+change the table above. In particular, `CreateNew` may execute the new plan
+inside an enabled `MapExisting` operation even when the public `MapNew`
+operation is disabled.
+
 ## Direct-only destinations
 
 Built-in scalars and other direct-only destination types cannot use a generated

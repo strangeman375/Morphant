@@ -419,19 +419,18 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a mapping template that depends on the destination's previous state.
+        /// Configures a mapping template for an existing destination.
         /// </summary>
         /// <typeparam name=""TSource"">The source type.</typeparam>
         /// <param name=""builder"">The mapping builder to configure.</param>
         /// <param name=""template"">
-        /// A lambda expression that receives the non-null source value and the destination's
-        /// previous value and describes the mapping. The previous value is
-        /// <see langword=""default""/> when no destination exists.
+        /// A lambda expression that receives the non-null source value and the non-null
+        /// existing destination and describes the mapping.
         /// </param>
         /// <returns>The <paramref name=""builder""/> instance.</returns>
         public static global::Morphant.MapperBuilder<TSource, {destinationType.FullyQualifiedName}> Template<TSource>(
             this global::Morphant.MapperBuilder<TSource, {destinationType.FullyQualifiedName}> builder,
-            global::System.Func<TSource, {destinationType.ExistingDestinationTypeFullyQualifiedName}, {destinationType.TemplateResultTypeFullyQualifiedName}> template)
+            global::System.Func<TSource, {destinationType.NonNullDestinationTypeFullyQualifiedName}, {destinationType.TemplateResultTypeFullyQualifiedName}> template)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }}
 }}
@@ -514,8 +513,8 @@ namespace Morphant
         writer.Line();
         writer.Line("/// <summary>");
         writer.Line(
-            "/// Configures a mapping template that depends on the " +
-            "destination's previous state.");
+            "/// Configures a mapping template for an existing " +
+            "destination.");
         writer.Line("/// </summary>");
         writer.Line(
             "/// <param name=\"builder\">The mapping builder to " +
@@ -523,12 +522,9 @@ namespace Morphant
         writer.Line("/// <param name=\"template\">");
         writer.Line(
             "/// A lambda expression that receives the non-null source " +
-            "value and the destination's");
+            "value and the non-null");
         writer.Line(
-            "/// previous value and describes the mapping. The previous " +
-            "value is");
-        writer.Line(
-            "/// <see langword=\"default\"/> when no destination exists.");
+            "/// existing destination and describes the mapping.");
         writer.Line("/// </param>");
         writer.Line(
             "/// <returns>The <paramref name=\"builder\"/> " +
@@ -541,7 +537,7 @@ namespace Morphant
             "    global::System.Func<" +
             mappingType.SourceTypeFullyQualifiedName +
             ", " +
-            mappingType.ExistingDestinationTypeFullyQualifiedName +
+            mappingType.NonNullDestinationTypeFullyQualifiedName +
             ", " +
             mappingType.TemplateResultTypeFullyQualifiedName +
             "> template)");

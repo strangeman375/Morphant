@@ -71,6 +71,7 @@ internal static class TemplateMappingPlanner
 
     public static TemplateMappingPlanResult? Build(
         MapperBuilderMapRegistrationInfo registration,
+        InvocationExpressionSyntax? templateSyntax,
         ITypeSymbol? memberType,
         bool directTemplate,
         CSharpCompilation compilation,
@@ -78,7 +79,7 @@ internal static class TemplateMappingPlanner
         CancellationToken cancellationToken)
     {
         if (!TryGetLambda(
-                registration.TemplateSyntax,
+                templateSyntax,
                 out var lambda,
                 out var sourceParameter,
                 out var destinationParameter))
@@ -124,10 +125,10 @@ internal static class TemplateMappingPlanner
         var mapExistingDestinationExpression =
             destinationParameterSymbol is null
                 ? null
-                : SyntaxFactory.IdentifierName("destination");
+                : BuildMapExistingDestinationExpression(
+                    registration.DestinationType);
         var mapExistingDestinationIsKnownNonNull =
-            destinationParameterSymbol is not null &&
-            registration.DestinationType.IsReferenceType;
+            destinationParameterSymbol is not null;
 
         if (directTemplate &&
             lambda.Block is { } directBlock)
@@ -140,6 +141,7 @@ internal static class TemplateMappingPlanner
                 destinationParameterSymbol,
                 registration.DestinationType,
                 mapNewDestinationExpression,
+                mapExistingDestinationExpression,
                 semanticModel,
                 cancellationToken);
         }
@@ -541,6 +543,7 @@ internal static class TemplateMappingPlanner
         IParameterSymbol? destinationParameter,
         ITypeSymbol destinationType,
         ExpressionSyntax? mapNewDestinationExpression,
+        ExpressionSyntax? mapExistingDestinationExpression,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
@@ -616,11 +619,17 @@ internal static class TemplateMappingPlanner
                 parameters.Add((
                     capture,
                     TypeMapperMappingTypePolicy
-                        .GetGeneratedMaybeNullTypeName(
+                        .GetGeneratedNonNullDestinationTypeName(
                             destinationType),
+                    "default(" +
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedNonNullDestinationTypeName(
+                            destinationType) +
+                    ")",
                     NormalizeTransferredExpression(
-                        mapNewDestinationExpression),
-                    "destination"
+                        mapExistingDestinationExpression ??
+                        SyntaxFactory.IdentifierName(
+                            "destination"))
                 ));
                 continue;
             }
@@ -1363,6 +1372,20 @@ internal static class TemplateMappingPlanner
             ? expression.WithAdditionalAnnotations(
                 KnownNullMapNewExpressionAnnotation)
             : expression;
+    }
+
+    private static ExpressionSyntax BuildMapExistingDestinationExpression(
+        ITypeSymbol destinationType)
+    {
+        if (destinationType is INamedTypeSymbol namedType &&
+            namedType.OriginalDefinition.SpecialType ==
+                SpecialType.System_Nullable_T)
+        {
+            return SyntaxFactory.ParseExpression(
+                "destination.Value");
+        }
+
+        return SyntaxFactory.IdentifierName("destination");
     }
 
     private static bool HasKnownNullDefault(ITypeSymbol type)

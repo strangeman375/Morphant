@@ -146,6 +146,24 @@ internal static class TypeMapperMappingTypePolicy
         return GetGeneratedTypeName(type);
     }
 
+    public static string GetGeneratedNonNullDestinationTypeName(
+        ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol namedType &&
+            namedType.OriginalDefinition.SpecialType ==
+                SpecialType.System_Nullable_T)
+        {
+            type = namedType.TypeArguments[0];
+        }
+        else if (!type.IsValueType)
+        {
+            type = type.WithNullableAnnotation(
+                NullableAnnotation.NotAnnotated);
+        }
+
+        return GetGeneratedTypeName(type);
+    }
+
     private static bool AreContainingTypesEquivalent(
         INamedTypeSymbol? left,
         INamedTypeSymbol? right)

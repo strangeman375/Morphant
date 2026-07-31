@@ -39,10 +39,10 @@ internal sealed class TemplateExtensionDependencyIsolationTests
                     "DestinationB"),
                 Expected(
                     DestinationAHintName,
-                    IncrementalStepRunReason.Modified),
+                    IncrementalStepRunReason.Cached),
                 Expected(
                     DestinationBHintName,
-                    IncrementalStepRunReason.Unchanged)),
+                    IncrementalStepRunReason.Cached)),
             Step(
                 "second destination becomes nullable",
                 BuildSurfaceSourceFiles(
@@ -242,11 +242,11 @@ internal sealed class TemplateExtensionDependencyIsolationTests
                 Expected(
                     "Morphant.Generated.TemplateExtension." +
                     "ExternalChanging_Destination.g.cs",
-                    IncrementalStepRunReason.Modified),
+                    IncrementalStepRunReason.Cached),
                 Expected(
                     "Morphant.Generated.TemplateExtension." +
                     "ExternalStable_Destination.g.cs",
-                    IncrementalStepRunReason.Unchanged)));
+                    IncrementalStepRunReason.Cached)));
     }
 
     private static TemplateExtensionIncrementalitySourceFile[]

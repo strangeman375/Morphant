@@ -16,8 +16,9 @@ public enum NullDestinationHandling
     /// Creates and maps a new destination.
     /// </summary>
     /// <remarks>
-    /// A template that receives the destination's previous state observes the
-    /// original <see langword="null"/> or <see langword="default"/> value.
+    /// Morphant runs the new-destination mapping plan. A source-only template
+    /// participates when configured; a destination-aware template is not
+    /// invoked.
     /// </remarks>
     CreateNew,
 
