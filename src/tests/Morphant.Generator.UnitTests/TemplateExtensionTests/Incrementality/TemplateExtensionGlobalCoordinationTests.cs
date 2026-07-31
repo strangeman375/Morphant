@@ -69,14 +69,14 @@ internal sealed class TemplateExtensionGlobalCoordinationTests
                 "non-canonical usages removed",
                 BuildCanonicalSourceFiles(PreferredStatements),
                 PreferredExpected(
-                    IncrementalStepRunReason.Unchanged,
-                    IncrementalStepRunReason.Unchanged)),
+                    IncrementalStepRunReason.Cached,
+                    IncrementalStepRunReason.Cached)),
             Step(
                 "non-canonical usages restored",
                 BuildCanonicalSourceFiles(AllStatements),
                 PreferredExpected(
-                    IncrementalStepRunReason.Unchanged,
-                    IncrementalStepRunReason.Unchanged)),
+                    IncrementalStepRunReason.Cached,
+                    IncrementalStepRunReason.Cached)),
             Step(
                 "less preferred representatives restored",
                 BuildCanonicalSourceFiles(LessPreferredStatements),
