@@ -3,12 +3,13 @@ using Morphant.Generator.MapperBuilderMap;
 using Morphant.Generator.Settings;
 using Morphant.Generator.TemplateSurface;
 using Morphant.Generator.TemplateSurface.TemplateExtension;
+using Morphant.Generator.TemplateSurface.TemplateType;
 using Morphant.Generator.TypeMapperConfigure;
-using Morphant.Generator.TypeMapperGeneration;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
 
-internal sealed class TestTemplateMappingGenerator : IIncrementalGenerator
+internal sealed class TestTemplateSurfaceGenerator :
+    IIncrementalGenerator
 {
     public void Initialize(
         IncrementalGeneratorInitializationContext context)
@@ -28,13 +29,12 @@ internal sealed class TestTemplateMappingGenerator : IIncrementalGenerator
             assemblySettings,
             mapInfos);
 
+        TemplateTypePipeline.Register(
+            context,
+            compilationContext,
+            destinationTypes);
         TemplateExtensionPipeline.Register(
             context,
             destinationTypes);
-        TypeMapperPipeline.Register(
-            context,
-            compilationContext,
-            assemblySettings,
-            mapInfos);
     }
 }

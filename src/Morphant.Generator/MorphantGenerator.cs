@@ -23,6 +23,7 @@ public sealed class MorphantGenerator : IIncrementalGenerator
             configureInfos);
         var destinationTypeInfos = TemplateDestinationTypePipeline.Build(
             compilationContext,
+            assemblySettings,
             mapInfos);
 
         TemplateTypePipeline.Register(context, compilationContext, destinationTypeInfos);

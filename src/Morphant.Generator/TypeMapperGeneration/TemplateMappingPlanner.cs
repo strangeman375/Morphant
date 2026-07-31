@@ -72,6 +72,7 @@ internal static class TemplateMappingPlanner
     public static TemplateMappingPlanResult? Build(
         MapperBuilderMapRegistrationInfo registration,
         ITypeSymbol? memberType,
+        bool directTemplate,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
@@ -112,11 +113,6 @@ internal static class TemplateMappingPlanner
                 declaredDestinationParameter;
         }
 
-        var directTemplate =
-            registration.DestinationType is
-                INamedTypeSymbol namedDestination &&
-            DirectDestinationTypePolicy.IsDirect(
-                namedDestination);
         var mapNewDestinationIsKnownNull =
             HasKnownNullDefault(registration.DestinationType);
         var mapNewDestinationExpression =

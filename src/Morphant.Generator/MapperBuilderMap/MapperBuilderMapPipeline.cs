@@ -147,6 +147,29 @@ internal static class MapperBuilderMapPipeline
                 continue;
             }
 
+            if (IsMapperBuilderTemplateSurfaceMethod(
+                    method,
+                    knownSymbols))
+            {
+                var templateSurface =
+                    TryGetTemplateSurface(
+                        invocation,
+                        method,
+                        semanticModel,
+                        cancellationToken,
+                        out var parsedTemplateSurface)
+                        ? parsedTemplateSurface
+                        : (TemplateSurfaceValue?)null;
+
+                ApplyTemplateSurface(
+                    invocation,
+                    templateSurface,
+                    settings,
+                    registrations,
+                    out settings);
+                continue;
+            }
+
             if (!IsMapInvocationCandidate(invocation) ||
                 !IsMapperBuilderMapMethod(method, knownSymbols))
             {
@@ -278,6 +301,47 @@ internal static class MapperBuilderMapPipeline
         };
     }
 
+    private static void ApplyTemplateSurface(
+        InvocationExpressionSyntax invocation,
+        TemplateSurfaceValue? value,
+        MappingSettings rootSettings,
+        ImmutableArray<MapperBuilderMapRegistrationInfo>.Builder
+            registrations,
+        out MappingSettings updatedRootSettings)
+    {
+        if (TryFindRegistration(
+                invocation,
+                registrations,
+                out var registrationIndex))
+        {
+            var registration = registrations[registrationIndex];
+
+            registrations[registrationIndex] = registration with
+            {
+                Settings = registration.Settings with
+                {
+                    TemplateSurface = value
+                }
+            };
+            updatedRootSettings = rootSettings;
+            return;
+        }
+
+        if (invocation
+            .DescendantNodesAndSelf()
+            .OfType<InvocationExpressionSyntax>()
+            .Any(IsMapInvocationCandidate))
+        {
+            updatedRootSettings = rootSettings;
+            return;
+        }
+
+        updatedRootSettings = rootSettings with
+        {
+            TemplateSurface = value
+        };
+    }
+
     private static bool TryFindRegistration(
         InvocationExpressionSyntax settingInvocation,
         ImmutableArray<MapperBuilderMapRegistrationInfo>.Builder
@@ -374,6 +438,31 @@ internal static class MapperBuilderMapPipeline
 
         nullDestinationHandling =
             (NullDestinationHandlingValue)numericValue;
+        return true;
+    }
+
+    private static bool TryGetTemplateSurface(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out TemplateSurfaceValue templateSurface)
+    {
+        if (!TryGetInt32Constant(
+                invocation,
+                method,
+                semanticModel,
+                cancellationToken,
+                out var numericValue) ||
+            !Enum.IsDefined(
+                typeof(TemplateSurfaceValue),
+                numericValue))
+        {
+            templateSurface = default;
+            return false;
+        }
+
+        templateSurface = (TemplateSurfaceValue)numericValue;
         return true;
     }
 
@@ -809,6 +898,16 @@ internal static class MapperBuilderMapPipeline
             method,
             knownSymbols,
             "NullDestinationHandling");
+    }
+
+    private static bool IsMapperBuilderTemplateSurfaceMethod(
+        IMethodSymbol method,
+        KnownSymbols knownSymbols)
+    {
+        return IsMapperBuilderBaseSettingMethod(
+            method,
+            knownSymbols,
+            "TemplateSurface");
     }
 
     private static bool IsMapperBuilderBaseSettingMethod(

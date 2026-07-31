@@ -3,6 +3,7 @@ using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MapperBuilderMap;
+using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TemplateSurface;
 
@@ -10,17 +11,20 @@ internal static class TemplateDestinationTypePipeline
 {
     public static IncrementalValuesProvider<TemplateDestinationTypeInfo> Build(
         IncrementalValueProvider<CompilationContext> compilationContext,
+        IncrementalValueProvider<MappingSettings> assemblySettings,
         IncrementalValuesProvider<MapperBuilderMapInfo> mapInfos)
     {
         var destinationTypes = mapInfos
             .Combine(compilationContext)
+            .Combine(assemblySettings)
             .SelectMany(static (source, cancellationToken) =>
             {
-                var (mapInfo, context) = source;
+                var ((mapInfo, context), settings) = source;
 
                 return BuildDestinationTypes(
                     mapInfo,
                     context,
+                    settings,
                     cancellationToken);
             })
             .WithTrackingName(
@@ -42,6 +46,7 @@ internal static class TemplateDestinationTypePipeline
         BuildDestinationTypes(
             MapperBuilderMapInfo mapInfo,
             CompilationContext context,
+            MappingSettings assemblySettings,
             CancellationToken cancellationToken)
     {
         var semanticModel = context.Compilation.GetSemanticModel(
@@ -54,12 +59,22 @@ internal static class TemplateDestinationTypePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (MappingTypePolicy.IsSupported(
-                    registration.SourceType) &&
-                MappingTypePolicy.IsSupported(
-                    registration.DestinationType) &&
-                TryGetDestinationType(
+            if (!MappingTypePolicy.IsSupported(
+                    registration.SourceType) ||
+                !MappingTypePolicy.IsSupported(
+                    registration.DestinationType))
+            {
+                continue;
+            }
+
+            var effectiveSurface = EffectiveTemplateSurface.Resolve(
+                assemblySettings,
+                mapInfo.Settings,
+                registration.Settings);
+
+            if (TryGetDestinationType(
                     registration.Syntax,
+                    effectiveSurface,
                     semanticModel,
                     cancellationToken) is { } destinationType)
             {
@@ -72,6 +87,7 @@ internal static class TemplateDestinationTypePipeline
 
     private static TemplateDestinationTypeInfo? TryGetDestinationType(
         InvocationExpressionSyntax invocation,
+        TemplateSurfaceValue? effectiveSurface,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
@@ -83,65 +99,83 @@ internal static class TemplateDestinationTypePipeline
             return null;
         }
 
+        var sourceTypeSyntax =
+            genericName.TypeArgumentList.Arguments[0];
         var destinationTypeSyntax =
             genericName.TypeArgumentList.Arguments[1];
 
+        var sourceType = semanticModel.GetTypeInfo(
+            sourceTypeSyntax,
+            cancellationToken).Type;
         var destinationType = semanticModel.GetTypeInfo(
             destinationTypeSyntax,
             cancellationToken).Type;
 
-        if (destinationType is null)
+        if (sourceType is null ||
+            destinationType is null)
         {
             return null;
         }
+
+        sourceType = PreserveTopLevelNullableAnnotation(
+            sourceTypeSyntax,
+            sourceType);
 
         if (destinationType is IDynamicTypeSymbol)
         {
-            return BuildDestinationTypeInfo(
-                PreserveTopLevelNullableAnnotation(
-                    destinationTypeSyntax,
-                    semanticModel.Compilation.GetSpecialType(
-                        SpecialType.System_Object)),
-                TemplateDestinationTypeKind.DirectTemplate);
+            destinationType = PreserveTopLevelNullableAnnotation(
+                destinationTypeSyntax,
+                semanticModel.Compilation.GetSpecialType(
+                    SpecialType.System_Object));
         }
-
-        if (destinationType is not INamedTypeSymbol namedDestinationType)
+        else
         {
-            return null;
+            destinationType = PreserveTopLevelNullableAnnotation(
+                destinationTypeSyntax,
+                destinationType);
         }
 
-        namedDestinationType = PreserveTopLevelNullableAnnotation(
-            destinationTypeSyntax,
-            namedDestinationType);
-
-        if (GetDestinationTypeKind(
+        if (destinationType is not INamedTypeSymbol namedDestinationType ||
+            !TryGetDestinationTypeKind(
                 namedDestinationType,
-                semanticModel.Compilation) is not { } kind)
+                effectiveSurface,
+                semanticModel.Compilation,
+                out var kind))
         {
             return null;
         }
 
         return BuildDestinationTypeInfo(
+            sourceType,
             namedDestinationType,
-            kind);
+            kind,
+            semanticModel.Compilation);
     }
 
-    private static INamedTypeSymbol PreserveTopLevelNullableAnnotation(
+    private static ITypeSymbol PreserveTopLevelNullableAnnotation(
         TypeSyntax syntax,
-        INamedTypeSymbol type)
+        ITypeSymbol type)
     {
-        return syntax is NullableTypeSyntax && type.IsReferenceType
-            ? (INamedTypeSymbol)type.WithNullableAnnotation(
+        return syntax is NullableTypeSyntax &&
+               type.IsReferenceType
+            ? type.WithNullableAnnotation(
                 NullableAnnotation.Annotated)
             : type;
     }
 
     private static TemplateDestinationTypeInfo BuildDestinationTypeInfo(
+        ITypeSymbol sourceType,
         INamedTypeSymbol destinationType,
-        TemplateDestinationTypeKind kind)
+        TemplateDestinationTypeKind kind,
+        Compilation compilation)
     {
+        var sourceTypeSignature =
+            BuildTemplateExtensionSignature(sourceType);
         var templateExtensionSignature =
             BuildTemplateExtensionSignature(destinationType);
+
+        var sourceTypeFullyQualifiedName = sourceType.ToDisplayString(
+            SymbolDisplayFormats.FullyQualifiedNullable);
 
         var usageDefinition = destinationType.OriginalDefinition;
 
@@ -165,17 +199,31 @@ internal static class TemplateDestinationTypePipeline
                         SymbolDisplayFormats.FullyQualifiedNullable)
                 : fullyQualifiedName;
 
-        if (kind == TemplateDestinationTypeKind.DirectTemplate)
+        var canGenerateTemplateExtension =
+            CanGenerateTopLevelTypeReference(destinationType);
+
+        var canGeneratePairSpecificTemplateExtension =
+            canGenerateTemplateExtension &&
+            CanGenerateTopLevelTypeReference(sourceType) &&
+            IsTypeAccessibleWithin(
+                sourceType,
+                compilation,
+                compilation.Assembly);
+
+        if (kind != TemplateDestinationTypeKind.GeneratedTemplate)
         {
             return new TemplateDestinationTypeInfo(
                 kind,
                 null,
+                sourceTypeSignature,
                 templateExtensionSignature,
+                sourceTypeFullyQualifiedName,
                 usageIdentity,
                 fullyQualifiedName,
                 existingDestinationTypeFullyQualifiedName,
                 fullyQualifiedName,
-                CanGenerateTemplateExtension(destinationType));
+                canGenerateTemplateExtension,
+                canGeneratePairSpecificTemplateExtension);
         }
 
         var templateDestinationType =
@@ -209,24 +257,26 @@ internal static class TemplateDestinationTypePipeline
                 definitionMetadataName,
                 templateNamespace,
                 templateTypeName),
+            sourceTypeSignature,
             templateExtensionSignature,
+            sourceTypeFullyQualifiedName,
             usageIdentity,
             fullyQualifiedName,
             existingDestinationTypeFullyQualifiedName,
             templateTypeFullyQualifiedName,
-            CanGenerateTemplateExtension(destinationType));
+            canGenerateTemplateExtension,
+            canGeneratePairSpecificTemplateExtension);
     }
 
     private static TemplateExtensionSignatureInfo
-        BuildTemplateExtensionSignature(ITypeSymbol destinationType)
+        BuildTemplateExtensionSignature(ITypeSymbol type)
     {
         var preference = GetTemplateExtensionSignaturePreference(
-            destinationType);
+            type);
 
         return new TemplateExtensionSignatureInfo(
-            DocumentationCommentId.CreateReferenceId(
-                destinationType) ??
-            destinationType.ToDisplayString(
+            DocumentationCommentId.CreateReferenceId(type) ??
+            type.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat),
             preference.DynamicTypeCount,
             preference.NullableReferenceTypeCount,
@@ -361,13 +411,91 @@ internal static class TemplateDestinationTypePipeline
             ImmutableArray<TemplateDestinationTypeInfo> destinationTypes,
             CancellationToken cancellationToken)
     {
-        var orderedDestinationTypes = destinationTypes.ToArray();
+        var groups =
+            new Dictionary<
+                string,
+                List<TemplateDestinationTypeInfo>>(
+                StringComparer.Ordinal);
+
+        foreach (var destinationType in destinationTypes)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var identity =
+                destinationType.TemplateExtensionSignature.Identity;
+
+            if (!groups.TryGetValue(identity, out var group))
+            {
+                group = new List<TemplateDestinationTypeInfo>();
+                groups.Add(identity, group);
+            }
+
+            group.Add(destinationType);
+        }
+
+        var coordinatedDestinationTypes =
+            new List<TemplateDestinationTypeInfo>(
+                destinationTypes.Length);
+
+        foreach (var group in groups.Values)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var firstKind = group[0].Kind;
+
+            if (group.All(destinationType =>
+                    destinationType.Kind == firstKind))
+            {
+                coordinatedDestinationTypes.Add(
+                    RemoveSourceSpecificDetails(
+                        SelectCanonicalDestination(group)));
+                continue;
+            }
+
+            var seen = new HashSet<TemplateDestinationTypeInfo>();
+
+            foreach (var destinationType in group)
+            {
+                if (seen.Add(destinationType))
+                {
+                    coordinatedDestinationTypes.Add(destinationType);
+                }
+            }
+        }
+
+        var orderedDestinationTypes =
+            coordinatedDestinationTypes.ToArray();
 
         Array.Sort(
             orderedDestinationTypes,
             static (left, right) =>
             {
                 var comparison = StringComparer.Ordinal.Compare(
+                    left.TemplateExtensionSignature.Identity,
+                    right.TemplateExtensionSignature.Identity);
+
+                if (comparison != 0)
+                {
+                    return comparison;
+                }
+
+                comparison = StringComparer.Ordinal.Compare(
+                    left.SourceTypeSignature.Identity,
+                    right.SourceTypeSignature.Identity);
+
+                if (comparison != 0)
+                {
+                    return comparison;
+                }
+
+                comparison = left.Kind.CompareTo(right.Kind);
+
+                if (comparison != 0)
+                {
+                    return comparison;
+                }
+
+                comparison = StringComparer.Ordinal.Compare(
                     left.UsageIdentity,
                     right.UsageIdentity);
 
@@ -377,31 +505,94 @@ internal static class TemplateDestinationTypePipeline
                 }
 
                 comparison = StringComparer.Ordinal.Compare(
-                    left.FullyQualifiedName,
-                    right.FullyQualifiedName);
+                    left.SourceTypeFullyQualifiedName,
+                    right.SourceTypeFullyQualifiedName);
 
                 return comparison != 0
                     ? comparison
                     : StringComparer.Ordinal.Compare(
-                        left.TemplateResultTypeFullyQualifiedName,
-                        right.TemplateResultTypeFullyQualifiedName);
+                        left.FullyQualifiedName,
+                        right.FullyQualifiedName);
             });
 
-        var seen = new HashSet<TemplateDestinationTypeInfo>();
-        var result = new List<TemplateDestinationTypeInfo>(
-            orderedDestinationTypes.Length);
+        return orderedDestinationTypes.ToImmutableArray();
+    }
 
-        foreach (var destinationType in orderedDestinationTypes)
+    private static TemplateDestinationTypeInfo
+        SelectCanonicalDestination(
+            IReadOnlyList<TemplateDestinationTypeInfo> destinationTypes)
+    {
+        var canonical = destinationTypes[0];
+
+        for (var index = 1;
+             index < destinationTypes.Count;
+             index++)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            var candidate = destinationTypes[index];
 
-            if (seen.Add(destinationType))
+            if (CompareCanonicalPreference(
+                    candidate,
+                    canonical) < 0)
             {
-                result.Add(destinationType);
+                canonical = candidate;
             }
         }
 
-        return result.ToImmutableArray();
+        return canonical;
+    }
+
+    private static int CompareCanonicalPreference(
+        TemplateDestinationTypeInfo left,
+        TemplateDestinationTypeInfo right)
+    {
+        var leftSignature = left.TemplateExtensionSignature;
+        var rightSignature = right.TemplateExtensionSignature;
+
+        var comparison = leftSignature.DynamicTypeCount.CompareTo(
+            rightSignature.DynamicTypeCount);
+
+        if (comparison != 0)
+        {
+            return comparison;
+        }
+
+        comparison = leftSignature.NullableReferenceTypeCount.CompareTo(
+            rightSignature.NullableReferenceTypeCount);
+
+        if (comparison != 0)
+        {
+            return comparison;
+        }
+
+        comparison = leftSignature.ExplicitTupleElementNameCount.CompareTo(
+            rightSignature.ExplicitTupleElementNameCount);
+
+        if (comparison != 0)
+        {
+            return comparison;
+        }
+
+        comparison = StringComparer.Ordinal.Compare(
+            left.UsageIdentity,
+            right.UsageIdentity);
+
+        return comparison != 0
+            ? comparison
+            : StringComparer.Ordinal.Compare(
+                left.FullyQualifiedName,
+                right.FullyQualifiedName);
+    }
+
+    private static TemplateDestinationTypeInfo
+        RemoveSourceSpecificDetails(
+            TemplateDestinationTypeInfo destinationType)
+    {
+        return destinationType with
+        {
+            SourceTypeSignature = default,
+            SourceTypeFullyQualifiedName = string.Empty,
+            CanGeneratePairSpecificTemplateExtension = false
+        };
     }
 
     private readonly record struct TemplateExtensionSignaturePreference
@@ -424,9 +615,11 @@ internal static class TemplateDestinationTypePipeline
         }
     }
 
-    private static TemplateDestinationTypeKind? GetDestinationTypeKind(
+    private static bool TryGetDestinationTypeKind(
         INamedTypeSymbol destinationType,
-        Compilation compilation)
+        TemplateSurfaceValue? effectiveSurface,
+        Compilation compilation,
+        out TemplateDestinationTypeKind kind)
     {
         var templateDestinationType =
             GetTemplateDestinationType(destinationType);
@@ -440,25 +633,56 @@ internal static class TemplateDestinationTypePipeline
                 destinationType,
                 compilation.Assembly))
         {
-            return null;
+            kind = default;
+            return false;
+        }
+
+        if (effectiveSurface is null or
+            TemplateSurfaceValue.Default or
+            TemplateSurfaceValue.None)
+        {
+            kind = TemplateDestinationTypeKind.None;
+            return true;
+        }
+
+        if (effectiveSurface == TemplateSurfaceValue.Direct)
+        {
+            kind = IsDirectTemplateSupported(templateDestinationType)
+                ? TemplateDestinationTypeKind.DirectTemplate
+                : TemplateDestinationTypeKind.None;
+            return true;
         }
 
         if (DirectDestinationTypePolicy.IsDirect(destinationType))
         {
-            return TemplateDestinationTypeKind.DirectTemplate;
+            kind = TemplateDestinationTypeKind.DirectTemplate;
+            return true;
         }
 
         if (HasDuplicateTypeParameterNames(templateDestinationType))
         {
-            return null;
+            kind = TemplateDestinationTypeKind.None;
+            return true;
         }
 
-        return templateDestinationType.TypeKind is
+        kind = templateDestinationType.TypeKind is
             TypeKind.Class or
             TypeKind.Struct or
             TypeKind.Interface
                 ? TemplateDestinationTypeKind.GeneratedTemplate
-                : null;
+                : TemplateDestinationTypeKind.None;
+        return true;
+    }
+
+    private static bool IsDirectTemplateSupported(
+        INamedTypeSymbol destinationType)
+    {
+        return DirectDestinationTypePolicy.IsDirect(destinationType) ||
+               destinationType.TypeKind is
+                   TypeKind.Class or
+                   TypeKind.Struct or
+                   TypeKind.Interface or
+                   TypeKind.Enum;
     }
 
     private static bool IsNullableValueType(INamedTypeSymbol type)
@@ -513,7 +737,7 @@ internal static class TemplateDestinationTypePipeline
         return false;
     }
 
-    private static bool CanGenerateTemplateExtension(ITypeSymbol type)
+    private static bool CanGenerateTopLevelTypeReference(ITypeSymbol type)
     {
         if (type.TypeKind == TypeKind.TypeParameter)
         {
@@ -522,7 +746,8 @@ internal static class TemplateDestinationTypePipeline
 
         if (type is IArrayTypeSymbol arrayType)
         {
-            return CanGenerateTemplateExtension(arrayType.ElementType);
+            return CanGenerateTopLevelTypeReference(
+                arrayType.ElementType);
         }
 
         if (type is not INamedTypeSymbol namedType)
@@ -536,14 +761,53 @@ internal static class TemplateDestinationTypePipeline
         }
 
         if (namedType.ContainingType is { } containingType &&
-            !CanGenerateTemplateExtension(containingType))
+            !CanGenerateTopLevelTypeReference(containingType))
         {
             return false;
         }
 
         foreach (var typeArgument in namedType.TypeArguments)
         {
-            if (!CanGenerateTemplateExtension(typeArgument))
+            if (!CanGenerateTopLevelTypeReference(typeArgument))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsTypeAccessibleWithin(
+        ITypeSymbol type,
+        Compilation compilation,
+        ISymbol within)
+    {
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            return IsTypeAccessibleWithin(
+                arrayType.ElementType,
+                compilation,
+                within);
+        }
+
+        if (type is not INamedTypeSymbol namedType)
+        {
+            return type is IDynamicTypeSymbol;
+        }
+
+        if (!compilation.IsSymbolAccessibleWithin(
+                namedType,
+                within))
+        {
+            return false;
+        }
+
+        foreach (var typeArgument in namedType.TypeArguments)
+        {
+            if (!IsTypeAccessibleWithin(
+                    typeArgument,
+                    compilation,
+                    within))
             {
                 return false;
             }

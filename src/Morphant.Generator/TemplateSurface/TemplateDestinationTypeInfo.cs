@@ -4,12 +4,15 @@ public readonly record struct TemplateDestinationTypeInfo
 (
     TemplateDestinationTypeKind Kind,
     TemplateTypeDefinitionInfo? TemplateTypeDefinition,
+    TemplateExtensionSignatureInfo SourceTypeSignature,
     TemplateExtensionSignatureInfo TemplateExtensionSignature,
+    string SourceTypeFullyQualifiedName,
     string UsageIdentity,
     string FullyQualifiedName,
     string ExistingDestinationTypeFullyQualifiedName,
     string TemplateResultTypeFullyQualifiedName,
-    bool CanGenerateTemplateExtension
+    bool CanGenerateTemplateExtension,
+    bool CanGeneratePairSpecificTemplateExtension
 );
 
 public readonly record struct TemplateExtensionSignatureInfo
@@ -23,7 +26,8 @@ public readonly record struct TemplateExtensionSignatureInfo
 public enum TemplateDestinationTypeKind
 {
     GeneratedTemplate,
-    DirectTemplate
+    DirectTemplate,
+    None
 }
 
 public readonly record struct TemplateTypeDefinitionInfo

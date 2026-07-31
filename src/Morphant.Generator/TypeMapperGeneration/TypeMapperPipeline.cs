@@ -308,10 +308,16 @@ internal static class TypeMapperPipeline
                     assemblySettings,
                     mapInfo.Settings,
                     registration.Settings);
+            var effectiveTemplateSurface =
+                EffectiveTemplateSurface.Resolve(
+                    assemblySettings,
+                    mapInfo.Settings,
+                    registration.Settings);
             var mapping =
                 effectiveSettings.HasExecutableOperation
                     ? BuildMapping(
                         registration,
+                        effectiveTemplateSurface,
                         compilation,
                         mapperType,
                         usedGeneratedMethodNames,
@@ -357,6 +363,7 @@ internal static class TypeMapperPipeline
 
     private static TypeMapperMappingModel BuildMapping(
         MapperBuilderMapRegistrationInfo registration,
+        TemplateSurfaceValue? effectiveTemplateSurface,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
@@ -373,12 +380,24 @@ internal static class TypeMapperPipeline
             compilation,
             mapperType,
             cancellationToken);
-        var templateMappingResult = TemplateMappingPlanner.Build(
-            registration,
-            destinationPlan.MemberType,
-            compilation,
-            mapperType,
-            cancellationToken);
+        var templateMappingResult =
+            effectiveTemplateSurface is null or
+                TemplateSurfaceValue.Default or
+                TemplateSurfaceValue.None
+                ? null
+                : TemplateMappingPlanner.Build(
+                    registration,
+                    destinationPlan.MemberType,
+                    directTemplate:
+                        effectiveTemplateSurface ==
+                            TemplateSurfaceValue.Direct ||
+                        registration.DestinationType is
+                            INamedTypeSymbol namedDestination &&
+                        DirectDestinationTypePolicy.IsDirect(
+                            namedDestination),
+                    compilation,
+                    mapperType,
+                    cancellationToken);
 
         if (templateMappingResult is null)
         {

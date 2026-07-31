@@ -653,6 +653,34 @@ parameters, затем добавить строгий opt-in режим без 
   XML docs и пользовательская страница находятся в
   `docs/settings/null-handling.md`.
 
+- [x] `TemplateSurface`.
+
+  Effective surface разрешается общим порядком
+  `map → mapper root → assembly → Full`; assembly-level значение задаётся
+  compiler-visible MSBuild-свойством `TemplateSurface`. Поддерживаются три
+  результата: `Full`, `Direct` и `None`. `Full` сохраняет direct surface для
+  встроенных и остальных direct-only destination-типов, а `None` отключает
+  только template DSL и не влияет на convention mapping.
+
+  Surface является контрактом уникальной канонической пары
+  `TSource → TDestination` в пределах compilation. Если все пары одного
+  destination имеют одинаковый surface, сохраняется компактный generic
+  `Template<TSource>()`. При смешанных surface генерируются exact
+  pair-specific overloads; `None`-пары overload не получают. Template record
+  остаётся общим для destination и создаётся, если хотя бы одна пара использует
+  `Full`.
+
+  Одна каноническая пара может быть зарегистрирована только один раз, включая
+  разные mapper-классы; диагностика дубликатов отложена. В mixed-сценарии
+  pair-specific extension пока пропускается для source-типа, который нельзя
+  назвать или к которому нет доступа из top-level generated-кода, включая
+  mapper type parameter и private/protected nested type. Для однородного
+  destination прежний generic extension сохраняет их поддержку. Диагностика
+  этой границы также отложена.
+
+  XML docs публичного API и полное пользовательское описание находятся в
+  `docs/settings/template-surface.md`.
+
 - [ ] Настройка boxing-преобразований.
 
   По умолчанию сохранять автоматический convention mapping с boxing. Добавить
@@ -676,10 +704,12 @@ parameters, затем добавить строгий opt-in режим без 
 - [ ] Диагностики и валидация.
 
   Unsupported DSL, неоднозначные конструкторы, unmapped members, nullability
-  mismatch, конфликтующие registrations. Отдельно сообщать о явно заданном
-  init-only member, который не может быть применён после `ByFactory()` в
-  `MapNew` и не может присваиваться в `MapExisting`. Оставить поздним этапом,
-  как и было согласовано.
+  mismatch, конфликтующие registrations. Отдельно сообщать о повторённой
+  канонической mapping-паре, о mixed `TemplateSurface`, для которого source
+  нельзя назвать из top-level generated-кода, и о явно заданном init-only
+  member, который не может быть применён после `ByFactory()` в `MapNew` и не
+  может присваиваться в `MapExisting`. Оставить поздним этапом, как и было
+  согласовано.
 
 - [ ] Актуализация generated mapper-а.
 
