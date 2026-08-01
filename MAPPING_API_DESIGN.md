@@ -114,8 +114,8 @@ builder.Map<Source, Destination>()
 
 ```csharp
 builder.Map<Source, Destination>()
-    .MapManually((source, call) =>
-        MapCore(source, call));
+    .MapManually((source, call, context) =>
+        MapCore(source, call, context));
 ```
 
 Для одной canonical mapping-пары разрешён либо декларативный набор
@@ -194,13 +194,13 @@ Source-only перегрузка концептуально эквивалент
 ```csharp
 Create((source, previous) =>
     previous.HasValue
-        ? previous.AsResult()
+        ? previous.Value
         : CreateFromSource(source));
 ```
 
-`AsResult()` в примере обозначает служебную форму creation-plan, выбирающую
-существующий previous. Точное имя этого generated API должно быть закреплено
-при проектировании surface, но семантика является частью дизайна.
+Между `TDestination` и `DestinationCreation` существует generated implicit
+conversion. Поэтому возврат `previous.Value` выбирает именно этот instance как
+`result`; отдельный служебный метод наподобие `AsResult()` не нужен.
 
 Для одной пары можно настроить только один `Create`, независимо от выбранной
 перегрузки. Повторный вызов является diagnostic; две перегрузки не образуют
@@ -236,14 +236,15 @@ internal sealed class DestinationCreation
         ConstructorMember<Guid> id,
         ConstructorMember<Guid> tenantId);
 
-    public DestinationCreation(ByConventionMarker marker);
-
     public DestinationCreation(
         ByConventionMarker marker,
-        DestinationConstructorMembers members);
+        DestinationConstructorMembers? members = null);
 
     public DestinationCreation(
         IByFactoryMarker<Destination> marker);
+
+    public static implicit operator DestinationCreation(
+        Destination destination);
 }
 ```
 
@@ -347,6 +348,15 @@ internal sealed class DestinationMembers
 Собственные `init`-сеттеры служебного типа нужны только для составления плана и
 не связаны с `init`-семантикой destination.
 
+Обычные `set`-сеттеры для `DestinationMembers` намеренно не генерируются. Они
+были бы полезны только для императивной сборки и последующей мутации одного
+member-plan, например через локальную переменную. Это добавило бы отдельную
+семантику порядка повторных присваиваний, aliasing и изменения плана после его
+создания. В согласованной модели каждая поддерживаемая ветка lambda возвращает
+целиком сформированный plan, поэтому `init` достаточно и точнее выражает его
+назначение. Если императивная сборка плана окажется нужна, её следует отдельно
+согласовать вместе с поддерживаемыми control-flow constructs.
+
 ### 7.3. Применение плана
 
 `Members` всегда применяется к выбранному `result`, а не к `previous`.
@@ -361,7 +371,7 @@ builder.Map<CustomerDto, Customer>()
         previous.HasValue &&
         previous.Value.TenantId == source.TenantId &&
         !previous.Value.IsFrozen
-            ? previous.AsResult()
+            ? previous.Value
             : new(source.Id, source.TenantId))
     .Members((source, previous) => new()
     {
@@ -424,9 +434,32 @@ rules. При `MemberMatching.Explicit` неуказанные members не ма
 factory или default initialization. Для previous он сохраняет текущее значение
 выбранного result.
 
-Nested `Map()` должен брать previous дочернего mapping из выбранного `result`,
-а не из внешнего `previous.Value`. Это особенно важно, когда `Create` выбрал
-replacement.
+Для post-construction writable member nested `Map()` должен брать previous
+дочернего mapping из соответствующего member выбранного `result`, а не из
+внешнего `previous.Value`. Концептуально генерируется:
+
+```csharp
+result.Address = context.Mapper.Map<AddressSource, Address>(
+    source.Address,
+    result.Address,
+    context);
+```
+
+Предположим, внешний `previous` содержит `oldAddress`, а previous-aware
+`Create` выбрал replacement, уже содержащий `replacementAddress`. Если
+передать в дочерний mapping `previous.Value.Address`, Morphant начнёт обновлять
+дочерний объект отвергнутого outer-result: он может мутировать старый object
+graph, а затем присвоить этот child в replacement, одновременно потеряв
+`replacementAddress`. `result.Address` продолжает именно тот graph, который
+был выбран как результат текущего mapping. Когда `result` и `previous.Value`
+совпадают, обе формы естественно дают один и тот же child.
+
+Для creation-time `init` member это правило нельзя механически применить:
+новый `result` ещё невозможно прочитать до завершения object initializer.
+Следует отдельно согласовать, вызывает ли `Map()` в такой ветке nested
+`MapNew`, является ли сочетание неподдерживаемым или получает иную явно
+описанную семантику. До этого решения поведение не должно определяться
+случайной формой generated code.
 
 ### 7.5. Почему `Skip()` не нужен
 
@@ -453,20 +486,31 @@ no-op, используется `MapManually`. Отдельный `Skip()` не 
 
 ```csharp
 MapManually(
-    Func<TSource?, MapCall<TDestination>, TDestination> mapping);
+    Func<
+        TSource?,
+        MapCall<TDestination>,
+        MappingContext,
+        TDestination> mapping);
 ```
 
 `TSource?` здесь означает исходное runtime-значение source, включая `null`,
 когда `TSource` допускает его. Точный generated nullable-контракт должен
 сохранять фактическую nullability mapping-пары.
 
-Source-only перегрузки нет. Если сведения о вызове не нужны, пользователь
-намеренно игнорирует второй параметр:
+Source-only перегрузки нет. Если сведения о вызове и mapping context не нужны,
+пользователь намеренно игнорирует оба дополнительных параметра:
 
 ```csharp
-.MapManually((source, _) =>
+.MapManually((source, _, _) =>
     new Destination(source!.Id, source.Name));
 ```
+
+`MapCall<TDestination>` и `MappingContext` передаются раздельно, поскольку
+отвечают на разные вопросы. `MapCall` описывает исходную форму публичного
+вызова и фактический destination instance, а `MappingContext` предоставляет
+текущий mapping context и contextual mapper для ручных nested mappings.
+`MappingContext` является последним параметром, как и в generated
+`ITypeMapper.Map(...)` contract.
 
 ### 8.2. Почему `Previous<T>` недостаточно
 
@@ -510,7 +554,7 @@ public readonly struct MapCall<TDestination>
 
 ```csharp
 builder.Map<Source, Destination>()
-    .MapManually((source, call) =>
+    .MapManually((source, call, context) =>
     {
         if (source is null)
             return HandleNullSource(call);
@@ -521,10 +565,28 @@ builder.Map<Source, Destination>()
         if (!call.Previous.TryGetValue(out var previous))
             return HandleExplicitNullDestination(source);
 
-        Update(previous, source);
+        Update(previous, source, context);
         return previous;
     });
 ```
+
+В lambda передаётся тот же `MappingContext`, который получил текущий
+generated mapper. Поэтому nested mapping вручную вызывается через уже
+существующий contextual contract с обязательной передачей этого же context:
+
+```csharp
+var address = call.Previous.TryGetValue(out var previous)
+    ? context.Mapper.Map<AddressDto, Address>(
+        source.Address,
+        previous.Address,
+        context)
+    : context.Mapper.Map<AddressDto, Address>(
+        source.Address,
+        context);
+```
+
+Создавать новый context или начинать отдельную mapping chain для такого вызова
+не нужно.
 
 `MapManually` полностью определяет результат во всех включённых
 `MappingMode`-операциях. Внутри разрешён обычный C#:
@@ -545,6 +607,8 @@ builder.Map<Source, Destination>()
 - `Create` и `Members` не выполняются;
 - `Auto()`, `Ignore()`, `Map()`, `ByConvention()` и `ByFactory()` не являются
   DSL-маркерами и недоступны;
+- ручные nested mappings доступны через `context.Mapper.Map(...)`;
+- во вложенный вызов передаётся полученный lambda экземпляр `MappingContext`;
 - lambda возвращает настоящий `TDestination`;
 - `MappingMode` по-прежнему определяет, какую публичную операцию можно вызвать.
 
@@ -758,7 +822,7 @@ builder.Map<CustomerDto, Customer>()
         previous.HasValue &&
         previous.Value.TenantId == source.TenantId &&
         !previous.Value.IsFrozen
-            ? previous.AsResult()
+            ? previous.Value
             : new(
                 source.Id,
                 source.TenantId))
@@ -807,7 +871,7 @@ Factory выполняется только в no-previous ветке source-onl
 
 ```csharp
 builder.Map<SnapshotDto, Snapshot>()
-    .MapManually((source, call) =>
+    .MapManually((source, call, _) =>
     {
         if (source is null)
             return default!;
@@ -834,7 +898,7 @@ builder.Map<SnapshotDto, Snapshot>()
 
 ```csharp
 builder.Map<Order, decimal>()
-    .MapManually((source, _) =>
+    .MapManually((source, _, _) =>
         source!.Items.Sum(x => x.Price * x.Count));
 ```
 
@@ -853,7 +917,6 @@ builder.Map<Order, decimal>()
 - factory creation вместе с explicit `init`-rule, который невозможно применить
   после возврата factory;
 - невозможный explicit constructor/member marker;
-- попытку использовать previous-result форму при `Previous.None`;
 - duplicate registration той же canonical pair.
 
 Diagnostics остаются отдельной реализационной фазой, но отсутствие готового
@@ -882,10 +945,12 @@ diagnostic не должно вводить скрытый fallback на дру�
 13. Member, не указанный в `Members`, следует effective `MemberMatching`.
 14. `MemberMatching.Explicit` является статическим способом полностью
     отключить implicit member mapping; отдельного `Skip()` нет.
-15. Nested `Map()` использует member выбранного result как child previous.
+15. Для post-construction writable member nested `Map()` использует member
+    выбранного result как child previous.
 16. `MapManually` является методом обычного pair-builder, а не отдельным
     builder-типом.
-17. У `MapManually` есть только одна перегрузка с `MapCall<TDestination>`.
+17. У `MapManually` есть только одна перегрузка с `MapCall<TDestination>` и
+    `MappingContext`.
 18. `MapManually` полностью заменяет declarative pipeline и не запускает
     null-handling settings.
 19. `MapCall` независимо сообщает форму вызова и наличие фактического
@@ -896,6 +961,15 @@ diagnostic не должно вводить скрытый fallback на дру�
 22. Возвращённый `Map` result всегда авторитетен.
 23. Никаких скрытых fallback между manual и declarative mapping либо между
     разными configured lambdas нет.
+24. `TDestination` неявно преобразуется в `DestinationCreation`; возврат
+    destination из previous-aware `Create` выбирает этот exact value как
+    result без отдельного marker-метода.
+25. Для `ByConventionMarker` генерируется один creation-plan constructor с
+    необязательным `DestinationConstructorMembers`.
+26. Generated properties `DestinationMembers` имеют только `init`; мутация уже
+    созданного member-plan не входит в declarative DSL.
+27. `MapManually` получает текущий `MappingContext` отдельным последним
+    параметром и использует его для ручных nested mappings.
 
 ## 15. Детали, которые ещё нужно закрепить перед реализацией
 
@@ -903,9 +977,9 @@ diagnostic не должно вводить скрытый fallback на дру�
 проектировании generated surface требуют:
 
 - окончательное имя generated creation- и member-plan типов;
-- окончательная syntax/name для выбора previous как creation result
-  (`previous.AsResult()` в этом документе является концептуальной записью);
 - точная nullable-аннотация `Previous<T>`, `MapCall<T>` и manual source;
+- семантика nested `Map()` для creation-time `init` members, у которых нельзя
+  прочитать значение нового result до завершения object initializer;
 - граница поддерживаемых control-flow constructs внутри declarative `Create`
   и `Members` lambdas;
 - порядок миграции текущего `Template()` implementation и тестов;
