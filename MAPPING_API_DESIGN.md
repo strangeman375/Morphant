@@ -388,7 +388,7 @@ internal sealed class DestinationCreation
 .Create(source => new(
     source.Id,
     Auto(),
-    Map()))
+    Map(source.Address)))
 ```
 
 Поддерживаемые формы creation-plan:
@@ -417,7 +417,8 @@ Constructor-member rules сохраняют текущую модель:
 | Явное выражение | Вычислить и передать значение параметра |
 | `Auto()` | Обязательно получить параметр по convention |
 | `Ignore()` | Опустить параметр, когда это допустимо для optional / `params` |
-| `Map()` | Выполнить nested mapping и передать его результат |
+| `Map(source)` / `Map<TDestination>(source)` | Выполнить nested `MapNew` и передать его результат |
+| `Map(source, destination)` / `Map<TDestination>(source, destination)` | Выполнить nested `MapExisting` и передать его результат |
 
 `Create` не гарантирует новую identity. В частности, `ByFactory()` может
 вернуть cached instance. Название означает получение базового `result`, а не
@@ -566,7 +567,7 @@ mapping должен быть ручным.
     Name = source.Name,
     Age = Auto(),
     LegacyValue = Ignore(),
-    Address = Map()
+    Address = Map(source.Address)
 });
 ```
 
@@ -577,7 +578,8 @@ mapping должен быть ручным.
 | Явное выражение | Вычислить и присвоить member выбранного result |
 | `Auto()` | Обязательно найти convention mapping |
 | `Ignore()` | Не маппить member и сохранить значение выбранного result |
-| `Map()` | Выполнить nested mapping и присвоить возвращённый результат |
+| `Map(source)` / `Map<TDestination>(source)` | Выполнить nested `MapNew` и присвоить результат |
+| `Map(source, destination)` / `Map<TDestination>(source, destination)` | Выполнить nested `MapExisting` и присвоить результат |
 | Member не указан | Применить эффективный `MemberMatching` |
 
 При `MemberMatching.Auto` явные rules дополняют или переопределяют convention
@@ -587,45 +589,63 @@ rules. При `MemberMatching.Explicit` неуказанные members не ма
 factory или default initialization. Для previous он сохраняет текущее значение
 выбранного result.
 
-Nested `Map()` всегда берёт previous дочернего mapping из соответствующего
-member внешнего `previous`, а выбранный `result` определяет только место, куда
-будет записано возвращённое значение. Концептуально генерируется:
+Обычные conventions и явный `Auto()` никогда не предполагают nested mapping.
+Они находят source-member по своим правилам имени и доступности и используют
+его только при warning-free implicit C#-преобразовании в целевой тип. Если
+имена совпали, но прямого преобразования нет, convention не разрешена. Generator
+не проверяет наличие mapping-пары и не генерирует runtime lookup по одному
+совпадению имён: полный набор mappings может быть объявлен в другой либо в
+потребляющей сборке и потому неизвестен в точке генерации.
+
+Nested mapping всегда задаётся одной из четырёх явных форм:
+
+| Форма | Nested destination | Операция |
+|---|---|---|
+| `Map(source)` | Выводится из целевого member или constructor parameter | `MapNew` |
+| `Map<TDestination>(source)` | Явно заданный `TDestination` | `MapNew` |
+| `Map(source, destination)` | Выводится из целевого member или constructor parameter | `MapExisting` |
+| `Map<TDestination>(source, destination)` | Явно заданный `TDestination` | `MapExisting` |
+
+Форм `Map()` и `Map<TDestination>()` без аргументов нет: source и, когда нужен
+existing-вызов, child destination выбирает пользователь. Это правило одинаково
+для body-members и constructor parameters; автоматической связи имени параметра
+конструктора с member-ом внешнего previous не существует.
+
+Статический тип nested source определяется первым аргументом. Runtime-тип не
+меняет выбранную пару, а `Map(null)` без типизирующего cast не определяет
+source-тип и потому недопустим. В generic-форме возвращаемый `TDestination`
+должен warning-free неявно преобразовываться в тип целевого member или
+constructor parameter; это позволяет, например, явно получить concrete child
+для interface-typed места.
+
+Явный `Map(...)` требует nested mapping даже тогда, когда source можно напрямую
+присвоить целевому месту. One-argument форма всегда означает `MapNew`, а
+two-argument — `MapExisting`, независимо от outer operation. Это сохраняется и
+для explicit `null` во втором аргументе: null handling выполняет сама вложенная
+mapping-пара, без внешней подстановки, fallback или смены операции.
+
+Child previous также передаётся только явно. Если нужная операция зависит от
+наличия outer previous, пользователь выражает обе ветки непосредственно:
 
 ```csharp
-var address = previous.HasValue
-    ? context.Mapper.Map<AddressSource, Address>(
-        source.Address,
-        previous.Value.Address,
-        context)
-    : context.Mapper.Map<AddressSource, Address>(
-        source.Address,
-        context);
-
-result.Address = address;
+.Members((source, previous) => new()
+{
+    Address = previous.HasValue
+        ? Map(source.Address, previous.Value.Address)
+        : Map(source.Address)
+});
 ```
 
-Если внешний `previous` отсутствует, выполняется обычный nested `MapNew`. Если
-он существует, вызывается nested `MapExisting` с child из
-`previous.Value`, даже когда previous-aware `Create` выбрал replacement.
-Replacement задаёт новый внешний result, но не подменяет историю mapping-а
-своими текущими member values. Возвращённый nested result затем присваивается
-member-у replacement.
+В existing-ветке здесь читается именно исходный outer `previous`, а не
+replacement, выбранный `Create`. Если `previous.Value.Address` равен `null`,
+вызывается nested `MapExisting` с explicit `null`. Возвращённый nested result
+авторитетен и присваивается выбранному outer result; nested `MapExisting` может
+как сохранить или изменить старый child, так и вернуть replacement.
 
-Если child внешнего `previous` равен `null`, должен вызываться именно nested
-`Map(source, null)`, а не `Map(source)`. Благодаря этому вложенный mapping
-сохраняет различие двух публичных операций и применяет свой обычный
-`NullDestinationHandling`.
-
-Nested `MapExisting` может изменить child старого object graph и вернуть тот же
-экземпляр. Это является обычной семантикой соответствующей вложенной mapping-
-пары. Если нужно всегда создавать новый child, это настраивается в ней; если
-нужно сохранить значение member-а выбранного replacement, пользователь
-указывает `Ignore()` или явное выражение вместо `Map()`.
-
-То же правило применяется к creation-time `init` member. Nested mapping можно
-вычислить из внешнего `previous` до создания result и поместить возвращённое
-значение непосредственно в object initializer; читать member ещё не созданного
-replacement для этого не требуется.
+Аргументы каждого `Map(...)` вычисляются ровно один раз слева направо в порядке
+записи, включая переставленные named arguments. Scoped `IMapper` создаёт для
+вложенного вызова новый immutable call frame с выбранной operation и сохраняет
+общий mapping scope.
 
 ### 7.5. Почему `Skip()` не нужен
 
@@ -849,7 +869,7 @@ Exception из nested mapping не меняет outer frame. Его можно �
 - convention construction не применяется;
 - convention member mapping не применяется;
 - `Create` и `Members` не выполняются;
-- `Auto()`, `Ignore()`, `Map()`, `ByConvention()` и `ByFactory()` не являются
+- `Auto()`, `Ignore()`, `Map(...)`, `ByConvention()` и `ByFactory()` не являются
   DSL-маркерами и недоступны;
 - ручные nested mappings доступны через `context.Mapper.Map(...)`;
 - scoped mapper автоматически создаёт для вложенного вызова новый
@@ -865,7 +885,7 @@ Exception из nested mapping не меняет outer frame. Его можно �
 ### 8.4. Использование context за пределами `MapManually`
 
 `MappingContext` участвует не только в manual mapping. Declarative pipeline
-использует его внутренне для каждого automatic nested `Map()`: текущий вызов
+использует его внутренне для каждого explicit nested `Map(...)`: текущий вызов
 получает собственный frame, а все frame mapping chain разделяют один scope.
 
 Scope завершается в `finally` вместе с root `Map`. Сохранять
@@ -888,7 +908,7 @@ mutable reference cache без неявной синхронизации.
   previous после null handling;
 - доступ к `context.Operation` позволил бы снова различать `Map(source)` и
   нормализованный `Map(source, null)`, обходя эту модель;
-- declarative nested mapping уже выражается специальным `Map()` marker.
+- declarative nested mapping уже выражается явным `Map(...)` marker.
 
 Если в будущем в context появятся конкретные пользовательские данные или
 новые extension points, необходимость доступа к ним из declarative DSL должна
@@ -1316,9 +1336,14 @@ diagnostic не должно вводить скрытый fallback на дру�
 13. Member, не указанный в `Members`, следует effective `MemberMatching`.
 14. `MemberMatching.Explicit` является статическим способом полностью
     отключить implicit member mapping; отдельного `Skip()` нет.
-15. Nested `Map()` использует соответствующий member внешнего `previous` как
-    child destination; при отсутствии outer previous выполняется nested
-    `MapNew`, а возвращённое значение присваивается member-у выбранного result.
+15. Nested mapping выполняется только через явные `Map(source)`,
+    `Map<TDestination>(source)`, `Map(source, destination)` и
+    `Map<TDestination>(source, destination)`. Форм без аргументов нет;
+    conventions и `Auto()` используют только warning-free implicit
+    C#-преобразование и не предполагают наличие mapping-пары. One-argument
+    формы всегда вызывают nested `MapNew`, two-argument формы — nested
+    `MapExisting`, включая explicit `null`, независимо от outer operation;
+    child previous при необходимости передаёт сам пользователь.
 16. `MapManually` является методом обычного pair-builder, а не отдельным
     builder-типом.
 17. У `MapManually` есть только одна перегрузка с

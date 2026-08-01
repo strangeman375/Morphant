@@ -71,7 +71,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 2 | Direct `Create` и capability-based surface | До реализации нового API | Согласован |
 | 3 | Nullability, `Previous<T>` и null-result | До реализации нового API | Согласован |
 | 4 | `MappingContext` и call frames | До реализации нового API | Согласован |
-| 5 | Полная семантика nested `Map` | До реализации нового API | Не начат |
+| 5 | Полная семантика nested `Map` | До реализации нового API | Согласован |
 | 6 | Порядок вычислений и declarative control flow | До реализации нового API | Не начат |
 | 7 | Допустимость mapping-пар и capability model | До реализации нового API | Не начат |
 | 8 | Scope mapping-а и несколько вариантов одной пары | До заморозки runtime architecture | Не начат |
@@ -244,35 +244,51 @@ thread-safety contract, а также псевдокод root/nested dispatch п
 
 ### Этап 5. Полная семантика nested `Map`
 
-**Проблема.** В новом документе остался только абстрактный `Map()` с
-автоматическим child previous. Потеряны четыре уже реализованные формы и не
-определён nested mapping для constructor parameters.
+**Проблема.** Автоматический nested mapping по совпавшим именам требует знать
+полный набор зарегистрированных пар. Для source generator-а этот набор может
+быть неполным: mapping способен находиться в другой либо в потребляющей сборке.
+Попытка угадать пару сделала бы conventions зависимыми от места объявления,
+а безусловный runtime lookup переносил бы забытую регистрацию на runtime.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- сохранение форм `Map(source)`, `Map(source, destination)`,
+- nested mapping выполняется только через четыре явные формы:
+  `Map(source)`, `Map(source, destination)`,
   `Map<TDestination>(source)` и
   `Map<TDestination>(source, destination)`;
-- закон: one-argument form всегда вызывает nested `MapNew`, two-argument form
-  — nested `MapExisting`, включая explicit `null`;
-- явные one-argument и two-argument формы не зависят от operation внешнего
-  mapping-а;
-- no-argument `Map()` как shorthand с automatic source и automatic previous;
-- target-inferred и explicit generic destination;
-- связь constructor parameter с readable member внешнего previous;
-- поведение, когда у constructor parameter нет однозначного previous-member;
-- явное задание child previous пользователем;
-- использование outer previous, а не replacement result, как истории;
-- порядок вычисления arguments, включая named arguments;
-- передача call frame и null semantics во вложенную pair.
+- no-argument форм `Map()` и `Map<TDestination>()` нет; они дублировали бы
+  `Auto()` и скрывали выбор source/previous за convention;
+- обычные conventions и `Auto()` используют совпавший source-member только при
+  warning-free implicit C#-преобразовании; они не ищут, не предполагают и не
+  создают nested mapping-пару;
+- explicit `Map(...)` требует mapping даже при наличии прямого implicit
+  conversion;
+- one-argument формы всегда вызывают nested `MapNew`, two-argument формы —
+  nested `MapExisting`, включая explicit `null`; outer operation на этот выбор
+  не влияет;
+- source-тип пары определяется по статическому типу первого аргумента; destination
+  выводится из целевого member/constructor parameter либо задаётся generic-
+  аргументом, а generic-result должен warning-free неявно преобразовываться в
+  целевое место;
+- child previous пользователь передаёт явно. Автоматической связи constructor
+  parameter с одноимённым member внешнего previous нет. Когда ветка зависит от
+  наличия previous, пользователь явно выбирает между one- и two-argument
+  формами и при existing-вызове читает исходный outer previous, а не replacement
+  result;
+- аргументы одного `Map(...)` вычисляются ровно один раз слева направо в порядке
+  записи, включая named arguments;
+- nested null handling выполняет вложенная пара без внешних проверок, fallback
+  или смены operation; возвращённый result авторитетен;
+- scoped `IMapper` создаёт новый immutable call frame для вложенной operation и
+  сохраняет общий mapping scope.
 
-**Предварительное направление:** сохранить все четыре явные формы, а
-no-argument `Map()` добавить только как convention shorthand. Для
-constructor parameter automatic previous допустим лишь при однозначной связи;
-иначе нужен explicit вызов или diagnostic.
+Возможный assembly manifest или composition-root validator требований
+`requires/provides` можно добавить позднее без изменения DSL. Он не является
+основанием вводить неявный nested mapping сейчас.
 
-**Результат этапа:** таблица всех overload laws для body-member и constructor
-parameter с `MapNew`, `MapExisting`, nullable child и replacement outer result.
+**Результат этапа:** четыре overload laws и единая явная семантика nested
+mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначность automatic source
+и child previous устранена для body-members и constructor parameters.
 
 ### Этап 6. Порядок вычислений и declarative control flow
 
@@ -292,7 +308,7 @@ parameter с `MapNew`, `MapExisting`, nullable child и replacement outer result
 - поддерживаемые expression- и block-lambdas, locals, `if`/`else`, `switch`,
   несколько `return` и `throw`;
 - conditional и switch expressions;
-- conditional `Auto()`, `Ignore()` и `Map()`;
+- conditional `Auto()`, `Ignore()` и `Map(...)`;
 - допустимые references/captures declarative lambdas: mapper members, static
   API, constants, method groups, Configure-locals и local functions;
 - отдельная граница references/captures для `MapManually`, включая то, что
@@ -368,7 +384,7 @@ pair API.
   или их комбинация;
 - допустимость одной пары в разных `TypeMapper`;
 - какой набор mappings представляет runtime `IMapper`;
-- выбор mapping-а при automatic nested `Map()`;
+- выбор mapping variant для explicit nested `Map(...)`;
 - конфликт двух доступных вариантов в одном scope;
 - связь variants с inheritance, reuse и DI registration;
 - нужна ли явная named mapping возможность либо достаточно mapper-level scope;
@@ -745,7 +761,7 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 
 ## 7. Следующий этап
 
-**Этап 5 — полная семантика nested `Map`.** Зафиксировать все явные и
-convention-формы nested mapping, выбор `MapNew` / `MapExisting`, получение
-child previous для members и constructor parameters, а также порядок
-вычисления и передачу нового call frame во вложенную pair.
+**Этап 6 — порядок вычислений и declarative control flow.** Зафиксировать
+snapshot semantics explicit values, exactly-once и пользовательский порядок
+побочных эффектов, фазу mutation/conventions, aliasing и поддерживаемую границу
+expression-/block-lambdas.
