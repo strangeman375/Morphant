@@ -30,6 +30,17 @@ patch/update, второго варианта одной пары или polymor
 Manual остаётся обязательным escape hatch для специальных алгоритмов, но не
 должен скрывать отсутствие первоклассной поддержки массового сценария.
 
+При доработке сохраняются уже удачные инварианты нового дизайна:
+
+- две публичные операции mapping-а остаются единственными: `MapNew` и
+  `MapExisting`;
+- возвращаемое значение обеих операций всегда авторитетно, включая structs,
+  records и replacement destination;
+- `Members` имеет одну общую перегрузку для обеих операций, а не отдельные
+  правила для `MapNew` и `MapExisting`;
+- `MapManually` также имеет одну общую перегрузку и остаётся альтернативой
+  declarative pipeline, а не его дополнительной стадией.
+
 ## 2. Порядок работы
 
 1. Обсуждать по одному этапу, не смешивая независимые продуктовые решения.
@@ -104,7 +115,9 @@ Manual остаётся обязательным escape hatch для специ�
 **Предварительное направление:** заменить conversion от `TDestination` на
 conversion от `Previous<TDestination>`. Тогда возврат `previous` означает
 только сохранение фактического previous, а factory или cache остаются явно
-обозначенной веткой.
+обозначенной веткой. Пользователь возвращает сам `previous`; извлекать
+`previous.Value` или вызывать отдельный `AsResult()` для выбора result не
+нужно.
 
 **Результат этапа:** точная generated shape `DestinationCreation`, таблица
 creation-веток и нормативные примеры source-only/previous-aware `Create`.
@@ -208,6 +221,8 @@ nested dispatch.
   `Map<TDestination>(source, destination)`;
 - закон: one-argument form всегда вызывает nested `MapNew`, two-argument form
   — nested `MapExisting`, включая explicit `null`;
+- явные one-argument и two-argument формы не зависят от operation внешнего
+  mapping-а;
 - no-argument `Map()` как shorthand с automatic source и automatic previous;
 - target-inferred и explicit generic destination;
 - связь constructor parameter с readable member внешнего previous;
@@ -242,9 +257,12 @@ parameter с `MapNew`, `MapExisting`, nullable child и replacement outer result
 - ветки, выражения которых неприменимы и потому не должны вычисляться;
 - поддерживаемые expression- и block-lambdas, locals, `if`/`else`, `switch`,
   несколько `return` и `throw`;
+- conditional и switch expressions;
 - conditional `Auto()`, `Ignore()` и `Map()`;
-- допустимые captures: mapper members, static API, constants, method groups и
-  Configure-locals/local functions;
+- допустимые references/captures declarative lambdas: mapper members, static
+  API, constants, method groups, Configure-locals и local functions;
+- отдельная граница references/captures для `MapManually`, включая то, что
+  generator может безопасно перенести из `Configure` в generated method;
 - нужна ли динамическая whole-plan no-op операция, не сводимая к статическому
   `MemberMatching.Explicit`;
 - остаются ли generated member-plan properties `init`-only.
@@ -273,13 +291,17 @@ values в типизированные locals в исходном порядке
 - минимальные ограничения для регистрации manual pair;
 - root arrays, tuples, `IEnumerable`, dictionaries, scalar, abstract и
   interface types;
+- root collection eligibility отдельно для sequence source и collection
+  destination: `IEnumerable<Order> -> OrderSummary`,
+  `Order -> List<OrderLineDto>` и collection-to-collection pair;
 - осмысленность или сознательный запрет delegate/dynamic-like types;
 - inaccessible/unnameable types и границы generated code placement;
 - сохранение nullable, constructed generic, mapper type parameter и generic
   constraints;
 - применимость `MappingMode`, `NullSourceHandling`,
   `NullDestinationHandling`, `MemberMatching`, `ConstructorSelection`,
-  boxing policy и validation settings к каждой capability;
+  boxing policy, `UnmappedMemberValidation` и
+  `NullabilityMismatchValidation` к каждой capability;
 - defaults, inheritance и precedence settings после удаления `TemplateMode`;
 - окончательное имя и семантику `NullDestinationHandling.CreateNew` /
   `TreatAsMissing`;
