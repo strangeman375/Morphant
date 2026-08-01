@@ -200,13 +200,15 @@ Source-only перегрузка концептуально эквивалент
 ```csharp
 Create((source, previous) =>
     previous.HasValue
-        ? previous.Value
+        ? previous
         : CreateFromSource(source));
 ```
 
-Между `TDestination` и `DestinationCreation` существует generated implicit
-conversion. Поэтому возврат `previous.Value` выбирает именно этот instance как
-`result`; отдельный служебный метод наподобие `AsResult()` не нужен.
+Между `Previous<TDestination>` и `DestinationCreation` существует generated
+implicit conversion. Поэтому возврат самого `previous` выбирает именно этот
+instance как `result`; отдельный служебный метод наподобие `AsResult()` или
+`UsePrevious()` не нужен. `previous.Value` используется только для чтения
+existing destination.
 
 Для одной пары можно настроить только один `Create`, независимо от выбранной
 перегрузки. Повторный вызов является diagnostic; две перегрузки не образуют
@@ -250,7 +252,7 @@ internal sealed class DestinationCreation
         IByFactoryMarker<Destination> marker);
 
     public static implicit operator DestinationCreation(
-        Destination destination);
+        Previous<Destination> previous);
 }
 ```
 
@@ -268,8 +270,19 @@ internal sealed class DestinationCreation
 - явный destination-конструктор;
 - `ByConvention()`;
 - `ByConvention()` с явными constructor-member rules;
-- `ByFactory()`;
+- factory через `new(ByFactory(...))`;
 - existing previous как result в previous-aware перегрузке.
+
+Произвольный готовый `TDestination` не преобразуется в structured
+creation-plan. Готовый или cached instance выражается явно как factory-ветка:
+
+```csharp
+.Create(source => new(ByFactory(() => cache.Get(source.Id))))
+```
+
+Форма `new(ByFactory(...))` обязательна: marker передаётся generated
+constructor-у creation-plan, а implicit conversion от marker-interface не
+генерируется.
 
 Constructor-member rules сохраняют текущую модель:
 
@@ -377,7 +390,7 @@ builder.Map<CustomerDto, Customer>()
         previous.HasValue &&
         previous.Value.TenantId == source.TenantId &&
         !previous.Value.IsFrozen
-            ? previous.Value
+            ? previous
             : new(source.Id, source.TenantId))
     .Members((source, previous) => new()
     {
@@ -822,7 +835,7 @@ writable body-members:
 ```csharp
 builder.Map<Source, IDestination>()
     .Create((source, _) =>
-        ByFactory(() => factory.Create(source.Id)))
+        new(ByFactory(() => factory.Create(source.Id))))
     .Members((source, _) => new()
     {
         Name = source.Name
@@ -878,7 +891,7 @@ builder.Map<CustomerDto, Customer>()
         previous.HasValue &&
         previous.Value.TenantId == source.TenantId &&
         !previous.Value.IsFrozen
-            ? previous.Value
+            ? previous
             : new(
                 source.Id,
                 source.TenantId))
@@ -913,7 +926,7 @@ builder.Map<Source, Destination>()
 ```csharp
 builder.Map<OrderDto, Order>()
     .Create(source =>
-        ByFactory(() => orderFactory.Create(source.Id)))
+        new(ByFactory(() => orderFactory.Create(source.Id))))
     .Members((source, _) => new()
     {
         Number = source.Number
@@ -1019,9 +1032,10 @@ diagnostic не должно вводить скрытый fallback на дру�
 22. Возвращённый `Map` result всегда авторитетен.
 23. Никаких скрытых fallback между manual и declarative mapping либо между
     разными configured lambdas нет.
-24. `TDestination` неявно преобразуется в `DestinationCreation`; возврат
-    destination из previous-aware `Create` выбирает этот exact value как
-    result без отдельного marker-метода.
+24. `Previous<TDestination>` неявно преобразуется в `DestinationCreation`;
+    возврат самого `previous` из previous-aware `Create` выбирает existing
+    destination как result без отдельного marker-метода. Произвольный готовый
+    `TDestination` выражается только явной factory-веткой.
 25. Для `ByConventionMarker` генерируется один creation-plan constructor с
     необязательным `DestinationConstructorMembers`.
 26. Generated properties `DestinationMembers` имеют только `init`; мутация уже

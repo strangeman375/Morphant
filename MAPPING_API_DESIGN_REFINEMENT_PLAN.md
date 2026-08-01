@@ -59,8 +59,7 @@ Manual остаётся обязательным escape hatch для специ�
 
 Статусы этапов:
 
-- `Не начат` — вопрос ещё не обсуждался;
-- `Обсуждается` — варианты рассматриваются, решения нет;
+- `Не начат` — согласованное решение по этапу ещё не зафиксировано;
 - `Согласован` — решение перенесено в целевую спецификацию;
 - `Отложен` — граница и причина отсрочки явно зафиксированы.
 
@@ -68,7 +67,7 @@ Manual остаётся обязательным escape hatch для специ�
 
 | Этап | Узел дизайна | Горизонт | Статус |
 |---:|---|---|---|
-| 1 | Creation model и выбор previous | До реализации нового API | Обсуждается |
+| 1 | Creation model и выбор previous | До реализации нового API | Согласован |
 | 2 | Direct `Create` и capability-based surface | До реализации нового API | Не начат |
 | 3 | Nullability, `Previous<T>` и null-result | До реализации нового API | Не начат |
 | 4 | `MappingContext` и call frames | До реализации нового API | Не начат |
@@ -99,28 +98,28 @@ Manual остаётся обязательным escape hatch для специ�
 произвольного уже созданного или cached instance, из-за чего невозможно точно
 определить применимость `init` и `required` rules.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- исчерпывающий набор creation-веток: explicit constructor, convention,
-  factory, previous и, возможно, отдельный готовый result;
-- представление выбора previous без conversion от `TDestination`;
-- нужен ли явный marker `UsePrevious()` или достаточно conversion
-  `Previous<TDestination> -> DestinationCreation`;
-- как generator классифицирует каждую ветку до генерации кода;
-- что означает factory/cached instance для обычных setters, `init` и
-  `required`;
-- допустим ли arbitrary ready instance в structured `Create` и как он должен
-  быть выражен, если действительно нужен.
+- structured `DestinationCreation` имеет закрытый набор веток: explicit
+  constructor, convention, factory и previous;
+- generated implicit conversion существует от
+  `Previous<TDestination>` к `DestinationCreation`, но не от произвольного
+  `TDestination`;
+- для выбора existing result пользователь возвращает сам `previous`;
+  `previous.Value` нужен только для чтения, а `AsResult()` и `UsePrevious()`
+  не вводятся;
+- готовый или cached instance выражается явной factory-веткой
+  `new(ByFactory(() => instance))`; непосредственный возврат `ByFactory(...)`
+  не является допустимой generated shape;
+- constructor/convention result допускает creation-time `init` и `required`
+  rules, а factory/previous уже существует и получает только применимые
+  setter-rules; factory сама отвечает за `init`/creation-time `required`;
+- никакого скрытого fallback между creation-ветками нет;
+- точный nullable-контракт `Previous<T>` и поведение `null` factory-result
+  определяются на этапе 3.
 
-**Предварительное направление:** заменить conversion от `TDestination` на
-conversion от `Previous<TDestination>`. Тогда возврат `previous` означает
-только сохранение фактического previous, а factory или cache остаются явно
-обозначенной веткой. Пользователь возвращает сам `previous`; извлекать
-`previous.Value` или вызывать отдельный `AsResult()` для выбора result не
-нужно.
-
-**Результат этапа:** точная generated shape `DestinationCreation`, таблица
-creation-веток и нормативные примеры source-only/previous-aware `Create`.
+**Результат этапа:** generated shape, creation-ветки и нормативные примеры
+перенесены в `MAPPING_API_DESIGN.md`.
 
 ### Этап 2. Direct `Create` и capability-based surface
 
@@ -711,7 +710,6 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 
 ## 7. Следующий этап
 
-**Этап 1 — Creation model и выбор previous.** Начать с проверки всех веток
-создания на class, struct, record, interface и nullable destination, затем
-сравнить conversion от `Previous<TDestination>` с явным `UsePrevious()` и
-зафиксировать одну непротиворечивую generated shape.
+**Этап 2 — Direct `Create` и capability-based surface.** Определить, какие
+destination получают structured plan, какие — direct `Create` с настоящим
+`TDestination`, и может ли одна mapping-пара иметь обе поверхности.
