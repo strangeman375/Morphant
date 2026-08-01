@@ -41,8 +41,9 @@
 
 - `MapNew` — публичная операция `Map(source)`;
 - `MapExisting` — публичная операция `Map(source, destination)`;
-- `previous` — исходный пригодный экземпляр destination, переданный в
-  `MapExisting`, если он есть после декларативной null-предобработки;
+- `previous` — фактический экземпляр destination, переданный в `MapExisting`;
+  в declarative pipeline он формируется после null-предобработки, а в manual
+  mapping — непосредственно из исходного аргумента;
 - `result` — объект или значение, которое выбрано для применения member rules
   и в итоге возвращается из `Map`;
 - `creation plan` — сгенерированное описание способа получить `result`, а не
@@ -114,8 +115,8 @@ builder.Map<Source, Destination>()
 
 ```csharp
 builder.Map<Source, Destination>()
-    .MapManually((source, call, context) =>
-        MapCore(source, call, context));
+    .MapManually((source, previous, context) =>
+        MapCore(source, previous, context));
 ```
 
 Для одной canonical mapping-пары разрешён либо декларативный набор
@@ -123,8 +124,8 @@ builder.Map<Source, Destination>()
 
 ## 5. `Previous<TDestination>`
 
-Для декларативного API используется отдельная value-type обёртка, аналогичная
-`Nullable<T>`:
+Для представления возможного previous используется отдельная value-type
+обёртка, аналогичная `Nullable<T>`:
 
 ```csharp
 public readonly struct Previous<T>
@@ -149,6 +150,11 @@ public readonly struct Previous<T>
 В декларативном pipeline `Previous<TDestination>` не хранит `Some(null)`.
 Явный `null` destination сначала обрабатывается `NullDestinationHandling`, и
 только затем формируется `Previous<TDestination>`.
+
+Та же обёртка передаётся в `MapManually`, но там она формируется из исходного
+destination без null-предобработки. Поэтому explicit `null` представлен как
+`Previous.None`, а отличие `Map(source, null)` от `Map(source)` сообщает
+`MappingContext.Operation`.
 
 ## 6. `Create`
 
@@ -492,7 +498,29 @@ no-op, используется `MapManually`. Отдельный `Skip()` не 
 
 ## 8. Полностью ручной mapping
 
-### 8.1. Единственная перегрузка
+### 8.1. `MappingContext` и единственная перегрузка
+
+Тип текущей mapping-операции является частью общего `MappingContext`, а не
+destination-specific previous-объекта:
+
+```csharp
+public enum MappingOperation
+{
+    MapNew = 0,
+    MapExisting
+}
+
+public abstract class MappingContext
+{
+    public MappingOperation Operation { get; }
+
+    public IContextualMapper Mapper { get; }
+}
+```
+
+`MappingOperation` описывает ровно одну выполняемую операцию и поэтому не
+переиспользует flags-enum `MappingMode`. `Operation` доступен пользователю
+только для чтения; его значение устанавливает mapper.
 
 `MapManually` находится на обычном pair-builder и имеет одну универсальную
 перегрузку:
@@ -501,7 +529,7 @@ no-op, используется `MapManually`. Отдельный `Skip()` не 
 MapManually(
     Func<
         TSource?,
-        MapCall<TDestination>,
+        Previous<TDestination>,
         MappingContext,
         TDestination> mapping);
 ```
@@ -518,14 +546,14 @@ Source-only перегрузки нет. Если сведения о вызов
     new Destination(source!.Id, source.Name));
 ```
 
-`MapCall<TDestination>` и `MappingContext` передаются раздельно, поскольку
-отвечают на разные вопросы. `MapCall` описывает исходную форму публичного
-вызова и фактический destination instance, а `MappingContext` предоставляет
-текущий mapping context и contextual mapper для ручных nested mappings.
+`Previous<TDestination>` и `MappingContext` передаются раздельно, поскольку
+отвечают на разные вопросы. `Previous` описывает наличие фактического
+destination instance, а `MappingContext` — весь mapping-вызов, включая его
+операцию и contextual mapper для ручных nested mappings.
 `MappingContext` является последним параметром, как и в generated
 `ITypeMapper.Map(...)` contract.
 
-### 8.2. Почему `Previous<T>` недостаточно
+### 8.2. Почему одного `Previous<T>` недостаточно
 
 В manual mapping не выполняются `NullSourceHandling` и
 `NullDestinationHandling`. Поэтому пользователь должен различать:
@@ -535,51 +563,38 @@ Source-only перегрузки нет. Если сведения о вызов
 - `Map(source, destination)`.
 
 Два первых вызова не имеют экземпляра destination, но являются разными
-операциями. Для них используется контекст вызова:
-
-```csharp
-public enum MapInvocation
-{
-    SourceOnly = 0,
-    SourceAndDestination
-}
-
-public readonly struct MapCall<TDestination>
-{
-    public MapInvocation Invocation { get; }
-
-    public Previous<TDestination> Previous { get; }
-}
-```
+операциями. Форма вызова хранится в `MappingContext.Operation`, а наличие
+экземпляра — независимо от неё в `Previous<TDestination>`.
 
 Точные состояния:
 
-| Вызов | `Invocation` | `Previous` |
+| Вызов | `context.Operation` | `previous` |
 |---|---|---|
-| `Map(source)` | `SourceOnly` | `None` |
-| `Map(source, null)` | `SourceAndDestination` | `None` |
-| `Map(source, destination)` | `SourceAndDestination` | `Some(destination)` |
+| `Map(source)` | `MapNew` | `None` |
+| `Map(source, null)` | `MapExisting` | `None` |
+| `Map(source, destination)` | `MapExisting` | `Some(destination)` |
 
-`Invocation` и `Previous` хранят два независимых факта: какая публичная
-операция вызвана и существует ли фактический destination instance.
+`Operation` и `Previous` хранят два независимых факта: какая публичная
+операция вызвана и существует ли фактический destination instance. Поэтому
+для различения explicit `null` не требуется отдельная generic call-обёртка.
 
 ### 8.3. Семантика
 
 ```csharp
 builder.Map<Source, Destination>()
-    .MapManually((source, call, context) =>
+    .MapManually((source, previous, context) =>
     {
         if (source is null)
-            return HandleNullSource(call);
+            return HandleNullSource(previous, context);
 
-        if (call.Invocation == MapInvocation.SourceOnly)
+        if (context.Operation == MappingOperation.MapNew)
             return Create(source);
 
-        if (!call.Previous.TryGetValue(out var previous))
+        if (!previous.TryGetValue(out var destination))
             return HandleExplicitNullDestination(source);
 
-        Update(previous, source, context);
-        return previous;
+        Update(destination, source, context);
+        return destination;
     });
 ```
 
@@ -588,10 +603,10 @@ generated mapper. Поэтому nested mapping вручную вызывает�
 существующий contextual contract с обязательной передачей этого же context:
 
 ```csharp
-var address = call.Previous.TryGetValue(out var previous)
+var address = previous.TryGetValue(out var destination)
     ? context.Mapper.Map<AddressDto, Address>(
         source.Address,
-        previous.Address,
+        destination.Address,
         context)
     : context.Mapper.Map<AddressDto, Address>(
         source.Address,
@@ -600,6 +615,12 @@ var address = call.Previous.TryGetValue(out var previous)
 
 Создавать новый context или начинать отдельную mapping chain для такого вызова
 не нужно.
+
+`Operation` всегда описывает текущий вызов в mapping chain, а не корневую
+операцию. При входе во вложенный `Map(...)` contextual mapper устанавливает
+операцию вложенного overload-а, а при выходе восстанавливает предыдущее
+значение. Поэтому внутри nested `MapManually` видна его собственная операция,
+а продолжившийся после него внешний manual mapping снова видит свою.
 
 `MapManually` полностью определяет результат во всех включённых
 `MappingMode`-операциях. Внутри разрешён обычный C#:
@@ -629,6 +650,27 @@ var address = call.Previous.TryGetValue(out var previous)
 `Members` или declarative constructor/member-specific configuration является
 ошибкой конфигурации и должно диагностироваться. Унаследованные общие settings,
 не имеющие эффекта в manual mapping, не запускают скрытый declarative pipeline.
+
+### 8.4. Использование context за пределами `MapManually`
+
+`MappingContext` участвует не только в manual mapping. Declarative pipeline
+использует его внутренне для каждого automatic nested `Map()` и передаёт тот
+же экземпляр по всей mapping chain. `Operation` при этом поддерживается для
+каждого текущего outer или nested вызова по правилу выше.
+
+Однако пользовательским параметром `MappingContext` пока остаётся только в
+`MapManually`. Добавлять его в `Create` или `Members` не нужно:
+
+- declarative lambdas намеренно получают уже нормализованные source и
+  previous после null handling;
+- доступ к `context.Operation` позволил бы снова различать `Map(source)` и
+  нормализованный `Map(source, null)`, обходя эту модель;
+- declarative nested mapping уже выражается специальным `Map()` marker.
+
+Если в будущем в context появятся конкретные пользовательские данные или
+новые extension points, необходимость доступа к ним из declarative DSL должна
+быть согласована отдельно. Гипотетическая польза не является основанием
+усложнять текущие сигнатуры `Create` и `Members`.
 
 ## 9. Null handling
 
@@ -668,7 +710,8 @@ Map(source, null)
 ```
 
 В обоих случаях `Create` / `Members` получают `Previous.None`. Именно поэтому
-для `Members` достаточно `Previous<TDestination>` без отдельного call context.
+для `Members` достаточно `Previous<TDestination>` без доступа к
+`MappingContext.Operation`.
 
 `NullSourceHandling` сохраняет текущие варианты и precedence. В частности,
 если effective policy возвращает результат или бросает исключение, ни
@@ -677,8 +720,8 @@ Map(source, null)
 ### 9.2. Manual mapping
 
 Для `MapManually` обе null-handling настройки полностью обходятся. В lambda
-передаются исходный source, исходная форма вызова и наличие фактического
-destination instance.
+передаются исходный source, фактический previous и `MappingContext`, чей
+`Operation` сохраняет исходную форму вызова.
 
 Это не fallback и не специальный mode настройки. Полная обработка `null`
 является частью ручного алгоритма пользователя.
@@ -884,15 +927,15 @@ Factory выполняется только в no-previous ветке source-onl
 
 ```csharp
 builder.Map<SnapshotDto, Snapshot>()
-    .MapManually((source, call, _) =>
+    .MapManually((source, previous, _) =>
     {
         if (source is null)
             return default!;
 
-        if (call.Previous.TryGetValue(out var previous) &&
-            previous.Version == source.Version)
+        if (previous.TryGetValue(out var destination) &&
+            destination.Version == source.Version)
         {
-            return previous with
+            return destination with
             {
                 Name = source.Name
             };
@@ -963,11 +1006,12 @@ diagnostic не должно вводить скрытый fallback на дру�
     `MapNew`, а возвращённое значение присваивается member-у выбранного result.
 16. `MapManually` является методом обычного pair-builder, а не отдельным
     builder-типом.
-17. У `MapManually` есть только одна перегрузка с `MapCall<TDestination>` и
-    `MappingContext`.
+17. У `MapManually` есть только одна перегрузка с
+    `Previous<TDestination>` и `MappingContext`.
 18. `MapManually` полностью заменяет declarative pipeline и не запускает
     null-handling settings.
-19. `MapCall` независимо сообщает форму вызова и наличие фактического
+19. `MappingContext.Operation` сообщает текущую публичную операцию, а
+    `Previous<TDestination>` независимо сообщает наличие фактического
     destination instance.
 20. `MapManually` всегда доступен; `Members` и `Create` генерируются только при
     наличии описанных реальных возможностей destination.
@@ -984,6 +1028,11 @@ diagnostic не должно вводить скрытый fallback на дру�
     созданного member-plan не входит в declarative DSL.
 27. `MapManually` получает текущий `MappingContext` отдельным последним
     параметром и использует его для ручных nested mappings.
+28. `MappingContext.Operation` описывает текущий outer или nested вызов;
+    contextual mapper восстанавливает операцию вызывающего mapping после
+    возврата из вложенного.
+29. Declarative pipeline использует `MappingContext` внутренне, но `Create` и
+    `Members` не получают его пользовательским lambda-параметром.
 
 ## 15. Детали, которые ещё нужно закрепить перед реализацией
 
@@ -991,7 +1040,7 @@ diagnostic не должно вводить скрытый fallback на дру�
 проектировании generated surface требуют:
 
 - окончательное имя generated creation- и member-plan типов;
-- точная nullable-аннотация `Previous<T>`, `MapCall<T>` и manual source;
+- точная nullable-аннотация `Previous<T>` и manual source;
 - граница поддерживаемых control-flow constructs внутри declarative `Create`
   и `Members` lambdas;
 - порядок миграции текущего `Template()` implementation и тестов;
