@@ -69,8 +69,8 @@ Manual остаётся обязательным escape hatch для специ�
 |---:|---|---|---|
 | 1 | Creation model и выбор previous | До реализации нового API | Согласован |
 | 2 | Direct `Create` и capability-based surface | До реализации нового API | Согласован |
-| 3 | Nullability, `Previous<T>` и null-result | До реализации нового API | Не начат |
-| 4 | `MappingContext` и call frames | До реализации нового API | Не начат |
+| 3 | Nullability, `Previous<T>` и null-result | До реализации нового API | Согласован |
+| 4 | `MappingContext` и call frames | До реализации нового API | Согласован |
 | 5 | Полная семантика nested `Map` | До реализации нового API | Не начат |
 | 6 | Порядок вычислений и declarative control flow | До реализации нового API | Не начат |
 | 7 | Допустимость mapping-пар и capability model | До реализации нового API | Не начат |
@@ -116,7 +116,7 @@ Manual остаётся обязательным escape hatch для специ�
   setter-rules; factory сама отвечает за `init`/creation-time `required`;
 - никакого скрытого fallback между creation-ветками нет;
 - точный nullable-контракт `Previous<T>` и поведение `null` factory-result
-  определяются на этапе 3.
+  зафиксированы на этапе 3.
 
 **Результат этапа:** generated shape, creation-ветки и нормативные примеры
 перенесены в `MAPPING_API_DESIGN.md`.
@@ -165,28 +165,42 @@ constructor/factory/direct `Create` фактически возвращает `n
 `Previous<Customer?>` также вводит в заблуждение: `Some(null)` запрещён, но
 `Value` выглядит nullable.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- использование non-null underlying destination в `Previous<T>`:
-  `Customer? -> Previous<Customer>` и `MyStruct? -> Previous<MyStruct>`;
-- nullable-аннотации `Value`, `TryGetValue`, declarative source и manual
-  source;
-- отличия `Map(source)`, declarative `Map(source, null)` после normalization и
-  raw manual `Map(source, null)`;
-- допустимость `null` как базового result direct `Create` перед `Members` и как
-  финального результата `MapManually`;
-- поведение `null` из structured constructor/factory перед `Members`;
-- вид ошибки: compile-time diagnostic, generated guard и тип exception;
-- взаимодействие с `NullSourceHandling` и `NullDestinationHandling` без
-  повторного применения этих policies к factory result.
+- public `IMapper` и generated `ITypeMapper` принимают nullable source и
+  destination inputs, но возвращают ровно `TDestination`, а не безусловный
+  `TDestination?`; nullability обычного result выбирает пользователь типом
+  destination, чтобы non-null mapping не создавал предупреждение на каждом
+  вызове;
+- runtime policy может фактически вернуть `null` при non-nullable
+  `TDestination`; это неизбежный компромисс для настроек, которые нельзя
+  выразить условной generic-аннотацией;
+- `Previous<T>` имеет `where T : notnull` и всегда использует destination без
+  корневой nullability: `Customer? -> Previous<Customer>`,
+  `MyStruct? -> Previous<MyStruct>`; nested generic nullability сохраняется;
+- `Value` имеет non-null `T`, а `TryGetValue` использует
+  `[MaybeNullWhen(false)] out T`: успешное извлечение всегда non-null,
+  `Some(null)` не существует;
+- declarative `Create` и `Members` получают source после
+  `NullSourceHandling` как non-null underlying type; `MapManually` получает
+  исходное nullable runtime-значение;
+- direct `Create` и structured `ByFactory` могут вернуть `null` независимо от
+  destination annotation; такой result авторитетен, немедленно возвращается и
+  short-circuit-ит `Members` и conventions;
+- Morphant не генерирует для этого exception, fallback или повторное
+  применение `NullDestinationHandling`; previous-aware `Create`, вернувший
+  `null`, намеренно заменяет previous;
+- C# nullability warning остаётся основной статической защитой для
+  non-nullable destination, но пользователь может сознательно подавить его
+  либо получить `null` из oblivious API;
+- `MapManually` возвращает пользовательский result без generated guard и без
+  вмешательства pipeline;
+- `null` вместо generated `DestinationCreation` или `DestinationMembers`
+  является ошибкой DSL-plan, а не допустимым destination-result.
 
-**Предварительное направление:** `Previous<T>` всегда использует non-null
-underlying type. Declarative pipeline требует non-null result перед member
-stage и явно проверяет factory/direct result; nullable final result разрешается
-только там, где raw manual contract действительно его допускает.
-
-**Результат этапа:** полная null-state matrix для обеих public operations и
-всех creation modes.
+**Результат этапа:** nullable-контракты public/manual/declarative surface,
+root-normalization `Previous<T>` и полная семантика `null` creation-result
+перенесены в `MAPPING_API_DESIGN.md`.
 
 ### Этап 4. `MappingContext` и call frames
 
@@ -195,23 +209,38 @@ stage и явно проверяет factory/direct result; nullable final resul
 nested calls. В будущем тот же context должен нести общий reference cache и
 другой chain state.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- разделение общего mapping scope и immutable call frame;
-- identity и lifetime пользовательского `MappingContext`;
-- создание nested frame с собственной `Operation` при разделяемом mapper и
-  общем chain state;
-- поведение при exception, recursion и нескольких nested вызовах;
-- требования к thread safety manual mapping;
-- какие данные принадлежат frame, а какие всей mapping chain;
-- остаётся ли context пока пользовательски доступен только в `MapManually`.
+- `MappingContext` является `readonly struct`: immutable call frame передаётся
+  по значению, не имеет значимой reference identity и содержит текущую
+  `MappingOperation` и scoped `IMapper`;
+- отдельный `IContextualMapper` не вводится: root mapper и scoped mapper имеют
+  один публичный контракт `IMapper`, но являются разными экземплярами с разным
+  lifetime;
+- каждый root `IMapper.Map(...)` создаёт скрытый reference-type
+  `MappingScope`; он хранит scoped mapper и в будущем принимает общий reference
+  cache и per-call state;
+- каждый outer или nested call получает новый `MappingContext`, а все frame
+  одной chain разделяют scope; `Operation` определяется выбранной перегрузкой
+  `IMapper` и никогда не мутируется либо восстанавливается;
+- one-argument scoped `Map` создаёт `MapNew` frame, two-argument —
+  `MapExisting` frame даже для explicit `null` destination;
+- nested exception не повреждает outer frame; recursion и последовательная
+  reentrancy безопасны относительно operation state, и пойманный exception не
+  мешает продолжить outer manual mapping;
+- scope завершается в `finally` после root-вызова; сохранённый
+  `context.Mapper` нельзя использовать позже, и scoped implementation обязана
+  проверять lifetime;
+- независимые root scopes допускают параллельное выполнение, но параллельные
+  nested-вызовы внутри одного scope не поддерживаются и не получают
+  thread-safety guarantee;
+- пользователь получает `MappingContext` пока только в `MapManually`;
+  declarative pipeline использует frame внутренне, но не добавляет context в
+  `Create` или `Members`.
 
-**Предварительное направление:** nested call получает новый immutable frame,
-который разделяет общий scope. `Operation` не мутируется на ранее переданном
-пользователю object instance.
-
-**Результат этапа:** runtime-модель context/scope/frame и псевдокод outer и
-nested dispatch.
+**Результат этапа:** runtime-модель frame/scope, scoped `IMapper`, lifetime и
+thread-safety contract, а также псевдокод root/nested dispatch перенесены в
+`MAPPING_API_DESIGN.md`.
 
 ### Этап 5. Полная семантика nested `Map`
 
@@ -639,7 +668,7 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 - duplicate mapping с учётом нового scope;
 - смешивание manual/direct/declarative models;
 - невозможный creation/member/nested marker;
-- null structured result;
+- `null` вместо structured creation/member plan;
 - неприменимый `init`/`required` rule;
 - immutable existing no-op;
 - unsupported control flow/capture;
@@ -716,6 +745,7 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 
 ## 7. Следующий этап
 
-**Этап 3 — Nullability, `Previous<T>` и null-result.** Зафиксировать точные
-nullable-контракты и поведение `null` для declarative structured/direct
-creation и raw manual mapping.
+**Этап 5 — полная семантика nested `Map`.** Зафиксировать все явные и
+convention-формы nested mapping, выбор `MapNew` / `MapExisting`, получение
+child previous для members и constructor parameters, а также порядок
+вычисления и передачу нового call frame во вложенную pair.
