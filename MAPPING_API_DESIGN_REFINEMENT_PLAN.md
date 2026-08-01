@@ -73,9 +73,9 @@ Manual остаётся обязательным escape hatch для специ�
 | 4 | `MappingContext` и call frames | До реализации нового API | Согласован |
 | 5 | Полная семантика nested `Map` | До реализации нового API | Согласован |
 | 6 | Порядок вычислений и declarative control flow | До реализации нового API | Согласован |
-| 7 | Допустимость mapping-пар и capability model | До реализации нового API | Не начат |
+| 7 | Допустимость mapping-пар и capability model | До реализации нового API | Согласован |
 | 8 | Scope mapping-а и несколько вариантов одной пары | До заморозки runtime architecture | Не начат |
-| 9 | Коллекции | До general-purpose release | Не начат |
+| 9 | Коллекции | После v0 | Отложен |
 | 10 | Patch/merge и conditional no-op | До general-purpose release | Не начат |
 | 11 | Immutable `MapExisting` | До general-purpose release | Не начат |
 | 12 | Per-call data и пользовательский context | До заморозки public contract | Не начат |
@@ -343,8 +343,9 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
   `builder` и local functions из внешнего `Configure` не захватываются;
   переиспользуемая логика выносится в обычный member mapper-а. Local functions,
   объявленные внутри переносимого direct/factory/manual block, сохраняются;
-- generated `DestinationMembers` остаётся immutable plan с `init`-only
-  properties;
+- generated `DestinationMembers` использует обычные `set`-properties как
+  совместимую точку будущего расширения, но текущая declarative grammar не
+  поддерживает mutation уже созданного plan-а;
 - динамический whole-plan no-op и отдельный `Skip()` сейчас не вводятся.
   Статический no-op выражается `MemberMatching.Explicit`, специальный
   динамический алгоритм — `MapManually`; first-class решение повторно
@@ -355,44 +356,58 @@ declarative/ordinary C# control flow перенесены в `MAPPING_API_DESIGN
 
 ### Этап 7. Допустимость mapping-пар и capability model
 
-**Проблема.** Текущая общая type policy запрещает arrays, tuples и collections
-даже для `MapManually`. Поэтому заявленный универсальный escape hatch не
-является универсальным. Одновременно разные операции над одной парой требуют
-разных generator capabilities.
+**Проблема.** Pair eligibility смешивалась с наличием template/declarative
+surface, из-за чего capability конкретного destination могла молча запрещать
+всю registration. Одновременно root tuples и collections требуют отдельной
+продуктовой семантики, которой не должно быть в v0 даже под видом raw escape
+hatch.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- раздельные понятия pair eligibility и declarative surface eligibility;
-- независимые capabilities: structured, direct, manual, collection и
-  projectable;
-- минимальные ограничения для регистрации manual pair;
-- root arrays, tuples, `IEnumerable`, dictionaries, scalar, abstract и
-  interface types;
-- root collection eligibility отдельно для sequence source и collection
-  destination: `IEnumerable<Order> -> OrderSummary`,
-  `Order -> List<OrderLineDto>` и collection-to-collection pair;
-- осмысленность или сознательный запрет delegate/dynamic-like types;
-- inaccessible/unnameable types и границы generated code placement;
-- сохранение nullable, constructed generic, mapper type parameter и generic
-  constraints;
-- применимость `MappingMode`, `NullSourceHandling`,
-  `NullDestinationHandling`, `MemberMatching`, `ConstructorSelection`,
-  boxing policy, `UnmappedMemberValidation` и
-  `NullabilityMismatchValidation` к каждой capability;
-- defaults, inheritance и precedence settings после удаления `TemplateMode`;
-- окончательное имя и семантику `NullDestinationHandling.CreateNew` /
-  `TreatAsMissing`;
-- считать ли неприменимую явную setting ошибкой, warning или допустимым no-op
-  в direct/manual mapping;
-- поведение при частично поддерживаемой pair без скрытого fallback.
+- eligibility и capabilities разделены. Pair допустима, если оба root-типа
+  являются legal C# 9 generic arguments, могут быть названы из generated
+  mapper-а и не входят в явно отложенную root-категорию;
+- tuple roots (`System.ValueTuple`, tuple syntax, `System.Tuple`) и collection
+  roots полностью исключены из v0 в обеих mapping-позициях, включая direct и
+  manual mapping. Collection означает array либо любой `IEnumerable`, кроме
+  `string`, включая dictionaries и custom collection types;
+- запрет относится только к root mapping-позиции. Tuple/collection member,
+  constructor parameter или generic argument внешнего non-collection root
+  остаётся обычным единым C#-значением; element mapping не выполняется;
+- технически исключены `void`, pointers/function pointers, ref-like, error,
+  anonymous/unnameable и недоступные generated lexical context типы;
+- допустимы scalars, enums, nullable forms, custom class/struct/record,
+  abstract/interface, delegates, constructed generics и mapper type
+  parameters. Delegate destination использует direct/manual surface, delegate
+  source не меняет capabilities другого destination, `dynamic` канонически
+  совпадает с `object`, а root nullable reference annotation не создаёт
+  отдельную runtime pair;
+- любая eligible pair получает обе runtime operations и `MapManually`.
+  Destination независимо получает ровно одну форму `Create`: structured при
+  наличии поддерживаемого constructor surface, direct при его отсутствии или
+  для opaque category. `Members` генерируется независимо при наличии
+  поддерживаемых body-members;
+- collection и projection capabilities отсутствуют в v0. Collections и tuples
+  рассматриваются только после v0 на собственных продуктовых этапах;
+- `MappingMode` применяется к declarative и manual models. Null handling,
+  member/constructor matching, boxing и validation settings применяются только
+  к соответствующим стадиям declarative pipeline; direct creation body и
+  manual lambda остаются обычным пользовательским C#;
+- общий precedence остаётся
+  `map -> mapper root -> assembly -> library default`, `Default` наследует.
+  `TemplateMode` удалён. `TreatAsMissing` окончательно заменяет имя
+  `NullDestinationHandling.CreateNew`;
+- неприменимая inherited setting является допустимым no-op, поскольку внешний
+  уровень обслуживает много пар. Неприменимая explicit map-level setting —
+  configuration error: у manual pair разрешён только `MappingMode`, а direct
+  pair не принимает `ConstructorSelection`;
+- частичная capability не включает fallback к manual, другой creation-ветке
+  или runtime discovery. Ошибка должна диагностироваться на фактической
+  недоступной operation/rule/setting.
 
-**Предварительное направление:** разрешать регистрацию любой statically
-nameable pair с определённым runtime contract, а ограничивать только
-конкретные generated capabilities. Collections и tuples должны быть доступны
-как минимум direct/manual mapping до появления automatic support.
-
-**Результат этапа:** единая capability/settings matrix и правила генерации
-pair API.
+**Результат этапа:** eligibility rules, capability/settings matrix и generated
+pair surface перенесены в `MAPPING_API_DESIGN.md`. Фундаментальные этапы 1–7
+образуют согласованную основу; tuple/collection support вынесен за v0.
 
 После этапа 7 нужно сделать отдельную checkpoint-проверку согласованности
 фундамента и только затем обновить порядок миграции production-кода.
@@ -424,6 +439,10 @@ mapper/profile graph, а не всей compilation. Named variants добавл�
 **Результат этапа:** формальная identity mapping-а и deterministic lookup law.
 
 ### Этап 9. Коллекции
+
+**Статус:** полностью отложен до выпуска v0. До этого root collection pair не
+регистрируется даже как direct/manual, а member collection доступна только как
+единое значение без element mapping.
 
 **Проблема.** Без collection mapping пользователь вынужден материализовать и
 перебирать DTO вручную даже при наличии element pair. Особенно важны collection
@@ -642,6 +661,10 @@ builder helper calls. Нужен явно распознаваемый compositi
 
 ### Этап 17. Generic, runtime-type и multi-source mapping
 
+Tuple/multi-source часть этого этапа отложена до после v0 вместе со специальной
+tuple support. Сохранение уже поддерживаемых constructed generics и mapper type
+parameters не зависит от этой отсрочки.
+
 **Проблема.** Новый дизайн должен сохранить достигнутые generic scenarios и
 не смешивать их с более сложными open-generic/runtime dispatch. Multi-source
 mapping сейчас требует wrapper, потому что tuple pair запрещена общей policy.
@@ -661,8 +684,8 @@ mapping сейчас требует wrapper, потому что tuple pair за
 
 **Предварительное направление:** сначала гарантированно сохранить constructed
 generics и mapper type parameters. Open-generic и runtime-type dispatcher
-рассматривать как отдельные opt-in capabilities; tuple разрешить как минимум
-для direct/manual pair, не создавая преждевременно отдельный multi-source DSL.
+рассматривать как отдельные opt-in capabilities; после v0 отдельно решить,
+достаточна ли direct/manual tuple pair или нужен first-class multi-source DSL.
 
 **Результат этапа:** support matrix для generic и runtime-resolved pairs и
 решение по multi-source boundary.
@@ -751,7 +774,7 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 | Side effects, swap и source/destination aliasing | 6 |
 | Rename, calculated member и source flattening | 6 |
 | Boxing/conversion и settings precedence | 7, 16 |
-| Root tuple/array/collection manual pair | 7, 9, 17 |
+| Root tuple/array/collection pair | Unsupported в v0; 9 и 17 после v0 |
 | Public/admin или shallow/deep вариант одной pair | 8 |
 | Collection root/member/getter-only/existing | 9 |
 | Nullable patch и absent patch field | 10 |
@@ -788,6 +811,6 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 
 ## 7. Следующий этап
 
-**Этап 7 — допустимость mapping-пар и capability model.** Разделить pair
-eligibility и доступные способы mapping-а, затем построить capability/settings
-matrix для structural, direct и manual пар до миграции production API.
+**Этап 8 — scope mapping-а и несколько вариантов одной пары.** Определить
+identity mapper/profile graph, границы runtime `IMapper` и deterministic lookup
+для одинаковой type pair в разных scopes до заморозки runtime architecture.

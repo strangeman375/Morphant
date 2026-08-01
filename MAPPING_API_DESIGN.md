@@ -189,7 +189,7 @@ public readonly struct Previous<T>
 | `Customer?` | `Previous<Customer>` |
 | `Point` | `Previous<Point>` |
 | `Point?` | `Previous<Point>` |
-| `List<string?>?` | `Previous<List<string?>>` |
+| `Envelope<string?>?` | `Previous<Envelope<string?>>` |
 
 Удаляется только корневая nullability destination; nullability вложенных
 generic arguments сохраняется. Далее в концептуальных сигнатурах документа
@@ -516,25 +516,20 @@ body-members.
 ```csharp
 internal sealed class DestinationMembers
 {
-    public Member<string> Name { get; init; }
+    public Member<string> Name { get; set; }
 
-    public Member<string> Code { get; init; }
+    public Member<string> Code { get; set; }
 
-    public Member<int> Revision { get; init; }
+    public Member<int> Revision { get; set; }
 }
 ```
 
-Собственные `init`-сеттеры служебного типа нужны только для составления плана и
-не связаны с `init`-семантикой destination.
-
-Обычные `set`-сеттеры для `DestinationMembers` намеренно не генерируются. Они
-были бы полезны только для императивной сборки и последующей мутации одного
-member-plan, например через локальную переменную. Это добавило бы отдельную
-семантику порядка повторных присваиваний, aliasing и изменения плана после его
-создания. В согласованной модели каждая поддерживаемая ветка lambda возвращает
-целиком сформированный plan, поэтому `init` достаточно и точнее выражает его
-назначение. Если императивная сборка плана окажется нужна, её следует отдельно
-согласовать вместе с поддерживаемыми control-flow constructs.
+Собственные `set`-сеттеры служебного типа нужны только для составления плана и
+не связаны с `set`/`init`-семантикой destination. Текущий declarative DSL
+по-прежнему требует вернуть полностью сформированный plan и не поддерживает
+последующую mutation local plan-а. Более широкая форма setter-а сохраняется как
+совместимая точка расширения: если после v0 понадобится императивная сборка или
+поэтапное дополнение plan-а, generated surface не придётся ломать.
 
 ### 7.3. Применение плана
 
@@ -796,9 +791,10 @@ lifetime generated mapper-а. Переиспользуемая логика до
 member-ом mapper-а. Local functions внутри direct/factory/manual block
 переносятся вместе с этим block.
 
-Generated properties `DestinationMembers` остаются `init`-only. DSL описывает
-immutable plan выбранной ветки; императивная сборка и последующая mutation plan
-не получают отдельной evaluation semantics.
+Generated properties `DestinationMembers` имеют обычный `set`. Это намеренный
+запас для будущего расширения DSL, но само по себе не добавляет в v0
+императивную сборку либо последующую mutation plan-а: текущая declarative
+grammar и её evaluation semantics остаются прежними.
 
 ### 7.7. Почему `Skip()` не нужен
 
@@ -1255,19 +1251,70 @@ Generator вправе сворачивать одинаковые ветки и
 пользовательский порядок, набор выполняемых side effects и момент generated
 outer mutation не меняются.
 
-## 11. Условия генерации pair API
+## 11. Pair eligibility, capabilities и generated API
 
-API должен отражать реальные возможности destination и не показывать
-бесполезные методы.
+### 11.1. Допустимость mapping-пары
 
-После применения общей destination-type policy действуют независимые правила:
+Pair eligibility отделяется от конкретной declarative capability. В v0
+mapping-пара допустима, если оба её корневых типа:
 
-| Возможности destination | Доступный API |
-|---|---|
-| Для любой поддерживаемой mapping-пары | Обе runtime `Map`-операции в contract, ровно одна форма `Create` и `MapManually` на pair-builder |
-| Есть хотя бы один поддерживаемый доступный constructor | Structured `Create`, возвращающий generated `DestinationCreation` |
-| Поддерживаемого constructor surface нет | Direct `Create`, возвращающий настоящий `TDestination` |
-| Есть хотя бы один поддерживаемый body-member | Generated `Members` независимо от формы `Create` |
+- являются допустимыми generic type arguments при минимальном C# 9 contract;
+- могут быть однозначно названы из lexical context generated mapper-а;
+- не входят в сознательно отложенные root-категории ниже.
+
+До специальной поддержки после v0 полностью исключаются в обеих позициях
+mapping-пары:
+
+- tuple roots: tuple syntax, `System.ValueTuple` и `System.Tuple`;
+- collection roots: arrays и любой тип, реализующий
+  `System.Collections.IEnumerable`, кроме `string`.
+
+Collection-категория включает generic/non-generic sequence interfaces,
+dictionaries и пользовательские collection-типы. Запрет симметричен для
+source и destination и действует также для direct `Create` и `MapManually`:
+для такой пары v0 вообще не генерирует mapping contract. Забытая registration
+не превращается в runtime lookup или скрытый manual fallback.
+
+Это ограничение относится только к корню пары. Tuple или collection может
+оставаться типом обычного member-а, constructor parameter либо generic argument
+внешнего non-collection root-типа. В v0 такое значение рассматривается целиком:
+оно доступно через warning-free implicit C#-преобразование либо явное
+пользовательское expression, но Morphant не выполняет element mapping.
+
+Технически исключаются `void`, pointers, function pointers, ref-like types,
+error types, anonymous/unnameable types и типы, недоступные из generated
+lexical context. Это не продуктовые запреты, а формы, для которых невозможно
+сформировать согласованный `ITypeMapper<TSource, TDestination>` при C# 9.
+
+Остальные статически выразимые roots допустимы: built-in и BCL scalars, enums,
+classes, structs, records, nullable value/reference forms, abstract classes,
+interfaces, delegates, constructed generics и mapper type parameters с их
+constraints. Delegate destination не получает structural constructor surface
+и использует direct `Create` либо `MapManually`; delegate source сам по себе не
+меняет capabilities другого destination. `dynamic` имеет каноническую identity
+`object` и не образует отдельную пару. Алиасы также не меняют identity; root
+nullable reference annotation не создаёт вторую runtime pair, тогда как
+`Nullable<T>` остаётся самостоятельным constructed value type.
+
+### 11.2. Capability model
+
+API отражает реальные возможности destination и не показывает бесполезные
+declarative методы. Для каждой eligible pair capabilities выводятся независимо:
+
+| Capability | Условие | Generated surface |
+|---|---|---|
+| Runtime contract | Любая eligible pair | Обе `Map`-операции; effective `MappingMode` остаётся единственным operation gate |
+| Manual | Любая eligible pair | Один `MapManually` на обычном pair-builder |
+| Structured creation | Есть хотя бы один поддерживаемый доступный destination constructor | `Create`, возвращающий generated `DestinationCreation` |
+| Direct creation | Structured constructor surface отсутствует либо destination намеренно opaque | `Create`, возвращающий настоящий `TDestination` |
+| Members | Есть хотя бы один поддерживаемый body-member | Generated `DestinationMembers` и `Members`, независимо от формы `Create` |
+| Collection / projection | Не входят в v0 capability model | Никакого generated surface; рассматриваются после v0 на отдельных этапах |
+
+Structured и direct creation взаимоисключающие: eligible pair получает ровно
+одну форму `Create`. `MapManually` доступен для той же пары, но является
+альтернативой всему declarative pipeline, а не fallback отдельной
+неподдерживаемой ветки. Source shape сама по себе не меняет destination
+surface.
 
 Отсутствие members и constructors не убирает declarative surface. Такая пара
 получает direct `Create`; `MapExisting` всё равно может вернуть previous без
@@ -1310,9 +1357,49 @@ builder.Map<Source, IDestination>()
 который вернул уже созданный instance.
 
 Отдельного служебного creation type для scalar, opaque value object,
-factory-only class, interface или abstract destination не создаётся. Их direct
-surface сохраняет standard null handling и declarative member stage, поэтому
-`MapManually` нужен только для действительно ручного алгоритма.
+factory-only class, interface, abstract или delegate destination не создаётся.
+Их direct surface сохраняет standard null handling и declarative member stage,
+поэтому `MapManually` нужен только для действительно ручного алгоритма.
+
+### 11.3. Settings matrix
+
+После удаления `TemplateMode` settings наследуются прежним общим порядком
+`map -> mapper root -> assembly -> library default`; `Default` продолжает
+поиск менее конкретного уровня. Applicability определяется выбранной model и
+capabilities пары:
+
+| Setting | Declarative mapping | `MapManually` |
+|---|---|---|
+| `MappingMode` | Включает `MapNew`, `MapExisting` либо обе операции | Применяется так же и остаётся единственным effective setting manual mapping-а |
+| `NullSourceHandling` | Выполняется до `Create` / `Members` | Не применяется |
+| `NullDestinationHandling` | Выполняется перед previous normalization только в `MapExisting` | Не применяется |
+| `MemberMatching` | Управляет неуказанными supported body-members; работает и после direct `Create` | Не применяется |
+| `ConstructorSelection` | Применяется только к structured convention / `ByConvention` creation | Не применяется |
+| Boxing policy | Ограничивает только automatic constructor/member conversions; explicit expressions остаются обычным C# | Не применяется |
+| `UnmappedMemberValidation` | Проверяет только mapping plan, который строит Morphant; direct creation body не анализируется как набор member mappings | Не применяется |
+| `NullabilityMismatchValidation` | Проверяет generator-selected constructor/member conversions; explicit C# expressions проверяет compiler | Не применяется |
+
+Library defaults сохраняются: `MapNewAndExisting`, `ReturnNull`,
+`TreatAsMissing`, `MemberMatching.Auto`, `ConstructorSelection.Unambiguous`,
+разрешённый automatic boxing, `UnmappedMemberValidation.None` и
+`NullabilityMismatchValidation.Error`. `TreatAsMissing` окончательно заменяет
+имя `NullDestinationHandling.CreateNew`: policy сообщает отсутствие previous,
+но не обещает создание новой identity.
+
+Inherited setting, неприменимая к конкретной pair, просто не имеет эффекта: её
+уровень может обслуживать другие mappings. Явная map-level setting, которую
+выбранная model принципиально обходит, является ошибкой конфигурации. Поэтому
+у manual pair разрешён только `MappingMode`, а explicit null/member/constructor
+policy должна диагностироваться. Для direct declarative pair явно заданный
+`ConstructorSelection` также ошибочен; остальные declarative settings работают
+на своих стадиях, даже если на конкретной pair не найдено ни одного кандидата
+для warning или conversion.
+
+Частичная capability никогда не включает скрытый fallback. Недоступная
+operation, отсутствующий required direct `Create`, невозможный explicit rule
+или setting без требуемой capability дают diagnostic; до реализации
+соответствующей диагностики generated operation может быть unsupported, но не
+переключается на manual, другую creation-ветку или runtime discovery.
 
 ## 12. Основные сценарии
 
@@ -1549,8 +1636,9 @@ diagnostic не должно вводить скрытый fallback на дру�
     явной factory-веткой.
 26. Для `ByConventionMarker` генерируется один creation-plan constructor с
     необязательным `DestinationConstructorMembers`.
-27. Generated properties `DestinationMembers` имеют только `init`; мутация уже
-    созданного member-plan не входит в declarative DSL.
+27. Generated properties `DestinationMembers` имеют обычный `set` как
+    совместимую точку будущего расширения; текущий declarative DSL по-прежнему
+    не поддерживает mutation уже созданного member-plan.
 28. `MapManually` получает текущий `MappingContext` отдельным последним
     параметром и использует его для ручных nested mappings.
 29. `MappingContext` является immutable value-type frame текущего outer или
@@ -1594,15 +1682,29 @@ diagnostic не должно вводить скрытый fallback на дру�
     `MapManually` являются обычными синхронными C# blocks. Ни одна форма не
     захватывает обычные Configure-locals, `builder` или внешние Configure-local
     functions.
+42. Eligible pair определяется отдельно от её capabilities. До post-v0
+    специальной поддержки tuple и collection roots, включая arrays,
+    dictionaries и custom `IEnumerable`, полностью исключаются в обеих
+    mapping-позициях даже для direct/manual mapping.
+43. Для любой другой статически выразимой eligible pair доступны runtime
+    contract и `MapManually`; destination независимо получает ровно одну форму
+    `Create` и, при наличии поддерживаемых body-members, `Members`.
+44. Delegate roots допустимы: delegate destination использует direct/manual
+    capabilities, а delegate source не меняет surface другого destination.
+    `dynamic` канонически совпадает с `object`; root nullable reference
+    annotation не создаёт отдельную runtime pair.
+45. Manual mapping применяет только `MappingMode`. Остальные settings не
+    запускают скрытый declarative pipeline; неприменимая explicit map-level
+    setting является ошибкой, а inherited setting может быть безвредным no-op.
 
 ## 15. Детали, которые ещё нужно закрепить перед реализацией
 
-Фундаментальные этапы 1–6 согласованы. До начала миграции production API нужно
-завершить capability model этапа 7. После этого отдельного решения либо
-реализационного планирования требуют:
+Фундаментальные этапы 1–7 согласованы. Pair eligibility и capability/settings
+matrix зафиксированы; tuple/collection roots сознательно отложены за границу
+v0. До миграции production API отдельного решения либо реализационного
+планирования требуют:
 
 - окончательное имя generated creation- и member-plan типов;
-- pair eligibility и точная capability/settings matrix;
 - порядок миграции текущего `Template()` implementation и тестов;
 - обновление `IMPLEMENTATION_PLAN.md`, XML-документации и user-facing docs;
 - diagnostic IDs, сообщения и точная фаза их добавления.
