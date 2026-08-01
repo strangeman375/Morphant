@@ -68,7 +68,7 @@ Manual остаётся обязательным escape hatch для специ�
 
 | Этап | Узел дизайна | Горизонт | Статус |
 |---:|---|---|---|
-| 1 | Creation model и выбор previous | До реализации нового API | Не начат |
+| 1 | Creation model и выбор previous | До реализации нового API | Обсуждается |
 | 2 | Direct `Create` и capability-based surface | До реализации нового API | Не начат |
 | 3 | Nullability, `Previous<T>` и null-result | До реализации нового API | Не начат |
 | 4 | `MappingContext` и call frames | До реализации нового API | Не начат |
