@@ -434,32 +434,45 @@ rules. При `MemberMatching.Explicit` неуказанные members не ма
 factory или default initialization. Для previous он сохраняет текущее значение
 выбранного result.
 
-Для post-construction writable member nested `Map()` должен брать previous
-дочернего mapping из соответствующего member выбранного `result`, а не из
-внешнего `previous.Value`. Концептуально генерируется:
+Nested `Map()` всегда берёт previous дочернего mapping из соответствующего
+member внешнего `previous`, а выбранный `result` определяет только место, куда
+будет записано возвращённое значение. Концептуально генерируется:
 
 ```csharp
-result.Address = context.Mapper.Map<AddressSource, Address>(
-    source.Address,
-    result.Address,
-    context);
+var address = previous.HasValue
+    ? context.Mapper.Map<AddressSource, Address>(
+        source.Address,
+        previous.Value.Address,
+        context)
+    : context.Mapper.Map<AddressSource, Address>(
+        source.Address,
+        context);
+
+result.Address = address;
 ```
 
-Предположим, внешний `previous` содержит `oldAddress`, а previous-aware
-`Create` выбрал replacement, уже содержащий `replacementAddress`. Если
-передать в дочерний mapping `previous.Value.Address`, Morphant начнёт обновлять
-дочерний объект отвергнутого outer-result: он может мутировать старый object
-graph, а затем присвоить этот child в replacement, одновременно потеряв
-`replacementAddress`. `result.Address` продолжает именно тот graph, который
-был выбран как результат текущего mapping. Когда `result` и `previous.Value`
-совпадают, обе формы естественно дают один и тот же child.
+Если внешний `previous` отсутствует, выполняется обычный nested `MapNew`. Если
+он существует, вызывается nested `MapExisting` с child из
+`previous.Value`, даже когда previous-aware `Create` выбрал replacement.
+Replacement задаёт новый внешний result, но не подменяет историю mapping-а
+своими текущими member values. Возвращённый nested result затем присваивается
+member-у replacement.
 
-Для creation-time `init` member это правило нельзя механически применить:
-новый `result` ещё невозможно прочитать до завершения object initializer.
-Следует отдельно согласовать, вызывает ли `Map()` в такой ветке nested
-`MapNew`, является ли сочетание неподдерживаемым или получает иную явно
-описанную семантику. До этого решения поведение не должно определяться
-случайной формой generated code.
+Если child внешнего `previous` равен `null`, должен вызываться именно nested
+`Map(source, null)`, а не `Map(source)`. Благодаря этому вложенный mapping
+сохраняет различие двух публичных операций и применяет свой обычный
+`NullDestinationHandling`.
+
+Nested `MapExisting` может изменить child старого object graph и вернуть тот же
+экземпляр. Это является обычной семантикой соответствующей вложенной mapping-
+пары. Если нужно всегда создавать новый child, это настраивается в ней; если
+нужно сохранить значение member-а выбранного replacement, пользователь
+указывает `Ignore()` или явное выражение вместо `Map()`.
+
+То же правило применяется к creation-time `init` member. Nested mapping можно
+вычислить из внешнего `previous` до создания result и поместить возвращённое
+значение непосредственно в object initializer; читать member ещё не созданного
+replacement для этого не требуется.
 
 ### 7.5. Почему `Skip()` не нужен
 
@@ -945,8 +958,9 @@ diagnostic не должно вводить скрытый fallback на дру�
 13. Member, не указанный в `Members`, следует effective `MemberMatching`.
 14. `MemberMatching.Explicit` является статическим способом полностью
     отключить implicit member mapping; отдельного `Skip()` нет.
-15. Для post-construction writable member nested `Map()` использует member
-    выбранного result как child previous.
+15. Nested `Map()` использует соответствующий member внешнего `previous` как
+    child destination; при отсутствии outer previous выполняется nested
+    `MapNew`, а возвращённое значение присваивается member-у выбранного result.
 16. `MapManually` является методом обычного pair-builder, а не отдельным
     builder-типом.
 17. У `MapManually` есть только одна перегрузка с `MapCall<TDestination>` и
@@ -978,8 +992,6 @@ diagnostic не должно вводить скрытый fallback на дру�
 
 - окончательное имя generated creation- и member-plan типов;
 - точная nullable-аннотация `Previous<T>`, `MapCall<T>` и manual source;
-- семантика nested `Map()` для creation-time `init` members, у которых нельзя
-  прочитать значение нового result до завершения object initializer;
 - граница поддерживаемых control-flow constructs внутри declarative `Create`
   и `Members` lambdas;
 - порядок миграции текущего `Template()` implementation и тестов;
