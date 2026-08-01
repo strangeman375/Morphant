@@ -23,7 +23,7 @@ patch/update, второго варианта одной пары или polymor
 | Уровень | Значение |
 |---|---|
 | Declarative | Morphant строит mapping plan и применяет conventions/settings |
-| Direct | Пользователь задаёт итоговое значение, но сохраняется нормализованный pipeline, включая null handling |
+| Direct | Пользователь напрямую получает базовый result без constructor-plan, но сохраняется нормализованный pipeline, включая null handling и применимые member rules |
 | Manual | Пользователь полностью управляет алгоритмом и сам обрабатывает null, mutation и nested mapping |
 | Unsupported | Пару нельзя зарегистрировать либо операция намеренно запрещена |
 
@@ -68,7 +68,7 @@ Manual остаётся обязательным escape hatch для специ�
 | Этап | Узел дизайна | Горизонт | Статус |
 |---:|---|---|---|
 | 1 | Creation model и выбор previous | До реализации нового API | Согласован |
-| 2 | Direct `Create` и capability-based surface | До реализации нового API | Не начат |
+| 2 | Direct `Create` и capability-based surface | До реализации нового API | Согласован |
 | 3 | Nullability, `Previous<T>` и null-result | До реализации нового API | Не начат |
 | 4 | `MappingContext` и call frames | До реализации нового API | Не начат |
 | 5 | Полная семантика nested `Map` | До реализации нового API | Не начат |
@@ -105,9 +105,9 @@ Manual остаётся обязательным escape hatch для специ�
 - generated implicit conversion существует от
   `Previous<TDestination>` к `DestinationCreation`, но не от произвольного
   `TDestination`;
-- для выбора existing result пользователь возвращает сам `previous`;
-  `previous.Value` нужен только для чтения, а `AsResult()` и `UsePrevious()`
-  не вводятся;
+- для выбора existing result в structured `Create` пользователь возвращает сам
+  `previous`; direct `Create` возвращает настоящий destination и потому
+  использует `previous.Value`; `AsResult()` и `UsePrevious()` не вводятся;
 - готовый или cached instance выражается явной factory-веткой
   `new(ByFactory(() => instance))`; непосредственный возврат `ByFactory(...)`
   не является допустимой generated shape;
@@ -128,29 +128,35 @@ writable members и многие third-party immutable types сейчас вын
 использовать `MapManually`. При этом они теряют стандартное null handling,
 хотя их алгоритм не является по смыслу manual.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- direct `Create`, возвращающий настоящий `TDestination`, для destination без
-  осмысленного structured plan;
-- source-only и previous-aware формы direct `Create`;
-- правило выбора между structured и direct generated surface;
-- нужны ли conventions после direct result или direct всегда является
-  окончательным значением;
-- место static factory, parser, enum/string conversion и opaque value object;
-- поведение direct `MapExisting`: сохранить previous по умолчанию, заменить
-  его или требовать явного решения;
-- должна ли одна пара когда-либо одновременно иметь structured и direct
-  surface.
+- каждая поддерживаемая mapping-пара получает ровно одну форму `Create`;
+- если после общей destination-type policy существует хотя бы один
+  поддерживаемый constructor surface, генерируется structured `Create`,
+  возвращающий `DestinationCreation`;
+- если поддерживаемого constructor surface нет, генерируется direct `Create`,
+  возвращающий настоящий `TDestination`; наличие body-members на этот выбор не
+  влияет;
+- built-in, enum и отдельно определённые scalar-категории используют direct
+  surface, даже если metadata типа технически содержит public constructors;
+- обе формы имеют source-only и previous-aware перегрузки с одинаковой
+  семантикой arity: source-only lambda не вызывается при существующем previous,
+  previous-aware lambda сама выбирает result в обеих публичных операциях;
+- structured previous-aware `Create` возвращает сам `previous` через generated
+  conversion, а direct `Create` после проверки `HasValue` возвращает
+  `previous.Value`; вводить ради косметической симметрии `DirectCreation<T>`,
+  implicit unwrap или marker-метод не нужно;
+- direct result семантически соответствует уже созданному result из
+  `new(ByFactory(...))`: после него выполняются применимые `Members` и member
+  conventions, а `init`/creation-time `required` должен заполнить direct код;
+- у direct surface нет default creation для no-previous ветки: если такая ветка
+  достижима, direct `Create` обязан быть настроен;
+- отдельного mode нет, structured и direct surface одновременно не
+  генерируются, `MapManually` остаётся raw alternative для обеих категорий.
 
-**Предварительное направление:** generated surface определяется возможностями
-destination, а не пользовательским mode. Structured destination получает
-creation/member plans; direct destination получает нормализованный `Create`
-с `TDestination` result; `MapManually` остаётся raw alternative для обеих
-категорий.
-
-**Результат этапа:** capability-таблица destination form -> доступные
-`Create`/`Members`/`MapManually` и примеры для scalar, value object,
-factory-only class и interface.
+**Результат этапа:** формы и перегрузки `Create`, capability-таблица, точный
+declarative алгоритм и примеры для scalar, opaque value object, factory-only
+destination и interface перенесены в `MAPPING_API_DESIGN.md`.
 
 ### Этап 3. Nullability, `Previous<T>` и null-result
 
@@ -167,17 +173,17 @@ constructor/factory/direct `Create` фактически возвращает `n
   source;
 - отличия `Map(source)`, declarative `Map(source, null)` после normalization и
   raw manual `Map(source, null)`;
-- допустимость `null` как финального результата direct `Create` и
-  `MapManually`;
+- допустимость `null` как базового result direct `Create` перед `Members` и как
+  финального результата `MapManually`;
 - поведение `null` из structured constructor/factory перед `Members`;
 - вид ошибки: compile-time diagnostic, generated guard и тип exception;
 - взаимодействие с `NullSourceHandling` и `NullDestinationHandling` без
   повторного применения этих policies к factory result.
 
 **Предварительное направление:** `Previous<T>` всегда использует non-null
-underlying type. Structured pipeline требует non-null result перед member
-stage и явно проверяет factory; nullable final result разрешается только там,
-где контракт direct/manual mapping действительно его допускает.
+underlying type. Declarative pipeline требует non-null result перед member
+stage и явно проверяет factory/direct result; nullable final result разрешается
+только там, где raw manual contract действительно его допускает.
 
 **Результат этапа:** полная null-state matrix для обеих public operations и
 всех creation modes.
@@ -710,6 +716,6 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 
 ## 7. Следующий этап
 
-**Этап 2 — Direct `Create` и capability-based surface.** Определить, какие
-destination получают structured plan, какие — direct `Create` с настоящим
-`TDestination`, и может ли одна mapping-пара иметь обе поверхности.
+**Этап 3 — Nullability, `Previous<T>` и null-result.** Зафиксировать точные
+nullable-контракты и поведение `null` для declarative structured/direct
+creation и raw manual mapping.

@@ -46,8 +46,10 @@
   mapping — непосредственно из исходного аргумента;
 - `result` — объект или значение, которое выбрано для применения member rules
   и в итоге возвращается из `Map`;
-- `creation plan` — сгенерированное описание способа получить `result`, а не
-  готовый `TDestination`;
+- `structured creation plan` — сгенерированное описание вызова поддерживаемого
+  destination-конструктора либо выбора factory/previous, а не готовый
+  `TDestination`; direct `Create` возвращает готовый destination без такого
+  промежуточного plan;
 - `member plan` — сгенерированное описание body-member mappings, а не готовый
   `TDestination`.
 
@@ -167,14 +169,38 @@ destination без null-предобработки. Поэтому explicit `nul
 - mapping constructor parameters;
 - convention construction;
 - factory construction;
+- прямое получение готового destination, когда constructor-plan отсутствует;
 - выбор existing destination как `result`, когда previous существует.
 
 Body-members в `Create` не настраиваются. В частности, свойства и поля,
 включая `init` и `required`, принадлежат только `Members`.
 
-### 6.2. Две перегрузки
+### 6.2. Выбор generated surface
 
-Концептуальные сигнатуры:
+После применения общей destination-type policy форма `Create` определяется
+только наличием constructor surface, который Morphant действительно умеет
+вызвать:
+
+| Constructor capability | Generated `Create` | Что возвращает lambda |
+|---|---|---|
+| Есть хотя бы один поддерживаемый constructor | Structured | `DestinationCreation` |
+| Поддерживаемого constructor surface нет | Direct | Настоящий `TDestination` |
+
+Structured `Create` нужен для выбора destination-конструктора и настройки его
+параметров. Если такого конструктора нет, моделировать промежуточный
+constructor-plan бессмысленно: direct `Create` сразу получает готовый instance.
+
+Наличие body-members не влияет на выбор формы `Create`. Оно независимо
+определяет наличие `Members`. Поэтому interface или factory-only class с
+writable members получает direct `Create` вместе с `Members`, а scalar без
+members — только direct `Create`.
+
+Одна mapping-пара никогда не получает обе формы. Пользовательский mode для
+переключения между structured и direct surface не вводится.
+
+### 6.3. Две перегрузки и общая семантика arity
+
+Для structured surface генерируются:
 
 ```csharp
 Create(
@@ -187,15 +213,24 @@ Create(
 `DestinationCreation` — сгенерированный creation-plan для конкретного
 destination. Это не настоящий `TDestination`.
 
-У перегрузок разная семантика:
+Для direct surface генерируются:
+
+```csharp
+Create(
+    Func<TSource, TDestination> create);
+
+Create(
+    Func<TSource, Previous<TDestination>, TDestination> create);
+```
+
+Обе формы используют один закон выбора result:
 
 | Настройка | Previous отсутствует | Previous существует |
 |---|---|---|
-| `Create` отсутствует | Convention creation | Previous становится result |
 | `Create(source)` | Lambda определяет result | Lambda не вызывается; previous становится result |
 | `Create(source, previous)` | Lambda вызывается с `Previous.None` | Lambda вызывается с `Previous.Some` |
 
-Source-only перегрузка концептуально эквивалентна:
+Source-only structured `Create` концептуально эквивалентен:
 
 ```csharp
 Create((source, previous) =>
@@ -204,17 +239,36 @@ Create((source, previous) =>
         : CreateFromSource(source));
 ```
 
-Между `Previous<TDestination>` и `DestinationCreation` существует generated
-implicit conversion. Поэтому возврат самого `previous` выбирает именно этот
-instance как `result`; отдельный служебный метод наподобие `AsResult()` или
-`UsePrevious()` не нужен. `previous.Value` используется только для чтения
-existing destination.
+Source-only direct `Create` имеет ту же семантику, но возвращает настоящий
+destination:
+
+```csharp
+Create((source, previous) =>
+    previous.HasValue
+        ? previous.Value
+        : CreateFromSource(source));
+```
+
+Эта небольшая синтаксическая асимметрия намеренна. Structured lambda выбирает
+ветку creation-plan, поэтому `Previous<TDestination>` неявно преобразуется в
+`DestinationCreation`. Direct lambda уже обязана вернуть `TDestination`, поэтому
+после проверки `HasValue` явно извлекается `previous.Value`. Отдельный
+`DirectCreation<T>`, implicit conversion `Previous<T> -> T`, `AsResult()` и
+`UsePrevious()` не вводятся.
+
+Настоящий return type direct source-only перегрузки также сохраняет естественные
+method groups:
+
+```csharp
+builder.Map<string, Guid>()
+    .Create(Guid.Parse);
+```
 
 Для одной пары можно настроить только один `Create`, независимо от выбранной
 перегрузки. Повторный вызов является diagnostic; две перегрузки не образуют
 отдельные `MapNew`- и `MapExisting`-правила.
 
-### 6.3. Почему две перегрузки нужны только здесь
+### 6.4. Почему две перегрузки нужны только здесь
 
 У `Create` arity действительно меняет политику:
 
@@ -232,7 +286,21 @@ existing destination.
 
 Это намеренное различие, а не сокращённая запись одной и той же операции.
 
-### 6.4. Generated creation-plan
+Тот же закон действует для direct surface:
+
+```csharp
+.Create(Parse)
+```
+
+сохраняет existing destination, а:
+
+```csharp
+.Create((source, _) => Parse(source))
+```
+
+получает replacement и для `MapNew`, и для `MapExisting`.
+
+### 6.5. Generated structured creation-plan
 
 Creation-plan зеркалит поддерживаемые destination-конструкторы и использует
 `ConstructorMember<T>` для их параметров. Концептуально:
@@ -297,19 +365,26 @@ Constructor-member rules сохраняют текущую модель:
 вернуть cached instance. Название означает получение базового `result`, а не
 обязательное выделение нового объекта.
 
-### 6.5. Поведение по умолчанию
+### 6.6. Поведение по умолчанию
 
-Если previous отсутствует и `Create` не настроен, Morphant выполняет обычное
-convention construction с эффективным `ConstructorSelection`. Текущим
-default остаётся `Unambiguous`.
+Для structured surface, если previous отсутствует и `Create` не настроен,
+Morphant выполняет обычное convention construction с эффективным
+`ConstructorSelection`. Текущим default остаётся `Unambiguous`.
+
+У direct surface нет default creation: отсутствие поддерживаемого constructor
+как раз означает, что Morphant не может самостоятельно получить instance. Если
+доступная операция может прийти в no-previous ветку, direct `Create` должен быть
+настроен. Отсутствие настройки является ошибочной конфигурацией, а не поводом
+для скрытого fallback на `MapManually` или runtime conversion.
 
 Если previous существует и configured `Create` — source-only, lambda не
 вычисляется вообще. Constructor arguments, factory и любые используемые только
 в этой lambda выражения также не вычисляются.
 
-Если previous-aware `Create` выбирает previous, он становится `result`.
-Если lambda выбирает constructor, convention или factory, полученное значение
-становится replacement-result.
+Если previous-aware structured `Create` выбирает previous, он становится
+`result`. Constructor, convention или factory дают replacement-result. В
+direct surface lambda возвращает либо `previous.Value`, либо готовый
+replacement непосредственно.
 
 Никакого скрытого fallback между различными ветками `Create` нет.
 
@@ -407,8 +482,8 @@ replacement, но `previous.Value.Revision` читается из исходно
 
 Generator самостоятельно раскладывает единый member plan по допустимым фазам:
 
-- для создаваемого result `init` и creation-time `required` попадают в object
-  initializer;
+- для result, создаваемого structured constructor/convention plan, `init` и
+  creation-time `required` попадают в object initializer;
 - обычные setters и writable fields применяются к выбранному result;
 - если result является previous, его `init`-only members сохраняются;
 - выражение explicit `init`-rule не вычисляется в ветке, где применить его
@@ -417,10 +492,11 @@ Generator самостоятельно раскладывает единый mem
 - replacement, созданный constructor/convention plan, получает те же
   creation-time member rules, что и обычный `MapNew`.
 
-Если `ByFactory()` возвращает уже созданный объект, применить к нему
-`init`-only rule невозможно. Явная попытка совместить такую factory-ветку с
-соответствующим `Members` rule должна давать diagnostic. Factory должна
-инициализировать такой member сама либо mapping должен быть ручным.
+Если `ByFactory()` или direct `Create` возвращает уже созданный объект,
+применить к нему `init`-only rule невозможно. Явная попытка совместить такую
+creation-ветку с соответствующим `Members` rule должна давать diagnostic.
+Factory или direct lambda должна инициализировать такой member сама либо
+mapping должен быть ручным.
 
 ### 7.4. Explicit rules и conventions
 
@@ -748,17 +824,17 @@ ApplyNullSourceHandling(source);
 
 var previous = Previous<Destination>.None;
 
-var result = createConfigured
-    ? RunCreate(source, previous)
-    : CreateByConvention(source);
+var result = RunNoPreviousCreate(source, previous);
 
 ApplyMembers(source, previous, result);
 
 return result;
 ```
 
-Здесь `RunCreate` вызывает любую configured `Create`-перегрузку, поскольку
-previous отсутствует.
+`RunNoPreviousCreate` вызывает любую configured `Create`-перегрузку, поскольку
+previous отсутствует. Если `Create` не настроен, structured surface выполняет
+convention construction, а direct surface не имеет default creation и является
+ошибочной конфигурацией для такой reachable ветки.
 
 `Map(source, destination)` после null-предобработки работает так:
 
@@ -770,9 +846,7 @@ Destination result;
 
 if (!previous.HasValue)
 {
-    result = createConfigured
-        ? RunCreate(source, previous)
-        : CreateByConvention(source);
+    result = RunNoPreviousCreate(source, previous);
 }
 else if (previousAwareCreateConfigured)
 {
@@ -788,8 +862,9 @@ ApplyMembers(source, previous, result);
 return result;
 ```
 
-`RunCreate` никогда не подменяется другой configured lambda. Для пары
-существует не более одного `Create`.
+`RunCreate` никогда не подменяется другой configured lambda. Structured plan
+lowering и direct lambda в итоге дают один настоящий `Destination result`. Для
+пары существует не более одного `Create`.
 
 Если `Members` не настроен, `ApplyMembers` применяет только effective
 `MemberMatching` conventions. Если generated member surface отсутствует, эта
@@ -800,19 +875,19 @@ return result;
 API должен отражать реальные возможности destination и не показывать
 бесполезные методы.
 
-После применения общей destination-type policy действуют правила:
+После применения общей destination-type policy действуют независимые правила:
 
 | Возможности destination | Доступный API |
 |---|---|
-| Для любой поддерживаемой mapping-пары | Обе runtime `Map`-операции в contract и `MapManually` на pair-builder |
-| Есть хотя бы один поддерживаемый body-member | Generated `Members` |
-| Generated `Members` существует или есть хотя бы один поддерживаемый доступный constructor | Generated `Create` |
-| Нет ни generated members, ни поддерживаемых constructors | `Create` не генерируется |
+| Для любой поддерживаемой mapping-пары | Обе runtime `Map`-операции в contract, ровно одна форма `Create` и `MapManually` на pair-builder |
+| Есть хотя бы один поддерживаемый доступный constructor | Structured `Create`, возвращающий generated `DestinationCreation` |
+| Поддерживаемого constructor surface нет | Direct `Create`, возвращающий настоящий `TDestination` |
+| Есть хотя бы один поддерживаемый body-member | Generated `Members` независимо от формы `Create` |
 
-Отсутствие members и constructors не убирает `MapExisting`: эта runtime
-операция всё равно может вернуть previous без изменений либо быть реализована
-через `MapManually`. Единственным общим gate для публичной операции остаётся
-эффективный `MappingMode`.
+Отсутствие members и constructors не убирает declarative surface. Такая пара
+получает direct `Create`; `MapExisting` всё равно может вернуть previous без
+изменений, а `MapNew` требует configured direct lambda. Единственным общим gate
+для публичной операции остаётся эффективный `MappingMode`.
 
 Под «есть member» понимается member, реально включаемый в generated
 `DestinationMembers`, а не любой symbol типа. Static members, indexers,
@@ -822,32 +897,37 @@ get-only properties, readonly fields и другие неподдерживае�
 Под «есть constructor» понимается instance-constructor, который generator
 может использовать для создания данного destination. Недоступные и
 неподдерживаемые constructors не считаются. Constructor abstract-типа сам по
-себе не делает тип создаваемым.
+себе не делает тип создаваемым. Built-in, enum и отдельно определённые общей
+type policy scalar-категории получают direct surface, даже если metadata типа
+технически содержит public constructors: Morphant намеренно не моделирует их
+как structural constructor DSL.
 
-`Create` не генерируется исключительно ради `ByFactory()`. Если у destination
-нет ни generated members, ни доступного constructor surface, factory-only
-mapping выражается через `MapManually`.
+Direct `Create` семантически соответствует structured-ветке
+`new(ByFactory(...))`: он получает уже созданный instance, после чего Morphant
+применяет обычные setter-rules и member conventions. Direct result не является
+окончательным результатом в смысле `MapManually`.
 
-При этом `ByFactory()` остаётся полезен, когда `Create` уже имеет основание
-существовать. Например, interface не имеет constructors, но может иметь
+Например, interface не имеет constructor surface, но может независимо иметь
 writable body-members:
 
 ```csharp
 builder.Map<Source, IDestination>()
-    .Create((source, _) =>
-        new(ByFactory(() => factory.Create(source.Id))))
+    .Create(source => factory.Create(source.Id))
     .Members((source, _) => new()
     {
         Name = source.Name
     });
 ```
 
-Здесь factory получает экземпляр, а declarative member plan продолжает иметь
-самостоятельную ценность.
+Здесь direct lambda получает экземпляр, а declarative member plan продолжает
+иметь самостоятельную ценность. Для `init` и creation-time `required` действуют
+те же ограничения, что для structured factory-ветки: их должен заполнить код,
+который вернул уже созданный instance.
 
-Direct-only destination types, для которых общая type policy не создаёт
-declarative plan surface, используют `MapManually`; искусственный template или
-creation type только ради возврата scalar-значения не нужен.
+Отдельного служебного creation type для scalar, opaque value object,
+factory-only class, interface или abstract destination не создаётся. Их direct
+surface сохраняет standard null handling и declarative member stage, поэтому
+`MapManually` нужен только для действительно ручного алгоритма.
 
 ## 12. Основные сценарии
 
@@ -936,7 +1016,41 @@ builder.Map<OrderDto, Order>()
 Factory выполняется только в no-previous ветке source-only `Create`. При
 обычном `MapExisting` используется previous и применяется `Number`.
 
-### 12.6. Immutable или сложный ручной mapping
+### 12.6. Direct factory-only destination плюс members
+
+```csharp
+builder.Map<OrderDto, IOrder>()
+    .Create((source, previous) =>
+        previous.HasValue && CanReuse(previous.Value, source)
+            ? previous.Value
+            : orderFactory.Create(source.Id))
+    .Members((source, _) => new()
+    {
+        Number = source.Number
+    });
+```
+
+У interface нет constructor surface, поэтому `Create` возвращает настоящий
+`IOrder`. Возврат `previous.Value` сохраняет existing instance; factory даёт
+replacement. В обеих ветках применимый member plan выполняется после выбора
+result.
+
+### 12.7. Scalar и opaque value object
+
+```csharp
+builder.Map<Order, decimal>()
+    .Create(source =>
+        source.Items.Sum(x => x.Price * x.Count));
+
+builder.Map<string, OrderNumber>()
+    .Create(OrderNumber.Parse);
+```
+
+Для destination без structural constructor surface direct `Create` сохраняет
+обычный declarative pipeline без искусственного creation-plan и без перехода к
+`MapManually`.
+
+### 12.8. Immutable или сложный ручной mapping
 
 ```csharp
 builder.Map<SnapshotDto, Snapshot>()
@@ -963,17 +1077,6 @@ builder.Map<SnapshotDto, Snapshot>()
 
 Никакого generated `with`-DSL для этого не требуется.
 
-### 12.7. Scalar destination
-
-```csharp
-builder.Map<Order, decimal>()
-    .MapManually((source, _, _) =>
-        source!.Items.Sum(x => x.Price * x.Count));
-```
-
-Для результата без осмысленного constructor/member plan ручной mapping является
-прямым и достаточным API.
-
 ## 13. Ошибочные и конфликтующие конфигурации
 
 В целевом дизайне diagnostics должны покрыть как минимум:
@@ -983,8 +1086,9 @@ builder.Map<Order, decimal>()
 - повторный `MapManually`;
 - смешивание `MapManually` с `Create` или `Members`;
 - pair-specific constructor/member settings, несовместимые с manual mapping;
-- factory creation вместе с explicit `init`-rule, который невозможно применить
-  после возврата factory;
+- factory или direct creation вместе с explicit `init`-rule, который невозможно
+  применить к уже созданному result;
+- reachable no-previous branch direct surface без configured `Create`;
 - невозможный explicit constructor/member marker;
 - duplicate registration той же canonical pair.
 
@@ -999,8 +1103,9 @@ diagnostic не должно вводить скрытый fallback на дру�
 3. Source-only `Create` выполняется только при отсутствии previous.
 4. Previous-aware `Create` выполняется и с `Previous.None`, и с
    `Previous.Some`.
-5. Если `Create` отсутствует, no-previous result создаётся по convention, а
-   существующий previous сам становится result.
+5. Если `Create` отсутствует, structured surface создаёт no-previous result по
+   convention, direct surface не имеет default creation, а существующий previous
+   в обеих формах сам становится result.
 6. Для одной pair разрешён не более чем один `Create` любой перегрузки.
 7. `Create` настраивает result selection и constructor parameters, но никогда
    не body-members.
@@ -1026,26 +1131,33 @@ diagnostic не должно вводить скрытый fallback на дру�
 19. `MappingContext.Operation` сообщает текущую публичную операцию, а
     `Previous<TDestination>` независимо сообщает наличие фактического
     destination instance.
-20. `MapManually` всегда доступен; `Members` и `Create` генерируются только при
-    наличии описанных реальных возможностей destination.
-21. `Create` не генерируется исключительно ради `ByFactory()`.
-22. Возвращённый `Map` result всегда авторитетен.
-23. Никаких скрытых fallback между manual и declarative mapping либо между
+20. `MapManually` и ровно одна форма `Create` доступны для каждой поддерживаемой
+    mapping-пары; `Members` генерируется независимо при наличии поддерживаемых
+    body-members.
+21. Наличие поддерживаемого constructor surface выбирает structured `Create`,
+    его отсутствие — direct `Create`; пользовательского mode и пары с обеими
+    формами нет.
+22. Direct `Create` семантически соответствует уже созданному factory-result:
+    после него выполняются применимые `Members` и member conventions.
+23. Возвращённый `Map` result всегда авторитетен.
+24. Никаких скрытых fallback между manual и declarative mapping либо между
     разными configured lambdas нет.
-24. `Previous<TDestination>` неявно преобразуется в `DestinationCreation`;
-    возврат самого `previous` из previous-aware `Create` выбирает existing
-    destination как result без отдельного marker-метода. Произвольный готовый
-    `TDestination` выражается только явной factory-веткой.
-25. Для `ByConventionMarker` генерируется один creation-plan constructor с
+25. В structured surface `Previous<TDestination>` неявно преобразуется в
+    `DestinationCreation`, поэтому возврат самого `previous` выбирает existing
+    result. Direct surface возвращает настоящий `TDestination` и использует
+    `previous.Value`; отдельный direct plan или implicit unwrap не вводится.
+    Произвольный готовый `TDestination` в structured surface выражается только
+    явной factory-веткой.
+26. Для `ByConventionMarker` генерируется один creation-plan constructor с
     необязательным `DestinationConstructorMembers`.
-26. Generated properties `DestinationMembers` имеют только `init`; мутация уже
+27. Generated properties `DestinationMembers` имеют только `init`; мутация уже
     созданного member-plan не входит в declarative DSL.
-27. `MapManually` получает текущий `MappingContext` отдельным последним
+28. `MapManually` получает текущий `MappingContext` отдельным последним
     параметром и использует его для ручных nested mappings.
-28. `MappingContext.Operation` описывает текущий outer или nested вызов;
+29. `MappingContext.Operation` описывает текущий outer или nested вызов;
     contextual mapper восстанавливает операцию вызывающего mapping после
     возврата из вложенного.
-29. Declarative pipeline использует `MappingContext` внутренне, но `Create` и
+30. Declarative pipeline использует `MappingContext` внутренне, но `Create` и
     `Members` не получают его пользовательским lambda-параметром.
 
 ## 15. Детали, которые ещё нужно закрепить перед реализацией
