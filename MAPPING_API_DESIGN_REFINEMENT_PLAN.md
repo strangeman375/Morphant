@@ -72,7 +72,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 3 | Nullability, `Previous<T>` и null-result | До реализации нового API | Согласован |
 | 4 | `MappingContext` и call frames | До реализации нового API | Согласован |
 | 5 | Полная семантика nested `Map` | До реализации нового API | Согласован |
-| 6 | Порядок вычислений и declarative control flow | До реализации нового API | Не начат |
+| 6 | Порядок вычислений и declarative control flow | До реализации нового API | Согласован |
 | 7 | Допустимость mapping-пар и capability model | До реализации нового API | Не начат |
 | 8 | Scope mapping-а и несколько вариантов одной пары | До заморозки runtime architecture | Не начат |
 | 9 | Коллекции | До general-purpose release | Не начат |
@@ -296,35 +296,62 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
 новый дизайн. Последовательная mutation result может изменить значение более
 позднего выражения, читающего previous, и сломать даже обычный swap.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- snapshot semantics: какие explicit values вычисляются до первой mutation;
-- порядок plan locals, explicit member expressions, nested calls,
-  constructor arguments, assignments и convention rules;
-- exactly-once semantics и сохранение пользовательского порядка побочных
-  эффектов;
-- aliasing source/result/previous и различия reference/value destinations;
-- ветки, выражения которых неприменимы и потому не должны вычисляться;
-- поддерживаемые expression- и block-lambdas, locals, `if`/`else`, `switch`,
-  несколько `return` и `throw`;
-- conditional и switch expressions;
-- conditional `Auto()`, `Ignore()` и `Map(...)`;
-- допустимые references/captures declarative lambdas: mapper members, static
-  API, constants, method groups, Configure-locals и local functions;
-- отдельная граница references/captures для `MapManually`, включая то, что
-  generator может безопасно перенести из `Configure` в generated method;
-- нужна ли динамическая whole-plan no-op операция, не сводимая к статическому
-  `MemberMatching.Explicit`;
-- остаются ли generated member-plan properties `init`-only.
+- каждое выполняемое пользовательское выражение вычисляется ровно один раз;
+  порядок observable side effects следует порядку записи. Невыбранные ветки,
+  неприменимые rules и значения, нужные только другой mapping operation, не
+  вычисляются;
+- explicit constructor arguments вычисляются слева направо в порядке записи,
+  затем вызывается constructor. В `ByConvention` явно записанные arguments
+  идут первыми в пользовательском порядке, оставшиеся automatic arguments — в
+  порядке параметров выбранного конструктора;
+- для нового result из structured constructor/convention сохраняется
+  естественный порядок object initializer: constructor, затем очередное
+  explicit member value и его assignment в пользовательском порядке, затем
+  неуказанные conventions в порядке destination-members;
+- previous, factory-result и direct-result считаются уже существующими и
+  потенциально aliased. Для них все применимые explicit member values сначала
+  вычисляются в типизированные locals в пользовательском порядке и только
+  затем выполняются generated outer assignments в том же порядке. Это
+  shallow snapshot независимо от того, возвращает factory/direct code новый,
+  cached, source или previous instance;
+- snapshot включает обычные explicit expressions, явный `Auto()` и nested
+  `Map(...)`. Неуказанные conventions выполняются после explicit assignments и
+  в snapshot не входят; если конкретное convention-value нужно прочитать
+  заранее, пользователь делает rule явным через `Auto()`;
+- nested `Map(...)` выполняется в позиции соответствующего rule. Его вызовы и
+  любые пользовательские side effects видны последующим выражениям. Snapshot
+  откладывает только outer assignments, генерируемые Morphant, и не является
+  deep snapshot либо транзакцией object graph; нужную более раннюю точку
+  чтения пользователь явно задаёт declarative local;
+- declarative structured `Create` и `Members` сохраняют конечный анализируемый
+  control flow прежнего DSL: expression-lambda, locals с initializer-ом,
+  `const`, вложенные blocks, `if`/`else`, несколько `return`, `throw`,
+  statement `switch`, conditional- и switch-expressions. `Auto()`, `Ignore()`
+  и `Map(...)` могут участвовать в поддерживаемых условных формах. Ветви
+  планируются отдельно, а утратившие значение условия и их зависимости не
+  выполняются;
+- во внешнем declarative block не поддерживаются изменяемые или
+  неинициализированные locals, assignments, standalone side-effect statements,
+  loops, `try`, Configure/local functions и остальные императивные формы.
+  Direct `Create`, тело `ByFactory` и `MapManually` переносятся как обычный
+  синхронный C# block и могут использовать соответствующий обычный control
+  flow;
+- переносимые expressions могут обращаться к instance/static members mapper-а,
+  static API, method groups и compile-time constants. Обычные Configure-locals,
+  `builder` и local functions из внешнего `Configure` не захватываются;
+  переиспользуемая логика выносится в обычный member mapper-а. Local functions,
+  объявленные внутри переносимого direct/factory/manual block, сохраняются;
+- generated `DestinationMembers` остаётся immutable plan с `init`-only
+  properties;
+- динамический whole-plan no-op и отдельный `Skip()` сейчас не вводятся.
+  Статический no-op выражается `MemberMatching.Explicit`, специальный
+  динамический алгоритм — `MapManually`; first-class решение повторно
+  рассматривается вместе с patch/merge на этапе 10.
 
-**Предварительное направление:** сначала вычислять все применимые explicit
-values в типизированные locals в исходном порядке, затем выполнять mutation,
-после неё — оставшиеся conventions. Сохранить уже достигнутый control-flow
-уровень и отдельно решить whole-plan no-op вместо автоматического возврата
-`Skip()`.
-
-**Результат этапа:** нормативный declarative algorithm и таблица
-поддерживаемых/неподдерживаемых language constructs.
+**Результат этапа:** нормативные evaluation phases, shallow snapshot и граница
+declarative/ordinary C# control flow перенесены в `MAPPING_API_DESIGN.md`.
 
 ### Этап 7. Допустимость mapping-пар и capability model
 
@@ -761,7 +788,6 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 
 ## 7. Следующий этап
 
-**Этап 6 — порядок вычислений и declarative control flow.** Зафиксировать
-snapshot semantics explicit values, exactly-once и пользовательский порядок
-побочных эффектов, фазу mutation/conventions, aliasing и поддерживаемую границу
-expression-/block-lambdas.
+**Этап 7 — допустимость mapping-пар и capability model.** Разделить pair
+eligibility и доступные способы mapping-а, затем построить capability/settings
+matrix для structural, direct и manual пар до миграции production API.

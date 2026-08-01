@@ -447,6 +447,32 @@ replacement непосредственно.
 
 Никакого скрытого fallback между различными ветками `Create` нет.
 
+### 6.7. Порядок вычислений creation-plan
+
+В runtime выполняется только выбранный путь `Create`. Невыбранная ветка,
+source-only lambda при существующем previous и выражения, нужные только
+неприменимой operation, не вычисляются.
+
+В structured plan явные constructor arguments вычисляются ровно один раз
+слева направо в порядке записи, включая переставленные named arguments. Затем
+вызывается выбранный destination-constructor. Для `ByConvention()` сначала в
+пользовательском порядке вычисляются явно записанные constructor-member rules,
+после них — оставшиеся automatic arguments в порядке параметров выбранного
+конструктора. `Ignore()` не вычисляет значение, а `Auto()` и `Map(...)`
+занимают позицию соответствующего rule.
+
+Plan-shaping locals, условия и selector-ы выполняются в своей позиции и только
+на выбранном execution path. Если значение уже вычислено в declarative local,
+оно переиспользуется, а не вычисляется повторно ради constructor или member
+rule.
+
+Direct `Create` и тело `ByFactory` являются обычным синхронным C#-кодом, а не
+разбираемым statement-by-statement creation DSL. Expression-body переносится
+как выражение, block-body — целиком; обычный C# определяет внутренний порядок,
+ветвление, mutation, циклы, exceptions и local functions. Получение настоящего
+result выполняется ровно один раз. После него действует общая member-фаза,
+если result не равен `null`.
+
 ## 7. `Members`
 
 ### 7.1. Единственная перегрузка
@@ -647,7 +673,134 @@ replacement, выбранный `Create`. Если `previous.Value.Address` ра
 вложенного вызова новый immutable call frame с выбранной operation и сохраняет
 общий mapping scope.
 
-### 7.5. Почему `Skip()` не нужен
+### 7.5. Evaluation phases и shallow snapshot
+
+Порядок member-фазы зависит не от публичной operation, а от происхождения
+выбранного result:
+
+| Происхождение result | Порядок member-фазы |
+|---|---|
+| Новый structured constructor/convention result | Обычный C#-порядок object initializer: constructor, затем очередное explicit value и соответствующий assignment в пользовательском порядке |
+| Previous, `ByFactory` result или direct `Create` result | Сначала shallow snapshot всех применимых explicit values, затем generated outer assignments |
+
+После explicit-фазы в обоих случаях выполняются неуказанные conventions в
+обычном порядке destination-members. `Ignore()` не вычисляет значение и не
+создаёт assignment. Неприменимый rule, включая `init` для уже созданного
+result, не вычисляется.
+
+Snapshot для уже созданного result охватывает обычные explicit expressions,
+явный `Auto()` и nested `Map(...)`. Значения вычисляются ровно один раз в
+пользовательском порядке и сохраняются в типизированные collision-safe locals.
+Только после вычисления последнего применимого explicit value Morphant начинает
+outer assignments, также в пользовательском порядке.
+
+Например:
+
+```csharp
+.Members((_, previous) => new()
+{
+    Left = previous.Value.Right,
+    Right = previous.Value.Left
+});
+```
+
+для previous-result концептуально становится:
+
+```csharp
+var left = previous.Value.Right;
+var right = previous.Value.Left;
+
+result.Left = left;
+result.Right = right;
+```
+
+Factory и direct result намеренно используют то же правило. Пользовательский
+код может вернуть новый instance, но также source, previous или cached object;
+generator не пытается угадывать aliasing по телу lambda.
+
+Неуказанные conventions не входят в snapshot, чтобы каждый mapping не
+раздувался locals для неявных rules. Если конкретное convention-value тоже
+должно быть прочитано заранее, пользователь делает его явным через `Auto()`.
+
+Snapshot является поверхностным. Он откладывает только присваивания во внешний
+result, генерируемые Morphant. Вызов nested `Map(...)` выполняется в позиции
+rule, и его mutation object graph либо другие пользовательские side effects
+видны последующим выражениям. Generator не переносит более позднее чтение выше
+такого вызова, потому что это изменило бы порядок exceptions и side effects и
+потребовало бы знания реализации nested pair из другой сборки.
+
+Нужную точку глубокого snapshot пользователь задаёт обычным declarative local:
+
+```csharp
+.Members((source, previous) =>
+{
+    var oldSummary = previous.Value.Child.Summary;
+
+    return new()
+    {
+        Child = Map(source.Child, previous.Value.Child),
+        Summary = oldSummary
+    };
+});
+```
+
+Для нового constructor/convention result universal snapshot не применяется.
+Иначе значения `init`-members пришлось бы вычислять до constructor-а, меняя
+естественный C#-порядок. Поэтому после вызова constructor каждое explicit
+member value вычисляется и сразу попадает в object initializer; setter или
+иные пользовательские side effects могут быть видны следующему expression.
+Явный local остаётся способом зафиксировать более раннее значение.
+
+### 7.6. Declarative control flow и captures
+
+Structured `Create` и `Members` являются конечным анализируемым DSL. В них
+поддерживаются:
+
+- expression-lambda;
+- locals с initializer-ом, `const` и вложенные blocks;
+- `if` / `else if` / `else`, несколько `return` и `throw`;
+- statement `switch`, если каждый выбранный завершённый путь возвращает plan
+  либо бросает exception;
+- conditional- и switch-expressions;
+- условный выбор whole plan, creation strategy, constructor/member value,
+  `Auto()`, `Ignore()` и `Map(...)`.
+
+Каждая ветка планируется отдельно для достижимой mapping operation. Условие,
+selector, local и value не выполняются, если от них не зависит выбранный путь.
+Все выполняемые выражения вычисляются ровно один раз, а их observable side
+effects сохраняют пользовательский порядок. Declarative locals задают явную
+точку вычисления; последующая mutation такого local не поддерживается.
+
+Во внешнем structured `Create` или `Members` block не поддерживаются:
+
+- locals без initializer-а, последующие/deconstruction/compound assignments и
+  `++` / `--`;
+- loops, `break` / `continue` и standalone statements только ради side effect;
+- local functions, объявленные во внешнем declarative block;
+- `try` / `catch` / `finally`, `using`, `lock`, labels / `goto`;
+- `ref` / `using` locals, `unsafe` / `fixed`, `async` / `await` и `yield`.
+
+Сложное вычисление выносится в обычный instance/static member mapper-а, сложное
+получение result — в direct `Create` либо `ByFactory`, а полностью специальный
+алгоритм — в `MapManually`. Direct `Create`, factory body и `MapManually`
+переносятся как обычный синхронный C# block; внутри них доступны mutation,
+loops, `try` / `finally`, nested local functions и остальные допустимые для их
+сигнатуры синхронные конструкции.
+
+Переносимый пользовательский код может обращаться к instance/static members
+mapper-а, static API, типам, method groups и compile-time constants.
+Configure-local compile-time constant подставляется как constant value.
+Обычные Configure-locals, параметр `builder` и local functions, объявленные во
+внешнем `Configure`, не захватываются: их runtime lifetime не совпадает с
+lifetime generated mapper-а. Переиспользуемая логика должна быть обычным
+member-ом mapper-а. Local functions внутри direct/factory/manual block
+переносятся вместе с этим block.
+
+Generated properties `DestinationMembers` остаются `init`-only. DSL описывает
+immutable plan выбранной ветки; императивная сборка и последующая mutation plan
+не получают отдельной evaluation semantics.
+
+### 7.7. Почему `Skip()` не нужен
 
 Полный статический отказ от implicit member mapping уже выражается настройкой:
 
@@ -661,7 +814,9 @@ previous и отсутствии previous-aware `Create` он останется
 изменений.
 
 Для динамического алгоритма, который в runtime иногда должен выполнить полный
-no-op, используется `MapManually`. Отдельный `Skip()` не добавляется.
+no-op, используется `MapManually`. Отдельный `Skip()` сейчас не добавляется;
+first-class whole-plan no-op повторно рассматривается вместе с patch/merge,
+где он нужен в общей модели absent и conditional assignments.
 
 ## 8. Полностью ручной mapping
 
@@ -1078,6 +1233,28 @@ lowering и direct lambda в итоге дают один настоящий `De
 `MemberMatching` conventions. Если generated member surface отсутствует, эта
 стадия не содержит применимых members.
 
+`ApplyMembers` является одной логической стадией, но lowering зависит от
+creation branch:
+
+1. Для structured constructor/convention branch вычисляются применимые
+   plan-shaping условия и locals выбранного пути, затем constructor arguments,
+   после чего вызывается constructor. Explicit member values и assignments
+   выполняются в порядке rules как обычный object initializer; оставшиеся
+   conventions следуют после них.
+2. Для previous, factory и direct branch сначала полностью вычисляется
+   выбранный declarative member plan. Все применимые explicit values
+   сохраняются в locals без outer mutation, затем выполняются explicit
+   assignments и только после них — оставшиеся conventions.
+3. `null` factory/direct result завершает mapping до построения member plan.
+4. Rule или ветка, неприменимые к текущей operation/result capability, не
+   вычисляются. Это включает construction-only expressions в existing branch
+   и `init`-rules для уже созданного result.
+
+Generator вправе сворачивать одинаковые ветки и убирать временные переменные
+только там, где доказана полная observable equivalence: exactly-once,
+пользовательский порядок, набор выполняемых side effects и момент generated
+outer mutation не меняются.
+
 ## 11. Условия генерации pair API
 
 API должен отражать реальные возможности destination и не показывать
@@ -1397,15 +1574,35 @@ diagnostic не должно вводить скрытый fallback на дру�
 36. Root-вызовы используют независимые scopes и могут выполняться параллельно;
     scoped mapper действует только до завершения root `Map`, а параллельные
     nested-вызовы внутри одного scope не поддерживаются.
+37. Каждое выполняемое declarative expression вычисляется ровно один раз в
+    пользовательском порядке; невыбранные ветки, неприменимые rules и
+    operation-specific значения другого пути не вычисляются.
+38. Explicit constructor arguments вычисляются в порядке записи до вызова
+    constructor. Новый structured constructor/convention result сохраняет
+    естественный порядок object initializer: очередное explicit member value
+    сразу сопровождается assignment, затем выполняются оставшиеся conventions.
+39. Previous, factory-result и direct-result всегда считаются потенциально
+    aliased. Все их применимые explicit member expressions, `Auto()` и
+    `Map(...)` образуют shallow snapshot до первого generated outer assignment;
+    неуказанные conventions выполняются после explicit assignments.
+40. Shallow snapshot не откатывает и не скрывает side effects пользовательских
+    expressions или nested mappings. Они видны последующим expressions;
+    более раннее чтение вложенного состояния пользователь задаёт declarative
+    local-ом.
+41. Structured `Create` и `Members` поддерживают только конечный анализируемый
+    control flow без изменяемого состояния. Direct `Create`, factory body и
+    `MapManually` являются обычными синхронными C# blocks. Ни одна форма не
+    захватывает обычные Configure-locals, `builder` или внешние Configure-local
+    functions.
 
 ## 15. Детали, которые ещё нужно закрепить перед реализацией
 
-Фундаментальная семантика выше согласована. Отдельного решения при
-проектировании generated surface требуют:
+Фундаментальные этапы 1–6 согласованы. До начала миграции production API нужно
+завершить capability model этапа 7. После этого отдельного решения либо
+реализационного планирования требуют:
 
 - окончательное имя generated creation- и member-plan типов;
-- граница поддерживаемых control-flow constructs внутри declarative `Create`
-  и `Members` lambdas;
+- pair eligibility и точная capability/settings matrix;
 - порядок миграции текущего `Template()` implementation и тестов;
 - обновление `IMPLEMENTATION_PLAN.md`, XML-документации и user-facing docs;
 - diagnostic IDs, сообщения и точная фаза их добавления.
