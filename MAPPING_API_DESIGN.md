@@ -193,8 +193,9 @@ Effective settings разрешаются от более конкретного
 Plan объединяется по собственным правилам:
 
 - локальный `Create` целиком заменяет унаследованный `Create`;
-- `Members` объединяются по destination member, локальное правило перекрывает
-  унаследованное;
+- `Members` объединяются по destination member только при совпадающей
+  форме перегрузки; локальное правило перекрывает унаследованное, а
+  смешивание обычного и result-aware plans ошибочно;
 - локальный `Ignore()` является таким же явным перекрытием;
 - conventions применяются после объединения только к ещё не занятым members;
 - локальный `MapManually` заменяет весь унаследованный declarative plan;
@@ -524,16 +525,35 @@ result выполняется ровно один раз. После него д
 
 ## 7. `Members`
 
-### 7.1. Единственная перегрузка
+### 7.1. Две альтернативные перегрузки
 
-Концептуальная сигнатура:
+Для каждой pair с member-capability generator всегда создаёт обе
+концептуальные перегрузки:
 
 ```csharp
 Members(
     Func<TSource, Previous<TDestination>, DestinationMembers> members);
+
+Members(
+    Func<
+        TSource,
+        Previous<TDestination>,
+        TDestination,
+        DestinationMembers> members);
 ```
 
-Source-only перегрузки нет. Если previous не нужен, пользователь пишет `_`:
+Первая перегрузка не зависит от состояния выбранного result.
+Вторая явно задаёт post-creation member plan, которому нужен
+фактически выбранный non-null result. Обе формы генерируются
+независимо от стратегии `Create`: constructor, convention, previous,
+factory и direct result не меняют generated surface.
+
+В локальной конфигурации pair можно вызвать ровно один `Members`.
+Любой второй локальный вызов является ошибкой. `IncludeBase()` может
+объединить унаследованный и локальный member plans только при совпадающей
+форме перегрузки. Смешивание обычного и result-aware plans в effective
+pair также ошибочно. Source-only перегрузки нет. Если previous или result
+не нужны, пользователь пишет `_`:
 
 ```csharp
 .Members((source, _) => new()
@@ -585,6 +605,40 @@ internal sealed class DestinationMembers
 `Members` всегда применяется к выбранному `result`, а не к `previous`.
 Параметр `previous` внутри lambda всегда означает исходный destination-вход
 после null-предобработки, даже если `Create` выбрал replacement.
+
+В трёхпараметрической перегрузке `result` означает именно фактически
+выбранный instance: previous, constructor/convention result, factory/cache
+или direct result, включая его derived runtime-тип. Это позволяет
+использовать состояние, которого нет ни в source, ни в previous:
+
+```csharp
+builder.Map<OrderDto, Order>()
+    .Create(source => new(source.Id))
+    .Members((source, _, result) => new()
+    {
+        Revision = result.Revision + 1,
+        Details = Map(source.Details, result.Details)
+    });
+```
+
+Здесь `Details` мог быть создан самим constructor-ом. Та же перегрузка
+покрывает cached/factory result без специальной привязки API к factory.
+
+Параметр `result` не использует presence-wrapper и генерируется без
+корневой nullability destination: `Customer?` даёт `Customer result`,
+`Point?` — `Point result`, а вложенные nullable annotations сохраняются.
+К моменту вызова lambda result уже гарантированно существует. Если
+direct `Create` или `ByFactory()` вернул `null`, mapping завершается до
+`Members`; недостижимое состояние «result отсутствует» не несёт
+полезной информации и ложно намекало бы на возможность заменить
+терминальный `null`.
+
+Трёхпараметрическая форма всегда является post-creation plan. До её
+вызова structured result должен уже быть полностью создан, поэтому
+достижимый explicit `init`-rule или creation-time `required`-rule в таком
+`Members` невозможен и должен давать configuration diagnostic. Такая pair
+должна самостоятельно закрывать все creation-time requirements до
+result-aware member-фазы.
 
 Пример:
 
@@ -719,13 +773,15 @@ replacement, выбранный `Create`. Если `previous.Value.Address` ра
 
 ### 7.5. Evaluation phases и shallow snapshot
 
-Порядок member-фазы зависит не от публичной operation, а от происхождения
-выбранного result:
+Порядок member-фазы зависит от выбранной перегрузки `Members` и,
+для обычной формы, от происхождения выбранного result. Публичная
+operation сама по себе порядок не меняет:
 
-| Происхождение result | Порядок member-фазы |
+| Форма и происхождение result | Порядок member-фазы |
 |---|---|
-| Новый structured constructor/convention result | Обычный C#-порядок object initializer: constructor, затем очередное explicit value и соответствующий assignment в пользовательском порядке |
-| Previous, `ByFactory` result или direct `Create` result | Сначала shallow snapshot всех применимых explicit values, затем generated outer assignments |
+| Обычный `Members`; новый structured constructor/convention result | Обычный C#-порядок object initializer: constructor, затем очередное explicit value и соответствующий assignment в пользовательском порядке |
+| Обычный `Members`; previous, `ByFactory` result или direct `Create` result | Сначала shallow snapshot всех применимых explicit values, затем generated outer assignments |
+| Result-aware `Members`; любой non-null result | Полностью создать result, передать его в lambda, снять shallow snapshot всех применимых explicit values и только затем выполнить generated outer assignments |
 
 После explicit-фазы в обоих случаях выполняются неуказанные conventions в
 обычном порядке destination-members. `Ignore()` не вычисляет значение и не
@@ -737,6 +793,9 @@ Snapshot для уже созданного result охватывает обыч
 пользовательском порядке и сохраняются в типизированные collision-safe locals.
 Только после вычисления последнего применимого explicit value Morphant начинает
 outer assignments, также в пользовательском порядке.
+В result-aware форме это правило действует и для constructor/convention
+result: все чтения `result` в плане видят состояние после его создания,
+но до первого generated member assignment.
 
 Например:
 
@@ -788,12 +847,15 @@ rule, и его mutation object graph либо другие пользовате
 });
 ```
 
-Для нового constructor/convention result universal snapshot не применяется.
-Иначе значения `init`-members пришлось бы вычислять до constructor-а, меняя
-естественный C#-порядок. Поэтому после вызова constructor каждое explicit
-member value вычисляется и сразу попадает в object initializer; setter или
-иные пользовательские side effects могут быть видны следующему expression.
-Явный local остаётся способом зафиксировать более раннее значение.
+Для нового constructor/convention result в обычной двухпараметрической
+форме universal snapshot не применяется. Иначе значения `init`-members
+пришлось бы вычислять до constructor-а, меняя естественный C#-порядок.
+Поэтому после вызова constructor каждое explicit member value вычисляется и
+сразу попадает в object initializer; setter или иные пользовательские side effects
+могут быть видны следующему expression. Трёхпараметрическая форма
+намеренно имеет другую post-creation семантику и всегда использует shallow
+snapshot. Явный local остаётся способом зафиксировать более раннее
+вложенное значение в обеих формах.
 
 ### 7.6. Declarative control flow и captures
 
@@ -845,7 +907,28 @@ Generated properties `DestinationMembers` имеют обычный `set`. Эт�
 императивную сборку либо последующую mutation plan-а: текущая declarative
 grammar и её evaluation semantics остаются прежними.
 
-### 7.7. Почему `Skip()` не нужен
+### 7.7. Граница result-dependent logic
+
+Result-aware `Members` закрывает структурные member-rules, которым нужно
+прочитать состояние фактически созданного result и затем выполнить
+обычные generated assignments. Он не делает declarative pipeline общим
+imperative lifecycle.
+
+Если алгоритму нужны последовательная зависимость от setter side
+effects, mutation между assignments, замена result после member-фазы,
+итоговая imperative validation или другой полностью ручной lifecycle, он
+выражается через `MapManually`. Обычные синхронные instance/static методы
+mapper-а, включая методы с injected services, можно по-прежнему вызывать
+внутри `Create` и `Members`.
+
+`BeforeMap`, `AfterMap`, middleware либо эквивалентные lifecycle hooks
+обязательно будут поддержаны после v0; их точная форма ещё не выбрана.
+Post-processing с replacement-result до того же будущего этапа не утверждается.
+Async mapping, I/O orchestration, first-class business validation, private-state
+bypass, runtime-only dynamic shapes и automatic reverse mapping также не
+расширяют core v0; обратная pair объявляется явно.
+
+### 7.8. Почему `Skip()` не нужен
 
 Полный статический отказ от implicit member mapping уже выражается настройкой:
 
@@ -1303,21 +1386,29 @@ lowering и direct lambda в итоге дают один настоящий `De
 Если `Members` не настроен, `ApplyMembers` применяет только effective
 `MemberMatching` conventions. Если generated member surface отсутствует, эта
 стадия не содержит применимых members.
+Если настроен result-aware `Members`, `ApplyMembers` передаёт в него уже
+проверенный non-null `result` непосредственно, без presence-wrapper.
 
 `ApplyMembers` является одной логической стадией, но lowering зависит от
 creation branch:
 
-1. Для structured constructor/convention branch вычисляются применимые
+1. Для structured constructor/convention branch с обычным `Members`
+   вычисляются применимые
    plan-shaping условия и locals выбранного пути, затем constructor arguments,
    после чего вызывается constructor. Explicit member values и assignments
    выполняются в порядке rules как обычный object initializer; оставшиеся
    conventions следуют после них.
-2. Для previous, factory и direct branch сначала полностью вычисляется
+2. Для previous, factory и direct branch с обычным `Members` сначала
+   полностью вычисляется
    выбранный declarative member plan. Все применимые explicit values
    сохраняются в locals без outer mutation, затем выполняются explicit
    assignments и только после них — оставшиеся conventions.
-3. `null` factory/direct result завершает mapping до построения member plan.
-4. Rule или ветка, неприменимые к текущей operation/result capability, не
+3. Result-aware `Members` для любой creation branch выполняется только
+   после полного создания result. Его explicit plan всегда использует
+   shallow snapshot до generated assignments; creation-time `init`/`required`
+   rules в нём недопустимы.
+4. `null` factory/direct result завершает mapping до построения member plan.
+5. Rule или ветка, неприменимые к текущей operation/result capability, не
    вычисляются. Это включает construction-only expressions в existing branch
    и `init`-rules для уже созданного result.
 
@@ -1429,7 +1520,7 @@ declarative методы. Для каждой eligible pair capabilities выв�
 | Manual | Любая eligible pair | Один `MapManually` на обычном pair-builder |
 | Structured creation | Есть хотя бы один поддерживаемый доступный destination constructor | `Create`, возвращающий generated `DestinationCreation` |
 | Direct creation | Structured constructor surface отсутствует либо destination намеренно opaque | `Create`, возвращающий настоящий `TDestination` |
-| Members | Есть хотя бы один поддерживаемый body-member | Generated `DestinationMembers` и `Members`, независимо от формы `Create` |
+| Members | Есть хотя бы один поддерживаемый body-member | Generated `DestinationMembers` и обе альтернативные `Members`-перегрузки, независимо от формы `Create` |
 | Collection / projection | Не входят в v0 capability model | Никакого generated surface; рассматриваются после v0 на отдельных этапах |
 
 Structured и direct creation взаимоисключающие: eligible pair получает ровно
@@ -1940,11 +2031,13 @@ source, factory/derived behavior и точный evaluation order будут с�
 В целевом дизайне diagnostics должны покрыть как минимум:
 
 - повторный `Create` для одной pair, включая вызовы разных перегрузок;
-- повторный `Members`;
+- любой второй локальный `Members` или смешивание двух форм
+  перегрузки через `IncludeBase()`;
 - повторный `MapManually`;
 - смешивание `MapManually` с `Create` или `Members`;
 - pair-specific constructor/member settings, несовместимые с manual mapping;
-- previous, factory или direct creation вместе с explicit `init`-rule, который
+- previous, factory, direct creation или result-aware `Members` вместе с
+  explicit `init`-rule либо creation-time `required`-rule, который
   невозможно применить к уже созданному result;
 - статически неизбежный declarative `MapExisting` no-op: existing-ветка не
   может ни выбрать replacement, ни выполнить post-construction assignment;
@@ -1978,11 +2071,20 @@ diagnostic не должно вводить скрытый fallback на дру�
    не body-members.
 8. `Members` является единственным declarative API для всех body-members,
    включая `init` и `required`.
-9. У `Members` есть только одна universal previous-aware перегрузка.
-10. `Members` применяется к выбранному result.
+9. Для member-capable pair всегда генерируются две альтернативные
+   `Members`-перегрузки: с `source`/`previous` и с
+   `source`/`previous`/`result`. В локальной pair можно вызвать
+   ровно один `Members`; любой второй вызов ошибочен. Effective plan может
+   объединять унаследованный и локальный `Members` только одной формы.
+10. Обе формы `Members` применяются к выбранному result; их
+    availability не зависит от creation strategy.
 11. `previous` в `Members` всегда означает исходный нормализованный input, а не
-    выбранный result.
+    выбранный result. В трёхпараметрической форме `result` — это
+    фактически выбранный non-null destination без presence-wrapper и без
+    корневой nullability.
 12. Неприменимое `init`-выражение в existing-result ветке не вычисляется.
+    Result-aware `Members` целиком выполняется после creation, поэтому
+    достижимые `init` и creation-time `required` rules в нём ошибочны.
 13. Member, не указанный в `Members`, следует effective `MemberMatching`.
 14. `MemberMatching.Explicit` является статическим способом полностью
     отключить implicit member mapping; отдельного `Skip()` нет.
@@ -2004,8 +2106,8 @@ diagnostic не должно вводить скрытый fallback на дру�
     `Previous<TDestination>` независимо сообщает наличие фактического
     destination instance.
 20. `MapManually` и ровно одна форма `Create` доступны для каждой поддерживаемой
-    mapping-пары; `Members` генерируется независимо при наличии поддерживаемых
-    body-members.
+    mapping-пары; обе `Members`-перегрузки генерируются независимо
+    при наличии поддерживаемых body-members.
 21. Наличие поддерживаемого constructor surface выбирает structured `Create`,
     его отсутствие — direct `Create`; пользовательского mode и пары с обеими
     формами нет.
@@ -2052,13 +2154,17 @@ diagnostic не должно вводить скрытый fallback на дру�
     пользовательском порядке; невыбранные ветки, неприменимые rules и
     operation-specific значения другого пути не вычисляются.
 38. Explicit constructor arguments вычисляются в порядке записи до вызова
-    constructor. Новый structured constructor/convention result сохраняет
-    естественный порядок object initializer: очередное explicit member value
-    сразу сопровождается assignment, затем выполняются оставшиеся conventions.
-39. Previous, factory-result и direct-result всегда считаются потенциально
-    aliased. Все их применимые explicit member expressions, `Auto()` и
-    `Map(...)` образуют shallow snapshot до первого generated outer assignment;
-    неуказанные conventions выполняются после explicit assignments.
+    constructor. Новый structured constructor/convention result в обычном
+    `Members` сохраняет естественный порядок object initializer: очередное
+    explicit member value сразу сопровождается assignment, затем
+    выполняются оставшиеся conventions.
+39. Previous, factory-result и direct-result в обычном `Members`, а также любой
+    non-null result в result-aware `Members`, используют shallow snapshot.
+    Все применимые explicit member expressions, `Auto()` и `Map(...)`
+    вычисляются до первого generated outer assignment; неуказанные
+    conventions выполняются после explicit assignments. Result-aware lambda
+    выполняется только после полного создания result и до generated
+    member assignments.
 40. Shallow snapshot не откатывает и не скрывает side effects пользовательских
     expressions или nested mappings. Они видны последующим expressions;
     более раннее чтение вложенного состояния пользователь задаёт declarative
@@ -2142,9 +2248,10 @@ diagnostic не должно вводить скрытый fallback на дру�
     ближайший matching base plan и его map-level settings.
 64. Settings precedence — current pair, included base pair, current mapper
     root, connected base roots, assembly, library default.
-65. Локальный `Create` заменяет унаследованный; `Members` объединяются по
-    destination member с локальным приоритетом, включая `Ignore()`, после чего
-    conventions заполняют только незанятые members.
+65. Локальный `Create` заменяет унаследованный; `Members` одной формы
+    объединяются по destination member с локальным приоритетом, включая
+    `Ignore()`, после чего conventions заполняют только незанятые members.
+    Смешивание двух форм `Members` через `IncludeBase()` ошибочно.
 66. Локальный `MapManually` заменяет весь унаследованный declarative plan, а
     manual plan не смешивается частично с `Create`/`Members`.
 67. General-purpose и generic fragments, а также cross-assembly
@@ -2166,6 +2273,13 @@ diagnostic не должно вводить скрытый fallback на дру�
 73. После v0 tuple/multi-source mapping использует обычный tuple `TSource` без
     специальных overload-ов `IMapper`; identity учитывает типы и порядок
     элементов, но не имена, а пользовательский state передаётся детям явно.
+74. Result-aware `Members` остаётся declarative post-creation plan.
+    Последовательная зависимость от setter side effects, mutation между
+    assignments, replacement-result и полный imperative lifecycle требуют
+    `MapManually`.
+75. `BeforeMap`, `AfterMap`, middleware либо эквивалентные lifecycle hooks не
+    входят в v0, но обязательно будут поддержаны после v0; точная
+    форма будущего API пока не выбрана.
 
 ## 16. Детали, которые ещё нужно закрепить перед реализацией
 
@@ -2195,13 +2309,16 @@ inheritance остаются post-v0. Этап 17 сохранил exact constru
 и generic mapper contracts, но application registry содержит только явно
 подключённые closed descriptors; bare root type parameters, open-generic и
 runtime-type lookup, tuple/multi-source и неявный state propagation остаются
-post-v0. До миграции production API отдельного решения либо реализационного
-планирования требуют:
+post-v0. Этап 18 закрыл result-dependent member rules двумя всегда
+генерируемыми, но взаимоисключающими `Members`-перегрузками. Вторая
+получает фактический non-null result без presence-wrapper и всегда
+выполняется как post-creation shallow-snapshot plan. Hooks и middleware
+гарантированно остаются в roadmap, но сознательно отложены до после v0.
+До миграции production API отдельного
+решения либо реализационного планирования требуют:
 
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
-  creation/member-plan types и возможную result-wrapper;
-- нужен ли узкий result-aware `Members` для factory/direct destination,
-  member rules которого зависят от runtime-state созданного instance;
+  creation/member-plan types и терминологию `Previous<T>`;
 - порядок миграции текущего `Template()` implementation и тестов;
 - обновление `IMPLEMENTATION_PLAN.md`, XML-документации и user-facing docs;
 - diagnostic IDs, сообщения и точная фаза их добавления.

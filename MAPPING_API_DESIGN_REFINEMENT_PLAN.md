@@ -798,8 +798,9 @@ Effective settings разрешаются в порядке:
 Plan объединяется отдельно от settings:
 
 - локальный `Create` целиком заменяет унаследованный `Create`;
-- `Members` объединяются по destination member, а локальное правило, включая
-  `Ignore()`, перекрывает унаследованное;
+- `Members` объединяются по destination member только при совпадающей
+  форме перегрузки, а локальное правило, включая `Ignore()`, перекрывает
+  унаследованное. Смешивание обычного и result-aware plans ошибочно;
 - conventions применяются после объединения только к ещё не занятым members;
 - локальный `MapManually` заменяет весь унаследованный declarative plan;
 - manual plan нельзя частично объединять с локальными `Create` или `Members`.
@@ -853,50 +854,75 @@ Tuple/multi-source и per-call data остаются после v0. Будуща
 
 **Результат этапа:** v0 поддерживает только exact constructed generic pairs и
 явно подключённые closed mapper instantiations; open-generic, runtime-type и
-tuple/multi-source capabilities отложены. Следующий активный этап — 18.
+tuple/multi-source capabilities отложены. Следом был проработан и
+закрыт этап 18.
 
 ### Этап 18. Hooks, result-dependent logic и граница manual mapping
 
 **Проблема.** `Members` видит source и previous, но не result. В частности,
-factory или direct `Create` может вернуть cached, derived либо иным образом
-runtime-настроенный destination, а значения последующих members должны
-зависеть от фактического состояния именно этого instance. Не определено,
-нужен ли для такого структурного сценария узкий result-aware API, нужны ли
-first-class before/after hooks и другие imperative extension points либо это
-сознательная область manual mapping.
+factory, direct `Create` или constructor может вернуть либо создать
+destination с состоянием, которого нет ни в source, ни в previous.
+Без доступа к фактическому result такой структурный member-rule без
+необходимости уходит в `MapManually`.
 
-**Нужно согласовать:**
+**Согласованное решение:**
 
-- member expression, зависящий от runtime-state только что созданного factory
-  или direct result;
-- возможную общую перегрузку `Members(source, previous, result)`, где previous
-  и result представлены presence-aware nullable-обёртками; точная shape,
-  нейминг, применимость к `MapNew`/`MapExisting` и поведение при `null` result
-  пока не выбраны;
-- порядок чтений result относительно shallow snapshot и generated member
-  assignments, включая намеренную зависимость от setter side effects;
-- `BeforeMap`/`AfterMap` и side effects;
-- post-processing с authoritative replacement result;
-- валидация после mapping;
-- вызовы services и внешнего I/O;
-- async mapping;
-- post-v0 boundary для `Task`/`ValueTask`/`Lazy`/`IObservable` root pairs:
-  нужен ли им отдельный mapping contract либо они должны остаться вне core;
-- private-state mutation, dynamic/`ExpandoObject` и runtime-only shapes;
-- reverse mapping;
-- бизнес-валидация и enrichment;
-- критерий, когда ручной код является нормальной границей продукта, а когда
-  свидетельствует о пробеле core API.
+- каждая pair с member-capability всегда получает обе альтернативные
+  перегрузки:
 
-**Предварительное направление:** оставить I/O, async enrichment, business
-validation, private-state bypass и fully dynamic mapping вне core. До
-добавления generic hooks отдельно проверить узкий result-aware `Members`:
-factory-result с runtime-state является структурным mapping-сценарием и не
-должен автоматически проваливаться в `MapManually`. Конкретная перегрузка при
-этом остаётся лишь кандидатом до разбора observable semantics и примеров.
+  ```csharp
+  Members(
+      Func<TSource, Previous<TDestination>, DestinationMembers> members);
 
-**Результат этапа:** явный список first-class scenarios, manual scenarios и
-осознанных non-goals.
+  Members(
+      Func<
+          TSource,
+          Previous<TDestination>,
+          TDestination,
+          DestinationMembers> members);
+  ```
+
+- в локальной pair можно вызвать только один `Members`; любой второй
+  вызов даёт configuration diagnostic. `IncludeBase()` объединяет
+  унаследованный и локальный plans только при совпадающей форме
+  перегрузки; смешивание двух форм ошибочно;
+- обе перегрузки генерируются независимо от стратегии `Create`.
+  Result-aware форма одинаково доступна для constructor/convention,
+  previous, factory/cache, direct и derived results;
+- `previous` остаётся исходным нормализованным destination. `result` —
+  фактически выбранный destination без корневой nullability и без
+  presence-wrapper;
+- result-aware lambda вызывается только после того, как result полностью
+  создан и прошёл null-guard. `null` из direct `Create` или `ByFactory()`
+  терминален и завершает mapping до `Members`;
+- result-aware `Members` всегда является post-creation plan. Достижимый
+  explicit `init`-rule или creation-time `required`-rule в нём ошибочен;
+- все применимые explicit values result-aware plan образуют shallow
+  snapshot. Чтения `result` видят его состояние после creation, но до
+  первого generated outer assignment. Side effects expressions и nested
+  mappings по-прежнему видны последующим expressions.
+
+**Граница v0:**
+
+- структурное вычисление из source, previous и фактического result остаётся
+  declarative mapping;
+- зависимость от setter side effects, mutation между assignments,
+  replacement-result после member-фазы и полный imperative lifecycle требуют
+  `MapManually`;
+- синхронные mapper-методы и injected services можно вызывать внутри
+  `Create`, `Members` и `MapManually`;
+- `BeforeMap`, `AfterMap`, middleware либо эквивалентные lifecycle hooks
+  обязательно будут поддержаны после v0; их точная форма ещё не
+  выбрана. Post-processing с replacement-result пока не утверждён;
+- async mapping и I/O orchestration, first-class business validation,
+  private-state bypass, runtime-only dynamic shapes и automatic reverse
+  mapping в core v0 не входят. Обратная pair объявляется явно.
+
+**Результат этапа:** result-dependent structural member rules входят в v0
+через вторую `Members`-перегрузку; imperative lifecycle остаётся в
+`MapManually`, а общие hooks/middleware гарантированы после v0, но их
+точная форма ещё не выбрана. Этап закрыт;
+переход к naming-этапу отложен по явному указанию.
 
 ## 6. Завершающие этапы
 
@@ -913,8 +939,7 @@ factory-result с runtime-state является структурным mapping-
   `null` отсутствующим previous, без ложного обещания создать новый instance;
 - имена generated creation/member-plan типов и их согласованность с
   `Create` / `Members`;
-- терминологию для presence wrappers, включая `Previous<T>` и возможный
-  result-wrapper этапа 18;
+- терминологию `Previous<T>` и non-null result-параметра `Members`;
 - согласованность пар `MapNew` / `MapExisting`, declarative / direct / manual и
   публичных settings;
 - короткие примеры IntelliSense/call-site для каждого спорного имени и
@@ -999,7 +1024,7 @@ factory-result с runtime-state является структурным mapping-
 | Constructed/open generic и runtime destination type | 17 |
 | Multi-source mapping | 17 |
 | Полностью специальный synchronous algorithm | 2, 4, 7, 18 |
-| Result-dependent rule, hooks и async boundary | 18 |
+| Result-dependent rule, hooks и async boundary | 18: result-aware `Members` в v0; hooks после v0; async вне core v0 |
 | Публичный нейминг, включая рабочее `TreatAsMissing` | 19 |
 | Ошибочная конфигурация и проигнорированный result | 20 |
 
@@ -1022,12 +1047,14 @@ factory-result с runtime-state является структурным mapping-
 зависит от догадок implementation, а следующий roadmap можно выполнять без
 повторного проектирования фундамента.
 
-## 7. Следующий этап
+## 7. Пауза перед следующим этапом
 
-**Этап 18 — hooks, result-dependent logic и граница manual mapping.** Этап 17
-сохранил exact constructed generic pairs и generic mapper contracts, но
-ограничил runtime registry явно подключёнными closed descriptors. Bare root
-type parameter, open-generic/runtime-type lookup и tuple/multi-source остались
-после v0. Следующий вопрос — нужен ли декларативному pipeline узкий доступ к
-фактически выбранному result и какие imperative сценарии должны оставаться
-только в `MapManually`.
+**Этап 18 завершён.** Для result-dependent structural rules зафиксирована
+всегда генерируемая result-aware `Members`-перегрузка с non-null result
+без presence-wrapper. В локальной pair можно вызвать только один
+`Members`; унаследованный и локальный plans должны иметь одну форму.
+Hooks и middleware гарантированы после v0, но их точная форма пока не
+выбрана.
+
+Следующим по roadmap является этап 19 — naming-аудит публичного API, но по
+явному указанию работа над ним ещё не начата.
