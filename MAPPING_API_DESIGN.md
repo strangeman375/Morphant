@@ -1690,6 +1690,45 @@ contract, expression-compatible subset и внутренняя representation б
 client-side fallback и не накладывает ради будущей projection дополнительные
 ограничения на production implementation v0.
 
+### 12.8. Generic, runtime-type и multi-source boundary
+
+Constructed generic root со статически известной nominal-формой является
+обычной canonical pair. Например, `Page<Order> -> PageDto<Order>` разрешается
+тем же exact lookup, что и любая non-generic pair. Generic mapper также может
+сгенерировать contract для `Page<T> -> PageDto<T>`, поскольку type parameter
+находится внутри известного root, а не непосредственно в root-позиции.
+
+Это не создаёт open-generic registration. Application registry v0 содержит
+только явно подключённые closed descriptors. Поэтому явно зарегистрированный
+`PageMapper<Order>` предоставляет closed pair, но registry не выводит `T` из
+запрошенных типов, не закрывает `PageMapper<T>` автоматически и не
+сопоставляет generic definitions. Все closed pairs следуют обычному правилу
+`0 / 1 / 2+`.
+
+Generic arguments могут содержать type parameters, nullable-типы и даже
+категории, запрещённые непосредственно как root. Например,
+`Envelope<Task<T>>` допустим: Morphant рассматривает вложенный `Task<T>` как
+единое значение и не применяет к нему async semantics. Каждый полный
+constructed root должен оставаться выразимым из lexical context generated
+surface; reflection-обхода для недоступных типов нет.
+
+Reference nullability не входит в runtime identity и внутри generic
+arguments: `Page<string>` и `Page<string?>` являются одной canonical pair.
+`Page<int>` и `Page<int?>` различаются, потому что `Nullable<int>` является
+отдельным CLR-типом.
+
+Type parameter непосредственно в root-позиции, open-generic registration и
+mapping по runtime source/destination `Type` отсутствуют в v0. Их можно
+добавить после v0 отдельными registry capabilities без изменения базового
+generic `IMapper` contract, но текущий lookup не делает runtime inference или
+fallback к generic definition.
+
+Tuple/multi-source support также остаётся после v0. Будущая tuple является
+обычным `TSource`, поэтому специальные overloads `IMapper` на два или три
+source не нужны. Canonical identity учитывает типы и порядок tuple-elements,
+но не их имена. Пользовательский state является обычным элементом source и
+передаётся в nested tuple mappings явно, без ambient propagation.
+
 ## 13. Основные сценарии
 
 ### 13.1. Полностью convention mapping
@@ -2111,6 +2150,22 @@ diagnostic не должно вводить скрытый fallback на дру�
 67. General-purpose и generic fragments, а также cross-assembly
     `IncludeBase()` отсутствуют в v0. Внешние mappings регистрируются
     независимо и не импортируют configuration друг друга.
+68. Constructed generic root с известной nominal-формой является обычной exact
+    pair; mapper type parameters допустимы внутри его generic arguments.
+69. Generic mapper contract не является open-generic registration. Registry
+    v0 содержит только явно подключённые closed descriptors и не выводит
+    arguments, не закрывает mapper type и не сопоставляет generic definitions.
+70. Reference nullable annotations не входят в canonical identity, включая
+    annotations внутри generic arguments. `Nullable<T>` value type остаётся
+    настоящей частью constructed type и меняет identity.
+71. Generic arguments могут содержать type parameters и отложенные root-
+    категории как обычные единые значения, если полный root выразим из
+    lexical context generated surface; reflection-обхода недоступности нет.
+72. Bare root type parameter, open-generic registration и mapping по runtime
+    `Type` отсутствуют в v0 и не получают fallback через application registry.
+73. После v0 tuple/multi-source mapping использует обычный tuple `TSource` без
+    специальных overload-ов `IMapper`; identity учитывает типы и порядок
+    элементов, но не имена, а пользовательский state передаётся детям явно.
 
 ## 16. Детали, которые ещё нужно закрепить перед реализацией
 
@@ -2136,8 +2191,12 @@ extension path. Этап 14 также отложен: `MappingScope` сохра
 plan model текущей реализации. Этап 16 ограничил v0-composition явной
 mapper-иерархией: root settings подключаются через `base.Configure(builder)`,
 а map-level plan — отдельным `IncludeBase()`; fragments и cross-assembly plan
-inheritance остаются post-v0. До миграции production API отдельного решения
-либо реализационного планирования требуют:
+inheritance остаются post-v0. Этап 17 сохранил exact constructed generic pairs
+и generic mapper contracts, но application registry содержит только явно
+подключённые closed descriptors; bare root type parameters, open-generic и
+runtime-type lookup, tuple/multi-source и неявный state propagation остаются
+post-v0. До миграции production API отдельного решения либо реализационного
+планирования требуют:
 
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
   creation/member-plan types и возможную result-wrapper;

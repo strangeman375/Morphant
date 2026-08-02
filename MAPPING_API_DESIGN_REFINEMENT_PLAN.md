@@ -88,7 +88,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 14 | Cycles и shared references | После v0 | Отложен |
 | 15 | `IQueryable` projection | После v0 | Отложен |
 | 16 | Переиспользование и композиция конфигурации | До general-purpose release | Согласован |
-| 17 | Generic, runtime-type и multi-source mapping | До фиксации support boundary | Не начат |
+| 17 | Generic, runtime-type и multi-source mapping | До фиксации support boundary | Согласован |
 | 18 | Hooks, result-dependent logic и граница manual mapping | До фиксации support boundary | Не начат |
 | 19 | Нейминг публичного API | До заморозки public contract | Не начат |
 | 20 | Diagnostics и observable failures | После определения возможностей API | Не начат |
@@ -820,50 +820,40 @@ composition из registry.
 
 ### Этап 17. Generic, runtime-type и multi-source mapping
 
-Tuple/multi-source и per-call-data части этого этапа отложены до после v0
-вместе со специальной tuple support. В v0 сохраняются constructed generic roots
-со статически известной nominal-формой и type parameters внутри их arguments.
-Type parameter непосредственно в root-позиции запрещён этапом 7 и может быть
-пересмотрен здесь после v0 только как отдельная capability.
+**Согласованная v0-граница:** новый публичный API не добавляется. Generic
+mapper не является open-generic registration:
 
-**Проблема.** Новый дизайн должен сохранить согласованные для v0 constructed
-generic scenarios, но не переносить автоматически прежнюю поддержку bare root
-type parameter и не смешивать её с более сложными open-generic/runtime
-dispatch. Multi-source mapping сейчас требует wrapper, потому что tuple pair
-запрещена общей policy.
+- constructed generic root со статически известной nominal-формой является
+  обычной exact pair, например `Page<Order> -> PageDto<Order>`;
+- `Page<T> -> PageDto<T>` внутри `PageMapper<T>` получает generated contract,
+  но application registry видит только явно подключённые closed
+  instantiations, например `PageMapper<Order>`;
+- registry не выводит generic arguments из запрошенной pair, не закрывает
+  `PageMapper<T>` автоматически и не сопоставляет generic definitions;
+- type parameter непосредственно в root-позиции, open-generic registration и
+  mapping по runtime `Type` отсутствуют в v0;
+- generic arguments разрешённого root могут содержать type parameters,
+  nullable-типы и отложенные root-категории. Поэтому `Envelope<Task<T>>`
+  допустим, хотя `Task<T>` непосредственно как root запрещён;
+- nullable reference annotation не создаёт отдельную canonical pair, включая
+  annotations внутри generic arguments: `Page<string>` и `Page<string?>`
+  совпадают. `Page<int>` и `Page<int?>` различаются, поскольку
+  `Nullable<int>` является настоящим CLR-типом;
+- generic argument не обязан быть public сам по себе, если полный constructed
+  root можно корректно провести через generated lexical surface. Reflection
+  для обхода недоступности не используется;
+- closed descriptors разрешаются прежним application-wide правилом
+  `0 / 1 / 2+`; неизвестная pair не запускает runtime generic inference.
 
-**Нужно согласовать:**
+Tuple/multi-source и per-call data остаются после v0. Будущая tuple является
+обычным `TSource`: типы и порядок элементов входят в canonical identity, а их
+имена — нет. Пользовательский state является обычным tuple-element и явно
+передаётся в nested tuple mappings; ambient propagation и специальные
+перегрузки `IMapper` на два или три source не вводятся.
 
-- constructed generic types и nullable generic arguments;
-- generic mapper type parameters внутри известных nominal roots;
-- нужна ли после v0 поддержка type parameter непосредственно как root и какие
-  constraints могли бы сделать её предсказуемой;
-- reusable open-generic registration;
-- resolution closed pair из generic definition;
-- runtime source/destination `Type` только среди generated known pairs;
-- reflection-free registry и поведение неизвестной pair;
-- root tuple как direct/manual multi-source input;
-- generated declarative surface для tuple-source и разрешение конфликтов
-  одинаковых convention-members из разных tuple-elements;
-- использование обычного tuple-element как strongly typed пользовательского
-  state без отдельного arguments API;
-- явную передачу state в nested tuple mappings без ambient propagation;
-- canonical identity по типам и порядку tuple-elements без учёта их имён;
-- нужны ли какие-либо специальные overloads до трёх source сверх обычной
-  tuple pair;
-- ambiguity с будущими keyed variants и polymorphic dispatch;
-- generated surface для inaccessible generic arguments.
-
-**Предварительное направление:** сначала гарантированно сохранить constructed
-generics и вложенные mapper type parameters при известной верхнеуровневой
-nominal-форме. Bare root type parameter, open-generic и runtime-type dispatcher
-рассматривать после v0 как отдельные opt-in capabilities. Tuple является
-обычным `TSource` и должна покрыть multi-source mapping и явно передаваемый
-пользовательский state без новых overload-ов `IMapper`; отдельно остаётся
-согласовать её declarative/convention surface.
-
-**Результат этапа:** support matrix для generic и runtime-resolved pairs и
-точная tuple/multi-source boundary, включая явный пользовательский state.
+**Результат этапа:** v0 поддерживает только exact constructed generic pairs и
+явно подключённые closed mapper instantiations; open-generic, runtime-type и
+tuple/multi-source capabilities отложены. Следующий активный этап — 18.
 
 ### Этап 18. Hooks, result-dependent logic и граница manual mapping
 
@@ -1034,11 +1024,10 @@ factory-result с runtime-state является структурным mapping-
 
 ## 7. Следующий этап
 
-**Этап 17 — generic, runtime-type и multi-source mapping.** Этап 16 ограничил
-v0-композицию явно подключённой C#-иерархией mapper-ов: `base.Configure`
-наследует root settings, `IncludeBase()` отдельно импортирует ближайший
-map-level plan, а arbitrary builder helpers и general-purpose fragments не
-анализируются. Следующий активный вопрос — окончательная support boundary для
-constructed generic roots и необходимость любых возможностей сверх уже
-отложенных tuple/multi-source, bare root type parameter, open-generic и
-runtime-type mapping.
+**Этап 18 — hooks, result-dependent logic и граница manual mapping.** Этап 17
+сохранил exact constructed generic pairs и generic mapper contracts, но
+ограничил runtime registry явно подключёнными closed descriptors. Bare root
+type parameter, open-generic/runtime-type lookup и tuple/multi-source остались
+после v0. Следующий вопрос — нужен ли декларативному pipeline узкий доступ к
+фактически выбранному result и какие imperative сценарии должны оставаться
+только в `MapManually`.
