@@ -81,6 +81,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 7 | Допустимость mapping-пар и capability model | До реализации нового API | Согласован |
 | 8 | Scope mapping-а и несколько вариантов одной пары | До заморозки runtime architecture | Согласован |
 | 9 | Коллекции | После v0 | Отложен |
+| 9A | `IncludeMembers` и convention flattening | После v0 | Отложен |
 | 10 | Patch/merge и conditional no-op | После v0 | Отложен |
 | 11 | Immutable `MapExisting` | До general-purpose release | Согласован |
 | 12 | Per-call data и пользовательский context | После v0, вместе с tuple/multi-source | Отложен |
@@ -90,6 +91,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 16 | Переиспользование и композиция конфигурации | До general-purpose release | Согласован |
 | 17 | Generic, runtime-type и multi-source mapping | До фиксации support boundary | Согласован |
 | 18 | Hooks, result-dependent logic и граница manual mapping | До фиксации support boundary | Согласован |
+| 18A | Аудит переноса прежнего `Template()`-дизайна | До naming-аудита | Согласован |
 | 19 | Нейминг публичного API | До заморозки public contract | Не начат |
 | 20 | Diagnostics и observable failures | После определения возможностей API | Не начат |
 | 21 | Финальный сценарный аудит и новый implementation roadmap | После этапов 1–20 | Не начат |
@@ -309,6 +311,16 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
   выбранный execution path требует его значение, оно вычисляется ровно один
   раз; невыбранные ветки, неприменимые rules и значения, нужные только другой
   mapping operation, не вычисляются;
+- structured `Create` и `Members` образуют общий path-sensitive dependency
+  graph. Одинаковое semantically bound subexpression, требуемое обеими
+  plan-частями на одном выбранном пути, автоматически вычисляется в одном
+  local и переиспользуется. Это observable семантика, устраняющая runtime-
+  разрыв с общим local старого `Template()`, а не факультативная оптимизация;
+- equality для sharing учитывает bound operations, symbols, receiver,
+  arguments, constants и target-resolved nested mapping. Contextual
+  `ConstructorMember<T>` / `Member<T>` conversions применяются отдельно к
+  разделяемому исходному значению. Direct `Create`, factory body и
+  `MapManually` остаются ordinary C# blocks вне cross-plan extraction;
 - explicit constructor arguments вычисляются слева направо в порядке записи,
   затем вызывается constructor. В `ByConvention` явно записанные arguments
   идут первыми в пользовательском порядке, оставшиеся automatic arguments — в
@@ -348,15 +360,18 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
   `builder` и local functions из внешнего `Configure` не захватываются;
   переиспользуемая логика выносится в обычный member mapper-а. Local functions,
   объявленные внутри переносимого direct/factory/manual block, сохраняются;
-- generated `DestinationMembers` использует обычные `set`-properties как
-  совместимую точку будущего расширения, но текущая declarative grammar не
-  поддерживает mutation уже созданного plan-а;
+- generated `DestinationMembers` является record с обычными `set`-properties.
+  Object initializer и `with` поддерживают declarative member-plan overlay:
+  более поздний rule заменяет ранний без вычисления заменённого expression,
+  после чего строится dependency graph. Creation-plan `with` не получает, а
+  mutation уже созданного plan-а не поддерживается;
 - динамический whole-plan no-op и отдельный `Skip()` сейчас не вводятся.
   Статический no-op выражается `MemberMatching.Explicit`, специальный
   динамический алгоритм — `MapManually`; first-class решение повторно
   рассматривается вместе с patch/merge на этапе 10.
 
-**Результат этапа:** нормативная dependency-based evaluation model и граница
+**Результат этапа:** нормативная dependency-based evaluation model, общий
+structured `Create` / `Members` graph, member-plan `with` и граница
 declarative/ordinary C# control flow перенесены в `MAPPING_API_DESIGN.md`;
 конкретный snapshot/assignment lowering оставлен деталью реализации.
 
@@ -531,6 +546,38 @@ key-based reconciliation не должен иметь скрытого default �
 
 **Результат этапа:** collection capability matrix, null/existing policies и
 минимальный конкурентоспособный scope.
+
+### Этап 9A. `IncludeMembers` и convention flattening
+
+**Статус:** обязательно поддержать после v0. Возможность была отложена в
+прежнем дизайне и возвращена в roadmap аудитом 18A; в v0 generated surface для
+неё отсутствует.
+
+**Проблема.** Explicit `DestinationMember = source.Nested.Value` удобно для
+одного rule, но не подключает nested object к convention matching. Tuple-root
+и nested `Map(...)` решают соответственно source shape и mapping одного
+значения, а не массовое flattening candidates.
+
+**Нужно согласовать:**
+
+- точную pair-builder форму `IncludeMembers` и поддержку одного/нескольких
+  included source expressions;
+- precedence root source, нескольких includes, explicit rules и `Auto()`;
+- ambiguity, name matching и conversion diagnostics;
+- null semantics included source и path-sensitive evaluation;
+- взаимодействие с `IncludeBase()`, generic mapper-ами, projection и
+  collection members;
+- whether reverse unflattening is a separate explicit capability rather than
+  an automatic inverse.
+
+**Рабочая граница:** текущий v0 использует явные member expressions. Candidate
+model должна оставлять возможность добавить included sources до convention
+resolution, не меняя `IMapper`, `ITypeMapper`, `Create`, `Members` или
+`MapManually` contracts.
+
+**Результат этапа:** first-class convention flattening с явными precedence,
+null и ambiguity laws; feature не должна сводиться к синтаксическому helper-у
+над набором ручных assignments.
 
 ### Этап 10. Patch/merge и conditional no-op
 
@@ -931,6 +978,62 @@ lifecycle остаётся в `MapManually`, а общие hooks/middleware га
 после v0, но их точная форма ещё не выбрана. Этап закрыт; переход к naming-
 этапу отложен по явному указанию.
 
+### Межэтапный аудит 18A. Перенос прежнего `Template()`-дизайна
+
+**Проблема.** Разделение прежнего единого template-record на `Create`,
+`Members` и `MapManually` могло случайно потерять не только API-формы, но и
+выразительность, IntelliSense contracts либо уже проверенные generator laws.
+Перед naming-этапом последний старый design, implementation roadmap и тесты
+были сопоставлены с целевой спецификацией по сценариям.
+
+**Согласовано:**
+
+- прежний общий lexical local между constructor- и member-частью не является
+  runtime-регрессом: одинаковые bound expressions structured `Create` и
+  `Members` обязаны делить одну computation node. Пользователь иногда повторяет
+  запись expression, но оно выполняется один раз на выбранном path;
+- широкий template `with`, объединявший creation и members, не возвращается:
+  независимые `Create` и `Members` лучше выражают его основные сценарии.
+  Самостоятельно полезный member-plan overlay сохраняется, поэтому generated
+  `DestinationMembers` — record с declarative `with`;
+- `IncludeMembers` обязательно поддерживается после v0 как first-class
+  convention flattening. Explicit member expression, tuple/multi-source и
+  nested `Map(...)` не считаются его заменой;
+- удачные старые contracts являются carry-forward requirements нового
+  surface:
+
+  | Область | Обязательный перенос |
+  |---|---|
+  | Typed DSL | `Auto<T>()`, `Ignore<T>()`, `Map<TDestination>(...)`, explicit `ConstructorMember<T>` cast |
+  | Nullability | Nullable value/reference inputs, `AllowNull`/`DisallowNull`, oblivious context, outer wrapper только для допустимого explicit `null`, `null!` omission sentinel без ослабления annotation |
+  | Constructors | Compiler probe для positional/named/mixed/optional/`params`, declaration order и точный `Unambiguous` без fallback |
+  | Generated UX | `inheritdoc` и fallback docs, `ObsoleteAttribute`, stable overload/member order, C# 9 и deterministic generated files/hint names |
+  | Generics | Один plan на original destination definition с containing parameters и constraints; diagnostic потенциально унифицирующихся pair shapes |
+  | Settings | Root не зависит от позиции; на одном level побеждает последний вызов, включая `Default`; assembly defaults только через compiler-visible MSBuild properties |
+  | Conventions | Полная accessibility/hiding/inheritance matrix, exact body-member name, exact-then-unique-`OrdinalIgnoreCase` constructor parameter matching, warning-free implicit conversions и user-defined operators |
+  | Type policy | Прежний opaque/direct scalar whitelist; exact distinction между runtime duplicate descriptors и compile-time generic interface conflict |
+
+- old `Raw Template` заменён явным `MapManually`, а direct/factory `Create`
+  сохраняет normalized declarative pipeline там, где нужен готовый instance с
+  последующими member rules;
+- сознательные ограничения нового v0 — bare root type parameters и специальные
+  root categories, collections/tuples, patch, projection, polymorphism,
+  reference tracking и cross-assembly plan composition — не считаются
+  забытыми features. Snapshot/order side effects также намеренно не
+  возвращаются в contract.
+
+**Сравнительная оценка:** прежний `Template` компактнее для смешанного
+constructor/member call site и остаётся полезным источником идей. Новый design
+удачнее как публичная архитектура: responsibilities разделены, previous/result
+и manual boundary явны, factory/cached result покрыт декларативно, а будущие
+collections, hooks, projection и polymorphism могут добавляться ортогонально.
+После перечисленных переносов у старого design нет существенного
+функционального преимущества, поэтому возвращаться к unified `Template` не
+следует.
+
+**Результат аудита:** полный нормативный итог перенесён в разделы 6, 7, 11,
+12 и 16 `MAPPING_API_DESIGN.md`. Этап 19 по-прежнему не начат.
+
 ## 6. Завершающие этапы
 
 ### Этап 19. Нейминг публичного API
@@ -1012,8 +1115,11 @@ lifecycle остаётся в `MapManually`, а общие hooks/middleware га
 | Nullable root и все null-handling branches | 3, 7 |
 | Nested new/existing/nullable child | 4–6 |
 | Side effects, swap и source/destination aliasing | 6 |
-| Rename, calculated member и source flattening | 6 |
+| Повтор expression между `Create`/`Members` и member-plan `with` | 6, 18A |
+| Rename, calculated member и explicit source flattening | 6 |
+| Convention flattening через `IncludeMembers` | После v0; 9A, 18A |
 | Boxing/conversion и settings precedence | 7, 16 |
+| Nullability/docs/order/generic generated surface | 18A carry-forward |
 | Root tuple/array/sequence/collection/buffer pair | Unsupported в v0; 9 и 17 после v0 |
 | Root delegate pair | Unsupported в v0; отдельный этап после v0 при реальной потребности |
 | Root expression-tree pair | Unsupported в v0; связь с projection рассматривается на этапе 15 после v0 |
@@ -1043,7 +1149,8 @@ lifecycle остаётся в `MapManually`, а общие hooks/middleware га
    согласованность примеров.
 3. Явно разделить минимальный release scope, следующие возможности и non-goals.
 4. Обновить `IMPLEMENTATION_PLAN.md`: миграция с `Template()`, порядок TDD-
-   срезов, settings, diagnostics, actualization и incrementality.
+   срезов, carry-forward tests старого surface, settings, diagnostics,
+   actualization и incrementality.
 5. Запланировать удаление `TemplateMode`, старых template surfaces и
    устаревшей документации только в соответствующем implementation slice.
 6. Для каждой отложенной возможности проверить, что текущий public/runtime
@@ -1056,13 +1163,20 @@ lifecycle остаётся в `MapManually`, а общие hooks/middleware га
 
 ## 7. Пауза перед следующим этапом
 
-**Этап 18 завершён.** Для result-dependent structural rules зафиксирована
+**Этапы 18 и 18A завершены.** Для result-dependent structural rules зафиксирована
 всегда генерируемая result-aware `Members`-перегрузка с non-null result
 без presence-wrapper. В локальной pair можно вызвать только один
 `Members`; `IncludeBase()` объединяет plans независимо от формы перегрузки.
 Фаза каждого rule определяется только его фактической зависимостью от
 `result`, а snapshot и порядок независимых rules остаются деталями lowering.
 Hooks и middleware гарантированы после v0, но их точная форма пока не выбрана.
+
+Аудит прежнего `Template()`-дизайна закрепил общий dependency graph structured
+`Create` / `Members`, member-plan `with`, обязательный post-v0
+`IncludeMembers` и carry-forward contracts typed markers, nullability,
+constructor binding, generated UX, generics, settings, conventions и type
+policy. Новый design признан более удачной основой; unified `Template` не
+возвращается.
 
 Следующим по roadmap является этап 19 — naming-аудит публичного API, но по
 явному указанию работа над ним ещё не начата.
