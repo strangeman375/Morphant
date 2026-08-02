@@ -36,8 +36,9 @@ Manual остаётся обязательным escape hatch для специ�
   `MapExisting`;
 - возвращаемое значение обеих операций всегда авторитетно, включая structs,
   records и replacement destination;
-- `Members` имеет одну общую перегрузку для обеих операций, а не отдельные
-  правила для `MapNew` и `MapExisting`;
+- правила `Members` являются общими для обеих операций, а не разделяются на
+  независимые `MapNew`- и `MapExisting`-конфигурации; точный набор общих
+  перегрузок можно расширить только после этапа 18;
 - `MapManually` также имеет одну общую перегрузку и остаётся альтернативой
   declarative pipeline, а не его дополнительной стадией.
 
@@ -85,8 +86,9 @@ Manual остаётся обязательным escape hatch для специ�
 | 16 | Переиспользование и композиция конфигурации | До general-purpose release | Не начат |
 | 17 | Generic, runtime-type и multi-source mapping | До фиксации support boundary | Не начат |
 | 18 | Hooks, result-dependent logic и граница manual mapping | До фиксации support boundary | Не начат |
-| 19 | Diagnostics и observable failures | После определения возможностей API | Не начат |
-| 20 | Финальный сценарный аудит и новый implementation roadmap | После этапов 1–19 | Не начат |
+| 19 | Нейминг публичного API | До заморозки public contract | Не начат |
+| 20 | Diagnostics и observable failures | После определения возможностей API | Не начат |
+| 21 | Финальный сценарный аудит и новый implementation roadmap | После этапов 1–20 | Не начат |
 
 ## 4. Фундаментальные этапы
 
@@ -358,9 +360,9 @@ declarative/ordinary C# control flow перенесены в `MAPPING_API_DESIGN
 
 **Проблема.** Pair eligibility смешивалась с наличием template/declarative
 surface, из-за чего capability конкретного destination могла молча запрещать
-всю registration. Одновременно root tuples и collections требуют отдельной
-продуктовой семантики, которой не должно быть в v0 даже под видом raw escape
-hatch.
+всю registration. Одновременно root tuples, collections и delegates требуют
+отдельной продуктовой семантики, которой не должно быть в v0 даже под видом
+raw escape hatch.
 
 **Согласовано:**
 
@@ -371,17 +373,19 @@ hatch.
   roots полностью исключены из v0 в обеих mapping-позициях, включая direct и
   manual mapping. Collection означает array либо любой `IEnumerable`, кроме
   `string`, включая dictionaries и custom collection types;
-- запрет относится только к root mapping-позиции. Tuple/collection member,
-  constructor parameter или generic argument внешнего non-collection root
-  остаётся обычным единым C#-значением; element mapping не выполняется;
+- delegate roots также полностью исключены из v0 в обеих mapping-позициях,
+  включая direct и manual mapping. Для них нужна отдельная семантика либо
+  явное решение о долгосрочной неподдерживаемости после v0;
+- запрет относится только к root mapping-позиции. Tuple, collection или
+  delegate member, constructor parameter либо generic argument внешнего
+  разрешённого root остаётся обычным единым C#-значением; element mapping или
+  специальная delegate-семантика не применяются;
 - технически исключены `void`, pointers/function pointers, ref-like, error,
   anonymous/unnameable и недоступные generated lexical context типы;
 - допустимы scalars, enums, nullable forms, custom class/struct/record,
-  abstract/interface, delegates, constructed generics и mapper type
-  parameters. Delegate destination использует direct/manual surface, delegate
-  source не меняет capabilities другого destination, `dynamic` канонически
-  совпадает с `object`, а root nullable reference annotation не создаёт
-  отдельную runtime pair;
+  abstract/interface, constructed generics и mapper type parameters.
+  `dynamic` канонически совпадает с `object`, а root nullable reference
+  annotation не создаёт отдельную runtime pair;
 - любая eligible pair получает обе runtime operations и `MapManually`.
   Destination независимо получает ровно одну форму `Create`: structured при
   наличии поддерживаемого constructor surface, direct при его отсутствии или
@@ -395,8 +399,10 @@ hatch.
   manual lambda остаются обычным пользовательским C#;
 - общий precedence остаётся
   `map -> mapper root -> assembly -> library default`, `Default` наследует.
-  `TemplateMode` удалён. `TreatAsMissing` окончательно заменяет имя
-  `NullDestinationHandling.CreateNew`;
+  `TemplateMode` удалён. Семантика текущего
+  `NullDestinationHandling.CreateNew` уточнена как обработка explicit `null`
+  в качестве отсутствующего previous; `TreatAsMissing` остаётся только
+  рабочим именем до отдельного naming-этапа и не считается принятым;
 - неприменимая inherited setting является допустимым no-op, поскольку внешний
   уровень обслуживает много пар. Неприменимая explicit map-level setting —
   configuration error: у manual pair разрешён только `MappingMode`, а direct
@@ -407,7 +413,8 @@ hatch.
 
 **Результат этапа:** eligibility rules, capability/settings matrix и generated
 pair surface перенесены в `MAPPING_API_DESIGN.md`. Фундаментальные этапы 1–7
-образуют согласованную основу; tuple/collection support вынесен за v0.
+образуют согласованную основу; tuple/collection/delegate root support вынесен
+за v0.
 
 После этапа 7 нужно сделать отдельную checkpoint-проверку согласованности
 фундамента и только затем обновить порядок миграции production-кода.
@@ -692,13 +699,24 @@ generics и mapper type parameters. Open-generic и runtime-type dispatcher
 
 ### Этап 18. Hooks, result-dependent logic и граница manual mapping
 
-**Проблема.** `Members` видит source и previous, но не result. Не определено,
-нужны ли first-class before/after hooks, result-dependent rules и другие
-imperative extension points либо это сознательная область manual mapping.
+**Проблема.** `Members` видит source и previous, но не result. В частности,
+factory или direct `Create` может вернуть cached, derived либо иным образом
+runtime-настроенный destination, а значения последующих members должны
+зависеть от фактического состояния именно этого instance. Не определено,
+нужен ли для такого структурного сценария узкий result-aware API, нужны ли
+first-class before/after hooks и другие imperative extension points либо это
+сознательная область manual mapping.
 
 **Нужно согласовать:**
 
-- member expression, зависящий от только что созданного result;
+- member expression, зависящий от runtime-state только что созданного factory
+  или direct result;
+- возможную общую перегрузку `Members(source, previous, result)`, где previous
+  и result представлены presence-aware nullable-обёртками; точная shape,
+  нейминг, применимость к `MapNew`/`MapExisting` и поведение при `null` result
+  пока не выбраны;
+- порядок чтений result относительно shallow snapshot и generated member
+  assignments, включая намеренную зависимость от setter side effects;
 - `BeforeMap`/`AfterMap` и side effects;
 - post-processing с authoritative replacement result;
 - валидация после mapping;
@@ -712,16 +730,46 @@ imperative extension points либо это сознательная облас�
 
 **Предварительное направление:** оставить I/O, async enrichment, business
 validation, private-state bypass и fully dynamic mapping вне core. До
-добавления generic hooks проверить, можно ли редкий result-dependent сценарий
-понятно выразить explicit factory/helper или `MapManually` без дублирования
-обычного structural mapping.
+добавления generic hooks отдельно проверить узкий result-aware `Members`:
+factory-result с runtime-state является структурным mapping-сценарием и не
+должен автоматически проваливаться в `MapManually`. Конкретная перегрузка при
+этом остаётся лишь кандидатом до разбора observable semantics и примеров.
 
 **Результат этапа:** явный список first-class scenarios, manual scenarios и
 осознанных non-goals.
 
 ## 6. Завершающие этапы
 
-### Этап 19. Diagnostics и observable failures
+### Этап 19. Нейминг публичного API
+
+**Проблема.** Имена появлялись по мере согласования отдельных семантических
+узлов и не проходили общий аудит на call sites. В частности,
+`TreatAsMissing` описывает уже согласованное поведение
+`NullDestinationHandling`, но пока не принято как окончательное имя.
+
+**Нужно согласовать:**
+
+- окончательное имя ветки `NullDestinationHandling`, которая считает explicit
+  `null` отсутствующим previous, без ложного обещания создать новый instance;
+- имена generated creation/member-plan типов и их согласованность с
+  `Create` / `Members`;
+- терминологию для presence wrappers, включая `Previous<T>` и возможный
+  result-wrapper этапа 18;
+- согласованность пар `MapNew` / `MapExisting`, declarative / direct / manual и
+  публичных settings;
+- короткие примеры IntelliSense/call-site для каждого спорного имени и
+  отсутствие конфликтов между `Default`, рабочими названиями и значениями по
+  умолчанию.
+
+**Предварительное направление:** проводить naming-аудит после определения
+семантики продуктовых этапов, но до diagnostics и migration roadmap. Ни одно
+рабочее имя не становится принятым только потому, что оно используется в
+текущем design-документе.
+
+**Результат этапа:** финальная таблица public names, обновлённая цельная
+спецификация и явный список намеренно оставленных внутренних рабочих терминов.
+
+### Этап 20. Diagnostics и observable failures
 
 **Проблема.** Новый API вводит несколько capability boundaries. Без единого
 правила ошибка может проявляться как пропущенная generation, неожиданный
@@ -754,7 +802,7 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 
 **Результат этапа:** таблица condition -> diagnostic/runtime behavior.
 
-### Этап 20. Финальный сценарный аудит и новый implementation roadmap
+### Этап 21. Финальный сценарный аудит и новый implementation roadmap
 
 После решений нужно повторно пройти не по API-методам, а по пользовательским
 историям и убедиться, что ни одна массовая задача не провалилась в manual по
@@ -775,6 +823,7 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 | Rename, calculated member и source flattening | 6 |
 | Boxing/conversion и settings precedence | 7, 16 |
 | Root tuple/array/collection pair | Unsupported в v0; 9 и 17 после v0 |
+| Root delegate pair | Unsupported в v0; отдельный этап после v0 при реальной потребности |
 | Public/admin или shallow/deep вариант одной pair | 8 |
 | Collection root/member/getter-only/existing | 9 |
 | Nullable patch и absent patch field | 10 |
@@ -788,7 +837,8 @@ validation, private-state bypass и fully dynamic mapping вне core. До
 | Multi-source mapping | 17 |
 | Полностью специальный synchronous algorithm | 2, 4, 7, 18 |
 | Result-dependent rule, hooks и async boundary | 18 |
-| Ошибочная конфигурация и проигнорированный result | 19 |
+| Публичный нейминг, включая рабочее `TreatAsMissing` | 19 |
+| Ошибочная конфигурация и проигнорированный result | 20 |
 
 **Финальные действия:**
 

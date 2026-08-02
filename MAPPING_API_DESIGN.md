@@ -1095,9 +1095,10 @@ mutable reference cache без неявной синхронизации.
 | `Throw` | Бросить исключение до `Create` и `Members` |
 | `TreatAsMissing` | Считать explicit `null` отсутствующим previous и перейти в no-previous ветку |
 
-`TreatAsMissing` — более точное целевое имя для текущего `CreateNew`: configured
-`Create` может использовать factory или cache и не обязан возвращать новый
-instance.
+`TreatAsMissing` здесь и далее — только рабочее имя, а не принятое название.
+Семантика текущего `CreateNew` уже уточнена: configured `Create` может
+использовать factory или cache и не обязан возвращать новый instance. Выбор
+окончательного имени вынесен в отдельный naming-этап.
 
 После `TreatAsMissing` следующие вызовы намеренно неразличимы внутри
 declarative DSL:
@@ -1267,19 +1268,23 @@ mapping-пары:
 
 - tuple roots: tuple syntax, `System.ValueTuple` и `System.Tuple`;
 - collection roots: arrays и любой тип, реализующий
-  `System.Collections.IEnumerable`, кроме `string`.
+  `System.Collections.IEnumerable`, кроме `string`;
+- delegate roots: любой delegate type.
 
 Collection-категория включает generic/non-generic sequence interfaces,
-dictionaries и пользовательские collection-типы. Запрет симметричен для
-source и destination и действует также для direct `Create` и `MapManually`:
-для такой пары v0 вообще не генерирует mapping contract. Забытая registration
-не превращается в runtime lookup или скрытый manual fallback.
+dictionaries и пользовательские collection-типы. Для delegates сначала нужна
+отдельная семантика либо явное решение об их долгосрочной неподдерживаемости.
+Запреты симметричны для source и destination и действуют также для direct
+`Create` и `MapManually`: для такой пары v0 вообще не генерирует mapping
+contract. Забытая registration не превращается в runtime lookup или скрытый
+manual fallback.
 
-Это ограничение относится только к корню пары. Tuple или collection может
-оставаться типом обычного member-а, constructor parameter либо generic argument
-внешнего non-collection root-типа. В v0 такое значение рассматривается целиком:
-оно доступно через warning-free implicit C#-преобразование либо явное
-пользовательское expression, но Morphant не выполняет element mapping.
+Эти ограничения относятся только к корню пары. Tuple, collection или delegate
+может оставаться типом обычного member-а, constructor parameter либо generic
+argument внешнего разрешённого root-типа. В v0 такое значение рассматривается
+целиком: оно доступно через warning-free implicit C#-преобразование либо явное
+пользовательское expression, но Morphant не выполняет element mapping или
+специальную delegate-обработку.
 
 Технически исключаются `void`, pointers, function pointers, ref-like types,
 error types, anonymous/unnameable types и типы, недоступные из generated
@@ -1288,13 +1293,11 @@ lexical context. Это не продуктовые запреты, а форм�
 
 Остальные статически выразимые roots допустимы: built-in и BCL scalars, enums,
 classes, structs, records, nullable value/reference forms, abstract classes,
-interfaces, delegates, constructed generics и mapper type parameters с их
-constraints. Delegate destination не получает structural constructor surface
-и использует direct `Create` либо `MapManually`; delegate source сам по себе не
-меняет capabilities другого destination. `dynamic` имеет каноническую identity
-`object` и не образует отдельную пару. Алиасы также не меняют identity; root
-nullable reference annotation не создаёт вторую runtime pair, тогда как
-`Nullable<T>` остаётся самостоятельным constructed value type.
+interfaces, constructed generics и mapper type parameters с их constraints.
+`dynamic` имеет каноническую identity `object` и не образует отдельную пару.
+Алиасы также не меняют identity; root nullable reference annotation не создаёт
+вторую runtime pair, тогда как `Nullable<T>` остаётся самостоятельным
+constructed value type.
 
 ### 11.2. Capability model
 
@@ -1357,9 +1360,9 @@ builder.Map<Source, IDestination>()
 который вернул уже созданный instance.
 
 Отдельного служебного creation type для scalar, opaque value object,
-factory-only class, interface, abstract или delegate destination не создаётся.
-Их direct surface сохраняет standard null handling и declarative member stage,
-поэтому `MapManually` нужен только для действительно ручного алгоритма.
+factory-only class, interface или abstract destination не создаётся. Их direct
+surface сохраняет standard null handling и declarative member stage, поэтому
+`MapManually` нужен только для действительно ручного алгоритма.
 
 ### 11.3. Settings matrix
 
@@ -1382,9 +1385,9 @@ capabilities пары:
 Library defaults сохраняются: `MapNewAndExisting`, `ReturnNull`,
 `TreatAsMissing`, `MemberMatching.Auto`, `ConstructorSelection.Unambiguous`,
 разрешённый automatic boxing, `UnmappedMemberValidation.None` и
-`NullabilityMismatchValidation.Error`. `TreatAsMissing` окончательно заменяет
-имя `NullDestinationHandling.CreateNew`: policy сообщает отсутствие previous,
-но не обещает создание новой identity.
+`NullabilityMismatchValidation.Error`. Здесь `TreatAsMissing` обозначает
+согласованную default-семантику, но остаётся рабочим именем до naming-аудита:
+policy сообщает отсутствие previous, но не обещает создание новой identity.
 
 Inherited setting, неприменимая к конкретной pair, просто не имеет эффекта: её
 уровень может обслуживать другие mappings. Явная map-level setting, которую
@@ -1682,17 +1685,17 @@ diagnostic не должно вводить скрытый fallback на дру�
     `MapManually` являются обычными синхронными C# blocks. Ни одна форма не
     захватывает обычные Configure-locals, `builder` или внешние Configure-local
     functions.
-42. Eligible pair определяется отдельно от её capabilities. До post-v0
-    специальной поддержки tuple и collection roots, включая arrays,
-    dictionaries и custom `IEnumerable`, полностью исключаются в обеих
-    mapping-позициях даже для direct/manual mapping.
+42. Eligible pair определяется отдельно от её capabilities. До post-v0 tuple,
+    collection и delegate roots, включая arrays, dictionaries и custom
+    `IEnumerable`, полностью исключаются в обеих mapping-позициях даже для
+    direct/manual mapping.
 43. Для любой другой статически выразимой eligible pair доступны runtime
     contract и `MapManually`; destination независимо получает ровно одну форму
     `Create` и, при наличии поддерживаемых body-members, `Members`.
-44. Delegate roots допустимы: delegate destination использует direct/manual
-    capabilities, а delegate source не меняет surface другого destination.
-    `dynamic` канонически совпадает с `object`; root nullable reference
-    annotation не создаёт отдельную runtime pair.
+44. Delegate value внутри разрешённого root остаётся обычным C#-значением, но
+    delegate root требует отдельной post-v0 поддержки. `dynamic` канонически
+    совпадает с `object`; root nullable reference annotation не создаёт
+    отдельную runtime pair.
 45. Manual mapping применяет только `MappingMode`. Остальные settings не
     запускают скрытый declarative pipeline; неприменимая explicit map-level
     setting является ошибкой, а inherited setting может быть безвредным no-op.
@@ -1700,11 +1703,14 @@ diagnostic не должно вводить скрытый fallback на дру�
 ## 15. Детали, которые ещё нужно закрепить перед реализацией
 
 Фундаментальные этапы 1–7 согласованы. Pair eligibility и capability/settings
-matrix зафиксированы; tuple/collection roots сознательно отложены за границу
-v0. До миграции production API отдельного решения либо реализационного
-планирования требуют:
+matrix зафиксированы; tuple/collection/delegate roots сознательно отложены за
+границу v0. До миграции production API отдельного решения либо
+реализационного планирования требуют:
 
-- окончательное имя generated creation- и member-plan типов;
+- naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
+  creation/member-plan types и возможную result-wrapper;
+- нужен ли узкий result-aware `Members` для factory/direct destination,
+  member rules которого зависят от runtime-state созданного instance;
 - порядок миграции текущего `Template()` implementation и тестов;
 - обновление `IMPLEMENTATION_PLAN.md`, XML-документации и user-facing docs;
 - diagnostic IDs, сообщения и точная фаза их добавления.
