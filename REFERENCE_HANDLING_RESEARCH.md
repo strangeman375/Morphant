@@ -27,7 +27,7 @@ Reference preservation не является обычной member convention. �
 жизнь вместе с root `Map` и завершается после него.
 
 Поэтому feature можно добавить после v0 без изменения `IMapper`,
-`ITypeMapper`, `MappingContext`, `Create` или `Members`.
+`ITypeMapper`, `MappingContext`, `Construct` или `Members`.
 
 ## 2. Рабочая настройка
 
@@ -91,13 +91,13 @@ descriptor-у стабильную identity, это нужно решить вн
 ```text
 cache lookup
 -> mark entry as building
--> Create/select result
+-> Construct/select result
 -> register result
 -> Members
 -> mark entry as complete
 ```
 
-Состояние `building` создаётся до `Create`, чтобы recursion можно было
+Состояние `building` создаётся до `Construct`, чтобы recursion можно было
 обнаружить даже тогда, когда result ещё не существует. Если recursive lookup
 находит такую entry без зарегистрированного result, Morphant должен завершить
 вызов понятной runtime error, а не продолжать recursion до stack overflow.
@@ -121,11 +121,11 @@ scope всё равно завершается вместе с root call; час
 | Цикл проходит через writable property или field | Поддерживается: result уже зарегистрирован до `Members` |
 | Цикл нужен constructor argument-у | Не поддерживается: result ещё не существует |
 | Цикл нужен `init`/required initializer member-у | Не поддерживается по той же причине |
-| Factory/direct `Create` | Result можно зарегистрировать только после возврата пользовательского кода |
+| Factory/direct `Construct` | Result можно зарегистрировать только после возврата пользовательского кода |
 | Factory сама рекурсивно вызывает mapping до возврата | Обнаруживается building-entry без result и завершается ошибкой |
 | Source или destination является value type | Built-in entry не создаётся |
 | Пользовательский creation-код вернул `null` | `null` немедленно возвращается и не кэшируется |
-| `MapManually` | Built-in lifecycle не применяется автоматически |
+| `Convert` | Built-in lifecycle не применяется автоматически |
 
 Главная граница здесь принципиальна: cache не может сделать разрешимым цикл,
 в котором объект обязан получить ссылку на самого себя до завершения
@@ -144,7 +144,7 @@ descriptor. Morphant возвращает уже зарегистрирован�
 повторно:
 
 - null handling pair-а;
-- `Create`;
+- `Construct`;
 - factory/direct creation code;
 - `Members`;
 - nested mappings из этих rules.
@@ -158,15 +158,15 @@ destination, выполнять side effects или выбирать друго�
 instance внутри цикла. Такое же свойство имеет обычная ручная сборка mutable
 cyclic graph: обратная ссылка появляется до завершения остальных assignments.
 
-## 7. `MapExisting` и conflicting previous
+## 7. `Update` и conflicting previous
 
-Первый вызов `MapExisting` связывает source/descriptor entry с конкретным
+Первый вызов `Update` связывает source/descriptor entry с конкретным
 выбранным result. Это может быть переданный previous либо replacement из
-`Create`.
+`Construct`.
 
 При повторном вызове с тем же source и descriptor:
 
-- `Previous.None` не меняет уже выбранный result;
+- `Option.None` не меняет уже выбранный result;
 - тот же previous instance допустим;
 - уже выбранный replacement-result также допустим как previous;
 - другой non-null previous является reference conflict.
@@ -182,7 +182,7 @@ constructor-cycle.
 
 ## 8. Factory, direct creation и manual mapping
 
-Structured constructor, factory и direct `Create` различаются способом
+Structured constructor, factory и direct `Construct` различаются способом
 получения result, но имеют одну cache boundary: регистрация возможна только
 после фактического возврата reference-type instance.
 
@@ -191,7 +191,7 @@ Structured constructor, factory и direct `Create` различаются спо
 возвращают один singleton, это не cache collision: entries различаются по
 source identity, хотя их values совпадают.
 
-`MapManually` остаётся авторитетным полным алгоритмом и обходит declarative
+`Convert` остаётся авторитетным полным алгоритмом и обходит declarative
 lifecycle. Автоматически оборачивать его cache lookup/register нельзя:
 
 - manual code может намеренно возвращать разные результаты;
@@ -257,7 +257,7 @@ cycle.
 [Mapperly — Reference handling](https://mapperly.riok.app/docs/configuration/reference-handling/).
 
 Сравнение не утверждает, что Morphant должен копировать их public API. Для
-Morphant важны собственные уже принятые `Create`/`Members`, descriptor registry
+Morphant важны собственные уже принятые `Construct`/`Members`, descriptor registry
 и explicit manual boundary.
 
 ## 11. Принятая v0-граница
@@ -269,7 +269,7 @@ Morphant важны собственные уже принятые `Create`/`Mem
 - cyclic graph не получает built-in completion guarantee;
 - `MappingScope` остаётся внутренней совместимой точкой расширения;
 - public mapper contracts ради будущего cache не меняются;
-- `MapManually` позволяет пользователю реализовать специальный graph algorithm
+- `Convert` позволяет пользователю реализовать специальный graph algorithm
   самостоятельно.
 
 После v0 отдельно согласуются:

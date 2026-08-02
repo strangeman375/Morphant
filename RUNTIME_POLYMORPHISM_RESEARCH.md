@@ -36,7 +36,7 @@ AnimalDto result = mapper.Map<Animal, AnimalDto>(source);
 - связь dispatch с наследованием mapping-конфигурации;
 - выбор наиболее конкретного derived source type;
 - неоднозначность между interface-ветками;
-- `MapExisting`, когда runtime-типы source и previous не образуют одну derived
+- `Update`, когда runtime-типы source и previous не образуют одну derived
   pair;
 - polymorphic collection elements;
 - generated closed-world dispatcher без runtime reflection;
@@ -57,7 +57,7 @@ Runtime dispatch отвечает на другой вопрос: какую map
 - удаление `IncludeBase()` ради другой precedence внезапно отключает dispatch;
 - base pair становится зависимой от registrations, которые сама явно не
   перечисляет;
-- `MapExisting` получает неявный выбор другой destination pair и потенциальную
+- `Update` получает неявный выбор другой destination pair и потенциальную
   смену identity;
 - projection вынуждена повторять runtime-dispatch semantics в expression tree.
 
@@ -66,7 +66,7 @@ Runtime dispatch отвечает на другой вопрос: какую map
 - `IncludeBase()` наследует конфигурацию и не включает runtime dispatch;
 - runtime-тип аргумента не меняет canonical pair, выбранную generic-вызовом;
 - base и derived registrations остаются независимыми;
-- нужный special-case выражается обычным `MapManually` и явным `switch`.
+- нужный special-case выражается обычным `Convert` и явным `switch`.
 
 ## 3. Что уже возможно без специального API
 
@@ -74,7 +74,7 @@ Runtime dispatch отвечает на другой вопрос: какую map
 
 ```csharp
 builder.Map<Animal, AnimalDto>()
-    .MapManually((source, previous, context) => source switch
+    .Convert((source, previous, context) => source switch
     {
         Dog dog => context.Mapper.Map<Dog, DogDto>(
             dog,
@@ -236,28 +236,28 @@ IncludeDerived<IPet, PetDto>();
 Generated dispatcher должен это обнаружить через обычные type checks и
 сообщить ambiguity, а не зависеть от порядка arms в C# `switch`.
 
-## 7. `MapExisting`
+## 7. `Update`
 
 Здесь одного runtime source type недостаточно: выбранная derived operation
 должна получить destination совместимого типа.
 
 Рабочая матрица:
 
-| Runtime source | Previous | Действие |
+| Runtime source | Переданный destination | Действие |
 |---|---|---|
-| Derived link не найден | Любой | Base `MapExisting` |
-| Derived link найден | `null` | Derived `MapExisting` с `null`; её own `NullDestinationHandling` определяет дальнейшее поведение |
-| Derived link найден | Совместим с derived destination | Derived `MapExisting` с тем же instance |
-| Derived link найден | Несовместим с derived destination | Base `MapExisting` с исходным previous |
+| Derived link не найден | Любой | Base `Update` |
+| Derived link найден | `null` | Derived `Update` с `null`; её own `NullDestinationHandling` определяет дальнейшее поведение |
+| Derived link найден | Совместим с derived destination | Derived `Update` с тем же instance |
+| Derived link найден | Несовместим с derived destination | Base `Update` с исходным previous |
 
 Последняя строка принципиальна. Morphant не должен молча вызывать derived
-`MapNew`, выбрасывать переданный previous и менять identity только потому, что
+`Create`, выбрасывать переданный previous и менять identity только потому, что
 runtime source оказался производным. Если пользователю нужен replacement, он
 задаётся обычным authoritative result base mapping-а либо явным manual
 dispatcher-ом.
 
 Если compatible derived mapping сама возвращает replacement, этот result
-остаётся авторитетным по общему закону `MapExisting`. Если её operation
+остаётся авторитетным по общему закону `Update`. Если её operation
 отключена effective `MappingMode`, действует обычная ошибка disabled
 operation; polymorphic dispatch не вводит скрытый fallback.
 
@@ -284,7 +284,7 @@ Runtime polymorphism не входит в v0 по следующим причи�
 - базовые interfaces уже совместимы с будущим dispatcher-ом;
 - application-wide descriptor registry оставляет естественное место для
   generated dispatch table;
-- единичный сценарий покрывается `MapManually`;
+- единичный сценарий покрывается `Convert`;
 - основной массовый сценарий зависит от отложенной collection support;
 - projection требует отдельной capability model;
 - точные observable lookup errors всё равно согласуются на этапе 20.
@@ -306,7 +306,7 @@ breaking change для будущего расширения.
 - projection capability;
 - polymorphic collection element lifecycle;
 - точные exception types и сообщения;
-- нужен ли пользовательский dispatcher hook сверх `MapManually`.
+- нужен ли пользовательский dispatcher hook сверх `Convert`.
 
 До этих решений v0 всегда выполняет exact requested pair и не выводит dispatch
 из type hierarchy, `IncludeBase()` или набора registrations.

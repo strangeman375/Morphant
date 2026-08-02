@@ -14,7 +14,7 @@
 
 Нужно не только сделать API внутренне непротиворечивым, но и проверить, что
 Morphant удобно покрывает реальные пользовательские сценарии. Формальное
-наличие `MapManually` не считается достаточным покрытием, если ручной mapping
+наличие `Convert` не считается достаточным покрытием, если ручной mapping
 требуется для распространённой структурной задачи: коллекции, value objects,
 patch/update, второго варианта одной пары или polymorphic dispatch.
 
@@ -32,14 +32,14 @@ Manual остаётся обязательным escape hatch для специ�
 
 При доработке сохраняются уже удачные инварианты нового дизайна:
 
-- две публичные операции mapping-а остаются единственными: `MapNew` и
-  `MapExisting`;
+- две публичные операции mapping-а остаются единственными: `Create` и
+  `Update`;
 - возвращаемое значение обеих операций всегда авторитетно, включая structs,
   records и replacement destination;
 - правила `Members` являются общими для обеих операций, а не разделяются на
-  независимые `MapNew`- и `MapExisting`-конфигурации; точный набор общих
+  независимые `Create`- и `Update`-конфигурации; точный набор общих
   перегрузок можно расширить только после этапа 18;
-- `MapManually` также имеет одну общую перегрузку и остаётся альтернативой
+- `Convert` также имеет одну общую перегрузку и остаётся альтернативой
   declarative pipeline, а не его дополнительной стадией.
 
 ## 2. Порядок работы
@@ -73,8 +73,8 @@ Manual остаётся обязательным escape hatch для специ�
 | Этап | Узел дизайна | Горизонт | Статус |
 |---:|---|---|---|
 | 1 | Creation model и выбор previous | До реализации нового API | Согласован |
-| 2 | Direct `Create` и capability-based surface | До реализации нового API | Согласован |
-| 3 | Nullability, `Previous<T>` и null-result | До реализации нового API | Согласован |
+| 2 | Direct `Construct` и capability-based surface | До реализации нового API | Согласован |
+| 3 | Nullability, `Option<T>` и null-result | До реализации нового API | Согласован |
 | 4 | `MappingContext` и call frames | До реализации нового API | Согласован |
 | 5 | Полная семантика nested `Map` | До реализации нового API | Согласован |
 | 6 | Порядок вычислений и declarative control flow | До реализации нового API | Согласован |
@@ -83,7 +83,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 9 | Коллекции | После v0 | Отложен |
 | 9A | `IncludeMembers` и convention flattening | После v0 | Отложен |
 | 10 | Patch/merge и conditional no-op | После v0 | Отложен |
-| 11 | Immutable `MapExisting` | До general-purpose release | Согласован |
+| 11 | Immutable `Update` | До general-purpose release | Согласован |
 | 12 | Per-call data и пользовательский context | После v0, вместе с tuple/multi-source | Отложен |
 | 13 | Runtime polymorphism и inheritance | После v0 | Отложен |
 | 14 | Cycles и shared references | После v0 | Отложен |
@@ -92,7 +92,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 17 | Generic, runtime-type и multi-source mapping | До фиксации support boundary | Согласован |
 | 18 | Hooks, result-dependent logic и граница manual mapping | До фиксации support boundary | Согласован |
 | 18A | Аудит переноса прежнего `Template()`-дизайна | До naming-аудита | Согласован |
-| 19 | Нейминг публичного API | До заморозки public contract | Не начат |
+| 19 | Нейминг публичного API | До заморозки public contract | Согласован |
 | 20 | Diagnostics и observable failures | После определения возможностей API | Не начат |
 | 21 | Финальный сценарный аудит и новый implementation roadmap | После этапов 1–20 | Не начат |
 
@@ -101,20 +101,20 @@ Manual остаётся обязательным escape hatch для специ�
 ### Этап 1. Creation model и выбор previous
 
 **Проблема.** Generated implicit conversion
-`TDestination -> DestinationCreation` незаконен для interface destination и
+`TDestination -> DestinationConstruction` незаконен для interface destination и
 одновременно слишком широк для остальных типов. Он не отличает previous от
 произвольного уже созданного или cached instance, из-за чего невозможно точно
 определить применимость `init` и `required` rules.
 
 **Согласовано:**
 
-- structured `DestinationCreation` имеет закрытый набор веток: explicit
+- structured `DestinationConstruction` имеет закрытый набор веток: explicit
   constructor, convention, factory и previous;
 - generated implicit conversion существует от
-  `Previous<TDestination>` к `DestinationCreation`, но не от произвольного
+  `Option<TDestination>` к `DestinationConstruction`, но не от произвольного
   `TDestination`;
-- для выбора existing result в structured `Create` пользователь возвращает сам
-  `previous`; direct `Create` возвращает настоящий destination и потому
+- для выбора existing result в structured `Construct` пользователь возвращает сам
+  `previous`; direct `Construct` возвращает настоящий destination и потому
   использует `previous.Value`; `AsResult()` и `UsePrevious()` не вводятся;
 - готовый или cached instance выражается явной factory-веткой
   `new(ByFactory(() => instance))`; непосредственный возврат `ByFactory(...)`
@@ -123,26 +123,26 @@ Manual остаётся обязательным escape hatch для специ�
   rules, а factory/previous уже существует и получает только применимые
   setter-rules; factory сама отвечает за `init`/creation-time `required`;
 - никакого скрытого fallback между creation-ветками нет;
-- точный nullable-контракт `Previous<T>` и поведение `null` factory-result
+- точный nullable-контракт `Option<T>` и поведение `null` factory-result
   зафиксированы на этапе 3.
 
 **Результат этапа:** generated shape, creation-ветки и нормативные примеры
 перенесены в `MAPPING_API_DESIGN.md`.
 
-### Этап 2. Direct `Create` и capability-based surface
+### Этап 2. Direct `Construct` и capability-based surface
 
 **Проблема.** Scalar, opaque value object, factory-only type, interface без
 writable members и многие third-party immutable types сейчас вынуждены
-использовать `MapManually`. При этом они теряют стандартное null handling,
+использовать `Convert`. При этом они теряют стандартное null handling,
 хотя их алгоритм не является по смыслу manual.
 
 **Согласовано:**
 
-- каждая поддерживаемая mapping-пара получает ровно одну форму `Create`;
+- каждая поддерживаемая mapping-пара получает ровно одну форму `Construct`;
 - если после общей destination-type policy существует хотя бы один
-  поддерживаемый constructor surface, генерируется structured `Create`,
-  возвращающий `DestinationCreation`;
-- если поддерживаемого constructor surface нет, генерируется direct `Create`,
+  поддерживаемый constructor surface, генерируется structured `Construct`,
+  возвращающий `DestinationConstruction`;
+- если поддерживаемого constructor surface нет, генерируется direct `Construct`,
   возвращающий настоящий `TDestination`; наличие body-members на этот выбор не
   влияет;
 - built-in, enum и отдельно определённые scalar-категории используют direct
@@ -150,28 +150,29 @@ writable members и многие third-party immutable types сейчас вын
 - обе формы имеют source-only и previous-aware перегрузки с одинаковой
   семантикой arity: source-only lambda не вызывается при существующем previous,
   previous-aware lambda сама выбирает result в обеих публичных операциях;
-- structured previous-aware `Create` возвращает сам `previous` через generated
-  conversion, а direct `Create` после проверки `HasValue` возвращает
-  `previous.Value`; вводить ради косметической симметрии `DirectCreation<T>`,
+- structured previous-aware `Construct` возвращает сам `previous` через generated
+  conversion, а direct `Construct` после проверки `HasValue` возвращает
+  `previous.Value`; вводить ради косметической симметрии
+  `DirectConstruction<T>`,
   implicit unwrap или marker-метод не нужно;
 - direct result семантически соответствует уже созданному result из
   `new(ByFactory(...))`: после него выполняются применимые `Members` и member
   conventions, а `init`/creation-time `required` должен заполнить direct код;
 - у direct surface нет default creation для no-previous ветки: если такая ветка
-  достижима, direct `Create` обязан быть настроен;
+  достижима, direct `Construct` обязан быть настроен;
 - отдельного mode нет, structured и direct surface одновременно не
-  генерируются, `MapManually` остаётся raw alternative для обеих категорий.
+  генерируются, `Convert` остаётся raw alternative для обеих категорий.
 
-**Результат этапа:** формы и перегрузки `Create`, capability-таблица, точный
+**Результат этапа:** формы и перегрузки `Construct`, capability-таблица, точный
 declarative алгоритм и примеры для scalar, opaque value object, factory-only
 destination и interface перенесены в `MAPPING_API_DESIGN.md`.
 
-### Этап 3. Nullability, `Previous<T>` и null-result
+### Этап 3. Nullability, `Option<T>` и null-result
 
 **Проблема.** Сейчас не закреплены точные nullable contracts и поведение, если
-constructor/factory/direct `Create` фактически возвращает `null`.
-`Previous<Customer?>` также вводит в заблуждение: `Some(null)` запрещён, но
-`Value` выглядит nullable.
+constructor/factory/direct `Construct` фактически возвращает `null`.
+После выбора общего имени `Option<T>` нужно также отделить универсальную
+presence-семантику типа от более строгой роли mapping previous.
 
 **Согласовано:**
 
@@ -183,31 +184,34 @@ constructor/factory/direct `Create` фактически возвращает `n
 - runtime policy может фактически вернуть `null` при non-nullable
   `TDestination`; это неизбежный компромисс для настроек, которые нельзя
   выразить условной generic-аннотацией;
-- `Previous<T>` имеет `where T : notnull` и всегда использует destination без
-  корневой nullability: `Customer? -> Previous<Customer>`,
-  `MyStruct? -> Previous<MyStruct>`; nested generic nullability сохраняется;
-- `Value` имеет non-null `T`, а `TryGetValue` использует
-  `[MaybeNullWhen(false)] out T`: успешное извлечение всегда non-null,
-  `Some(null)` не существует;
-- declarative `Create` и `Members` получают source после
-  `NullSourceHandling` как non-null underlying type; `MapManually` получает
+- общий `Option<T>` не ограничен `where T : notnull`: `default` означает
+  `None`, который отличается от `Some(default)` и, для nullable `T`, от
+  `Some(null)`;
+- в роли previous всегда используется destination без корневой nullability:
+  `Customer? -> Option<Customer>`, `MyStruct? -> Option<MyStruct>`; nested
+  generic nullability сохраняется, поэтому именно mapping previous никогда не
+  содержит `Some(null)`;
+- `Value` сохраняет контракт самого `T`, а `TryGetValue` использует
+  `[MaybeNullWhen(false)] out T`;
+- declarative `Construct` и `Members` получают source после
+  `NullSourceHandling` как non-null underlying type; `Convert` получает
   исходное nullable runtime-значение;
-- direct `Create` и structured `ByFactory` могут вернуть `null` независимо от
+- direct `Construct` и structured `ByFactory` могут вернуть `null` независимо от
   destination annotation; такой result авторитетен, немедленно возвращается и
   short-circuit-ит `Members` и conventions;
 - Morphant не генерирует для этого exception, fallback или повторное
-  применение `NullDestinationHandling`; previous-aware `Create`, вернувший
+  применение `NullDestinationHandling`; previous-aware `Construct`, вернувший
   `null`, намеренно заменяет previous;
 - C# nullability warning остаётся основной статической защитой для
   non-nullable destination, но пользователь может сознательно подавить его
   либо получить `null` из oblivious API;
-- `MapManually` возвращает пользовательский result без generated guard и без
+- `Convert` возвращает пользовательский result без generated guard и без
   вмешательства pipeline;
-- `null` вместо generated `DestinationCreation` или `DestinationMembers`
+- `null` вместо generated `DestinationConstruction` или `DestinationMembers`
   является ошибкой DSL-plan, а не допустимым destination-result.
 
 **Результат этапа:** nullable-контракты public/manual/declarative surface,
-root-normalization `Previous<T>` и полная семантика `null` creation-result
+root-normalization `Option<T>` и полная семантика `null` creation-result
 перенесены в `MAPPING_API_DESIGN.md`.
 
 ### Этап 4. `MappingContext` и call frames
@@ -231,8 +235,8 @@ nested calls. В будущем скрытый scope должен нести о�
 - каждый outer или nested call получает новый `MappingContext`, а все frame
   одной chain разделяют scope; `Operation` определяется выбранной перегрузкой
   `IMapper` и никогда не мутируется либо восстанавливается;
-- one-argument scoped `Map` создаёт `MapNew` frame, two-argument —
-  `MapExisting` frame даже для explicit `null` destination;
+- one-argument scoped `Map` создаёт `Create` frame, two-argument —
+  `Update` frame даже для explicit `null` destination;
 - nested exception не повреждает outer frame; recursion и последовательная
   reentrancy безопасны относительно operation state, и пойманный exception не
   мешает продолжить outer manual mapping;
@@ -242,9 +246,9 @@ nested calls. В будущем скрытый scope должен нести о�
 - независимые root scopes допускают параллельное выполнение, но параллельные
   nested-вызовы внутри одного scope не поддерживаются и не получают
   thread-safety guarantee;
-- пользователь получает `MappingContext` пока только в `MapManually`;
+- пользователь получает `MappingContext` пока только в `Convert`;
   declarative pipeline использует frame внутренне, но не добавляет context в
-  `Create` или `Members`.
+  `Construct` или `Members`.
 
 **Результат этапа:** runtime-модель frame/scope, scoped `IMapper`, lifetime и
 thread-safety contract, а также псевдокод root/nested dispatch перенесены в
@@ -271,8 +275,8 @@ thread-safety contract, а также псевдокод root/nested dispatch п
   создают nested mapping-пару;
 - explicit `Map(...)` требует mapping даже при наличии прямого implicit
   conversion;
-- one-argument формы всегда вызывают nested `MapNew`, two-argument формы —
-  nested `MapExisting`, включая explicit `null`; outer operation на этот выбор
+- one-argument формы всегда вызывают nested `Create`, two-argument формы —
+  nested `Update`, включая explicit `null`; outer operation на этот выбор
   не влияет;
 - source-тип пары определяется по статическому типу первого аргумента; destination
   выводится из целевого member/constructor parameter либо задаётся generic-
@@ -311,16 +315,16 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
   выбранный execution path требует его значение, оно вычисляется ровно один
   раз; невыбранные ветки, неприменимые rules и значения, нужные только другой
   mapping operation, не вычисляются;
-- structured `Create` и `Members` образуют общий path-sensitive dependency
+- structured `Construct` и `Members` образуют общий path-sensitive dependency
   graph. Одинаковое semantically bound subexpression, требуемое обеими
   plan-частями на одном выбранном пути, автоматически вычисляется в одном
   local и переиспользуется. Это observable семантика, устраняющая runtime-
   разрыв с общим local старого `Template()`, а не факультативная оптимизация;
 - equality для sharing учитывает bound operations, symbols, receiver,
   arguments, constants и target-resolved nested mapping. Contextual
-  `ConstructorMember<T>` / `Member<T>` conversions применяются отдельно к
-  разделяемому исходному значению. Direct `Create`, factory body и
-  `MapManually` остаются ordinary C# blocks вне cross-plan extraction;
+  `ConstructorParameter<T>` / `Member<T>` conversions применяются отдельно к
+  разделяемому исходному значению. Direct `Construct`, factory body и
+  `Convert` остаются ordinary C# blocks вне cross-plan extraction;
 - explicit constructor arguments вычисляются слева направо в порядке записи,
   затем вызывается constructor. В `ByConvention` явно записанные arguments
   идут первыми в пользовательском порядке, оставшиеся automatic arguments — в
@@ -337,12 +341,12 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
   assignments или другой эквивалентный lowering. Относительный порядок
   независимых member expressions и generated assignments, а также видимость
   setter, nested mapping и других side effects между ними не являются
-  контрактом. Зависимость от такого порядка требует `MapManually`;
+  контрактом. Зависимость от такого порядка требует `Convert`;
 - declarative local задаёт явную data dependency: его initializer вычисляется
   не более одного раза до использующих его выражений. Внутри каждого
   отдельного выражения и explicit constructor invocation сохраняется обычная
   C#-семантика;
-- declarative structured `Create` и `Members` сохраняют конечный анализируемый
+- declarative structured `Construct` и `Members` сохраняют конечный анализируемый
   control flow прежнего DSL: expression-lambda, locals с initializer-ом,
   `const`, вложенные blocks, `if`/`else`, несколько `return`, `throw`,
   statement `switch`, conditional- и switch-expressions. `Auto()`, `Ignore()`
@@ -352,7 +356,7 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
 - во внешнем declarative block не поддерживаются изменяемые или
   неинициализированные locals, assignments, standalone side-effect statements,
   loops, `try`, Configure/local functions и остальные императивные формы.
-  Direct `Create`, тело `ByFactory` и `MapManually` переносятся как обычный
+  Direct `Construct`, тело `ByFactory` и `Convert` переносятся как обычный
   синхронный C# block и могут использовать соответствующий обычный control
   flow;
 - переносимые expressions могут обращаться к instance/static members mapper-а,
@@ -366,12 +370,12 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
   после чего строится dependency graph. Creation-plan `with` не получает, а
   mutation уже созданного plan-а не поддерживается;
 - динамический whole-plan no-op и отдельный `Skip()` сейчас не вводятся.
-  Статический no-op выражается `MemberMatching.Explicit`, специальный
-  динамический алгоритм — `MapManually`; first-class решение повторно
+  Статический no-op выражается `MemberSelection.Explicit`, специальный
+  динамический алгоритм — `Convert`; first-class решение повторно
   рассматривается вместе с patch/merge на этапе 10.
 
 **Результат этапа:** нормативная dependency-based evaluation model, общий
-structured `Create` / `Members` graph, member-plan `with` и граница
+structured `Construct` / `Members` graph, member-plan `with` и граница
 declarative/ordinary C# control flow перенесены в `MAPPING_API_DESIGN.md`;
 конкретный snapshot/assignment lowering оставлен деталью реализации.
 
@@ -425,8 +429,8 @@ surface, из-за чего capability конкретного destination мог
   nominal-формой; их arguments могут содержать type parameters. `dynamic`
   канонически совпадает с `object`, а root nullable reference annotation не
   создаёт отдельную runtime pair;
-- любая eligible pair получает обе runtime operations и `MapManually`.
-  Destination независимо получает ровно одну форму `Create`: structured при
+- любая eligible pair получает обе runtime operations и `Convert`.
+  Destination независимо получает ровно одну форму `Construct`: structured при
   наличии поддерживаемого constructor surface, direct при его отсутствии или
   для opaque category. `Members` генерируется независимо при наличии
   поддерживаемых body-members;
@@ -438,10 +442,9 @@ surface, из-за чего capability конкретного destination мог
   manual lambda остаются обычным пользовательским C#;
 - общий precedence остаётся
   `map -> mapper root -> assembly -> library default`, `Default` наследует.
-  `TemplateMode` удалён. Семантика текущего
-  `NullDestinationHandling.CreateNew` уточнена как обработка explicit `null`
-  в качестве отсутствующего previous; `TreatAsMissing` остаётся только
-  рабочим именем до отдельного naming-этапа и не считается принятым;
+  `TemplateMode` удалён. `NullDestinationHandling.Create` обрабатывает explicit
+  `null` как отсутствующий previous и переводит declarative pipeline в
+  no-previous construction branch, не обещая новую identity;
 - неприменимая inherited setting является допустимым no-op, поскольку внешний
   уровень обслуживает много пар. Неприменимая explicit map-level setting —
   configuration error: у manual pair разрешён только `MappingMode`, а direct
@@ -500,7 +503,7 @@ mapper
 
 `WithServiceKey` пока не является принятым именем. Отдельно нужно решить,
 назначается ли key mapper-у или pair, наследуется ли он nested mapping-ом,
-есть ли fallback к default-варианту, как выглядит `MapExisting` fluent form и
+есть ли fallback к default-варианту, как выглядит `Update` fluent form и
 как диагностируются повторы одной pair с одним key. Если используется
 собственный registry Morphant, честнее может оказаться `WithMappingKey`.
 
@@ -529,7 +532,7 @@ members и getter-only mutable collections в entity mappings.
 - использование зарегистрированной element pair;
 - null source collection policy и nullable elements;
 - writable collection replacement;
-- `MapExisting`: preserve, replace, clear-and-fill либо настраиваемая policy;
+- `Update`: preserve, replace, clear-and-fill либо настраиваемая policy;
 - заполнение getter-only mutable collection;
 - dictionaries и mapping key/value;
 - fixed-size/read-only destinations;
@@ -538,7 +541,7 @@ members и getter-only mutable collections в entity mappings.
 - polymorphic elements и reference handling;
 - какие части входят в минимальный выпуск, а какие сознательно откладываются.
 
-**Предварительное направление:** сначала поддержать `MapNew` основных sequence
+**Предварительное направление:** сначала поддержать `Create` основных sequence
 targets, element mapping, replacement writable members и явно выбранную
 existing policy. Getter-only fill нужен в базовом наборе; универсальный
 key-based reconciliation не должен иметь скрытого default и может быть
@@ -572,8 +575,8 @@ key-based reconciliation не должен иметь скрытого default �
 
 **Рабочая граница:** текущий v0 использует явные member expressions. Candidate
 model должна оставлять возможность добавить included sources до convention
-resolution, не меняя `IMapper`, `ITypeMapper`, `Create`, `Members` или
-`MapManually` contracts.
+resolution, не меняя `IMapper`, `ITypeMapper`, `Construct`, `Members` или
+`Convert` contracts.
 
 **Результат этапа:** first-class convention flattening с явными precedence,
 null и ambiguity laws; feature не должна сводиться к синтаксическому helper-у
@@ -616,20 +619,20 @@ type: explicit absence требует отдельного source contract. Эт
 **Результат этапа:** точная patch matrix для absent/non-null/null values и
 решение по whole-plan no-op.
 
-### Этап 11. Immutable `MapExisting`
+### Этап 11. Immutable `Update`
 
 **Проблема.** Для record или init-only destination существующий result может
 молча вернуться без изменений. Ручная полная reconstruction делает
-`MapExisting` заметно менее полезным и легко теряет сохраняемые поля.
+`Update` заметно менее полезным и легко теряет сохраняемые поля.
 
 **Согласовано:**
 
-- в v0 `MapExisting` не клонирует и не реконструирует destination неявно только
+- в v0 `Update` не клонирует и не реконструирует destination неявно только
   потому, что новое значение нельзя присвоить после создания. Если result —
   previous, его `init`-only, get-only и readonly state сохраняется, а обычные
   setter-rules продолжают применяться;
 - декларативный replacement уже выражается existing previous-aware
-  `Create`. Он может сравнить source с previous, вернуть previous при
+  `Construct`. Он может сравнить source с previous, вернуть previous при
   совместимом immutable state либо выбрать explicit constructor/convention
   result. В последнем случае `Members` применяет к новому result доступные
   creation-time `init`/`required` rules;
@@ -637,17 +640,17 @@ type: explicit absence требует отдельного source contract. Эт
   сохраняемые значения через constructor/member rules. Morphant не угадывает,
   какие destination-only значения нужно копировать;
 - настоящий record-copy с сохранением всех неуказанных значений уже выражается
-  через `MapManually` и обычный C# `with`. Отдельный `ByCopy`, generated
+  через `Convert` и обычный C# `with`. Отдельный `ByCopy`, generated
   `with`-plan или автоматическое клонирование record в v0 не добавляются: они
   не дают новой capability, но вводят неявную смену identity и отдельные
   вопросы copy-constructor/derived-runtime-type semantics;
-- source-only `Create` не выполняется при существующем previous и потому не
-  является replacement-path для immutable `MapExisting`;
-- если включён declarative `MapExisting`, но его existing-ветка статически не
+- source-only `Construct` не выполняется при существующем previous и потому не
+  является replacement-path для immutable `Update`;
+- если включён declarative `Update`, но его existing-ветка статически не
   может ни выбрать replacement, ни выполнить хотя бы один post-construction
   assignment, это configuration diagnostic вместо молчаливого возврата
-  previous. Явный previous-aware `Create`, `MapManually` либо отключённый
-  `MapExisting` делают намерение наблюдаемым и устраняют эту diagnostic;
+  previous. Явный previous-aware `Construct`, `Convert` либо отключённый
+  `Update` делают намерение наблюдаемым и устраняют эту diagnostic;
 - смешанный mutable/immutable destination не считается целиком ошибочным
   только из-за сохранённого immutable member. Неприменимый explicit
   `init`-rule диагностируется отдельно, а полнота convention mapping остаётся
@@ -663,13 +666,13 @@ previous. Если все такие значения равны, identity previ
 Эта policy не объединяется с `NullAssignmentHandling`: одна управляет выбором
 identity/reconstruction, другая — выполнением отдельного assignment. Рабочее
 имя, уровень конфигурации, equality contract, способ reconstruction
-(полный MapNew-plan, копирование previous либо явно предоставленный plan),
+(полный Create-plan, копирование previous либо явно предоставленный plan),
 поведение factory/derived instances и порядок side effects согласуются после
 v0. До этого никакой скрытой `EqualityComparer<T>.Default`-семантики или
 fallback reconstruction в контракте нет.
 
 **Результат этапа:** v0 использует только явный replacement через
-previous-aware `Create` либо manual `with`/reconstruction, диагностирует
+previous-aware `Construct` либо manual `with`/reconstruction, диагностирует
 статически неизбежный полный no-op и сохраняет совместимый путь к отдельной
 post-v0 настройке `recreate when changed`.
 
@@ -729,7 +732,7 @@ tuple/multi-source support; его точная generated surface согласу
   dispatch;
 - base и derived registrations независимы. Само наличие `Dog -> DogDto` не
   меняет поведение `Animal -> AnimalDto`;
-- специальный polymorphic алгоритм уже выражается через `MapManually` с явным
+- специальный polymorphic алгоритм уже выражается через `Convert` с явным
   type-switch и application-wide exact nested mappings;
 - основной массовый сценарий polymorphic collection elements остаётся
   отложенным вместе с общей collection support;
@@ -749,10 +752,10 @@ source link. Несравнимые interface-ветки дают ambiguity не
 pair снова разрешается обычным application-wide exact lookup, а её
 missing/ambiguity не скрывается fallback-ом.
 
-Для `MapExisting` derived branch применяется только при `null` previous либо
+Для `Update` derived branch применяется только при `null` previous либо
 runtime-совместимом derived destination. Несовместимый previous передаётся
-base mapping-у: Morphant не выбрасывает его и не вызывает derived `MapNew`
-неявно. При `null` previous вызывается именно derived `MapExisting` с `null`,
+base mapping-у: Morphant не выбрасывает его и не вызывает derived `Create`
+неявно. При `null` previous вызывается именно derived `Update` с `null`,
 после чего действует её own `NullDestinationHandling`.
 
 Runtime dispatch и projection считаются разными capabilities. Derived links
@@ -787,12 +790,12 @@ instances.
 - tracking является opt-in policy с default `None`;
 - cache key состоит из reference identity source и identity уже разрешённого
   mapping descriptor-а;
-- result регистрируется после `Create`, но до `Members`;
+- result регистрируется после `Construct`, но до `Members`;
 - поэтому setter/field cycles разрешимы, а constructor/initializer cycles до
   появления result принципиально неразрешимы;
 - repeated source возвращает тот же result без повторного выполнения rules;
-- конфликтующие non-null previous в `MapExisting` являются observable error;
-- `MapManually`, custom handler, `MaxDepth` и projection не включаются в
+- конфликтующие non-null previous в `Update` являются observable error;
+- `Convert`, custom handler, `MaxDepth` и projection не включаются в
   built-in policy автоматически.
 
 Полное уже выполненное исследование сохранено в
@@ -844,19 +847,19 @@ Effective settings разрешаются в порядке:
 
 Plan объединяется отдельно от settings:
 
-- локальный `Create` целиком заменяет унаследованный `Create`;
+- локальный `Construct` целиком заменяет унаследованный `Construct`;
 - `Members` объединяются по destination member независимо от формы
   перегрузки, а локальное правило, включая `Ignore()`, перекрывает
   унаследованное. После объединения зависимости каждого effective rule
   анализируются отдельно;
 - conventions применяются после объединения только к ещё не занятым members;
-- локальный `MapManually` заменяет весь унаследованный declarative plan;
-- manual plan нельзя частично объединять с локальными `Create` или `Members`.
+- локальный `Convert` заменяет весь унаследованный declarative plan;
+- manual plan нельзя частично объединять с локальными `Construct` или `Members`.
 
 Generator не следует за произвольными helper calls, изменяющими builder, и не
 выполняет пользовательский configuration code. Обычные instance/static методы
-остаются способом переиспользовать вычисления внутри `Create`, `Members` и
-`MapManually`, где они являются обычным C#.
+остаются способом переиспользовать вычисления внутри `Construct`, `Members` и
+`Convert`, где они являются обычным C#.
 
 General-purpose fragments для unrelated pairs, generic fragments и
 cross-assembly `IncludeBase()` откладываются. Готовые mappings из внешней
@@ -908,10 +911,10 @@ tuple/multi-source capabilities отложены. Следом был прора
 ### Этап 18. Hooks, result-dependent logic и граница manual mapping
 
 **Проблема.** `Members` видит source и previous, но не result. В частности,
-factory, direct `Create` или constructor может вернуть либо создать
+factory, direct `Construct` или constructor может вернуть либо создать
 destination с состоянием, которого нет ни в source, ни в previous.
 Без доступа к фактическому result такой структурный member-rule без
-необходимости уходит в `MapManually`.
+необходимости уходит в `Convert`.
 
 **Согласованное решение:**
 
@@ -920,12 +923,12 @@ destination с состоянием, которого нет ни в source, н�
 
   ```csharp
   Members(
-      Func<TSource, Previous<TDestination>, DestinationMembers> members);
+      Func<TSource, Option<TDestination>, DestinationMembers> members);
 
   Members(
       Func<
           TSource,
-          Previous<TDestination>,
+          Option<TDestination>,
           TDestination,
           DestinationMembers> members);
   ```
@@ -933,7 +936,7 @@ destination с состоянием, которого нет ни в source, н�
 - в локальной pair можно вызвать только один `Members`; любой второй
   вызов даёт configuration diagnostic. `IncludeBase()` объединяет
   унаследованный и локальный plans независимо от формы перегрузки;
-- обе перегрузки генерируются независимо от стратегии `Create`.
+- обе перегрузки генерируются независимо от стратегии `Construct`.
   Форма с параметром `result` одинаково доступна для constructor/convention,
   previous, factory/cache, direct и derived results. Обе формы являются одним
   источником declarative DSL; выбор формы сам по себе не меняет semantics;
@@ -947,13 +950,13 @@ destination с состоянием, которого нет ни в source, н�
 - result-independent `init` и creation-time `required` rules допустимы в обеих
   перегрузках. Diagnostic требуется только если конкретный creation-time rule
   либо условие его применимости зависит от ещё не созданного result;
-- `null` из direct `Create` или `ByFactory()` терминален и завершает mapping до
+- `null` из direct `Construct` или `ByFactory()` терминален и завершает mapping до
   применения любых member rules;
 - snapshot, относительный порядок независимых rules и момент generated
   assignments не являются контрактом. Каждое требуемое expression вычисляется
   не более одного раза с обычной C#-семантикой внутри expression; алгоритм,
   зависящий от setter/nested mapping side effects либо порядка независимых
-  rules, требует `MapManually`.
+  rules, требует `Convert`.
 
 **Граница v0:**
 
@@ -961,9 +964,9 @@ destination с состоянием, которого нет ни в source, н�
   declarative mapping;
 - зависимость от порядка независимых rules, setter/nested mapping side effects,
   mutation между assignments, replacement-result после member-фазы и полный
-  imperative lifecycle требуют `MapManually`;
+  imperative lifecycle требуют `Convert`;
 - синхронные mapper-методы и injected services можно вызывать внутри
-  `Create`, `Members` и `MapManually`;
+  `Construct`, `Members` и `Convert`;
 - `BeforeMap`, `AfterMap`, middleware либо эквивалентные lifecycle hooks
   обязательно будут поддержаны после v0; их точная форма ещё не
   выбрана. Post-processing с replacement-result пока не утверждён;
@@ -974,14 +977,14 @@ destination с состоянием, которого нет ни в source, н�
 **Результат этапа:** result-dependent structural member rules входят в v0
 через перегрузку единого `Members` DSL с параметром `result`; semantics
 определяется фактическими dependencies, а не формой перегрузки. Imperative
-lifecycle остаётся в `MapManually`, а общие hooks/middleware гарантированы
-после v0, но их точная форма ещё не выбрана. Этап закрыт; переход к naming-
-этапу отложен по явному указанию.
+lifecycle остаётся в `Convert`, а общие hooks/middleware гарантированы
+после v0, но их точная форма ещё не выбрана. Этап закрыт; после него выполнены
+межэтапный аудит 18A и naming-этап 19.
 
 ### Межэтапный аудит 18A. Перенос прежнего `Template()`-дизайна
 
-**Проблема.** Разделение прежнего единого template-record на `Create`,
-`Members` и `MapManually` могло случайно потерять не только API-формы, но и
+**Проблема.** Разделение прежнего единого template-record на `Construct`,
+`Members` и `Convert` могло случайно потерять не только API-формы, но и
 выразительность, IntelliSense contracts либо уже проверенные generator laws.
 Перед naming-этапом последний старый design, implementation roadmap и тесты
 были сопоставлены с целевой спецификацией по сценариям.
@@ -989,11 +992,11 @@ lifecycle остаётся в `MapManually`, а общие hooks/middleware га
 **Согласовано:**
 
 - прежний общий lexical local между constructor- и member-частью не является
-  runtime-регрессом: одинаковые bound expressions structured `Create` и
+  runtime-регрессом: одинаковые bound expressions structured `Construct` и
   `Members` обязаны делить одну computation node. Пользователь иногда повторяет
   запись expression, но оно выполняется один раз на выбранном path;
 - широкий template `with`, объединявший creation и members, не возвращается:
-  независимые `Create` и `Members` лучше выражают его основные сценарии.
+  независимые `Construct` и `Members` лучше выражают его основные сценарии.
   Самостоятельно полезный member-plan overlay сохраняется, поэтому generated
   `DestinationMembers` — record с declarative `with`;
 - `IncludeMembers` обязательно поддерживается после v0 как first-class
@@ -1004,7 +1007,7 @@ lifecycle остаётся в `MapManually`, а общие hooks/middleware га
 
   | Область | Обязательный перенос |
   |---|---|
-  | Typed DSL | `Auto<T>()`, `Ignore<T>()`, `Map<TDestination>(...)`, explicit `ConstructorMember<T>` cast |
+  | Typed DSL | `Auto<T>()`, `Ignore<T>()`, `Map<TDestination>(...)`, explicit `ConstructorParameter<T>` cast |
   | Nullability | Nullable value/reference inputs, `AllowNull`/`DisallowNull`, oblivious context, outer wrapper только для допустимого explicit `null`, `null!` omission sentinel без ослабления annotation |
   | Constructors | Compiler probe для positional/named/mixed/optional/`params`, declaration order и точный `Unambiguous` без fallback |
   | Generated UX | `inheritdoc` и fallback docs, `ObsoleteAttribute`, stable overload/member order, C# 9 и deterministic generated files/hint names |
@@ -1013,7 +1016,7 @@ lifecycle остаётся в `MapManually`, а общие hooks/middleware га
   | Conventions | Полная accessibility/hiding/inheritance matrix, exact body-member name, exact-then-unique-`OrdinalIgnoreCase` constructor parameter matching, warning-free implicit conversions и user-defined operators |
   | Type policy | Прежний opaque/direct scalar whitelist; exact distinction между runtime duplicate descriptors и compile-time generic interface conflict |
 
-- old `Raw Template` заменён явным `MapManually`, а direct/factory `Create`
+- old `Raw Template` заменён явным `Convert`, а direct/factory `Construct`
   сохраняет normalized declarative pipeline там, где нужен готовый instance с
   последующими member rules;
 - сознательные ограничения нового v0 — bare root type parameters и специальные
@@ -1032,37 +1035,89 @@ collections, hooks, projection и polymorphism могут добавляться
 следует.
 
 **Результат аудита:** полный нормативный итог перенесён в разделы 6, 7, 11,
-12 и 16 `MAPPING_API_DESIGN.md`. Этап 19 по-прежнему не начат.
+12 и 16 `MAPPING_API_DESIGN.md`. Следом проведён и закрыт этап 19.
 
 ## 6. Завершающие этапы
 
 ### Этап 19. Нейминг публичного API
 
 **Проблема.** Имена появлялись по мере согласования отдельных семантических
-узлов и не проходили общий аудит на call sites. В частности,
-`TreatAsMissing` описывает уже согласованное поведение
-`NullDestinationHandling`, но пока не принято как окончательное имя.
+узлов и не проходили общий аудит на call sites. Прежние имена операций,
+declarative result strategy, manual method, presence-wrapper и нескольких
+settings смешивали публичную операцию, способ получения result и
+implementation terms.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- окончательное имя ветки `NullDestinationHandling`, которая считает explicit
-  `null` отсутствующим previous, без ложного обещания создать новый instance;
-- имена generated creation/member-plan типов и их согласованность с
-  `Create` / `Members`;
-- терминологию `Previous<T>` и non-null result-параметра `Members`;
-- согласованность пар `MapNew` / `MapExisting`, declarative / direct / manual и
-  публичных settings;
-- короткие примеры IntelliSense/call-site для каждого спорного имени и
-  отсутствие конфликтов между `Default`, рабочими названиями и значениями по
-  умолчанию.
+| Область | Итоговый public naming |
+|---|---|
+| Публичные операции | `Create` для `Map(source)` и `Update` для `Map(source, destination)` |
+| Operation flags | `MappingMode.Default`, `MappingMode.Create`, `MappingMode.Update`, `MappingMode.CreateAndUpdate` |
+| Текущий call frame | `MappingOperation.Create` / `MappingOperation.Update` |
+| Declarative result strategy | `Construct(...)` |
+| Declarative body rules | `Members(...)` |
+| Полный пользовательский algorithm | `Convert(...)` |
+| Presence-wrapper | `Option<T>`; параметры остаются `previous` |
+| Structured plan | `DestinationConstruction` |
+| Constructor plan overlay | `DestinationConstructorParameters` |
+| Constructor parameter wrapper | `ConstructorParameter<T>` |
+| Member plan и wrapper | `DestinationMembers` / `Member<T>` |
+| Member convention setting | `MemberSelection` с `Default`, `Auto`, `Explicit` |
+| Explicit `null` destination | `NullDestinationHandling.Create` |
 
-**Предварительное направление:** проводить naming-аудит после определения
-семантики продуктовых этапов, но до diagnostics и migration roadmap. Ни одно
-рабочее имя не становится принятым только потому, что оно используется в
-текущем design-документе.
+- тип остаётся `MappingMode`, а объединённое значение —
+  `CreateAndUpdate`. Короткие `Both` и `Map` отвергнуты: первое станет
+  двусмысленным при появлении третьей операции, а второе хуже сообщает точный
+  набор flags. Будущий `Project` сможет быть добавлен без изменения смысла
+  `CreateAndUpdate`;
+- `NullDestinationHandling.Create` не переключает публичный вызов `Update` на
+  другую operation и не обещает новую identity. Он только считает explicit
+  `null` отсутствующим previous и запускает ту же no-previous construction
+  branch; для этого достаточно включённого `MappingMode.Update`;
+- `Construct` описывает способ получить базовый result и не обещает новую
+  identity: previous, factory и cached instance остаются допустимыми ветками;
+- `Convert` целиком заменяет declarative pipeline; `Members` сохраняет прежнее
+  имя и остаётся единым plan для обеих операций;
+- общий `Option<T>` не содержит previous-specific API: `default` равен `None`,
+  а `None` отличается от `Some(default)` и `Some(null)`, когда `T` допускает
+  `null`. Mapping previous по-прежнему root-normalized и в этой роли никогда
+  не содержит `Some(null)`;
+- generated types находятся в destination-relative namespace
+  `.Morphant.Generated`, поэтому дополнительное слово `Morphant` в именах
+  типов не добавляется. Реальные collisions разрешаются принятой
+  deterministic hint/type naming policy;
+- `NullabilityMismatchValidation` удалена из целевого API, а не переименована.
+  Automatic mappings допускают только warning-free implicit C# conversions,
+  explicit expressions проверяет compiler; отдельной v0-policy здесь нет;
+- `UnmappedMemberValidation.Strict`, все значения `ConstructorSelection`,
+  `source`, `destination`, `previous`, `result`, `MappingContext`, `Auto`,
+  `Ignore`, `Map`, `ByConvention` и `ByFactory` остаются без изменений;
+- внутренние термины `creation plan`, `member plan`, `previous`, `result`,
+  declarative, direct и manual остаются описательной терминологией, а не
+  альтернативными public identifiers.
 
-**Результат этапа:** финальная таблица public names, обновлённая цельная
-спецификация и явный список намеренно оставленных внутренних рабочих терминов.
+Основные call sites:
+
+```csharp
+builder.Map<Source, Destination>(MappingMode.CreateAndUpdate)
+    .Construct((source, previous) =>
+        previous.HasValue ? previous : new(source.Id))
+    .Members((source, previous, result) => new()
+    {
+        Name = source.Name,
+        Revision = result.Revision + 1
+    });
+
+builder.Map<Source, Destination>()
+    .Convert((source, previous, context) =>
+        MapCore(source, previous, context));
+```
+
+**Результат этапа:** финальные public names перенесены в цельную спецификацию,
+а terminology-аудит выполнен также для refinement, product-audit и research-
+документов нового дизайна. `IMPLEMENTATION_PLAN.md` и `docs/settings/*`
+намеренно сохраняют имена реально существующего `Template()`-API до
+отдельного migration-среза. Этап 19 закрыт; следующим является этап 20.
 
 ### Этап 20. Diagnostics и observable failures
 
@@ -1084,7 +1139,7 @@ collections, hooks, projection и polymorphism могут добавляться
 - ambiguous polymorphic/generic/variant dispatch;
 - non-projectable mapping;
 - reference cycle, который нельзя построить;
-- проигнорированный authoritative result `MapExisting`;
+- проигнорированный authoritative result `Update`;
 - отсутствие скрытых fallback во всех ошибочных конфигурациях;
 - точные diagnostic IDs и формулировки можно назначать при реализации, но
   user-visible condition нужно определить в дизайне.
@@ -1115,7 +1170,7 @@ collections, hooks, projection и polymorphism могут добавляться
 | Nullable root и все null-handling branches | 3, 7 |
 | Nested new/existing/nullable child | 4–6 |
 | Side effects, swap и source/destination aliasing | 6 |
-| Повтор expression между `Create`/`Members` и member-plan `with` | 6, 18A |
+| Повтор expression между `Construct`/`Members` и member-plan `with` | 6, 18A |
 | Rename, calculated member и explicit source flattening | 6 |
 | Convention flattening через `IncludeMembers` | После v0; 9A, 18A |
 | Boxing/conversion и settings precedence | 7, 16 |
@@ -1138,7 +1193,7 @@ collections, hooks, projection и polymorphism могут добавляться
 | Multi-source mapping | 17 |
 | Полностью специальный synchronous algorithm | 2, 4, 7, 18 |
 | Result-dependent rule, hooks и async boundary | 18: result-aware `Members` в v0; hooks после v0; async вне core v0 |
-| Публичный нейминг, включая рабочее `TreatAsMissing` | 19 |
+| Публичный нейминг | 19 |
 | Ошибочная конфигурация и проигнорированный result | 20 |
 
 **Финальные действия:**
@@ -1163,7 +1218,7 @@ collections, hooks, projection и polymorphism могут добавляться
 
 ## 7. Пауза перед следующим этапом
 
-**Этапы 18 и 18A завершены.** Для result-dependent structural rules зафиксирована
+**Этапы 18, 18A и 19 завершены.** Для result-dependent structural rules зафиксирована
 всегда генерируемая result-aware `Members`-перегрузка с non-null result
 без presence-wrapper. В локальной pair можно вызвать только один
 `Members`; `IncludeBase()` объединяет plans независимо от формы перегрузки.
@@ -1172,11 +1227,15 @@ collections, hooks, projection и polymorphism могут добавляться
 Hooks и middleware гарантированы после v0, но их точная форма пока не выбрана.
 
 Аудит прежнего `Template()`-дизайна закрепил общий dependency graph structured
-`Create` / `Members`, member-plan `with`, обязательный post-v0
+`Construct` / `Members`, member-plan `with`, обязательный post-v0
 `IncludeMembers` и carry-forward contracts typed markers, nullability,
 constructor binding, generated UX, generics, settings, conventions и type
 policy. Новый design признан более удачной основой; unified `Template` не
 возвращается.
 
-Следующим по roadmap является этап 19 — naming-аудит публичного API, но по
-явному указанию работа над ним ещё не начата.
+Naming-аудит закрепил `Create` / `Update`, `MappingMode.CreateAndUpdate`,
+`Construct` / `Members` / `Convert`, `Option<T>`, `MemberSelection` и новые
+имена generated construction surface. `NullabilityMismatchValidation`
+удалена, а остальные явно оставленные settings и enum values не менялись.
+
+Следующим по roadmap является этап 20 — diagnostics и observable failures.

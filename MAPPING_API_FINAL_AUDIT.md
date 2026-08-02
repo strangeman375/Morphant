@@ -2,18 +2,19 @@
 
 Дата аудита: 2 августа 2026 года.
 
-Статус документа: независимая продуктовая оценка целевого mapping API перед
-naming-аудитом. Нормативным источником семантики остаётся
-`MAPPING_API_DESIGN.md`; этот документ фиксирует полноту сценариев, сравнение с
-конкурентами, найденные риски и рекомендации.
+Статус документа: независимая продуктовая оценка целевого mapping API,
+выполненная перед naming-аудитом. После завершения этапа 19 терминология
+актуализирована, но оценки и рекомендации не менялись. Нормативным источником
+семантики остаётся `MAPPING_API_DESIGN.md`; этот документ фиксирует полноту
+сценариев, сравнение с конкурентами, найденные риски и рекомендации.
 
 ## 1. Объём и методика аудита
 
 Аудит рассматривает Morphant как будущий пользовательский продукт, а не только
 как внутренне непротиворечивый source generator. Проверялись:
 
-- целевой дизайн `Create`, `Members` и `MapManually`;
-- контракты `MapNew` и `MapExisting`, включая identity результата;
+- целевой дизайн `Construct`, `Members` и `Convert`;
+- контракты `Create` и `Update`, включая identity результата;
 - constructors, `init`, `required`, nullability, factories и immutable types;
 - nested mapping, generics, variants, settings, inheritance и composition;
 - уже запланированные post-v0 capabilities;
@@ -64,7 +65,7 @@ existing-target semantics и поведению в сложных графах �
 - отсутствие скрытого runtime polymorphism;
 - observable failures и будущие diagnostics.
 
-Разделение `Create`, `Members` и `MapManually` является удачной основой. Оно
+Разделение `Construct`, `Members` и `Convert` является удачной основой. Оно
 немного многословнее прежнего `Template`, но каждый API отвечает на один вопрос,
 а общая модель объясняется без специальных режимов и исключений.
 
@@ -93,29 +94,29 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 
 В сравнении с конкурентами особенно оправданы следующие решения Morphant:
 
-- авторитетный возвращаемый результат `MapExisting` вместо `void`-update;
+- авторитетный возвращаемый результат `Update` вместо `void`-update;
 - явный выбор reuse или replacement;
 - отсутствие тайной мутации `init` после создания объекта;
 - explicit nested и polymorphic links вместо глобального поиска assignable
   mappings;
-- единый `Members` plan для `MapNew` и `MapExisting`;
+- единый `Members` plan для `Create` и `Update`;
 - детерминированное precedence вместо смешения global transforms, inherited
   settings и explicit rules;
-- `MapManually` как честная граница для imperative algorithm, а не скрытый
+- `Convert` как честная граница для imperative algorithm, а не скрытый
   fallback generator-а.
 
 ## 4. Что показывают пользовательские issues
 
 | Пользовательская боль | Состояние Morphant |
 |---|---|
-| Приходится дублировать правила для MapNew и MapExisting в [Mapperly #1294][mapperly-1294] | Решено архитектурно: один `Members` обслуживает обе операции |
+| Приходится дублировать правила для Create и Update в [Mapperly #1294][mapperly-1294] | Решено архитектурно: один `Members` обслуживает обе операции |
 | Global transform перебивает explicit mapping в [Mapster #952][mapster-952] | Предотвращено явным precedence и отсутствием скрытых transforms |
 | Неявное inheritance переносит неподходящие settings в [Mapster #947][mapster-947] | Решено разделением `base.Configure(builder)` и `IncludeBase()` |
 | Nullable DTO должен сохранять initializer destination в [Mapperly #2178][mapperly-2178] | Входит в будущий patch/null-assignment design, но публичный контракт ещё не закрыт |
 | Нужен не только ignore-null, но и ignore-default в [Mapster #982][mapster-982] | Patch-этап следует расширить до общей presence/default policy |
 | Projection приходится объявлять и конфигурировать повторно в [Mapperly #2252][mapperly-2252] | Есть риск повторить проблему: projection обещана, но её связь с основным pair-plan пока не зафиксирована |
 | Нужен collection-path flattening для EF join entities в [Mapperly #2253][mapperly-2253] | Не включён явно в текущий collection/`IncludeMembers` roadmap |
-| Нужен nested update существующего member-объекта в [Mapperly #1700][mapperly-1700] | Get-only complex child сейчас требует `MapManually`; отдельного declarative сценария нет |
+| Нужен nested update существующего member-объекта в [Mapperly #1700][mapperly-1700] | Get-only complex child сейчас требует `Convert`; отдельного declarative сценария нет |
 | Нужны несколько sources для required/init destination в [Mapperly #1978][mapperly-1978] | Поддерживается будущими tuple roots и multi-source mapping |
 | Нужны настраиваемые правила сопоставления имён в [Mapperly #2039][mapperly-2039] | Сейчас доступны exact matching и explicit rules, но нет масштабируемого opt-in affordance |
 
@@ -130,12 +131,12 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 |---|---|
 | Mutable POCO, records, constructors, optional/`params` | Контракт закрыт хорошо |
 | `init`, `required`, defaults и factories | Контракт закрыт; conditional null-preservation входит в будущий patch |
-| Scalar и opaque value object | Закрыт через direct `Create` |
+| Scalar и opaque value object | Закрыт через direct `Construct` |
 | Existing destination: reuse, mutation и replacement | Закрыт лучше, чем у сравниваемых mapper-ов |
 | Immutable existing destination | Закрыт явным replacement или ручным `with`; скрытой mutation нет |
 | Custom expressions, injected services и специальный synchronous algorithm | Закрыт |
-| Nested MapNew/MapExisting | Закрыт, но требует явного `Map(...)` |
-| Get-only mutable child object | Только `MapManually`; отдельного declarative сценария нет |
+| Nested Create/Update | Закрыт, но требует явного `Map(...)` |
+| Get-only mutable child object | Только `Convert`; отдельного declarative сценария нет |
 | Collections, dictionaries и getter-only collections | Обязательная post-v0 capability; точная lifecycle-матрица ещё проектируется |
 | Collection reconciliation по ключу | Поддерживается после v0, без скрытого default; API не выбран |
 | Explicit flattening | Закрыт |
@@ -171,16 +172,16 @@ public Address Address { get; } = new();
 ```
 
 Декларативный mapping должен уметь обновить `result.Address` без присваивания
-нового `Address` и без перевода всего outer mapping в `MapManually`.
+нового `Address` и без перевода всего outer mapping в `Convert`.
 
 Безопасная будущая семантика:
 
 - member обязан быть readable и non-null;
-- применяется nested `MapExisting` к уже доступному child;
+- применяется nested `Update` к уже доступному child;
 - nested pair должна статически гарантировать сохранение identity;
 - если nested mapping может вернуть replacement, configuration diagnostic;
 - отсутствующий child или необходимость replacement требуют mutator/factory
-  либо `MapManually`.
+  либо `Convert`.
 
 Обычный two-argument `Map(source, destination)` с последующим assignment не
 решает get-only member: авторитетный nested replacement некуда присвоить.
@@ -197,7 +198,7 @@ capability.
 
 - projection переиспользует тот же declarative pair-plan, а не отдельную
   configuration model;
-- поддерживается только статически translatable подмножество `MapNew`;
+- поддерживается только статически translatable подмножество `Create`;
 - direct/manual logic, previous/result-dependent behavior, hooks и reference
   tracking не получают ложной projectability;
 - вся цепочка nested mappings должна быть projectable;
@@ -211,7 +212,7 @@ capability.
 
 ### 6.3. First-class enum mapping
 
-Ручной `Create` функционально достаточен для единичной пары, но плохо
+Ручной `Construct` функционально достаточен для единичной пары, но плохо
 масштабируется и не даёт exhaustiveness diagnostics. В roadmap следует добавить:
 
 - mapping by value, checked value и name;
@@ -223,7 +224,7 @@ capability.
 - enum ↔ string naming strategy.
 
 Широкое автоматическое обнаружение `Parse`, `ToString` и произвольных factory
-methods не требуется. Для них explicit `Create` безопаснее и понятнее.
+methods не требуется. Для них explicit `Construct` безопаснее и понятнее.
 
 ### 6.4. Масштабируемое name matching
 
@@ -308,7 +309,7 @@ runtime serialization и произвольного исполнения пол�
 
 - когда объект создаётся и когда переиспользуется previous;
 - какой result получит member-plan;
-- может ли `MapExisting` вернуть replacement;
+- может ли `Update` вернуть replacement;
 - где применяются conventions;
 - где заканчивается declarative model и начинается ручной algorithm;
 - какие rules унаследованы и каков их precedence;
@@ -322,8 +323,8 @@ records, existing aggregate roots и конфигураций с inheritance.
 Для простого DTO graph цена предсказуемости заметна:
 
 - nested pair не применяется автоматически;
-- `Previous<T>` нужно изучить;
-- `Create` и `Members` иногда повторяют одно expression, хотя generator обязан
+- `Option<T>` нужно изучить;
+- `Construct` и `Members` иногда повторяют одно expression, хотя generator обязан
   вычислить его один раз;
 - declarative `with` и expression sharing образуют graph DSL, а не обычное
   последовательное выполнение C#;
@@ -348,12 +349,13 @@ v0 корректно выпускать как architectural preview, foundatio
 
 Полная спецификация пока оценивается ниже самой архитектуры, потому что часть
 важных future-capabilities только названа. Это не требует нового redesign:
-текущие `Create`, `Members`, `MapManually`, authoritative result и explicit
+текущие `Construct`, `Members`, `Convert`, authoritative result и explicit
 nested dispatch оставляют для них совместимые точки расширения.
 
-## 10. Рекомендованный порядок перед naming-аудитом
+## 10. Рекомендации, отложенные при переходе к naming-аудиту
 
-Перед переходом к окончательному публичному naming рекомендуется:
+Перед naming-аудитом были рекомендованы следующие дополнительные продуктовые
+решения:
 
 1. добавить existing get-only complex-child update как отдельное post-v0
    обязательство;
@@ -363,8 +365,9 @@ nested dispatch оставляют для них совместимые точк
 5. уточнить законы keyed variants;
 6. разделить future commitments и явные non-goals.
 
-После этого можно переходить к naming и diagnostics без нового
-архитектурного круга.
+Из-за дедлайна v0 принято продолжить с уже согласованным core design, не
+расширяя его этими возможностями сейчас. Рекомендации остаются post-v0
+направлениями и не являются незакрытой частью naming-этапа.
 
 ## 11. Финальный вердикт
 
@@ -374,10 +377,10 @@ nested dispatch оставляют для них совместимые точк
 концептуально чище Mapperly в existing-target и configuration composition.
 
 Core redesign завершён удачно. Найденные проблемы не требуют возвращения к
-unified `Template` и не ломают разделение `Create` / `Members` /
-`MapManually`. Следующая работа должна дополнять продуктовый roadmap и
-фиксировать contracts будущих массовых capabilities, сохраняя нынешнюю
-явность identity, null, precedence и operation semantics.
+unified `Template` и не ломают разделение `Construct` / `Members` /
+`Convert`. После v0 продуктовый roadmap следует дополнить contracts будущих
+массовых capabilities, сохраняя нынешнюю явность identity, null, precedence и
+operation semantics.
 
 [automapper-nested]: https://docs.automapper.io/en/stable/Nested-mappings.html
 [automapper-collections]: https://docs.automapper.io/en/stable/Lists-and-arrays.html

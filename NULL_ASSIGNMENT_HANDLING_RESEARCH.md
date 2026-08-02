@@ -49,8 +49,10 @@ public enum NullAssignmentHandling
 
 - `NullSourceHandling` решает судьбу всего mapping-а при `source == null`;
 - `NullDestinationHandling` нормализует отсутствующий previous в
-  `MapExisting`;
-- `NullabilityMismatchValidation` является compile-time проверкой;
+  `Update`;
+- nullable-совместимость automatic mapping-а является фиксированной
+  compile-time границей: разрешены только warning-free implicit C#-
+  преобразования, а explicit expressions проверяет compiler;
 - null-assignment policy является runtime правилом для отдельного member
   candidate-а.
 
@@ -62,10 +64,10 @@ public enum NullAssignmentHandling
 | Сценарий | Ожидание от `null` | Естественный baseline |
 |---|---|---|
 | Полное создание нового объекта | Member результата становится `null` | Созданный объект не считается значимым состоянием для merge |
-| Создание поверх destination defaults | Не затирать constructor/property/factory defaults | Новый объект после `Create` |
+| Создание поверх destination defaults | Не затирать constructor/property/factory defaults | Новый объект после `Construct` |
 | Полное обновление существующего объекта | Очистить member | Выбранный existing result |
 | Patch/merge существующего объекта | Сохранить старое значение | Выбранный existing result |
-| Строгий create/update | Считать неожиданный `null` ошибкой | Неважно: assignment не выполняется |
+| Строгий `Create` / `Update` | Считать неожиданный `null` ошибкой | Неважно: assignment не выполняется |
 | Presence-aware patch | Различать absent, value и explicit `null` | Нужен отдельный source contract |
 
 Основной и бесспорный сценарий `Ignore` — patch существующего объекта:
@@ -74,7 +76,7 @@ public enum NullAssignmentHandling
 var customer = mapper.Map(update, existingCustomer);
 ```
 
-Но у `MapNew` тоже есть реальная потребность: DTO конфигурации из JSON/YAML
+Но у `Create` тоже есть реальная потребность: DTO конфигурации из JSON/YAML
 часто содержит nullable поля, а destination задаёт осмысленные defaults.
 
 ```csharp
@@ -121,11 +123,11 @@ member-а.
 
 Для намеренного исключения из общей policy нужен per-member override.
 
-### 3.2. Только `MapExisting` или оба режима
+### 3.2. Только `Update` или оба режима
 
-Аргумент за `MapExisting`-only: именно здесь `Ignore` имеет очевидную
+Аргумент за `Update`-only: именно здесь `Ignore` имеет очевидную
 patch/merge-семантику — сохранить состояние переданного destination. Для
-обычного `MapNew` наиболее естественно получить полное состояние из source, а
+обычного `Create` наиболее естественно получить полное состояние из source, а
 не зависеть от скрытого property initializer-а destination.
 
 Аргумент за оба режима: явно включённое правило с названием
@@ -137,9 +139,9 @@ Mapperly.
 
 Наиболее сильное рабочее направление к моменту отсрочки:
 
-1. Policy семантически доступна и для `MapNew`, и для `MapExisting`.
+1. Policy семантически доступна и для `Create`, и для `Update`.
 2. Default для обоих путей остаётся `Assign`.
-3. Пользователь может задать разные effective values для create и update.
+3. Пользователь может задать разные effective values для `Create` и `Update`.
 4. Простая настройка без scope применяется к обоим путям.
 
 Это направление ещё не принято как контракт. После v0 его нужно повторно
@@ -157,26 +159,26 @@ builder.Map<Dto, Entity>()
 Mode-specific эскиз для наиболее распространённой комбинации:
 
 ```csharp
-builder.Map<Dto, Entity>(MappingMode.MapNewAndExisting)
+builder.Map<Dto, Entity>(MappingMode.CreateAndUpdate)
     .NullAssignmentHandling(
-        MappingMode.MapExisting,
+        MappingMode.Update,
         NullAssignmentHandling.Ignore);
 ```
 
 Ожидаемый результат:
 
 ```text
-MapNew      -> Assign
-MapExisting -> Ignore
+Create      -> Assign
+Update      -> Ignore
 ```
 
 Точный syntax не принят. В частности, после v0 нужно решить:
 
-- допустим ли `MappingMode.MapNewAndExisting` во втором аргументе;
+- допустим ли `MappingMode.CreateAndUpdate` во втором аргументе;
 - нужны ли две именованные настройки вместо overload-а с flags;
 - можно ли задавать operation-specific value на mapper root и assembly level;
 - как совместить обычный inheritance precedence с mode-specific override;
-- должно ли отсутствие previous выбирать create-policy независимо от
+- должно ли отсутствие previous выбирать `Create`-policy независимо от
   `MappingContext.Operation`.
 
 Обычный settings precedence Morphant должен сохраниться:
@@ -199,13 +201,13 @@ var candidate = EvaluateMemberRuleOnce();
 switch (effectiveHandling)
 {
     case NullAssignmentHandling.Assign:
-        result.Member = Convert(candidate);
+        result.Member = ConvertCandidate(candidate);
         break;
 
     case NullAssignmentHandling.Ignore:
         if (candidate is not null)
         {
-            result.Member = Convert(candidate);
+            result.Member = ConvertCandidate(candidate);
         }
         break;
 
@@ -215,7 +217,7 @@ switch (effectiveHandling)
             throw CreateNullAssignmentException();
         }
 
-        result.Member = Convert(candidate);
+        result.Member = ConvertCandidate(candidate);
         break;
 }
 ```
@@ -229,9 +231,9 @@ lowering должны быть согласованы вместе с diagnostic
 
 | Путь | Сохраняемое значение |
 |---|---|
-| `MapNew` | Значение после constructor, convention creation, factory или property initializer |
-| `MapExisting`, result = previous | Старое значение previous |
-| `MapExisting`, `Create` выбрал replacement | Значение replacement-result |
+| `Create` | Значение после constructor, convention creation, factory или property initializer |
+| `Update`, result = previous | Старое значение previous |
+| `Update`, `Construct` выбрал replacement | Значение replacement-result |
 | No-previous ветка после нормализации `null` destination | Значение нового baseline |
 
 Последний случай требует отдельного решения. Ранее рабочим законом было:
@@ -241,9 +243,9 @@ Map(source, destination: null) == Map(source)
 ```
 
 Текущий target design уже делает эти вызовы неразличимыми внутри declarative
-DSL: оба передают `Previous.None`. Поэтому наиболее согласованно использовать
-create-oriented effective policy в обеих no-previous ветках. Но публичная
-операция второго вызова остаётся `MapExisting`, и это нужно явно учесть при
+DSL: оба передают `Option.None`. Поэтому наиболее согласованно использовать
+`Create`-oriented effective policy в обеих no-previous ветках. Но публичная
+операция второго вызова остаётся `Update`, и это нужно явно учесть при
 проектировании mode-specific API, а не получить случайно из implementation.
 
 ### 5.2. Где policy действует
@@ -253,12 +255,12 @@ create-oriented effective policy в обеих no-previous ветках. Но п
 - только generated member assignments declarative pipeline-а;
 - convention, `Auto()`, explicit expression и `Map(...)` подчиняются одному
   effective rule;
-- constructor parameters и сам `Create` не являются member assignments и не
+- constructor parameters и сам `Construct` не являются member assignments и не
   подчиняются policy;
 - `Ignore()` остаётся безусловным отсутствием конкретного assignment;
-- `MapManually` полностью обходит setting, как и остальные declarative
+- `Convert` полностью обходит setting, как и остальные declarative
   settings;
-- direct `Create` сам по себе policy не обходит: она всё ещё может применяться
+- direct `Construct` сам по себе policy не обходит: она всё ещё может применяться
   к последующему `Members`/convention stage;
 - в старом production API эквивалентный raw/manual template не должен получать
   скрытое generated поведение.
@@ -314,7 +316,7 @@ Morphant не обязательно нужны два отдельных condit
 
 Whole-plan runtime no-op — отдельный вопрос. До отсрочки не было принято,
 должен ли появиться first-class marker для него или сложный случай должен
-остаться в `MapManually`.
+остаться в `Convert`.
 
 ## 7. `null` не равен отсутствию поля
 
@@ -328,12 +330,13 @@ Whole-plan runtime no-op — отдельный вопрос. До отсроч�
 
 Ни один mapper не может восстановить presence после того, как serializer
 поместил оба первых nullable-состояния в одно значение `null`. Нужен
-source-owned contract, например `Optional<T>`:
+source-owned contract. Для него можно использовать общий `Option<T>` Morphant
+либо domain-specific wrapper:
 
 ```csharp
 .Members((source, _) => new()
 {
-    Name = !source.Name.IsSpecified
+    Name = !source.Name.HasValue
         ? Ignore()
         : Assign(source.Name.Value)
 });
@@ -341,14 +344,15 @@ source-owned contract, например `Optional<T>`:
 
 Семантика:
 
-- `IsSpecified == false` — assignment отсутствует;
-- `Value != null` — присвоить значение;
-- `Value == null` — намеренно очистить member даже при global `Ignore`.
+- `Option.None` — assignment отсутствует;
+- `Option.Some(value)` — присвоить значение;
+- `Option.Some(null)` — намеренно очистить nullable member даже при global
+  `Ignore`.
 
-Morphant не должен вводить единственный собственный `Optional<T>` как
-обязательный transport type без отдельного исследования serializer и GraphQL
-contracts. Но DSL должен позволять естественно использовать source-owned
-presence wrapper.
+Наличие public `Option<T>` не делает его обязательным transport type и не
+восстанавливает field presence автоматически. Serializer, GraphQL layer либо
+сам source type должны явно сформировать `None` / `Some`; DSL также должен
+позволять естественно использовать сторонний presence wrapper.
 
 ## 8. Порядок вычисления и nullable-граница
 
@@ -454,9 +458,9 @@ Mapster issue #439 показывает, что распространение i
 mapping на mapping collection как целого вызывает отдельные ожидания и ошибки.
 Полная collection policy остаётся отдельным post-v0 этапом 9.
 
-## 10. Почему `MapNew + Ignore` технически сложен
+## 10. Почему `Create + Ignore` технически сложен
 
-Проблемы ниже не доказывают, что `MapNew` нужно исключить. Они показывают, где
+Проблемы ниже не доказывают, что `Create` нужно исключить. Они показывают, где
 Morphant не может честно обещать «пропустить assignment» и должен либо
 ограничить support boundary, либо потребовать явный fallback.
 
@@ -491,7 +495,7 @@ public Destination(string name)
 
 - optional parameter с настоящим объявленным default можно опустить;
 - required parameter требует explicit fallback, другого constructor-а,
-  factory/direct `Create` либо `MapManually`;
+  factory/direct `Construct` либо `Convert`;
 - невозможный declarative plan должен давать diagnostic.
 
 Mapster issue #707 показывает, насколько легко смешать три разных смысла для
@@ -542,8 +546,8 @@ bug и breaking change: пользовательское ожидание реа
 
 - constructor/factory, уже удовлетворяющий required contract, предоставляет
   baseline;
-- иначе `MapNew + Ignore` несовместим с potentially-null creation-time rule;
-- это ограничение не переносится на настоящий `MapExisting`, где объект уже
+- иначе `Create + Ignore` несовместим с potentially-null creation-time rule;
+- это ограничение не переносится на настоящий `Update`, где объект уже
   создан.
 
 Mapperly issue #1569 показывает обратную ошибку: creation-time required
@@ -560,7 +564,7 @@ record Destination(string Name);
 constructor требует значение, независимого baseline не существует. Нужны
 explicit fallback, reconstruction/clone strategy или manual mapping.
 
-Эта проблема пересекается с отдельным этапом 11 об immutable `MapExisting`, но
+Эта проблема пересекается с отдельным этапом 11 об immutable `Update`, но
 null-assignment policy не должна сама вводить hidden clone/reconstruction.
 
 ### 10.6. Factory и derived runtime type
@@ -583,7 +587,7 @@ strategy.
 
 `Ignore` может сделать nullable-to-non-nullable mapping безопасным в runtime,
 но только если baseline уже удовлетворяет invariant destination. Для
-`MapExisting` это ответственность существующего instance; для `MapNew` она
+`Update` это ответственность существующего instance; для `Create` она
 зависит от constructor/factory/initializer-а.
 
 Поэтому нельзя автоматически считать любой nullable mismatch устранённым:
@@ -645,7 +649,7 @@ Relevant feedback:
   existing target.
 
 Это поддерживает два решения для Morphant: map-level scope обязателен, а
-creation и existing capabilities нельзя валидировать одной матрицей.
+`Create` и `Update` capabilities нельзя валидировать одной матрицей.
 
 ### 11.3. AutoMapper
 
@@ -677,10 +681,10 @@ candidate до destination conversion.
 
 1. `NullAssignmentHandling { Default, Assign, Ignore, Throw }`.
 2. Library default — `Assign`.
-3. Policy доступна для create и existing paths, но поддерживает раздельные
+3. Policy доступна для `Create` и `Update`, но поддерживает раздельные
    effective values.
 4. Простая настройка применяется к обоим путям; mode/path-specific override
-   позволяет `MapNew = Assign`, `MapExisting = Ignore`.
+   позволяет `Create = Assign`, `Update = Ignore`.
 5. `Ignore` сохраняет member выбранного `result`, а не обязательно исходного
    previous.
 6. No-previous ветки `Map(source)` и `Map(source, null)` должны оставаться
@@ -707,15 +711,17 @@ candidate до destination conversion.
 
 ## 13. Вопросы для повторного открытия после v0
 
-- Подтверждают ли реальные пользователи потребность `Ignore` в `MapNew`, или
-  достаточно existing-only v1 slice?
-- Называть scope через public `MappingMode` или через create/existing path?
-- Как exact setting выбирается для `MapExisting` с `Previous.None`?
+- Подтверждают ли реальные пользователи потребность `Ignore` в `Create`, или
+  достаточно `Update`-only v1 slice?
+- Называть scope через public `MappingMode` или через `Create` / `Update`
+  path?
+- Как exact setting выбирается для `Update` с `Option.None`?
 - Нужны ли оба per-member marker-а `Assign` и `IgnoreIfNull`?
 - Какой exception contract у `Throw`?
 - Какие init/record cases можно поддержать без нарушения evaluation order?
 - Нужен ли first-class whole-plan no-op?
-- Нужно ли Morphant предоставлять собственный optional/presence abstraction?
+- Нужна ли специальная serializer-интеграция для `Option<T>`, и как policy
+  взаимодействует со сторонними presence wrappers?
 - Как policy взаимодействует с collection replacement/fill/reconciliation?
 - Как `UnmappedMemberValidation` учитывает условно пропущенный assignment?
 - Когда `Ignore` действительно устраняет nullability mismatch diagnostic?
