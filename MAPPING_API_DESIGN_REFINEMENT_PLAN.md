@@ -360,32 +360,52 @@ declarative/ordinary C# control flow перенесены в `MAPPING_API_DESIGN
 
 **Проблема.** Pair eligibility смешивалась с наличием template/declarative
 surface, из-за чего capability конкретного destination могла молча запрещать
-всю registration. Одновременно root tuples, collections и delegates требуют
-отдельной продуктовой семантики, которой не должно быть в v0 даже под видом
-raw escape hatch.
+всю registration. Одновременно root types без статически известной
+верхнеуровневой формы и типы, представляющие последовательность, исполняемый
+код либо ещё не полученное значение, требуют отдельной продуктовой семантики,
+которой не должно быть в v0 даже под видом raw escape hatch.
 
 **Согласовано:**
 
 - eligibility и capabilities разделены. Pair допустима, если оба root-типа
   являются legal C# 9 generic arguments, могут быть названы из generated
-  mapper-а и не входят в явно отложенную root-категорию;
-- tuple roots (`System.ValueTuple`, tuple syntax, `System.Tuple`) и collection
-  roots полностью исключены из v0 в обеих mapping-позициях, включая direct и
-  manual mapping. Collection означает array либо любой `IEnumerable`, кроме
-  `string`, включая dictionaries и custom collection types;
-- delegate roots также полностью исключены из v0 в обеих mapping-позициях,
-  включая direct и manual mapping. Для них нужна отдельная семантика либо
-  явное решение о долгосрочной неподдерживаемости после v0;
-- запрет относится только к root mapping-позиции. Tuple, collection или
-  delegate member, constructor parameter либо generic argument внешнего
-  разрешённого root остаётся обычным единым C#-значением; element mapping или
-  специальная delegate-семантика не применяются;
+  mapper-а, имеют статически известную верхнеуровневую форму и не входят в
+  явно отложенную root-категорию;
+- tuple roots (`System.ValueTuple`, tuple syntax, `System.Tuple` и реализации
+  `ITuple`) полностью исключены из v0 в обеих mapping-позициях, включая direct
+  и manual mapping;
+- sequence, collection и buffer roots также исключены. Категория включает
+  arrays, любой `IEnumerable` кроме `string`, `IEnumerator`,
+  `IAsyncEnumerable<T>`, `IAsyncEnumerator<T>`, `Memory<T>`,
+  `ReadOnlyMemory<T>` и `ReadOnlySequence<T>`, включая пользовательские типы,
+  реализующие соответствующие контракты;
+- delegate roots включают конкретные delegate-типы, `System.Delegate` и
+  `System.MulticastDelegate`. Expression-tree roots включают всю иерархию
+  `System.Linq.Expressions.Expression`, в том числе
+  `Expression<TDelegate>`. Обе категории полностью исключены из v0;
+- deferred/async roots (`Task` и его иерархия, `ValueTask`, `ValueTask<T>`,
+  `Lazy<T>`) и push-sequence roots, реализующие `IObservable<T>`, полностью
+  исключены из v0. Для них нужны отдельные правила выполнения, lifetime,
+  исключений и последующего mapping-а;
+- категория определяется после снятия верхнеуровневой `Nullable<T>`-обёртки,
+  поэтому, например, `ValueTask<int>?` также запрещён. Для разрешённого
+  underlying value type nullable-форма сохраняет собственную canonical pair;
+- type parameter непосредственно в source или destination root запрещён
+  независимо от `class`, `struct`, `new()`, base/interface и других
+  constraints. Type parameter внутри известного nominal root допустим:
+  `Page<T> -> PageDto<T>` сохраняется, а `T -> Destination` — нет;
+- запрет относится только к root mapping-позиции. Значение любой отложенной
+  категории как member, constructor parameter либо generic argument внешнего
+  разрешённого root остаётся обычным единым C#-значением; element mapping,
+  ожидание deferred result, expression rebinding и другая специальная
+  семантика не применяются;
 - технически исключены `void`, pointers/function pointers, ref-like, error,
   anonymous/unnameable и недоступные generated lexical context типы;
 - допустимы scalars, enums, nullable forms, custom class/struct/record,
-  abstract/interface, constructed generics и mapper type parameters.
-  `dynamic` канонически совпадает с `object`, а root nullable reference
-  annotation не создаёт отдельную runtime pair;
+  abstract/interface и constructed generics с известной верхнеуровневой
+  nominal-формой; их arguments могут содержать type parameters. `dynamic`
+  канонически совпадает с `object`, а root nullable reference annotation не
+  создаёт отдельную runtime pair;
 - любая eligible pair получает обе runtime operations и `MapManually`.
   Destination независимо получает ровно одну форму `Create`: structured при
   наличии поддерживаемого constructor surface, direct при его отсутствии или
@@ -413,8 +433,9 @@ raw escape hatch.
 
 **Результат этапа:** eligibility rules, capability/settings matrix и generated
 pair surface перенесены в `MAPPING_API_DESIGN.md`. Фундаментальные этапы 1–7
-образуют согласованную основу; tuple/collection/delegate root support вынесен
-за v0.
+образуют согласованную основу; root type parameters и специальные
+tuple/sequence/collection/buffer, delegate, expression-tree, deferred/async и
+push-sequence categories вынесены за v0.
 
 После этапа 7 нужно сделать отдельную checkpoint-проверку согласованности
 фундамента и только затем обновить порядок миграции production-кода.
@@ -447,9 +468,9 @@ mapper/profile graph, а не всей compilation. Named variants добавл�
 
 ### Этап 9. Коллекции
 
-**Статус:** полностью отложен до выпуска v0. До этого root collection pair не
-регистрируется даже как direct/manual, а member collection доступна только как
-единое значение без element mapping.
+**Статус:** полностью отложен до выпуска v0. До этого root
+sequence/collection/buffer pair не регистрируется даже как direct/manual, а
+member collection доступна только как единое значение без element mapping.
 
 **Проблема.** Без collection mapping пользователь вынужден материализовать и
 перебирать DTO вручную даже при наличии element pair. Особенно важны collection
@@ -460,6 +481,8 @@ members и getter-only mutable collections в entity mappings.
 - root collection и collection-member mapping;
 - source sequences и baseline destination forms: array, list, set,
   collection interfaces и immutable collections;
+- отдельная граница enumerators, async sequences, `Memory<T>`,
+  `ReadOnlyMemory<T>` и `ReadOnlySequence<T>`;
 - использование зарегистрированной element pair;
 - null source collection policy и nullable elements;
 - writable collection replacement;
@@ -612,6 +635,10 @@ cycle forms.
 
 ### Этап 15. `IQueryable` projection
 
+Expression-tree roots полностью исключены из v0. На этом этапе отдельно нужно
+решить, требуется ли их first-class mapping или expression representation
+нужна только как внутренняя основа projection.
+
 **Проблема.** Без projection EF/query-provider пользователь либо загружает
 лишние данные, либо повторно пишет mapping в `.Select(...)`. Если внутренний
 plan сразу проектировать только как imperative code, добавить projection позже
@@ -669,17 +696,23 @@ builder helper calls. Нужен явно распознаваемый compositi
 ### Этап 17. Generic, runtime-type и multi-source mapping
 
 Tuple/multi-source часть этого этапа отложена до после v0 вместе со специальной
-tuple support. Сохранение уже поддерживаемых constructed generics и mapper type
-parameters не зависит от этой отсрочки.
+tuple support. В v0 сохраняются constructed generic roots со статически
+известной nominal-формой и type parameters внутри их arguments. Type parameter
+непосредственно в root-позиции запрещён этапом 7 и может быть пересмотрен здесь
+после v0 только как отдельная capability.
 
-**Проблема.** Новый дизайн должен сохранить достигнутые generic scenarios и
-не смешивать их с более сложными open-generic/runtime dispatch. Multi-source
-mapping сейчас требует wrapper, потому что tuple pair запрещена общей policy.
+**Проблема.** Новый дизайн должен сохранить согласованные для v0 constructed
+generic scenarios, но не переносить автоматически прежнюю поддержку bare root
+type parameter и не смешивать её с более сложными open-generic/runtime
+dispatch. Multi-source mapping сейчас требует wrapper, потому что tuple pair
+запрещена общей policy.
 
 **Нужно согласовать:**
 
 - constructed generic types и nullable generic arguments;
-- generic mapper type parameters и constraints;
+- generic mapper type parameters внутри известных nominal roots;
+- нужна ли после v0 поддержка type parameter непосредственно как root и какие
+  constraints могли бы сделать её предсказуемой;
 - reusable open-generic registration;
 - resolution closed pair из generic definition;
 - runtime source/destination `Type` только среди generated known pairs;
@@ -690,8 +723,9 @@ mapping сейчас требует wrapper, потому что tuple pair за
 - generated surface для inaccessible generic arguments.
 
 **Предварительное направление:** сначала гарантированно сохранить constructed
-generics и mapper type parameters. Open-generic и runtime-type dispatcher
-рассматривать как отдельные opt-in capabilities; после v0 отдельно решить,
+generics и вложенные mapper type parameters при известной верхнеуровневой
+nominal-форме. Bare root type parameter, open-generic и runtime-type dispatcher
+рассматривать после v0 как отдельные opt-in capabilities; отдельно решить,
 достаточна ли direct/manual tuple pair или нужен first-class multi-source DSL.
 
 **Результат этапа:** support matrix для generic и runtime-resolved pairs и
@@ -722,6 +756,8 @@ first-class before/after hooks и другие imperative extension points ли�
 - валидация после mapping;
 - вызовы services и внешнего I/O;
 - async mapping;
+- post-v0 boundary для `Task`/`ValueTask`/`Lazy`/`IObservable` root pairs:
+  нужен ли им отдельный mapping contract либо они должны остаться вне core;
 - private-state mutation, dynamic/`ExpandoObject` и runtime-only shapes;
 - reverse mapping;
 - бизнес-валидация и enrichment;
@@ -822,8 +858,11 @@ factory-result с runtime-state является структурным mapping-
 | Side effects, swap и source/destination aliasing | 6 |
 | Rename, calculated member и source flattening | 6 |
 | Boxing/conversion и settings precedence | 7, 16 |
-| Root tuple/array/collection pair | Unsupported в v0; 9 и 17 после v0 |
+| Root tuple/array/sequence/collection/buffer pair | Unsupported в v0; 9 и 17 после v0 |
 | Root delegate pair | Unsupported в v0; отдельный этап после v0 при реальной потребности |
+| Root expression-tree pair | Unsupported в v0; связь с projection рассматривается на этапе 15 после v0 |
+| Root `Task`/`ValueTask`/`Lazy`/`IObservable` pair | Unsupported в v0; async/deferred boundary рассматривается на этапе 18 после v0 |
+| Type parameter непосредственно как root | Unsupported в v0; отдельная generic capability этапа 17 после v0 |
 | Public/admin или shallow/deep вариант одной pair | 8 |
 | Collection root/member/getter-only/existing | 9 |
 | Nullable patch и absent patch field | 10 |

@@ -1256,35 +1256,79 @@ outer mutation не меняются.
 
 ### 11.1. Допустимость mapping-пары
 
-Pair eligibility отделяется от конкретной declarative capability. В v0
-mapping-пара допустима, если оба её корневых типа:
+Pair eligibility отделяется от конкретной declarative capability. Root mapping
+в v0 является синхронным преобразованием одного уже материализованного
+значения со статически известной верхнеуровневой формой в другое такое
+значение. Поэтому mapping-пара допустима, если оба её корневых типа:
 
 - являются допустимыми generic type arguments при минимальном C# 9 contract;
 - могут быть однозначно названы из lexical context generated mapper-а;
+- после снятия верхнеуровневой `Nullable<T>`-обёртки не являются type
+  parameter;
 - не входят в сознательно отложенные root-категории ниже.
 
 До специальной поддержки после v0 полностью исключаются в обеих позициях
 mapping-пары:
 
-- tuple roots: tuple syntax, `System.ValueTuple` и `System.Tuple`;
-- collection roots: arrays и любой тип, реализующий
-  `System.Collections.IEnumerable`, кроме `string`;
-- delegate roots: любой delegate type.
+- tuple roots: tuple syntax, `System.ValueTuple`, `System.Tuple` и типы,
+  реализующие `System.Runtime.CompilerServices.ITuple`;
+- sequence, collection и buffer roots: arrays, любой тип, реализующий
+  `System.Collections.IEnumerable` кроме `string`, типы, реализующие
+  `System.Collections.IEnumerator`, `IAsyncEnumerable<T>` или
+  `IAsyncEnumerator<T>`, а также `Memory<T>`, `ReadOnlyMemory<T>` и
+  `ReadOnlySequence<T>`;
+- delegate roots: любой конкретный delegate type, а также базовые
+  `System.Delegate` и `System.MulticastDelegate`;
+- expression-tree roots: вся иерархия `System.Linq.Expressions.Expression`,
+  включая `Expression<TDelegate>`;
+- deferred/async roots: иерархия `Task`, `ValueTask`, `ValueTask<T>` и
+  `Lazy<T>`;
+- push-sequence roots: типы, реализующие `IObservable<T>`.
 
 Collection-категория включает generic/non-generic sequence interfaces,
-dictionaries и пользовательские collection-типы. Для delegates сначала нужна
-отдельная семантика либо явное решение об их долгосрочной неподдерживаемости.
-Запреты симметричны для source и destination и действуют также для direct
-`Create` и `MapManually`: для такой пары v0 вообще не генерирует mapping
-contract. Забытая registration не превращается в runtime lookup или скрытый
-manual fallback.
+dictionaries, enumerators, async sequences, memory buffers и пользовательские
+типы, реализующие соответствующие контракты. Для delegates, expression trees,
+deferred/async и push values сначала нужна отдельная семантика либо явное
+решение об их долгосрочной неподдерживаемости. Запреты симметричны для source и
+destination и действуют также для direct `Create` и `MapManually`: для такой
+пары v0 вообще не генерирует mapping contract. Забытая registration не
+превращается в runtime lookup или скрытый manual fallback.
 
-Эти ограничения относятся только к корню пары. Tuple, collection или delegate
-может оставаться типом обычного member-а, constructor parameter либо generic
-argument внешнего разрешённого root-типа. В v0 такое значение рассматривается
-целиком: оно доступно через warning-free implicit C#-преобразование либо явное
-пользовательское expression, но Morphant не выполняет element mapping или
-специальную delegate-обработку.
+Категория определяется после снятия верхнеуровневой `Nullable<T>`-обёртки:
+например, `ValueTask<int>?` также запрещён как root. Для разрешённого
+underlying value type сама `Nullable<T>`-форма при этом сохраняет собственную
+canonical identity mapping-пары.
+
+Эти ограничения относятся только к корню пары. Значение любой отложенной
+категории может оставаться типом обычного member-а, constructor parameter либо
+generic argument внешнего разрешённого root-типа. Например,
+`Envelope<Task<Result>>` остаётся допустимым root. В v0 вложенное значение
+рассматривается целиком: оно доступно через warning-free implicit
+C#-преобразование либо явное пользовательское expression, но Morphant не
+выполняет element mapping, ожидание deferred result, expression rebinding или
+другую специальную обработку.
+
+Type parameter непосредственно в любой root-позиции запрещён независимо от
+constraints:
+
+```csharp
+Map<T, Destination>();
+Map<Source, T>();
+Map<TSource, TDestination>();
+Map<T?, Destination>();
+```
+
+Ограничения `class`, `struct`, `new()`, базовым классом или интерфейсом не
+определяют точный верхнеуровневый тип и не создают исключения. Type parameter
+внутри известного nominal root остаётся допустимым:
+
+```csharp
+Map<Page<T>, PageDto<T>>();
+Map<Result<T>, Response<T>>();
+```
+
+Если сам известный root реализует или наследует одну из отложенных категорий,
+соответствующий запрет всё равно применяется.
 
 Технически исключаются `void`, pointers, function pointers, ref-like types,
 error types, anonymous/unnameable types и типы, недоступные из generated
@@ -1293,11 +1337,12 @@ lexical context. Это не продуктовые запреты, а форм�
 
 Остальные статически выразимые roots допустимы: built-in и BCL scalars, enums,
 classes, structs, records, nullable value/reference forms, abstract classes,
-interfaces, constructed generics и mapper type parameters с их constraints.
-`dynamic` имеет каноническую identity `object` и не образует отдельную пару.
-Алиасы также не меняют identity; root nullable reference annotation не создаёт
-вторую runtime pair, тогда как `Nullable<T>` остаётся самостоятельным
-constructed value type.
+interfaces и constructed generics с известной верхнеуровневой nominal-формой.
+Их generic arguments могут содержать type parameters. `dynamic` имеет
+каноническую identity `object` и не образует отдельную пару. Алиасы также не
+меняют identity; root nullable reference annotation не создаёт вторую runtime
+pair, тогда как `Nullable<T>` разрешённого underlying type остаётся
+самостоятельным constructed value type.
 
 ### 11.2. Capability model
 
@@ -1685,17 +1730,21 @@ diagnostic не должно вводить скрытый fallback на дру�
     `MapManually` являются обычными синхронными C# blocks. Ни одна форма не
     захватывает обычные Configure-locals, `builder` или внешние Configure-local
     functions.
-42. Eligible pair определяется отдельно от её capabilities. До post-v0 tuple,
-    collection и delegate roots, включая arrays, dictionaries и custom
-    `IEnumerable`, полностью исключаются в обеих mapping-позициях даже для
-    direct/manual mapping.
-43. Для любой другой статически выразимой eligible pair доступны runtime
-    contract и `MapManually`; destination независимо получает ровно одну форму
-    `Create` и, при наличии поддерживаемых body-members, `Members`.
-44. Delegate value внутри разрешённого root остаётся обычным C#-значением, но
-    delegate root требует отдельной post-v0 поддержки. `dynamic` канонически
-    совпадает с `object`; root nullable reference annotation не создаёт
-    отдельную runtime pair.
+42. Eligible pair определяется отдельно от её capabilities. Оба root-типа
+    должны иметь статически известную верхнеуровневую форму; type parameter в
+    root-позиции запрещён независимо от constraints, но может оставаться
+    generic argument известного nominal root. Для классификации верхнеуровневая
+    `Nullable<T>`-обёртка снимается, не меняя canonical identity разрешённой
+    nullable value pair.
+43. До post-v0 tuple, sequence/collection/buffer, delegate, expression-tree,
+    deferred/async и push-sequence roots полностью исключаются в обеих
+    mapping-позициях даже для direct/manual mapping.
+44. Для любой другой eligible pair доступны runtime contract и `MapManually`;
+    destination независимо получает ровно одну форму `Create` и, при наличии
+    поддерживаемых body-members, `Members`. Значение отложенной категории
+    внутри разрешённого root остаётся обычным единым C#-значением. `dynamic`
+    канонически совпадает с `object`; root nullable reference annotation не
+    создаёт отдельную runtime pair.
 45. Manual mapping применяет только `MappingMode`. Остальные settings не
     запускают скрытый declarative pipeline; неприменимая explicit map-level
     setting является ошибкой, а inherited setting может быть безвредным no-op.
@@ -1703,9 +1752,10 @@ diagnostic не должно вводить скрытый fallback на дру�
 ## 15. Детали, которые ещё нужно закрепить перед реализацией
 
 Фундаментальные этапы 1–7 согласованы. Pair eligibility и capability/settings
-matrix зафиксированы; tuple/collection/delegate roots сознательно отложены за
-границу v0. До миграции production API отдельного решения либо
-реализационного планирования требуют:
+matrix зафиксированы; root type parameters и специальные tuple,
+sequence/collection/buffer, delegate, expression-tree, deferred/async и
+push-sequence categories сознательно отложены за границу v0. До миграции
+production API отдельного решения либо реализационного планирования требуют:
 
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
   creation/member-plan types и возможную result-wrapper;
