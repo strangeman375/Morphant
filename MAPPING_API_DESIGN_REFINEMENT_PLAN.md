@@ -75,7 +75,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 5 | Полная семантика nested `Map` | До реализации нового API | Согласован |
 | 6 | Порядок вычислений и declarative control flow | До реализации нового API | Согласован |
 | 7 | Допустимость mapping-пар и capability model | До реализации нового API | Согласован |
-| 8 | Scope mapping-а и несколько вариантов одной пары | До заморозки runtime architecture | Не начат |
+| 8 | Scope mapping-а и несколько вариантов одной пары | До заморозки runtime architecture | Согласован |
 | 9 | Коллекции | После v0 | Отложен |
 | 10 | Patch/merge и conditional no-op | До general-purpose release | Не начат |
 | 11 | Immutable `MapExisting` | До general-purpose release | Не начат |
@@ -448,23 +448,47 @@ push-sequence categories вынесены за v0.
 `User -> UserDto` mappings для public/admin, summary/details, bounded contexts
 или версий API. Эту потребность невозможно выразить даже вручную.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- identity mapping-а: canonical type pair, mapper/profile graph, имя/variant
-  или их комбинация;
-- допустимость одной пары в разных `TypeMapper`;
-- какой набор mappings представляет runtime `IMapper`;
-- выбор mapping variant для explicit nested `Map(...)`;
-- конфликт двух доступных вариантов в одном scope;
-- связь variants с inheritance, reuse и DI registration;
-- нужна ли явная named mapping возможность либо достаточно mapper-level scope;
-- поведение mappings из разных assemblies.
+- public `IMapper` является единым application-wide фасадом. Он использует
+  `IServiceProvider` текущего DI-scope и видит registrations из приложения и
+  всех подключённых composition root-ом assemblies;
+- concrete `TypeMapper` является единицей конфигурации, генерации и
+  DI-активации, но не lookup-scope и не частью ключа обычного mapping-а;
+- lookup key v0 — canonical type pair. Registry хранит все её registrations;
+- ноль кандидатов означает missing mapping, один кандидат выполняется, два и
+  более дают runtime ambiguity;
+- повторные pair registrations разрешены и сами по себе не вызывают generator
+  diagnostic или startup failure. Выбор первого/последнего по порядку DI либо
+  assembly registrations запрещён;
+- explicit и manual nested `Map(...)` используют тот же application-wide
+  registry и текущий `IServiceProvider`, что и root call. Mapping scope хранит
+  call-chain state, но не ограничивает набор mappings outer `TypeMapper` или
+  assembly;
+- точные exception types/messages для missing и ambiguous lookup относятся к
+  этапу 20.
 
-**Предварительное направление:** как минимум ограничить uniqueness одним
-mapper/profile graph, а не всей compilation. Named variants добавлять только
-если mapper-level scope не покрывает реальные сценарии без искусственных DTO.
+**Отложенный keyed extension path:** после v0 descriptor можно расширить
+service/mapping key типа `object?`, не меняя core-shape `IMapper.Map(...)` и
+generated `ITypeMapper`. Рабочий terminal sketch:
 
-**Результат этапа:** формальная identity mapping-а и deterministic lookup law.
+```csharp
+mapper
+    .From(source)
+    .To<Destination>()
+    .WithServiceKey("public");
+```
+
+`WithServiceKey` пока не является принятым именем. Отдельно нужно решить,
+назначается ли key mapper-у или pair, наследуется ли он nested mapping-ом,
+есть ли fallback к default-варианту, как выглядит `MapExisting` fluent form и
+как диагностируются повторы одной pair с одним key. Если используется
+собственный registry Morphant, честнее может оказаться `WithMappingKey`.
+
+**Результат этапа:** application-wide registry, canonical-pair lookup и
+deterministic `0 / 1 / 2+` law перенесены в `MAPPING_API_DESIGN.md`. Повторные
+pair registrations разрешены, keyed selection оставлен совместимым post-v0
+расширением.
 
 ### Этап 9. Коллекции
 
@@ -598,7 +622,7 @@ extension path, который не потребует ломать основн
 - preservation/replacement existing destination с derived runtime type;
 - polymorphic collection elements;
 - closed-world generated dispatcher без runtime reflection;
-- взаимодействие с mapper scopes/variants.
+- взаимодействие с application-wide registry и будущими keyed variants.
 
 **Предварительное направление:** explicit opt-in relationship между base и
 derived pairs и generated most-specific dispatcher с diagnostic на
@@ -682,7 +706,7 @@ types неудобно возвращать из обычных helper methods, 
 - generic fragments;
 - external assembly configurations;
 - discoverability source generator-ом без выполнения arbitrary code;
-- взаимодействие с mapper scopes и mapping variants;
+- взаимодействие с application-wide registry и будущими keyed variants;
 - является ли обычный method call mapper-а достаточным reuse для direct/manual
   logic, но не для declarative plan.
 
@@ -719,7 +743,7 @@ dispatch. Multi-source mapping сейчас требует wrapper, потому
 - reflection-free registry и поведение неизвестной pair;
 - root tuple как direct/manual multi-source input;
 - нужны ли специальные overloads до трёх source или wrapper/tuple достаточно;
-- ambiguity с mapping variants и polymorphic dispatch;
+- ambiguity с будущими keyed variants и polymorphic dispatch;
 - generated surface для inaccessible generic arguments.
 
 **Предварительное направление:** сначала гарантированно сохранить constructed
@@ -863,7 +887,7 @@ factory-result с runtime-state является структурным mapping-
 | Root expression-tree pair | Unsupported в v0; связь с projection рассматривается на этапе 15 после v0 |
 | Root `Task`/`ValueTask`/`Lazy`/`IObservable` pair | Unsupported в v0; async/deferred boundary рассматривается на этапе 18 после v0 |
 | Type parameter непосредственно как root | Unsupported в v0; отдельная generic capability этапа 17 после v0 |
-| Public/admin или shallow/deep вариант одной pair | 8 |
+| Public/admin или shallow/deep вариант одной pair | Unkeyed повторы допустимы, но неоднозначны при использовании; keyed selection после v0 |
 | Collection root/member/getter-only/existing | 9 |
 | Nullable patch и absent patch field | 10 |
 | Immutable record update | 11 |
@@ -900,6 +924,8 @@ factory-result с runtime-state является структурным mapping-
 
 ## 7. Следующий этап
 
-**Этап 8 — scope mapping-а и несколько вариантов одной пары.** Определить
-identity mapper/profile graph, границы runtime `IMapper` и deterministic lookup
-для одинаковой type pair в разных scopes до заморозки runtime architecture.
+**Этап 10 — patch/merge и conditional no-op.** Этап 9 с коллекциями уже
+полностью отложен до после v0. Следующий активный вопрос — различить обычный
+nullable mapping, merge-policy «не присваивать `null`» и настоящее отсутствие
+patch field, затем определить precedence explicit member rules и необходимость
+first-class whole-plan no-op.

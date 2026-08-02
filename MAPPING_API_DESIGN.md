@@ -862,6 +862,11 @@ mapping chain и создаёт новый scope для каждого публ�
 scope. Отдельный `IContextualMapper`, полностью повторяющий `IMapper`, не
 вводится.
 
+Оба экземпляра видят один application-wide registry mapping-ов и используют
+`IServiceProvider` текущего DI-scope. `MappingScope` сохраняет состояние одной
+mapping chain, но никогда не ограничивает набор доступных пар конкретным
+`TypeMapper`, mapper-графом или assembly.
+
 Source-only перегрузка scoped mapper создаёт nested frame с
 `MappingOperation.MapNew`, а two-parameter перегрузка — с
 `MappingOperation.MapExisting`, даже когда переданный destination равен
@@ -1449,9 +1454,104 @@ operation, отсутствующий required direct `Create`, невозмож
 соответствующей диагностики generated operation может быть unsupported, но не
 переключается на manual, другую creation-ветку или runtime discovery.
 
-## 12. Основные сценарии
+## 12. Application registry и deterministic lookup
 
-### 12.1. Полностью convention mapping
+### 12.1. Граница runtime `IMapper`
+
+`IMapper` является единой точкой входа во все mappings, зарегистрированные в
+приложении. Он не привязан к конкретному `TypeMapper`, compilation или
+mapper/profile graph. Application registry содержит descriptors пар из самого
+приложения и всех подключённых composition root-ом assemblies.
+
+Concrete `TypeMapper` остаётся единицей объявления конфигурации, генерации и
+DI-активации. Он может иметь собственные dependencies, но его тип и assembly не
+входят в ключ обычного lookup и не образуют скрытый mapping scope. Перенос pair
+между mapper-классами сам по себе не должен менять поведение вызова.
+
+Registry может быть immutable singleton, а root `IMapper` использует
+`IServiceProvider` текущего DI-scope. Поэтому выбранный generated mapper
+разрешается вместе со своими scoped/transient dependencies из того provider,
+который обслуживает текущий публичный вызов. Точная registration-механика и
+generated manifest являются implementation details; runtime reflection для
+поиска pair не требуется.
+
+### 12.2. Lookup law v0
+
+Lookup key обычного `Map<TSource, TDestination>` — canonical type pair из
+раздела 11. Mapper-type, assembly и порядок DI registrations в этот ключ не
+входят. Registry хранит все кандидаты pair, а dispatch использует только их
+количество:
+
+| Кандидаты canonical pair | Поведение |
+|---:|---|
+| `0` | Mapping не найден; вызов завершается явной runtime-ошибкой |
+| `1` | Кандидат разрешается через текущий `IServiceProvider` и выполняется |
+| `2+` | Mapping неоднозначен; вызов завершается явной runtime-ошибкой |
+
+Несколько registrations одной canonical pair допустимы, в том числе в разных
+`TypeMapper` и assemblies. Само их наличие не является generator diagnostic и
+не запрещает построение application registry. Неоднозначность наблюдаема
+только при фактическом безымянном lookup этой pair.
+
+Morphant никогда не выбирает первый или последний descriptor и не зависит от
+порядка `IServiceCollection` registrations, assembly discovery либо вызовов
+`AddMorphant`. `MappingMode` является capability выбранного mapping-а, а не
+дополнительной частью lookup identity и не используется для скрытого выбора
+между повторными pair registrations.
+
+Точные exception-типы и сообщения для missing/ambiguous lookup определяются на
+этапе observable failures. До этого отсутствие готового типа ошибки не даёт
+права вводить `last registration wins` или другой fallback.
+
+### 12.3. Root и nested dispatch
+
+Root `IMapper.Map(...)` начинает новую mapping chain, создаёт `MappingScope` и
+выполняет lookup в application registry. Explicit nested `Map(...)` и ручной
+`context.Mapper.Map(...)` используют тот же registry и тот же текущий
+`IServiceProvider`, но создают новый immutable call frame внутри уже
+существующего scope.
+
+Nested lookup не предпочитает mapping из `TypeMapper`, которому принадлежит
+outer pair, и не ограничивается его assembly. Для одной canonical pair root и
+nested вызовы применяют одинаковое правило `0 / 1 / 2+`; неоднозначность не
+разрешается через outer mapper, call stack или порядок регистрации.
+
+### 12.4. Post-v0 путь к keyed mappings
+
+После v0 registry можно совместимо расширить явным ключом варианта. Рабочая
+модель descriptor-а тогда имеет lookup identity
+`(canonical pair, service key)`, где отсутствие ключа означает default-вариант.
+Core-shape `IMapper.Map(...)` и generated
+`ITypeMapper<TSource, TDestination>` при этом не меняются.
+
+Возможный terminal extension API:
+
+```csharp
+var destination = mapper
+    .From(source)
+    .To<Destination>()
+    .WithServiceKey("public");
+```
+
+`WithServiceKey` здесь является рабочим именем, а не принятым API. Если ключ
+будет принадлежать собственному registry Morphant, а не настоящей keyed DI
+registration, точнее может оказаться `WithMappingKey`. Сам ключ не следует
+ограничивать строкой; совместимая внутренняя форма — `object?`.
+
+Перед добавлением keyed mappings отдельно согласуются:
+
+- назначается ли ключ всему concrete `TypeMapper` или отдельной pair;
+- наследует ли explicit nested `Map(...)` текущий ключ;
+- разрешён ли fallback keyed lookup к default-варианту;
+- как выглядит terminal fluent API для обеих mapping-операций;
+- что происходит при нескольких кандидатах с одной pair и одним ключом.
+
+Этот эскиз резервирует extension path, но не добавляет keyed semantics в v0 и
+не делает текущий unkeyed lookup зависимым от будущего имени API.
+
+## 13. Основные сценарии
+
+### 13.1. Полностью convention mapping
 
 ```csharp
 builder.Map<Source, Destination>();
@@ -1463,7 +1563,7 @@ builder.Map<Source, Destination>();
 - `Map(source, destination)` использует destination как result;
 - body-members маппятся по effective conventions.
 
-### 12.2. Явный constructor и единый member plan
+### 13.2. Явный constructor и единый member plan
 
 ```csharp
 builder.Map<UserDto, User>()
@@ -1483,7 +1583,7 @@ builder.Map<UserDto, User>()
 обновляют его. `RequiredCode` настраивается только в `Members`, независимо от
 того, является ли он `set`- или `init`-member destination.
 
-### 12.3. Условное переиспользование или replacement
+### 13.3. Условное переиспользование или replacement
 
 ```csharp
 builder.Map<CustomerDto, Customer>()
@@ -1507,7 +1607,7 @@ builder.Map<CustomerDto, Customer>()
 Previous-aware `Create` является полным выбором result для обоих публичных
 вызовов. `Members` применяется уже к выбранному result.
 
-### 12.4. Всегда создавать replacement
+### 13.4. Всегда создавать replacement
 
 ```csharp
 builder.Map<Source, Destination>()
@@ -1521,7 +1621,7 @@ builder.Map<Source, Destination>()
 Двухпараметрический `Create` намеренно игнорирует previous и получает result в
 обеих операциях.
 
-### 12.5. Factory плюс members
+### 13.5. Factory плюс members
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -1536,7 +1636,7 @@ builder.Map<OrderDto, Order>()
 Factory выполняется только в no-previous ветке source-only `Create`. При
 обычном `MapExisting` используется previous и применяется `Number`.
 
-### 12.6. Direct factory-only destination плюс members
+### 13.6. Direct factory-only destination плюс members
 
 ```csharp
 builder.Map<OrderDto, IOrder>()
@@ -1555,7 +1655,7 @@ builder.Map<OrderDto, IOrder>()
 replacement. В обеих ветках применимый member plan выполняется после выбора
 result.
 
-### 12.7. Scalar и opaque value object
+### 13.7. Scalar и opaque value object
 
 ```csharp
 builder.Map<Order, decimal>()
@@ -1577,7 +1677,7 @@ builder.Map<string, Guid?>()
 `MapManually`. В последнем примере `null` является авторитетным терминальным
 результатом; member stage после него не выполняется.
 
-### 12.8. Immutable или сложный ручной mapping
+### 13.8. Immutable или сложный ручной mapping
 
 ```csharp
 builder.Map<SnapshotDto, Snapshot>()
@@ -1604,7 +1704,7 @@ builder.Map<SnapshotDto, Snapshot>()
 
 Никакого generated `with`-DSL для этого не требуется.
 
-## 13. Ошибочные и конфликтующие конфигурации
+## 14. Ошибочные и конфликтующие конфигурации
 
 В целевом дизайне diagnostics должны покрыть как минимум:
 
@@ -1619,12 +1719,17 @@ builder.Map<SnapshotDto, Snapshot>()
 - `null` вместо generated `DestinationCreation` или `DestinationMembers`
   plan;
 - невозможный explicit constructor/member marker;
-- duplicate registration той же canonical pair.
+- отсутствие кандидата при runtime lookup canonical pair;
+- неоднозначный безымянный runtime lookup при двух и более кандидатах pair.
+
+Несколько registrations одной canonical pair сами по себе не являются
+ошибочной конфигурацией. Ошибка возникает только тогда, когда конкретный вызов
+не может выбрать ровно одного кандидата.
 
 Diagnostics остаются отдельной реализационной фазой, но отсутствие готового
 diagnostic не должно вводить скрытый fallback на другой mapping algorithm.
 
-## 14. Зафиксированные законы дизайна
+## 15. Зафиксированные законы дизайна
 
 1. `Map(source)` и `Map(source, destination)` остаются двумя публичными
    mapping-операциями; effective `MappingMode` управляет их доступностью.
@@ -1748,14 +1853,29 @@ diagnostic не должно вводить скрытый fallback на дру�
 45. Manual mapping применяет только `MappingMode`. Остальные settings не
     запускают скрытый declarative pipeline; неприменимая explicit map-level
     setting является ошибкой, а inherited setting может быть безвредным no-op.
+46. Public `IMapper` является application-wide фасадом: concrete `TypeMapper`,
+    compilation и assembly не ограничивают видимый runtime registry.
+47. Root и scoped mapper используют один registry и `IServiceProvider`
+    текущего DI-scope; `MappingScope` хранит только состояние mapping chain.
+48. Обычный v0 lookup идентифицируется canonical type pair. Ноль кандидатов
+    означает missing mapping, один — выполнение, два и более — ambiguity.
+49. Повторные registrations pair допустимы и не являются generator/startup
+    error; Morphant никогда не разрешает их порядком регистрации или правилом
+    last-registration-wins.
+50. Explicit nested и manual nested mappings выполняют тот же application-wide
+    lookup, не предпочитая outer `TypeMapper` или assembly.
+51. Post-v0 keyed lookup добавляется как явное расширение выбора descriptor-а,
+    не меняющее базовый `IMapper`/`ITypeMapper` shape; точный API, назначение и
+    наследование ключа согласуются отдельно.
 
-## 15. Детали, которые ещё нужно закрепить перед реализацией
+## 16. Детали, которые ещё нужно закрепить перед реализацией
 
-Фундаментальные этапы 1–7 согласованы. Pair eligibility и capability/settings
-matrix зафиксированы; root type parameters и специальные tuple,
-sequence/collection/buffer, delegate, expression-tree, deferred/async и
-push-sequence categories сознательно отложены за границу v0. До миграции
-production API отдельного решения либо реализационного планирования требуют:
+Этапы 1–8 согласованы. Pair eligibility, capability/settings matrix и
+application-wide deterministic lookup зафиксированы; root type parameters и
+специальные tuple, sequence/collection/buffer, delegate, expression-tree,
+deferred/async и push-sequence categories сознательно отложены за границу v0.
+Keyed mappings также оставлены post-v0 extension path. До миграции production
+API отдельного решения либо реализационного планирования требуют:
 
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
   creation/member-plan types и возможную result-wrapper;
