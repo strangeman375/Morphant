@@ -810,9 +810,10 @@ previous и отсутствии previous-aware `Create` он останется
 изменений.
 
 Для динамического алгоритма, который в runtime иногда должен выполнить полный
-no-op, используется `MapManually`. Отдельный `Skip()` сейчас не добавляется;
-first-class whole-plan no-op повторно рассматривается вместе с patch/merge,
-где он нужен в общей модели absent и conditional assignments.
+no-op, используется `MapManually`. Отдельный `Skip()` в v0 не добавляется;
+first-class whole-plan no-op и общая patch/merge policy полностью отложены до
+после v0. Исследование возможной null-assignment policy сохранено в
+[`NULL_ASSIGNMENT_HANDLING_RESEARCH.md`](NULL_ASSIGNMENT_HANDLING_RESEARCH.md).
 
 ## 8. Полностью ручной mapping
 
@@ -1871,11 +1872,14 @@ diagnostic не должно вводить скрытый fallback на дру�
 ## 16. Детали, которые ещё нужно закрепить перед реализацией
 
 Этапы 1–8 согласованы. Pair eligibility, capability/settings matrix и
-application-wide deterministic lookup зафиксированы; root type parameters и
-специальные tuple, sequence/collection/buffer, delegate, expression-tree,
-deferred/async и push-sequence categories сознательно отложены за границу v0.
-Keyed mappings также оставлены post-v0 extension path. До миграции production
-API отдельного решения либо реализационного планирования требуют:
+application-wide deterministic lookup зафиксированы. Этапы 9 и 10 — collections
+и patch/merge — сознательно отложены за границу v0; исследование
+null-assignment policy сохранено отдельно и не меняет текущий default обычного
+member assignment. Root type parameters и специальные tuple,
+sequence/collection/buffer, delegate, expression-tree, deferred/async и
+push-sequence categories также остаются post-v0. Keyed mappings оставлены
+совместимым extension path. До миграции production API отдельного решения либо
+реализационного планирования требуют:
 
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
   creation/member-plan types и возможную result-wrapper;

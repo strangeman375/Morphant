@@ -77,7 +77,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 7 | Допустимость mapping-пар и capability model | До реализации нового API | Согласован |
 | 8 | Scope mapping-а и несколько вариантов одной пары | До заморозки runtime architecture | Согласован |
 | 9 | Коллекции | После v0 | Отложен |
-| 10 | Patch/merge и conditional no-op | До general-purpose release | Не начат |
+| 10 | Patch/merge и conditional no-op | После v0 | Отложен |
 | 11 | Immutable `MapExisting` | До general-purpose release | Не начат |
 | 12 | Per-call data и пользовательский context | До заморозки public contract | Не начат |
 | 13 | Runtime polymorphism и inheritance | До general-purpose release | Не начат |
@@ -530,6 +530,13 @@ key-based reconciliation не должен иметь скрытого default �
 
 ### Этап 10. Patch/merge и conditional no-op
 
+**Статус:** полностью отложен до периода после v0. Null-assignment policy,
+presence-aware patch и whole-plan conditional no-op являются надстройкой над
+уже согласованными creation/member/null/evaluation laws и не нужны для
+надёжного каркаса v0. Проведённое исследование, сравнение с другими мапперами,
+рабочая рекомендация и все найденные ограничения сохранены в
+[`NULL_ASSIGNMENT_HANDLING_RESEARCH.md`](NULL_ASSIGNMENT_HANDLING_RESEARCH.md).
+
 **Проблема.** Для обычного partial update пользователь должен повторять
 conditional `Ignore()` для десятков members. Nullable source value также не
 различает «поле отсутствовало» и «явно присвоить null».
@@ -548,9 +555,12 @@ conditional `Ignore()` для десятков members. Nullable source value т
 - nested patch и collection patch behavior;
 - влияние на `UnmappedMemberValidation` и nullability diagnostics.
 
-**Предварительное направление:** добавить first-class ignore-null assignment
-policy для распространённого merge, но не пытаться угадать field presence по
-nullable type. Explicit absence требует отдельного source contract.
+**Рабочее post-v0 направление:** рассмотреть first-class
+`NullAssignmentHandling { Assign, Ignore, Throw }` с default `Assign`, общей
+семантикой generated member assignment и возможностью разных effective values
+для create и existing paths. Не пытаться угадывать field presence по nullable
+type: explicit absence требует отдельного source contract. Это направление не
+принято как public API и должно быть повторно проверено после v0.
 
 **Результат этапа:** точная patch matrix для absent/non-null/null values и
 решение по whole-plan no-op.
@@ -889,7 +899,7 @@ factory-result с runtime-state является структурным mapping-
 | Type parameter непосредственно как root | Unsupported в v0; отдельная generic capability этапа 17 после v0 |
 | Public/admin или shallow/deep вариант одной pair | Unkeyed повторы допустимы, но неоднозначны при использовании; keyed selection после v0 |
 | Collection root/member/getter-only/existing | 9 |
-| Nullable patch и absent patch field | 10 |
+| Nullable patch и absent patch field | После v0 (этап 10) |
 | Immutable record update | 11 |
 | Tenant/culture/request flag | 12 |
 | Derived runtime source и polymorphic element | 13 |
@@ -924,8 +934,9 @@ factory-result с runtime-state является структурным mapping-
 
 ## 7. Следующий этап
 
-**Этап 10 — patch/merge и conditional no-op.** Этап 9 с коллекциями уже
-полностью отложен до после v0. Следующий активный вопрос — различить обычный
-nullable mapping, merge-policy «не присваивать `null`» и настоящее отсутствие
-patch field, затем определить precedence explicit member rules и необходимость
-first-class whole-plan no-op.
+**Этап 11 — immutable `MapExisting`.** Этапы 9 и 10 полностью отложены до
+после v0; исследование null-assignment policy сохранено отдельно. Следующий
+активный вопрос — определить минимально безопасное поведение для record,
+init-only и других immutable destinations: когда достаточно явного replacement
+через previous-aware `Create`, нужен ли generated clone/`with` path и где
+обязательна diagnostic вместо молчаливого no-op.
