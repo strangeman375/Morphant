@@ -78,7 +78,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 8 | Scope mapping-а и несколько вариантов одной пары | До заморозки runtime architecture | Согласован |
 | 9 | Коллекции | После v0 | Отложен |
 | 10 | Patch/merge и conditional no-op | После v0 | Отложен |
-| 11 | Immutable `MapExisting` | До general-purpose release | Не начат |
+| 11 | Immutable `MapExisting` | До general-purpose release | Согласован |
 | 12 | Per-call data и пользовательский context | До заморозки public contract | Не начат |
 | 13 | Runtime polymorphism и inheritance | До general-purpose release | Не начат |
 | 14 | Cycles и shared references | До general-purpose release | Не начат |
@@ -571,24 +571,56 @@ type: explicit absence требует отдельного source contract. Эт
 молча вернуться без изменений. Ручная полная reconstruction делает
 `MapExisting` заметно менее полезным и легко теряет сохраняемые поля.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- минимально допустимое поведение immutable existing mapping;
-- replacement через previous-aware `Create` как явный baseline;
-- generated record clone/`with` strategy;
-- возможность применять `Members` к clone для init-only properties;
-- constructor-based reconstruction non-record immutable types;
-- сохранение не затронутых members;
-- factory и derived runtime type;
-- diagnostic для silent no-op или неполного replacement plan.
+- в v0 `MapExisting` не клонирует и не реконструирует destination неявно только
+  потому, что новое значение нельзя присвоить после создания. Если result —
+  previous, его `init`-only, get-only и readonly state сохраняется, а обычные
+  setter-rules продолжают применяться;
+- декларативный replacement уже выражается existing previous-aware
+  `Create`. Он может сравнить source с previous, вернуть previous при
+  совместимом immutable state либо выбрать explicit constructor/convention
+  result. В последнем случае `Members` применяет к новому result доступные
+  creation-time `init`/`required` rules;
+- для non-record immutable destination пользователь явно переносит необходимые
+  сохраняемые значения через constructor/member rules. Morphant не угадывает,
+  какие destination-only значения нужно копировать;
+- настоящий record-copy с сохранением всех неуказанных значений уже выражается
+  через `MapManually` и обычный C# `with`. Отдельный `ByCopy`, generated
+  `with`-plan или автоматическое клонирование record в v0 не добавляются: они
+  не дают новой capability, но вводят неявную смену identity и отдельные
+  вопросы copy-constructor/derived-runtime-type semantics;
+- source-only `Create` не выполняется при существующем previous и потому не
+  является replacement-path для immutable `MapExisting`;
+- если включён declarative `MapExisting`, но его existing-ветка статически не
+  может ни выбрать replacement, ни выполнить хотя бы один post-construction
+  assignment, это configuration diagnostic вместо молчаливого возврата
+  previous. Явный previous-aware `Create`, `MapManually` либо отключённый
+  `MapExisting` делают намерение наблюдаемым и устраняют эту diagnostic;
+- смешанный mutable/immutable destination не считается целиком ошибочным
+  только из-за сохранённого immutable member. Неприменимый explicit
+  `init`-rule диагностируется отдельно, а полнота convention mapping остаётся
+  под effective validation settings.
 
-**Предварительное направление:** до появления безопасного clone/reconstruction
-как минимум диагностировать фактически пустой immutable `MapExisting`.
-Отдельно оценить `with`-based result как declarative creation strategy, не
-возвращая старый универсальный template overlay.
+**Отложенная надстройка:** после v0 добавить отдельную opt-in настройку
+условной reconstruction. Когда existing result иначе был бы переиспользован,
+она должна до первой generated mutation вычислить значения creation-only
+members и пересоздать result только если хотя бы одно из них отличается от
+previous. Если все такие значения равны, identity previous сохраняется, а
+обычные mutable rules выполняются как сейчас.
 
-**Результат этапа:** поддерживаемые immutable update strategies и явная граница
-между declarative replacement и manual algorithm.
+Эта policy не объединяется с `NullAssignmentHandling`: одна управляет выбором
+identity/reconstruction, другая — выполнением отдельного assignment. Рабочее
+имя, уровень конфигурации, equality contract, способ reconstruction
+(полный MapNew-plan, копирование previous либо явно предоставленный plan),
+поведение factory/derived instances и порядок side effects согласуются после
+v0. До этого никакой скрытой `EqualityComparer<T>.Default`-семантики или
+fallback reconstruction в контракте нет.
+
+**Результат этапа:** v0 использует только явный replacement через
+previous-aware `Create` либо manual `with`/reconstruction, диагностирует
+статически неизбежный полный no-op и сохраняет совместимый путь к отдельной
+post-v0 настройке `recreate when changed`.
 
 ### Этап 12. Per-call data и пользовательский context
 
@@ -934,9 +966,9 @@ factory-result с runtime-state является структурным mapping-
 
 ## 7. Следующий этап
 
-**Этап 11 — immutable `MapExisting`.** Этапы 9 и 10 полностью отложены до
-после v0; исследование null-assignment policy сохранено отдельно. Следующий
-активный вопрос — определить минимально безопасное поведение для record,
-init-only и других immutable destinations: когда достаточно явного replacement
-через previous-aware `Create`, нужен ли generated clone/`with` path и где
-обязательна diagnostic вместо молчаливого no-op.
+**Этап 12 — per-call data и пользовательский context.** Этап 11 зафиксировал
+явные immutable replacement paths для v0 и отдельную post-v0 настройку
+условной reconstruction. Следующий активный вопрос — нужен ли per-call data в
+public contract до его заморозки и, если нужен, как типобезопасно передавать и
+автоматически распространять tenant/user/culture/flags в declarative, direct,
+manual и nested mappings без раскрытия внутреннего call frame.

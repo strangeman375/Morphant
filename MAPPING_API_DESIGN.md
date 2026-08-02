@@ -1705,6 +1705,57 @@ builder.Map<SnapshotDto, Snapshot>()
 
 Никакого generated `with`-DSL для этого не требуется.
 
+### 13.9. Immutable `MapExisting` в v0
+
+Declarative mapping уже может условно сохранить previous либо явно построить
+replacement через previous-aware `Create`:
+
+```csharp
+builder.Map<SnapshotDto, Snapshot>()
+    .Create((source, previous) =>
+        previous.HasValue &&
+        previous.Value.Id == source.Id &&
+        previous.Value.Name == source.Name
+            ? previous
+            : new(source.Id))
+    .Members((source, _) => new()
+    {
+        Name = source.Name
+    });
+```
+
+Если `Name` является `init`-only, он сохраняется при выборе previous и попадает
+в object initializer при выборе constructor-result. Для обычного immutable
+class все сохраняемые значения, которых нет в source, пользователь явно
+переносит через constructor/member rules. Для record-copy с сохранением всех
+остальных значений используется `MapManually` и обычный C# `with`, как в
+предыдущем примере.
+
+В v0 Morphant не выводит такое equality-условие автоматически, не добавляет
+`ByCopy` и не клонирует record только из-за наличия неприменимого после создания
+member-а. Source-only `Create` при существующем previous не выполняется и
+replacement-path не образует. Это сохраняет явный контроль identity,
+copy-constructor semantics и derived runtime type.
+
+Статически неизбежный полный no-op является ошибочной конфигурацией: если
+declarative `MapExisting` включён, existing-ветка не имеет previous-aware
+`Create` и не содержит ни одного применимого post-construction assignment,
+generator должен выдать diagnostic вместо молчаливого возврата previous.
+Отключённый `MapExisting`, `MapManually` или explicit previous-aware `Create`
+явно задают другое намерение и устраняют эту diagnostic. Наличие отдельных
+immutable members в смешанном mutable/immutable destination само по себе не
+делает всю operation ошибочной; неприменимые explicit rules и полнота
+conventions проверяются своими diagnostics/settings.
+
+После v0 запланирована отдельная opt-in setting условной reconstruction. Она
+сможет вычислить creation-only member candidates до первой generated mutation,
+сравнить их со значениями previous и выбрать replacement только при реальном
+отличии; при равенстве previous identity сохраняется. Это надстройка над тем же
+creation/member plan, а не новая creation-ветка и не часть
+`NullAssignmentHandling`. Её public name, equality contract, reconstruction
+source, factory/derived behavior и точный evaluation order будут согласованы
+отдельно; до этого скрытой политики сравнения или реконструкции нет.
+
 ## 14. Ошибочные и конфликтующие конфигурации
 
 В целевом дизайне diagnostics должны покрыть как минимум:
@@ -1714,8 +1765,10 @@ builder.Map<SnapshotDto, Snapshot>()
 - повторный `MapManually`;
 - смешивание `MapManually` с `Create` или `Members`;
 - pair-specific constructor/member settings, несовместимые с manual mapping;
-- factory или direct creation вместе с explicit `init`-rule, который невозможно
-  применить к уже созданному result;
+- previous, factory или direct creation вместе с explicit `init`-rule, который
+  невозможно применить к уже созданному result;
+- статически неизбежный declarative `MapExisting` no-op: existing-ветка не
+  может ни выбрать replacement, ни выполнить post-construction assignment;
 - reachable no-previous branch direct surface без configured `Create`;
 - `null` вместо generated `DestinationCreation` или `DestinationMembers`
   plan;
@@ -1868,12 +1921,30 @@ diagnostic не должно вводить скрытый fallback на дру�
 51. Post-v0 keyed lookup добавляется как явное расширение выбора descriptor-а,
     не меняющее базовый `IMapper`/`ITypeMapper` shape; точный API, назначение и
     наследование ключа согласуются отдельно.
+52. В v0 `MapExisting` не создаёт replacement автоматически из-за отличия
+    `init`-only, get-only или readonly state. Декларативный replacement задаётся
+    previous-aware `Create`, а record-copy и иная специальная reconstruction —
+    `MapManually`.
+53. Source-only `Create` при существующем previous не является immutable
+    replacement-path. `ByCopy`, generated `with` и implicit record cloning в
+    v0 отсутствуют.
+54. Declarative existing-ветка, которая статически не может ни заменить result,
+    ни выполнить post-construction assignment, является configuration
+    diagnostic, если `MapExisting` доступен и намерение не выражено
+    previous-aware `Create` либо `MapManually`.
+55. Отдельная post-v0 opt-in setting может условно реконструировать result при
+    отличии хотя бы одного creation-only member candidate от previous. Эта
+    identity-policy не является частью `NullAssignmentHandling`; её equality,
+    reconstruction и evaluation contracts требуют отдельного решения.
 
 ## 16. Детали, которые ещё нужно закрепить перед реализацией
 
-Этапы 1–8 согласованы. Pair eligibility, capability/settings matrix и
-application-wide deterministic lookup зафиксированы. Этапы 9 и 10 — collections
-и patch/merge — сознательно отложены за границу v0; исследование
+Этапы 1–8 и 11 согласованы. Pair eligibility, capability/settings matrix,
+application-wide deterministic lookup и явная граница immutable
+`MapExisting` зафиксированы. В v0 immutable replacement выполняется только
+через previous-aware `Create` либо `MapManually`; автоматическая условная
+reconstruction оставлена отдельной post-v0 setting. Этапы 9 и 10 — collections
+и patch/merge — также сознательно отложены за границу v0; исследование
 null-assignment policy сохранено отдельно и не меняет текущий default обычного
 member assignment. Root type parameters и специальные tuple,
 sequence/collection/buffer, delegate, expression-tree, deferred/async и
@@ -1881,6 +1952,8 @@ push-sequence categories также остаются post-v0. Keyed mappings о�
 совместимым extension path. До миграции production API отдельного решения либо
 реализационного планирования требуют:
 
+- per-call data и typed пользовательский context, включая propagation в nested
+  mapping;
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
   creation/member-plan types и возможную result-wrapper;
 - нужен ли узкий result-aware `Members` для factory/direct destination,
