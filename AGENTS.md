@@ -120,3 +120,6 @@
   if the tree changes afterward, rerun only the affected validation.
 - Keep tool output focused: use filtered test runs and avoid returning entire
   files or build logs when a smaller excerpt establishes the result.
+- Do not attach or link repository files in user-facing progress or final
+  messages. The user reviews files only through commits published to `main`;
+  report the concise change summary and remote commit instead.

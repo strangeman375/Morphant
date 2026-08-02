@@ -79,7 +79,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 9 | Коллекции | После v0 | Отложен |
 | 10 | Patch/merge и conditional no-op | После v0 | Отложен |
 | 11 | Immutable `MapExisting` | До general-purpose release | Согласован |
-| 12 | Per-call data и пользовательский context | До заморозки public contract | Не начат |
+| 12 | Per-call data и пользовательский context | После v0, вместе с tuple/multi-source | Отложен |
 | 13 | Runtime polymorphism и inheritance | До general-purpose release | Не начат |
 | 14 | Cycles и shared references | До general-purpose release | Не начат |
 | 15 | `IQueryable` projection | До заморозки внутренней plan model | Не начат |
@@ -208,8 +208,8 @@ root-normalization `Previous<T>` и полная семантика `null` creat
 
 **Проблема.** Временная mutation `MappingContext.Operation` с последующим
 восстановлением небезопасна при exception, recursion, reentrancy и параллельных
-nested calls. В будущем тот же context должен нести общий reference cache и
-другой chain state.
+nested calls. В будущем скрытый scope должен нести общий reference cache и
+другой внутренний chain state.
 
 **Согласовано:**
 
@@ -221,7 +221,7 @@ nested calls. В будущем тот же context должен нести об
   lifetime;
 - каждый root `IMapper.Map(...)` создаёт скрытый reference-type
   `MappingScope`; он хранит scoped mapper и в будущем принимает общий reference
-  cache и per-call state;
+  cache и другой внутренний chain state;
 - каждый outer или nested call получает новый `MappingContext`, а все frame
   одной chain разделяют scope; `Operation` определяется выбранной перегрузкой
   `IMapper` и никогда не мутируется либо восстанавливается;
@@ -624,28 +624,42 @@ post-v0 настройке `recreate when changed`.
 
 ### Этап 12. Per-call data и пользовательский context
 
+**Статус:** отложен до post-v0 поддержки root tuples и multi-source mapping на
+этапе 17. Отдельный arguments/context contract не входит в v0 и сейчас не
+добавляется в публичные интерфейсы.
+
 **Проблема.** Mapper instance с DI покрывает сервисы, но не request-specific
 tenant, user, culture, timezone, flags и formatting parameters. Текущий public
 `IMapper` не принимает такие данные, а declarative DSL context не видит.
 
-**Нужно согласовать:**
+**Согласовано:**
 
-- различие injected dependencies, chain state и per-call arguments;
-- public overload/options object либо typed mapping arguments;
-- compile-time safety вместо string/object dictionary;
-- declarative view context без возможности обойти нормализованный null
-  pipeline через `Operation`;
-- доступ из `Create`, `Members`, direct и manual mappings;
-- propagation в nested mappings;
-- lifetime, allocation и thread safety;
-- влияние на mapping identity, caching, projections и generated interfaces.
+- injected dependencies остаются зависимостями mapper-а из DI, внутренний
+  chain state остаётся в `MappingScope`, а пользовательские данные конкретного
+  вызова являются обычной частью source;
+- после включения tuple roots mapping вида
+  `(Order Order, MappingState State) -> Invoice` естественно покрывает и
+  multi-source mapping, и strongly typed пользовательский state;
+- существующие overload-ы `IMapper` и `ITypeMapper` не меняются. Отдельные
+  `TArguments`, options object, string/object dictionary, ambient `AsyncLocal`
+  и пользовательский payload в `MappingContext`/`MappingScope` не вводятся;
+- state не получает специальной семантики. Его тип и позиция входят в
+  canonical tuple-source type; имена tuple-elements отдельную mapping identity
+  не создают;
+- nested mapping получает нужный state только явно, например через
+  `Map((source.Address, source.State))`. Автоматической propagation по всей
+  mapping chain нет;
+- `NullSourceHandling` относится к tuple root целиком. Nullable tuple-elements
+  остаются обычными частями source и обрабатываются явными rules или их
+  собственными nested mappings;
+- влияние tuple-source на projection согласуется отдельно на этапе 15;
+- отдельный per-call mechanism следует повторно рассматривать только при
+  подтверждённой потребности в неявной propagation state по всей chain.
 
-**Предварительное направление:** не передавать raw call frame в declarative
-lambdas. Если per-call data входит в contract, предоставить отдельное read-only
-typed view/state, автоматически распространяемое по chain.
-
-**Результат этапа:** public invocation contract либо явно зарезервированный
-extension path, который не потребует ломать основные overloads.
+**Результат этапа:** публичный invocation contract v0 не расширяется.
+Совместимый strongly typed путь для per-call data зарезервирован через будущую
+tuple/multi-source support; его точная generated surface согласуется на этапе
+17.
 
 ### Этап 13. Runtime polymorphism и inheritance
 
@@ -761,11 +775,11 @@ builder helper calls. Нужен явно распознаваемый compositi
 
 ### Этап 17. Generic, runtime-type и multi-source mapping
 
-Tuple/multi-source часть этого этапа отложена до после v0 вместе со специальной
-tuple support. В v0 сохраняются constructed generic roots со статически
-известной nominal-формой и type parameters внутри их arguments. Type parameter
-непосредственно в root-позиции запрещён этапом 7 и может быть пересмотрен здесь
-после v0 только как отдельная capability.
+Tuple/multi-source и per-call-data части этого этапа отложены до после v0
+вместе со специальной tuple support. В v0 сохраняются constructed generic roots
+со статически известной nominal-формой и type parameters внутри их arguments.
+Type parameter непосредственно в root-позиции запрещён этапом 7 и может быть
+пересмотрен здесь после v0 только как отдельная capability.
 
 **Проблема.** Новый дизайн должен сохранить согласованные для v0 constructed
 generic scenarios, но не переносить автоматически прежнюю поддержку bare root
@@ -784,18 +798,27 @@ dispatch. Multi-source mapping сейчас требует wrapper, потому
 - runtime source/destination `Type` только среди generated known pairs;
 - reflection-free registry и поведение неизвестной pair;
 - root tuple как direct/manual multi-source input;
-- нужны ли специальные overloads до трёх source или wrapper/tuple достаточно;
+- generated declarative surface для tuple-source и разрешение конфликтов
+  одинаковых convention-members из разных tuple-elements;
+- использование обычного tuple-element как strongly typed пользовательского
+  state без отдельного arguments API;
+- явную передачу state в nested tuple mappings без ambient propagation;
+- canonical identity по типам и порядку tuple-elements без учёта их имён;
+- нужны ли какие-либо специальные overloads до трёх source сверх обычной
+  tuple pair;
 - ambiguity с будущими keyed variants и polymorphic dispatch;
 - generated surface для inaccessible generic arguments.
 
 **Предварительное направление:** сначала гарантированно сохранить constructed
 generics и вложенные mapper type parameters при известной верхнеуровневой
 nominal-форме. Bare root type parameter, open-generic и runtime-type dispatcher
-рассматривать после v0 как отдельные opt-in capabilities; отдельно решить,
-достаточна ли direct/manual tuple pair или нужен first-class multi-source DSL.
+рассматривать после v0 как отдельные opt-in capabilities. Tuple является
+обычным `TSource` и должна покрыть multi-source mapping и явно передаваемый
+пользовательский state без новых overload-ов `IMapper`; отдельно остаётся
+согласовать её declarative/convention surface.
 
 **Результат этапа:** support matrix для generic и runtime-resolved pairs и
-решение по multi-source boundary.
+точная tuple/multi-source boundary, включая явный пользовательский state.
 
 ### Этап 18. Hooks, result-dependent logic и граница manual mapping
 
@@ -933,7 +956,7 @@ factory-result с runtime-state является структурным mapping-
 | Collection root/member/getter-only/existing | 9 |
 | Nullable patch и absent patch field | После v0 (этап 10) |
 | Immutable record update | 11 |
-| Tenant/culture/request flag | 12 |
+| Tenant/culture/request flag | После v0: tuple-source на этапах 12 и 17 |
 | Derived runtime source и polymorphic element | 13 |
 | Cyclic graph и shared child | 14 |
 | EF/query-provider projection | 15 |
@@ -966,9 +989,10 @@ factory-result с runtime-state является структурным mapping-
 
 ## 7. Следующий этап
 
-**Этап 12 — per-call data и пользовательский context.** Этап 11 зафиксировал
-явные immutable replacement paths для v0 и отдельную post-v0 настройку
-условной reconstruction. Следующий активный вопрос — нужен ли per-call data в
-public contract до его заморозки и, если нужен, как типобезопасно передавать и
-автоматически распространять tenant/user/culture/flags в declarative, direct,
-manual и nested mappings без раскрытия внутреннего call frame.
+**Этап 13 — runtime polymorphism и inheritance.** Этап 12 отложил отдельный
+per-call arguments/context API: после v0 tuple-source должна естественно
+покрыть multi-source mapping и явно передаваемый пользовательский state без
+изменения `IMapper`/`ITypeMapper`. Следующий активный вопрос — как explicit
+derived registrations участвуют в runtime dispatch, как выбирается наиболее
+конкретная pair и что происходит при неоднозначности либо существующем
+destination производного runtime-типа.

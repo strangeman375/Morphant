@@ -852,9 +852,14 @@ reference-type `MappingScope`:
 | Call frame (`MappingContext`) | Общий `MappingScope` |
 |---|---|
 | Текущая `Operation` | Scoped mapper |
-| Immutable и передаётся по значению | Будущий reference cache |
-| Новый для каждого nested `Map` | Будущие per-call данные |
-| Описывает ровно текущий вызов | Общий до завершения root `Map` |
+| Immutable и передаётся по значению | Будущий reference cache и внутренний chain state |
+| Новый для каждого nested `Map` | Одна reference identity на всю chain |
+| Описывает ровно текущий вызов | Завершается вместе с root `Map` |
+
+Пользовательский per-call state не хранится ни во frame, ни в scope. После
+post-v0 включения tuple roots он передаётся как обычная часть source и при
+необходимости явно включается пользователем в source следующего nested
+mapping-а.
 
 Публичный root mapper и `context.Mapper` реализуют один контракт `IMapper`, но
 являются разными экземплярами с разным lifetime. Root mapper начинает новую
@@ -1067,10 +1072,24 @@ mutable reference cache без неявной синхронизации.
   нормализованный `Map(source, null)`, обходя эту модель;
 - declarative nested mapping уже выражается явным `Map(...)` marker.
 
-Если в будущем в context появятся конкретные пользовательские данные или
-новые extension points, необходимость доступа к ним из declarative DSL должна
-быть согласована отдельно. Гипотетическая польза не является основанием
-усложнять текущие сигнатуры `Create` и `Members`.
+В v0 отдельные per-call arguments и пользовательский context не добавляются.
+После включения tuple roots strongly typed state передаётся обычным source:
+
+```csharp
+builder.Map<(Order Order, MappingState State), Invoice>()
+    .Members((source, _) => new()
+    {
+        Total = Format(source.Order.Total, source.State.Culture),
+        Address = Map((source.Order.Address, source.State))
+    });
+```
+
+Tuple здесь не получает особой state-семантики: типы и порядок элементов
+образуют source type, а nested propagation всегда записывается явно. Ни
+`MappingContext`, ни `MappingScope`, ни overload-ы `IMapper` ради этого не
+расширяются. Отдельный автоматически распространяемый per-call contract имеет
+смысл повторно рассматривать только при подтверждённой потребности, которую
+явный tuple-source не покрывает.
 
 ## 9. Null handling
 
@@ -1936,6 +1955,10 @@ diagnostic не должно вводить скрытый fallback на дру�
     отличии хотя бы одного creation-only member candidate от previous. Эта
     identity-policy не является частью `NullAssignmentHandling`; её equality,
     reconstruction и evaluation contracts требуют отдельного решения.
+56. В v0 нет отдельного per-call arguments/context contract. После включения
+    tuple roots пользовательский state является обычным элементом source и
+    передаётся в nested mappings явно; он не хранится в `MappingContext` или
+    `MappingScope` и не распространяется ambient-механизмом.
 
 ## 16. Детали, которые ещё нужно закрепить перед реализацией
 
@@ -1948,12 +1971,13 @@ reconstruction оставлена отдельной post-v0 setting. Этапы
 null-assignment policy сохранено отдельно и не меняет текущий default обычного
 member assignment. Root type parameters и специальные tuple,
 sequence/collection/buffer, delegate, expression-tree, deferred/async и
-push-sequence categories также остаются post-v0. Keyed mappings оставлены
-совместимым extension path. До миграции production API отдельного решения либо
-реализационного планирования требуют:
+push-sequence categories также остаются post-v0. Этап 12 также отложен:
+отдельного per-call contract в v0 нет, а будущий tuple-source должен покрыть
+multi-source mapping и явно передаваемый strongly typed state без изменения
+базовых mapper interfaces. Keyed mappings оставлены совместимым extension
+path. До миграции production API отдельного решения либо реализационного
+планирования требуют:
 
-- per-call data и typed пользовательский context, включая propagation в nested
-  mapping;
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
   creation/member-plan types и возможную result-wrapper;
 - нужен ли узкий result-aware `Members` для factory/direct destination,
