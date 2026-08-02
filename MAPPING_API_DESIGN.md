@@ -1606,6 +1606,39 @@ previous обрабатывает base mapping: runtime source сам по се�
 observable errors согласуются после v0. Полное исследование сохранено в
 [`RUNTIME_POLYMORPHISM_RESEARCH.md`](RUNTIME_POLYMORPHISM_RESEARCH.md).
 
+### 12.6. Cycles и shared references после v0
+
+В v0 Morphant не сохраняет reference identity автоматически и не гарантирует
+завершение cyclic object graph. `MappingScope` уже отделён от immutable
+`MappingContext` и остаётся совместимой chain-wide точкой для будущего cache,
+поэтому публичные mapper interfaces ради отсрочки не расширяются.
+
+Будущая built-in policy рассматривается как opt-in. Её рабочий default — не
+выполнять tracking. Cache идентифицирует entry по reference identity source и
+identity уже разрешённого mapping descriptor-а, а не только по destination
+type. Выбранный result регистрируется после `Create`, но до `Members`:
+setter/field cycle тогда может замкнуться, а constructor, `init` и required
+initializer cycle до появления result остаётся неразрешимым.
+
+Повторный source должен вернуть тот же result без повторного выполнения rules.
+Для `MapExisting` другой non-null previous при уже существующей cache entry
+является reference conflict, а не основанием молча выбрать первый instance.
+`MapManually`, custom handler, `MaxDepth` и projection не получают эту
+семантику автоматически.
+
+Реализация, точное имя setting и observable failures отложены до после v0.
+Полное исследование сохранено в
+[`REFERENCE_HANDLING_RESEARCH.md`](REFERENCE_HANDLING_RESEARCH.md).
+
+### 12.7. Projection после v0
+
+`IQueryable` projection однозначно исключена из v0. Публичного `Project(...)`,
+projectable capability и special expression-tree roots нет. Точный public
+contract, expression-compatible subset и внутренняя representation будут
+спроектированы отдельным post-v0 этапом; текущая спецификация не обещает
+client-side fallback и не накладывает ради будущей projection дополнительные
+ограничения на production implementation v0.
+
 ## 13. Основные сценарии
 
 ### 13.1. Полностью convention mapping
@@ -1999,6 +2032,16 @@ diagnostic не должно вводить скрытый fallback на дру�
 57. В v0 runtime-тип source не меняет requested canonical pair.
     `IncludeBase()` наследует только конфигурацию и не включает runtime
     dispatch; special-case остаётся областью explicit `MapManually`.
+58. В v0 reference tracking отсутствует. `MappingScope` резервирует
+    chain-wide extension point, но shared source может породить разные result,
+    а cyclic graph не получает built-in завершение.
+59. Будущий reference cache является opt-in и использует source reference
+    identity вместе с resolved mapping descriptor identity. Result может быть
+    зарегистрирован только после `Create`; поэтому built-in preservation не
+    делает constructor/initializer cycles разрешимыми.
+60. `IQueryable` projection, public `Project(...)`, projectable capability и
+    expression-tree roots полностью отсутствуют в v0 и рассматриваются после
+    него отдельным дизайном.
 
 ## 16. Детали, которые ещё нужно закрепить перед реализацией
 
@@ -2017,7 +2060,11 @@ multi-source mapping и явно передаваемый strongly typed state �
 базовых mapper interfaces. Этап 13 также отложен: runtime lookup остаётся
 exact-pair, `IncludeBase()` не включает dispatch, а исследование explicit
 derived links сохранено отдельно. Keyed mappings оставлены совместимым
-extension path. До миграции production API отдельного решения либо
+extension path. Этап 14 также отложен: `MappingScope` сохраняет место для
+будущего opt-in reference cache, но v0 не сохраняет shared identity и не
+обрабатывает cycles автоматически. Этап 15 — Projection — однозначно пропущен
+до после v0 без дополнительного исследования и без требований к внутренней
+plan model текущей реализации. До миграции production API отдельного решения либо
 реализационного планирования требуют:
 
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated

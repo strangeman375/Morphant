@@ -57,6 +57,10 @@ Manual остаётся обязательным escape hatch для специ�
    блокирует её дальнейшее добавление.
 7. Не начинать переработку production-кода под новый API до завершения
    фундаментальных этапов 1–7 и обновления implementation roadmap.
+8. Если пользователь однозначно откладывает этап, не проводить по нему
+   отдельное исследование. Достаточно зафиксировать post-v0 границу, причину
+   отсрочки и уже существующую совместимую точку расширения, после чего сразу
+   перейти к следующему этапу.
 
 Статусы этапов:
 
@@ -81,8 +85,8 @@ Manual остаётся обязательным escape hatch для специ�
 | 11 | Immutable `MapExisting` | До general-purpose release | Согласован |
 | 12 | Per-call data и пользовательский context | После v0, вместе с tuple/multi-source | Отложен |
 | 13 | Runtime polymorphism и inheritance | После v0 | Отложен |
-| 14 | Cycles и shared references | До general-purpose release | Не начат |
-| 15 | `IQueryable` projection | До заморозки внутренней plan model | Не начат |
+| 14 | Cycles и shared references | После v0 | Отложен |
+| 15 | `IQueryable` projection | После v0 | Отложен |
 | 16 | Переиспользование и композиция конфигурации | До general-purpose release | Не начат |
 | 17 | Generic, runtime-type и multi-source mapping | До фиксации support boundary | Не начат |
 | 18 | Hooks, result-dependent logic и граница manual mapping | До фиксации support boundary | Не начат |
@@ -727,59 +731,43 @@ descriptor registry.
 recursion, а повторно встреченный source instance создаёт разные destination
 instances.
 
-**Нужно согласовать:**
+**Отложено до после v0.** Публичный API и текущий declarative contract менять
+не требуется: chain-wide состояние уже имеет отдельную точку расширения в
+`MappingScope`.
 
-- opt-in или default reference tracking;
-- ключ cache: source identity, mapping identity и destination type;
-- scope и lifetime cache;
-- момент регистрации result относительно constructor и `Members`;
-- `MapExisting`, replacement, factory, direct и manual branches;
-- shared reference с разными mapping variants;
-- взаимодействие с polymorphic dispatch;
-- cycles через immutable constructor graph;
-- пользовательский/custom reference handler;
-- allocation и performance при выключенной поддержке.
+Сохранённое рабочее направление:
 
-**Предварительное направление:** opt-in chain-level reference scope,
-разделяемый call frames. Mutable result регистрируется до nested member
-mapping; неразрешимые immutable constructor cycles должны давать понятный
-diagnostic, а не stack overflow.
+- tracking является opt-in policy с default `None`;
+- cache key состоит из reference identity source и identity уже разрешённого
+  mapping descriptor-а;
+- result регистрируется после `Create`, но до `Members`;
+- поэтому setter/field cycles разрешимы, а constructor/initializer cycles до
+  появления result принципиально неразрешимы;
+- repeated source возвращает тот же result без повторного выполнения rules;
+- конфликтующие non-null previous в `MapExisting` являются observable error;
+- `MapManually`, custom handler, `MaxDepth` и projection не включаются в
+  built-in policy автоматически.
 
-**Результат этапа:** lifecycle reference cache и список разрешимых/неразрешимых
-cycle forms.
+Полное уже выполненное исследование сохранено в
+[`REFERENCE_HANDLING_RESEARCH.md`](REFERENCE_HANDLING_RESEARCH.md). Точное имя
+setting, diagnostics и runtime-типы cache согласуются только при возвращении к
+feature после v0.
+
+**Результат этапа:** реализация отложена; текущий `MappingScope` сохраняет
+совместимую точку для opt-in reference cache.
 
 ### Этап 15. `IQueryable` projection
 
-Expression-tree roots полностью исключены из v0. На этом этапе отдельно нужно
-решить, требуется ли их first-class mapping или expression representation
-нужна только как внутренняя основа projection.
+**Однозначно отложено до после v0 без отдельного исследования.** В v0 нет
+public `Project(...)`, projectable capability и expression-tree roots. Текущая
+runtime mapping semantics не должна молча обещать совместимость с query
+provider-ами или client-side fallback.
 
-**Проблема.** Без projection EF/query-provider пользователь либо загружает
-лишние данные, либо повторно пишет mapping в `.Select(...)`. Если внутренний
-plan сразу проектировать только как imperative code, добавить projection позже
-может оказаться архитектурно дорого.
+При возвращении к feature отдельно проектируются public contract, допустимое
+expression-compatible подмножество и внутренняя representation. Ни один из
+этих вопросов не фиксирует ограничения production implementation v0.
 
-**Нужно согласовать:**
-
-- public `Project(IQueryable<TSource>)` contract;
-- отдельную projectable capability mapping-а;
-- expression representation constructor/member plan;
-- source-only semantics без previous и mutation;
-- допустимые conversions, conditionals и nested maps;
-- inline expansion nested projectable pair;
-- запрет либо специальное представление factory, manual mapping, runtime
-  context, reference cache и non-expression-compatible methods;
-- diagnostic для непроецируемой pair без runtime client-side fallback;
-- поддержка runtime parameters query provider-ом;
-- связь projection с variants и polymorphism.
-
-**Предварительное направление:** сохранить декларативный plan независимо от
-emit-кода и заранее маркировать его capabilities. Projection принимает только
-expression-compatible подмножество и никогда молча не переключается на
-client-side mapping.
-
-**Результат этапа:** projection capability rules и требования к внутренней
-модели, даже если сам `Project` реализуется позднее.
+**Результат этапа:** Projection пропущен; следующий активный этап — 16.
 
 ### Этап 16. Переиспользование и композиция конфигурации
 
@@ -1024,10 +1012,9 @@ factory-result с runtime-state является структурным mapping-
 
 ## 7. Следующий этап
 
-**Этап 14 — cycles и shared references.** Этап 13 отложил automatic runtime
-polymorphism до после v0: обычный lookup остаётся exact-pair, `IncludeBase()`
-не включает dispatch, а совместимый future path зарезервирован отдельными
-explicit derived links поверх descriptor registry. Следующий активный вопрос —
-нужен ли reference cache в general-purpose release, когда result должен
-регистрироваться относительно `Create`/`Members` и какие cyclic immutable
-graphs принципиально невозможно построить.
+**Этап 16 — переиспользование и композиция конфигурации.** Этап 14 сохранил
+opt-in reference cache как post-v0 расширение `MappingScope`, а этап 15
+Projection однозначно пропущен без отдельного исследования. Следующий активный
+вопрос — какие формы declarative configuration reuse нужны помимо уже
+согласованных `base.Configure(builder)` и `IncludeBase()`, не заставляя source
+generator выполнять или интерпретировать произвольный пользовательский код.
