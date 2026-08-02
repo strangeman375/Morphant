@@ -87,7 +87,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 13 | Runtime polymorphism и inheritance | После v0 | Отложен |
 | 14 | Cycles и shared references | После v0 | Отложен |
 | 15 | `IQueryable` projection | После v0 | Отложен |
-| 16 | Переиспользование и композиция конфигурации | До general-purpose release | Не начат |
+| 16 | Переиспользование и композиция конфигурации | До general-purpose release | Согласован |
 | 17 | Generic, runtime-type и multi-source mapping | До фиксации support boundary | Не начат |
 | 18 | Hooks, result-dependent logic и граница manual mapping | До фиксации support boundary | Не начат |
 | 19 | Нейминг публичного API | До заморозки public contract | Не начат |
@@ -771,30 +771,52 @@ expression-compatible подмножество и внутренняя represent
 
 ### Этап 16. Переиспользование и композиция конфигурации
 
-**Проблема.** `IncludeBase()` покрывает inheritance, но не общие fragments для
-unrelated mappings, внешние configuration packages и variants. Generated plan
-types неудобно возвращать из обычных helper methods, а discovery не может
-неограниченно следовать за пользовательским builder code.
+**Согласованная v0-граница:** отдельный configuration-fragment API не
+добавляется. Declarative configuration переиспользуется только через явно
+выраженную C#-иерархию mapper-ов:
 
-**Нужно согласовать:**
+- `base.Configure(builder)` подключает configuration chain базового mapper-а и
+  наследует его root-level settings;
+- повторное объявление canonical pair в derived mapper-е само по себе не
+  наследует её map-level plan;
+- `IncludeBase()` на текущей pair явно подключает plan и map-level settings
+  ближайшего matching mapping-а из подключённой base chain;
+- без `base.Configure(builder)` либо без matching base pair вызов
+  `IncludeBase()` является ошибочной конфигурацией;
+- pair без `IncludeBase()` начинает с чистого map-level plan, но продолжает
+  видеть root settings, унаследованные через `base.Configure(builder)`.
 
-- root-level inheritance через `base.Configure(builder)`;
-- map-level inheritance через `IncludeBase()`;
-- reusable member/constructor fragments unrelated pairs;
-- precedence fragment, convention и local explicit rule;
-- generic fragments;
-- external assembly configurations;
-- discoverability source generator-ом без выполнения arbitrary code;
-- взаимодействие с application-wide registry и будущими keyed variants;
-- является ли обычный method call mapper-а достаточным reuse для direct/manual
-  logic, но не для declarative plan.
+Effective settings разрешаются в порядке:
 
-**Предварительное направление:** не пытаться интерпретировать произвольные
-builder helper calls. Нужен явно распознаваемый composition primitive либо
-сознательно ограниченный compile-time fragment contract.
+1. текущая pair;
+2. pair, подключённая через `IncludeBase()`;
+3. root текущего mapper-а;
+4. roots подключённых base mapper-ов от ближайшего к дальнему;
+5. assembly;
+6. library default.
 
-**Результат этапа:** минимальный reuse model и перечень форм, оставленных
-обычному C#.
+Plan объединяется отдельно от settings:
+
+- локальный `Create` целиком заменяет унаследованный `Create`;
+- `Members` объединяются по destination member, а локальное правило, включая
+  `Ignore()`, перекрывает унаследованное;
+- conventions применяются после объединения только к ещё не занятым members;
+- локальный `MapManually` заменяет весь унаследованный declarative plan;
+- manual plan нельзя частично объединять с локальными `Create` или `Members`.
+
+Generator не следует за произвольными helper calls, изменяющими builder, и не
+выполняет пользовательский configuration code. Обычные instance/static методы
+остаются способом переиспользовать вычисления внутри `Create`, `Members` и
+`MapManually`, где они являются обычным C#.
+
+General-purpose fragments для unrelated pairs, generic fragments и
+cross-assembly `IncludeBase()` откладываются. Готовые mappings из внешней
+assembly независимо попадают в application-wide registry и не импортируют
+configuration plan друг друга. Будущие keyed variants также не выводят
+composition из registry.
+
+**Результат этапа:** v0 использует только явную hierarchy-based composition;
+следующий активный этап — 17.
 
 ### Этап 17. Generic, runtime-type и multi-source mapping
 
@@ -1012,9 +1034,11 @@ factory-result с runtime-state является структурным mapping-
 
 ## 7. Следующий этап
 
-**Этап 16 — переиспользование и композиция конфигурации.** Этап 14 сохранил
-opt-in reference cache как post-v0 расширение `MappingScope`, а этап 15
-Projection однозначно пропущен без отдельного исследования. Следующий активный
-вопрос — какие формы declarative configuration reuse нужны помимо уже
-согласованных `base.Configure(builder)` и `IncludeBase()`, не заставляя source
-generator выполнять или интерпретировать произвольный пользовательский код.
+**Этап 17 — generic, runtime-type и multi-source mapping.** Этап 16 ограничил
+v0-композицию явно подключённой C#-иерархией mapper-ов: `base.Configure`
+наследует root settings, `IncludeBase()` отдельно импортирует ближайший
+map-level plan, а arbitrary builder helpers и general-purpose fragments не
+анализируются. Следующий активный вопрос — окончательная support boundary для
+constructed generic roots и необходимость любых возможностей сверх уже
+отложенных tuple/multi-source, bare root type parameter, open-generic и
+runtime-type mapping.

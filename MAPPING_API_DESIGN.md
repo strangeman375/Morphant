@@ -163,6 +163,55 @@ builder.Map<Source, Destination>()
 Для одной canonical mapping-пары разрешён либо декларативный набор
 `Create` / `Members`, либо один `MapManually`. Смешивать эти модели нельзя.
 
+### 4.1. Наследование и композиция конфигурации
+
+В v0 declarative configuration переиспользуется только через явную C#-
+иерархию mapper-ов. Вызов `base.Configure(builder)` подключает configuration
+chain базового mapper-а и наследует его root-level settings. Без этого вызова
+base configuration не участвует в текущем mapper-е.
+
+Повторное объявление canonical pair в derived mapper-е не наследует её plan
+автоматически. Оно начинает с чистого map-level plan и использует только
+унаследованные root settings, пока пользователь явно не вызовет
+`IncludeBase()` на pair-builder-е. `IncludeBase()` импортирует plan и map-level
+settings ближайшей matching pair из подключённой base chain. Если
+`base.Configure(builder)` не вызван либо matching base pair отсутствует,
+конфигурация ошибочна.
+
+Effective settings разрешаются от более конкретного уровня к менее
+конкретному:
+
+| Уровень | Приоритет |
+|---|---:|
+| Текущая pair | 1 |
+| Pair из `IncludeBase()` | 2 |
+| Root текущего mapper-а | 3 |
+| Roots подключённых base mapper-ов, от ближайшего к дальнему | 4 |
+| Assembly | 5 |
+| Library default | 6 |
+
+Plan объединяется по собственным правилам:
+
+- локальный `Create` целиком заменяет унаследованный `Create`;
+- `Members` объединяются по destination member, локальное правило перекрывает
+  унаследованное;
+- локальный `Ignore()` является таким же явным перекрытием;
+- conventions применяются после объединения только к ещё не занятым members;
+- локальный `MapManually` заменяет весь унаследованный declarative plan;
+- унаследованный manual plan нельзя частично объединить с локальными `Create`
+  или `Members`.
+
+Source generator не выполняет configuration code и не следует за
+произвольными helper calls, которые изменяют builder. Переиспользуемые
+вычисления остаются обычными instance/static методами mapper-а, вызываемыми
+внутри `Create`, `Members` или `MapManually`.
+
+Отдельные fragments для unrelated pairs, generic fragments и cross-assembly
+`IncludeBase()` не входят в v0. Mapping-и из внешних assemblies подключаются
+независимыми descriptors через application-wide registry; registry не
+становится неявным источником configuration composition и будущие keyed
+variants не меняют это правило.
+
 ## 5. `Previous<TDestination>`
 
 Для представления возможного previous используется отдельная value-type
@@ -1436,10 +1485,12 @@ surface сохраняет standard null handling и declarative member stage, �
 
 ### 11.3. Settings matrix
 
-После удаления `TemplateMode` settings наследуются прежним общим порядком
-`map -> mapper root -> assembly -> library default`; `Default` продолжает
-поиск менее конкретного уровня. Applicability определяется выбранной model и
-capabilities пары:
+После удаления `TemplateMode` settings наследуются общим порядком
+`current map -> included base map -> current mapper root -> connected base
+mapper roots -> assembly -> library default`; `Default` продолжает поиск менее
+конкретного уровня. Base-уровни появляются только через явно распознанные
+`base.Configure(builder)` и `IncludeBase()`, описанные в разделе 4.1.
+Applicability определяется выбранной model и capabilities пары:
 
 | Setting | Declarative mapping | `MapManually` |
 |---|---|---|
@@ -2042,6 +2093,24 @@ diagnostic не должно вводить скрытый fallback на дру�
 60. `IQueryable` projection, public `Project(...)`, projectable capability и
     expression-tree roots полностью отсутствуют в v0 и рассматриваются после
     него отдельным дизайном.
+61. В v0 configuration reuse следует только явно подключённой C#-иерархии
+    mapper-ов. Generator не выполняет arbitrary builder helpers и не ищет
+    fragments или подходящие plans в application registry.
+62. `base.Configure(builder)` подключает base configuration chain и её root
+    settings. Без него `IncludeBase()` является ошибочной конфигурацией.
+63. Повторно объявленная pair без `IncludeBase()` начинает с чистого map-level
+    plan, сохраняя унаследованные root settings. `IncludeBase()` импортирует
+    ближайший matching base plan и его map-level settings.
+64. Settings precedence — current pair, included base pair, current mapper
+    root, connected base roots, assembly, library default.
+65. Локальный `Create` заменяет унаследованный; `Members` объединяются по
+    destination member с локальным приоритетом, включая `Ignore()`, после чего
+    conventions заполняют только незанятые members.
+66. Локальный `MapManually` заменяет весь унаследованный declarative plan, а
+    manual plan не смешивается частично с `Create`/`Members`.
+67. General-purpose и generic fragments, а также cross-assembly
+    `IncludeBase()` отсутствуют в v0. Внешние mappings регистрируются
+    независимо и не импортируют configuration друг друга.
 
 ## 16. Детали, которые ещё нужно закрепить перед реализацией
 
@@ -2064,8 +2133,11 @@ extension path. Этап 14 также отложен: `MappingScope` сохра
 будущего opt-in reference cache, но v0 не сохраняет shared identity и не
 обрабатывает cycles автоматически. Этап 15 — Projection — однозначно пропущен
 до после v0 без дополнительного исследования и без требований к внутренней
-plan model текущей реализации. До миграции production API отдельного решения либо
-реализационного планирования требуют:
+plan model текущей реализации. Этап 16 ограничил v0-composition явной
+mapper-иерархией: root settings подключаются через `base.Configure(builder)`,
+а map-level plan — отдельным `IncludeBase()`; fragments и cross-assembly plan
+inheritance остаются post-v0. До миграции production API отдельного решения
+либо реализационного планирования требуют:
 
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
   creation/member-plan types и возможную result-wrapper;
