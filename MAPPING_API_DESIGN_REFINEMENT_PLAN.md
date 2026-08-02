@@ -89,7 +89,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 15 | `IQueryable` projection | После v0 | Отложен |
 | 16 | Переиспользование и композиция конфигурации | До general-purpose release | Согласован |
 | 17 | Generic, runtime-type и multi-source mapping | До фиксации support boundary | Согласован |
-| 18 | Hooks, result-dependent logic и граница manual mapping | До фиксации support boundary | Не начат |
+| 18 | Hooks, result-dependent logic и граница manual mapping | До фиксации support boundary | Согласован |
 | 19 | Нейминг публичного API | До заморозки public contract | Не начат |
 | 20 | Diagnostics и observable failures | После определения возможностей API | Не начат |
 | 21 | Финальный сценарный аудит и новый implementation roadmap | После этапов 1–20 | Не начат |
@@ -298,39 +298,38 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
 
 ### Этап 6. Порядок вычислений и declarative control flow
 
-**Проблема.** Observable evaluation semantics из прежнего DSL не перенесена в
-новый дизайн. Последовательная mutation result может изменить значение более
-позднего выражения, читающего previous, и сломать даже обычный swap.
+**Проблема.** Нужно сохранить обычную C#-семантику пользовательских выражений
+и их явные зависимости, не превращая конкретный lowering member-plan-а в
+публичный контракт. В частности, наличие временных locals, object initializer
+и порядок generated assignments должны оставаться деталями реализации.
 
 **Согласовано:**
 
-- каждое выполняемое пользовательское выражение вычисляется ровно один раз;
-  порядок observable side effects следует порядку записи. Невыбранные ветки,
-  неприменимые rules и значения, нужные только другой mapping operation, не
-  вычисляются;
+- каждое пользовательское выражение вычисляется не более одного раза. Если
+  выбранный execution path требует его значение, оно вычисляется ровно один
+  раз; невыбранные ветки, неприменимые rules и значения, нужные только другой
+  mapping operation, не вычисляются;
 - explicit constructor arguments вычисляются слева направо в порядке записи,
   затем вызывается constructor. В `ByConvention` явно записанные arguments
   идут первыми в пользовательском порядке, оставшиеся automatic arguments — в
   порядке параметров выбранного конструктора;
-- для нового result из structured constructor/convention сохраняется
-  естественный порядок object initializer: constructor, затем очередное
-  explicit member value и его assignment в пользовательском порядке, затем
-  неуказанные conventions в порядке destination-members;
-- previous, factory-result и direct-result считаются уже существующими и
-  потенциально aliased. Для них все применимые explicit member values сначала
-  вычисляются в типизированные locals в пользовательском порядке и только
-  затем выполняются generated outer assignments в том же порядке. Это
-  shallow snapshot независимо от того, возвращает factory/direct code новый,
-  cached, source или previous instance;
-- snapshot включает обычные explicit expressions, явный `Auto()` и nested
-  `Map(...)`. Неуказанные conventions выполняются после explicit assignments и
-  в snapshot не входят; если конкретное convention-value нужно прочитать
-  заранее, пользователь делает rule явным через `Auto()`;
-- nested `Map(...)` выполняется в позиции соответствующего rule. Его вызовы и
-  любые пользовательские side effects видны последующим выражениям. Snapshot
-  откладывает только outer assignments, генерируемые Morphant, и не является
-  deep snapshot либо транзакцией object graph; нужную более раннюю точку
-  чтения пользователь явно задаёт declarative local;
+- `Members` анализируется как граф data/control dependencies. Rule, local или
+  условие считается result-dependent, только если прямо либо транзитивно
+  использует параметр `result`; форма перегрузки сама по себе фазу не задаёт;
+- result-independent `init` и creation-time `required` rules могут участвовать
+  в initializer-е даже из трёхпараметрической перегрузки. Result-dependent
+  setter/field rule выполняется после создания non-null result. Если
+  creation-time rule либо условие его применимости зависит от ещё не
+  созданного result, конфигурация ошибочна;
+- generator вправе выбирать object initializer, временные locals, немедленные
+  assignments или другой эквивалентный lowering. Относительный порядок
+  независимых member expressions и generated assignments, а также видимость
+  setter, nested mapping и других side effects между ними не являются
+  контрактом. Зависимость от такого порядка требует `MapManually`;
+- declarative local задаёт явную data dependency: его initializer вычисляется
+  не более одного раза до использующих его выражений. Внутри каждого
+  отдельного выражения и explicit constructor invocation сохраняется обычная
+  C#-семантика;
 - declarative structured `Create` и `Members` сохраняют конечный анализируемый
   control flow прежнего DSL: expression-lambda, locals с initializer-ом,
   `const`, вложенные blocks, `if`/`else`, несколько `return`, `throw`,
@@ -357,8 +356,9 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
   динамический алгоритм — `MapManually`; first-class решение повторно
   рассматривается вместе с patch/merge на этапе 10.
 
-**Результат этапа:** нормативные evaluation phases, shallow snapshot и граница
-declarative/ordinary C# control flow перенесены в `MAPPING_API_DESIGN.md`.
+**Результат этапа:** нормативная dependency-based evaluation model и граница
+declarative/ordinary C# control flow перенесены в `MAPPING_API_DESIGN.md`;
+конкретный snapshot/assignment lowering оставлен деталью реализации.
 
 ### Этап 7. Допустимость mapping-пар и capability model
 
@@ -798,9 +798,10 @@ Effective settings разрешаются в порядке:
 Plan объединяется отдельно от settings:
 
 - локальный `Create` целиком заменяет унаследованный `Create`;
-- `Members` объединяются по destination member только при совпадающей
-  форме перегрузки, а локальное правило, включая `Ignore()`, перекрывает
-  унаследованное. Смешивание обычного и result-aware plans ошибочно;
+- `Members` объединяются по destination member независимо от формы
+  перегрузки, а локальное правило, включая `Ignore()`, перекрывает
+  унаследованное. После объединения зависимости каждого effective rule
+  анализируются отдельно;
 - conventions применяются после объединения только к ещё не занятым members;
 - локальный `MapManually` заменяет весь унаследованный declarative plan;
 - manual plan нельзя частично объединять с локальными `Create` или `Members`.
@@ -884,31 +885,36 @@ destination с состоянием, которого нет ни в source, н�
 
 - в локальной pair можно вызвать только один `Members`; любой второй
   вызов даёт configuration diagnostic. `IncludeBase()` объединяет
-  унаследованный и локальный plans только при совпадающей форме
-  перегрузки; смешивание двух форм ошибочно;
+  унаследованный и локальный plans независимо от формы перегрузки;
 - обе перегрузки генерируются независимо от стратегии `Create`.
-  Result-aware форма одинаково доступна для constructor/convention,
-  previous, factory/cache, direct и derived results;
+  Форма с параметром `result` одинаково доступна для constructor/convention,
+  previous, factory/cache, direct и derived results. Обе формы являются одним
+  источником declarative DSL; выбор формы сам по себе не меняет semantics;
 - `previous` остаётся исходным нормализованным destination. `result` —
   фактически выбранный destination без корневой nullability и без
   presence-wrapper;
-- result-aware lambda вызывается только после того, как result полностью
-  создан и прошёл null-guard. `null` из direct `Create` или `ByFactory()`
-  терминален и завершает mapping до `Members`;
-- result-aware `Members` всегда является post-creation plan. Достижимый
-  explicit `init`-rule или creation-time `required`-rule в нём ошибочен;
-- все применимые explicit values result-aware plan образуют shallow
-  snapshot. Чтения `result` видят его состояние после creation, но до
-  первого generated outer assignment. Side effects expressions и nested
-  mappings по-прежнему видны последующим expressions.
+- generator анализирует прямую и транзитивную зависимость каждого rule,
+  local и условия от `result`. Только фактически result-dependent expressions
+  требуют уже созданный non-null result; использование параметра одним rule
+  не переводит весь plan в post-creation;
+- result-independent `init` и creation-time `required` rules допустимы в обеих
+  перегрузках. Diagnostic требуется только если конкретный creation-time rule
+  либо условие его применимости зависит от ещё не созданного result;
+- `null` из direct `Create` или `ByFactory()` терминален и завершает mapping до
+  применения любых member rules;
+- snapshot, относительный порядок независимых rules и момент generated
+  assignments не являются контрактом. Каждое требуемое expression вычисляется
+  не более одного раза с обычной C#-семантикой внутри expression; алгоритм,
+  зависящий от setter/nested mapping side effects либо порядка независимых
+  rules, требует `MapManually`.
 
 **Граница v0:**
 
 - структурное вычисление из source, previous и фактического result остаётся
   declarative mapping;
-- зависимость от setter side effects, mutation между assignments,
-  replacement-result после member-фазы и полный imperative lifecycle требуют
-  `MapManually`;
+- зависимость от порядка независимых rules, setter/nested mapping side effects,
+  mutation между assignments, replacement-result после member-фазы и полный
+  imperative lifecycle требуют `MapManually`;
 - синхронные mapper-методы и injected services можно вызывать внутри
   `Create`, `Members` и `MapManually`;
 - `BeforeMap`, `AfterMap`, middleware либо эквивалентные lifecycle hooks
@@ -919,10 +925,11 @@ destination с состоянием, которого нет ни в source, н�
   mapping в core v0 не входят. Обратная pair объявляется явно.
 
 **Результат этапа:** result-dependent structural member rules входят в v0
-через вторую `Members`-перегрузку; imperative lifecycle остаётся в
-`MapManually`, а общие hooks/middleware гарантированы после v0, но их
-точная форма ещё не выбрана. Этап закрыт;
-переход к naming-этапу отложен по явному указанию.
+через перегрузку единого `Members` DSL с параметром `result`; semantics
+определяется фактическими dependencies, а не формой перегрузки. Imperative
+lifecycle остаётся в `MapManually`, а общие hooks/middleware гарантированы
+после v0, но их точная форма ещё не выбрана. Этап закрыт; переход к naming-
+этапу отложен по явному указанию.
 
 ## 6. Завершающие этапы
 
@@ -1052,9 +1059,10 @@ destination с состоянием, которого нет ни в source, н�
 **Этап 18 завершён.** Для result-dependent structural rules зафиксирована
 всегда генерируемая result-aware `Members`-перегрузка с non-null result
 без presence-wrapper. В локальной pair можно вызвать только один
-`Members`; унаследованный и локальный plans должны иметь одну форму.
-Hooks и middleware гарантированы после v0, но их точная форма пока не
-выбрана.
+`Members`; `IncludeBase()` объединяет plans независимо от формы перегрузки.
+Фаза каждого rule определяется только его фактической зависимостью от
+`result`, а snapshot и порядок независимых rules остаются деталями lowering.
+Hooks и middleware гарантированы после v0, но их точная форма пока не выбрана.
 
 Следующим по roadmap является этап 19 — naming-аудит публичного API, но по
 явному указанию работа над ним ещё не начата.
