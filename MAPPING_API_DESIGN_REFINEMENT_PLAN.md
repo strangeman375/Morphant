@@ -80,7 +80,7 @@ Manual остаётся обязательным escape hatch для специ�
 | 10 | Patch/merge и conditional no-op | После v0 | Отложен |
 | 11 | Immutable `MapExisting` | До general-purpose release | Согласован |
 | 12 | Per-call data и пользовательский context | После v0, вместе с tuple/multi-source | Отложен |
-| 13 | Runtime polymorphism и inheritance | До general-purpose release | Не начат |
+| 13 | Runtime polymorphism и inheritance | После v0 | Отложен |
 | 14 | Cycles и shared references | До general-purpose release | Не начат |
 | 15 | `IQueryable` projection | До заморозки внутренней plan model | Не начат |
 | 16 | Переиспользование и композиция конфигурации | До general-purpose release | Не начат |
@@ -663,28 +663,63 @@ tuple/multi-source support; его точная generated surface согласу
 
 ### Этап 13. Runtime polymorphism и inheritance
 
+**Статус:** отложен до post-v0. Полное исследование сохранено в
+[`RUNTIME_POLYMORPHISM_RESEARCH.md`](RUNTIME_POLYMORPHISM_RESEARCH.md).
+
 **Проблема.** Base pair сама по себе не выбирает `Dog -> DogDto` для runtime
 `Dog`, а ручной switch заставляет пользователя писать dispatcher. Это также
 затрагивает collection elements и existing destination runtime type.
 
-**Нужно согласовать:**
+**Согласованная v0-граница:**
 
-- различие configuration inheritance (`IncludeBase`) и runtime dispatch;
-- регистрацию derived source/destination pairs;
-- выбор наиболее конкретной pair;
-- ambiguity между interfaces и несколькими inheritance paths;
-- поведение, если runtime source известен, а destination derived type выбрать
-  нельзя;
-- preservation/replacement existing destination с derived runtime type;
-- polymorphic collection elements;
-- closed-world generated dispatcher без runtime reflection;
-- взаимодействие с application-wide registry и будущими keyed variants.
+- обычный lookup всегда выполняет ровно requested canonical pair; runtime-тип
+  source не выбирает derived registration автоматически;
+- `IncludeBase()` наследует только mapping-конфигурацию и не включает runtime
+  dispatch;
+- base и derived registrations независимы. Само наличие `Dog -> DogDto` не
+  меняет поведение `Animal -> AnimalDto`;
+- специальный polymorphic алгоритм уже выражается через `MapManually` с явным
+  type-switch и application-wide exact nested mappings;
+- основной массовый сценарий polymorphic collection elements остаётся
+  отложенным вместе с общей collection support;
+- `IMapper`, `ITypeMapper`, `MappingContext`, `MappingScope` и базовый registry
+  не расширяются ради будущей feature.
 
-**Предварительное направление:** explicit opt-in relationship между base и
-derived pairs и generated most-specific dispatcher с diagnostic на
-неоднозначность.
+**Рабочее post-v0 направление:** отдельная explicit-связь на base pair с
+условным именем `IncludeDerived<TSource, TDestination>()`. Она перечисляет
+закрытый набор допустимых derived pairs, но не наследует rules и не создаёт
+registration. `IncludeAllDerived` и application-wide поиск assignable pairs не
+рекомендуются.
 
-**Результат этапа:** dispatch table laws и API регистрации derived mappings.
+Сначала registry разрешает конкретный base descriptor по правилу `0 / 1 / 2+`,
+затем его generated dispatcher выбирает единственный most-specific explicit
+source link. Несравнимые interface-ветки дают ambiguity независимо от порядка
+регистрации; неизвестный subtype использует base mapping. Выбранная derived
+pair снова разрешается обычным application-wide exact lookup, а её
+missing/ambiguity не скрывается fallback-ом.
+
+Для `MapExisting` derived branch применяется только при `null` previous либо
+runtime-совместимом derived destination. Несовместимый previous передаётся
+base mapping-у: Morphant не выбрасывает его и не вызывает derived `MapNew`
+неявно. При `null` previous вызывается именно derived `MapExisting` с `null`,
+после чего действует её own `NullDestinationHandling`.
+
+Runtime dispatch и projection считаются разными capabilities. Derived links
+могут быть общей декларацией, но expression-tree lowering и query-provider
+ограничения согласуются отдельно на этапе 15; client-side fallback запрещён.
+
+**После v0 нужно согласовать:**
+
+- окончательное имя и сторону API регистрации;
+- direct либо транзитивные dispatch links;
+- unknown-subtype policy для abstract base destination;
+- точные diagnostics и observable lookup errors;
+- keyed variant propagation;
+- collection element lifecycle и projection capability.
+
+**Результат этапа:** v0 сохраняет exact-pair semantics и manual escape hatch;
+automatic runtime dispatch отложен как совместимая explicit надстройка над
+descriptor registry.
 
 ### Этап 14. Cycles и shared references
 
@@ -957,7 +992,7 @@ factory-result с runtime-state является структурным mapping-
 | Nullable patch и absent patch field | После v0 (этап 10) |
 | Immutable record update | 11 |
 | Tenant/culture/request flag | После v0: tuple-source на этапах 12 и 17 |
-| Derived runtime source и polymorphic element | 13 |
+| Derived runtime source и polymorphic element | После v0 (этап 13) |
 | Cyclic graph и shared child | 14 |
 | EF/query-provider projection | 15 |
 | Base, fragment и external configuration reuse | 16 |
@@ -989,10 +1024,10 @@ factory-result с runtime-state является структурным mapping-
 
 ## 7. Следующий этап
 
-**Этап 13 — runtime polymorphism и inheritance.** Этап 12 отложил отдельный
-per-call arguments/context API: после v0 tuple-source должна естественно
-покрыть multi-source mapping и явно передаваемый пользовательский state без
-изменения `IMapper`/`ITypeMapper`. Следующий активный вопрос — как explicit
-derived registrations участвуют в runtime dispatch, как выбирается наиболее
-конкретная pair и что происходит при неоднозначности либо существующем
-destination производного runtime-типа.
+**Этап 14 — cycles и shared references.** Этап 13 отложил automatic runtime
+polymorphism до после v0: обычный lookup остаётся exact-pair, `IncludeBase()`
+не включает dispatch, а совместимый future path зарезервирован отдельными
+explicit derived links поверх descriptor registry. Следующий активный вопрос —
+нужен ли reference cache в general-purpose release, когда result должен
+регистрироваться относительно `Create`/`Members` и какие cyclic immutable
+graphs принципиально невозможно построить.

@@ -1569,6 +1569,43 @@ registration, точнее может оказаться `WithMappingKey`. Са�
 Этот эскиз резервирует extension path, но не добавляет keyed semantics в v0 и
 не делает текущий unkeyed lookup зависимым от будущего имени API.
 
+### 12.5. Runtime polymorphism после v0
+
+В v0 runtime-тип source не меняет requested canonical pair. Вызов
+`Map<Animal, AnimalDto>` всегда разрешает `Animal -> AnimalDto`, даже если
+фактический source является `Dog` и отдельно зарегистрирована
+`Dog -> DogDto`. `IncludeBase()` наследует только mapping-конфигурацию и не
+включает runtime dispatch.
+
+Нестандартный polymorphic алгоритм выражается через `MapManually` с явным
+type-switch и exact nested mappings. Основной массовый сценарий polymorphic
+collection elements отложен вместе с collection support. Поэтому базовые
+interfaces, call frames и registry в v0 не расширяются.
+
+После v0 registry можно совместимо дополнить explicit derived links на
+конкретном base descriptor-е. Рабочее направление использует отдельный от
+`IncludeBase()` API с условным именем
+`IncludeDerived<TSource, TDestination>()`, closed-world generated dispatcher и
+most-specific selection. Оно не предусматривает `IncludeAllDerived`, поиск
+всех assignable application registrations или зависимость от порядка
+регистрации.
+
+Base descriptor сначала выбирается обычным правилом `0 / 1 / 2+`; только затем
+рассматриваются его explicit links. Неизвестный subtype использует base
+mapping, а несколько несравнимых наиболее конкретных interface-кандидатов
+дают ambiguity. Derived pair снова разрешается через application-wide exact
+lookup.
+
+Для будущего polymorphic `MapExisting` derived branch допустима только при
+`null` previous либо runtime-совместимом derived destination. Несовместимый
+previous обрабатывает base mapping: runtime source сам по себе не разрешает
+молча выбросить destination и вызвать derived `MapNew`. Projection остаётся
+отдельной capability и не получает client-side fallback.
+
+Точный API, транзитивность links, keyed propagation, collection lifecycle и
+observable errors согласуются после v0. Полное исследование сохранено в
+[`RUNTIME_POLYMORPHISM_RESEARCH.md`](RUNTIME_POLYMORPHISM_RESEARCH.md).
+
 ## 13. Основные сценарии
 
 ### 13.1. Полностью convention mapping
@@ -1959,6 +1996,9 @@ diagnostic не должно вводить скрытый fallback на дру�
     tuple roots пользовательский state является обычным элементом source и
     передаётся в nested mappings явно; он не хранится в `MappingContext` или
     `MappingScope` и не распространяется ambient-механизмом.
+57. В v0 runtime-тип source не меняет requested canonical pair.
+    `IncludeBase()` наследует только конфигурацию и не включает runtime
+    dispatch; special-case остаётся областью explicit `MapManually`.
 
 ## 16. Детали, которые ещё нужно закрепить перед реализацией
 
@@ -1974,9 +2014,11 @@ sequence/collection/buffer, delegate, expression-tree, deferred/async и
 push-sequence categories также остаются post-v0. Этап 12 также отложен:
 отдельного per-call contract в v0 нет, а будущий tuple-source должен покрыть
 multi-source mapping и явно передаваемый strongly typed state без изменения
-базовых mapper interfaces. Keyed mappings оставлены совместимым extension
-path. До миграции production API отдельного решения либо реализационного
-планирования требуют:
+базовых mapper interfaces. Этап 13 также отложен: runtime lookup остаётся
+exact-pair, `IncludeBase()` не включает dispatch, а исследование explicit
+derived links сохранено отдельно. Keyed mappings оставлены совместимым
+extension path. До миграции production API отдельного решения либо
+реализационного планирования требуют:
 
 - naming-аудит публичного API, включая рабочее `TreatAsMissing`, generated
   creation/member-plan types и возможную result-wrapper;
