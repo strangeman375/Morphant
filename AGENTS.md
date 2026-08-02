@@ -2,8 +2,10 @@
 
 ## Implementation plan
 
-- `IMPLEMENTATION_PLAN.md` is the current agreed roadmap and progress record.
-  Read it before selecting the next work slice.
+- `MAPPING_API_IMPLEMENTATION_PLAN.md` is the current agreed roadmap and
+  progress record. Read it before selecting the next work slice.
+- `IMPLEMENTATION_PLAN.md` is the archived roadmap for the superseded
+  `Template()` design. Keep it for history; do not use it to select work.
 - Use the next incomplete plan item by default, but treat the plan as a working
   document rather than an immutable specification. If new information suggests
   a better sequence or scope, explain the proposed change and agree it with the
