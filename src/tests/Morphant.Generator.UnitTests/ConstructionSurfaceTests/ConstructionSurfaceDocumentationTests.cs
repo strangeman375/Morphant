@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.ConstructionSurfaceTests;
 internal sealed class ConstructionSurfaceDocumentationTests
 {
     [Test]
-    public void Inherits_destination_documentation_and_supplies_complete_fallbacks()
+    public async Task Inherits_destination_documentation_and_supplies_complete_fallbacks()
     {
         // lang=c#
         const string source =
@@ -38,59 +38,60 @@ namespace TestCase
 }
 """;
 
-        var generated =
-            ConstructionSurfaceCompilationTest.RunAndGetGeneratedSources(
-                LanguageVersion.CSharp9,
-                source);
-        var plan = generated[
-            "Morphant.Generated.Construction.TestCase_Destination.g.cs"];
-        var extension = generated[
-            "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs"];
+        // lang=c#
+        const string destinationConstructor =
+"""
+/// <inheritdoc cref="global::TestCase.Destination.Destination(global::System.Int32)"/>
+public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> value)
+{
+}
+""";
 
-        Assert.That(
-            plan,
-            Does.Contain(
-                "/// <inheritdoc cref=\"global::TestCase.Destination\"/>"));
-        Assert.That(
-            plan,
-            Does.Contain(
-                "/// <inheritdoc cref=\"global::TestCase.Destination.Destination(global::System.Int32)\"/>"));
-        Assert.That(
-            plan,
-            Does.Contain(
-                "Contains mappings for constructor arguments of <see cref=\"global::TestCase.Destination\"/>."));
-        Assert.That(
-            plan,
-            Does.Contain(
-                "Configures the <c>value</c> constructor argument."));
-        Assert.That(
-            plan,
-            Does.Contain(
-                "Creates a destination instance using convention-based mapping."));
-        Assert.That(
-            plan,
-            Does.Contain(
-                "Creates a destination instance using factory-based construction."));
-        Assert.That(
-            plan,
-            Does.Contain(
-                "Selects an existing destination as the mapping result."));
+        var destinationCref = "global::TestCase.Destination";
+        var plan = ConstructionSurfaceExpectedSource.Plan(
+            "TestCase.Morphant.Generated",
+            ConstructionSurfaceExpectedSource.ConstructionType(
+                ConstructionSurfaceExpectedSource
+                    .InheritDocumentation(destinationCref),
+                "internal sealed class DestinationConstruction",
+                "DestinationConstruction",
+                "DestinationConstruction",
+                destinationCref,
+                destinationConstructor,
+                "DestinationConstructionConstructorParameters"),
+            ConstructionSurfaceExpectedSource.ConstructorParametersType(
+                "internal sealed class DestinationConstructionConstructorParameters",
+                destinationCref,
+                ConstructionSurfaceExpectedSource.ConstructorParameterField(
+                    "value",
+                    "public global::Morphant.Members.ConstructorParameter<int> value = null!;")));
+        var builderType =
+            "global::Morphant.MapperBuilder<global::TestCase.Source, " +
+            "global::TestCase.Destination>";
+        var extension = ConstructionSurfaceExpectedSource.MappingExtension(
+            builderType,
+            "global::TestCase.Source",
+            "global::TestCase.Source?",
+            destinationCref,
+            destinationCref,
+            "global::TestCase.Morphant.Generated.DestinationConstruction");
 
-        Assert.That(
-            extension,
-            Does.Contain(
-                "Configures how to construct a destination when no existing destination is used."));
-        Assert.That(
-            extension,
-            Does.Contain(
-                "Configures how to select or construct the destination from the source and an optional existing destination."));
-        Assert.That(
-            extension,
-            Does.Contain("Configures a fully manual mapping algorithm."));
+        await ConstructionSurfaceGeneratorTest
+            .RunAndAssertAllowingCompilerWarnings(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                plan
+            ),
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs",
+                extension
+            ));
     }
 
     [Test]
-    public void Generates_a_meaningful_plan_summary_without_destination_docs()
+    public async Task Generates_a_meaningful_plan_summary_without_destination_docs()
     {
         // lang=c#
         const string source =
@@ -113,16 +114,49 @@ namespace TestCase
 }
 """;
 
-        var generated =
-            ConstructionSurfaceCompilationTest.RunAndGetGeneratedSources(
-                LanguageVersion.CSharp9,
-                source);
-        var plan = generated[
-            "Morphant.Generated.Construction.TestCase_Destination.g.cs"];
+        // lang=c#
+        const string destinationConstructor =
+"""
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+public DestinationConstruction()
+{
+}
+""";
 
-        Assert.That(
-            plan,
-            Does.Contain(
-                "Describes construction of <see cref=\"global::TestCase.Destination\"/>."));
+        var destinationCref = "global::TestCase.Destination";
+        var plan = ConstructionSurfaceExpectedSource.Plan(
+            "TestCase.Morphant.Generated",
+            ConstructionSurfaceExpectedSource.ConstructionType(
+                ConstructionSurfaceExpectedSource
+                    .FallbackPlanDocumentation(destinationCref),
+                "internal sealed class DestinationConstruction",
+                "DestinationConstruction",
+                "DestinationConstruction",
+                destinationCref,
+                destinationConstructor));
+        var builderType =
+            "global::Morphant.MapperBuilder<global::TestCase.Source, " +
+            "global::TestCase.Destination>";
+        var extension = ConstructionSurfaceExpectedSource.MappingExtension(
+            builderType,
+            "global::TestCase.Source",
+            "global::TestCase.Source?",
+            destinationCref,
+            destinationCref,
+            "global::TestCase.Morphant.Generated.DestinationConstruction");
+
+        await ConstructionSurfaceGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                plan
+            ),
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs",
+                extension
+            ));
     }
 }

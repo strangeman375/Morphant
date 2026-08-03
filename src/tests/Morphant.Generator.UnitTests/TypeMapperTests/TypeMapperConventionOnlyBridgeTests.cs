@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperTests;
 internal sealed class TypeMapperConventionOnlyBridgeTests
 {
     [Test]
-    public void Production_generator_composes_the_surface_with_the_mapper_bridge()
+    public async Task Production_generator_composes_the_surface_with_the_mapper_bridge()
     {
         // lang=c#
         const string source =
@@ -88,30 +88,53 @@ namespace TestCase
 }
 """;
 
-        var generated = ConstructionSurfaceCompilationTest
-            .RunProductionAndGetGeneratedSources(
-                LanguageVersion.CSharp9,
-                source);
+        // lang=c#
+        const string destinationConstructor =
+"""
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+public DestinationConstruction()
+{
+}
+""";
 
-        Assert.That(
-            generated.Keys,
-            Is.EquivalentTo(new[]
-            {
+        var destinationType = "global::TestCase.Destination";
+        var plan = ConstructionSurfaceExpectedSource.Plan(
+            "TestCase.Morphant.Generated",
+            ConstructionSurfaceExpectedSource.ConstructionType(
+                ConstructionSurfaceExpectedSource
+                    .FallbackPlanDocumentation(destinationType),
+                "internal sealed class DestinationConstruction",
+                "DestinationConstruction",
+                "DestinationConstruction",
+                destinationType,
+                destinationConstructor));
+        var builderType =
+            "global::Morphant.MapperBuilder<global::TestCase.Source, " +
+            "global::TestCase.Destination>";
+        var extension = ConstructionSurfaceExpectedSource.MappingExtension(
+            builderType,
+            "global::TestCase.Source",
+            "global::TestCase.Source?",
+            destinationType,
+            destinationType,
+            "global::TestCase.Morphant.Generated.DestinationConstruction");
+
+        await ProductionGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
                 "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                plan
+            ),
+            (
                 "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs",
+                extension
+            ),
+            (
                 "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
-            }));
-        Assert.That(
-            NormalizeNewLines(generated[
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"]),
-            Is.EqualTo(NormalizeNewLines(expected)));
-    }
-
-    private static string NormalizeNewLines(string value)
-    {
-        return value
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n')
-            .TrimEnd('\n');
+                expected
+            ));
     }
 }

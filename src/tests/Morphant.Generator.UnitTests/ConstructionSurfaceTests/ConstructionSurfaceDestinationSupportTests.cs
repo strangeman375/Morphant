@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.ConstructionSurfaceTests;
 internal sealed class ConstructionSurfaceDestinationSupportTests
 {
     [Test]
-    public void Generates_only_the_surface_allowed_by_each_destination_capability()
+    public async Task Generates_only_the_surface_allowed_by_each_destination_capability()
     {
         // lang=c#
         const string source =
@@ -47,47 +47,84 @@ namespace TestCase
 }
 """;
 
-        var generated =
-            ConstructionSurfaceCompilationTest.RunAndGetGeneratedSources(
-                LanguageVersion.CSharp9,
-                source);
+        var emptyClassType = "global::TestCase.EmptyClass";
+        var emptyClassConstruction =
+            "global::TestCase.Morphant.Generated.EmptyClassConstruction";
+        var customStructType = "global::TestCase.CustomStruct";
+        var customStructConstruction =
+            "global::TestCase.Morphant.Generated.CustomStructConstruction";
+        var interfaceType = "global::TestCase.IDestination";
+        var abstractType = "global::TestCase.AbstractDestination";
+        var factoryOnlyType = "global::TestCase.FactoryOnly";
 
-        Assert.That(
-            generated.Keys,
-            Is.EquivalentTo(new[]
-            {
+        (string FileName, string Content)[] expectedSources =
+        {
+            (
                 "Morphant.Generated.Construction.TestCase_CustomStruct.g.cs",
+                BuildParameterlessPlan(
+                    "CustomStructConstruction",
+                    customStructType)
+            ),
+            (
                 "Morphant.Generated.Construction.TestCase_EmptyClass.g.cs",
+                BuildParameterlessPlan(
+                    "EmptyClassConstruction",
+                    emptyClassType)
+            ),
+            (
                 "Morphant.Generated.MappingExtension.TestCase_Source__System_Int32.g.cs",
+                BuildExtension("int", "int", "int", "int")
+            ),
+            (
                 "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_AbstractDestination.g.cs",
+                BuildExtension(
+                    abstractType,
+                    abstractType,
+                    abstractType,
+                    abstractType)
+            ),
+            (
                 "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_CustomStruct.g.cs",
+                BuildExtension(
+                    customStructType,
+                    customStructType,
+                    customStructType,
+                    customStructConstruction)
+            ),
+            (
                 "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_EmptyClass.g.cs",
+                BuildExtension(
+                    emptyClassType,
+                    emptyClassType,
+                    emptyClassType,
+                    emptyClassConstruction)
+            ),
+            (
                 "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_FactoryOnly.g.cs",
-                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_IDestination.g.cs"
-            }));
+                BuildExtension(
+                    factoryOnlyType,
+                    factoryOnlyType,
+                    factoryOnlyType,
+                    factoryOnlyType)
+            ),
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_IDestination.g.cs",
+                BuildExtension(
+                    interfaceType,
+                    interfaceType,
+                    interfaceType,
+                    interfaceType)
+            )
+        };
 
-        Assert.That(
-            generated.Values.Count(static value =>
-                value.Contains(
-                    "internal sealed class EmptyClassConstruction",
-                    StringComparison.Ordinal)),
-            Is.EqualTo(1));
-        Assert.That(
-            generated.Values.Count(static value =>
-                value.Contains(
-                    "internal sealed class CustomStructConstruction",
-                    StringComparison.Ordinal)),
-            Is.EqualTo(1));
-        Assert.That(
-            generated.Values,
-            Has.None.Contains("IDestinationConstruction"));
-        Assert.That(
-            generated.Values,
-            Has.None.Contains("FactoryOnlyConstruction"));
+        await ConstructionSurfaceGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            expectedSources);
     }
 
     [Test]
-    public void Uses_only_constructors_visible_from_the_common_generated_context()
+    public async Task Uses_only_constructors_visible_from_the_common_generated_context()
     {
         // lang=c#
         const string source =
@@ -119,35 +156,87 @@ namespace TestCase
 }
 """;
 
-        var generated =
-            ConstructionSurfaceCompilationTest.RunAndGetGeneratedSources(
-                LanguageVersion.CSharp9,
-                source);
-        var plan = generated[
-            "Morphant.Generated.Construction.TestCase_Destination.g.cs"];
+        // lang=c#
+        const string destinationConstructors =
+"""
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+/// <param name="value">Configures the <c>value</c> constructor argument.</param>
+public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> value)
+{
+}
 
-        Assert.That(
-            plan,
-            Does.Contain("ConstructorParameter<int> value"));
-        Assert.That(
-            plan,
-            Does.Contain("ConstructorParameter<uint> value"));
-        Assert.That(
-            plan,
-            Does.Contain("ConstructorParameter<string> value"));
-        Assert.That(
-            plan,
-            Does.Not.Contain("ConstructorParameter<byte> value"));
-        Assert.That(
-            plan,
-            Does.Not.Contain("ConstructorParameter<short> value"));
-        Assert.That(
-            plan,
-            Does.Not.Contain("ConstructorParameter<long> value"));
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+/// <param name="value">Configures the <c>value</c> constructor argument.</param>
+public DestinationConstruction(global::Morphant.Members.ConstructorParameter<uint> value)
+{
+}
+
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+/// <param name="value">Configures the <c>value</c> constructor argument.</param>
+#nullable disable annotations
+public DestinationConstruction(global::Morphant.Members.ConstructorParameter<string> value)
+{
+}
+#nullable enable annotations
+""";
+
+        var destinationType = "global::TestCase.Destination";
+        var plan = ConstructionSurfaceExpectedSource.Plan(
+            "TestCase.Morphant.Generated",
+            ConstructionSurfaceExpectedSource.ConstructionType(
+                ConstructionSurfaceExpectedSource
+                    .FallbackPlanDocumentation(destinationType),
+                "internal sealed class DestinationConstruction",
+                "DestinationConstruction",
+                "DestinationConstruction",
+                destinationType,
+                destinationConstructors,
+                "DestinationConstructionConstructorParameters"),
+            ConstructionSurfaceExpectedSource.ConstructorParametersType(
+                "internal sealed class DestinationConstructionConstructorParameters",
+                destinationType,
+                ConstructionSurfaceExpectedSource.ConstructorParameterField(
+                    "value",
+                    "public global::Morphant.Members.ConstructorParameter<int> valueInt = null!;"),
+                ConstructionSurfaceExpectedSource.ConstructorParameterField(
+                    "value",
+                    "public global::Morphant.Members.ConstructorParameter<uint> valueUint = null!;"),
+                """
+#nullable disable annotations
+/// <summary>
+/// Configures the <c>value</c> constructor argument.
+/// </summary>
+public global::Morphant.Members.ConstructorParameter<string> valueString = null!;
+#nullable enable annotations
+"""));
+        var extension = BuildExtension(
+            destinationType,
+            destinationType,
+            destinationType,
+            "global::TestCase.Morphant.Generated.DestinationConstruction");
+
+        await ConstructionSurfaceGeneratorTest
+            .RunAndAssertAllowingCompilerWarnings(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                plan
+            ),
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs",
+                extension
+            ));
     }
 
     [Test]
-    public void Reuses_one_plan_for_nullable_and_non_nullable_custom_structs()
+    public async Task Reuses_one_plan_for_nullable_and_non_nullable_custom_structs()
     {
         // lang=c#
         const string source =
@@ -176,18 +265,114 @@ namespace TestCase
 }
 """;
 
-        var generated =
-            ConstructionSurfaceCompilationTest.RunAndGetGeneratedSources(
-                LanguageVersion.CSharp9,
-                source);
+        // lang=c#
+        const string destinationConstructors =
+"""
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+/// <param name="value">Configures the <c>value</c> constructor argument.</param>
+public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> value)
+{
+}
 
-        Assert.That(
-            generated.Keys.Count(static name =>
-                name.Contains(".Construction.", StringComparison.Ordinal)),
-            Is.EqualTo(1));
-        Assert.That(
-            generated.Keys.Count(static name =>
-                name.Contains(".MappingExtension.", StringComparison.Ordinal)),
-            Is.EqualTo(2));
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+public DestinationConstruction()
+{
+}
+""";
+
+        var destinationType = "global::TestCase.Destination";
+        var constructionType =
+            "global::TestCase.Morphant.Generated.DestinationConstruction";
+        var plan = ConstructionSurfaceExpectedSource.Plan(
+            "TestCase.Morphant.Generated",
+            ConstructionSurfaceExpectedSource.ConstructionType(
+                ConstructionSurfaceExpectedSource
+                    .FallbackPlanDocumentation(destinationType),
+                "internal sealed class DestinationConstruction",
+                "DestinationConstruction",
+                "DestinationConstruction",
+                destinationType,
+                destinationConstructors,
+                "DestinationConstructionConstructorParameters"),
+            ConstructionSurfaceExpectedSource.ConstructorParametersType(
+                "internal sealed class DestinationConstructionConstructorParameters",
+                destinationType,
+                ConstructionSurfaceExpectedSource.ConstructorParameterField(
+                    "value",
+                    "public global::Morphant.Members.ConstructorParameter<int> value = null!;")));
+
+        await ConstructionSurfaceGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                plan
+            ),
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__System_Nullable_TestCase_Destination_.g.cs",
+                BuildExtension(
+                    destinationType + "?",
+                    destinationType + "?",
+                    destinationType,
+                    constructionType)
+            ),
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs",
+                BuildExtension(
+                    destinationType,
+                    destinationType,
+                    destinationType,
+                    constructionType)
+            ));
+    }
+
+    private static string BuildParameterlessPlan(
+        string constructionTypeName,
+        string destinationType)
+    {
+        // lang=c#
+        var destinationConstructor =
+$$"""
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+public {{constructionTypeName}}()
+{
+}
+""";
+
+        return ConstructionSurfaceExpectedSource.Plan(
+            "TestCase.Morphant.Generated",
+            ConstructionSurfaceExpectedSource.ConstructionType(
+                ConstructionSurfaceExpectedSource
+                    .FallbackPlanDocumentation(destinationType),
+                $"internal sealed class {constructionTypeName}",
+                constructionTypeName,
+                constructionTypeName,
+                destinationType,
+                destinationConstructor));
+    }
+
+    private static string BuildExtension(
+        string builderDestinationType,
+        string destinationType,
+        string previousDestinationType,
+        string constructionResultType)
+    {
+        var builderType =
+            "global::Morphant.MapperBuilder<global::TestCase.Source, " +
+            builderDestinationType + ">";
+
+        return ConstructionSurfaceExpectedSource.MappingExtension(
+            builderType,
+            "global::TestCase.Source",
+            "global::TestCase.Source?",
+            destinationType,
+            previousDestinationType,
+            constructionResultType);
     }
 }

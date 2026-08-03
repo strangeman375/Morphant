@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.ConstructionSurfaceTests;
 internal sealed class ConstructionSurfaceUsageTests
 {
     [Test]
-    public void Resolves_every_structured_construction_form_and_manual_mapping()
+    public async Task Resolves_every_structured_construction_form_and_manual_mapping()
     {
         // lang=c#
         const string source =
@@ -71,13 +71,84 @@ namespace TestCase
 }
 """;
 
-        ConstructionSurfaceCompilationTest.RunAndAssert(
+        // lang=c#
+        const string destinationConstructors =
+"""
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+/// <param name="id">Configures the <c>id</c> constructor argument.</param>
+public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> id)
+{
+}
+
+/// <summary>
+/// Creates a destination instance using a corresponding constructor.
+/// </summary>
+/// <param name="id">Configures the <c>id</c> constructor argument.</param>
+/// <param name="enabled">Configures the <c>enabled</c> constructor argument. If omitted, the destination constructor default value <c>true</c> is used.</param>
+/// <param name="tags">Configures the <c>tags</c> constructor argument.</param>
+public DestinationConstruction(
+    global::Morphant.Members.ConstructorParameter<global::System.Guid> id,
+    global::Morphant.Members.ConstructorParameter<bool> enabled = null!,
+    global::Morphant.Members.ConstructorParameter<string[]> tags = null!)
+{
+}
+""";
+
+        var destinationType = "global::TestCase.Destination";
+        var plan = ConstructionSurfaceExpectedSource.Plan(
+            "TestCase.Morphant.Generated",
+            ConstructionSurfaceExpectedSource.ConstructionType(
+                ConstructionSurfaceExpectedSource
+                    .FallbackPlanDocumentation(destinationType),
+                "internal sealed class DestinationConstruction",
+                "DestinationConstruction",
+                "DestinationConstruction",
+                destinationType,
+                destinationConstructors,
+                "DestinationConstructionConstructorParameters"),
+            ConstructionSurfaceExpectedSource.ConstructorParametersType(
+                "internal sealed class DestinationConstructionConstructorParameters",
+                destinationType,
+                ConstructionSurfaceExpectedSource.ConstructorParameterField(
+                    "id",
+                    "public global::Morphant.Members.ConstructorParameter<int> idInt = null!;"),
+                ConstructionSurfaceExpectedSource.ConstructorParameterField(
+                    "id",
+                    "public global::Morphant.Members.ConstructorParameter<global::System.Guid> idGuid = null!;"),
+                ConstructionSurfaceExpectedSource.ConstructorParameterField(
+                    "enabled",
+                    "public global::Morphant.Members.ConstructorParameter<bool> enabled = null!;"),
+                ConstructionSurfaceExpectedSource.ConstructorParameterField(
+                    "tags",
+                    "public global::Morphant.Members.ConstructorParameter<string[]> tags = null!;")));
+        var builderType =
+            "global::Morphant.MapperBuilder<global::TestCase.Source?, " +
+            "global::TestCase.Destination?>";
+        var extension = ConstructionSurfaceExpectedSource.MappingExtension(
+            builderType,
+            "global::TestCase.Source",
+            "global::TestCase.Source?",
+            destinationType + "?",
+            destinationType,
+            "global::TestCase.Morphant.Generated.DestinationConstruction");
+
+        await ConstructionSurfaceGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
-            source);
+            source,
+            (
+                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                plan
+            ),
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs",
+                extension
+            ));
     }
 
     [Test]
-    public void Resolves_direct_method_groups_and_previous_aware_replacement()
+    public async Task Resolves_direct_method_groups_and_previous_aware_replacement()
     {
         // lang=c#
         const string source =
@@ -112,8 +183,22 @@ namespace TestCase
 }
 """;
 
-        ConstructionSurfaceCompilationTest.RunAndAssert(
+        var builderType =
+            "global::Morphant.MapperBuilder<string?, global::System.Guid>";
+        var extension = ConstructionSurfaceExpectedSource.MappingExtension(
+            builderType,
+            "string",
+            "string?",
+            "global::System.Guid",
+            "global::System.Guid",
+            "global::System.Guid");
+
+        await ConstructionSurfaceGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
-            source);
+            source,
+            (
+                "Morphant.Generated.MappingExtension.System_String__System_Guid.g.cs",
+                extension
+            ));
     }
 }

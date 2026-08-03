@@ -71,7 +71,12 @@
 ## Tests and verification
 
 - Use NUnit and `Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing`.
-- Prefer exact generated-source assertions. Tests are executable project
+- Generated-source assertions must compare the complete generation result:
+  the exact set of hint names and the full content of every generated file.
+  Never validate generated output through substring presence, absence,
+  occurrence counts, or relative substring positions. An expected result may
+  be assembled from test-owned literal parts when that improves readability,
+  but the final assertion must remain complete. Tests are executable project
   documentation and should make the resulting API understandable.
 - Use `TestTemplateTypeGenerator` for template type tests so unrelated
   template extension generation does not run.
