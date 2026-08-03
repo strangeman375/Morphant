@@ -41,17 +41,17 @@ internal sealed class TemplateTypeContentActualizationTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = null!;
+        public global::Morphant.Members.ConstructorParameter<int> id = null!;
 
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?>? name = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? name = null!;
     }
 """;
 
@@ -64,8 +64,8 @@ internal sealed class TemplateTypeContentActualizationTests
         /// <param name="id">Configures the <c>id</c> constructor argument.</param>
         /// <param name="name">Configures the <c>name</c> constructor argument. If omitted, the destination constructor default value <c>null</c> is used.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<int> id,
-            global::Morphant.Members.ConstructorMember<string?>? name = null)
+            global::Morphant.Members.ConstructorParameter<int> id,
+            global::Morphant.Members.ConstructorParameter<string?>? name = null)
         {
         }
 """;
@@ -90,7 +90,7 @@ internal sealed class TemplateTypeContentActualizationTests
                         byConventionConstructor:
                             Expected.BuildByConventionConstructorWithMembers(
                                 "DestinationMorphantTemplate",
-                                "DestinationMorphantTemplateConstructorMembers"),
+                                "DestinationMorphantTemplateConstructorParameters"),
                         destinationConstructors: updatedConstructor)
                 )));
     }
@@ -1242,12 +1242,12 @@ namespace ReferencedModels
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::ReferencedModels.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?>? name = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? name = null!;
     }
 """;
 
@@ -1258,7 +1258,7 @@ namespace ReferencedModels
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="name">Configures the <c>name</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<string?>? name)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<string?>? name)
         {
         }
 """;
@@ -1310,7 +1310,7 @@ namespace ReferencedModels
                         byConventionConstructor:
                             Expected.BuildByConventionConstructorWithMembers(
                                 "DestinationMorphantTemplate",
-                                "DestinationMorphantTemplateConstructorMembers"),
+                                "DestinationMorphantTemplateConstructorParameters"),
                         destinationConstructors: updatedConstructor,
                         members: updatedMember)
                 )));

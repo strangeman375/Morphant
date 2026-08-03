@@ -10,24 +10,6 @@ public abstract class MapperBuilderBase<T>
     }
 
     /// <summary>
-    /// Configures how <c>Template()</c> lambdas are interpreted for this
-    /// builder.
-    /// </summary>
-    /// <param name="templateMode">
-    /// The template mode to use.
-    /// <see cref="Morphant.TemplateMode.Default"/> inherits the
-    /// mapper-level setting for a mapping builder, or the assembly-level
-    /// <c>MorphantTemplateMode</c> MSBuild property for the mapper builder. If
-    /// all levels inherit, Morphant uses
-    /// <see cref="Morphant.TemplateMode.Dsl"/>.
-    /// The argument expression must be a compile-time constant whose value is
-    /// defined by <see cref="Morphant.TemplateMode"/>.
-    /// </param>
-    /// <returns>This builder.</returns>
-    public T TemplateMode(TemplateMode templateMode) =>
-        throw new RuntimeInvocationNotSupportedException();
-
-    /// <summary>
     /// Configures how this builder handles a
     /// <see langword="null"/> source.
     /// </summary>
@@ -55,7 +37,7 @@ public abstract class MapperBuilderBase<T>
     /// mapper-level setting for a mapping builder, or the assembly-level
     /// <c>MorphantNullDestinationHandling</c> MSBuild property for the mapper
     /// builder. If all levels inherit, Morphant uses
-    /// <see cref="Morphant.NullDestinationHandling.CreateNew"/>.
+    /// <see cref="Morphant.NullDestinationHandling.Create"/>.
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.NullDestinationHandling"/>.
     /// </param>
@@ -67,13 +49,10 @@ public abstract class MapperBuilderBase<T>
     public T ConstructorSelection(ConstructorSelection constructorSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T MemberMatching(MemberMatching memberMatching) =>
+    public T MemberSelection(MemberSelection memberSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 
     public T UnmappedMemberValidation(UnmappedMemberValidation unmappedMemberValidation) =>
-        throw new RuntimeInvocationNotSupportedException();
-
-    public T NullabilityMismatchValidation(NullabilityMismatchValidation nullabilityMismatchValidation) =>
         throw new RuntimeInvocationNotSupportedException();
 }
 
@@ -91,7 +70,7 @@ public abstract class MapperBuilder : MapperBuilderBase<MapperBuilder>
     /// The mapping operations to support. <see cref="Morphant.MappingMode.Default"/>
     /// inherits the assembly-level <c>MorphantMappingMode</c> MSBuild
     /// property. If that property is not set or is also <c>Default</c>,
-    /// Morphant uses <see cref="Morphant.MappingMode.MapNewAndExisting"/>.
+    /// Morphant uses <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
     /// The argument expression must be a compile-time constant composed only
     /// from the defined mapping mode flags.
     /// </param>

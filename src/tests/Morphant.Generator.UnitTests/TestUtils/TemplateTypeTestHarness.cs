@@ -73,13 +73,13 @@ internal static class TemplateTypeTestHarness
         string? expectedByConventionConstructor,
         string? expectedByFactoryConstructor)
     {
-        var hasConstructorMembers =
+        var hasConstructorParameters =
             !string.IsNullOrEmpty(constructorMembers);
 
         var builder = new StringBuilder();
         builder.AppendLine(ExpectedFileStart);
 
-        if (hasConstructorMembers)
+        if (hasConstructorParameters)
         {
             builder.AppendLine(constructorMembers);
             builder.AppendLine();
@@ -91,7 +91,7 @@ internal static class TemplateTypeTestHarness
         expectedByConventionConstructor ??=
             !canConstructDestination
                 ? ExpectedByConventionConstructorWithoutDestinationConstructor
-                : hasConstructorMembers
+                : hasConstructorParameters
                     ? ExpectedByConventionConstructorWithMembers
                     : ExpectedByConventionConstructorWithoutMembers;
 
@@ -241,7 +241,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="members">Specifies optional mappings for constructor arguments.</param>
         public DestinationMorphantTemplate(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationMorphantTemplateConstructorMembers? members = null)
+            DestinationMorphantTemplateConstructorParameters? members = null)
         {
         }
 """;

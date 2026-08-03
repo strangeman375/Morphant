@@ -280,7 +280,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<FirstSource, Destination>(MappingMode.MapNew)
+            builder.Map<FirstSource, Destination>(MappingMode.Create)
                 .Template(static _ => new());
 
             builder.Map<FirstSource, Destination>();
@@ -292,7 +292,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<SecondSource, Destination>(MappingMode.MapExisting)
+            builder.Map<SecondSource, Destination>(MappingMode.Update)
                 .Template(static _ => new());
         }
     }

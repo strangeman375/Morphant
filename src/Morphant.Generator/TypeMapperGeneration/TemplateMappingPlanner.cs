@@ -438,7 +438,7 @@ internal static class TemplateMappingPlanner
             TemplateConstructorMappingPlan? constructor = null;
             TemplateFactoryPlan? factory = null;
             ImmutableArray<
-                    TemplateConstructorMemberMappingModel>
+                    TemplateConstructorParameterMappingModel>
                 conventionConstructorMappings = [];
 
             if (TemplateByConventionMappingPlanner.TryBuild(
@@ -3138,7 +3138,7 @@ internal readonly record struct TemplateMappingPlan(
     TemplateConstructionKind ConstructionKind,
     TemplateConstructorMappingPlan? Constructor,
     TemplateFactoryPlan? Factory,
-    ImmutableArray<TemplateConstructorMemberMappingModel>
+    ImmutableArray<TemplateConstructorParameterMappingModel>
         ConventionConstructorMappings,
     bool HasDestinationParameter);
 

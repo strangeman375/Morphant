@@ -581,13 +581,13 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination&lt;T&gt;"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers<T>
+    internal sealed class DestinationMorphantTemplateConstructorParameters<T>
         where T : class
     {
         /// <summary>
         /// Configures the <c>value</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<T> value = null!;
+        public global::Morphant.Members.ConstructorParameter<T> value = null!;
     }
 
     /// <summary>
@@ -603,7 +603,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="members">Specifies optional mappings for constructor arguments.</param>
         public DestinationMorphantTemplate(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationMorphantTemplateConstructorMembers<T>? members = null)
+            DestinationMorphantTemplateConstructorParameters<T>? members = null)
         {
         }
 
@@ -619,7 +619,7 @@ namespace TestCase.Morphant.Generated
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="value">Configures the <c>value</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<T> value)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<T> value)
         {
         }
 

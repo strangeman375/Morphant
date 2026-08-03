@@ -1,10 +1,29 @@
 namespace Morphant;
 
-public abstract class MappingContext
+/// <summary>
+/// Describes the current mapping call.
+/// </summary>
+/// <remarks>
+/// Morphant creates a context for each mapping call. A default-initialized
+/// context is not a valid mapping frame.
+/// </remarks>
+public readonly struct MappingContext
 {
-    private protected MappingContext()
+    internal MappingContext(
+        MappingOperation operation,
+        IMapper mapper)
     {
+        Operation = operation;
+        Mapper = mapper;
     }
 
-    public IContextualMapper Mapper { get; internal set; } = null!;
+    /// <summary>
+    /// Gets the operation performed by the current call.
+    /// </summary>
+    public MappingOperation Operation { get; }
+
+    /// <summary>
+    /// Gets the mapper bound to the current mapping scope.
+    /// </summary>
+    public IMapper Mapper { get; }
 }

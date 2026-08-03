@@ -21,3 +21,29 @@ internal sealed class NotNullIfNotNullAttribute : Attribute
     /// </summary>
     public string ParameterName { get; }
 }
+
+/// <summary>
+/// Specifies that an output may be <see langword="null"/> when a method
+/// returns the specified value.
+/// </summary>
+[AttributeUsage(AttributeTargets.Parameter, Inherited = false)]
+[ExcludeFromCodeCoverage]
+internal sealed class MaybeNullWhenAttribute : Attribute
+{
+    /// <summary>
+    /// Initializes the attribute with the return value whose path may produce
+    /// a <see langword="null"/> output.
+    /// </summary>
+    /// <param name="returnValue">
+    /// The return value associated with a potentially
+    /// <see langword="null"/> output.
+    /// </param>
+    public MaybeNullWhenAttribute(bool returnValue) =>
+        ReturnValue = returnValue;
+
+    /// <summary>
+    /// Gets the return value associated with a potentially
+    /// <see langword="null"/> output.
+    /// </summary>
+    public bool ReturnValue { get; }
+}

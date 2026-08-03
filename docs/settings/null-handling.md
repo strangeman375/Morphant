@@ -1,14 +1,14 @@
 # Null handling
 
 `NullSourceHandling` controls what a generated mapping does when its source is
-`null`. `NullDestinationHandling` controls what the `MapExisting` overload
+`null`. `NullDestinationHandling` controls what the `Update` overload
 does when its destination is `null`.
 
 The library defaults are:
 
 ```csharp
 NullSourceHandling.ReturnNull
-NullDestinationHandling.CreateNew
+NullDestinationHandling.Create
 ```
 
 ## Configure assembly defaults
@@ -30,7 +30,7 @@ The same properties can be set in a project file:
 ```xml
 <PropertyGroup>
   <MorphantNullSourceHandling>Throw</MorphantNullSourceHandling>
-  <MorphantNullDestinationHandling>CreateNew</MorphantNullDestinationHandling>
+  <MorphantNullDestinationHandling>Create</MorphantNullDestinationHandling>
 </PropertyGroup>
 ```
 
@@ -49,7 +49,7 @@ Set mapper-level values when most registrations use the same behavior:
 protected override void Configure(MapperBuilder builder)
 {
     builder.NullSourceHandling(NullSourceHandling.Throw);
-    builder.NullDestinationHandling(NullDestinationHandling.CreateNew);
+    builder.NullDestinationHandling(NullDestinationHandling.Create);
 
     builder.Map<Order, OrderDto>();
     builder.Map<Customer, CustomerDto>();
@@ -73,7 +73,7 @@ protected override void Configure(MapperBuilder builder)
 
     builder.Map<Order, OrderDto>()
         .NullSourceHandling(NullSourceHandling.ReturnNull)
-        .NullDestinationHandling(NullDestinationHandling.CreateNew);
+        .NullDestinationHandling(NullDestinationHandling.Create);
 }
 ```
 
@@ -88,7 +88,7 @@ Each property is resolved independently in this order:
 
 The source is handled before any destination check or mapping expression.
 
-| Effective value | `MapNew` | `MapExisting` |
+| Effective value | `Create` | `Update` |
 |---|---|---|
 | `ReturnNull` | Returns `default(TDestination)` | Returns `default(TDestination)` |
 | `ReturnDestination` | Returns `default(TDestination)` | Returns the original destination |
@@ -103,34 +103,23 @@ because the source check runs first.
 
 ## Null destination behavior
 
-`NullDestinationHandling` applies only to `MapExisting`:
+`NullDestinationHandling` applies only to `Update`:
 
 | Effective value | Behavior |
 |---|---|
-| `CreateNew` | Runs the complete MapNew creation and mapping plan |
+| `Create` | Treats the explicit `null` as no previous destination and runs the no-previous construction branch |
 | `Throw` | Throws `ArgumentNullException(nameof(destination))` |
 
-`CreateNew` also works when the effective `MappingMode` is `MapExisting`.
-`MappingMode` controls which public overloads can be called; it does not
-prevent the supported `MapExisting` overload from creating a replacement for
-a missing destination.
+`Create` does not change the public operation: the call remains
+`MappingOperation.Update`, and only `MappingMode.Update` must be enabled.
+Inside the declarative pipeline, the normalized previous value is
+`Option<TDestination>.None`, exactly as it is for public `Create`. A configured
+no-previous `Construct` branch may obtain the result through a constructor,
+factory, or another explicit strategy; the setting does not promise a new
+object identity.
 
-For a destination-aware template:
-
-```csharp
-builder.Map<Source, Destination>()
-    .Template(source => Create(source))
-    .Template((source, destination) => Update(source, destination));
-```
-
-The destination-aware lambda runs only after Morphant has established that
-`destination` is non-null. `Throw` throws before template selection.
-`CreateNew` switches to the new mapping plan, which uses the source-only
-template when one is configured and otherwise uses ordinary `MapNew` mapping.
-This rule is the same for `TemplateMode.Dsl` and `TemplateMode.Raw`.
-
-The source parameter is also non-null because source handling runs before
-template selection.
+`Throw` runs before `Construct` or `Members`. Source handling also runs before
+the destination check, so declarative mapping sees a non-null source.
 
 No source or destination runtime null check is generated for a definitely
 non-nullable value type.
@@ -143,7 +132,7 @@ value.
 
 An invalid effective `NullSourceHandling` keeps the generated mapping
 contract, but both overloads throw `NotSupportedException`. An invalid
-effective `NullDestinationHandling` affects only `MapExisting`; `MapNew`
+effective `NullDestinationHandling` affects only `Update`; public `Create`
 remains available.
 
 Configuration validity is checked independently of runtime arguments and type

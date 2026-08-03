@@ -11,7 +11,7 @@ under a directory:
 ```xml
 <Project>
   <PropertyGroup>
-    <MorphantMappingMode>MapNew</MorphantMappingMode>
+    <MorphantMappingMode>Create</MorphantMappingMode>
   </PropertyGroup>
 </Project>
 ```
@@ -20,7 +20,7 @@ The same property can be set in a project file:
 
 ```xml
 <PropertyGroup>
-  <MorphantMappingMode>MapExisting</MorphantMappingMode>
+  <MorphantMappingMode>Update</MorphantMappingMode>
 </PropertyGroup>
 ```
 
@@ -28,8 +28,8 @@ MSBuild resolves imports before Morphant runs. A value in a `.csproj`
 therefore normally overrides a value imported earlier from
 `Directory.Build.props`, and the generator receives only the final value.
 
-Supported values are `Default`, `MapNew`, `MapExisting`, and
-`MapNewAndExisting`. Names are case-insensitive. An empty or missing property
+Supported values are `Default`, `Create`, `Update`, and
+`CreateAndUpdate`. Names are case-insensitive. An empty or missing property
 has the same behavior as `Default`.
 
 ## Configure a mapper default
@@ -39,14 +39,14 @@ Set the mapper-level mode when most registrations use the same behavior:
 ```csharp
 protected override void Configure(MapperBuilder builder)
 {
-    builder.MappingMode(MappingMode.MapNew);
+    builder.MappingMode(MappingMode.Create);
 
     builder.Map<Order, OrderDto>();
     builder.Map<Customer, CustomerDto>();
 }
 ```
 
-Both registrations inherit `MapNew`.
+Both registrations inherit `Create`.
 
 ## Override one mapping
 
@@ -56,11 +56,11 @@ value:
 ```csharp
 protected override void Configure(MapperBuilder builder)
 {
-    builder.MappingMode(MappingMode.MapNew);
+    builder.MappingMode(MappingMode.Create);
 
     builder.Map<Order, OrderDto>();
-    builder.Map<Customer, CustomerDto>(MappingMode.MapExisting);
-    builder.Map<Product, ProductDto>(MappingMode.MapNewAndExisting);
+    builder.Map<Customer, CustomerDto>(MappingMode.Update);
+    builder.Map<Product, ProductDto>(MappingMode.CreateAndUpdate);
 }
 ```
 
@@ -69,7 +69,7 @@ The effective value is selected in this order:
 1. A non-`Default` value passed to `Map<TSource, TDestination>()`.
 2. A non-`Default` mapper-level value passed to `builder.MappingMode(...)`.
 3. A non-`Default` `MorphantMappingMode` MSBuild property.
-4. `MappingMode.MapNewAndExisting`.
+4. `MappingMode.CreateAndUpdate`.
 
 `Default` continues to the next level. Mapper-level settings apply to the
 whole mapper, regardless of whether the setting call appears before or after
@@ -80,9 +80,9 @@ once, the last call wins, including a last call with `Default`.
 
 | Effective mode | `Map(source, context)` | `Map(source, destination, context)` |
 |---|---|---|
-| `MapNew` | Maps to a new destination | Throws `NotSupportedException` |
-| `MapExisting` | Throws `NotSupportedException` | Maps to the supplied destination |
-| `MapNewAndExisting` | Maps to a new destination | Maps to the supplied destination |
+| `Create` | Maps to a new destination | Throws `NotSupportedException` |
+| `Update` | Throws `NotSupportedException` | Maps to the supplied destination |
+| `CreateAndUpdate` | Maps to a new destination | Maps to the supplied destination |
 
 `Default` means inheritance; it is not an operation by itself.
 
@@ -92,7 +92,7 @@ runtime resolution uniform. Invoking an overload excluded by the effective
 mode fails immediately in the generated mapper.
 
 Mapping mode expressions must be compile-time constants composed only from
-the defined `MapNew` and `MapExisting` flags. The MSBuild property must use one
+the defined `Create` and `Update` flags. The MSBuild property must use one
 of the named values listed above.
 
 ## Invalid values

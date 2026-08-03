@@ -18,7 +18,7 @@ internal static class TemplateTypeEmitter
 
         if (!model.ConstructorFields.IsEmpty)
         {
-            WriteConstructorMembersType(writer, model);
+            WriteConstructorParametersType(writer, model);
             writer.Line();
         }
 
@@ -29,12 +29,12 @@ internal static class TemplateTypeEmitter
         return writer.ToString();
     }
 
-    private static void WriteConstructorMembersType(
+    private static void WriteConstructorParametersType(
         CodeWriter writer,
         TemplateTypeModel model)
     {
         var constructorMembersTypeReference = BuildTypeReference(
-            Identifier(model.ConstructorMembersTypeName),
+            Identifier(model.ConstructorParametersTypeName),
             model.TypeParameters);
 
         var destinationCref = XmlAttribute(
@@ -70,7 +70,7 @@ internal static class TemplateTypeEmitter
                 "constructor argument.");
 
             writer.Line(
-                $"public global::Morphant.Members.ConstructorMember<{field.TypeName}>" +
+                $"public global::Morphant.Members.ConstructorParameter<{field.TypeName}>" +
                 (field.AcceptsNull ? "?" : string.Empty) +
                 $" {Identifier(field.Name)} = null!;");
 
@@ -259,7 +259,7 @@ internal static class TemplateTypeEmitter
             {
                 "global::Morphant.Markers.ByConventionMarker marker",
                 BuildTypeReference(
-                    Identifier(model.ConstructorMembersTypeName),
+                    Identifier(model.ConstructorParametersTypeName),
                     model.TypeParameters) +
                 "? members = null"
             });
@@ -402,7 +402,7 @@ internal static class TemplateTypeEmitter
         TemplateConstructorParameterModel parameter)
     {
         var wrapperType =
-            $"global::Morphant.Members.ConstructorMember<{parameter.TypeName}>";
+            $"global::Morphant.Members.ConstructorParameter<{parameter.TypeName}>";
 
         if (parameter.AcceptsNull)
         {

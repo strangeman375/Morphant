@@ -41,8 +41,8 @@ namespace TestCase
                     NullSourceHandling.Throw)
                 .Template(static (Source source) =>
                     new(source.Value))
-                .MemberMatching(
-                    MemberMatching.Explicit)
+                .MemberSelection(
+                    MemberSelection.Explicit)
                 .Template(static (Source source, Destination destination) =>
                     new(
                         source.Value,
@@ -101,8 +101,8 @@ namespace TestCase
                     new(
                         source.Value,
                         destination.Value))
-                .MemberMatching(
-                    MemberMatching.Explicit);
+                .MemberSelection(
+                    MemberSelection.Explicit);
         }
     }
 }

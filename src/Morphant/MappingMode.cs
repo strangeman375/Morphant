@@ -8,11 +8,11 @@ namespace Morphant;
 /// A mapping-level <see cref="Default"/> value inherits the mapper-level
 /// setting. A mapper-level <see cref="Default"/> value inherits the
 /// assembly-level <c>MorphantMappingMode</c> MSBuild property. If no level
-/// specifies a mode, the effective mode is <see cref="MapNewAndExisting"/>.
+/// specifies a mode, the effective mode is <see cref="CreateAndUpdate"/>.
 /// </para>
 /// <para>
 /// The <c>MorphantMappingMode</c> property accepts <c>Default</c>,
-/// <c>MapNew</c>, <c>MapExisting</c>, or <c>MapNewAndExisting</c>,
+/// <c>Create</c>, <c>Update</c>, or <c>CreateAndUpdate</c>,
 /// case-insensitively. A missing or empty property is equivalent to
 /// <c>Default</c>.
 /// </para>
@@ -39,16 +39,16 @@ public enum MappingMode
     /// <summary>
     /// Supports mapping a source to a new destination.
     /// </summary>
-    MapNew = 1 << 0,
+    Create = 1 << 0,
 
     /// <summary>
     /// Supports mapping a source to an existing destination.
     /// </summary>
-    MapExisting = 1 << 1,
+    Update = 1 << 1,
 
     /// <summary>
     /// Supports mapping both to a new destination and to an existing
     /// destination.
     /// </summary>
-    MapNewAndExisting = MapNew | MapExisting
+    CreateAndUpdate = Create | Update
 }

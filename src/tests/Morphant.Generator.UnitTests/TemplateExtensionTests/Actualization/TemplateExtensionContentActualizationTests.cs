@@ -357,7 +357,7 @@ internal sealed class TemplateExtensionContentActualizationTests
                 "source and destination members changed",
                 BuildIrrelevantChangeSource(
                     "AlternativeSource",
-                    "MappingMode.MapNew",
+                    "MappingMode.Create",
                     "        public Destination()\n" +
                     "        {\n" +
                     "        }\n\n" +
@@ -370,7 +370,7 @@ internal sealed class TemplateExtensionContentActualizationTests
                 "mapping mode and template stub changed again",
                 BuildIrrelevantChangeSource(
                     "Source",
-                    "MappingMode.MapExisting",
+                    "MappingMode.Update",
                     "        public decimal Amount { get; set; }",
                     "\n    {\n" +
                     "        public string Marker => string.Empty;\n" +

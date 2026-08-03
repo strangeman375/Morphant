@@ -8,8 +8,8 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TemplateConstructorMappingPlanner
 {
-    private const string ConstructorMemberMetadataName =
-        "Morphant.Members.ConstructorMember`1";
+    private const string ConstructorParameterMetadataName =
+        "Morphant.Members.ConstructorParameter`1";
 
     public static TemplateConstructorMappingPlan? Build(
         ImmutableArray<TemplateObjectArgumentSyntax> templateArguments,
@@ -444,7 +444,7 @@ internal static class TemplateConstructorMappingPlanner
                 : string.Empty;
 
         return
-            $"global::Morphant.Members.ConstructorMember<{parameterType}> " +
+            $"global::Morphant.Members.ConstructorParameter<{parameterType}> " +
             Identifier(parameter.Name) +
             optionalSuffix;
     }
@@ -599,7 +599,7 @@ internal static class TemplateConstructorMappingPlanner
         Func<ExpressionSyntax, string> rewriteExpression,
         CancellationToken cancellationToken)
     {
-        if (!TryGetConstructorMemberCast(
+        if (!TryGetConstructorParameterCast(
                 expression,
                 destinationParameter,
                 compilation,
@@ -632,7 +632,7 @@ internal static class TemplateConstructorMappingPlanner
         Func<ExpressionSyntax, string> rewriteExpression,
         CancellationToken cancellationToken)
     {
-        if (!TryGetConstructorMemberCast(
+        if (!TryGetConstructorParameterCast(
                 expression,
                 compilation,
                 semanticModel,
@@ -655,7 +655,7 @@ internal static class TemplateConstructorMappingPlanner
             .ToFullString();
     }
 
-    private static bool TryGetConstructorMemberCast(
+    private static bool TryGetConstructorParameterCast(
         ExpressionSyntax expression,
         IParameterSymbol destinationParameter,
         CSharpCompilation compilation,
@@ -663,7 +663,7 @@ internal static class TemplateConstructorMappingPlanner
         CancellationToken cancellationToken,
         out CastExpressionSyntax constructorMemberCast)
     {
-        if (!TryGetConstructorMemberCast(
+        if (!TryGetConstructorParameterCast(
                 expression,
                 compilation,
                 semanticModel,
@@ -682,7 +682,7 @@ internal static class TemplateConstructorMappingPlanner
         return true;
     }
 
-    private static bool TryGetConstructorMemberCast(
+    private static bool TryGetConstructorParameterCast(
         ExpressionSyntax expression,
         CSharpCompilation compilation,
         SemanticModel semanticModel,
@@ -705,7 +705,7 @@ internal static class TemplateConstructorMappingPlanner
         constructorMemberCast = cast;
 
         if (compilation.GetTypeByMetadataName(
-                ConstructorMemberMetadataName) is not
+                ConstructorParameterMetadataName) is not
                 { } constructorMemberDefinition ||
             semanticModel.GetTypeInfo(
                     constructorMemberCast.Type,

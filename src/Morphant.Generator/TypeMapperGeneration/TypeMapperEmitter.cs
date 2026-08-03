@@ -130,7 +130,7 @@ internal static class TypeMapperEmitter
     {
         writer.Line("/// <inheritdoc/>");
         writer.Line(
-            $"{mapping.MaybeNullDestinationTypeName} " +
+            $"{mapping.DestinationTypeName} " +
             $"{mapping.InterfaceTypeName}.Map(");
         writer.Indent();
         writer.Line(
@@ -150,7 +150,7 @@ internal static class TypeMapperEmitter
         {
             WriteUnsupportedMapping(
                 writer,
-                "The effective MappingMode does not include MapNew.");
+                "The effective MappingMode does not include Create.");
             writer.Unindent();
             return;
         }
@@ -628,7 +628,7 @@ internal static class TypeMapperEmitter
     {
         writer.Line("/// <inheritdoc/>");
         writer.Line(
-            $"{mapping.MaybeNullDestinationTypeName} " +
+            $"{mapping.DestinationTypeName} " +
             $"{mapping.InterfaceTypeName}.Map(");
         writer.Indent();
         writer.Line(
@@ -650,7 +650,7 @@ internal static class TypeMapperEmitter
         {
             WriteUnsupportedMapping(
                 writer,
-                "The effective MappingMode does not include MapExisting.");
+                "The effective MappingMode does not include Update.");
             writer.Unindent();
             return;
         }
@@ -824,16 +824,16 @@ internal static class TypeMapperEmitter
         switch (mapping.EffectiveSettings.NullSourceHandling)
         {
             case NullSourceHandlingValue.ReturnNull:
-                writer.Line("return default;");
+                writer.Line("return default!;");
                 break;
 
             case NullSourceHandlingValue.ReturnDestination
                 when mapExisting:
-                writer.Line("return destination;");
+                writer.Line("return destination!;");
                 break;
 
             case NullSourceHandlingValue.ReturnDestination:
-                writer.Line("return default;");
+                writer.Line("return default!;");
                 break;
 
             case NullSourceHandlingValue.Throw:
@@ -861,7 +861,7 @@ internal static class TypeMapperEmitter
 
         switch (mapping.EffectiveSettings.NullDestinationHandling)
         {
-            case NullDestinationHandlingValue.CreateNew:
+            case NullDestinationHandlingValue.Create:
                 WriteMapNewCallOrStatements(
                     writer,
                     mapping);
@@ -892,7 +892,7 @@ internal static class TypeMapperEmitter
                 "A MapNew implementation method name is required.");
 
         writer.Line(
-            $"private {mapping.MaybeNullDestinationTypeName} " +
+            $"private {mapping.DestinationTypeName} " +
             $"{methodName}(");
         writer.Indent();
         writer.Line(

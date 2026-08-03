@@ -361,7 +361,7 @@ internal static class TypeMapperPipeline
                settings.SupportsMapNew &&
                settings.SupportsMapExisting &&
                settings.NullDestinationHandling ==
-                   NullDestinationHandlingValue.CreateNew;
+                   NullDestinationHandlingValue.Create;
     }
 
     private static TypeMapperMappingModel BuildMapping(

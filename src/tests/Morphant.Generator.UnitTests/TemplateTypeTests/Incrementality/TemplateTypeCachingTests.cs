@@ -183,9 +183,9 @@ namespace TestCase
                         "Mapper.cs",
                         BuildMapperSource(
                             "builder.Map<SourceB, DestinationB>(" +
-                            "MappingMode.MapExisting);",
+                            "MappingMode.Update);",
                             "builder.Map<SourceA, DestinationA>(" +
-                            "MappingMode.MapNew);")))
+                            "MappingMode.Create);")))
                     .ToArray(),
                 Expected(
                     DestinationAHintName,

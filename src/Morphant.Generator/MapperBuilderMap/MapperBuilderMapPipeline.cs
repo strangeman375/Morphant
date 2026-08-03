@@ -379,7 +379,7 @@ internal static class MapperBuilderMapPipeline
                 cancellationToken,
                 out var numericValue) ||
             (numericValue &
-             ~(int)MappingModeValue.MapNewAndExisting) != 0)
+             ~(int)MappingModeValue.CreateAndUpdate) != 0)
         {
             mappingMode = default;
             return false;

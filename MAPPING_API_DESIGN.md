@@ -2,8 +2,8 @@
 
 Статус документа: согласованный рабочий дизайн, зафиксированный перед началом
 переработки реализации. Документ описывает целевой API. Текущий код и
-`IMPLEMENTATION_PLAN.md` пока отражают прежний `Template()`-дизайн и должны
-быть пересмотрены отдельно после проверки этого документа.
+`IMPLEMENTATION_PLAN.md` отражает прежний `Template()`-дизайн; переход
+реализации выполняется поэтапно по актуальному roadmap.
 
 ## 1. Цель переработки
 
@@ -247,6 +247,10 @@ variants не меняют это правило.
 ```csharp
 public readonly struct Option<T>
 {
+    public static Option<T> None { get; }
+
+    public static Option<T> Some(T value);
+
     public bool HasValue { get; }
 
     public T Value { get; }
@@ -260,6 +264,9 @@ public readonly struct Option<T>
 только с previous destination. Для неё действуют следующие законы:
 
 - `default(Option<T>)` означает `None`;
+- `None` доступен как именованное значение, а `Some(T)` является единственным
+  публичным способом явно создать присутствующее значение; публичного
+  конструктора и implicit conversion из `T` нет;
 - `None` отличается от `Some(default(T))`;
 - когда `T` допускает `null`, `None` отличается и от `Some(null)`;
 - `Value` возвращает сохранённый `T`, а обращение к нему при `None` ошибочно

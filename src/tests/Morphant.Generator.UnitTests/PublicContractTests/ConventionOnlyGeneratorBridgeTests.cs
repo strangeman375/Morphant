@@ -1,13 +1,13 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TypeMapperTests;
+namespace Morphant.Generator.UnitTests.PublicContractTests;
 
 [TestFixture]
-internal sealed class TypeMapperDocumentationTests
+internal sealed class ConventionOnlyGeneratorBridgeTests
 {
     [Test]
-    public async Task Inherits_documentation_for_both_mapping_modes()
+    public async Task Production_generator_emits_only_the_compilable_mapper_bridge()
     {
         // lang=c#
         const string source =
@@ -29,10 +29,8 @@ namespace TestCase
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
-        protected override void Configure(MapperBuilder builder)
-        {
+        protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
-        }
     }
 }
 """;
@@ -90,7 +88,7 @@ namespace TestCase
 }
 """;
 
-        await TypeMapperGeneratorTest.RunAndAssert(
+        await ProductionGeneratorTest.RunAndAssert(
             LanguageVersion.CSharp9,
             source,
             (

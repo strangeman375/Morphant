@@ -13,8 +13,8 @@ internal sealed record TemplateTypeModel(
     ImmutableArray<TemplateConstructorFieldModel> ConstructorFields,
     ImmutableArray<TemplateMemberModel> Members)
 {
-    public string ConstructorMembersTypeName =>
-        TemplateTypeName + "ConstructorMembers";
+    public string ConstructorParametersTypeName =>
+        TemplateTypeName + "ConstructorParameters";
 }
 
 internal sealed record TemplateTypeParameterModel(

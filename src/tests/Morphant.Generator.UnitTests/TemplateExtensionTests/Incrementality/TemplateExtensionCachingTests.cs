@@ -246,9 +246,9 @@ internal sealed class TemplateExtensionCachingTests
                         "Mapper.cs",
                         BuildMapperSource(
                             "builder.Map<SourceC, DirectDestination>(" +
-                            "MappingMode.MapExisting);",
+                            "MappingMode.Update);",
                             "builder.Map<SourceB, GeneratedDestination>(" +
-                            "MappingMode.MapNew);",
+                            "MappingMode.Create);",
                             "builder.Map<SourceA, DirectDestination>();",
                             "builder.Map<SourceC, " +
                             "GeneratedDestination>();"))

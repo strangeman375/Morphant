@@ -23,15 +23,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// <see cref="NullSourceHandling"/> setting determines how it is handled.
     /// </param>
     /// <param name="context">The context for the mapping operation.</param>
-    /// <returns>
-    /// The mapped destination. The result may be <see langword="null"/> for a
-    /// reference or nullable value type, or <see langword="default"/> for a
-    /// non-nullable value type, according to the effective null-handling
-    /// settings.
-    /// </returns>
+    /// <returns>The mapped destination.</returns>
     /// <exception cref="NotSupportedException">
     /// The effective <see cref="MappingMode"/> is invalid or does not include
-    /// <see cref="MappingMode.MapNew"/>, or the effective
+    /// <see cref="MappingMode.Create"/>, or the effective
     /// <see cref="NullSourceHandling"/> is invalid.
     /// </exception>
     /// <exception cref="ArgumentNullException">
@@ -39,7 +34,7 @@ public interface ITypeMapper<in TSource, TDestination>
     /// <see cref="NullSourceHandling"/> is
     /// <see cref="Morphant.NullSourceHandling.Throw"/>.
     /// </exception>
-    TDestination? Map(TSource? source, MappingContext context);
+    TDestination Map(TSource? source, MappingContext context);
 
     /// <summary>
     /// Maps the specified source to the specified destination.
@@ -54,15 +49,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// handled.
     /// </param>
     /// <param name="context">The context for the mapping operation.</param>
-    /// <returns>
-    /// The mapped destination. The result may be <see langword="null"/> for a
-    /// reference or nullable value type, or <see langword="default"/> for a
-    /// non-nullable value type, according to the effective null-handling
-    /// settings.
-    /// </returns>
+    /// <returns>The mapped destination.</returns>
     /// <exception cref="NotSupportedException">
     /// The effective <see cref="MappingMode"/> is invalid or does not include
-    /// <see cref="MappingMode.MapExisting"/>, or an effective null-handling
+    /// <see cref="MappingMode.Update"/>, or an effective null-handling
     /// setting is invalid.
     /// </exception>
     /// <exception cref="ArgumentNullException">
@@ -73,7 +63,7 @@ public interface ITypeMapper<in TSource, TDestination>
     /// effective <see cref="NullDestinationHandling"/> is
     /// <see cref="Morphant.NullDestinationHandling.Throw"/>.
     /// </exception>
-    TDestination? Map(
+    TDestination Map(
         TSource? source,
         TDestination? destination,
         MappingContext context);

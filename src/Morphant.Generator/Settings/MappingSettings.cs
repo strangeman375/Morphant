@@ -5,11 +5,11 @@ internal enum MappingModeValue
 {
     Default = 0,
 
-    MapNew = 1 << 0,
+    Create = 1 << 0,
 
-    MapExisting = 1 << 1,
+    Update = 1 << 1,
 
-    MapNewAndExisting = MapNew | MapExisting
+    CreateAndUpdate = Create | Update
 }
 
 internal enum NullSourceHandlingValue
@@ -27,7 +27,7 @@ internal enum NullDestinationHandlingValue
 {
     Default = 0,
 
-    CreateNew,
+    Create,
 
     Throw
 }
@@ -71,11 +71,11 @@ internal readonly record struct EffectiveMappingSettings(
 
     public bool SupportsMapNew =>
         MappingMode is { } mappingMode &&
-        (mappingMode & MappingModeValue.MapNew) != 0;
+        (mappingMode & MappingModeValue.Create) != 0;
 
     public bool SupportsMapExisting =>
         MappingMode is { } mappingMode &&
-        (mappingMode & MappingModeValue.MapExisting) != 0;
+        (mappingMode & MappingModeValue.Update) != 0;
 
     public bool HasExecutableOperation =>
         IsMappingModeValid &&
@@ -94,7 +94,7 @@ internal readonly record struct EffectiveMappingSettings(
                 assemblySettings.MappingMode,
                 rootSettings.MappingMode,
                 mappingSettings.MappingMode,
-                MappingModeValue.MapNewAndExisting),
+                MappingModeValue.CreateAndUpdate),
             SettingValueResolver.Resolve(
                 assemblySettings.NullSourceHandling,
                 rootSettings.NullSourceHandling,
@@ -104,7 +104,7 @@ internal readonly record struct EffectiveMappingSettings(
                 assemblySettings.NullDestinationHandling,
                 rootSettings.NullDestinationHandling,
                 mappingSettings.NullDestinationHandling,
-                NullDestinationHandlingValue.CreateNew));
+                NullDestinationHandlingValue.Create));
     }
 }
 

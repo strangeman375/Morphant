@@ -78,12 +78,12 @@ internal sealed class TemplateSpecialConstructorDocumentationTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = null!;
+        public global::Morphant.Members.ConstructorParameter<int> id = null!;
     }
 """;
 
@@ -94,7 +94,7 @@ internal sealed class TemplateSpecialConstructorDocumentationTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="id">Configures the <c>id</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> id)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<int> id)
         {
         }
 """;
@@ -109,7 +109,7 @@ internal sealed class TemplateSpecialConstructorDocumentationTests
         /// <param name="members">Specifies optional mappings for constructor arguments.</param>
         public DestinationMorphantTemplate(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationMorphantTemplateConstructorMembers? members = null)
+            DestinationMorphantTemplateConstructorParameters? members = null)
         {
         }
 """;

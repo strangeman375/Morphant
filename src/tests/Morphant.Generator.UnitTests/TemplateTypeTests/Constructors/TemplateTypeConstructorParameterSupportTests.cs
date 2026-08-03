@@ -27,32 +27,32 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = null!;
+        public global::Morphant.Members.ConstructorParameter<int> id = null!;
 
         /// <summary>
         /// Configures the <c>displayName</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?>? displayName = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? displayName = null!;
 
         /// <summary>
         /// Configures the <c>createdAt</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<global::System.DateTime?>? createdAt = null!;
+        public global::Morphant.Members.ConstructorParameter<global::System.DateTime?>? createdAt = null!;
 
         /// <summary>
         /// Configures the <c>enabled</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<bool> enabled = null!;
+        public global::Morphant.Members.ConstructorParameter<bool> enabled = null!;
 
         /// <summary>
         /// Configures the <c>mode</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> mode = null!;
+        public global::Morphant.Members.ConstructorParameter<string> mode = null!;
     }
 """;
 
@@ -68,11 +68,11 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
         /// <param name="enabled">Configures the <c>enabled</c> constructor argument. If omitted, the destination constructor default value <c>true</c> is used.</param>
         /// <param name="mode">Configures the <c>mode</c> constructor argument. If omitted, the destination constructor default value <c>"default"</c> is used.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<int> id,
-            global::Morphant.Members.ConstructorMember<string?>? displayName,
-            global::Morphant.Members.ConstructorMember<global::System.DateTime?>? createdAt,
-            global::Morphant.Members.ConstructorMember<bool> enabled = null!,
-            global::Morphant.Members.ConstructorMember<string> mode = null!)
+            global::Morphant.Members.ConstructorParameter<int> id,
+            global::Morphant.Members.ConstructorParameter<string?>? displayName,
+            global::Morphant.Members.ConstructorParameter<global::System.DateTime?>? createdAt,
+            global::Morphant.Members.ConstructorParameter<bool> enabled = null!,
+            global::Morphant.Members.ConstructorParameter<string> mode = null!)
         {
         }
 """;
@@ -99,17 +99,17 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = null!;
+        public global::Morphant.Members.ConstructorParameter<int> id = null!;
 
         /// <summary>
         /// Configures the <c>tags</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string[]> tags = null!;
+        public global::Morphant.Members.ConstructorParameter<string[]> tags = null!;
     }
 """;
 
@@ -122,8 +122,8 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
         /// <param name="id">Configures the <c>id</c> constructor argument.</param>
         /// <param name="tags">Configures the <c>tags</c> constructor argument.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<int> id,
-            global::Morphant.Members.ConstructorMember<string[]> tags = null!)
+            global::Morphant.Members.ConstructorParameter<int> id,
+            global::Morphant.Members.ConstructorParameter<string[]> tags = null!)
         {
         }
 """;
@@ -179,17 +179,17 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = null!;
+        public global::Morphant.Members.ConstructorParameter<int> id = null!;
 
         /// <summary>
         /// Configures the <c>token</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<global::System.Guid> token = null!;
+        public global::Morphant.Members.ConstructorParameter<global::System.Guid> token = null!;
     }
 """;
 
@@ -200,7 +200,7 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="id">Configures the <c>id</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> id)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<int> id)
         {
         }
 
@@ -208,7 +208,7 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="token">Configures the <c>token</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<global::System.Guid> token)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<global::System.Guid> token)
         {
         }
 """;
@@ -237,12 +237,12 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = null!;
+        public global::Morphant.Members.ConstructorParameter<int> id = null!;
     }
 """;
 
@@ -253,7 +253,7 @@ internal sealed class TemplateTypeConstructorParameterSupportTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="id">Configures the <c>id</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> id)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<int> id)
         {
         }
 """;

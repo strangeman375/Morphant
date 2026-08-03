@@ -333,17 +333,17 @@ internal sealed class TemplateMemberDocumentationTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>Id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> Id = null!;
+        public global::Morphant.Members.ConstructorParameter<int> Id = null!;
 
         /// <summary>
         /// Configures the <c>Name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> Name = null!;
+        public global::Morphant.Members.ConstructorParameter<string> Name = null!;
     }
 """;
 
@@ -356,8 +356,8 @@ internal sealed class TemplateMemberDocumentationTests
         /// <param name="Id">Configures the <c>Id</c> constructor argument.</param>
         /// <param name="Name">Configures the <c>Name</c> constructor argument.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<int> Id,
-            global::Morphant.Members.ConstructorMember<string> Name)
+            global::Morphant.Members.ConstructorParameter<int> Id,
+            global::Morphant.Members.ConstructorParameter<string> Name)
         {
         }
 """;

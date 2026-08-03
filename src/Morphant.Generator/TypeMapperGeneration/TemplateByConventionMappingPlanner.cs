@@ -20,7 +20,7 @@ internal static class TemplateByConventionMappingPlanner
         Func<ExpressionSyntax, bool>
             isKnownAbsentExistingDestination,
         CancellationToken cancellationToken,
-        out ImmutableArray<TemplateConstructorMemberMappingModel>
+        out ImmutableArray<TemplateConstructorParameterMappingModel>
             mappings)
     {
         mappings = default;
@@ -95,7 +95,7 @@ internal static class TemplateByConventionMappingPlanner
 
         var result =
             ImmutableArray.CreateBuilder<
-                TemplateConstructorMemberMappingModel>();
+                TemplateConstructorParameterMappingModel>();
         foreach (var assignment in memberAssignments)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -107,7 +107,7 @@ internal static class TemplateByConventionMappingPlanner
                     out var markerKind))
             {
                 result.Add(
-                    new TemplateConstructorMemberMappingModel(
+                    new TemplateConstructorParameterMappingModel(
                         assignment.MemberName,
                         markerKind,
                         ExplicitValueExpression: null));
@@ -129,7 +129,7 @@ internal static class TemplateByConventionMappingPlanner
                 }
 
                 result.Add(
-                    new TemplateConstructorMemberMappingModel(
+                    new TemplateConstructorParameterMappingModel(
                         assignment.MemberName,
                         MarkerKind: null,
                         ExplicitValueExpression: null,
@@ -138,7 +138,7 @@ internal static class TemplateByConventionMappingPlanner
             else
             {
                 result.Add(
-                    new TemplateConstructorMemberMappingModel(
+                    new TemplateConstructorParameterMappingModel(
                         assignment.MemberName,
                         MarkerKind: null,
                         rewriteExpression(assignment.Value)));
@@ -230,7 +230,7 @@ internal static class TemplateByConventionMappingPlanner
     }
 }
 
-internal readonly record struct TemplateConstructorMemberMappingModel(
+internal readonly record struct TemplateConstructorParameterMappingModel(
     string ParameterName,
     TemplateMemberMarkerKind? MarkerKind,
     string? ExplicitValueExpression,

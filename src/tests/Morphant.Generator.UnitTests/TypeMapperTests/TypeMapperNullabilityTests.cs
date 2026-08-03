@@ -1,4 +1,4 @@
-using System.Reflection;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
@@ -8,30 +8,30 @@ namespace Morphant.Generator.UnitTests.TypeMapperTests;
 internal sealed class TypeMapperNullabilityTests
 {
     [Test]
-    public void Declares_nullable_interface_inputs_and_results()
+    public void Declares_nullable_interface_inputs_and_non_nullable_results()
     {
-        var methods = typeof(ITypeMapper<,>)
-            .GetMethods()
-            .OrderBy(static method => method.GetParameters().Length)
+        var interfaceType = CreateCompilation()
+            .GetTypeByMetadataName("Morphant.ITypeMapper`2")!;
+        var methods = interfaceType
+            .GetMembers(nameof(ITypeMapper<object, object>.Map))
+            .OfType<IMethodSymbol>()
+            .OrderBy(static method => method.Parameters.Length)
             .ToArray();
-        var context = new NullabilityInfoContext();
 
         Assert.Multiple(() =>
         {
             Assert.That(methods, Has.Length.EqualTo(2));
 
             AssertMethodNullability(
-                context,
                 methods[0],
-                NullabilityState.Nullable,
-                NullabilityState.NotNull);
+                NullableAnnotation.Annotated,
+                NullableAnnotation.NotAnnotated);
 
             AssertMethodNullability(
-                context,
                 methods[1],
-                NullabilityState.Nullable,
-                NullabilityState.Nullable,
-                NullabilityState.NotNull);
+                NullableAnnotation.Annotated,
+                NullableAnnotation.Annotated,
+                NullableAnnotation.NotAnnotated);
         });
     }
 
@@ -221,19 +221,20 @@ namespace TestCase
     }
 
     private static void AssertMethodNullability(
-        NullabilityInfoContext context,
-        MethodInfo method,
-        params NullabilityState[] parameterStates)
+        IMethodSymbol method,
+        params NullableAnnotation[] parameterAnnotations)
     {
         Assert.That(
-            context.Create(method.ReturnParameter).ReadState,
-            Is.EqualTo(NullabilityState.Nullable));
+            method.ReturnNullableAnnotation,
+            Is.EqualTo(NullableAnnotation.NotAnnotated));
 
         var actualParameterStates = method
-            .GetParameters()
-            .Select(parameter => context.Create(parameter).ReadState);
+            .Parameters
+            .Select(static parameter => parameter.NullableAnnotation);
 
-        Assert.That(actualParameterStates, Is.EqualTo(parameterStates));
+        Assert.That(
+            actualParameterStates,
+            Is.EqualTo(parameterAnnotations));
     }
 
     private static string BuildExpectedMapper(
@@ -261,7 +262,7 @@ namespace TestCase
                   {
                       if (source is null)
                       {
-                          return default;
+                          return default!;
                       }
 
                       throw new global::System.NotImplementedException();
@@ -283,7 +284,7 @@ namespace TestCase
         var mapNewImpl = destinationCanBeNull
             ? BuildExpectedMapNewImpl(
                 sourceType,
-                destinationMethodType,
+                destinationType,
                 mapNewStatement)
             : string.Empty;
 
@@ -298,13 +299,13 @@ namespace TestCase
                          global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>
                      {
                          /// <inheritdoc/>
-                         {{destinationMethodType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
+                         {{destinationType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
                              {{sourceParameterType}} source,
                              global::Morphant.MappingContext context)
                  {{IndentGeneratedImplementation(mapNewImplementation)}}
 
                          /// <inheritdoc/>
-                         {{destinationMethodType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
+                         {{destinationType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
                              {{sourceParameterType}} source,
                              {{destinationMethodType}} destination,
                              global::Morphant.MappingContext context)
@@ -340,7 +341,7 @@ namespace TestCase
                     {
                         if (source is null)
                         {
-                            return default;
+                            return default!;
                         }
 
                         {{mapNewStatement}}
@@ -368,7 +369,7 @@ namespace TestCase
         var mapNewImpl = destinationCanBeNull
             ? BuildExpectedMapNewImpl(
                 sourceType,
-                destinationMethodType,
+                destinationType,
                 mapNewStatement)
             : string.Empty;
 
@@ -383,13 +384,13 @@ namespace TestCase
                          global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>
                      {
                          /// <inheritdoc/>
-                         {{destinationMethodType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
+                         {{destinationType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
                              {{sourceParameterType}} source,
                              global::Morphant.MappingContext context)
                  {{IndentGeneratedImplementation(mapNewImplementation)}}
 
                          /// <inheritdoc/>
-                         {{destinationMethodType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
+                         {{destinationType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
                              {{sourceParameterType}} source,
                              {{destinationMethodType}} destination,
                              global::Morphant.MappingContext context)
@@ -407,7 +408,7 @@ namespace TestCase
               {
                   if (source is null)
                   {
-                      return default;
+                      return default!;
                   }
 
                   return MapNewImpl(source, context);
@@ -475,7 +476,7 @@ namespace TestCase
         {
             lines.Add("    if (source is null)");
             lines.Add("    {");
-            lines.Add("        return default;");
+            lines.Add("        return default!;");
             lines.Add("    }");
             lines.Add(string.Empty);
         }
@@ -539,5 +540,26 @@ namespace TestCase
         {
             lines.Add(indentation + line);
         }
+    }
+
+    private static CSharpCompilation CreateCompilation()
+    {
+        var trustedPlatformAssemblies =
+            (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ??
+            throw new InvalidOperationException(
+                "TRUSTED_PLATFORM_ASSEMBLIES is unavailable.");
+        var references = trustedPlatformAssemblies
+            .Split(Path.PathSeparator)
+            .Select(static path => MetadataReference.CreateFromFile(path))
+            .Append(
+                MetadataReference.CreateFromFile(
+                    typeof(ITypeMapper<,>).Assembly.Location));
+
+        return CSharpCompilation.Create(
+            "TypeMapperNullabilityProbe",
+            references: references,
+            options: new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: NullableContextOptions.Enable));
     }
 }

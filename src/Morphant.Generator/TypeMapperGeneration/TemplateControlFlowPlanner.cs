@@ -17,8 +17,8 @@ internal static class TemplateControlFlowPlanner
     private const string MemberMetadataName =
         "Morphant.Members.Member`1";
 
-    private const string ConstructorMemberMetadataName =
-        "Morphant.Members.ConstructorMember`1";
+    private const string ConstructorParameterMetadataName =
+        "Morphant.Members.ConstructorParameter`1";
 
     private const string MemberMarkerMetadataName =
         "Morphant.Markers.MemberMarker";
@@ -2342,7 +2342,7 @@ internal static class TemplateControlFlowPlanner
 
         if (metadataName is
             MemberMetadataName or
-            ConstructorMemberMetadataName)
+            ConstructorParameterMetadataName)
         {
             return true;
         }

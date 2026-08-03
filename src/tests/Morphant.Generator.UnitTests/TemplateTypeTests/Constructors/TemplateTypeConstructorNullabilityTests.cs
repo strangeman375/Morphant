@@ -26,27 +26,27 @@ internal sealed class TemplateTypeConstructorNullabilityTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>nullableReference</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?>? nullableReference = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? nullableReference = null!;
 
         /// <summary>
         /// Configures the <c>nullableValue</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<global::System.DateTime?>? nullableValue = null!;
+        public global::Morphant.Members.ConstructorParameter<global::System.DateTime?>? nullableValue = null!;
 
         /// <summary>
         /// Configures the <c>allowsNull</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?>? allowsNull = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? allowsNull = null!;
 
         /// <summary>
         /// Configures the <c>disallowsNull</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> disallowsNull = null!;
+        public global::Morphant.Members.ConstructorParameter<string> disallowsNull = null!;
     }
 """;
 
@@ -61,10 +61,10 @@ internal sealed class TemplateTypeConstructorNullabilityTests
         /// <param name="allowsNull">Configures the <c>allowsNull</c> constructor argument.</param>
         /// <param name="disallowsNull">Configures the <c>disallowsNull</c> constructor argument.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<string?>? nullableReference,
-            global::Morphant.Members.ConstructorMember<global::System.DateTime?>? nullableValue,
-            global::Morphant.Members.ConstructorMember<string?>? allowsNull,
-            global::Morphant.Members.ConstructorMember<string> disallowsNull)
+            global::Morphant.Members.ConstructorParameter<string?>? nullableReference,
+            global::Morphant.Members.ConstructorParameter<global::System.DateTime?>? nullableValue,
+            global::Morphant.Members.ConstructorParameter<string?>? allowsNull,
+            global::Morphant.Members.ConstructorParameter<string> disallowsNull)
         {
         }
 """;
@@ -105,13 +105,13 @@ internal sealed class TemplateTypeConstructorNullabilityTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         #nullable disable annotations
         /// <summary>
         /// Configures the <c>legacy</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> legacy = null!;
+        public global::Morphant.Members.ConstructorParameter<string> legacy = null!;
         #nullable enable annotations
     }
 """;
@@ -124,7 +124,7 @@ internal sealed class TemplateTypeConstructorNullabilityTests
         /// </summary>
         /// <param name="legacy">Configures the <c>legacy</c> constructor argument.</param>
         #nullable disable annotations
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<string> legacy)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<string> legacy)
         {
         }
         #nullable enable annotations
@@ -166,17 +166,17 @@ internal sealed class TemplateTypeConstructorNullabilityTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>mode</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> mode = null!;
+        public global::Morphant.Members.ConstructorParameter<string> mode = null!;
 
         /// <summary>
         /// Configures the <c>nickname</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?>? nickname = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? nickname = null!;
     }
 """;
 
@@ -189,8 +189,8 @@ internal sealed class TemplateTypeConstructorNullabilityTests
         /// <param name="mode">Configures the <c>mode</c> constructor argument. If omitted, the destination constructor default value <c>"default"</c> is used.</param>
         /// <param name="nickname">Configures the <c>nickname</c> constructor argument. If omitted, the destination constructor default value <c>null</c> is used.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<string> mode = null!,
-            global::Morphant.Members.ConstructorMember<string?>? nickname = null)
+            global::Morphant.Members.ConstructorParameter<string> mode = null!,
+            global::Morphant.Members.ConstructorParameter<string?>? nickname = null)
         {
         }
 """;
@@ -223,24 +223,24 @@ internal sealed class TemplateTypeConstructorNullabilityTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>strict</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> strict = null!;
+        public global::Morphant.Members.ConstructorParameter<string> strict = null!;
 
         #nullable disable annotations
         /// <summary>
         /// Configures the <c>legacy</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> legacy = null!;
+        public global::Morphant.Members.ConstructorParameter<string> legacy = null!;
         #nullable enable annotations
 
         /// <summary>
         /// Configures the <c>nullable</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?>? nullable = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? nullable = null!;
     }
 """;
 
@@ -254,11 +254,11 @@ internal sealed class TemplateTypeConstructorNullabilityTests
         /// <param name="legacy">Configures the <c>legacy</c> constructor argument.</param>
         /// <param name="nullable">Configures the <c>nullable</c> constructor argument.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<string> strict,
+            global::Morphant.Members.ConstructorParameter<string> strict,
             #nullable disable annotations
-            global::Morphant.Members.ConstructorMember<string> legacy,
+            global::Morphant.Members.ConstructorParameter<string> legacy,
             #nullable enable annotations
-            global::Morphant.Members.ConstructorMember<string?>? nullable)
+            global::Morphant.Members.ConstructorParameter<string?>? nullable)
         {
         }
 """;

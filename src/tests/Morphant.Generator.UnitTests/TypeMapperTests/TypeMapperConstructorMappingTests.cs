@@ -70,27 +70,27 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -105,7 +105,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination? MapNewImpl(
+        private global::TestCase.Destination MapNewImpl(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -193,27 +193,27 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -224,7 +224,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination? MapNewImpl(
+        private global::TestCase.Destination MapNewImpl(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -348,27 +348,27 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ParameterlessDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.AmbiguousDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AmbiguousDestination>.Map(
+        global::TestCase.AmbiguousDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AmbiguousDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.AmbiguousDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AmbiguousDestination>.Map(
+        global::TestCase.AmbiguousDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AmbiguousDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.AmbiguousDestination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -379,7 +379,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.AmbiguousDestination? MapNewImpl(
+        private global::TestCase.AmbiguousDestination MapNewImpl(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -387,27 +387,27 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.UnmappableDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.UnmappableDestination>.Map(
+        global::TestCase.UnmappableDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.UnmappableDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.UnmappableDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.UnmappableDestination>.Map(
+        global::TestCase.UnmappableDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.UnmappableDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.UnmappableDestination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -418,7 +418,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.UnmappableDestination? MapNewImpl1(
+        private global::TestCase.UnmappableDestination MapNewImpl1(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -426,27 +426,27 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ParameterlessDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ParameterlessDestination>.Map(
+        global::TestCase.ParameterlessDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ParameterlessDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl2(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.ParameterlessDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ParameterlessDestination>.Map(
+        global::TestCase.ParameterlessDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ParameterlessDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.ParameterlessDestination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -457,7 +457,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.ParameterlessDestination? MapNewImpl2(
+        private global::TestCase.ParameterlessDestination MapNewImpl2(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -564,27 +564,27 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompatibleDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.CompatibleDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.CompatibleDestination>.Map(
+        global::TestCase.CompatibleDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.CompatibleDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.CompatibleDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.CompatibleDestination>.Map(
+        global::TestCase.CompatibleDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.CompatibleDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.CompatibleDestination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -595,7 +595,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.CompatibleDestination? MapNewImpl(
+        private global::TestCase.CompatibleDestination MapNewImpl(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -607,27 +607,27 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.IncompatibleDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompatibleDestination>.Map(
+        global::TestCase.IncompatibleDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompatibleDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.IncompatibleDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompatibleDestination>.Map(
+        global::TestCase.IncompatibleDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompatibleDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.IncompatibleDestination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -638,7 +638,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.IncompatibleDestination? MapNewImpl1(
+        private global::TestCase.IncompatibleDestination MapNewImpl1(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -740,27 +740,27 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompleteRequiredDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.RequiredDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RequiredDestination>.Map(
+        global::TestCase.RequiredDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RequiredDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.RequiredDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RequiredDestination>.Map(
+        global::TestCase.RequiredDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RequiredDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.RequiredDestination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -774,7 +774,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.RequiredDestination? MapNewImpl(
+        private global::TestCase.RequiredDestination MapNewImpl(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -789,27 +789,27 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.SetsRequiredDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SetsRequiredDestination>.Map(
+        global::TestCase.SetsRequiredDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SetsRequiredDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl1(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.SetsRequiredDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SetsRequiredDestination>.Map(
+        global::TestCase.SetsRequiredDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SetsRequiredDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.SetsRequiredDestination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -823,7 +823,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.SetsRequiredDestination? MapNewImpl1(
+        private global::TestCase.SetsRequiredDestination MapNewImpl1(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -835,27 +835,27 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.IncompleteRequiredDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompleteRequiredDestination>.Map(
+        global::TestCase.IncompleteRequiredDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompleteRequiredDestination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl2(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.IncompleteRequiredDestination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompleteRequiredDestination>.Map(
+        global::TestCase.IncompleteRequiredDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IncompleteRequiredDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.IncompleteRequiredDestination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -868,7 +868,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.IncompleteRequiredDestination? MapNewImpl2(
+        private global::TestCase.IncompleteRequiredDestination MapNewImpl2(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -945,27 +945,27 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination? global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -980,7 +980,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination? MapNewImpl(
+        private global::TestCase.Destination MapNewImpl(
             global::TestCase.Source source,
             global::Morphant.MappingContext context)
         {
@@ -1066,27 +1066,27 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination<T>? global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>.Map(
+        global::TestCase.Destination<T> global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>.Map(
             global::TestCase.Source<T>? source,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             return MapNewImpl(source, context);
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination<T>? global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>.Map(
+        global::TestCase.Destination<T> global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>.Map(
             global::TestCase.Source<T>? source,
             global::TestCase.Destination<T>? destination,
             global::Morphant.MappingContext context)
         {
             if (source is null)
             {
-                return default;
+                return default!;
             }
 
             if (destination is null)
@@ -1100,7 +1100,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination<T>? MapNewImpl(
+        private global::TestCase.Destination<T> MapNewImpl(
             global::TestCase.Source<T> source,
             global::Morphant.MappingContext context)
         {

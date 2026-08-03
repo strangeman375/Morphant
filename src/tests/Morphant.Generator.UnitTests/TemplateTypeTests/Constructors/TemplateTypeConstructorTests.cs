@@ -22,12 +22,12 @@ internal sealed class TemplateTypeConstructorTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> id = null!;
+        public global::Morphant.Members.ConstructorParameter<int> id = null!;
     }
 """;
 
@@ -38,7 +38,7 @@ internal sealed class TemplateTypeConstructorTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="id">Configures the <c>id</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> id)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<int> id)
         {
         }
 """;
@@ -71,17 +71,17 @@ internal sealed class TemplateTypeConstructorTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> name = null!;
+        public global::Morphant.Members.ConstructorParameter<string> name = null!;
 
         /// <summary>
         /// Configures the <c>enabled</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<bool> enabled = null!;
+        public global::Morphant.Members.ConstructorParameter<bool> enabled = null!;
     }
 """;
 
@@ -92,7 +92,7 @@ internal sealed class TemplateTypeConstructorTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="name">Configures the <c>name</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<string> name)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<string> name)
         {
         }
 
@@ -107,7 +107,7 @@ internal sealed class TemplateTypeConstructorTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="enabled">Configures the <c>enabled</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<bool> enabled)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<bool> enabled)
         {
         }
 """;

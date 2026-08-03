@@ -42,22 +42,22 @@ internal sealed class TemplateTypeConstructorAccessibilityTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>publicValue</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<int> publicValue = null!;
+        public global::Morphant.Members.ConstructorParameter<int> publicValue = null!;
 
         /// <summary>
         /// Configures the <c>internalValue</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> internalValue = null!;
+        public global::Morphant.Members.ConstructorParameter<string> internalValue = null!;
 
         /// <summary>
         /// Configures the <c>protectedInternalValue</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<bool> protectedInternalValue = null!;
+        public global::Morphant.Members.ConstructorParameter<bool> protectedInternalValue = null!;
     }
 """;
 
@@ -68,7 +68,7 @@ internal sealed class TemplateTypeConstructorAccessibilityTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="publicValue">Configures the <c>publicValue</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<int> publicValue)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<int> publicValue)
         {
         }
 
@@ -76,7 +76,7 @@ internal sealed class TemplateTypeConstructorAccessibilityTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="internalValue">Configures the <c>internalValue</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<string> internalValue)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<string> internalValue)
         {
         }
 
@@ -84,7 +84,7 @@ internal sealed class TemplateTypeConstructorAccessibilityTests
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
         /// <param name="protectedInternalValue">Configures the <c>protectedInternalValue</c> constructor argument.</param>
-        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorMember<bool> protectedInternalValue)
+        public DestinationMorphantTemplate(global::Morphant.Members.ConstructorParameter<bool> protectedInternalValue)
         {
         }
 """;

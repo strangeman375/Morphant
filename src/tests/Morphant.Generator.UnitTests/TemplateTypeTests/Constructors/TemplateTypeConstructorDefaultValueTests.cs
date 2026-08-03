@@ -39,42 +39,42 @@ internal sealed class TemplateTypeConstructorDefaultValueTests
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationMorphantTemplateConstructorMembers
+    internal sealed class DestinationMorphantTemplateConstructorParameters
     {
         /// <summary>
         /// Configures the <c>name</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string?>? name = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? name = null!;
 
         /// <summary>
         /// Configures the <c>createdAt</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<global::System.DateTime> createdAt = null!;
+        public global::Morphant.Members.ConstructorParameter<global::System.DateTime> createdAt = null!;
 
         /// <summary>
         /// Configures the <c>day</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<global::System.DayOfWeek> day = null!;
+        public global::Morphant.Members.ConstructorParameter<global::System.DayOfWeek> day = null!;
 
         /// <summary>
         /// Configures the <c>mode</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<global::TestCase.Mode> mode = null!;
+        public global::Morphant.Members.ConstructorParameter<global::TestCase.Mode> mode = null!;
 
         /// <summary>
         /// Configures the <c>amount</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<decimal> amount = null!;
+        public global::Morphant.Members.ConstructorParameter<decimal> amount = null!;
 
         /// <summary>
         /// Configures the <c>separator</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<char> separator = null!;
+        public global::Morphant.Members.ConstructorParameter<char> separator = null!;
 
         /// <summary>
         /// Configures the <c>text</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorMember<string> text = null!;
+        public global::Morphant.Members.ConstructorParameter<string> text = null!;
     }
 """;
 
@@ -92,13 +92,13 @@ internal sealed class TemplateTypeConstructorDefaultValueTests
         /// <param name="separator">Configures the <c>separator</c> constructor argument. If omitted, the destination constructor default value <c>'&lt;'</c> is used.</param>
         /// <param name="text">Configures the <c>text</c> constructor argument. If omitted, the destination constructor default value <c>"A &lt; B &amp; C"</c> is used.</param>
         public DestinationMorphantTemplate(
-            global::Morphant.Members.ConstructorMember<string?>? name = null,
-            global::Morphant.Members.ConstructorMember<global::System.DateTime> createdAt = null!,
-            global::Morphant.Members.ConstructorMember<global::System.DayOfWeek> day = null!,
-            global::Morphant.Members.ConstructorMember<global::TestCase.Mode> mode = null!,
-            global::Morphant.Members.ConstructorMember<decimal> amount = null!,
-            global::Morphant.Members.ConstructorMember<char> separator = null!,
-            global::Morphant.Members.ConstructorMember<string> text = null!)
+            global::Morphant.Members.ConstructorParameter<string?>? name = null,
+            global::Morphant.Members.ConstructorParameter<global::System.DateTime> createdAt = null!,
+            global::Morphant.Members.ConstructorParameter<global::System.DayOfWeek> day = null!,
+            global::Morphant.Members.ConstructorParameter<global::TestCase.Mode> mode = null!,
+            global::Morphant.Members.ConstructorParameter<decimal> amount = null!,
+            global::Morphant.Members.ConstructorParameter<char> separator = null!,
+            global::Morphant.Members.ConstructorParameter<string> text = null!)
         {
         }
 """;

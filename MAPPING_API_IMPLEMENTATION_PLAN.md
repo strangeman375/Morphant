@@ -111,7 +111,7 @@ Collections, projection и остальные post-v0 возможности в 
 
 **Фаза 1, этап 1 — публичный фундамент и граница миграции.**
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 До его принятия остальные этапы заблокированы.
 
@@ -119,7 +119,7 @@ Collections, projection и остальные post-v0 возможности в 
 
 ### Этап 1. Публичный контракт и граница миграции
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — перевести repository на согласованный словарь нового API и создать
 компилируемый фундамент, не пытаясь в том же срезе реализовать весь DSL.
@@ -128,8 +128,10 @@ Production scope:
 
 - изменить `IMapper` и `ITypeMapper<TSource, TDestination>` на целевой
   nullable-input / non-nullable-return contract;
-- ввести `Option<T>` с различием `None`, `Some(default)` и `Some(null)`, а
-  также точным `Value` / `TryGetValue` contract;
+- ввести `Option<T>` с именованным `None`, явной фабрикой `Some(T)`,
+  различием `None`, `Some(default)` и `Some(null)`, а также точным
+  `Value` / `TryGetValue` contract; публичный constructor и implicit
+  conversion не вводятся;
 - ввести `MappingOperation.Create` / `Update` и immutable value-type
   `MappingContext` с `Operation` и `IMapper`;
 - переименовать операции `MappingMode` в `Create`, `Update` и
@@ -137,9 +139,10 @@ Production scope:
 - переименовать `NullDestinationHandling.CreateNew` в `Create`,
   `MemberMatching` в `MemberSelection`, а `ConstructorMember<T>` в
   `ConstructorParameter<T>`;
-- подготовить целевые builder- и marker-signatures для `Construct`, `Members`,
-  `Convert`, `Auto`, `Ignore`, `ByConvention`, `ByFactory` и четырёх форм
-  explicit `Map(...)`;
+- подготовить общий builder- и marker-фундамент для будущих pair-specific
+  `Construct`, `Members` и `Convert`, включая `Auto`, `Ignore`,
+  `ByConvention`, `ByFactory` и четыре формы explicit `Map(...)`; не вводить
+  временные универсальные overload-ы с неточной root-nullability;
 - удалить из публичного контракта `Template()`, `TemplateMode`,
   `NullabilityMismatchValidation` и `IContextualMapper`;
 - временно оставить только тот внутренний adapter-код прежнего generator-а,
@@ -203,7 +206,8 @@ capabilities, не повторяя symbol-policy самостоятельно.
 Статус: не начат.
 
 Цель — сгенерировать полный compile-time surface для structured и direct
-`Construct`, пока без lowering в исполняемый mapping.
+`Construct`, а также точный pair-specific `Convert`, пока без lowering в
+исполняемый mapping.
 
 Production scope:
 
@@ -219,6 +223,10 @@ Production scope:
   `TDestination`, без искусственного plan type;
 - сгенерировать source-only и previous-aware overloads с точным normalized
   `Option<TDestination>`;
+- сгенерировать единственный pair-specific `Convert` с normalized
+  `Option<TDestination>` и `MappingContext`; не пытаться выразить его обычным
+  методом runtime `MapperBuilder<TSource, TDestination>`, поскольку для
+  nullable value destination это дало бы неверный `Option<TDestination?>`;
 - сохранить positional, named, mixed, optional и whole-array `params` forms,
   а также explicit `ConstructorParameter<T>` cast;
 - переиспользовать один generic plan original destination definition для
@@ -233,13 +241,14 @@ Production scope:
   Documentation, Naming, Generics и compile-time Usage как независимые
   категории;
 - отсутствие structured plan у direct/opaque destination;
-- обе overload arities и normalized previous для nullable destinations;
+- обе `Construct` overload arities, единственная `Convert` overload и
+  normalized previous для nullable destinations;
 - nested/containing generic parameters и constraints;
 - deterministic ordering и collision-safe names.
 
-Результат этапа: IntelliSense показывает корректный `Construct` surface и C#
-компилятор валидирует пользовательскую форму construction plan; TypeMapper
-пока не исполняет этот plan.
+Результат этапа: IntelliSense показывает корректные `Construct` и `Convert`
+surface, а C# компилятор валидирует пользовательскую форму construction plan;
+TypeMapper пока не исполняет эти lambdas.
 
 ### Этап 4. Generated member surface
 

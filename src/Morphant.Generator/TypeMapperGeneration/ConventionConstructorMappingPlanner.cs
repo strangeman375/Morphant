@@ -34,7 +34,7 @@ internal static class ConventionConstructorMappingPlanner
         ITypeSymbol sourceType,
         ITypeSymbol? destination,
         ConventionMemberMappingPlan memberMappings,
-        ImmutableArray<TemplateConstructorMemberMappingModel>
+        ImmutableArray<TemplateConstructorParameterMappingModel>
             explicitMappings,
         ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         CSharpCompilation compilation,
