@@ -17,7 +17,14 @@ internal static class DestinationCapabilityPolicy
         var isOpaque = IsOpaque(destination);
         var hasStructuredConstruction =
             !isOpaque &&
-            HasSupportedConstructor(
+            HasSupportedParameterizedConstructor(
+                destination,
+                compilation,
+                mapperType,
+                cancellationToken);
+        var hasParameterlessConstruction =
+            !isOpaque &&
+            HasParameterlessConstruction(
                 destination,
                 compilation,
                 mapperType,
@@ -36,6 +43,7 @@ internal static class DestinationCapabilityPolicy
             hasStructuredConstruction
                 ? MappingConstructionKind.Structured
                 : MappingConstructionKind.Direct,
+            hasParameterlessConstruction,
             hasMembers);
     }
 
@@ -87,10 +95,22 @@ internal static class DestinationCapabilityPolicy
                "System.Guid" or
                "System.DateTime" or
                "System.DateTimeOffset" or
-               "System.TimeSpan";
+               "System.DateOnly" or
+               "System.TimeOnly" or
+               "System.TimeSpan" or
+               "System.Half" or
+               "System.Int128" or
+               "System.UInt128" or
+               "System.Uri" or
+               "System.Version" or
+               "System.Numerics.BigInteger" or
+               "System.Numerics.Complex" or
+               "System.Text.Rune" or
+               "System.Index" or
+               "System.Range";
     }
 
-    private static bool HasSupportedConstructor(
+    private static bool HasSupportedParameterizedConstructor(
         INamedTypeSymbol destinationType,
         Compilation compilation,
         INamedTypeSymbol mapperType,
@@ -106,7 +126,8 @@ internal static class DestinationCapabilityPolicy
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!compilation.IsSymbolAccessibleWithin(
+            if (constructor.Parameters.Length == 0 ||
+                !compilation.IsSymbolAccessibleWithin(
                     constructor,
                     mapperType) ||
                 constructor.Parameters.Any(
@@ -122,6 +143,39 @@ internal static class DestinationCapabilityPolicy
             }
 
             return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasParameterlessConstruction(
+        INamedTypeSymbol destinationType,
+        Compilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        if (destinationType.TypeKind == TypeKind.Interface ||
+            destinationType.IsAbstract)
+        {
+            return false;
+        }
+
+        if (destinationType.IsValueType)
+        {
+            return true;
+        }
+
+        foreach (var constructor in destinationType.InstanceConstructors)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (constructor.Parameters.Length == 0 &&
+                compilation.IsSymbolAccessibleWithin(
+                    constructor,
+                    mapperType))
+            {
+                return true;
+            }
         }
 
         return false;

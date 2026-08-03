@@ -31,6 +31,19 @@ namespace TestCase
         public int Value { get; set; }
     }
 
+    public sealed class StructuredWithParameterless
+    {
+        public StructuredWithParameterless() { }
+        public StructuredWithParameterless(int value) { }
+    }
+
+    public sealed class ParameterlessOnly { }
+
+    public sealed class ParameterlessWithMembers
+    {
+        public int Value { get; set; }
+    }
+
     public abstract class DirectOnly { }
 
     public interface IDirectWithMembers
@@ -45,6 +58,11 @@ namespace TestCase
 
     public struct CustomStruct { }
 
+    public struct CustomStructWithMembers
+    {
+        public int Value { get; set; }
+    }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
@@ -52,11 +70,15 @@ namespace TestCase
         {
             builder.Map<Source, StructuredOnly>();
             builder.Map<Source, StructuredWithMembers>();
+            builder.Map<Source, StructuredWithParameterless>();
+            builder.Map<Source, ParameterlessOnly>();
+            builder.Map<Source, ParameterlessWithMembers>();
             builder.Map<Source, DirectOnly>();
             builder.Map<Source, IDirectWithMembers>();
             builder.Map<Source, FactoryOnly>();
             builder.Map<Source, CustomStruct>();
             builder.Map<Source, CustomStruct?>();
+            builder.Map<Source, CustomStructWithMembers>();
         }
     }
 }
@@ -69,17 +91,37 @@ namespace TestCase
             source,
             "TestCase.TestMapper",
             hasUnifiablePairs: false,
-            Pair(sourceType, "StructuredOnly", true, false),
-            Pair(sourceType, "StructuredWithMembers", true, true),
-            Pair(sourceType, "DirectOnly", false, false),
-            Pair(sourceType, "IDirectWithMembers", false, true),
-            Pair(sourceType, "FactoryOnly", false, false),
-            Pair(sourceType, "CustomStruct", true, false),
+            Pair(sourceType, "StructuredOnly", true, false, false),
+            Pair(sourceType, "StructuredWithMembers", true, false, true),
+            Pair(
+                sourceType,
+                "StructuredWithParameterless",
+                true,
+                true,
+                false),
+            Pair(sourceType, "ParameterlessOnly", false, true, false),
+            Pair(
+                sourceType,
+                "ParameterlessWithMembers",
+                false,
+                true,
+                true),
+            Pair(sourceType, "DirectOnly", false, false, false),
+            Pair(sourceType, "IDirectWithMembers", false, false, true),
+            Pair(sourceType, "FactoryOnly", false, false, false),
+            Pair(sourceType, "CustomStruct", false, true, false),
             new MappingPairExpectation(
                 sourceType,
                 "global::System.Nullable<global::TestCase.CustomStruct>",
-                Structured: true,
-                Members: false));
+                Structured: false,
+                Parameterless: true,
+                Members: false),
+            Pair(
+                sourceType,
+                "CustomStructWithMembers",
+                false,
+                true,
+                true));
     }
 
     [Test]
@@ -93,13 +135,18 @@ namespace TestCase
 
 using System;
 using System.Numerics;
+using System.Text;
 using Morphant;
 
 namespace TestCase
 {
     public sealed class Source { }
     public enum Status { None }
-    public struct CustomStruct { }
+    public struct CustomStruct
+    {
+        public CustomStruct(int value) { Value = value; }
+        public int Value { get; set; }
+    }
 
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
@@ -109,24 +156,67 @@ namespace TestCase
             builder.Map<Source, object>();
             builder.Map<Source, string>();
             builder.Map<Source, bool>();
+            builder.Map<Source, bool?>();
+            builder.Map<Source, char>();
+            builder.Map<Source, char?>();
+            builder.Map<Source, sbyte>();
+            builder.Map<Source, sbyte?>();
+            builder.Map<Source, byte>();
+            builder.Map<Source, byte?>();
+            builder.Map<Source, short>();
+            builder.Map<Source, short?>();
+            builder.Map<Source, ushort>();
+            builder.Map<Source, ushort?>();
             builder.Map<Source, int>();
-            builder.Map<Source, decimal>();
+            builder.Map<Source, int?>();
+            builder.Map<Source, uint>();
+            builder.Map<Source, uint?>();
+            builder.Map<Source, long>();
+            builder.Map<Source, long?>();
+            builder.Map<Source, ulong>();
+            builder.Map<Source, ulong?>();
             builder.Map<Source, nint>();
             builder.Map<Source, nuint>();
+            builder.Map<Source, nint?>();
+            builder.Map<Source, nuint?>();
+            builder.Map<Source, float>();
+            builder.Map<Source, float?>();
+            builder.Map<Source, double>();
+            builder.Map<Source, double?>();
+            builder.Map<Source, decimal>();
+            builder.Map<Source, decimal?>();
             builder.Map<Source, Status>();
+            builder.Map<Source, Status?>();
             builder.Map<Source, Guid>();
             builder.Map<Source, Guid?>();
             builder.Map<Source, DateTime>();
+            builder.Map<Source, DateTime?>();
             builder.Map<Source, DateTimeOffset>();
-            builder.Map<Source, TimeSpan>();
-
+            builder.Map<Source, DateTimeOffset?>();
             builder.Map<Source, DateOnly>();
+            builder.Map<Source, DateOnly?>();
             builder.Map<Source, TimeOnly>();
+            builder.Map<Source, TimeOnly?>();
+            builder.Map<Source, TimeSpan>();
+            builder.Map<Source, TimeSpan?>();
+            builder.Map<Source, Half>();
+            builder.Map<Source, Half?>();
+            builder.Map<Source, Int128>();
+            builder.Map<Source, Int128?>();
+            builder.Map<Source, UInt128>();
+            builder.Map<Source, UInt128?>();
             builder.Map<Source, Uri>();
             builder.Map<Source, Version>();
             builder.Map<Source, BigInteger>();
+            builder.Map<Source, BigInteger?>();
+            builder.Map<Source, Complex>();
+            builder.Map<Source, Complex?>();
+            builder.Map<Source, Rune>();
+            builder.Map<Source, Rune?>();
             builder.Map<Source, Index>();
+            builder.Map<Source, Index?>();
             builder.Map<Source, Range>();
+            builder.Map<Source, Range?>();
             builder.Map<Source, CustomStruct>();
         }
     }
@@ -140,29 +230,136 @@ namespace TestCase
             source,
             "TestCase.TestMapper",
             hasUnifiablePairs: false,
-            Direct(sourceType, "global::System.Object"),
-            Direct(sourceType, "global::System.String"),
-            Direct(sourceType, "global::System.Boolean"),
-            Direct(sourceType, "global::System.Int32"),
-            Direct(sourceType, "global::System.Decimal"),
-            Direct(sourceType, "global::System.IntPtr"),
-            Direct(sourceType, "global::System.UIntPtr"),
-            Direct(sourceType, "global::TestCase.Status"),
-            Direct(sourceType, "global::System.Guid"),
-            Direct(
+            Opaque(sourceType, "global::System.Object"),
+            Opaque(sourceType, "global::System.String"),
+            Opaque(sourceType, "global::System.Boolean"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Boolean>"),
+            Opaque(sourceType, "global::System.Char"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Char>"),
+            Opaque(sourceType, "global::System.SByte"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.SByte>"),
+            Opaque(sourceType, "global::System.Byte"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Byte>"),
+            Opaque(sourceType, "global::System.Int16"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Int16>"),
+            Opaque(sourceType, "global::System.UInt16"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.UInt16>"),
+            Opaque(sourceType, "global::System.Int32"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Int32>"),
+            Opaque(sourceType, "global::System.UInt32"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.UInt32>"),
+            Opaque(sourceType, "global::System.Int64"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Int64>"),
+            Opaque(sourceType, "global::System.UInt64"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.UInt64>"),
+            Opaque(sourceType, "global::System.IntPtr"),
+            Opaque(sourceType, "global::System.UIntPtr"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.IntPtr>"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.UIntPtr>"),
+            Opaque(sourceType, "global::System.Single"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Single>"),
+            Opaque(sourceType, "global::System.Double"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Double>"),
+            Opaque(sourceType, "global::System.Decimal"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Decimal>"),
+            Opaque(sourceType, "global::TestCase.Status"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::TestCase.Status>"),
+            Opaque(sourceType, "global::System.Guid"),
+            Opaque(
                 sourceType,
                 "global::System.Nullable<global::System.Guid>"),
-            Direct(sourceType, "global::System.DateTime"),
-            Direct(sourceType, "global::System.DateTimeOffset"),
-            Direct(sourceType, "global::System.TimeSpan"),
-            Structured(sourceType, "global::System.DateOnly"),
-            Structured(sourceType, "global::System.TimeOnly"),
-            Structured(sourceType, "global::System.Uri"),
-            Structured(sourceType, "global::System.Version"),
-            Structured(sourceType, "global::System.Numerics.BigInteger"),
-            Structured(sourceType, "global::System.Index"),
-            Structured(sourceType, "global::System.Range"),
-            Structured(sourceType, "global::TestCase.CustomStruct"));
+            Opaque(sourceType, "global::System.DateTime"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.DateTime>"),
+            Opaque(sourceType, "global::System.DateTimeOffset"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.DateTimeOffset>"),
+            Opaque(sourceType, "global::System.DateOnly"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.DateOnly>"),
+            Opaque(sourceType, "global::System.TimeOnly"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.TimeOnly>"),
+            Opaque(sourceType, "global::System.TimeSpan"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.TimeSpan>"),
+            Opaque(sourceType, "global::System.Half"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Half>"),
+            Opaque(sourceType, "global::System.Int128"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Int128>"),
+            Opaque(sourceType, "global::System.UInt128"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.UInt128>"),
+            Opaque(sourceType, "global::System.Uri"),
+            Opaque(sourceType, "global::System.Version"),
+            Opaque(sourceType, "global::System.Numerics.BigInteger"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Numerics.BigInteger>"),
+            Opaque(sourceType, "global::System.Numerics.Complex"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Numerics.Complex>"),
+            Opaque(sourceType, "global::System.Text.Rune"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Text.Rune>"),
+            Opaque(sourceType, "global::System.Index"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Index>"),
+            Opaque(sourceType, "global::System.Range"),
+            Opaque(
+                sourceType,
+                "global::System.Nullable<global::System.Range>"),
+            new MappingPairExpectation(
+                sourceType,
+                "global::TestCase.CustomStruct",
+                Structured: true,
+                Parameterless: true,
+                Members: true));
     }
 
     [Test]
@@ -227,11 +424,11 @@ namespace TestCase
             source,
             "TestCase.TestMapper",
             hasUnifiablePairs: false,
-            Pair(sourceType, "PublicConstructor", true, false),
-            Pair(sourceType, "RefConstructor", false, false),
-            Pair(sourceType, "RefLikeConstructor", false, false),
-            Pair(sourceType, "PrivateConstructor", false, false),
-            Pair(sourceType, "AbstractConstructor", false, false));
+            Pair(sourceType, "PublicConstructor", true, false, false),
+            Pair(sourceType, "RefConstructor", false, false, false),
+            Pair(sourceType, "RefLikeConstructor", false, false, false),
+            Pair(sourceType, "PrivateConstructor", false, false, false),
+            Pair(sourceType, "AbstractConstructor", false, false, false));
     }
 
     [Test]
@@ -320,13 +517,13 @@ namespace TestCase
             source,
             "TestCase.TestMapper",
             hasUnifiablePairs: false,
-            Pair(sourceType, "SetProperty", true, true),
-            Pair(sourceType, "InitProperty", true, true),
-            Pair(sourceType, "MutableField", true, true),
-            Pair(sourceType, "WholeDeferredValue", true, true),
-            Pair(sourceType, "UnsupportedMembers", true, false),
-            Pair(sourceType, "HiddenByGetOnly", true, false),
-            Pair(sourceType, "RefLikeMember", true, false));
+            Pair(sourceType, "SetProperty", false, true, true),
+            Pair(sourceType, "InitProperty", false, true, true),
+            Pair(sourceType, "MutableField", false, true, true),
+            Pair(sourceType, "WholeDeferredValue", false, true, true),
+            Pair(sourceType, "UnsupportedMembers", false, true, false),
+            Pair(sourceType, "HiddenByGetOnly", false, true, false),
+            Pair(sourceType, "RefLikeMember", false, true, false));
     }
 
     [Test]
@@ -366,7 +563,8 @@ namespace TestCase
             new MappingPairExpectation(
                 "global::TestCase.Source",
                 "global::TestCase.Destination",
-                Structured: true,
+                Structured: false,
+                Parameterless: true,
                 Members: true));
     }
 
@@ -408,6 +606,7 @@ namespace TestCase
                 "global::TestCase.Source",
                 "global::TestCase.Destination",
                 Structured: false,
+                Parameterless: false,
                 Members: false));
     }
 
@@ -415,16 +614,18 @@ namespace TestCase
         string source,
         string destinationName,
         bool structured,
+        bool parameterless,
         bool members)
     {
         return new MappingPairExpectation(
             source,
             "global::TestCase." + destinationName,
             structured,
+            parameterless,
             members);
     }
 
-    private static MappingPairExpectation Direct(
+    private static MappingPairExpectation Opaque(
         string source,
         string destination)
     {
@@ -432,17 +633,7 @@ namespace TestCase
             source,
             destination,
             Structured: false,
-            Members: false);
-    }
-
-    private static MappingPairExpectation Structured(
-        string source,
-        string destination)
-    {
-        return new MappingPairExpectation(
-            source,
-            destination,
-            Structured: true,
+            Parameterless: false,
             Members: false);
     }
 }
