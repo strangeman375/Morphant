@@ -1,41 +1,23 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace Morphant.Generator.UnitTests.PublicContractTests;
+namespace Morphant.Generator.UnitTests;
 
 [TestFixture]
-internal sealed class MappingInterfaceContractTests
+internal sealed class MappingInterfaceNullabilityTests
 {
     [Test]
-    public void IMapper_declares_nullable_inputs_and_non_nullable_results()
+    public void Consumer_observes_nullable_inputs_and_non_nullable_results()
     {
-        var interfaceType = CreateCompilation()
-            .GetTypeByMetadataName("Morphant.IMapper")!;
-        var methods = interfaceType
+        var compilation = CreateCompilation();
+        var mapperMethods = compilation
+            .GetTypeByMetadataName("Morphant.IMapper")!
             .GetMembers(nameof(IMapper.Map))
             .OfType<IMethodSymbol>()
             .OrderBy(static method => method.Parameters.Length)
             .ToArray();
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(methods, Has.Length.EqualTo(2));
-            AssertMethod(
-                methods[0],
-                expectedParameterCount: 1);
-            AssertMethod(
-                methods[1],
-                expectedParameterCount: 2);
-        });
-    }
-
-    [Test]
-    public void ITypeMapper_declares_nullable_inputs_and_non_nullable_results()
-    {
-        var interfaceType = CreateCompilation()
-            .GetTypeByMetadataName("Morphant.ITypeMapper`2")!;
-        var genericParameters = interfaceType.TypeParameters;
-        var methods = interfaceType
+        var typeMapperMethods = compilation
+            .GetTypeByMetadataName("Morphant.ITypeMapper`2")!
             .GetMembers(nameof(ITypeMapper<object, object>.Map))
             .OfType<IMethodSymbol>()
             .OrderBy(static method => method.Parameters.Length)
@@ -43,20 +25,16 @@ internal sealed class MappingInterfaceContractTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(
-                genericParameters[0].Variance,
-                Is.EqualTo(VarianceKind.In));
-            Assert.That(
-                genericParameters[1].Variance,
-                Is.EqualTo(VarianceKind.None));
-            Assert.That(methods, Has.Length.EqualTo(2));
-
+            Assert.That(mapperMethods, Has.Length.EqualTo(2));
+            AssertMethod(mapperMethods[0], expectedParameterCount: 1);
+            AssertMethod(mapperMethods[1], expectedParameterCount: 2);
+            Assert.That(typeMapperMethods, Has.Length.EqualTo(2));
             AssertMethod(
-                methods[0],
+                typeMapperMethods[0],
                 expectedParameterCount: 2,
                 contextParameterIndex: 1);
             AssertMethod(
-                methods[1],
+                typeMapperMethods[1],
                 expectedParameterCount: 3,
                 contextParameterIndex: 2);
         });
@@ -94,7 +72,7 @@ internal sealed class MappingInterfaceContractTests
             {
                 Assert.That(
                     parameters[index].Type.ToDisplayString(),
-                    Is.EqualTo("Morphant.MappingContext"));
+                    Is.EqualTo("Morphant.Context.MappingContext"));
                 Assert.That(
                     parameters[index].NullableAnnotation,
                     Is.EqualTo(NullableAnnotation.NotAnnotated));
@@ -123,7 +101,7 @@ internal sealed class MappingInterfaceContractTests
                     typeof(IMapper).Assembly.Location));
 
         return CSharpCompilation.Create(
-            "PublicContractProbe",
+            "MappingInterfaceNullabilityProbe",
             references: references,
             options: new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,

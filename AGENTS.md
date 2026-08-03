@@ -39,6 +39,10 @@
 
 ## Compatibility and generated code
 
+- A source file's namespace must match its directory under the owning project.
+  This is a repository law, not a stylistic preference. For example, files in
+  `src/Morphant/Context` use `Morphant.Context`; do not move a file while
+  preserving its previous namespace.
 - The minimum supported user language version is C# 9. Tests may additionally
   cover newer syntax by selecting the required `LanguageVersion` explicitly.
 - Template types must remain records because `with` expressions are part of

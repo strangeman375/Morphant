@@ -59,9 +59,9 @@ internal static class TemplateDestinationTypePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!MappingTypePolicy.IsSupported(
+            if (!LegacyTemplateMappingTypePolicy.IsSupported(
                     registration.SourceType) ||
-                !MappingTypePolicy.IsSupported(
+                !LegacyTemplateMappingTypePolicy.IsSupported(
                     registration.DestinationType))
             {
                 continue;
@@ -667,7 +667,7 @@ internal static class TemplateDestinationTypePipeline
             return true;
         }
 
-        if (DirectDestinationTypePolicy.IsDirect(destinationType))
+        if (LegacyTemplateDirectDestinationTypePolicy.IsDirect(destinationType))
         {
             kind = TemplateDestinationTypeKind.DirectTemplate;
             return true;
@@ -691,7 +691,7 @@ internal static class TemplateDestinationTypePipeline
     private static bool IsDirectTemplateSupported(
         INamedTypeSymbol destinationType)
     {
-        return DirectDestinationTypePolicy.IsDirect(destinationType) ||
+        return LegacyTemplateDirectDestinationTypePolicy.IsDirect(destinationType) ||
                destinationType.TypeKind is
                    TypeKind.Class or
                    TypeKind.Struct or

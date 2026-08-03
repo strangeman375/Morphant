@@ -56,7 +56,7 @@ namespace TestCase
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
         {
             if (source is null)
             {
@@ -70,7 +70,7 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
         {
             if (source is null)
             {
@@ -87,7 +87,7 @@ namespace TestCase
 
         private global::TestCase.Destination MapNewImpl(
             global::TestCase.Source source,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination();
         }
@@ -188,7 +188,7 @@ namespace TestCase
         /// <inheritdoc/>
         global::TestCase.AssemblyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AssemblyDestination>.Map(
             global::TestCase.Source? source,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode does not include Create.");
 
@@ -196,7 +196,7 @@ namespace TestCase
         global::TestCase.AssemblyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AssemblyDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.AssemblyDestination? destination,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
         {
             if (source is null)
             {
@@ -229,7 +229,7 @@ namespace TestCase
         /// <inheritdoc/>
         global::TestCase.RootDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>.Map(
             global::TestCase.Source? source,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
         {
             if (source is null)
             {
@@ -243,14 +243,14 @@ namespace TestCase
         global::TestCase.RootDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.RootDestination? destination,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode does not include Update.");
 
         /// <inheritdoc/>
         global::TestCase.MappingDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.MappingDestination>.Map(
             global::TestCase.Source? source,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode does not include Create.");
 
@@ -258,7 +258,7 @@ namespace TestCase
         global::TestCase.MappingDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.MappingDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.MappingDestination? destination,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
         {
             if (source is null)
             {
@@ -360,7 +360,7 @@ namespace TestCase
         /// <inheritdoc/>
         global::TestCase.InheritedDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InheritedDestination>.Map(
             global::TestCase.Source? source,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode is invalid.");
 
@@ -368,14 +368,14 @@ namespace TestCase
         global::TestCase.InheritedDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InheritedDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.InheritedDestination? destination,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode is invalid.");
 
         /// <inheritdoc/>
         global::TestCase.MappingOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.MappingOverrideDestination>.Map(
             global::TestCase.Source? source,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
         {
             if (source is null)
             {
@@ -389,7 +389,7 @@ namespace TestCase
         global::TestCase.MappingOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.MappingOverrideDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.MappingOverrideDestination? destination,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode does not include Update.");
     }
@@ -410,7 +410,7 @@ namespace TestCase
         /// <inheritdoc/>
         global::TestCase.RootOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootOverrideDestination>.Map(
             global::TestCase.Source? source,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode does not include Create.");
 
@@ -418,7 +418,7 @@ namespace TestCase
         global::TestCase.RootOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootOverrideDestination>.Map(
             global::TestCase.Source? source,
             global::TestCase.RootOverrideDestination? destination,
-            global::Morphant.MappingContext context)
+            global::Morphant.Context.MappingContext context)
         {
             if (source is null)
             {

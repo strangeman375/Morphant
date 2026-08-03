@@ -1121,8 +1121,8 @@ first-class whole-plan no-op и общая patch/merge policy полностью
 ```csharp
 public enum MappingOperation
 {
-    Create = 0,
-    Update
+    Create = 1,
+    Update = 2
 }
 
 public readonly struct MappingContext
@@ -1133,9 +1133,15 @@ public readonly struct MappingContext
 }
 ```
 
+Оба типа находятся в namespace `Morphant.Context`, соответствующем папке
+`Context` runtime-проекта. Поэтому consumer, использующий их по короткому
+имени, подключает `using Morphant.Context;`.
+
 `MappingOperation` описывает ровно одну выполняемую операцию и поэтому не
 переиспользует flags-enum `MappingMode`. `Operation` доступен пользователю
-только для чтения; его значение устанавливает mapper.
+только для чтения; его значение устанавливает mapper. Значение `0` намеренно
+не является операцией, поэтому default-initialized enum отличается от
+`Create` и `Update`.
 
 `MappingContext` является immutable call frame текущего outer или nested
 вызова. Morphant создаёт новый frame для каждого `Map`, передаёт его по

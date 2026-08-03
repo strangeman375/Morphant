@@ -301,14 +301,14 @@ namespace TestCase
                          /// <inheritdoc/>
                          {{destinationType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
                              {{sourceParameterType}} source,
-                             global::Morphant.MappingContext context)
+                             global::Morphant.Context.MappingContext context)
                  {{IndentGeneratedImplementation(mapNewImplementation)}}
 
                          /// <inheritdoc/>
                          {{destinationType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
                              {{sourceParameterType}} source,
                              {{destinationMethodType}} destination,
-                             global::Morphant.MappingContext context)
+                             global::Morphant.Context.MappingContext context)
                  {{IndentGeneratedImplementation(mapExistingImplementation)}}{{mapNewImpl}}
                      }
                  }
@@ -386,14 +386,14 @@ namespace TestCase
                          /// <inheritdoc/>
                          {{destinationType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
                              {{sourceParameterType}} source,
-                             global::Morphant.MappingContext context)
+                             global::Morphant.Context.MappingContext context)
                  {{IndentGeneratedImplementation(mapNewImplementation)}}
 
                          /// <inheritdoc/>
                          {{destinationType}} global::Morphant.ITypeMapper<{{sourceType}}, {{destinationType}}>.Map(
                              {{sourceParameterType}} source,
                              {{destinationMethodType}} destination,
-                             global::Morphant.MappingContext context)
+                             global::Morphant.Context.MappingContext context)
                  {{IndentGeneratedImplementation(mapExistingImplementation)}}{{mapNewImpl}}
                      }
                  }
@@ -428,7 +428,7 @@ namespace TestCase
             string.Empty,
             $"        private {destinationMethodType} MapNewImpl(",
             $"            {sourceType} source,",
-            "            global::Morphant.MappingContext context)",
+            "            global::Morphant.Context.MappingContext context)",
             "        {"
         };
 

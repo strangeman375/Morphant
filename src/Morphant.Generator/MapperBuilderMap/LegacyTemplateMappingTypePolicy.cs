@@ -2,7 +2,9 @@ using Microsoft.CodeAnalysis;
 
 namespace Morphant.Generator.MapperBuilderMap;
 
-internal static class MappingTypePolicy
+// Transitional eligibility policy for the superseded Template() surface.
+// New pipelines consume MappingPairModel instead.
+internal static class LegacyTemplateMappingTypePolicy
 {
     public static bool IsSupported(ITypeSymbol type)
     {

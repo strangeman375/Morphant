@@ -2,7 +2,9 @@ using Microsoft.CodeAnalysis;
 
 namespace Morphant.Generator;
 
-internal static class DirectDestinationTypePolicy
+// Transitional policy for the superseded Template() adapter only. New
+// generated surfaces consume MappingPairModel capabilities instead.
+internal static class LegacyTemplateDirectDestinationTypePolicy
 {
     public static bool IsDirect(INamedTypeSymbol destinationType)
     {

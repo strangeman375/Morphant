@@ -1,4 +1,4 @@
-namespace Morphant;
+namespace Morphant.Context;
 
 /// <summary>
 /// Describes the current mapping call.

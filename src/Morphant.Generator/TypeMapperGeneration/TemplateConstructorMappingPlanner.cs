@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -384,7 +385,7 @@ internal static class TemplateConstructorMappingPlanner
                     $"private {probeTypeName} " +
                     $"{probeMethodName}(" +
                     $"{sourceTypeName} source, " +
-                    "global::Morphant.MappingContext context)");
+                    "global::Morphant.Context.MappingContext context)");
                 writer.Line("{");
                 writer.Indent();
 
@@ -475,7 +476,7 @@ internal static class TemplateConstructorMappingPlanner
                     $"private {destinationTypeName} " +
                     $"{probeMethodName}(" +
                     $"{sourceTypeName} source, " +
-                    "global::Morphant.MappingContext context)");
+                    "global::Morphant.Context.MappingContext context)");
                 writer.Line("{");
                 writer.Indent();
 
@@ -671,7 +672,7 @@ internal static class TemplateConstructorMappingPlanner
                 out constructorMemberCast,
                 out var castType) ||
             castType.TypeArguments.Length != 1 ||
-            !TypeMapperMappingTypePolicy.AreEquivalent(
+            !MappingTypeIdentityPolicy.AreEquivalent(
                 castType.TypeArguments[0],
                 destinationParameter.Type))
         {

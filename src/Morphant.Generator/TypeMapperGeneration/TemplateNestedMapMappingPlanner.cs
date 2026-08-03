@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -547,7 +548,7 @@ internal static class TemplateNestedMapMappingPlanner
             targetDestinationType;
 
         if (mapping.ExplicitDestinationType is not null &&
-            !TypeMapperMappingTypePolicy.AreEquivalent(
+            !MappingTypeIdentityPolicy.AreEquivalent(
                 destinationType,
                 targetDestinationType))
         {

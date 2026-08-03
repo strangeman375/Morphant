@@ -3,6 +3,7 @@ using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.MapperBuilderMap;
 using Morphant.Generator.Settings;
 
@@ -17,9 +18,9 @@ internal static class TypeMapperPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValueProvider<MappingSettings> assemblySettings,
-        IncrementalValuesProvider<MapperBuilderMapInfo> mapInfos)
+        IncrementalValuesProvider<MapperMappingPairModel> mappingPairModels)
     {
-        var requests = mapInfos
+        var requests = mappingPairModels
             .Combine(compilationContext)
             .Combine(assemblySettings)
             .Select(static (source, cancellationToken) =>
@@ -44,19 +45,19 @@ internal static class TypeMapperPipeline
     private static TypeMapperGenerationInput? TryBuildGenerationInput(
         (
             (
-                MapperBuilderMapInfo MapInfo,
+                MapperMappingPairModel MappingPairs,
                 CompilationContext Context
             ) Input,
             MappingSettings AssemblySettings
         ) source,
         CancellationToken cancellationToken)
     {
-        var ((mapInfo, context), assemblySettings) = source;
+        var ((mappingPairs, context), assemblySettings) = source;
 
         var semanticModel = context.Compilation.GetSemanticModel(
-            mapInfo.ConfigureSyntax.SyntaxTree);
+            mappingPairs.ConfigureSyntax.SyntaxTree);
 
-        if (mapInfo.ConfigureSyntax.Parent is not ClassDeclarationSyntax mapperDeclaration ||
+        if (mappingPairs.ConfigureSyntax.Parent is not ClassDeclarationSyntax mapperDeclaration ||
             semanticModel.GetDeclaredSymbol(
                 mapperDeclaration,
                 cancellationToken) is not INamedTypeSymbol mapperType ||
@@ -68,7 +69,7 @@ internal static class TypeMapperPipeline
         }
 
         var mappings = BuildMappings(
-            mapInfo,
+            mappingPairs,
             assemblySettings,
             context.Compilation,
             mapperType,
@@ -239,82 +240,37 @@ internal static class TypeMapperPipeline
     }
 
     private static ImmutableArray<TypeMapperMappingModel> BuildMappings(
-        MapperBuilderMapInfo mapInfo,
+        MapperMappingPairModel mappingPairModel,
         MappingSettings assemblySettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
-        var registrations =
-            ImmutableArray.CreateBuilder<
-                MapperBuilderMapRegistrationInfo>();
-
-        foreach (var registration in mapInfo.Registrations)
+        if (mappingPairModel.HasUnifiablePairs)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (!MappingTypePolicy.IsSupported(
-                    registration.SourceType) ||
-                !MappingTypePolicy.IsSupported(
-                    registration.DestinationType) ||
-                registrations.Any(
-                    existing =>
-                        TypeMapperMappingTypePolicy.AreEquivalent(
-                            existing.SourceType,
-                            registration.SourceType) &&
-                        TypeMapperMappingTypePolicy.AreEquivalent(
-                            existing.DestinationType,
-                            registration.DestinationType)))
-            {
-                continue;
-            }
-
-            registrations.Add(registration);
-        }
-
-        for (var leftIndex = 0;
-             leftIndex < registrations.Count;
-             leftIndex++)
-        {
-            for (var rightIndex = leftIndex + 1;
-                 rightIndex < registrations.Count;
-                 rightIndex++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var left = registrations[leftIndex];
-                var right = registrations[rightIndex];
-
-                if (TypeMapperMappingTypePolicy.CanMappingsUnify(
-                        left.SourceType,
-                        left.DestinationType,
-                        right.SourceType,
-                        right.DestinationType))
-                {
-                    return default;
-                }
-            }
+            return default;
         }
 
         var usedGeneratedMethodNames =
             BuildUsedGeneratedMethodNames(mapperType);
         var mappings =
             ImmutableArray.CreateBuilder<TypeMapperMappingModel>(
-                registrations.Count);
+                mappingPairModel.Pairs.Length);
 
-        foreach (var registration in registrations)
+        foreach (var pair in mappingPairModel.Pairs)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var registration = pair.Registration;
 
             var effectiveSettings =
                 EffectiveMappingSettings.Resolve(
                     assemblySettings,
-                    mapInfo.Settings,
+                    mappingPairModel.Settings,
                     registration.Settings);
             var effectiveTemplateMode =
                 EffectiveTemplateMode.Resolve(
                     assemblySettings,
-                    mapInfo.Settings,
+                    mappingPairModel.Settings,
                     registration.Settings);
             var mapping =
                 effectiveSettings.HasExecutableOperation
@@ -413,7 +369,7 @@ internal static class TypeMapperPipeline
             effectiveTemplateMode == TemplateModeValue.Raw ||
             registration.DestinationType is
                 INamedTypeSymbol namedDestination &&
-            DirectDestinationTypePolicy.IsDirect(
+            LegacyTemplateDirectDestinationTypePolicy.IsDirect(
                 namedDestination);
         TypeMapperMappingModel? sourceTemplateMapping =
             registration.Templates.SourceTemplateSyntax is
@@ -3740,7 +3696,7 @@ internal static class TypeMapperPipeline
 
         if (destinationType is INamedTypeSymbol namedDestination)
         {
-            if (DirectDestinationTypePolicy.IsDirect(
+            if (LegacyTemplateDirectDestinationTypePolicy.IsDirect(
                     namedDestination))
             {
                 return default;

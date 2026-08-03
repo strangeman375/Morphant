@@ -109,17 +109,17 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 1, этап 1 — публичный фундамент и граница миграции.**
+**Фаза 1, этап 2 — pair eligibility, canonical identity и capability model.**
 
 Статус: ожидает ревью.
 
-До его принятия остальные этапы заблокированы.
+До его принятия этап 3 и все последующие этапы заблокированы.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
 ### Этап 1. Публичный контракт и граница миграции
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — перевести repository на согласованный словарь нового API и создать
 компилируемый фундамент, не пытаясь в том же срезе реализовать весь DSL.
@@ -132,8 +132,10 @@ Production scope:
   различием `None`, `Some(default)` и `Some(null)`, а также точным
   `Value` / `TryGetValue` contract; публичный constructor и implicit
   conversion не вводятся;
-- ввести `MappingOperation.Create` / `Update` и immutable value-type
-  `MappingContext` с `Operation` и `IMapper`;
+- ввести `MappingOperation.Create = 1` / `Update = 2` и immutable value-type
+  `MappingContext` с `Operation` и `IMapper`; оба типа находятся в папке
+  `Context` и namespace `Morphant.Context`, а значение `0` остаётся
+  неинициализированным и не обозначает операцию;
 - переименовать операции `MappingMode` в `Create`, `Update` и
   `CreateAndUpdate`;
 - переименовать `NullDestinationHandling.CreateNew` в `Create`,
@@ -151,19 +153,22 @@ Production scope:
 
 Тестовый scope:
 
-- точная shape- и nullable-спецификация новых runtime types и interfaces;
+- consumer-side nullable metadata новых mapping interfaces;
 - semantics `Option<T>` для reference, nullable value, non-nullable value и
   nested-nullable generic arguments;
-- enum values, flags и default values;
-- доступность целевых marker-ов и отсутствие удалённого публичного API;
 - сборка существующего convention-only generated mapper-а после cutover.
+
+Отдельная reflection-категория для буквального повторения видимой формы
+runtime API не сохраняется: поведение проверяется обычными тестами, nullable
+metadata — одной consumer-side проверкой, а стабильный public surface перед
+публикацией будет контролироваться `PublicApiAnalyzers`.
 
 Результат этапа: solution использует только финальные публичные имена нового
 дизайна; сложные generated plans и их executable semantics ещё не обещаются.
 
 ### Этап 2. Pair eligibility, canonical identity и capability model
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — отделить допустимость mapping-пары от возможностей destination и
 создать единый источник решений для всех последующих pipelines.

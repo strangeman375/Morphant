@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.MapperBuilderMap;
 using Morphant.Generator.Settings;
 using Morphant.Generator.TemplateSurface;
@@ -23,6 +24,9 @@ internal sealed class TestTemplateMappingGenerator : IIncrementalGenerator
         var mapInfos = MapperBuilderMapPipeline.Build(
             compilationContext,
             configureInfos);
+        var mappingPairs = MappingPairPipeline.Build(
+            compilationContext,
+            mapInfos);
         var destinationTypes = TemplateDestinationTypePipeline.Build(
             compilationContext,
             assemblySettings,
@@ -35,6 +39,6 @@ internal sealed class TestTemplateMappingGenerator : IIncrementalGenerator
             context,
             compilationContext,
             assemblySettings,
-            mapInfos);
+            mappingPairs);
     }
 }

@@ -135,7 +135,7 @@ internal static class TypeMapperEmitter
         writer.Indent();
         writer.Line(
             $"{mapping.MaybeNullSourceTypeName} source,");
-        writer.Line("global::Morphant.MappingContext context)");
+        writer.Line("global::Morphant.Context.MappingContext context)");
 
         if (!mapping.EffectiveSettings.IsMappingModeValid)
         {
@@ -635,7 +635,7 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line(
             $"{mapping.MaybeNullDestinationTypeName} destination,");
-        writer.Line("global::Morphant.MappingContext context)");
+        writer.Line("global::Morphant.Context.MappingContext context)");
 
         if (!mapping.EffectiveSettings.IsMappingModeValid)
         {
@@ -898,7 +898,7 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"{mapping.NonNullSourceTypeName} source,");
         writer.Line(
-            "global::Morphant.MappingContext context)");
+            "global::Morphant.Context.MappingContext context)");
         writer.Unindent();
         writer.Line("{");
         writer.Indent();

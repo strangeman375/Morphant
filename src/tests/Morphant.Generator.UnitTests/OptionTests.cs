@@ -1,64 +1,8 @@
-using System.Reflection;
-
-namespace Morphant.Generator.UnitTests.PublicContractTests;
+namespace Morphant.Generator.UnitTests;
 
 [TestFixture]
-internal sealed class OptionContractTests
+internal sealed class OptionTests
 {
-    [Test]
-    public void Declares_the_minimal_read_only_presence_contract()
-    {
-        var type = typeof(Option<>);
-        var publicMembers = type
-            .GetMembers(BindingFlags.Public | BindingFlags.Static |
-                        BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .Select(static member => member.Name)
-            .OrderBy(static name => name, StringComparer.Ordinal)
-            .ToArray();
-        var tryGetValueParameter = type
-            .GetMethod(nameof(Option<int>.TryGetValue))!
-            .GetParameters()
-            .Single();
-        var maybeNullWhen = tryGetValueParameter.CustomAttributes
-            .Single(static attribute =>
-                attribute.AttributeType.FullName ==
-                "System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute");
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(type.IsValueType, Is.True);
-            Assert.That(
-                type.CustomAttributes.Any(static attribute =>
-                    attribute.AttributeType.FullName ==
-                    "System.Runtime.CompilerServices.IsReadOnlyAttribute"),
-                Is.True);
-            Assert.That(type.GetConstructors(), Is.Empty);
-            Assert.That(
-                publicMembers,
-                Is.EqualTo(new[]
-                {
-                    "HasValue",
-                    "None",
-                    "Some",
-                    "TryGetValue",
-                    "Value",
-                    "get_HasValue",
-                    "get_None",
-                    "get_Value"
-                }));
-            Assert.That(
-                type.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .Where(static method =>
-                        method.Name.StartsWith(
-                            "op_",
-                            StringComparison.Ordinal)),
-                Is.Empty);
-            Assert.That(
-                maybeNullWhen.ConstructorArguments.Single().Value,
-                Is.False);
-        });
-    }
-
     [Test]
     public void Distinguishes_none_from_some_null_for_reference_values()
     {

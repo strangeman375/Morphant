@@ -650,7 +650,7 @@ internal static class ConventionConstructorMappingPlanner
                 writer.Indent();
                 writer.Line($"{sourceTypeName} source,");
                 writer.Line(
-                    "global::Morphant.MappingContext context)");
+                    "global::Morphant.Context.MappingContext context)");
                 writer.Unindent();
                 writer.Line("{");
                 writer.Indent();

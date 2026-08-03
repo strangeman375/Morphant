@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.MapperBuilderMap;
 using Morphant.Generator.Settings;
 using Morphant.Generator.TypeMapperGeneration;
@@ -18,10 +19,13 @@ public sealed class MorphantGenerator : IIncrementalGenerator
         var mapInfos = MapperBuilderMapPipeline.Build(
             compilationContext,
             configureInfos);
+        var mappingPairs = MappingPairPipeline.Build(
+            compilationContext,
+            mapInfos);
         TypeMapperPipeline.Register(
             context,
             compilationContext,
             assemblySettings,
-            mapInfos);
+            mappingPairs);
     }
 }
