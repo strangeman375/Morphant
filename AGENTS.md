@@ -34,6 +34,13 @@
   must remain useful and sufficient if all other test categories are removed.
 - Do not omit a scenario merely because another category happens to exercise
   it. Deliberate overlap between categories is acceptable.
+- Optimize expected test code for human review, not for reducing repeated
+  lines. Keep complete generated sources visible as local raw string literals
+  in the test that specifies them. A large expected source may be split into
+  clearly named, test-owned literal sections, but shared builders, emitters,
+  or parameterized helpers must not synthesize the expected API or generated
+  file structure. Test infrastructure may only normalize and register an
+  already readable expected source.
 - Create a category subdirectory only when it contains more than one test
   file. Keep single-file categories directly in their parent test directory.
 
@@ -78,6 +85,19 @@
   be assembled from test-owned literal parts when that improves readability,
   but the final assertion must remain complete. Tests are executable project
   documentation and should make the resulting API understandable.
+- Include compiler warnings in verification. Test harnesses must use
+  `CompilerDiagnostics.Warnings` or a stricter level and must not expose an
+  "allow warnings" path. Mark warnings that are an intentional part of a
+  scenario at their exact span, including warnings in expected generated
+  sources. Fix unrelated warnings instead of accepting them wholesale. A
+  narrow `CS1591` suppression is allowed only for undocumented input-fixture
+  declarations when XML documentation is unrelated to the scenario; it does
+  not apply to generated files.
+- Use `#nullable enable` in test inputs by default. Use
+  `#nullable disable annotations` only when a test explicitly specifies an
+  oblivious input contract, and keep it scoped to that type or member. It
+  preserves the distinction between oblivious and non-nullable reference
+  types; it is not a way to silence nullable flow warnings.
 - Use `TestTemplateTypeGenerator` for template type tests so unrelated
   template extension generation does not run.
 - Run only focused tests for the changed category. The user runs the full test
@@ -131,6 +151,11 @@
   if the tree changes afterward, rerun only the affected validation.
 - Keep tool output focused: use filtered test runs and avoid returning entire
   files or build logs when a smaller excerpt establishes the result.
+- Prefer one repository audit, one coherent batch edit, one focused category
+  run, and one final diff review. Expand or refresh large deterministic
+  snapshots mechanically, then review and commit the readable literals; do
+  not spend model turns reconstructing boilerplate or fixing one snapshot at
+  a time when the same work can be batched without reducing coverage.
 - Do not attach or link repository files in user-facing progress or final
   messages. The user reviews files only through commits published to `main`;
   report the concise change summary and remote commit instead.

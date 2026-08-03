@@ -143,6 +143,7 @@ namespace Morphant
         // lang=c#
         const string source =
 """
+#nullable enable
 #pragma warning disable CS1591
 
 using Morphant;

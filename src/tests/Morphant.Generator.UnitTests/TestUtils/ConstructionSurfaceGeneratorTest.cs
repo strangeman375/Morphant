@@ -39,20 +39,6 @@ internal sealed class ConstructionSurfaceGeneratorTest :
             languageVersion,
             sourceFileContent,
             Array.Empty<Assembly>(),
-            CompilerDiagnostics.Warnings,
-            expectedSources);
-    }
-
-    public static Task RunAndAssertAllowingCompilerWarnings(
-        LanguageVersion languageVersion,
-        string sourceFileContent,
-        params (string FileName, string Content)[] expectedSources)
-    {
-        return RunAndAssertCore(
-            languageVersion,
-            sourceFileContent,
-            Array.Empty<Assembly>(),
-            CompilerDiagnostics.Errors,
             expectedSources);
     }
 
@@ -66,7 +52,6 @@ internal sealed class ConstructionSurfaceGeneratorTest :
             languageVersion,
             sourceFileContent,
             additionalReferences,
-            CompilerDiagnostics.Warnings,
             expectedSources);
     }
 
@@ -74,13 +59,11 @@ internal sealed class ConstructionSurfaceGeneratorTest :
         LanguageVersion languageVersion,
         string sourceFileContent,
         IReadOnlyCollection<Assembly> additionalReferences,
-        CompilerDiagnostics compilerDiagnostics,
         params (string FileName, string Content)[] expectedSources)
     {
         var test = new ConstructionSurfaceGeneratorTest(languageVersion)
         {
-            TestCode = sourceFileContent,
-            CompilerDiagnostics = compilerDiagnostics
+            TestCode = sourceFileContent
         };
 
         foreach (var additionalReference in additionalReferences)
