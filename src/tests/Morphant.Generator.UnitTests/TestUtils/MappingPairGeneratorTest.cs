@@ -94,8 +94,6 @@ internal sealed class MappingPairGeneratorTest :
                 .Append(pair.Structured)
                 .Append("; Direct=")
                 .Append(!pair.Structured)
-                .Append("; Parameterless=")
-                .Append(pair.Parameterless)
                 .Append("; Members=")
                 .AppendLine(pair.Members.ToString());
         }
@@ -120,5 +118,4 @@ internal readonly record struct MappingPairExpectation(
     string Source,
     string Destination,
     bool Structured,
-    bool Parameterless,
     bool Members);

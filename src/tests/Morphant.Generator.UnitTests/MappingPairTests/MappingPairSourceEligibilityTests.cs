@@ -329,8 +329,7 @@ namespace TestCase
         return new MappingPairExpectation(
             source,
             destination,
-            Structured: false,
-            Parameterless: true,
+            Structured: true,
             Members: false);
     }
 }

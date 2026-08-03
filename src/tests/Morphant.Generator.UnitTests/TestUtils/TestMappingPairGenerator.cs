@@ -72,8 +72,6 @@ internal sealed class TestMappingPairGenerator : IIncrementalGenerator
                 .Append(capabilities.StructuredConstruction)
                 .Append("; Direct=")
                 .Append(capabilities.DirectConstruction)
-                .Append("; Parameterless=")
-                .Append(capabilities.ParameterlessConstruction)
                 .Append("; Members=")
                 .Append(capabilities.Members)
                 .Append(newLine);

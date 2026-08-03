@@ -91,35 +91,31 @@ namespace TestCase
             source,
             "TestCase.TestMapper",
             hasUnifiablePairs: false,
-            Pair(sourceType, "StructuredOnly", true, false, false),
-            Pair(sourceType, "StructuredWithMembers", true, false, true),
+            Pair(sourceType, "StructuredOnly", true, false),
+            Pair(sourceType, "StructuredWithMembers", true, true),
             Pair(
                 sourceType,
                 "StructuredWithParameterless",
                 true,
-                true,
                 false),
-            Pair(sourceType, "ParameterlessOnly", false, true, false),
+            Pair(sourceType, "ParameterlessOnly", true, false),
             Pair(
                 sourceType,
                 "ParameterlessWithMembers",
-                false,
                 true,
                 true),
-            Pair(sourceType, "DirectOnly", false, false, false),
-            Pair(sourceType, "IDirectWithMembers", false, false, true),
-            Pair(sourceType, "FactoryOnly", false, false, false),
-            Pair(sourceType, "CustomStruct", false, true, false),
+            Pair(sourceType, "DirectOnly", false, false),
+            Pair(sourceType, "IDirectWithMembers", false, true),
+            Pair(sourceType, "FactoryOnly", false, false),
+            Pair(sourceType, "CustomStruct", true, false),
             new MappingPairExpectation(
                 sourceType,
                 "global::System.Nullable<global::TestCase.CustomStruct>",
-                Structured: false,
-                Parameterless: true,
+                Structured: true,
                 Members: false),
             Pair(
                 sourceType,
                 "CustomStructWithMembers",
-                false,
                 true,
                 true));
     }
@@ -358,7 +354,6 @@ namespace TestCase
                 sourceType,
                 "global::TestCase.CustomStruct",
                 Structured: true,
-                Parameterless: true,
                 Members: true));
     }
 
@@ -424,11 +419,11 @@ namespace TestCase
             source,
             "TestCase.TestMapper",
             hasUnifiablePairs: false,
-            Pair(sourceType, "PublicConstructor", true, false, false),
-            Pair(sourceType, "RefConstructor", false, false, false),
-            Pair(sourceType, "RefLikeConstructor", false, false, false),
-            Pair(sourceType, "PrivateConstructor", false, false, false),
-            Pair(sourceType, "AbstractConstructor", false, false, false));
+            Pair(sourceType, "PublicConstructor", true, false),
+            Pair(sourceType, "RefConstructor", false, false),
+            Pair(sourceType, "RefLikeConstructor", false, false),
+            Pair(sourceType, "PrivateConstructor", false, false),
+            Pair(sourceType, "AbstractConstructor", false, false));
     }
 
     [Test]
@@ -517,13 +512,91 @@ namespace TestCase
             source,
             "TestCase.TestMapper",
             hasUnifiablePairs: false,
-            Pair(sourceType, "SetProperty", false, true, true),
-            Pair(sourceType, "InitProperty", false, true, true),
-            Pair(sourceType, "MutableField", false, true, true),
-            Pair(sourceType, "WholeDeferredValue", false, true, true),
-            Pair(sourceType, "UnsupportedMembers", false, true, false),
-            Pair(sourceType, "HiddenByGetOnly", false, true, false),
-            Pair(sourceType, "RefLikeMember", false, true, false));
+            Pair(sourceType, "SetProperty", true, true),
+            Pair(sourceType, "InitProperty", true, true),
+            Pair(sourceType, "MutableField", true, true),
+            Pair(sourceType, "WholeDeferredValue", true, true),
+            Pair(sourceType, "UnsupportedMembers", true, false),
+            Pair(sourceType, "HiddenByGetOnly", true, false),
+            Pair(sourceType, "RefLikeMember", true, false));
+    }
+
+    [Test]
+    public async Task Direct_destinations_expose_only_post_construction_members()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source { }
+
+    public interface ISetterProperty
+    {
+        int Value { get; set; }
+    }
+
+    public interface IInitOnlyProperty
+    {
+        int Value { get; init; }
+    }
+
+    public abstract class MutableField
+    {
+        public int Value;
+    }
+
+    public sealed class RequiredSetterProperty
+    {
+        private RequiredSetterProperty() { }
+        public required int Value { get; set; }
+    }
+
+    public sealed class RequiredMutableField
+    {
+        private RequiredMutableField() { }
+        public required int Value;
+    }
+
+    public sealed class RequiredInitOnlyProperty
+    {
+        private RequiredInitOnlyProperty() { }
+        public required int Value { get; init; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, ISetterProperty>();
+            builder.Map<Source, IInitOnlyProperty>();
+            builder.Map<Source, MutableField>();
+            builder.Map<Source, RequiredSetterProperty>();
+            builder.Map<Source, RequiredMutableField>();
+            builder.Map<Source, RequiredInitOnlyProperty>();
+        }
+    }
+}
+""";
+
+        const string sourceType = "global::TestCase.Source";
+
+        await MappingPairGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp11,
+            source,
+            "TestCase.TestMapper",
+            hasUnifiablePairs: false,
+            Pair(sourceType, "ISetterProperty", false, true),
+            Pair(sourceType, "IInitOnlyProperty", false, false),
+            Pair(sourceType, "MutableField", false, true),
+            Pair(sourceType, "RequiredSetterProperty", false, true),
+            Pair(sourceType, "RequiredMutableField", false, true),
+            Pair(sourceType, "RequiredInitOnlyProperty", false, false));
     }
 
     [Test]
@@ -563,8 +636,7 @@ namespace TestCase
             new MappingPairExpectation(
                 "global::TestCase.Source",
                 "global::TestCase.Destination",
-                Structured: false,
-                Parameterless: true,
+                Structured: true,
                 Members: true));
     }
 
@@ -606,7 +678,6 @@ namespace TestCase
                 "global::TestCase.Source",
                 "global::TestCase.Destination",
                 Structured: false,
-                Parameterless: false,
                 Members: false));
     }
 
@@ -614,14 +685,12 @@ namespace TestCase
         string source,
         string destinationName,
         bool structured,
-        bool parameterless,
         bool members)
     {
         return new MappingPairExpectation(
             source,
             "global::TestCase." + destinationName,
             structured,
-            parameterless,
             members);
     }
 
@@ -633,7 +702,6 @@ namespace TestCase
             source,
             destination,
             Structured: false,
-            Parameterless: false,
             Members: false);
     }
 }

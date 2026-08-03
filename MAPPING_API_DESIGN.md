@@ -328,11 +328,16 @@ instance, поэтому object initializer и любые допустимые C
 })
 ```
 
-Это не создаёт member rules и не мешает последующей member-фазе. Обычный
-writable member может быть позже перезаписан explicit либо convention rule.
-`init` и creation-time `required` готового direct result, наоборот, должны
-быть удовлетворены самим direct-кодом, потому что после получения instance их
-инициализировать уже нельзя.
+Это не создаёт declarative member rule. `Construct` и `Members` остаются двумя
+частями одного описания создания и инициализации destination, а generator
+lower-ит их совместно. Поэтому для structured destination `init` и `required`
+могут задаваться в `Members` и попадать в итоговый object initializer.
+
+Direct lambda возвращает уже созданный instance. Для такой pair generated
+`Members` содержит только post-construction assignable members: обычные
+setters и mutable fields, включая помеченные `required`. `init`-only properties
+в direct member surface не входят. Сам direct-код при этом свободен
+использовать object initializer.
 
 ### 6.2. Выбор generated surface
 
@@ -342,18 +347,19 @@ writable member может быть позже перезаписан explicit �
 
 | Constructor capability | Generated `Construct` | Что возвращает lambda |
 |---|---|---|
-| Есть хотя бы один поддерживаемый constructor с параметрами | Structured | `DestinationConstruction` |
-| Поддерживаемых constructors с параметрами нет либо destination opaque | Direct | Настоящий `TDestination` |
+| Есть хотя бы один поддерживаемый constructor, включая parameterless | Structured | `DestinationConstruction` |
+| Поддерживаемого constructor surface нет либо destination opaque | Direct | Настоящий `TDestination` |
 
-Structured `Construct` нужен для выбора destination-конструктора с параметрами
-и настройки этих параметров. Один parameterless constructor не создаёт
-полезного constructor-plan: такая pair получает direct `Construct`, а
-доступность parameterless/default creation хранится отдельной capability.
+Structured `Construct` описывает не отдельный constructor-вызов, а единый plan
+создания и инициализации destination. Поэтому доступный parameterless
+constructor тоже выбирает structured surface: Morphant может выполнить его по
+convention и включить `init`, `required` и остальные creation-time member rules
+в тот же итоговый initializer.
 
 Наличие body-members не влияет на выбор формы `Construct`. Оно независимо
 определяет наличие `Members`. Поэтому interface или factory-only class с
-writable members получает direct `Construct` вместе с `Members`, а scalar без
-members — только direct `Construct`.
+post-construction writable members получает direct `Construct` вместе с
+`Members`, а scalar без members — только direct `Construct`.
 
 Одна mapping-пара никогда не получает обе формы. Пользовательский mode для
 переключения между structured и direct surface не вводится.
@@ -549,26 +555,18 @@ Morphant выполняет обычное convention construction с эффек
 
 `Unambiguous` выбирает единственный поддерживаемый доступный parameterized-
 constructor, даже если одновременно существует parameterless-constructor.
-Если parameterized-конструкторов несколько, требуется явный выбор. Pair без
-parameterized-constructor уже имеет direct surface и в этот алгоритм не
-попадает. После выбора Morphant не делает fallback к parameterless либо
-другому constructor-у из-за отсутствующего или несовместимого обязательного
-argument-а.
+Если parameterized-конструкторов нет, выбирается поддерживаемый доступный
+parameterless-constructor. Если parameterized-конструкторов несколько,
+требуется явный выбор даже при наличии parameterless-constructor. После выбора
+Morphant не делает fallback к parameterless либо другому constructor-у из-за
+отсутствующего или несовместимого обязательного argument-а.
 
-Для non-opaque direct destination отдельно определяется parameterless/default
-creation capability. Доступный parameterless constructor класса либо обычная
-default construction value type позволяют не настраивать `Construct`: в
-no-previous ветке Morphant сам получает instance и затем применяет member rules
-и conventions. Эта capability не отменяет проверку `required` и других
-creation-time обязательств итогового plan.
-
-Interface, abstract или factory-only тип без доступного parameterless пути
-требует direct `Construct`, если операция может прийти в no-previous ветку.
-Opaque destination также всегда требует явный direct `Construct`: даже если C#
-технически позволяет `new()` или `default`, Morphant не выбирает за
-пользователя атомарное значение. Отсутствие обязательной настройки является
-ошибочной конфигурацией, а не поводом для fallback на `Convert`, runtime
-conversion или `default`.
+Direct destination не имеет поддерживаемого constructor surface, поэтому
+reachable no-previous ветка требует configured direct `Construct`. То же
+правило действует для opaque destination: даже если C# технически позволяет
+`new()` или `default`, Morphant не выбирает за пользователя атомарное значение.
+Отсутствие обязательной настройки является ошибочной конфигурацией, а не
+поводом для fallback на `Convert`, runtime conversion или `default`.
 
 Если previous существует и configured `Construct` — source-only, lambda не
 вычисляется вообще. Constructor arguments, factory и любые используемые только
@@ -630,8 +628,9 @@ Members(
 `result`, вторая делает фактически выбранный non-null result доступным для
 выражений, которым он нужен. Выбор перегрузки сам по себе не задаёт runtime-
 фазу и не меняет семантику rules, не использующих `result`. Обе формы
-генерируются независимо от стратегии `Construct`: constructor, convention,
-previous, factory и direct result не меняют generated surface.
+генерируются для любой pair с member-capability. Сам набор members учитывает
+форму construction: structured surface включает creation-time members, а
+direct surface — только post-construction assignable members.
 
 В локальной конфигурации pair можно вызвать ровно один `Members`.
 Любой второй локальный вызов является ошибкой. `IncludeBase()` объединяет
@@ -653,14 +652,17 @@ previous может существовать, хотя данному прави
 
 ### 7.2. Ответственность
 
-`Members` является единственным declarative surface настройки всех
-поддерживаемых body-members destination:
+`Members` является единственным declarative surface настройки body-members,
+которые применимы к construction capability destination:
 
 - properties с обычным `set`;
-- `init`-only properties;
+- `init`-only properties для structured destination;
 - `required` properties и fields;
 - writable fields;
 - поддерживаемые унаследованные body-members.
+
+У direct destination из этого списка остаются только обычные setters и mutable
+fields. Модификатор `required` их не исключает; `init`-only property исключается.
 
 Constructor parameters не входят в `Members`, потому что они не являются
 body-members. Обычный C# внутри direct `Construct`, factory или `Convert`
@@ -753,13 +755,13 @@ builder.Map<OrderDto, Order>()
 состояние «result отсутствует» не несёт полезной информации и ложно намекало
 бы на возможность заменить терминальный `null`.
 
-Generator анализирует каждый rule отдельно. Прямая либо транзитивная ссылка на
-`result` в value, declarative local или условии делает зависимые от неё rules
-post-creation. Само наличие третьего lambda-параметра ничего не меняет. Поэтому
-result-independent `init` и creation-time `required` rules допустимы и в
-трёхпараметрической перегрузке; diagnostic нужен только тогда, когда конкретный
-creation-time rule либо условие его применимости зависит от ещё не созданного
-result.
+Generator анализирует каждый structured member rule отдельно. Прямая либо
+транзитивная ссылка на `result` в value, declarative local или условии делает
+зависимые от неё rules post-creation. Само наличие третьего lambda-параметра
+ничего не меняет. Поэтому result-independent `init` и creation-time `required`
+rules допустимы и в трёхпараметрической перегрузке; diagnostic нужен только
+тогда, когда конкретный creation-time rule либо условие его применимости
+зависит от ещё не созданного result.
 
 Пример:
 
@@ -798,11 +800,10 @@ Generator самостоятельно раскладывает единый mem
 - replacement, созданный constructor/convention plan, получает те же
   creation-time member rules, что и обычный `Create`.
 
-Если `ByFactory()` или direct `Construct` возвращает уже созданный объект,
-применить к нему `init`-only rule невозможно. Явная попытка совместить такую
-creation-ветку с соответствующим `Members` rule должна давать diagnostic.
-Factory или direct lambda должна инициализировать такой member сама либо
-mapping должен быть ручным.
+Если `ByFactory()` возвращает уже созданный объект, применить к нему
+`init`-only rule невозможно. Явная попытка совместить такую creation-ветку с
+соответствующим `Members` rule должна давать diagnostic. Direct surface вообще
+не включает `init`-only member, поэтому такую конфигурацию нельзя записать.
 
 ### 7.4. Explicit rules и conventions
 
@@ -1554,10 +1555,9 @@ return result;
 
 `RunNoPreviousConstruction` вызывает любую configured `Construct`-перегрузку,
 поскольку previous отсутствует. Если `Construct` не настроен, structured
-surface выполняет convention construction, а non-opaque direct surface
-использует доступную parameterless/default construction capability. Direct
-pair без такой capability, включая opaque destination, является ошибочной
-конфигурацией для reachable no-previous ветки.
+surface выполняет convention construction. Direct pair, включая opaque
+destination, является ошибочной конфигурацией для reachable no-previous ветки
+без configured `Construct`.
 
 `Map(source, destination)` после null-предобработки работает так:
 
@@ -1735,10 +1735,9 @@ declarative методы. Для каждой eligible pair capabilities выв�
 |---|---|---|
 | Runtime contract | Любая eligible pair | Обе `Map`-операции; effective `MappingMode` остаётся единственным operation gate |
 | Manual | Любая eligible pair | Один `Convert` на обычном pair-builder |
-| Structured creation | Есть хотя бы один поддерживаемый доступный destination constructor с параметрами | `Construct`, возвращающий generated `DestinationConstruction` |
-| Direct creation | Поддерживаемый parameterized constructor surface отсутствует либо destination намеренно opaque | `Construct`, возвращающий настоящий `TDestination` |
-| Parameterless/default creation | Non-opaque destination можно создать доступным parameterless constructor либо обычной default construction value type | Direct no-previous ветка может работать без configured `Construct`; отдельный surface не генерируется |
-| Members | Destination не opaque и имеет хотя бы один поддерживаемый body-member | Generated `DestinationMembers` и обе альтернативные `Members`-перегрузки, независимо от формы `Construct` |
+| Structured creation | Есть хотя бы один поддерживаемый доступный destination constructor, включая parameterless | `Construct`, возвращающий generated `DestinationConstruction` |
+| Direct creation | Поддерживаемый constructor surface отсутствует либо destination намеренно opaque | `Construct`, возвращающий настоящий `TDestination` |
+| Members | Для structured destination есть поддерживаемый body-member; для direct destination есть post-construction assignable member; destination не opaque | Generated `DestinationMembers` и обе альтернативные `Members`-перегрузки |
 | Collection / projection | Не входят в v0 capability model | Никакого generated surface; рассматриваются после v0 на отдельных этапах |
 
 Structured и direct creation взаимоисключающие: eligible pair получает ровно
@@ -1747,27 +1746,24 @@ Structured и direct creation взаимоисключающие: eligible pair 
 неподдерживаемой ветки. Source shape сама по себе не меняет destination
 surface.
 
-Отсутствие members и parameterized constructors не убирает declarative
-surface. Такая пара получает direct `Construct`; `Update` всё равно может
-вернуть previous без изменений. В no-previous ветке Morphant использует
-доступную non-opaque parameterless/default construction либо требует
-configured direct lambda. Единственным общим gate для публичной операции
-остаётся эффективный `MappingMode`.
+Отсутствие members не убирает declarative surface. Pair с поддерживаемым
+constructor получает structured `Construct`, а pair без него — direct
+`Construct`; `Update` всё равно может вернуть previous без изменений.
+No-previous ветка direct pair требует configured lambda. Единственным общим
+gate для публичной операции остаётся эффективный `MappingMode`.
 
 Под «есть member» понимается member, реально включаемый в generated
 `DestinationMembers`, а не любой symbol типа. Static members, indexers,
 get-only properties, readonly fields и другие неподдерживаемые формы не
 считаются.
 
-Под «есть parameterized constructor» понимается instance-constructor хотя бы с
-одним параметром, который generator может использовать для создания данного
-destination. Недоступные и неподдерживаемые constructors не считаются.
-Parameterless constructor учитывается отдельной capability и сам по себе не
-делает surface structured. Constructor abstract-типа сам по себе не делает тип
-создаваемым. Built-in, enum и отдельно определённые общей type policy
-scalar-категории получают direct surface, даже если metadata типа технически
-содержит public constructors: Morphant намеренно не моделирует их как
-structural constructor DSL.
+Под «есть constructor» понимается instance-constructor любой arity, который
+generator может использовать для создания данного destination. Недоступные и
+неподдерживаемые constructors не считаются; constructor abstract-типа сам по
+себе не делает тип создаваемым. Built-in, enum и отдельно определённые общей
+type policy scalar-категории получают direct surface, даже если metadata типа
+технически содержит public constructors: Morphant намеренно не моделирует их
+как structural constructor DSL.
 
 В v0 opaque/direct scalar policy сохраняет полную проверенную границу прежнего
 surface:
@@ -1781,16 +1777,17 @@ surface:
 
 Верхнеуровневая nullable value wrapper не превращает такой destination в
 structured type. Opaque означает атомарный destination: он не получает ни
-`Members`, ни automatic parameterless/default creation. Custom struct/record
-не становится opaque только из-за value semantics и получает capabilities по
+`Members`, ни automatic convention construction. Custom struct/record не
+становится opaque только из-за value semantics и получает capabilities по
 обычным правилам своих constructors и members.
 
 Direct `Construct` non-opaque destination семантически соответствует
-structured-ветке `new(ByFactory(...))`: он получает уже созданный instance,
-после чего Morphant применяет обычные setter-rules и member conventions.
-Direct result не является окончательным результатом в смысле `Convert`.
-Opaque destination member surface не получает, поэтому для него после direct
-result member-фазы нет.
+structured-ветке `new(ByFactory(...))`: он получает уже созданный instance, к
+которому Morphant может применить обычные setter-rules и mutable-field rules.
+`required` не исключает такие members, если они остаются post-construction
+assignable. `init`-only properties в direct member surface не входят. Direct
+result не является окончательным результатом в смысле `Convert`. Opaque
+destination member surface не получает.
 
 Например, interface не имеет constructor surface, но может независимо иметь
 writable body-members:
@@ -1805,16 +1802,15 @@ builder.Map<Source, IDestination>()
 ```
 
 Здесь direct lambda получает экземпляр, а declarative member plan продолжает
-иметь самостоятельную ценность. Для `init` и creation-time `required` действуют
-те же ограничения, что для structured factory-ветки: их должен заполнить код,
-который вернул уже созданный instance.
+иметь самостоятельную ценность. Обычный `set` либо mutable field доступен в
+`Members`, в том числе при `required`; `init`-only property в этом surface не
+генерируется.
 
 Отдельного служебного creation type для scalar, opaque value object,
-parameterless/factory-only class, interface или abstract destination не
-создаётся. Их direct surface сохраняет standard null handling. Declarative
-member stage дополнительно доступен только non-opaque destination с
-поддерживаемыми body-members, поэтому `Convert` нужен лишь для действительно
-ручного алгоритма.
+factory-only class, interface или abstract destination не создаётся. Их direct
+surface сохраняет standard null handling. Declarative member plan дополнительно
+доступен только non-opaque destination с поддерживаемыми post-construction
+members, поэтому `Convert` нужен лишь для действительно ручного алгоритма.
 
 ### 11.3. Settings matrix
 
@@ -1867,11 +1863,10 @@ policy должна диагностироваться. Для direct declarativ
 для warning или conversion.
 
 Частичная capability никогда не включает скрытый fallback. Недоступная
-operation, отсутствующий обязательный direct `Construct` при отсутствии
-parameterless/default creation, невозможный explicit rule или setting без
-требуемой capability дают diagnostic; до реализации соответствующей
-диагностики generated operation может быть unsupported, но не переключается
-на manual, другую creation-ветку или runtime discovery.
+operation, отсутствующий обязательный direct `Construct`, невозможный explicit
+rule или setting без требуемой capability дают diagnostic; до реализации
+соответствующей диагностики generated operation может быть unsupported, но не
+переключается на manual, другую creation-ветку или runtime discovery.
 
 ### 11.4. Carry-forward contract generated surface
 
@@ -2382,10 +2377,10 @@ source, factory/derived behavior и точный evaluation order будут с�
 - повторный `Convert`;
 - смешивание `Convert` с `Construct` или `Members`;
 - pair-specific constructor/member settings, несовместимые с manual mapping;
-- достижимый explicit `init`-rule либо creation-time `required`-rule, который
-  невозможно применить в конкретной creation branch: result уже создан
-  previous/factory/direct code либо value/условие rule транзитивно зависит от
-  ещё не созданного result;
+- достижимый explicit `init`-rule либо creation-time `required`-rule structured
+  surface, который невозможно применить в конкретной creation branch: result
+  уже создан previous/factory code либо value/условие rule транзитивно зависит
+  от ещё не созданного result;
 - статически неизбежный declarative `Update` no-op: existing-ветка не
   может ни выбрать replacement, ни выполнить post-construction assignment;
 - reachable no-previous branch direct surface без configured `Construct`;
@@ -2414,24 +2409,24 @@ diagnostic не должно вводить скрытый fallback на дру�
 4. `Construct` с параметром `previous` выполняется и с `Option.None`, и с
    `Option.Some`.
 5. Если `Construct` отсутствует, structured surface создаёт no-previous result
-   по convention, non-opaque direct surface использует доступную
-   parameterless/default construction capability, а direct pair без неё
-   является ошибочной для reachable no-previous ветки. Существующий previous
-   в обеих формах сам становится result.
+   по convention, а direct pair является ошибочной для reachable no-previous
+   ветки. Существующий previous в обеих формах сам становится result.
 6. Для одной pair разрешён не более чем один `Construct` любой перегрузки.
 7. `Construct` настраивает result selection и constructor parameters, но не
    declarative body-member rules. Обычный C# direct lambda может вернуть object
    initializer либо иначе инициализированный instance.
-8. `Members` является единственным declarative API для всех body-members,
-   включая `init` и `required`.
+8. `Members` является единственным declarative API для body-members. Structured
+   surface включает `init` и `required`; direct surface включает обычные
+   setters и mutable fields, в том числе `required`, но не `init`-only
+   properties.
 9. Для member-capable pair всегда генерируются две альтернативные
    `Members`-перегрузки: с `source`/`previous` и с
    `source`/`previous`/`result`. В локальной pair можно вызвать
    ровно один `Members`; любой второй вызов ошибочен. `IncludeBase()` объединяет
    унаследованный и локальный plans независимо от формы перегрузки.
 10. Обе формы `Members` являются одним declarative DSL и применяются к
-    выбранному result; их availability не зависит от creation strategy, а
-    выбор формы сам по себе не задаёт evaluation phase.
+    выбранному result; выбор overload сам по себе не задаёт evaluation phase.
+    Набор доступных members определяется construction capability.
 11. `previous` в `Members` всегда означает исходный нормализованный input, а не
     выбранный result. В трёхпараметрической форме `result` — это
     фактически выбранный non-null destination без presence-wrapper и без
@@ -2463,16 +2458,15 @@ diagnostic не должно вводить скрытый fallback на дру�
     destination instance.
 20. `Convert` и ровно одна форма `Construct` доступны для каждой поддерживаемой
     mapping-пары; обе `Members`-перегрузки генерируются независимо при наличии
-    поддерживаемых body-members у non-opaque destination.
-21. Наличие хотя бы одного поддерживаемого parameterized constructor выбирает
-    structured `Construct`, его отсутствие — direct `Construct`; opaque
-    destination всегда direct. Пользовательского mode и пары с обеими формами
-    нет. Parameterless/default creation является отдельной capability и не
-    меняет форму surface.
+    применимых к construction capability body-members у non-opaque destination.
+21. Наличие хотя бы одного поддерживаемого constructor, включая parameterless,
+    выбирает structured `Construct`, его отсутствие — direct `Construct`;
+    opaque destination всегда direct. Пользовательского mode и пары с обеими
+    формами нет.
 22. Direct `Construct` допускает обычный C# object initializer и семантически
-    соответствует уже созданному factory-result: после него выполняются
-    применимые `Members` и member conventions. Opaque destination атомарен и
-    member surface не получает.
+    соответствует уже созданному factory-result: к нему применимы обычные
+    setter/mutable-field rules и conventions, но не `init`-only rules. Opaque
+    destination атомарен и member surface не получает.
 23. Возвращённый `Map` result всегда авторитетен.
 24. Никаких скрытых fallback между manual и declarative mapping либо между
     разными configured lambdas нет.
@@ -2547,10 +2541,10 @@ diagnostic не должно вводить скрытый fallback на дру�
     deferred/async и push-sequence roots полностью исключаются в обеих
     mapping-позициях даже для direct/manual mapping.
 44. Для любой другой eligible pair доступны runtime contract и `Convert`;
-    destination независимо получает ровно одну форму `Construct`, отдельный
-    признак parameterless/default creation и, если он не opaque, `Members` при
-    наличии поддерживаемых body-members. Значение отложенной категории внутри
-    разрешённого root остаётся обычным единым C#-значением. `dynamic`
+    destination получает ровно одну форму `Construct` и, если он не opaque,
+    `Members` при наличии применимых к этой construction capability
+    body-members. Значение отложенной категории внутри разрешённого root
+    остаётся обычным единым C#-значением. `dynamic`
     канонически совпадает с `object`; root nullable reference annotation не
     создаёт отдельную runtime pair.
 45. Manual mapping применяет только `MappingMode`. Остальные settings не
@@ -2666,8 +2660,8 @@ diagnostic не должно вводить скрытый fallback на дру�
 81. Built-in scalars, enums, `Guid`, `DateTime`, `DateTimeOffset`, `DateOnly`,
     `TimeOnly`, `TimeSpan`, `Half`, `Int128`, `UInt128`, `Uri`, `Version`,
     `BigInteger`, `Complex`, `Rune`, `Index` и `Range` являются opaque/direct
-    destinations без `Members` и automatic parameterless/default creation;
-    custom value type следует обычной capability model.
+    destinations без `Members` и automatic convention construction; custom
+    value type следует обычной capability model.
 82. Потенциально унифицирующиеся pair shapes одного generic mapper-а являются
     compile-time configuration conflict, а не runtime duplicate registration.
 83. `IncludeMembers` как first-class convention flattening обязателен после

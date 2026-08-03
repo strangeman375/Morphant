@@ -37,7 +37,6 @@ internal readonly record struct MappingPairCapabilities(
     bool Runtime,
     bool Manual,
     MappingConstructionKind Construction,
-    bool ParameterlessConstruction,
     bool Members)
 {
     public bool StructuredConstruction =>

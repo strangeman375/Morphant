@@ -15,16 +15,9 @@ internal static class DestinationCapabilityPolicy
             compilation);
 
         var isOpaque = IsOpaque(destination);
-        var hasStructuredConstruction =
+        var hasSupportedConstructor =
             !isOpaque &&
-            HasSupportedParameterizedConstructor(
-                destination,
-                compilation,
-                mapperType,
-                cancellationToken);
-        var hasParameterlessConstruction =
-            !isOpaque &&
-            HasParameterlessConstruction(
+            HasSupportedConstructor(
                 destination,
                 compilation,
                 mapperType,
@@ -35,15 +28,15 @@ internal static class DestinationCapabilityPolicy
                 destination,
                 compilation,
                 mapperType,
-                cancellationToken);
+                includeInitOnlyProperties: hasSupportedConstructor,
+                cancellationToken: cancellationToken);
 
         return new MappingPairCapabilities(
             Runtime: true,
             Manual: true,
-            hasStructuredConstruction
+            hasSupportedConstructor
                 ? MappingConstructionKind.Structured
                 : MappingConstructionKind.Direct,
-            hasParameterlessConstruction,
             hasMembers);
     }
 
@@ -110,7 +103,7 @@ internal static class DestinationCapabilityPolicy
                "System.Range";
     }
 
-    private static bool HasSupportedParameterizedConstructor(
+    private static bool HasSupportedConstructor(
         INamedTypeSymbol destinationType,
         Compilation compilation,
         INamedTypeSymbol mapperType,
@@ -126,8 +119,7 @@ internal static class DestinationCapabilityPolicy
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (constructor.Parameters.Length == 0 ||
-                !compilation.IsSymbolAccessibleWithin(
+            if (!compilation.IsSymbolAccessibleWithin(
                     constructor,
                     mapperType) ||
                 constructor.Parameters.Any(
@@ -148,43 +140,11 @@ internal static class DestinationCapabilityPolicy
         return false;
     }
 
-    private static bool HasParameterlessConstruction(
-        INamedTypeSymbol destinationType,
-        Compilation compilation,
-        INamedTypeSymbol mapperType,
-        CancellationToken cancellationToken)
-    {
-        if (destinationType.TypeKind == TypeKind.Interface ||
-            destinationType.IsAbstract)
-        {
-            return false;
-        }
-
-        if (destinationType.IsValueType)
-        {
-            return true;
-        }
-
-        foreach (var constructor in destinationType.InstanceConstructors)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (constructor.Parameters.Length == 0 &&
-                compilation.IsSymbolAccessibleWithin(
-                    constructor,
-                    mapperType))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static bool HasSupportedMember(
         INamedTypeSymbol destinationType,
         Compilation compilation,
         INamedTypeSymbol mapperType,
+        bool includeInitOnlyProperties,
         CancellationToken cancellationToken)
     {
         return destinationType.TypeKind == TypeKind.Interface
@@ -192,11 +152,13 @@ internal static class DestinationCapabilityPolicy
                 destinationType,
                 compilation,
                 mapperType,
+                includeInitOnlyProperties,
                 cancellationToken)
             : HasSupportedClassMember(
                 destinationType,
                 compilation,
                 mapperType,
+                includeInitOnlyProperties,
                 cancellationToken);
     }
 
@@ -204,6 +166,7 @@ internal static class DestinationCapabilityPolicy
         INamedTypeSymbol destinationType,
         Compilation compilation,
         INamedTypeSymbol mapperType,
+        bool includeInitOnlyProperties,
         CancellationToken cancellationToken)
     {
         var hiddenMemberNames =
@@ -223,7 +186,8 @@ internal static class DestinationCapabilityPolicy
                     IsSupportedMember(
                         member,
                         compilation,
-                        mapperType))
+                        mapperType,
+                        includeInitOnlyProperties))
                 {
                     return true;
                 }
@@ -242,6 +206,7 @@ internal static class DestinationCapabilityPolicy
         INamedTypeSymbol destinationType,
         Compilation compilation,
         INamedTypeSymbol mapperType,
+        bool includeInitOnlyProperties,
         CancellationToken cancellationToken)
     {
         var interfaces = BuildBaseFirstInterfaceOrder(
@@ -296,7 +261,8 @@ internal static class DestinationCapabilityPolicy
                 if (IsSupportedMember(
                         member,
                         compilation,
-                        mapperType))
+                        mapperType,
+                        includeInitOnlyProperties))
                 {
                     return true;
                 }
@@ -386,13 +352,15 @@ internal static class DestinationCapabilityPolicy
     private static bool IsSupportedMember(
         ISymbol member,
         Compilation compilation,
-        INamedTypeSymbol mapperType)
+        INamedTypeSymbol mapperType,
+        bool includeInitOnlyProperties)
     {
         if (member is IPropertySymbol property)
         {
             return !property.IsStatic &&
                    !property.IsIndexer &&
                    property.SetMethod is { } setter &&
+                   (includeInitOnlyProperties || !setter.IsInitOnly) &&
                    compilation.IsSymbolAccessibleWithin(
                        property,
                        mapperType) &&

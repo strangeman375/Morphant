@@ -184,16 +184,18 @@ Production scope:
 - зафиксировать canonical identity с учётом `Nullable<T>` и без различия
   aliases, `dynamic`/`object`, tuple names и nullable reference annotations;
 - независимо вычислять runtime, manual, structured-construction,
-  direct-construction, parameterless/default-construction и members
-  capabilities;
-- выбирать structured construction только при наличии поддерживаемого
-  доступного constructor с параметрами; один parameterless constructor даёт
-  direct surface и отдельную возможность automatic default creation;
+  direct-construction и members capabilities;
+- выбирать structured construction при наличии любого поддерживаемого
+  доступного constructor, включая parameterless; direct surface использовать
+  только при отсутствии constructor surface либо для opaque destination;
 - применить полную opaque/direct policy к built-in scalars, enums, `Guid`,
   `DateTime`, `DateTimeOffset`, `DateOnly`, `TimeOnly`, `TimeSpan`, `Half`,
   `Int128`, `UInt128`, `Uri`, `Version`, `BigInteger`, `Complex`, `Rune`,
   `Index` и `Range`; opaque destination не получает `Members` и automatic
-  parameterless/default creation;
+  convention construction;
+- для structured destination учитывать в member capability `set`, `init` и
+  mutable fields; для direct destination — только обычные setters и mutable
+  fields, включая `required`, но не `init`-only properties;
 - определять capabilities в реальном lexical context generated mapper-а,
   включая accessibility и nameability;
 - представить capability result отдельной immutable incremental model, не
@@ -203,8 +205,10 @@ Production scope:
 
 - самостоятельные полные матрицы eligibility для source и destination;
 - root nullable, nested generic arguments, inaccessible и unnameable types;
-- capability combinations: structured only, direct only, parameterless/default
-  creation, members with обеими creation forms и destination без body-members;
+- capability combinations: structured only, direct only, members with обеими
+  creation forms и destination без body-members;
+- parameterless class/struct как structured, creation-time members structured
+  surface и только post-construction members direct surface;
 - scalar/enum/custom-struct distinction;
 - canonical pair identity и case-insensitive hint-name collision inputs;
 - generic mapper shapes, разрешённые constructed roots и запрещённые bare type
@@ -252,7 +256,8 @@ Production scope:
 - Shape, DestinationSupport, Constructors, Nullability, Attributes,
   Documentation, Naming, Generics и compile-time Usage как независимые
   категории;
-- отсутствие structured plan у parameterless/direct/opaque destination;
+- отсутствие structured plan у direct/opaque destination и его наличие у
+  parameterless class/struct;
 - обе `Construct` overload arities, единственная `Convert` overload и
   normalized previous для nullable destinations;
 - nested/containing generic parameters и constraints;
@@ -273,6 +278,9 @@ Production scope:
 - генерировать record `DestinationMembers` только при members capability;
 - включать поддерживаемые properties и fields по accessibility, hiding и
   base-first declaration-order rules;
+- включать `init`-only properties в structured surface, но исключать их из
+  direct surface; обычные setters и mutable fields сохранять в обеих формах,
+  включая помеченные `required`;
 - использовать `Member<T>` с точным input-nullability destination member-а;
 - генерировать две альтернативные `Members` overloads:
   `(source, previous)` и `(source, previous, result)`;
@@ -289,7 +297,9 @@ Production scope:
   Nullability, Attributes, Documentation, Naming, Generics и Usage;
 - property/field matrix, `set`, `init`, `required`, readonly/get-only и
   unsupported members;
-- обе overloads независимо от strategy `Construct`;
+- обе overloads для structured и direct member-capable destinations;
+- отсутствие `init`-only property в direct surface при сохранении обычного
+  `required set` и `required` mutable field;
 - record `with` compile-time usage и отсутствие императивной mutation API;
 - destinations с constructors без members и с members без constructors.
 
@@ -345,8 +355,8 @@ API; observable реакция на invalid states остаётся поздне
 Production scope:
 
 - реализовать default structured construction с
-  `ConstructorSelection.Unambiguous` и automatic parameterless/default
-  creation для соответствующих non-opaque direct destinations;
+  `ConstructorSelection.Unambiguous`, включая parameterless constructor и
+  обычную default construction custom value type;
 - `Create` получает result через convention constructor и применяет body
   member conventions;
 - обычный `Update` выбирает non-null previous как result и применяет допустимые
@@ -359,7 +369,7 @@ Production scope:
 - поддержать class, struct, record, nullable value, abstract/interface Update
   и constructed generic destinations согласно capabilities;
 - не создавать hidden fallback для direct destinations без configured
-  `Construct` и без parameterless/default-construction capability.
+  `Construct`.
 
 Тестовый scope:
 
@@ -369,9 +379,8 @@ Production scope:
 - previous identity для reference destination и copy-return semantics для
   value destination;
 - required/init differences между creation и existing result;
-- unsupported no-previous direct branch без configured `Construct` и
-  parameterless/default capability, без подмены `default` либо runtime
-  conversion.
+- unsupported no-previous direct branch без configured `Construct`, без
+  подмены `default` либо runtime conversion.
 
 Результат этапа: `builder.Map<Source, Destination>()` работает по новому
 declarative lifecycle без explicit `Construct` и `Members`.
@@ -459,8 +468,6 @@ Production scope:
 
 - исполнять source-only и previous-aware direct `Construct` для destination
   без structured constructor surface и для opaque destinations;
-- разрешать отсутствие configured `Construct` у non-opaque direct destination
-  с parameterless/default-construction capability;
 - поддержать expression lambda, natural method group и переносимую
   синхронную block lambda;
 - lowering `new(ByFactory(...))` внутри structured construction;
@@ -472,14 +479,11 @@ Production scope:
   result и не выполнять member stage;
 - не считать direct result эквивалентом `Convert`: применимые member rules и
   conventions продолжают выполняться;
-- не использовать automatic parameterless/default creation для opaque,
-  interface, abstract и factory-only destination без соответствующей
-  capability.
+- не использовать automatic construction для direct destination.
 
 Тестовый scope:
 
-- scalars, enums, parameterless classes/structs, interfaces и
-  abstract/factory-only scenarios;
+- scalars, enums, interfaces и abstract/factory-only scenarios;
 - expression/block/method-group/delegate forms;
 - reuse/replacement, null result, side effects и exceptions;
 - instance/static mapper members, constants, supported captures и collision-

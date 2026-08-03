@@ -243,7 +243,7 @@ namespace TestCase
             Pair(
                 "global::TestCase.SafeSource",
                 "global::TestCase.SafeDestination",
-                parameterless: true));
+                structured: true));
     }
 
     [Test]
@@ -293,7 +293,7 @@ namespace TestCase
             Pair(
                 "global::TestCase.SafeSource",
                 "global::TestCase.Envelope<TClass>",
-                parameterless: true));
+                structured: true));
     }
 
     [Test]
@@ -334,19 +334,18 @@ namespace TestCase
             Pair(
                 "global::TestCase.SafeSource",
                 "global::TestCase.SafeDestination",
-                parameterless: true));
+                structured: true));
     }
 
     private static MappingPairExpectation Pair(
         string source,
         string destination,
-        bool parameterless)
+        bool structured)
     {
         return new MappingPairExpectation(
             source,
             destination,
-            Structured: false,
-            Parameterless: parameterless,
+            structured,
             Members: false);
     }
 }

@@ -57,7 +57,6 @@ namespace TestCase
                 "global::System.Object",
                 "global::System.Object",
                 Structured: false,
-                Parameterless: false,
                 Members: false),
             Pair("global::System.Int32"),
             Pair(
@@ -68,7 +67,6 @@ namespace TestCase
                 "global::System.IntPtr",
                 "global::System.UIntPtr",
                 Structured: false,
-                Parameterless: false,
                 Members: false));
     }
 
@@ -151,14 +149,12 @@ namespace TestCase
             new MappingPairExpectation(
                 "global::TestCase.Upper.Source",
                 "global::TestCase.Upper.Destination",
-                Structured: false,
-                Parameterless: true,
+                Structured: true,
                 Members: false),
             new MappingPairExpectation(
                 "global::TestCase.upper.Source",
                 "global::TestCase.upper.Destination",
-                Structured: false,
-                Parameterless: true,
+                Structured: true,
                 Members: false));
     }
 
@@ -204,8 +200,7 @@ namespace TestCase
         return new MappingPairExpectation(
             source,
             "global::TestCase.Destination",
-            Structured: false,
-            Parameterless: true,
+            Structured: true,
             Members: false);
     }
 }

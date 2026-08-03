@@ -119,9 +119,10 @@ Manual остаётся обязательным escape hatch для специ�
 - готовый или cached instance выражается явной factory-веткой
   `new(ByFactory(() => instance))`; непосредственный возврат `ByFactory(...)`
   не является допустимой generated shape;
-- constructor/convention result допускает creation-time `init` и `required`
-  rules, а factory/previous уже существует и получает только применимые
-  setter-rules; factory сама отвечает за `init`/creation-time `required`;
+- `Construct` и `Members` совместно описывают создание destination:
+  constructor/convention branch включает применимые creation-time `init` и
+  `required` rules в единый initializer, а уже существующий factory/previous
+  result допускает только post-construction assignments;
 - никакого скрытого fallback между creation-ветками нет;
 - точный nullable-контракт `Option<T>` и поведение `null` factory-result
   зафиксированы на этапе 3.
@@ -156,8 +157,9 @@ writable members и многие third-party immutable types сейчас вын
   `DirectConstruction<T>`,
   implicit unwrap или marker-метод не нужно;
 - direct result семантически соответствует уже созданному result из
-  `new(ByFactory(...))`: после него выполняются применимые `Members` и member
-  conventions, а `init`/creation-time `required` должен заполнить direct код;
+  `new(ByFactory(...))`: generated `Members` сохраняет обычные setters и mutable
+  fields, включая `required`, но не включает `init`-only properties; direct код
+  при этом может свободно использовать object initializer;
 - у direct surface нет default creation для no-previous ветки: если такая ветка
   достижима, direct `Construct` обязан быть настроен;
 - отдельного mode нет, structured и direct surface одновременно не
@@ -332,11 +334,11 @@ mapping перенесены в `MAPPING_API_DESIGN.md`; неоднозначн�
 - `Members` анализируется как граф data/control dependencies. Rule, local или
   условие считается result-dependent, только если прямо либо транзитивно
   использует параметр `result`; форма перегрузки сама по себе фазу не задаёт;
-- result-independent `init` и creation-time `required` rules могут участвовать
-  в initializer-е даже из трёхпараметрической перегрузки. Result-dependent
-  setter/field rule выполняется после создания non-null result. Если
-  creation-time rule либо условие его применимости зависит от ещё не
-  созданного result, конфигурация ошибочна;
+- result-independent `init` и creation-time `required` rules structured surface
+  могут участвовать в initializer-е даже из трёхпараметрической перегрузки.
+  Result-dependent setter/field rule выполняется после создания non-null
+  result. Если creation-time rule либо условие его применимости зависит от ещё
+  не созданного result, конфигурация ошибочна;
 - generator вправе выбирать object initializer, временные locals, немедленные
   assignments или другой эквивалентный lowering. Относительный порядок
   независимых member expressions и generated assignments, а также видимость
@@ -431,9 +433,10 @@ surface, из-за чего capability конкретного destination мог
   создаёт отдельную runtime pair;
 - любая eligible pair получает обе runtime operations и `Convert`.
   Destination независимо получает ровно одну форму `Construct`: structured при
-  наличии поддерживаемого constructor surface, direct при его отсутствии или
-  для opaque category. `Members` генерируется независимо при наличии
-  поддерживаемых body-members;
+  наличии поддерживаемого constructor surface, включая parameterless, direct
+  при его отсутствии или для opaque category. Body-members не влияют на этот
+  выбор; structured member-capability учитывает creation-time members, direct —
+  только post-construction assignable members, opaque не получает `Members`;
 - collection и projection capabilities отсутствуют в v0. Collections и tuples
   рассматриваются только после v0 на собственных продуктовых этапах;
 - `MappingMode` применяется к declarative и manual models. Null handling,
@@ -947,9 +950,10 @@ destination с состоянием, которого нет ни в source, н�
   local и условия от `result`. Только фактически result-dependent expressions
   требуют уже созданный non-null result; использование параметра одним rule
   не переводит весь plan в post-creation;
-- result-independent `init` и creation-time `required` rules допустимы в обеих
-  перегрузках. Diagnostic требуется только если конкретный creation-time rule
-  либо условие его применимости зависит от ещё не созданного result;
+- result-independent `init` и creation-time `required` rules structured surface
+  допустимы в обеих перегрузках. Diagnostic требуется только если конкретный
+  creation-time rule либо условие его применимости зависит от ещё не созданного
+  result; direct surface `init`-only member не генерирует;
 - `null` из direct `Construct` или `ByFactory()` терминален и завершает mapping до
   применения любых member rules;
 - snapshot, относительный порядок независимых rules и момент generated
