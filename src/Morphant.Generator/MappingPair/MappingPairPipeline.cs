@@ -51,12 +51,10 @@ internal static class MappingPairPipeline
 
             if (!MappingTypeEligibilityPolicy.IsEligible(
                     registration.SourceType,
-                    context.Compilation,
-                    mapperType) ||
+                    context.Compilation) ||
                 !MappingTypeEligibilityPolicy.IsEligible(
                     registration.DestinationType,
-                    context.Compilation,
-                    mapperType))
+                    context.Compilation))
             {
                 continue;
             }
@@ -82,7 +80,6 @@ internal static class MappingPairPipeline
                     DestinationCapabilityPolicy.Build(
                         registration.DestinationType,
                         context.Compilation,
-                        mapperType,
                         cancellationToken)));
         }
 

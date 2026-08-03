@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperTests;
 internal sealed class TypeMapperConventionOnlyBridgeTests
 {
     [Test]
-    public async Task Production_generator_emits_only_the_compilable_mapper_bridge()
+    public void Production_generator_composes_the_surface_with_the_mapper_bridge()
     {
         // lang=c#
         const string source =
@@ -88,12 +88,30 @@ namespace TestCase
 }
 """;
 
-        await ProductionGeneratorTest.RunAndAssert(
-            LanguageVersion.CSharp9,
-            source,
-            (
+        var generated = ConstructionSurfaceCompilationTest
+            .RunProductionAndGetGeneratedSources(
+                LanguageVersion.CSharp9,
+                source);
+
+        Assert.That(
+            generated.Keys,
+            Is.EquivalentTo(new[]
+            {
+                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs",
                 "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
-                expected
-            ));
+            }));
+        Assert.That(
+            NormalizeNewLines(generated[
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"]),
+            Is.EqualTo(NormalizeNewLines(expected)));
+    }
+
+    private static string NormalizeNewLines(string value)
+    {
+        return value
+            .Replace("\r\n", "\n")
+            .Replace('\r', '\n')
+            .TrimEnd('\n');
     }
 }

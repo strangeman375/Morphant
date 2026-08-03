@@ -109,11 +109,11 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 1, этап 2 — pair eligibility, canonical identity и capability model.**
+**Фаза 1, этап 3 — generated construction surface.**
 
 Статус: ожидает ревью.
 
-До его принятия этап 3 и все последующие этапы заблокированы.
+До его принятия этап 4 и все последующие этапы заблокированы.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -168,7 +168,7 @@ metadata — одной consumer-side проверкой, а стабильны�
 
 ### Этап 2. Pair eligibility, canonical identity и capability model
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — отделить допустимость mapping-пары от возможностей destination и
 создать единый источник решений для всех последующих pipelines.
@@ -196,8 +196,10 @@ Production scope:
 - для structured destination учитывать в member capability `set`, `init` и
   mutable fields; для direct destination — только обычные setters и mutable
   fields, включая `required`, но не `init`-only properties;
-- определять capabilities в реальном lexical context generated mapper-а,
-  включая accessibility и nameability;
+- определять eligibility и destination capabilities из общего generated
+  assembly-context. Pair-типы, constructors и destination members должны быть
+  доступны без private/protected-привилегий конкретного mapper-а; public и
+  доступный `internal` surface сохраняются;
 - представить capability result отдельной immutable incremental model, не
   зависящей от emitter-а.
 
@@ -219,7 +221,7 @@ capabilities, не повторяя symbol-policy самостоятельно.
 
 ### Этап 3. Generated construction surface
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — сгенерировать полный compile-time surface для structured и direct
 `Construct`, а также точный pair-specific `Convert`, пока без lowering в
@@ -247,6 +249,13 @@ Production scope:
   а также explicit `ConstructorParameter<T>` cast;
 - переиспользовать один generic plan original destination definition для
   closed constructed destinations;
+- дедуплицировать alpha-equivalent generic pair extensions. Их constraints
+  выводить только из source/destination generic definitions, не копируя
+  дополнительные mapper-specific constraints; generic construction plan при
+  этом точно воспроизводит constraints destination definition;
+- использовать общий assembly-stable constructor surface: private/protected
+  constructor не появляется только из-за lexical-привилегий конкретного
+  mapper-а;
 - перенести nullability/attributes/oblivious contract, `ObsoleteAttribute`,
   XML documentation, declaration order, namespace и hint-name laws из
   нормативного дизайна.
@@ -261,6 +270,8 @@ Production scope:
 - обе `Construct` overload arities, единственная `Convert` overload и
   normalized previous для nullable destinations;
 - nested/containing generic parameters и constraints;
+- alpha-equivalent pairs с одинаковыми definition-level, но различными
+  mapper-specific constraints;
 - deterministic ordering и collision-safe names.
 
 Результат этапа: IntelliSense показывает корректные `Construct` и `Convert`

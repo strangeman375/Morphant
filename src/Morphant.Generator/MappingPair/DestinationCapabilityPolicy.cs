@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
 namespace Morphant.Generator.MappingPair;
@@ -7,7 +8,6 @@ internal static class DestinationCapabilityPolicy
     public static MappingPairCapabilities Build(
         ITypeSymbol destinationType,
         Compilation compilation,
-        INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
         var destination = GetDestinationType(
@@ -17,17 +17,16 @@ internal static class DestinationCapabilityPolicy
         var isOpaque = IsOpaque(destination);
         var hasSupportedConstructor =
             !isOpaque &&
-            HasSupportedConstructor(
-                destination,
-                compilation,
-                mapperType,
-                cancellationToken);
+            !GetSupportedConstructors(
+                    destination,
+                    compilation,
+                    cancellationToken)
+                .IsDefaultOrEmpty;
         var hasMembers =
             !isOpaque &&
             HasSupportedMember(
                 destination,
                 compilation,
-                mapperType,
                 includeInitOnlyProperties: hasSupportedConstructor,
                 cancellationToken: cancellationToken);
 
@@ -40,7 +39,7 @@ internal static class DestinationCapabilityPolicy
             hasMembers);
     }
 
-    private static INamedTypeSymbol GetDestinationType(
+    internal static INamedTypeSymbol GetDestinationType(
         ITypeSymbol destinationType,
         Compilation compilation)
     {
@@ -58,7 +57,7 @@ internal static class DestinationCapabilityPolicy
             : namedType;
     }
 
-    private static bool IsOpaque(INamedTypeSymbol destinationType)
+    internal static bool IsOpaque(INamedTypeSymbol destinationType)
     {
         if (destinationType.TypeKind == TypeKind.Enum ||
             destinationType.SpecialType is
@@ -103,17 +102,18 @@ internal static class DestinationCapabilityPolicy
                "System.Range";
     }
 
-    private static bool HasSupportedConstructor(
+    internal static ImmutableArray<IMethodSymbol> GetSupportedConstructors(
         INamedTypeSymbol destinationType,
         Compilation compilation,
-        INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
         if (destinationType.TypeKind == TypeKind.Interface ||
             destinationType.IsAbstract)
         {
-            return false;
+            return ImmutableArray<IMethodSymbol>.Empty;
         }
+
+        var result = ImmutableArray.CreateBuilder<IMethodSymbol>();
 
         foreach (var constructor in destinationType.InstanceConstructors)
         {
@@ -121,29 +121,27 @@ internal static class DestinationCapabilityPolicy
 
             if (!compilation.IsSymbolAccessibleWithin(
                     constructor,
-                    mapperType) ||
+                    compilation.Assembly) ||
                 constructor.Parameters.Any(
                     parameter =>
                         parameter.RefKind != RefKind.None ||
                         parameter.Type.IsRefLikeType ||
                         !MappingTypeEligibilityPolicy.CanBeNamed(
                             parameter.Type,
-                            compilation,
-                            mapperType)))
+                            compilation)))
             {
                 continue;
             }
 
-            return true;
+            result.Add(constructor);
         }
 
-        return false;
+        return result.ToImmutable();
     }
 
     private static bool HasSupportedMember(
         INamedTypeSymbol destinationType,
         Compilation compilation,
-        INamedTypeSymbol mapperType,
         bool includeInitOnlyProperties,
         CancellationToken cancellationToken)
     {
@@ -151,13 +149,11 @@ internal static class DestinationCapabilityPolicy
             ? HasSupportedInterfaceMember(
                 destinationType,
                 compilation,
-                mapperType,
                 includeInitOnlyProperties,
                 cancellationToken)
             : HasSupportedClassMember(
                 destinationType,
                 compilation,
-                mapperType,
                 includeInitOnlyProperties,
                 cancellationToken);
     }
@@ -165,7 +161,6 @@ internal static class DestinationCapabilityPolicy
     private static bool HasSupportedClassMember(
         INamedTypeSymbol destinationType,
         Compilation compilation,
-        INamedTypeSymbol mapperType,
         bool includeInitOnlyProperties,
         CancellationToken cancellationToken)
     {
@@ -186,7 +181,6 @@ internal static class DestinationCapabilityPolicy
                     IsSupportedMember(
                         member,
                         compilation,
-                        mapperType,
                         includeInitOnlyProperties))
                 {
                     return true;
@@ -205,7 +199,6 @@ internal static class DestinationCapabilityPolicy
     private static bool HasSupportedInterfaceMember(
         INamedTypeSymbol destinationType,
         Compilation compilation,
-        INamedTypeSymbol mapperType,
         bool includeInitOnlyProperties,
         CancellationToken cancellationToken)
     {
@@ -261,7 +254,6 @@ internal static class DestinationCapabilityPolicy
                 if (IsSupportedMember(
                         member,
                         compilation,
-                        mapperType,
                         includeInitOnlyProperties))
                 {
                     return true;
@@ -352,7 +344,6 @@ internal static class DestinationCapabilityPolicy
     private static bool IsSupportedMember(
         ISymbol member,
         Compilation compilation,
-        INamedTypeSymbol mapperType,
         bool includeInitOnlyProperties)
     {
         if (member is IPropertySymbol property)
@@ -363,14 +354,13 @@ internal static class DestinationCapabilityPolicy
                    (includeInitOnlyProperties || !setter.IsInitOnly) &&
                    compilation.IsSymbolAccessibleWithin(
                        property,
-                       mapperType) &&
+                       compilation.Assembly) &&
                    compilation.IsSymbolAccessibleWithin(
                        setter,
-                       mapperType) &&
+                       compilation.Assembly) &&
                    MappingTypeEligibilityPolicy.CanBeNamed(
                        property.Type,
-                       compilation,
-                       mapperType);
+                       compilation);
         }
 
         return member is IFieldSymbol field &&
@@ -380,10 +370,9 @@ internal static class DestinationCapabilityPolicy
                !field.IsImplicitlyDeclared &&
                compilation.IsSymbolAccessibleWithin(
                    field,
-                   mapperType) &&
+                   compilation.Assembly) &&
                MappingTypeEligibilityPolicy.CanBeNamed(
                    field.Type,
-                   compilation,
-                   mapperType);
+                   compilation);
     }
 }

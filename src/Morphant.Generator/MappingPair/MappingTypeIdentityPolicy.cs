@@ -90,6 +90,28 @@ internal static class MappingTypeIdentityPolicy
         return true;
     }
 
+    public static string CreateAlphaEquivalentPairKey(
+        ITypeSymbol source,
+        ITypeSymbol destination)
+    {
+        var result = new StringBuilder();
+        var typeParameters =
+            new Dictionary<ITypeParameterSymbol, int>(
+                TypeParameterComparer.Instance);
+
+        AppendAlphaEquivalentKey(
+            source,
+            result,
+            typeParameters);
+        result.Append("->");
+        AppendAlphaEquivalentKey(
+            destination,
+            result,
+            typeParameters);
+
+        return result.ToString();
+    }
+
     public static bool CanPairsUnify(
         ITypeSymbol leftSource,
         ITypeSymbol leftDestination,
@@ -165,6 +187,113 @@ internal static class MappingTypeIdentityPolicy
             Normalize(namedType),
             key,
             displayName);
+    }
+
+    private static void AppendAlphaEquivalentKey(
+        ITypeSymbol type,
+        StringBuilder result,
+        Dictionary<ITypeParameterSymbol, int> typeParameters)
+    {
+        if (IsObjectLike(type))
+        {
+            result.Append("special:System.Object");
+            return;
+        }
+
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            result.Append("array(");
+            AppendAlphaEquivalentKey(
+                arrayType.ElementType,
+                result,
+                typeParameters);
+            result.Append(';')
+                .Append(arrayType.Rank)
+                .Append(';')
+                .Append(arrayType.IsSZArray)
+                .Append(')');
+            return;
+        }
+
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            if (!typeParameters.TryGetValue(
+                    typeParameter,
+                    out var ordinal))
+            {
+                ordinal = typeParameters.Count;
+                typeParameters.Add(typeParameter, ordinal);
+            }
+
+            result.Append("parameter:").Append(ordinal);
+            return;
+        }
+
+        if (type is not INamedTypeSymbol namedType)
+        {
+            result.Append(type.Kind)
+                .Append(':')
+                .Append(type.ToDisplayString());
+            return;
+        }
+
+        AppendAlphaEquivalentNamedKey(
+            Normalize(namedType),
+            result,
+            typeParameters);
+    }
+
+    private static void AppendAlphaEquivalentNamedKey(
+        INamedTypeSymbol type,
+        StringBuilder result,
+        Dictionary<ITypeParameterSymbol, int> typeParameters)
+    {
+        if (type.ContainingType is { } containingType)
+        {
+            AppendAlphaEquivalentNamedKey(
+                Normalize(containingType),
+                result,
+                typeParameters);
+            result.Append('+');
+        }
+        else
+        {
+            result.Append("named:[")
+                .Append(type.ContainingAssembly.Identity)
+                .Append("]:");
+
+            if (!type.ContainingNamespace.IsGlobalNamespace)
+            {
+                result.Append(type.ContainingNamespace.ToDisplayString())
+                    .Append('.');
+            }
+        }
+
+        result.Append(type.MetadataName);
+
+        if (type.TypeArguments.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        result.Append('<');
+
+        for (var index = 0;
+             index < type.TypeArguments.Length;
+             index++)
+        {
+            if (index > 0)
+            {
+                result.Append(',');
+            }
+
+            AppendAlphaEquivalentKey(
+                type.TypeArguments[index],
+                result,
+                typeParameters);
+        }
+
+        result.Append('>');
     }
 
     private static void AppendNamed(

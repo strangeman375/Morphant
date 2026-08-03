@@ -322,6 +322,42 @@ namespace TestCase
                 "global::TestCase.SafeDestination"));
     }
 
+    [Test]
+    public async Task Rejects_private_source_visible_only_to_its_nested_mapper()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class SafeDestination { }
+
+    public sealed class Container
+    {
+        private sealed class PrivateSource
+        {
+            [MorphantMapper]
+            public partial class TestMapper : TypeMapper
+            {
+                protected override void Configure(MapperBuilder builder) =>
+                    builder.Map<PrivateSource, SafeDestination>();
+            }
+        }
+    }
+}
+""";
+
+        await MappingPairGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            "TestCase.Container+PrivateSource+TestMapper",
+            hasUnifiablePairs: false);
+    }
+
     private static MappingPairExpectation Pair(
         string source,
         string destination)

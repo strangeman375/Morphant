@@ -425,7 +425,8 @@ surface, из-за чего capability конкретного destination мог
   ожидание deferred result, expression rebinding и другая специальная
   семантика не применяются;
 - технически исключены `void`, pointers/function pointers, ref-like, error,
-  anonymous/unnameable и недоступные generated lexical context типы;
+  anonymous/unnameable и типы, недоступные из общего generated
+  assembly-context без private/protected-привилегий конкретного mapper-а;
 - допустимы scalars, enums, nullable forms, custom class/struct/record,
   abstract/interface и constructed generics с известной верхнеуровневой
   nominal-формой; их arguments могут содержать type parameters. `dynamic`
@@ -437,6 +438,10 @@ surface, из-за чего capability конкретного destination мог
   при его отсутствии или для opaque category. Body-members не влияют на этот
   выбор; structured member-capability учитывает creation-time members, direct —
   только post-construction assignable members, opaque не получает `Members`;
+- destination constructor/member capabilities также вычисляются из общего
+  generated assembly-context. Поэтому одна destination definition имеет
+  стабильный surface во всех mapper-ах, даже если один из них вложен в тип и
+  вручную видит его private/protected symbols;
 - collection и projection capabilities отсутствуют в v0. Collections и tuples
   рассматриваются только после v0 на собственных продуктовых этапах;
 - `MappingMode` применяется к declarative и manual models. Null handling,
@@ -1015,7 +1020,7 @@ lifecycle остаётся в `Convert`, а общие hooks/middleware гара
   | Nullability | Nullable value/reference inputs, `AllowNull`/`DisallowNull`, oblivious context, outer wrapper только для допустимого explicit `null`, `null!` omission sentinel без ослабления annotation |
   | Constructors | Compiler probe для positional/named/mixed/optional/`params`, declaration order и точный `Unambiguous` без fallback |
   | Generated UX | `inheritdoc` и fallback docs, `ObsoleteAttribute`, stable overload/member order, C# 9 и deterministic generated files/hint names |
-  | Generics | Один plan на original destination definition с containing parameters и constraints; diagnostic потенциально унифицирующихся pair shapes |
+  | Generics | Один plan на original destination definition с containing parameters и constraints; один extension для alpha-equivalent pairs с constraints только из source/destination definitions; diagnostic потенциально унифицирующихся pair shapes |
   | Settings | Root не зависит от позиции; на одном level побеждает последний вызов, включая `Default`; assembly defaults только через compiler-visible MSBuild properties |
   | Conventions | Полная accessibility/hiding/inheritance matrix, exact body-member name, exact-then-unique-`OrdinalIgnoreCase` constructor parameter matching, warning-free implicit conversions и user-defined operators |
   | Type policy | Прежний opaque/direct scalar whitelist; exact distinction между runtime duplicate descriptors и compile-time generic interface conflict |

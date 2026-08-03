@@ -9,13 +9,11 @@ internal static class MappingTypeEligibilityPolicy
 
     public static bool IsEligible(
         ITypeSymbol type,
-        Compilation compilation,
-        INamedTypeSymbol mapperType)
+        Compilation compilation)
     {
         if (!CanBeUsedAsGenericArgument(
                 type,
-                compilation,
-                mapperType))
+                compilation))
         {
             return false;
         }
@@ -48,19 +46,16 @@ internal static class MappingTypeEligibilityPolicy
 
     public static bool CanBeNamed(
         ITypeSymbol type,
-        Compilation compilation,
-        INamedTypeSymbol mapperType)
+        Compilation compilation)
     {
         return CanBeUsedAsGenericArgument(
             type,
-            compilation,
-            mapperType);
+            compilation);
     }
 
     private static bool CanBeUsedAsGenericArgument(
         ITypeSymbol type,
-        Compilation compilation,
-        INamedTypeSymbol mapperType)
+        Compilation compilation)
     {
         if (type.TypeKind is
                 TypeKind.Error or
@@ -81,8 +76,7 @@ internal static class MappingTypeEligibilityPolicy
         {
             return CanBeUsedAsGenericArgument(
                 arrayType.ElementType,
-                compilation,
-                mapperType);
+                compilation);
         }
 
         if (type is not INamedTypeSymbol namedType ||
@@ -93,7 +87,7 @@ internal static class MappingTypeEligibilityPolicy
             !namedType.CanBeReferencedByName ||
             !compilation.IsSymbolAccessibleWithin(
                 namedType,
-                mapperType))
+                compilation.Assembly))
         {
             return false;
         }
@@ -101,8 +95,7 @@ internal static class MappingTypeEligibilityPolicy
         if (namedType.ContainingType is { } containingType &&
             !CanBeUsedAsGenericArgument(
                 containingType,
-                compilation,
-                mapperType))
+                compilation))
         {
             return false;
         }
@@ -111,8 +104,7 @@ internal static class MappingTypeEligibilityPolicy
             typeArgument =>
                 CanBeUsedAsGenericArgument(
                     typeArgument,
-                    compilation,
-                    mapperType));
+                    compilation));
     }
 
     private static ITypeSymbol UnwrapNullableValueType(ITypeSymbol type)

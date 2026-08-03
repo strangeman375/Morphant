@@ -600,7 +600,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Evaluates_accessibility_from_the_generated_mapper_lexical_context()
+    public async Task Uses_the_common_generated_assembly_context_for_accessibility()
     {
         // lang=c#
         const string source =
@@ -636,8 +636,8 @@ namespace TestCase
             new MappingPairExpectation(
                 "global::TestCase.Source",
                 "global::TestCase.Destination",
-                Structured: true,
-                Members: true));
+                Structured: false,
+                Members: false));
     }
 
     [Test]

@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.MapperBuilderMap;
 using Morphant.Generator.Settings;
@@ -22,6 +23,10 @@ public sealed class MorphantGenerator : IIncrementalGenerator
         var mappingPairs = MappingPairPipeline.Build(
             compilationContext,
             mapInfos);
+        ConstructionSurfacePipeline.Register(
+            context,
+            compilationContext,
+            mappingPairs);
         TypeMapperPipeline.Register(
             context,
             compilationContext,
