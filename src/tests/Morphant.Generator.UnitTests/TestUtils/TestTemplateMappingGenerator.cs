@@ -35,7 +35,7 @@ internal sealed class TestTemplateMappingGenerator : IIncrementalGenerator
         TemplateExtensionPipeline.Register(
             context,
             destinationTypes);
-        TypeMapperPipeline.Register(
+        LegacyTypeMapperPipeline.Register(
             context,
             compilationContext,
             assemblySettings,

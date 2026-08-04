@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -11,6 +12,49 @@ internal static class ConventionMemberMappingPlanner
         ITypeSymbol? destination,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        return Build(
+            sourceType,
+            destination,
+            compilation,
+            mapperType,
+            mapperType,
+            includeInitOnlyProperties: true,
+            hasMemberCapability: true,
+            excludeGeneratedPlanMemberNames: false,
+            cancellationToken);
+    }
+
+    public static ConventionMemberMappingPlan Build(
+        ITypeSymbol sourceType,
+        ITypeSymbol? destination,
+        MappingPairCapabilities capabilities,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        return Build(
+            sourceType,
+            destination,
+            compilation,
+            mapperType,
+            compilation.Assembly,
+            capabilities.StructuredConstruction,
+            capabilities.Members,
+            excludeGeneratedPlanMemberNames: true,
+            cancellationToken);
+    }
+
+    private static ConventionMemberMappingPlan Build(
+        ITypeSymbol sourceType,
+        ITypeSymbol? destination,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        ISymbol destinationAccessWithin,
+        bool includeInitOnlyProperties,
+        bool hasMemberCapability,
+        bool excludeGeneratedPlanMemberNames,
         CancellationToken cancellationToken)
     {
         if (destination is null)
@@ -52,11 +96,17 @@ internal static class ConventionMemberMappingPlanner
             var isRequired = IsRequiredInstanceMember(
                 memberGroup);
 
-            if (TryBuildWritableMember(
+            if (!hasMemberCapability ||
+                (excludeGeneratedPlanMemberNames &&
+                 IsGeneratedPlanMemberName(
+                     memberGroup.Name,
+                     destination)) ||
+                TryBuildWritableMember(
                     memberGroup,
                     destination,
                     compilation,
-                    mapperType) is not { } writableMember ||
+                    destinationAccessWithin,
+                    includeInitOnlyProperties) is not { } writableMember ||
                 !sourceMembers.TryGetValue(
                     writableMember.Name,
                     out var sourceMember))
@@ -629,7 +679,8 @@ internal static class ConventionMemberMappingPlanner
         EffectiveMemberGroup memberGroup,
         ITypeSymbol destination,
         CSharpCompilation compilation,
-        INamedTypeSymbol mapperType)
+        ISymbol destinationAccessWithin,
+        bool includeInitOnlyProperties)
     {
         foreach (var member in memberGroup.Members)
         {
@@ -641,16 +692,17 @@ internal static class ConventionMemberMappingPlanner
                     property.ReturnsByRefReadonly ||
                     !property.ExplicitInterfaceImplementations.IsEmpty ||
                     property.SetMethod is not { } setter ||
+                    !includeInitOnlyProperties && setter.IsInitOnly ||
                     !IsAccessible(
                         property,
                         destination,
                         compilation,
-                        mapperType) ||
+                        destinationAccessWithin) ||
                     !IsAccessible(
                         setter,
                         destination,
                         compilation,
-                        mapperType))
+                        destinationAccessWithin))
                 {
                     continue;
                 }
@@ -671,7 +723,7 @@ internal static class ConventionMemberMappingPlanner
                     field,
                     destination,
                     compilation,
-                    mapperType))
+                    destinationAccessWithin))
             {
                 return new WritableMember(
                     field.Name,
@@ -687,12 +739,33 @@ internal static class ConventionMemberMappingPlanner
         ISymbol symbol,
         ITypeSymbol throughType,
         CSharpCompilation compilation,
-        INamedTypeSymbol mapperType)
+        ISymbol within)
     {
         return compilation.IsSymbolAccessibleWithin(
             symbol,
-            mapperType,
+            within,
             throughType);
+    }
+
+    private static bool IsGeneratedPlanMemberName(
+        string memberName,
+        ITypeSymbol destination)
+    {
+        if (destination is not INamedTypeSymbol namedDestination)
+        {
+            return false;
+        }
+
+        var planTypeName = GeneratedPlanNaming.BuildMembersTypeName(
+            namedDestination.OriginalDefinition);
+
+        return memberName == planTypeName ||
+               memberName == "Clone" ||
+               memberName == "EqualityContract" ||
+               memberName == "Equals" ||
+               memberName == "GetHashCode" ||
+               memberName == "PrintMembers" ||
+               memberName == "ToString";
     }
 
     private static bool IsRequiredInstanceMember(

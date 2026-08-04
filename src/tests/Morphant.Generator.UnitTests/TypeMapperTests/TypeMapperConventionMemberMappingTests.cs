@@ -996,7 +996,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<TSource, Outer<int>.Destination<decimal>>();
+            builder.Map<ISource<decimal>, Outer<int>.Destination<decimal>>();
             builder.Map<StructSource, Outer<int>.Destination<int>>();
             builder.Map<RecordSource, Outer<int>.Destination<string>>();
         }
@@ -1013,13 +1013,13 @@ namespace TestCase
 namespace TestCase
 {
     public partial class TestMapper<TSource, TConstraint> :
-        global::Morphant.ITypeMapper<TSource, global::TestCase.Outer<int>.Destination<decimal>>,
+        global::Morphant.ITypeMapper<global::TestCase.ISource<decimal>, global::TestCase.Outer<int>.Destination<decimal>>,
         global::Morphant.ITypeMapper<global::TestCase.StructSource, global::TestCase.Outer<int>.Destination<int>>,
         global::Morphant.ITypeMapper<global::TestCase.RecordSource, global::TestCase.Outer<int>.Destination<string>>
     {
         /// <inheritdoc/>
-        global::TestCase.Outer<int>.Destination<decimal> global::Morphant.ITypeMapper<TSource, global::TestCase.Outer<int>.Destination<decimal>>.Map(
-            TSource? source,
+        global::TestCase.Outer<int>.Destination<decimal> global::Morphant.ITypeMapper<global::TestCase.ISource<decimal>, global::TestCase.Outer<int>.Destination<decimal>>.Map(
+            global::TestCase.ISource<decimal>? source,
             global::Morphant.Context.MappingContext context)
         {
             if (source is null)
@@ -1031,8 +1031,8 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Outer<int>.Destination<decimal> global::Morphant.ITypeMapper<TSource, global::TestCase.Outer<int>.Destination<decimal>>.Map(
-            TSource? source,
+        global::TestCase.Outer<int>.Destination<decimal> global::Morphant.ITypeMapper<global::TestCase.ISource<decimal>, global::TestCase.Outer<int>.Destination<decimal>>.Map(
+            global::TestCase.ISource<decimal>? source,
             global::TestCase.Outer<int>.Destination<decimal>? destination,
             global::Morphant.Context.MappingContext context)
         {
@@ -1052,7 +1052,7 @@ namespace TestCase
         }
 
         private global::TestCase.Outer<int>.Destination<decimal> MapNewImpl(
-            TSource source,
+            global::TestCase.ISource<decimal> source,
             global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Outer<int>.Destination<decimal>()

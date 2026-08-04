@@ -3,6 +3,7 @@ using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -34,12 +35,39 @@ internal static class ConventionConstructorMappingPlanner
         ITypeSymbol sourceType,
         ITypeSymbol? destination,
         ConventionMemberMappingPlan memberMappings,
+        MappingPairCapabilities capabilities,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        if (!capabilities.StructuredConstruction)
+        {
+            return null;
+        }
+
+        return Build(
+            sourceType,
+            destination,
+            memberMappings,
+            [],
+            [],
+            compilation,
+            mapperType,
+            cancellationToken,
+            useAssemblyStableConstructorSurface: true);
+    }
+
+    public static ConventionConstructorMappingPlan? Build(
+        ITypeSymbol sourceType,
+        ITypeSymbol? destination,
+        ConventionMemberMappingPlan memberMappings,
         ImmutableArray<TemplateConstructorParameterMappingModel>
             explicitMappings,
         ImmutableArray<TemplateRuntimeLocalPlan> runtimeLocals,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool useAssemblyStableConstructorSurface = false)
     {
         if (destination is ITypeParameterSymbol typeParameter)
         {
@@ -59,6 +87,7 @@ internal static class ConventionConstructorMappingPlanner
                 namedDestination,
                 compilation,
                 mapperType,
+                useAssemblyStableConstructorSurface,
                 cancellationToken) is not { } constructor)
         {
             return null;
@@ -352,8 +381,18 @@ internal static class ConventionConstructorMappingPlanner
         INamedTypeSymbol destination,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        bool useAssemblyStableConstructorSurface,
         CancellationToken cancellationToken)
     {
+        if (useAssemblyStableConstructorSurface)
+        {
+            return TrySelectConstructor(
+                DestinationCapabilityPolicy.GetSupportedConstructors(
+                    destination,
+                    compilation,
+                    cancellationToken));
+        }
+
         IMethodSymbol? parameterlessConstructor = null;
         IMethodSymbol? parameterizedConstructor = null;
 
@@ -369,6 +408,32 @@ internal static class ConventionConstructorMappingPlanner
                 continue;
             }
 
+            if (constructor.Parameters.IsEmpty)
+            {
+                parameterlessConstructor = constructor;
+                continue;
+            }
+
+            if (parameterizedConstructor is not null)
+            {
+                return null;
+            }
+
+            parameterizedConstructor = constructor;
+        }
+
+        return parameterizedConstructor ??
+               parameterlessConstructor;
+    }
+
+    private static IMethodSymbol? TrySelectConstructor(
+        ImmutableArray<IMethodSymbol> constructors)
+    {
+        IMethodSymbol? parameterlessConstructor = null;
+        IMethodSymbol? parameterizedConstructor = null;
+
+        foreach (var constructor in constructors)
+        {
             if (constructor.Parameters.IsEmpty)
             {
                 parameterlessConstructor = constructor;

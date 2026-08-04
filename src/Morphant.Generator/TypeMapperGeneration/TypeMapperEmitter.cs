@@ -176,7 +176,7 @@ internal static class TypeMapperEmitter
             { } mapNewImplMethodName)
         {
             writer.Line(
-                $"=> {mapNewImplMethodName}(source, context);");
+                $"=> {BuildMapNewImplCall(mapping, mapNewImplMethodName)};");
             writer.Unindent();
             return;
         }
@@ -274,7 +274,7 @@ internal static class TypeMapperEmitter
             { } mapNewImplMethodName)
         {
             writer.Line(
-                $"return {mapNewImplMethodName}(source, context);");
+                $"return {BuildMapNewImplCall(mapping, mapNewImplMethodName)};");
             return;
         }
 
@@ -896,9 +896,14 @@ internal static class TypeMapperEmitter
             $"{methodName}(");
         writer.Indent();
         writer.Line(
-            $"{mapping.NonNullSourceTypeName} source,");
-        writer.Line(
-            "global::Morphant.Context.MappingContext context)");
+            $"{mapping.NonNullSourceTypeName} source" +
+            (mapping.MapNewImplUsesContext ? "," : ")"));
+
+        if (mapping.MapNewImplUsesContext)
+        {
+            writer.Line(
+                "global::Morphant.Context.MappingContext context)");
+        }
         writer.Unindent();
         writer.Line("{");
         writer.Indent();
@@ -909,6 +914,15 @@ internal static class TypeMapperEmitter
 
         writer.Unindent();
         writer.Line("}");
+    }
+
+    private static string BuildMapNewImplCall(
+        TypeMapperMappingModel mapping,
+        string methodName)
+    {
+        return mapping.MapNewImplUsesContext
+            ? $"{methodName}(source, context)"
+            : $"{methodName}(source)";
     }
 
     private static void WriteArgumentNullException(

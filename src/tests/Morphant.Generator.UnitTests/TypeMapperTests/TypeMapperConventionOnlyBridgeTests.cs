@@ -218,7 +218,7 @@ namespace TestCase
                 return default!;
             }
 
-            return MapNewImpl(source, context);
+            return Create(source);
         }
 
         /// <inheritdoc/>
@@ -234,15 +234,14 @@ namespace TestCase
 
             if (destination is null)
             {
-                return MapNewImpl(source, context);
+                return Create(source);
             }
 
             return destination;
         }
 
-        private global::TestCase.Destination MapNewImpl(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
+        private global::TestCase.Destination Create(
+            global::TestCase.Source source)
         {
             return new global::TestCase.Destination();
         }

@@ -643,7 +643,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.IInterfaceDestination? MapNewImpl1(
+        private global::TestCase.IInterfaceDestination MapNewImpl1(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
@@ -816,7 +816,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Outer<int>.NestedDestination<string?>? MapNewImpl(
+        private global::TestCase.Outer<int>.NestedDestination<string?> MapNewImpl(
             global::TestCase.ISource<string?> source,
             global::Morphant.Context.MappingContext context)
         {

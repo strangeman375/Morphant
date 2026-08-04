@@ -109,11 +109,11 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 1, этап 5 — pair configuration discovery и semantic model.**
+**Фаза 2, этап 6 — convention-only `Create` и `Update`.**
 
 Статус: ожидает ревью.
 
-До его принятия этап 6 и все последующие этапы заблокированы.
+До его принятия этап 7 и все последующие этапы заблокированы.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -325,7 +325,7 @@ surface, но ещё не исполняется generated mapper-ом.
 
 ### Этап 5. Pair configuration discovery и semantic model
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — заменить прежнюю Template-centric registration model на единую модель
 pair configuration.
@@ -386,7 +386,7 @@ API; observable реакция на invalid states остаётся поздне
 
 ### Этап 6. Convention-only `Create` и `Update`
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — перенести уже проверенный convention mapping на новую result/previous
 модель до добавления explicit plans.

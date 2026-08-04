@@ -1,13 +1,12 @@
 using Microsoft.CodeAnalysis;
-using Morphant.Generator.MappingPair;
-using Morphant.Generator.MapperBuilderMap;
+using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
-using Morphant.Generator.TypeMapperGeneration;
 using Morphant.Generator.TypeMapperConfigure;
+using Morphant.Generator.TypeMapperGeneration;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
 
-internal sealed class TestTypeMapperGenerator : IIncrementalGenerator
+internal sealed class TestConventionTypeMapperGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -17,17 +16,14 @@ internal sealed class TestTypeMapperGenerator : IIncrementalGenerator
         var configureInfos = TypeMapperConfigurePipeline.Build(
             context,
             compilationContext);
-        var mapInfos = MapperBuilderMapPipeline.Build(
+        var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var mappingPairs = MappingPairPipeline.Build(
-            compilationContext,
-            mapInfos);
 
-        LegacyTypeMapperPipeline.Register(
+        TypeMapperPipeline.Register(
             context,
             compilationContext,
             assemblySettings,
-            mappingPairs);
+            pairConfigurations);
     }
 }
