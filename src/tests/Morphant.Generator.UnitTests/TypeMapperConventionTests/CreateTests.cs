@@ -91,7 +91,7 @@ namespace TestCase
                 return default!;
             }
 
-            return Create(source);
+            return CreateImpl(source);
         }
 
         /// <inheritdoc/>
@@ -107,7 +107,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create(source);
+                return CreateImpl(source);
             }
 
             destination.Name = source.Name;
@@ -115,7 +115,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination Create(
+        private global::TestCase.Destination CreateImpl(
             global::TestCase.Source source)
         {
             return new global::TestCase.Destination()

@@ -171,7 +171,7 @@ internal static class TypeMapperPipeline
             var createMethodName = RequiresCreateMethod(
                     mapping,
                     effectiveSettings)
-                ? AllocateName("Create", usedGeneratedMethodNames)
+                ? AllocateName("CreateImpl", usedGeneratedMethodNames)
                 : null;
 
             mappings.Add(
@@ -442,7 +442,6 @@ internal static class TypeMapperPipeline
     {
         return mapping.DestinationCanBeNull &&
                settings.IsNullSourceHandlingValid &&
-               settings.SupportsMapNew &&
                settings.SupportsMapExisting &&
                settings.NullDestinationHandling ==
                    NullDestinationHandlingValue.Create;

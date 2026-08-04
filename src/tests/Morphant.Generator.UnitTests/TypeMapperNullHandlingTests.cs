@@ -245,7 +245,7 @@ namespace TestCase
                 throw new global::System.ArgumentNullException(nameof(source));
             }
 
-            return Create(source);
+            return CreateImpl(source);
         }
 
         /// <inheritdoc/>
@@ -261,7 +261,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create(source);
+                return CreateImpl(source);
             }
 
             destination.Value = source.Value;
@@ -269,7 +269,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.ThrowDestination Create(
+        private global::TestCase.ThrowDestination CreateImpl(
             global::TestCase.Source source)
         {
             return new global::TestCase.ThrowDestination()
@@ -442,7 +442,7 @@ namespace TestCase
 
             var sourceValue = source.Value;
 
-            return Create(sourceValue);
+            return CreateImpl(sourceValue);
         }
 
         /// <inheritdoc/>
@@ -460,7 +460,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create(sourceValue);
+                return CreateImpl(sourceValue);
             }
 
             var destinationValue = destination.Value;
@@ -469,7 +469,7 @@ namespace TestCase
             return destinationValue;
         }
 
-        private global::TestCase.NullableDestination? Create(
+        private global::TestCase.NullableDestination? CreateImpl(
             global::TestCase.NullableSource sourceValue)
         {
             return new global::TestCase.NullableDestination()
@@ -536,7 +536,7 @@ namespace TestCase
         global::TestCase.ReferenceDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>.Map(
             global::TestCase.ValueSource source,
             global::Morphant.Context.MappingContext context)
-            => Create1(source);
+            => CreateImpl1(source);
 
         /// <inheritdoc/>
         global::TestCase.ReferenceDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>.Map(
@@ -546,7 +546,7 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return Create1(source);
+                return CreateImpl1(source);
             }
 
             destination.Value = source.Value;
@@ -554,7 +554,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.ReferenceDestination Create1(
+        private global::TestCase.ReferenceDestination CreateImpl1(
             global::TestCase.ValueSource source)
         {
             return new global::TestCase.ReferenceDestination()
@@ -719,7 +719,7 @@ namespace TestCase
                 return default!;
             }
 
-            return Create(source);
+            return CreateImpl(source);
         }
 
         /// <inheritdoc/>
@@ -735,7 +735,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create(source);
+                return CreateImpl(source);
             }
 
             destination.Value = source.Value;
@@ -743,7 +743,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.RootDestination Create(
+        private global::TestCase.RootDestination CreateImpl(
             global::TestCase.Source source)
         {
             return new global::TestCase.RootDestination()

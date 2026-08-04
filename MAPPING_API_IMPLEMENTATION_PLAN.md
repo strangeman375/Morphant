@@ -486,9 +486,11 @@ Production scope:
 
 Реализовано: effective settings разрешаются по полной precedence chain,
 `MappingMode` остаётся единым operation gate, null-source обрабатывается до
-destination, а `NullDestinationHandling.Create` использует no-previous branch
-внутри `Update` без зависимости от public `Create`. Declarative source
-нормализуется единым policy для generated surface и executable mapper-а;
+destination, а `NullDestinationHandling.Create` использует отдельный
+`CreateImpl` helper внутри `Update` без зависимости от public `Create`. Helper
+генерируется и для `MappingMode.Update`, когда public `Create` отключён.
+Declarative source нормализуется единым policy для generated surface и
+executable mapper-а;
 `Nullable<TSource>` разворачивается в underlying `TSource`, а для definitely
 non-nullable values проверки не генерируются. Invalid effective settings
 сохраняются как детерминированные unsupported operations до diagnostics.

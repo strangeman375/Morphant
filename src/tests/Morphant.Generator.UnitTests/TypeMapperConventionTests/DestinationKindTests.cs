@@ -105,7 +105,7 @@ namespace TestCase
                 return default!;
             }
 
-            return Create(source);
+            return CreateImpl(source);
         }
 
         /// <inheritdoc/>
@@ -121,7 +121,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create(source);
+                return CreateImpl(source);
             }
 
             destination.Value = source.Value;
@@ -129,7 +129,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.RecordDestination Create(
+        private global::TestCase.RecordDestination CreateImpl(
             global::TestCase.NumberSource source)
         {
             return new global::TestCase.RecordDestination()
@@ -148,7 +148,7 @@ namespace TestCase
                 return default!;
             }
 
-            return Create1(source);
+            return CreateImpl1(source);
         }
 
         /// <inheritdoc/>
@@ -164,7 +164,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create1(source);
+                return CreateImpl1(source);
             }
 
             destination.Value = source.Value;
@@ -172,7 +172,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Box<string> Create1(
+        private global::TestCase.Box<string> CreateImpl1(
             global::TestCase.TextSource source)
         {
             return new global::TestCase.Box<string>()
@@ -329,7 +329,7 @@ namespace TestCase
                 return default!;
             }
 
-            return Create(source);
+            return CreateImpl(source);
         }
 
         /// <inheritdoc/>
@@ -345,7 +345,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create(source);
+                return CreateImpl(source);
             }
 
             var destinationValue = destination.Value;
@@ -354,7 +354,7 @@ namespace TestCase
             return destinationValue;
         }
 
-        private global::TestCase.Destination? Create(
+        private global::TestCase.Destination? CreateImpl(
             global::TestCase.Source source)
         {
             return new global::TestCase.Destination()
@@ -532,7 +532,7 @@ namespace TestCase
                 return default!;
             }
 
-            return Create(source);
+            return CreateImpl(source);
         }
 
         /// <inheritdoc/>
@@ -548,7 +548,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create(source);
+                return CreateImpl(source);
             }
 
             destination.Value = source.Value;
@@ -556,7 +556,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.IInterfaceDestination Create(
+        private global::TestCase.IInterfaceDestination CreateImpl(
             global::TestCase.Source source)
         {
             throw new global::System.NotSupportedException(
@@ -573,7 +573,7 @@ namespace TestCase
                 return default!;
             }
 
-            return Create1(source);
+            return CreateImpl1(source);
         }
 
         /// <inheritdoc/>
@@ -589,7 +589,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return Create1(source);
+                return CreateImpl1(source);
             }
 
             destination.Value = source.Value;
@@ -597,7 +597,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.AbstractDestination Create1(
+        private global::TestCase.AbstractDestination CreateImpl1(
             global::TestCase.Source source)
         {
             throw new global::System.NotSupportedException(
