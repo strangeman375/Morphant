@@ -109,11 +109,11 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 1, этап 3 — generated construction surface.**
+**Фаза 1, этап 4 — generated member surface.**
 
 Статус: ожидает ревью.
 
-До его принятия этап 4 и все последующие этапы заблокированы.
+До его принятия этап 5 и все последующие этапы заблокированы.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -221,7 +221,7 @@ capabilities, не повторяя symbol-policy самостоятельно.
 
 ### Этап 3. Generated construction surface
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — сгенерировать полный compile-time surface для structured и direct
 `Construct`, а также точный pair-specific `Convert`, пока без lowering в
@@ -280,7 +280,7 @@ TypeMapper пока не исполняет эти lambdas.
 
 ### Этап 4. Generated member surface
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — сгенерировать самостоятельный body-member plan нового дизайна.
 
@@ -300,7 +300,11 @@ Production scope:
 - сохранить object initializer и record `with` как compile-time composition
   surface;
 - перенести documentation, attributes, generic sharing, namespace и hint-name
-  contracts.
+  contracts;
+- выводить plan и fluent methods раздельными `Member` / `MemberExtension`
+  artifacts; extension artifact дополняет общую
+  `MorphantGeneratedMappingExtensions` partial class и не изменяет
+  construction/manual artifacts предыдущего этапа.
 
 Тестовый scope:
 

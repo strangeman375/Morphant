@@ -2,13 +2,14 @@ using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using Morphant.Generator.ConstructionSurface.ConstructionPlan;
 using Morphant.Generator.ConstructionSurface.PairConfiguration;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.MemberSurface.MemberPlan;
+using Morphant.Generator.MemberSurface.PairConfiguration;
 
-namespace Morphant.Generator.ConstructionSurface;
+namespace Morphant.Generator.MemberSurface;
 
-internal static class ConstructionSurfacePipeline
+internal static class MemberSurfacePipeline
 {
     public static void Register(
         IncrementalGeneratorInitializationContext context,
@@ -24,8 +25,7 @@ internal static class ConstructionSurfacePipeline
                     source.Right.Compilation,
                     cancellationToken))
             .WithTrackingName(
-                MorphantGeneratorStageNames
-                    .BuildConstructionSurfaceRequests);
+                MorphantGeneratorStageNames.BuildMemberSurfaceRequests);
 
         context.RegisterSourceOutput(
             requests,
@@ -35,7 +35,7 @@ internal static class ConstructionSurfacePipeline
                     SourceText.From(request.Source, Encoding.UTF8)));
     }
 
-    private static ImmutableArray<ConstructionSurfaceRequest> BuildRequests(
+    private static ImmutableArray<MemberSurfaceRequest> BuildRequests(
         ImmutableArray<MapperMappingPairModel> mapperModels,
         Compilation compilation,
         CancellationToken cancellationToken)
@@ -43,10 +43,9 @@ internal static class ConstructionSurfacePipeline
         var pairs = CanonicalMappingPairSelector.Select(
             mapperModels,
             cancellationToken);
-        var requests =
-            ImmutableArray.CreateBuilder<ConstructionSurfaceRequest>();
+        var requests = ImmutableArray.CreateBuilder<MemberSurfaceRequest>();
 
-        AddConstructionPlanRequests(
+        AddMemberPlanRequests(
             pairs,
             compilation,
             requests,
@@ -60,26 +59,27 @@ internal static class ConstructionSurfacePipeline
         return requests.ToImmutable();
     }
 
-    private static void AddConstructionPlanRequests(
+    private static void AddMemberPlanRequests(
         ImmutableArray<MappingPairModel> pairs,
         Compilation compilation,
-        ImmutableArray<ConstructionSurfaceRequest>.Builder requests,
+        ImmutableArray<MemberSurfaceRequest>.Builder requests,
         CancellationToken cancellationToken)
     {
         var definitions =
-            new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
+            new Dictionary<string, MemberPlanDefinition>(
+                StringComparer.Ordinal);
 
         foreach (var pair in pairs)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!pair.Capabilities.StructuredConstruction)
+            if (!pair.Capabilities.Members)
             {
                 continue;
             }
 
-            var destination =
-                DestinationCapabilityPolicy.GetDestinationType(
+            var destination = DestinationCapabilityPolicy
+                .GetDestinationType(
                     pair.DestinationType,
                     compilation);
             var definition = destination.OriginalDefinition;
@@ -88,7 +88,11 @@ internal static class ConstructionSurfacePipeline
 
             if (!definitions.ContainsKey(identity))
             {
-                definitions.Add(identity, definition);
+                definitions.Add(
+                    identity,
+                    new MemberPlanDefinition(
+                        definition,
+                        pair.Capabilities.StructuredConstruction));
             }
         }
 
@@ -100,35 +104,28 @@ internal static class ConstructionSurfacePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var metadataName =
-                SymbolNameHelper.GetFullMetadataName(definition.Value);
-            var planNamespace =
-                GeneratedPlanNaming.BuildNamespace(
-                    definition.Value);
-            var planTypeName =
-                GeneratedPlanNaming.BuildConstructionTypeName(
-                    definition.Value);
-            var model = ConstructionPlanModelBuilder.Build(
-                definition.Value,
-                planNamespace,
-                planTypeName,
+            var metadataName = SymbolNameHelper.GetFullMetadataName(
+                definition.Value.DestinationType);
+            var model = MemberPlanModelBuilder.Build(
+                definition.Value.DestinationType,
+                definition.Value.IncludeInitOnlyProperties,
                 compilation,
                 cancellationToken);
             var hintName = GeneratedSourceHintName.Create(
-                "Construction",
+                "Member",
                 hintNameAllocator.Allocate(metadataName));
 
             requests.Add(
-                new ConstructionSurfaceRequest(
+                new MemberSurfaceRequest(
                     hintName,
-                    ConstructionPlanEmitter.Emit(model)));
+                    MemberPlanEmitter.Emit(model)));
         }
     }
 
     private static void AddPairConfigurationRequests(
         ImmutableArray<MappingPairModel> pairs,
         Compilation compilation,
-        ImmutableArray<ConstructionSurfaceRequest>.Builder requests,
+        ImmutableArray<MemberSurfaceRequest>.Builder requests,
         CancellationToken cancellationToken)
     {
         var hintNameAllocator = new HintNamePartAllocator();
@@ -137,21 +134,26 @@ internal static class ConstructionSurfacePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            if (!pair.Capabilities.Members)
+            {
+                continue;
+            }
+
             var stableIdentity =
                 RemoveGlobalAlias(pair.Identity.Source.DisplayName) +
                 "__" +
                 RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
             var hintName = GeneratedSourceHintName.Create(
-                "MappingExtension",
+                "MemberExtension",
                 hintNameAllocator.Allocate(stableIdentity));
             var model = PairConfigurationModelBuilder.Build(
                 pair,
                 compilation);
 
             requests.Add(
-                new ConstructionSurfaceRequest(
+                new MemberSurfaceRequest(
                     hintName,
-                    PairConfigurationEmitter.Emit(model)));
+                    MemberConfigurationEmitter.Emit(model)));
         }
     }
 
@@ -160,7 +162,11 @@ internal static class ConstructionSurfacePipeline
         return value.Replace("global::", string.Empty);
     }
 
-    private readonly record struct ConstructionSurfaceRequest(
+    private readonly record struct MemberPlanDefinition(
+        INamedTypeSymbol DestinationType,
+        bool IncludeInitOnlyProperties);
+
+    private readonly record struct MemberSurfaceRequest(
         string HintName,
         string Source);
 }

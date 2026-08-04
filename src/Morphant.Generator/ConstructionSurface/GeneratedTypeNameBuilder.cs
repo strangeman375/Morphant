@@ -10,13 +10,14 @@ internal static class GeneratedTypeNameBuilder
         ITypeSymbol type,
         IReadOnlyDictionary<ITypeParameterSymbol, string>? typeParameterNames =
             null,
-        bool escapeTypeParameterNames = true)
+        bool escapeTypeParameterNames = true,
+        bool normalizeDynamic = true)
     {
         var parts = type.ToDisplayParts(
             SymbolDisplayFormats.FullyQualifiedNullable);
 
         return string.Concat(parts.Select(part =>
-            part.Symbol is IDynamicTypeSymbol
+            part.Symbol is IDynamicTypeSymbol && normalizeDynamic
                 ? "object"
                 : part.Symbol is ITypeParameterSymbol typeParameter &&
                   typeParameterNames is not null &&

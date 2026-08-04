@@ -16,6 +16,7 @@ internal static class MorphantGeneratorStageNames
     public const string BuildMapperBuilderMapInfos = nameof(BuildMapperBuilderMapInfos);
     public const string BuildMappingPairModels = nameof(BuildMappingPairModels);
     public const string BuildConstructionSurfaceRequests = nameof(BuildConstructionSurfaceRequests);
+    public const string BuildMemberSurfaceRequests = nameof(BuildMemberSurfaceRequests);
 
     public const string BuildTemplateSurface = nameof(BuildTemplateSurface);
     public const string BuildTemplateTypeModels = nameof(BuildTemplateTypeModels);

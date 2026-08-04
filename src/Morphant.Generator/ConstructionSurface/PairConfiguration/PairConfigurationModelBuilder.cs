@@ -51,10 +51,17 @@ internal static class PairConfigurationModelBuilder
                 previousDestinationType,
                 typeParameterNames),
             pair.Capabilities.StructuredConstruction
-                ? BuildConstructionPlanTypeName(
+                ? BuildPlanTypeName(
                     (INamedTypeSymbol)previousDestinationType,
-                    typeParameterNames)
+                    typeParameterNames,
+                    GeneratedPlanNaming.BuildConstructionTypeName)
                 : destinationTypeName,
+            pair.Capabilities.Members
+                ? BuildPlanTypeName(
+                    (INamedTypeSymbol)previousDestinationType,
+                    typeParameterNames,
+                    GeneratedPlanNaming.BuildMembersTypeName)
+                : null,
             PairTypeParameterModelBuilder.Build(
                 sourceType,
                 destinationType,
@@ -115,15 +122,15 @@ internal static class PairConfigurationModelBuilder
             : type;
     }
 
-    private static string BuildConstructionPlanTypeName(
+    private static string BuildPlanTypeName(
         INamedTypeSymbol destinationType,
-        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterNames)
+        IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterNames,
+        Func<INamedTypeSymbol, string> buildTypeName)
     {
         var definition = destinationType.OriginalDefinition;
         var planNamespace =
-            ConstructionSurfaceNaming.BuildPlanNamespace(definition);
-        var planTypeName =
-            ConstructionSurfaceNaming.BuildConstructionTypeName(definition);
+            GeneratedPlanNaming.BuildNamespace(definition);
+        var planTypeName = buildTypeName(definition);
         var arguments = CollectTypeArguments(destinationType);
 
         return "global::" +

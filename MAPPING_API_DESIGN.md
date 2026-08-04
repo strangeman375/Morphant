@@ -874,6 +874,10 @@ factory или default initialization. Для previous он сохраняет �
 - static/const members, indexers, ref-return properties, explicit interface
   implementations, fixed buffers, нечитаемые source-members, get-only
   destination properties и readonly destination fields не участвуют;
+- имена, зарезервированные самим generated record (`Clone`,
+  `EqualityContract`, `Equals`, `GetHashCode`, `PrintMembers`, `ToString` и имя
+  `DestinationMembers`-типа), не образуют member rule: C# не позволяет
+  объявить одноимённый record-member с требуемой плоской DSL-формой;
 - destination member включается в общий generated `Members` surface только
   при доступности из assembly-context без привилегий конкретного mapper-а:
   доступны public и допустимые `internal`, но не private/protected members;
@@ -1947,6 +1951,13 @@ definition.
 `Morphant.Generated.<ArtifactKind>.<StableIdentity>.g.cs`; stable hash
 добавляется только при реальном case-insensitive collision после
 sanitization, а не ко всем artifacts по умолчанию.
+
+Physical artifacts разделены по ответственности: construction plan использует
+kind `Construction`, member plan — `Member`, `Construct` / `Convert` methods —
+`MappingExtension`, а `Members` methods — `MemberExtension`. Оба extension-
+artifact-а дополняют одну internal partial class
+`MorphantGeneratedMappingExtensions`; разделение файлов не создаёт второй
+пользовательский fluent surface.
 
 Plan types находятся в destination-relative namespace `.Morphant.Generated`.
 Дополнительное слово `Morphant` в `DestinationConstruction`,

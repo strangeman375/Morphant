@@ -522,6 +522,56 @@ namespace TestCase
     }
 
     [Test]
+    public async Task Excludes_names_reserved_by_the_generated_member_record()
+    {
+        // lang=c#
+        const string source =
+"""
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source { }
+
+    public sealed class ReservedOnly
+    {
+        public int Clone { get; set; }
+        public int ReservedOnlyMembers { get; set; }
+        public new int ToString { get; set; }
+    }
+
+    public sealed class ReservedAndValue
+    {
+        public int Clone { get; set; }
+        public int Value { get; set; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, ReservedOnly>();
+            builder.Map<Source, ReservedAndValue>();
+        }
+    }
+}
+""";
+
+        const string sourceType = "global::TestCase.Source";
+
+        await MappingPairGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            "TestCase.TestMapper",
+            hasUnifiablePairs: false,
+            Pair(sourceType, "ReservedOnly", true, false),
+            Pair(sourceType, "ReservedAndValue", true, true));
+    }
+
+    [Test]
     public async Task Direct_destinations_expose_only_post_construction_members()
     {
         // lang=c#

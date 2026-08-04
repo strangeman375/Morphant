@@ -53,7 +53,7 @@ internal static class ConstructionPlanModelBuilder
         return new ConstructionPlanModel(
             planNamespace,
             planTypeName,
-            ConstructionSurfaceNaming.BuildConstructorParametersTypeName(
+            GeneratedPlanNaming.BuildConstructorParametersTypeName(
                 destinationType),
             GeneratedTypeNameBuilder.Build(
                 destinationType,

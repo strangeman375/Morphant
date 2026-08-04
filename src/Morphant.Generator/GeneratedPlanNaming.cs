@@ -1,11 +1,11 @@
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 
-namespace Morphant.Generator.ConstructionSurface;
+namespace Morphant.Generator;
 
-internal static class ConstructionSurfaceNaming
+internal static class GeneratedPlanNaming
 {
-    public static string BuildPlanNamespace(
+    public static string BuildNamespace(
         INamedTypeSymbol destinationDefinition)
     {
         var destinationNamespace =
@@ -51,5 +51,11 @@ internal static class ConstructionSurfaceNaming
         INamedTypeSymbol destinationDefinition)
     {
         return destinationDefinition.Name + "ConstructorParameters";
+    }
+
+    public static string BuildMembersTypeName(
+        INamedTypeSymbol destinationDefinition)
+    {
+        return destinationDefinition.Name + "Members";
     }
 }
