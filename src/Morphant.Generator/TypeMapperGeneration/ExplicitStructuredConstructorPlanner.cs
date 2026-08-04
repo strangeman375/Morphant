@@ -152,8 +152,6 @@ internal static class ExplicitStructuredConstructorPlanner
             ImmutableArray.CreateBuilder<
                 TypeMapperConstructorArgumentMappingModel>(
                 planArguments.Length);
-        var ignoredParameterNames =
-            ImmutableArray.CreateBuilder<string>();
         var sourceMembers =
             ConventionMemberMappingPlanner.BuildReadableMembers(
                 sourceType,
@@ -208,8 +206,6 @@ internal static class ExplicitStructuredConstructorPlanner
                         return null;
                     }
 
-                    ignoredParameterNames.Add(
-                        destinationParameter.Name);
                     continue;
                 }
 
@@ -285,8 +281,7 @@ internal static class ExplicitStructuredConstructorPlanner
 
         return new ExplicitStructuredConstructorPlan(
             destinationConstructor,
-            argumentModels,
-            ignoredParameterNames.ToImmutable());
+            argumentModels);
     }
 
     private static SyntaxTree? BuildProbeTree(
@@ -723,5 +718,4 @@ internal static class ExplicitStructuredConstructorPlanner
 
 internal readonly record struct ExplicitStructuredConstructorPlan(
     IMethodSymbol Constructor,
-    ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments,
-    ImmutableArray<string> IgnoredParameterNames);
+    ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments);

@@ -680,7 +680,6 @@ internal static class ConventionConstructorMappingPlanner
         ConventionMemberMappingPlan memberMappings,
         IMethodSymbol constructor,
         ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
-        ImmutableArray<string> ignoredParameterNames,
         INamedTypeSymbol mapperType,
         string nonNullSourceName)
     {
@@ -695,18 +694,11 @@ internal static class ConventionConstructorMappingPlanner
 
         var correspondingMemberIndexes = new HashSet<int>();
 
-        foreach (var parameter in constructor.Parameters)
+        foreach (var argument in arguments)
         {
-            if (ignoredParameterNames.Contains(
-                    parameter.Name,
-                    StringComparer.Ordinal))
-            {
-                continue;
-            }
-
             if (FindCorrespondingMemberIndex(
                     memberMappings.MapNew,
-                    parameter.Name) is { } memberIndex)
+                    argument.ParameterName) is { } memberIndex)
             {
                 correspondingMemberIndexes.Add(memberIndex);
             }

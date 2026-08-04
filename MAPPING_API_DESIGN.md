@@ -586,6 +586,14 @@ reachable no-previous ветка требует configured direct `Construct`. �
 direct surface lambda возвращает либо `previous.Value`, либо готовый
 replacement непосредственно.
 
+Structured plan специализируется отдельно для заведомо отсутствующего
+previous в `Create` и существующего previous в обычном `Update`. Проверки
+`previous.HasValue` и защищённые ими обращения к `previous.Value` сворачиваются
+по известной operation, но только когда выбранная ветка доказуемо
+недостижима. Short-circuit-порядок и side effects остальных частей условия
+сохраняются. Незащищённый `return previous`, достижимый в `Create`, остаётся
+ошибочной веткой и не заменяется скрытым construction fallback.
+
 Никакого скрытого fallback между различными ветками `Construct` нет.
 
 ### 6.7. Порядок вычислений creation-plan
@@ -601,6 +609,16 @@ source-only lambda при существующем previous и выражени�
 после них — оставшиеся automatic arguments в порядке параметров выбранного
 конструктора. `Ignore()` не вычисляет значение, а `Auto()` и `Map(...)`
 занимают позицию соответствующего rule.
+
+Фактически сформированный constructor argument занимает одноимённый
+body-member только относительно неявной member-convention. Для этого
+используется exact name, затем unique `OrdinalIgnoreCase`, как и при обычном
+constructor mapping. Опущенный optional/`params` parameter и `Ignore()` не
+занимают member, поскольку argument в constructor не передаётся. Explicit
+`Members` rule остаётся авторитетным и применяется даже при соответствующем
+constructor argument. `required` member также остаётся в initializer, если
+выбранный constructor не помечен `[SetsRequiredMembers]`; общее automatic
+значение при этом вычисляется один раз и переиспользуется.
 
 Plan-shaping locals, условия и selector-ы выполняются в своей позиции и только
 на выбранном execution path. Если значение уже вычислено в declarative local,
@@ -2578,12 +2596,17 @@ diagnostic не должно вводить скрытый fallback на дру�
     bound subexpression, нужное обеим частям на выбранном пути, вычисляется
     один раз и разделяется между ними. Невыбранные ветки, неприменимые rules и
     operation-specific значения другого пути не вычисляются; ordinary direct,
-    factory и manual blocks остаются вне cross-plan sharing.
+    factory и manual blocks остаются вне cross-plan sharing. Previous-aware
+    structured plan специализируется по известному наличию previous для
+    `Create` и `Update`; удаляются только доказанно недостижимые ветки с
+    сохранением short-circuit и side effects.
 38. Explicit constructor arguments вычисляются в порядке записи до вызова
     constructor. Result-independent значения для `init` и creation-time
     `required` могут участвовать в structured initializer независимо от формы
     `Members`; result-dependent expressions выполняются только после создания
-    non-null result.
+    non-null result. Фактически переданный constructor argument подавляет
+    только соответствующую неявную member-convention; explicit `Members`
+    сильнее, а опущенный optional/`params` parameter member не занимает.
 39. Generator анализирует зависимость каждого member rule, declarative local и
     условия от `result` прямо и транзитивно. Использование `result` одним rule
     не переводит весь `Members` в post-creation; форма перегрузки не входит в

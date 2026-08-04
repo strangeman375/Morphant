@@ -526,6 +526,12 @@ Production scope:
   explicit wrapper casts;
 - вычислять только выбранную branch, а explicit arguments — ровно один раз
   слева направо в порядке записи;
+- специализировать previous-aware plan отдельно для известного отсутствия
+  previous в `Create` и наличия destination в обычном `Update`, удаляя только
+  доказанно недостижимые ветки с сохранением short-circuit и side effects;
+- считать занятым для неявной body-member convention только фактически
+  сформированный одноимённый constructor argument; explicit `Members` сильнее,
+  а required initializer сохраняется без `[SetsRequiredMembers]`;
 - не выполнять fallback к другому constructor при невозможности выбранного.
 
 Тестовый scope:
@@ -535,6 +541,8 @@ Production scope:
 - explicit, convention, previous и conditional construction branches;
 - overloads, named/mixed args, optional, `params`, casts и ambiguity inputs;
 - branch reachability, side-effect counts и evaluation order;
+- provided/omitted constructor parameters, corresponding body-members и
+  required shared values;
 - class/struct/record/nullable/generic destinations.
 
 Результат этапа: structured `Construct` полностью определяет выбор base result;
@@ -549,6 +557,19 @@ casts, positional/named/mixed argument order, optional и целиком пер�
 `params` array без fallback к другому constructor-у. Каждая runtime-ветка
 строит отдельный constructor/previous/unsupported leaf, поэтому невыбранные
 arguments не вычисляются, а выбранные выполняются ровно один раз слева направо.
+
+Previous-aware tree строится отдельно для `CreateImpl` и `UpdateImpl`:
+известные `previous.HasValue` и защищённые `previous.Value` специализируются до
+emission, поэтому обычный Create не содержит синтетический `Option.None` и
+недостижимую previous-ветку, а Update работает напрямую с `destination`.
+Составные short-circuit conditions сохраняют порядок и side effects;
+действительно достижимый выбор previous в Create остаётся unsupported path.
+
+Фактически сформированный constructor argument подавляет только соответствующую
+неявную member-convention. Опущенный optional/`params` parameter и `Ignore()`
+member не занимают; required member без `[SetsRequiredMembers]` остаётся в
+initializer и разделяет automatic value с constructor argument. Явный
+`Members` rule должен оставаться сильнее этого подавления на этапе 10.
 
 По согласованному уточнению в этап 8 перенесён минимальный declarative block
 control flow: блоки, состоящие из `if` / `else` и завершающих `return`, можно
@@ -613,8 +634,9 @@ Production scope:
 - lowering explicit member expressions к фактически выбранному result;
 - поддержать `Auto()` / `Auto<T>()`, `Ignore()` / `Ignore<T>()` и неуказанные
   members;
-- explicit rule занимает member раньше convention; `Ignore()` сохраняет
-  значение выбранного result;
+- explicit rule занимает member раньше convention и остаётся авторитетным при
+  одноимённом constructor argument; `Ignore()` сохраняет значение выбранного
+  result;
 - применять обычные conventions только к незанятым members;
 - реализовать `MemberSelection.Auto` и `Explicit` с pair/root/assembly/default
   resolution;

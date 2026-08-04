@@ -7,6 +7,167 @@ namespace Morphant.Generator.UnitTests.TypeMapperStructuredConstructTests;
 internal sealed class ExplicitConstructorTests
 {
     [Test]
+    public void Suppresses_member_convention_only_for_a_provided_constructor_parameter()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+using Morphant.Context;
+using System;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public int Id { get; init; }
+
+        public string Name { get; init; } = string.Empty;
+    }
+
+    public sealed class Destination
+    {
+        public Destination(
+            int id,
+            string name = "constructor-default")
+        {
+            Id = id + 1;
+            Name = name;
+        }
+
+        public int Id { get; set; }
+
+        public string Name { get; set; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Construct(source => new(source.Id));
+    }
+
+    public static class Scenario
+    {
+        public static void Verify()
+        {
+            var mapper =
+                (ITypeMapper<Source, Destination>)new TestMapper();
+            var source = new Source
+            {
+                Id = 17,
+                Name = "mapped"
+            };
+            var context = default(MappingContext);
+            var created = mapper.Map(source, context);
+            var previous = new Destination(0);
+            var updated = mapper.Map(source, previous, context);
+
+            if (created.Id != 18 ||
+                created.Name != "mapped" ||
+                !ReferenceEquals(previous, updated) ||
+                updated.Id != 17 ||
+                updated.Name != "mapped")
+            {
+                throw new InvalidOperationException(
+                    "Constructor arguments occupied the wrong convention members.");
+            }
+        }
+    }
+}
+""";
+
+        StructuredConstructTypeMapperGeneratorTest.RunAndExecute(
+            LanguageVersion.CSharp9,
+            source,
+            "TestCase.Scenario");
+    }
+
+    [Test]
+    public void Keeps_a_required_corresponding_member_and_reuses_its_automatic_value()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+using Morphant.Context;
+using System;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        private int reads;
+
+        public int Value
+        {
+            get
+            {
+                reads++;
+                return 61;
+            }
+        }
+
+        public int Reads => reads;
+    }
+
+    public sealed class Destination
+    {
+        public Destination(int value)
+        {
+            ConstructorValue = value;
+        }
+
+        public int ConstructorValue { get; }
+
+        public required int Value { get; init; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Construct(_ => new(Auto()));
+    }
+
+    public static class Scenario
+    {
+        public static void Verify()
+        {
+            var mapper =
+                (ITypeMapper<Source, Destination>)new TestMapper();
+            var source = new Source();
+            var destination = mapper.Map(
+                source,
+                default(MappingContext));
+
+            if (destination.ConstructorValue != 61 ||
+                destination.Value != 61 ||
+                source.Reads != 1)
+            {
+                throw new InvalidOperationException(
+                    "A required corresponding member was not initialized from the shared value.");
+            }
+        }
+    }
+}
+""";
+
+        StructuredConstructTypeMapperGeneratorTest.RunAndExecute(
+            LanguageVersion.CSharp11,
+            source,
+            "TestCase.Scenario");
+    }
+
+    [Test]
     public void Executes_source_only_constructor_for_Create_and_null_Update()
     {
         // lang=c#

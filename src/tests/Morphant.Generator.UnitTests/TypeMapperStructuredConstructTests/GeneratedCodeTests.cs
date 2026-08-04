@@ -104,21 +104,11 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::Morphant.Option<global::TestCase.Destination> previous = global::Morphant.Option<global::TestCase.Destination>.None;
-
-            if (previous.HasValue && previous.Value.Id == source.Id)
+            return new global::TestCase.Destination(
+                id: source.Id)
             {
-                throw new global::System.NotSupportedException(
-                    "The configured Construct selected an unavailable previous destination.");
-            }
-            else
-            {
-                return new global::TestCase.Destination(
-                    id: source.Id)
-                {
-                    Name = source.Name
-                };
-            }
+                Name = source.Name
+            };
         }
 
         private global::TestCase.Destination UpdateImpl(
@@ -126,9 +116,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::Morphant.Option<global::TestCase.Destination> previous = global::Morphant.Option<global::TestCase.Destination>.Some(destination);
-
-            if (previous.HasValue && previous.Value.Id == source.Id)
+            if (destination.Id == source.Id)
             {
                 destination.Name = source.Name;
 

@@ -11,7 +11,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     private readonly IParameterSymbol _sourceParameter;
     private readonly string _sourceName;
     private readonly IParameterSymbol? _previousParameter;
-    private readonly string _previousName;
+    private readonly PreviousExpressionSubstitution? _previousSubstitution;
     private readonly SyntaxNode _transferScope;
 
     private ConstructExpressionRewriter(
@@ -20,7 +20,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IParameterSymbol sourceParameter,
         string sourceName,
         IParameterSymbol? previousParameter,
-        string previousName,
+        PreviousExpressionSubstitution? previousSubstitution,
         SyntaxNode transferScope)
     {
         _semanticModel = semanticModel;
@@ -28,7 +28,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _sourceParameter = sourceParameter;
         _sourceName = sourceName;
         _previousParameter = previousParameter;
-        _previousName = previousName;
+        _previousSubstitution = previousSubstitution;
         _transferScope = transferScope;
     }
 
@@ -39,7 +39,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IParameterSymbol sourceParameter,
         string sourceName,
         IParameterSymbol? previousParameter,
-        string previousName,
+        PreviousExpressionSubstitution? previousSubstitution,
         SyntaxNode transferScope,
         CancellationToken cancellationToken,
         out string rewrittenExpression)
@@ -63,7 +63,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     sourceParameter,
                     sourceName,
                     previousParameter,
-                    previousName,
+                    previousSubstitution,
                     transferScope)
                 .Visit(expression)!;
 
@@ -174,6 +174,27 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     public override SyntaxNode? VisitMemberAccessExpression(
         MemberAccessExpressionSyntax node)
     {
+        if (_previousParameter is not null &&
+            _previousSubstitution is { } previous &&
+            IsPreviousParameterExpression(node.Expression))
+        {
+            if (node.Name.Identifier.ValueText == "HasValue")
+            {
+                return SyntaxFactory.LiteralExpression(
+                        previous.HasValue
+                            ? SyntaxKind.TrueLiteralExpression
+                            : SyntaxKind.FalseLiteralExpression)
+                    .WithTriviaFrom(node);
+            }
+
+            if (node.Name.Identifier.ValueText == "Value")
+            {
+                return SyntaxFactory.ParseExpression(
+                        previous.ValueExpression)
+                    .WithTriviaFrom(node);
+            }
+        }
+
         var symbol = GetReferencedSymbol(node);
 
         if (symbol is IAliasSymbol
@@ -213,7 +234,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 symbol,
                 _previousParameter))
         {
-            return SyntaxFactory.IdentifierName(_previousName)
+            return SyntaxFactory.ParseExpression(
+                    _previousSubstitution?.OptionExpression ??
+                    node.Identifier.Text)
                 .WithTriviaFrom(node);
         }
 
@@ -396,6 +419,36 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             : null;
     }
 
+    private bool IsPreviousParameterExpression(
+        ExpressionSyntax expression)
+    {
+        while (true)
+        {
+            switch (expression)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    expression = parenthesized.Expression;
+                    continue;
+
+                case PostfixUnaryExpressionSyntax
+                {
+                    RawKind:
+                        (int)SyntaxKind.SuppressNullableWarningExpression,
+                    Operand: var operand
+                }:
+                    expression = operand;
+                    continue;
+            }
+
+            break;
+        }
+
+        return expression is IdentifierNameSyntax identifier &&
+               SymbolEqualityComparer.Default.Equals(
+                   GetReferencedSymbol(identifier),
+                   _previousParameter);
+    }
+
     private static bool HasOnlyTransferableCaptures(
         SyntaxNode expression,
         SyntaxNode transferScope,
@@ -509,3 +562,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         } && ReferenceEquals(memberName, node);
     }
 }
+
+internal readonly record struct PreviousExpressionSubstitution(
+    string OptionExpression,
+    string ValueExpression,
+    bool HasValue);
