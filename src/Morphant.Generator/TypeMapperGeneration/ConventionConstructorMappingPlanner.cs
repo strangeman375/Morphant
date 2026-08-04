@@ -154,7 +154,7 @@ internal static class ConventionConstructorMappingPlanner
             namedDestination);
     }
 
-    private static string BuildTargetValueLocalTypeName(
+    internal static string BuildTargetValueLocalTypeName(
         IParameterSymbol parameter)
     {
         return parameter.Type
@@ -164,7 +164,7 @@ internal static class ConventionConstructorMappingPlanner
                 SymbolDisplayFormats.FullyQualifiedNullable);
     }
 
-    private static IMethodSymbol? TrySelectConstructor(
+    internal static IMethodSymbol? TrySelectConstructor(
         ImmutableArray<IMethodSymbol> constructors)
     {
         IMethodSymbol? parameterlessConstructor = null;
@@ -190,13 +190,13 @@ internal static class ConventionConstructorMappingPlanner
                parameterlessConstructor;
     }
 
-    private static bool CanOmit(IParameterSymbol parameter)
+    internal static bool CanOmit(IParameterSymbol parameter)
     {
         return parameter.IsOptional ||
                parameter.IsParams;
     }
 
-    private static ConventionReadableMember?
+    internal static ConventionReadableMember?
         TryFindSourceMember(
             ImmutableArray<ConventionReadableMember> sourceMembers,
             string parameterName)
@@ -597,7 +597,7 @@ internal static class ConventionConstructorMappingPlanner
         return result;
     }
 
-    private static string MakeUniqueSourceValueLocalName(
+    internal static string MakeUniqueSourceValueLocalName(
         string sourceMemberName,
         HashSet<string> usedNames)
     {
@@ -607,7 +607,7 @@ internal static class ConventionConstructorMappingPlanner
             usedNames);
     }
 
-    private static string MakeUniqueValueLocalName(
+    internal static string MakeUniqueValueLocalName(
         string prefix,
         string valueName,
         HashSet<string> usedNames)
@@ -635,7 +635,7 @@ internal static class ConventionConstructorMappingPlanner
         }
     }
 
-    private static int? FindCorrespondingMemberIndex(
+    internal static int? FindCorrespondingMemberIndex(
         ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
         string parameterName)
     {
@@ -675,7 +675,179 @@ internal static class ConventionConstructorMappingPlanner
         return result;
     }
 
-    private static bool HasSetsRequiredMembersAttribute(
+    internal static ConventionConstructorMappingPlan? BuildExplicitPlan(
+        ITypeSymbol destination,
+        ConventionMemberMappingPlan memberMappings,
+        IMethodSymbol constructor,
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
+        ImmutableArray<string> ignoredParameterNames,
+        INamedTypeSymbol mapperType,
+        string nonNullSourceName)
+    {
+        var setsRequiredMembers =
+            HasSetsRequiredMembersAttribute(constructor);
+
+        if (memberMappings.HasUnmappedRequiredMembers &&
+            !setsRequiredMembers)
+        {
+            return null;
+        }
+
+        var correspondingMemberIndexes = new HashSet<int>();
+
+        foreach (var parameter in constructor.Parameters)
+        {
+            if (ignoredParameterNames.Contains(
+                    parameter.Name,
+                    StringComparer.Ordinal))
+            {
+                continue;
+            }
+
+            if (FindCorrespondingMemberIndex(
+                    memberMappings.MapNew,
+                    parameter.Name) is { } memberIndex)
+            {
+                correspondingMemberIndexes.Add(memberIndex);
+            }
+        }
+
+        var correspondingArgumentIndexes =
+            new List<int>[memberMappings.MapNew.Length];
+
+        for (var argumentIndex = 0;
+             argumentIndex < arguments.Length;
+             argumentIndex++)
+        {
+            if (FindCorrespondingMemberIndex(
+                    memberMappings.MapNew,
+                    arguments[argumentIndex].ParameterName) is not
+                { } memberIndex)
+            {
+                continue;
+            }
+
+            correspondingArgumentIndexes[memberIndex] ??=
+                new List<int>();
+            correspondingArgumentIndexes[memberIndex]!
+                .Add(argumentIndex);
+        }
+
+        var mapNew =
+            ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
+        var sharedValues =
+            new List<(int MemberIndex, int ArgumentIndex)>();
+
+        for (var index = 0;
+             index < memberMappings.MapNew.Length;
+             index++)
+        {
+            var mapping = memberMappings.MapNew[index];
+
+            if (!correspondingMemberIndexes.Contains(index) ||
+                mapping.ExplicitValueExpression is not null ||
+                mapping.IsRequired && !setsRequiredMembers)
+            {
+                if (correspondingMemberIndexes.Contains(index) &&
+                    mapping.ExplicitValueExpression is null &&
+                    mapping.IsRequired &&
+                    !setsRequiredMembers &&
+                    correspondingArgumentIndexes[index] is
+                        { Count: 1 } argumentIndexes)
+                {
+                    var argumentIndex = argumentIndexes[0];
+                    var argument = arguments[argumentIndex];
+
+                    if (argument.ExplicitValueExpression is null &&
+                        StringComparer.Ordinal.Equals(
+                            argument.SourceMemberName,
+                            mapping.SourceMemberName))
+                    {
+                        sharedValues.Add(
+                            (mapNew.Count, argumentIndex));
+                    }
+                }
+
+                mapNew.Add(mapping);
+            }
+        }
+
+        var argumentModels = arguments.ToArray();
+
+        if (sharedValues.Count > 0)
+        {
+            var lastSharedArgumentIndex =
+                sharedValues.Max(static value => value.ArgumentIndex);
+            var usedValueLocalNames =
+                BuildUsedValueLocalNames(mapperType);
+
+            usedValueLocalNames.Add(nonNullSourceName);
+            usedValueLocalNames.Add("destination");
+            usedValueLocalNames.Add("previous");
+
+            for (var argumentIndex = 0;
+                 argumentIndex <= lastSharedArgumentIndex;
+                 argumentIndex++)
+            {
+                var argument = argumentModels[argumentIndex];
+
+                argumentModels[argumentIndex] =
+                    argument with
+                    {
+                        ValueLocalName =
+                            argument.ExplicitValueExpression is not null
+                                ? MakeUniqueValueLocalName(
+                                    "construct",
+                                    argument.ParameterName,
+                                    usedValueLocalNames)
+                                : MakeUniqueSourceValueLocalName(
+                                    argument.SourceMemberName,
+                                    usedValueLocalNames)
+                    };
+            }
+
+            foreach (var sharedValue in sharedValues)
+            {
+                var memberMapping = mapNew[sharedValue.MemberIndex];
+
+                mapNew[sharedValue.MemberIndex] =
+                    memberMapping with
+                    {
+                        SourceValueLocalName =
+                            argumentModels[sharedValue.ArgumentIndex]
+                                .ValueLocalName
+                    };
+            }
+        }
+
+        return new ConventionConstructorMappingPlan(
+            new TypeMapperConstructorMappingModel(
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    destination),
+                argumentModels.ToImmutableArray()),
+            mapNew.ToImmutable());
+    }
+
+    internal static string BuildExplicitValueLocalTypeName(
+        IParameterSymbol parameter)
+    {
+        var nullableAnnotation =
+            parameter.Type.IsReferenceType ||
+            parameter.Type is ITypeParameterSymbol
+            {
+                HasValueTypeConstraint: false,
+                HasUnmanagedTypeConstraint: false
+            }
+                ? NullableAnnotation.Annotated
+                : parameter.NullableAnnotation;
+
+        return parameter.Type
+            .WithNullableAnnotation(nullableAnnotation)
+            .ToDisplayString(
+                SymbolDisplayFormats.FullyQualifiedNullable);
+    }
+
+    internal static bool HasSetsRequiredMembersAttribute(
         IMethodSymbol constructor)
     {
         foreach (var attribute in constructor.GetAttributes())
@@ -692,7 +864,7 @@ internal static class ConventionConstructorMappingPlanner
         return false;
     }
 
-    private static bool AreSameConstructor(
+    internal static bool AreSameConstructor(
         IMethodSymbol left,
         IMethodSymbol right)
     {

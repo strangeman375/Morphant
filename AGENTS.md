@@ -60,10 +60,11 @@
   scenarios that compile generated assemblies, execute generated mappers, or
   validate the composed production generator belong in a dedicated
   integration-test project. Every current call through
-  `ConventionTypeMapperGeneratorTest.RunAndExecute`, together with the
-  production-composition test, is a temporary mixed slice and must be moved
-  when that project is introduced; do not mistake its current location for
-  the final boundary.
+  `ConventionTypeMapperGeneratorTest.RunAndExecute` or
+  `StructuredConstructTypeMapperGeneratorTest.RunAndExecute`, together with
+  the production-composition test, is a temporary mixed slice and must be
+  moved when that project is introduced; do not mistake its current location
+  for the final boundary.
 
 ## Generated code
 

@@ -335,6 +335,15 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        if (mapping.UnsupportedExceptionMessage is
+            { } unsupportedMappingMessage)
+        {
+            WriteUnsupportedMappingStatement(
+                writer,
+                unsupportedMappingMessage);
+            return;
+        }
+
         if (mapping.MapNewUnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
@@ -929,6 +938,15 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        if (mapping.UnsupportedExceptionMessage is
+            { } unsupportedMappingMessage)
+        {
+            WriteUnsupportedMappingStatement(
+                writer,
+                unsupportedMappingMessage);
+            return;
+        }
+
         if (mapping.MapExistingUnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
@@ -942,6 +960,24 @@ internal static class TypeMapperEmitter
             { } directExpression)
         {
             writer.Line($"return {directExpression};");
+            return;
+        }
+
+        if (mapping.MapNewFactory is { } factory)
+        {
+            WriteFactoryMapNewStatements(
+                writer,
+                mapping,
+                factory);
+            return;
+        }
+
+        if (mapping.MapNewConstructor is { } constructor)
+        {
+            WriteConstructorMapNewStatements(
+                writer,
+                mapping,
+                constructor);
             return;
         }
 

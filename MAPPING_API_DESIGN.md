@@ -400,9 +400,14 @@ Source-only structured `Construct` концептуально эквивален
 
 ```csharp
 Construct((source, previous) =>
-    previous.HasValue
-        ? previous
-        : ConstructFromSource(source));
+{
+    if (previous.HasValue)
+    {
+        return previous;
+    }
+
+    return ConstructFromSource(source);
+});
 ```
 
 Source-only direct `Construct` имеет ту же семантику, но возвращает настоящий
@@ -416,9 +421,13 @@ Construct((source, previous) =>
 ```
 
 Эта небольшая синтаксическая асимметрия намеренна. Structured lambda выбирает
-ветку creation-plan, поэтому `Option<TDestination>` неявно преобразуется в
-`DestinationConstruction`. Direct lambda уже обязана вернуть `TDestination`, поэтому
-после проверки `HasValue` явно извлекается `previous.Value`. Отдельный
+ветку creation-plan, поэтому отдельный `return previous` неявно преобразует
+`Option<TDestination>` в `DestinationConstruction`. Block-форма также сохраняет
+target typing `new(...)` в C# 9; conditional expression с `previous` и
+target-typed `new(...)` вместо этого пытается типизировать `new(...)` как
+`Option<TDestination>` и не компилируется. Direct lambda уже обязана вернуть
+`TDestination`, поэтому после проверки `HasValue` явно извлекается
+`previous.Value`. Отдельный
 `DirectConstruction<T>`, implicit conversion `Option<T> -> T`, `AsResult()` и
 `UsePrevious()` не вводятся.
 
@@ -768,11 +777,16 @@ rules допустимы и в трёхпараметрической перег
 ```csharp
 builder.Map<CustomerDto, Customer>()
     .Construct((source, previous) =>
-        previous.HasValue &&
-        previous.Value.TenantId == source.TenantId &&
-        !previous.Value.IsFrozen
-            ? previous
-            : new(source.Id, source.TenantId))
+    {
+        if (previous.HasValue &&
+            previous.Value.TenantId == source.TenantId &&
+            !previous.Value.IsFrozen)
+        {
+            return previous;
+        }
+
+        return new(source.Id, source.TenantId);
+    })
     .Members((source, previous) => new()
     {
         Name = source.Name,
@@ -2242,13 +2256,18 @@ builder.Map<UserDto, User>()
 ```csharp
 builder.Map<CustomerDto, Customer>()
     .Construct((source, previous) =>
-        previous.HasValue &&
-        previous.Value.TenantId == source.TenantId &&
-        !previous.Value.IsFrozen
-            ? previous
-            : new(
-                source.Id,
-                source.TenantId))
+    {
+        if (previous.HasValue &&
+            previous.Value.TenantId == source.TenantId &&
+            !previous.Value.IsFrozen)
+        {
+            return previous;
+        }
+
+        return new(
+            source.Id,
+            source.TenantId);
+    })
     .Members((source, previous) => new()
     {
         Name = source.Name,
@@ -2367,11 +2386,16 @@ replacement через previous-aware `Construct`:
 ```csharp
 builder.Map<SnapshotDto, Snapshot>()
     .Construct((source, previous) =>
-        previous.HasValue &&
-        previous.Value.Id == source.Id &&
-        previous.Value.Name == source.Name
-            ? previous
-            : new(source.Id))
+    {
+        if (previous.HasValue &&
+            previous.Value.Id == source.Id &&
+            previous.Value.Name == source.Name)
+        {
+            return previous;
+        }
+
+        return new(source.Id);
+    })
     .Members((source, _) => new()
     {
         Name = source.Name

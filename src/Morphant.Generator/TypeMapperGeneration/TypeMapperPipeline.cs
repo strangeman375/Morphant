@@ -11,7 +11,7 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class TypeMapperPipeline
 {
     private const string ConfiguredPlanUnsupportedMessage =
-        "Configured Construct, Members, and Convert plans are not executable yet.";
+        "Configured Members and Convert plans are not executable yet.";
 
     private const string ConventionConstructionUnavailableMessage =
         "Convention construction is not available for this destination.";
@@ -215,7 +215,6 @@ internal static class TypeMapperPipeline
             nonNullSourceName);
 
         if (configuration.Conflicts != PairConfigurationConflict.None ||
-            !configuration.Declarative.Constructs.IsEmpty ||
             !configuration.Declarative.Members.IsEmpty ||
             !configuration.Manual.Conversions.IsEmpty)
         {
@@ -251,6 +250,41 @@ internal static class TypeMapperPipeline
             configuration.Settings.ConstructorSelection,
             rootSettings.ConstructorSelection,
             ConstructorSelectionValue.Unambiguous);
+
+        if (!configuration.Declarative.Constructs.IsEmpty)
+        {
+            if (!pair.Capabilities.StructuredConstruction ||
+                destinationPlan.MemberType is not
+                    INamedTypeSymbol structuredDestination)
+            {
+                return mapping with
+                {
+                    UnsupportedExceptionMessage =
+                        "Configured direct Construct plans are not executable yet."
+                };
+            }
+
+            var structuredConstruct =
+                StructuredConstructMappingPlanner.Build(
+                    configuration.Declarative.Constructs[0],
+                    mapping,
+                    declarativeSourceType,
+                    structuredDestination,
+                    pair.Capabilities,
+                    memberMappings,
+                    constructorSelection,
+                    compilation,
+                    mapperType,
+                    cancellationToken);
+
+            return mapping with
+            {
+                ControlFlow = structuredConstruct.ControlFlow,
+                UnsupportedExceptionMessage =
+                    structuredConstruct.UnsupportedMessage
+            };
+        }
+
         ConventionConstructorMappingPlan? constructorMapping = null;
         string? createUnsupportedMessage = null;
 

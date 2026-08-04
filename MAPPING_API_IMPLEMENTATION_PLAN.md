@@ -91,7 +91,8 @@ algorithm недопустим.
 Тесты, которые собирают generated assembly, выполняют mapper runtime либо
 проверяют композицию полного production-generator-а, являются
 интеграционными по своей природе. Текущие вызовы
-`ConventionTypeMapperGeneratorTest.RunAndExecute` временно добавляют
+`ConventionTypeMapperGeneratorTest.RunAndExecute` и
+`StructuredConstructTypeMapperGeneratorTest.RunAndExecute` временно добавляют
 runtime-проверки к exact-source категориям в unit-test project; все такие
 вызовы и production composition нужно перенести в отдельный
 `Morphant.Generator.IntegrationTests` не позднее этапа 22. До переноса это
@@ -125,12 +126,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 2, этап 7 — `MappingMode` и declarative null normalization.**
+**Фаза 2, этап 8 — исполнение structured `Construct`.**
 
 Статус: ожидает ревью.
 
-Этап 6 принят. Этап 8 и все последующие этапы заблокированы до принятия
-этапа 7.
+Этап 7 принят. Этап 9 и все последующие этапы заблокированы до принятия
+этапа 8.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -448,7 +449,7 @@ discovery/planners и historical tests; они больше не входят н
 
 ### Этап 7. MappingMode и declarative null normalization
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — зафиксировать общий prelude, на который опираются все declarative
 lambdas.
@@ -507,7 +508,7 @@ nullable forms и invalid states. Их runtime-вызовы входят в уж
 
 ### Этап 8. Исполнение structured `Construct`
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — превратить generated construction plan в реальный выбор result.
 
@@ -538,6 +539,30 @@ Production scope:
 
 Результат этапа: structured `Construct` полностью определяет выбор base result;
 body-members пока применяются существующей convention/member logic.
+
+Реализовано: source-only `Construct` выполняет выбранный structured constructor
+только в no-previous ветке, а previous-aware форма является полным selector-ом
+для `Create`, existing `Update` и explicit-null `Update`. Поддержаны explicit
+constructor, `ByConvention()` с optional parameter overrides, `Auto()` и
+допустимый `Ignore()`; compiler probe сохраняет выбранный overload, wrapper
+casts, positional/named/mixed argument order, optional и целиком переданный
+`params` array без fallback к другому constructor-у. Каждая runtime-ветка
+строит отдельный constructor/previous/unsupported leaf, поэтому невыбранные
+arguments не вычисляются, а выбранные выполняются ровно один раз слева направо.
+
+По согласованному уточнению в этап 8 перенесён минимальный declarative block
+control flow: блоки, состоящие из `if` / `else` и завершающих `return`, можно
+использовать для выбора whole construction branch. Это сохраняет естественный
+C# 9 target typing для отдельных `return previous` и `return new(...)`;
+locals, `throw`, statement `switch` и полная block composition по-прежнему
+остаются этапу 12.
+
+Самостоятельная категория `TypeMapperStructuredConstructTests` фиксирует
+полный generated surface/type mapper source, compiler ambiguity, executable
+lifecycle, branch reachability, side effects и evaluation order для
+class/struct/record/nullable/generic destinations. Её runtime-вызовы входят в
+уже отмеченный временный integration debt и должны быть перенесены не позднее
+этапа 22.
 
 ### Этап 9. Direct `Construct` и `ByFactory`
 
