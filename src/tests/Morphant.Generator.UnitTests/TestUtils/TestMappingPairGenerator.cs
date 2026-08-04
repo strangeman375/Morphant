@@ -2,7 +2,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.MappingPair;
-using Morphant.Generator.MapperBuilderMap;
+using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.TypeMapperConfigure;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
@@ -17,12 +17,11 @@ internal sealed class TestMappingPairGenerator : IIncrementalGenerator
         var configureInfos = TypeMapperConfigurePipeline.Build(
             context,
             compilationContext);
-        var mapInfos = MapperBuilderMapPipeline.Build(
+        var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var mappingPairs = MappingPairPipeline.Build(
-            compilationContext,
-            mapInfos);
+        var mappingPairs = pairConfigurations.Select(
+            static (configuration, _) => configuration.MappingPairs);
 
         context.RegisterSourceOutput(
             mappingPairs,

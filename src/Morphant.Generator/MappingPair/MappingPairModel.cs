@@ -1,20 +1,26 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Morphant.Generator.MapperBuilderMap;
-using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.MappingPair;
 
+internal readonly record struct MapperMappingRegistrationModel(
+    MethodDeclarationSyntax ConfigureSyntax,
+    ImmutableArray<MappingPairRegistrationModel> Registrations);
+
+internal readonly record struct MappingPairRegistrationModel(
+    InvocationExpressionSyntax Syntax,
+    ITypeSymbol SourceType,
+    ITypeSymbol DestinationType);
+
 internal readonly record struct MapperMappingPairModel(
     MethodDeclarationSyntax ConfigureSyntax,
-    MappingSettings Settings,
     string MapperIdentity,
     ImmutableArray<MappingPairModel> Pairs,
     bool HasUnifiablePairs);
 
 internal readonly record struct MappingPairModel(
-    MapperBuilderMapRegistrationInfo Registration,
+    MappingPairRegistrationModel Registration,
     MappingPairIdentity Identity,
     MappingPairCapabilities Capabilities)
 {

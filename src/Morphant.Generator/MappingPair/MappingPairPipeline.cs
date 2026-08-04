@@ -7,33 +7,75 @@ namespace Morphant.Generator.MappingPair;
 
 internal static class MappingPairPipeline
 {
-    public static IncrementalValuesProvider<MapperMappingPairModel> Build(
+    public static IncrementalValuesProvider<LegacyMapperMappingPairModel> Build(
         IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValuesProvider<MapperBuilderMapInfo> mapInfos)
     {
         return mapInfos
             .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
-                TryBuild(source, cancellationToken))
+                BuildLegacyModel(
+                    source.Left,
+                    source.Right,
+                    cancellationToken))
             .WhereHasValue()
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildMappingPairModels);
     }
 
-    private static MapperMappingPairModel? TryBuild(
-        (
-            MapperBuilderMapInfo MapInfo,
-            CompilationContext Context
-        ) source,
+    private static LegacyMapperMappingPairModel? BuildLegacyModel(
+        MapperBuilderMapInfo mapInfo,
+        CompilationContext context,
+        CancellationToken cancellationToken)
+    {
+        var registrations = mapInfo.Registrations
+            .Select(static registration =>
+                new MappingPairRegistrationModel(
+                    registration.Syntax,
+                    registration.SourceType,
+                    registration.DestinationType))
+            .ToImmutableArray();
+        var mappingPairs = BuildModel(
+            new MapperMappingRegistrationModel(
+                mapInfo.ConfigureSyntax,
+                registrations),
+            context,
+            cancellationToken);
+
+        if (mappingPairs is not { } model)
+        {
+            return null;
+        }
+
+        var legacyRegistrations =
+            ImmutableArray.CreateBuilder<MapperBuilderMapRegistrationInfo>(
+                model.Pairs.Length);
+
+        foreach (var pair in model.Pairs)
+        {
+            var registration = mapInfo.Registrations.First(candidate =>
+                candidate.Syntax.SyntaxTree == pair.Registration.Syntax.SyntaxTree &&
+                candidate.Syntax.Span == pair.Registration.Syntax.Span);
+
+            legacyRegistrations.Add(registration);
+        }
+
+        return new LegacyMapperMappingPairModel(
+            model,
+            mapInfo.Settings,
+            legacyRegistrations.ToImmutable());
+    }
+
+    internal static MapperMappingPairModel? BuildModel(
+        MapperMappingRegistrationModel mappingInfo,
+        CompilationContext context,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-
-        var (mapInfo, context) = source;
         var semanticModel = context.Compilation.GetSemanticModel(
-            mapInfo.ConfigureSyntax.SyntaxTree);
+            mappingInfo.ConfigureSyntax.SyntaxTree);
 
-        if (mapInfo.ConfigureSyntax.Parent is not
+        if (mappingInfo.ConfigureSyntax.Parent is not
                 ClassDeclarationSyntax mapperDeclaration ||
             semanticModel.GetDeclaredSymbol(
                 mapperDeclaration,
@@ -45,7 +87,7 @@ internal static class MappingPairPipeline
         var pairs = ImmutableArray.CreateBuilder<MappingPairModel>();
         var identities = new HashSet<MappingPairIdentityKey>();
 
-        foreach (var registration in mapInfo.Registrations)
+        foreach (var registration in mappingInfo.Registrations)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -86,8 +128,7 @@ internal static class MappingPairPipeline
         var immutablePairs = pairs.ToImmutable();
 
         return new MapperMappingPairModel(
-            mapInfo.ConfigureSyntax,
-            mapInfo.Settings,
+            mappingInfo.ConfigureSyntax,
             SymbolNameHelper.GetFullMetadataName(mapperType),
             immutablePairs,
             HasUnifiablePairs(

@@ -41,6 +41,33 @@ internal enum TemplateModeValue
     Raw
 }
 
+internal enum ConstructorSelectionValue
+{
+    Default = 0,
+    Explicit,
+    Parameterless,
+    Single,
+    Unambiguous,
+    Greediest,
+    Largest
+}
+
+internal enum MemberSelectionValue
+{
+    Default = 0,
+    Auto,
+    Explicit
+}
+
+internal enum UnmappedMemberValidationValue
+{
+    Default = 0,
+    None,
+    Source,
+    Destination,
+    Strict
+}
+
 internal readonly record struct MappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,

@@ -272,7 +272,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.ExpressionDestination? MapNewImpl(
+        private global::TestCase.ExpressionDestination MapNewImpl(
             global::TestCase.ExpressionSource source,
             global::Morphant.Context.MappingContext context)
         {
@@ -325,7 +325,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.DeclarativeDestination? MapNewImpl(
+        private global::TestCase.DeclarativeDestination MapNewImpl(
             global::TestCase.DeclarativeSource source,
             global::Morphant.Context.MappingContext context)
         {

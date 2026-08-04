@@ -109,11 +109,11 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 1, этап 4 — generated member surface.**
+**Фаза 1, этап 5 — pair configuration discovery и semantic model.**
 
 Статус: ожидает ревью.
 
-До его принятия этап 5 и все последующие этапы заблокированы.
+До его принятия этап 6 и все последующие этапы заблокированы.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -280,7 +280,7 @@ TypeMapper пока не исполняет эти lambdas.
 
 ### Этап 4. Generated member surface
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — сгенерировать самостоятельный body-member plan нового дизайна.
 
@@ -316,6 +316,8 @@ Production scope:
 - отсутствие `init`-only property в direct surface при сохранении обычного
   `required set` и `required` mutable field;
 - record `with` compile-time usage и отсутствие императивной mutation API;
+- одновременный compile-time usage `Members` для `Destination` и
+  `Destination?`, когда destination является struct, без ambiguity;
 - destinations с constructors без members и с members без constructors.
 
 Результат этапа: generated member plan является полноценным отдельным DSL
@@ -323,7 +325,7 @@ surface, но ещё не исполняется generated mapper-ом.
 
 ### Этап 5. Pair configuration discovery и semantic model
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — заменить прежнюю Template-centric registration model на единую модель
 pair configuration.
@@ -345,6 +347,24 @@ Production scope:
   изменяющими builder; reusable runtime logic остаётся mapper member-ом;
 - удалить `TemplateMode` и destination-wide coordination из новой модели.
 
+Implementation shape этапа:
+
+- прямые invocation chains сначала обнаруживаются без попытки выполнить
+  configuration code;
+- capability model строится только из bound `Map<TSource, TDestination>()`,
+  после чего соответствующие generated plan и extension sources добавляются
+  во внутреннюю compilation для точного semantic binding fluent calls;
+- downstream model хранит исходный expression syntax, его `SemanticModel`,
+  bound delegate signature и `IOperation`, не выполняя lowering;
+- declarative и manual calls сохраняются раздельными массивами, а duplicate и
+  mixed состояния — явными flags без diagnostics либо last-call fallback;
+- `IncludeBase` зарезервирован отдельной composition-частью модели, но остаётся
+  пустым до этапа mapper inheritance;
+- прежний Template-centric discovery остаётся только временным adapter-ом для
+  executable `TypeMapper`; generated construction/member surfaces уже получают
+  пары из новой модели. Adapter удаляется при переходе convention mapping на
+  новую модель в этапе 6.
+
 Тестовый scope:
 
 - отдельная полноценная RegistrationDiscovery-категория;
@@ -354,6 +374,10 @@ Production scope:
 - повторные `Construct` / `Members` / `Convert`, mixed manual/declarative и
   potentially unifying generic pairs как сохранённые invalid states;
 - отсутствие неявного discovery через helper/local-function execution.
+- exact binding structured/direct signatures, normalized nullable roots и
+  method groups;
+- полный expected semantic model как читаемый generated snapshot с проверкой
+  compiler warnings.
 
 Результат этапа: generator имеет стабильную semantic input model для нового
 API; observable реакция на invalid states остаётся поздней diagnostics-фазой.

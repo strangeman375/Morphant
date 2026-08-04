@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.MappingPair;
-using Morphant.Generator.MapperBuilderMap;
+using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.TypeMapperConfigure;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
@@ -17,12 +17,11 @@ internal sealed class TestConstructionSurfaceGenerator :
         var configureInfos = TypeMapperConfigurePipeline.Build(
             context,
             compilationContext);
-        var mapInfos = MapperBuilderMapPipeline.Build(
+        var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var mappingPairs = MappingPairPipeline.Build(
-            compilationContext,
-            mapInfos);
+        var mappingPairs = pairConfigurations.Select(
+            static (configuration, _) => configuration.MappingPairs);
 
         ConstructionSurfacePipeline.Register(
             context,

@@ -35,7 +35,7 @@ internal static class MemberSurfacePipeline
                     SourceText.From(request.Source, Encoding.UTF8)));
     }
 
-    private static ImmutableArray<MemberSurfaceRequest> BuildRequests(
+    internal static ImmutableArray<MemberSurfaceRequest> BuildRequests(
         ImmutableArray<MapperMappingPairModel> mapperModels,
         Compilation compilation,
         CancellationToken cancellationToken)
@@ -166,7 +166,7 @@ internal static class MemberSurfacePipeline
         INamedTypeSymbol DestinationType,
         bool IncludeInitOnlyProperties);
 
-    private readonly record struct MemberSurfaceRequest(
+    internal readonly record struct MemberSurfaceRequest(
         string HintName,
         string Source);
 }

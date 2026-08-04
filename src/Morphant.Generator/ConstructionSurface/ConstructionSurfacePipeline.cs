@@ -35,7 +35,7 @@ internal static class ConstructionSurfacePipeline
                     SourceText.From(request.Source, Encoding.UTF8)));
     }
 
-    private static ImmutableArray<ConstructionSurfaceRequest> BuildRequests(
+    internal static ImmutableArray<ConstructionSurfaceRequest> BuildRequests(
         ImmutableArray<MapperMappingPairModel> mapperModels,
         Compilation compilation,
         CancellationToken cancellationToken)
@@ -160,7 +160,7 @@ internal static class ConstructionSurfacePipeline
         return value.Replace("global::", string.Empty);
     }
 
-    private readonly record struct ConstructionSurfaceRequest(
+    internal readonly record struct ConstructionSurfaceRequest(
         string HintName,
         string Source);
 }

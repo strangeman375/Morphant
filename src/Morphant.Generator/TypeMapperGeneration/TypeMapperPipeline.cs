@@ -18,7 +18,8 @@ internal static class TypeMapperPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValueProvider<MappingSettings> assemblySettings,
-        IncrementalValuesProvider<MapperMappingPairModel> mappingPairModels)
+        IncrementalValuesProvider<LegacyMapperMappingPairModel>
+            mappingPairModels)
     {
         var requests = mappingPairModels
             .Combine(compilationContext)
@@ -45,7 +46,7 @@ internal static class TypeMapperPipeline
     private static TypeMapperGenerationInput? TryBuildGenerationInput(
         (
             (
-                MapperMappingPairModel MappingPairs,
+                LegacyMapperMappingPairModel MappingPairs,
                 CompilationContext Context
             ) Input,
             MappingSettings AssemblySettings
@@ -240,7 +241,7 @@ internal static class TypeMapperPipeline
     }
 
     private static ImmutableArray<TypeMapperMappingModel> BuildMappings(
-        MapperMappingPairModel mappingPairModel,
+        LegacyMapperMappingPairModel mappingPairModel,
         MappingSettings assemblySettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -257,10 +258,12 @@ internal static class TypeMapperPipeline
             ImmutableArray.CreateBuilder<TypeMapperMappingModel>(
                 mappingPairModel.Pairs.Length);
 
-        foreach (var pair in mappingPairModel.Pairs)
+        for (var pairIndex = 0;
+             pairIndex < mappingPairModel.Pairs.Length;
+             pairIndex++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var registration = pair.Registration;
+            var registration = mappingPairModel.Registrations[pairIndex];
 
             var effectiveSettings =
                 EffectiveMappingSettings.Resolve(
