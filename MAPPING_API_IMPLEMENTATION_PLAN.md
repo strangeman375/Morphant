@@ -583,7 +583,7 @@ locals, `throw`, statement `switch` и полная block composition по-пр�
 lifecycle, branch reachability, side effects и evaluation order для
 class/struct/record/nullable/generic destinations. Её runtime-вызовы входят в
 уже отмеченный временный integration debt и должны быть перенесены не позднее
-этапа 22.
+этапа 22; самостоятельные exact-source проверки остаются в unit-test project.
 
 ### Этап 9. Direct `Construct` и `ByFactory`
 
