@@ -59,9 +59,11 @@
 - Keep focused model/emitter behavior in the unit-test project. End-to-end
   scenarios that compile generated assemblies, execute generated mappers, or
   validate the composed production generator belong in a dedicated
-  integration-test project. The existing `TypeMapperConventionTests` runtime
-  checks are a temporary mixed slice and must be moved when that project is
-  introduced; do not mistake their current location for the final boundary.
+  integration-test project. Every current call through
+  `ConventionTypeMapperGeneratorTest.RunAndExecute`, together with the
+  production-composition test, is a temporary mixed slice and must be moved
+  when that project is introduced; do not mistake its current location for
+  the final boundary.
 
 ## Generated code
 

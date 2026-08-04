@@ -19,6 +19,7 @@ internal static class ConventionConstructorMappingPlanner
         MappingPairCapabilities capabilities,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        string nonNullSourceName,
         CancellationToken cancellationToken)
     {
         if (!capabilities.StructuredConstruction)
@@ -149,6 +150,7 @@ internal static class ConventionConstructorMappingPlanner
             memberMappings.MapNew,
             setsRequiredMembers,
             mapperType,
+            nonNullSourceName,
             namedDestination);
     }
 
@@ -442,6 +444,7 @@ internal static class ConventionConstructorMappingPlanner
         ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
         bool setsRequiredMembers,
         INamedTypeSymbol mapperType,
+        string nonNullSourceName,
         INamedTypeSymbol destination)
     {
         var correspondingArguments =
@@ -484,6 +487,7 @@ internal static class ConventionConstructorMappingPlanner
             new List<SharedConstructorValue>();
         var usedValueLocalNames =
             BuildUsedValueLocalNames(mapperType);
+        usedValueLocalNames.Add(nonNullSourceName);
 
         for (var memberIndex = 0;
              memberIndex < memberMappings.Length;

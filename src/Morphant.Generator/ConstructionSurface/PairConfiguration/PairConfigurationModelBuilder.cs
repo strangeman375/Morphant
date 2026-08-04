@@ -14,17 +14,24 @@ internal static class PairConfigurationModelBuilder
         var typeParameterNames =
             GeneratedTypeNameBuilder.AllocateTypeParameterNames(
                 typeParameters);
-        var sourceType = NormalizeDynamic(
+        var sourceType = MappingTypeNormalization.NormalizeDynamic(
             pair.SourceType,
             compilation);
-        var destinationType = NormalizeDynamic(
+        var destinationType = MappingTypeNormalization.NormalizeDynamic(
             pair.DestinationType,
             compilation);
         var declarativeSourceType =
-            NormalizeDeclarativeSource(sourceType);
-        var manualSourceType = NormalizeManualSource(sourceType);
+            MappingTypeNormalization.NormalizeDeclarativeSource(
+                sourceType,
+                compilation);
+        var manualSourceType =
+            MappingTypeNormalization.NormalizeManualSource(
+                sourceType,
+                compilation);
         var previousDestinationType =
-            NormalizePreviousDestination(destinationType);
+            MappingTypeNormalization.NormalizePreviousDestination(
+                destinationType,
+                compilation);
         var sourceTypeName = GeneratedTypeNameBuilder.Build(
             sourceType,
             typeParameterNames);
@@ -76,50 +83,6 @@ internal static class PairConfigurationModelBuilder
         return GeneratedTypeNameBuilder.CollectTypeParameters(
             pair.SourceType,
             pair.DestinationType);
-    }
-
-    private static ITypeSymbol NormalizeDynamic(
-        ITypeSymbol type,
-        Compilation compilation)
-    {
-        return type is IDynamicTypeSymbol
-            ? compilation.GetSpecialType(SpecialType.System_Object)
-            : type;
-    }
-
-    private static ITypeSymbol NormalizeDeclarativeSource(ITypeSymbol type)
-    {
-        if (type is INamedTypeSymbol namedType &&
-            namedType.OriginalDefinition.SpecialType ==
-            SpecialType.System_Nullable_T)
-        {
-            return namedType.TypeArguments[0];
-        }
-
-        return type.IsReferenceType
-            ? type.WithNullableAnnotation(NullableAnnotation.NotAnnotated)
-            : type;
-    }
-
-    private static ITypeSymbol NormalizeManualSource(ITypeSymbol type)
-    {
-        return type.IsReferenceType
-            ? type.WithNullableAnnotation(NullableAnnotation.Annotated)
-            : type;
-    }
-
-    private static ITypeSymbol NormalizePreviousDestination(ITypeSymbol type)
-    {
-        if (type is INamedTypeSymbol namedType &&
-            namedType.OriginalDefinition.SpecialType ==
-            SpecialType.System_Nullable_T)
-        {
-            return namedType.TypeArguments[0];
-        }
-
-        return type.IsReferenceType
-            ? type.WithNullableAnnotation(NullableAnnotation.NotAnnotated)
-            : type;
     }
 
     private static string BuildPlanTypeName(

@@ -194,11 +194,22 @@ internal static class TypeMapperPipeline
         CancellationToken cancellationToken)
     {
         var pair = configuration.Pair;
+        var declarativeSourceType =
+            MappingTypeNormalization.NormalizeDeclarativeSource(
+                pair.SourceType,
+                compilation);
+        var nonNullSourceName = BuildNonNullSourceName(
+            pair.SourceType,
+            mapperType);
         var destinationPlan = BuildDestinationPlan(
             pair.DestinationType,
             compilation,
             cancellationToken);
-        var mapping = BuildEmptyMapping(pair, destinationPlan);
+        var mapping = BuildEmptyMapping(
+            pair,
+            destinationPlan,
+            declarativeSourceType,
+            nonNullSourceName);
 
         if (configuration.Conflicts != PairConfigurationConflict.None ||
             !configuration.Declarative.Constructs.IsEmpty ||
@@ -227,7 +238,7 @@ internal static class TypeMapperPipeline
         }
 
         var memberMappings = ConventionMemberMappingPlanner.Build(
-            pair.SourceType,
+            declarativeSourceType,
             destinationPlan.MemberType,
             pair.Capabilities,
             compilation,
@@ -248,12 +259,13 @@ internal static class TypeMapperPipeline
         else
         {
             constructorMapping = ConventionConstructorMappingPlanner.Build(
-                pair.SourceType,
+                declarativeSourceType,
                 destinationPlan.MemberType,
                 memberMappings,
                 pair.Capabilities,
                 compilation,
                 mapperType,
+                nonNullSourceName,
                 cancellationToken);
 
             if (constructorMapping is null)
@@ -286,7 +298,9 @@ internal static class TypeMapperPipeline
 
     private static TypeMapperMappingModel BuildEmptyMapping(
         MappingPairModel pair,
-        DestinationPlan destinationPlan)
+        DestinationPlan destinationPlan,
+        ITypeSymbol declarativeSourceType,
+        string nonNullSourceName)
     {
         return new TypeMapperMappingModel(
             SourceTypeName:
@@ -296,8 +310,9 @@ internal static class TypeMapperPipeline
                 TypeMapperMappingTypePolicy.GetGeneratedMaybeNullTypeName(
                     pair.SourceType),
             NonNullSourceTypeName:
-                TypeMapperMappingTypePolicy.GetGeneratedNonNullTypeName(
-                    pair.SourceType),
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    declarativeSourceType),
+            NonNullSourceName: nonNullSourceName,
             DestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     pair.DestinationType),
@@ -306,6 +321,9 @@ internal static class TypeMapperPipeline
                     .GetGeneratedMaybeNullTypeName(
                         pair.DestinationType),
             SourceCanBeNull: CanBeNull(pair.SourceType),
+            SourceIsNullableValue:
+                MappingTypeNormalization.IsNullableValue(
+                    pair.SourceType),
             DestinationCanBeNull: CanBeNull(pair.DestinationType),
             MapNewDirectExpression: null,
             MapExistingDirectExpression: null,
@@ -343,6 +361,23 @@ internal static class TypeMapperPipeline
         };
 
         return new DestinationPlan(memberType, mapExistingKind);
+    }
+
+    private static string BuildNonNullSourceName(
+        ITypeSymbol sourceType,
+        INamedTypeSymbol mapperType)
+    {
+        if (!MappingTypeNormalization.IsNullableValue(sourceType))
+        {
+            return "source";
+        }
+
+        var usedNames =
+            ConventionConstructorMappingPlanner.BuildUsedValueLocalNames(
+                mapperType);
+        usedNames.Add("destination");
+
+        return AllocateName("sourceValue", usedNames);
     }
 
     private static MappingSettings ToMappingSettings(

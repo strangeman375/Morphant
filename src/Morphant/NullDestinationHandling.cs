@@ -15,11 +15,15 @@ public enum NullDestinationHandling
     Default = 0,
 
     /// <summary>
-    /// Creates and maps a new destination.
+    /// Treats the <see langword="null"/> destination as absent and runs the
+    /// no-previous construction branch.
     /// </summary>
     /// <remarks>
     /// Morphant runs the no-previous construction branch while preserving the
-    /// current <see cref="MappingOperation.Update"/> operation.
+    /// current <see cref="MappingOperation.Update"/> operation. The effective
+    /// <see cref="MappingMode"/> only needs to include
+    /// <see cref="MappingMode.Update"/>; <see cref="MappingMode.Create"/> is
+    /// not required.
     /// </remarks>
     Create,
 

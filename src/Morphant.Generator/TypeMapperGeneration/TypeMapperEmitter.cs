@@ -258,6 +258,7 @@ internal static class TypeMapperEmitter
             mapping,
             mapExisting: false);
         writer.Line();
+        WriteNonNullSourceNormalization(writer, mapping);
         WriteMapNewCallOrStatements(
             writer,
             mapping);
@@ -482,6 +483,7 @@ internal static class TypeMapperEmitter
                 (argument.ValueLocalTypeName ?? "var") +
                 $" {valueLocalName} = " +
                 ConstructorArgumentUncachedValueExpression(
+                    mapping,
                     argument) +
                 ";");
         }
@@ -520,7 +522,9 @@ internal static class TypeMapperEmitter
 
                 writer.Line(
                     $"{Identifier(argument.ParameterName)}: " +
-                    ConstructorArgumentValueExpression(argument) +
+                    ConstructorArgumentValueExpression(
+                        mapping,
+                        argument) +
                     suffix);
             }
 
@@ -548,7 +552,7 @@ internal static class TypeMapperEmitter
 
             writer.Line(
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(memberMapping) +
+                MemberValueExpression(mapping, memberMapping) +
                 suffix);
         }
 
@@ -614,7 +618,7 @@ internal static class TypeMapperEmitter
             writer.Line(
                 $"{assignmentTarget}." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(memberMapping) +
+                MemberValueExpression(mapping, memberMapping) +
                 ";");
         }
 
@@ -768,6 +772,7 @@ internal static class TypeMapperEmitter
                 mapping,
                 mapExisting: true);
             writer.Line();
+            WriteNonNullSourceNormalization(writer, mapping);
         }
 
         if (mapping.DestinationCanBeNull)
@@ -851,6 +856,20 @@ internal static class TypeMapperEmitter
         writer.Line("}");
     }
 
+    private static void WriteNonNullSourceNormalization(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        if (!mapping.SourceIsNullableValue)
+        {
+            return;
+        }
+
+        writer.Line(
+            $"var {mapping.NonNullSourceName} = source.Value;");
+        writer.Line();
+    }
+
     private static void WriteDestinationNullHandling(
         CodeWriter writer,
         TypeMapperMappingModel mapping)
@@ -896,7 +915,8 @@ internal static class TypeMapperEmitter
             $"{methodName}(");
         writer.Indent();
         writer.Line(
-            $"{mapping.NonNullSourceTypeName} source" +
+            $"{mapping.NonNullSourceTypeName} " +
+            mapping.NonNullSourceName +
             (mapping.MapNewImplUsesContext ? "," : ")"));
 
         if (mapping.MapNewImplUsesContext)
@@ -921,8 +941,8 @@ internal static class TypeMapperEmitter
         string methodName)
     {
         return mapping.MapNewImplUsesContext
-            ? $"{methodName}(source, context)"
-            : $"{methodName}(source)";
+            ? $"{methodName}({mapping.NonNullSourceName}, context)"
+            : $"{methodName}({mapping.NonNullSourceName})";
     }
 
     private static void WriteArgumentNullException(
@@ -1097,7 +1117,7 @@ internal static class TypeMapperEmitter
             writer.Line(
                 "destination." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(memberMapping) +
+                MemberValueExpression(mapping, memberMapping) +
                 ";");
         }
 
@@ -1133,7 +1153,7 @@ internal static class TypeMapperEmitter
             writer.Line(
                 $"{destinationLocalName}." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(memberMapping) +
+                MemberValueExpression(mapping, memberMapping) +
                 ";");
         }
 
@@ -1220,19 +1240,23 @@ internal static class TypeMapperEmitter
     }
 
     private static string SourceValueExpression(
+        TypeMapperMappingModel mapping,
         string sourceMemberName,
         string? sourceValueLocalName)
     {
         return sourceValueLocalName ??
-               $"source.{Identifier(sourceMemberName)}";
+               $"{mapping.NonNullSourceName}." +
+               Identifier(sourceMemberName);
     }
 
     private static string MemberValueExpression(
+        TypeMapperMappingModel owner,
         TypeMapperMemberMappingModel mapping)
     {
         return mapping.ValueLocalName ??
                mapping.ExplicitValueExpression ??
                SourceValueExpression(
+                   owner,
                    mapping.SourceMemberName,
                    mapping.SourceValueLocalName);
     }
@@ -1273,17 +1297,22 @@ internal static class TypeMapperEmitter
     }
 
     private static string ConstructorArgumentValueExpression(
+        TypeMapperMappingModel owner,
         TypeMapperConstructorArgumentMappingModel mapping)
     {
         return mapping.ValueLocalName ??
-               ConstructorArgumentUncachedValueExpression(mapping);
+               ConstructorArgumentUncachedValueExpression(
+                   owner,
+                   mapping);
     }
 
     private static string ConstructorArgumentUncachedValueExpression(
+        TypeMapperMappingModel owner,
         TypeMapperConstructorArgumentMappingModel mapping)
     {
         return mapping.ExplicitValueExpression ??
                SourceValueExpression(
+                   owner,
                    mapping.SourceMemberName,
                    sourceValueLocalName: null);
     }

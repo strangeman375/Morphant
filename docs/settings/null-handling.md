@@ -101,6 +101,11 @@ for a non-nullable value destination.
 When both source and destination are `null`, only `NullSourceHandling` applies
 because the source check runs first.
 
+When mapping continues, the declarative pipeline receives the normalized
+non-null underlying source. A reference source has a non-null annotation, and
+a nullable value source `T?` is unwrapped to `T`. `Construct` and `Members`
+therefore do not repeat source null handling.
+
 ## Null destination behavior
 
 `NullDestinationHandling` applies only to `Update`:

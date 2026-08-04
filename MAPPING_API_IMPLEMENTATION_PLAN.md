@@ -90,9 +90,10 @@ algorithm недопустим.
 
 Тесты, которые собирают generated assembly, выполняют mapper runtime либо
 проверяют композицию полного production-generator-а, являются
-интеграционными по своей природе. Текущий `TypeMapperConventionTests` временно
-совмещает exact-source и runtime-проверки в unit-test project; runtime-часть и
-production composition нужно перенести в отдельный
+интеграционными по своей природе. Текущие вызовы
+`ConventionTypeMapperGeneratorTest.RunAndExecute` временно добавляют
+runtime-проверки к exact-source категориям в unit-test project; все такие
+вызовы и production composition нужно перенести в отдельный
 `Morphant.Generator.IntegrationTests` не позднее этапа 22. До переноса это
 явно считается техническим долгом, а не целевой организацией тестов.
 
@@ -126,7 +127,7 @@ Collections, projection и остальные post-v0 возможности в 
 
 **Фаза 2, этап 7 — `MappingMode` и declarative null normalization.**
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Этап 6 принят. Этап 8 и все последующие этапы заблокированы до принятия
 этапа 7.
@@ -447,7 +448,7 @@ discovery/planners и historical tests; они больше не входят н
 
 ### Этап 7. MappingMode и declarative null normalization
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — зафиксировать общий prelude, на который опираются все declarative
 lambdas.
@@ -482,6 +483,19 @@ Production scope:
 
 Результат этапа: любой следующий declarative plan начинает работу с точно
 определёнными non-null source и previous presence.
+
+Реализовано: effective settings разрешаются по полной precedence chain,
+`MappingMode` остаётся единым operation gate, null-source обрабатывается до
+destination, а `NullDestinationHandling.Create` использует no-previous branch
+внутри `Update` без зависимости от public `Create`. Declarative source
+нормализуется единым policy для generated surface и executable mapper-а;
+`Nullable<TSource>` разворачивается в underlying `TSource`, а для definitely
+non-nullable values проверки не генерируются. Invalid effective settings
+сохраняются как детерминированные unsupported operations до diagnostics.
+Самостоятельные `TypeMapperMappingModeTests` и `TypeMapperNullHandlingTests`
+проверяют полный generated source, runtime laws, precedence, call order,
+nullable forms и invalid states. Их runtime-вызовы входят в уже отмеченный
+временный integration debt и должны быть перенесены не позднее этапа 22.
 
 ### Этап 8. Исполнение structured `Construct`
 

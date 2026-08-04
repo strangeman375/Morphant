@@ -36,18 +36,6 @@ internal static class TypeMapperMappingTypePolicy
         return GetGeneratedTypeName(type);
     }
 
-    public static string GetGeneratedNonNullTypeName(
-        ITypeSymbol type)
-    {
-        if (!type.IsValueType)
-        {
-            type = type.WithNullableAnnotation(
-                NullableAnnotation.NotAnnotated);
-        }
-
-        return GetGeneratedTypeName(type);
-    }
-
     public static string GetGeneratedNonNullDestinationTypeName(
         ITypeSymbol type)
     {

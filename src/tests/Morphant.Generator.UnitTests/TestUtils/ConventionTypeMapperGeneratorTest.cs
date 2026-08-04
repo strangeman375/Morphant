@@ -51,6 +51,42 @@ internal sealed class ConventionTypeMapperGeneratorTest
         await test.RunAsync();
     }
 
+    public static async Task RunAndAssertWithAnalyzerConfig(
+        LanguageVersion languageVersion,
+        string source,
+        string analyzerConfig,
+        params (string FileName, string Content)[] expectedSources)
+    {
+        var test = new ConventionTypeMapperGeneratorTest(languageVersion)
+        {
+            TestCode = source
+        };
+
+        test.TestState.AnalyzerConfigFiles.Add(
+        (
+            "/.globalconfig",
+            analyzerConfig
+        ));
+        AddExpectedSources(test, expectedSources);
+
+        await test.RunAsync();
+    }
+
+    private static void AddExpectedSources(
+        ConventionTypeMapperGeneratorTest test,
+        IEnumerable<(string FileName, string Content)> expectedSources)
+    {
+        foreach (var expectedSource in expectedSources)
+        {
+            test.TestState.GeneratedSources.Add(
+            (
+                typeof(TestConventionTypeMapperGenerator),
+                expectedSource.FileName,
+                NormalizeGeneratedSource(expectedSource.Content)
+            ));
+        }
+    }
+
     // TODO: Move runtime compilation and execution to
     // Morphant.Generator.IntegrationTests.
     public static void RunAndExecute(
