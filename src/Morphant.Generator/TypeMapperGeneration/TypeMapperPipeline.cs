@@ -173,13 +173,16 @@ internal static class TypeMapperPipeline
                     effectiveSettings)
                 ? AllocateName("CreateImpl", usedGeneratedMethodNames)
                 : null;
+            var updateMethodName = RequiresUpdateMethod(effectiveSettings)
+                ? AllocateName("UpdateImpl", usedGeneratedMethodNames)
+                : null;
 
             mappings.Add(
                 mapping with
                 {
                     EffectiveSettings = effectiveSettings,
                     MapNewImplMethodName = createMethodName,
-                    MapNewImplUsesContext = false
+                    MapExistingImplMethodName = updateMethodName
                 });
         }
 
@@ -275,18 +278,9 @@ internal static class TypeMapperPipeline
             }
         }
 
-        var mapExistingDestinationLocalName =
-            destinationPlan.MapExistingKind ==
-                TypeMapperMapExistingKind.NullableValue &&
-            !memberMappings.MapExisting.IsEmpty
-                ? BuildDestinationValueLocalName(mapperType)
-                : null;
-
         return mapping with
         {
             MapNewConstructor = constructorMapping?.Constructor,
-            MapExistingDestinationLocalName =
-                mapExistingDestinationLocalName,
             MapNewMemberMappings =
                 constructorMapping?.MapNewMemberMappings ??
                 memberMappings.MapNew,
@@ -320,6 +314,9 @@ internal static class TypeMapperPipeline
                 TypeMapperMappingTypePolicy
                     .GetGeneratedMaybeNullTypeName(
                         pair.DestinationType),
+            NonNullDestinationTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    destinationPlan.MemberType),
             SourceCanBeNull: CanBeNull(pair.SourceType),
             SourceIsNullableValue:
                 MappingTypeNormalization.IsNullableValue(
@@ -330,7 +327,6 @@ internal static class TypeMapperPipeline
             MapNewFactory: null,
             MapNewConstructor: null,
             MapExistingKind: destinationPlan.MapExistingKind,
-            MapExistingDestinationLocalName: null,
             MapNewMemberMappings: [],
             MapExistingMemberMappings: []);
     }
@@ -440,11 +436,27 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel mapping,
         EffectiveMappingSettings settings)
     {
-        return mapping.DestinationCanBeNull &&
-               settings.IsNullSourceHandlingValid &&
+        if (!settings.IsMappingModeValid ||
+            !settings.IsNullSourceHandlingValid)
+        {
+            return false;
+        }
+
+        return settings.SupportsMapNew ||
+               mapping.DestinationCanBeNull &&
                settings.SupportsMapExisting &&
+               settings.IsNullDestinationHandlingValid &&
                settings.NullDestinationHandling ==
                    NullDestinationHandlingValue.Create;
+    }
+
+    private static bool RequiresUpdateMethod(
+        EffectiveMappingSettings settings)
+    {
+        return settings.IsMappingModeValid &&
+               settings.SupportsMapExisting &&
+               settings.IsNullSourceHandlingValid &&
+               settings.IsNullDestinationHandlingValid;
     }
 
     private static bool CanBeNull(ITypeSymbol type)
@@ -464,17 +476,6 @@ internal static class TypeMapperPipeline
         return type is ITypeParameterSymbol typeParameter &&
                !typeParameter.HasValueTypeConstraint &&
                !typeParameter.HasUnmanagedTypeConstraint;
-    }
-
-    private static string BuildDestinationValueLocalName(
-        INamedTypeSymbol mapperType)
-    {
-        var usedNames =
-            ConventionConstructorMappingPlanner.BuildUsedValueLocalNames(
-                mapperType);
-        usedNames.Add("destination");
-
-        return AllocateName("destinationValue", usedNames);
     }
 
     private static HashSet<string> BuildUsedGeneratedMethodNames(

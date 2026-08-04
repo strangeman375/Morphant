@@ -162,7 +162,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -178,19 +178,15 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Numeric = source.Numeric;
-            destination.Reference = source.Reference;
-            destination.Lifted = source.Lifted;
-            destination.UserDefined = source.UserDefined;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination()
             {
@@ -199,6 +195,19 @@ namespace TestCase
                 Lifted = source.Lifted,
                 UserDefined = source.UserDefined
             };
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Numeric = source.Numeric;
+            destination.Reference = source.Reference;
+            destination.Lifted = source.Lifted;
+            destination.UserDefined = source.UserDefined;
+
+            return destination;
         }
     }
 }

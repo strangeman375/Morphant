@@ -171,10 +171,7 @@ namespace TestCase
                 return default!;
             }
 
-            return new global::TestCase.ReturnNullDestination()
-            {
-                Value = source.Value
-            };
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -193,6 +190,24 @@ namespace TestCase
                 throw new global::System.ArgumentNullException(nameof(destination));
             }
 
+            return UpdateImpl(source, destination, context);
+        }
+
+        private global::TestCase.ReturnNullDestination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.ReturnNullDestination()
+            {
+                Value = source.Value
+            };
+        }
+
+        private global::TestCase.ReturnNullDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.ReturnNullDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
             destination.Value = source.Value;
 
             return destination;
@@ -208,10 +223,7 @@ namespace TestCase
                 return default!;
             }
 
-            return new global::TestCase.ReturnDestinationDestination()
-            {
-                Value = source.Value
-            };
+            return CreateImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -230,6 +242,24 @@ namespace TestCase
                 throw new global::System.ArgumentNullException(nameof(destination));
             }
 
+            return UpdateImpl1(source, destination, context);
+        }
+
+        private global::TestCase.ReturnDestinationDestination CreateImpl1(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.ReturnDestinationDestination()
+            {
+                Value = source.Value
+            };
+        }
+
+        private global::TestCase.ReturnDestinationDestination UpdateImpl1(
+            global::TestCase.Source source,
+            global::TestCase.ReturnDestinationDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
             destination.Value = source.Value;
 
             return destination;
@@ -245,7 +275,7 @@ namespace TestCase
                 throw new global::System.ArgumentNullException(nameof(source));
             }
 
-            return CreateImpl(source);
+            return CreateImpl2(source, context);
         }
 
         /// <inheritdoc/>
@@ -261,21 +291,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl2(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl2(source, destination, context);
         }
 
-        private global::TestCase.ThrowDestination CreateImpl(
-            global::TestCase.Source source)
+        private global::TestCase.ThrowDestination CreateImpl2(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.ThrowDestination()
             {
                 Value = source.Value
             };
+        }
+
+        private global::TestCase.ThrowDestination UpdateImpl2(
+            global::TestCase.Source source,
+            global::TestCase.ThrowDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }
@@ -442,7 +481,7 @@ namespace TestCase
 
             var sourceValue = source.Value;
 
-            return CreateImpl(sourceValue);
+            return CreateImpl(sourceValue, context);
         }
 
         /// <inheritdoc/>
@@ -460,17 +499,15 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(sourceValue);
+                return CreateImpl(sourceValue, context);
             }
 
-            var destinationValue = destination.Value;
-            destinationValue.Value = sourceValue.Value;
-
-            return destinationValue;
+            return UpdateImpl(sourceValue, destination.Value, context);
         }
 
         private global::TestCase.NullableDestination? CreateImpl(
-            global::TestCase.NullableSource sourceValue)
+            global::TestCase.NullableSource sourceValue,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.NullableDestination()
             {
@@ -478,8 +515,30 @@ namespace TestCase
             };
         }
 
+        private global::TestCase.NullableDestination? UpdateImpl(
+            global::TestCase.NullableSource sourceValue,
+            global::TestCase.NullableDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = sourceValue.Value;
+
+            return destination;
+        }
+
         /// <inheritdoc/>
         global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ValueDestination>.Map(
+            global::TestCase.ValueSource source,
+            global::Morphant.Context.MappingContext context)
+            => CreateImpl1(source, context);
+
+        /// <inheritdoc/>
+        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ValueDestination>.Map(
+            global::TestCase.ValueSource source,
+            global::TestCase.ValueDestination destination,
+            global::Morphant.Context.MappingContext context)
+            => UpdateImpl1(source, destination, context);
+
+        private global::TestCase.ValueDestination CreateImpl1(
             global::TestCase.ValueSource source,
             global::Morphant.Context.MappingContext context)
         {
@@ -489,8 +548,7 @@ namespace TestCase
             };
         }
 
-        /// <inheritdoc/>
-        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ValueDestination>.Map(
+        private global::TestCase.ValueDestination UpdateImpl1(
             global::TestCase.ValueSource source,
             global::TestCase.ValueDestination destination,
             global::Morphant.Context.MappingContext context)
@@ -510,10 +568,7 @@ namespace TestCase
                 return default!;
             }
 
-            return new global::TestCase.ValueDestination()
-            {
-                Value = source.Value
-            };
+            return CreateImpl2(source, context);
         }
 
         /// <inheritdoc/>
@@ -527,6 +582,24 @@ namespace TestCase
                 return default!;
             }
 
+            return UpdateImpl2(source, destination, context);
+        }
+
+        private global::TestCase.ValueDestination CreateImpl2(
+            global::TestCase.ReferenceSource source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.ValueDestination()
+            {
+                Value = source.Value
+            };
+        }
+
+        private global::TestCase.ValueDestination UpdateImpl2(
+            global::TestCase.ReferenceSource source,
+            global::TestCase.ValueDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
             destination.Value = source.Value;
 
             return destination;
@@ -536,7 +609,7 @@ namespace TestCase
         global::TestCase.ReferenceDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>.Map(
             global::TestCase.ValueSource source,
             global::Morphant.Context.MappingContext context)
-            => CreateImpl1(source);
+            => CreateImpl3(source, context);
 
         /// <inheritdoc/>
         global::TestCase.ReferenceDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>.Map(
@@ -546,21 +619,30 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return CreateImpl1(source);
+                return CreateImpl3(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl3(source, destination, context);
         }
 
-        private global::TestCase.ReferenceDestination CreateImpl1(
-            global::TestCase.ValueSource source)
+        private global::TestCase.ReferenceDestination CreateImpl3(
+            global::TestCase.ValueSource source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.ReferenceDestination()
             {
                 Value = source.Value
             };
+        }
+
+        private global::TestCase.ReferenceDestination UpdateImpl3(
+            global::TestCase.ValueSource source,
+            global::TestCase.ReferenceDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }
@@ -668,10 +750,7 @@ namespace TestCase
                 throw new global::System.ArgumentNullException(nameof(source));
             }
 
-            return new global::TestCase.AssemblyDestination()
-            {
-                Value = source.Value
-            };
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -690,6 +769,24 @@ namespace TestCase
                 throw new global::System.ArgumentNullException(nameof(destination));
             }
 
+            return UpdateImpl(source, destination, context);
+        }
+
+        private global::TestCase.AssemblyDestination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.AssemblyDestination()
+            {
+                Value = source.Value
+            };
+        }
+
+        private global::TestCase.AssemblyDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.AssemblyDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
             destination.Value = source.Value;
 
             return destination;
@@ -719,7 +816,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -735,21 +832,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.RootDestination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.RootDestination()
             {
                 Value = source.Value
             };
+        }
+
+        private global::TestCase.RootDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.RootDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }
@@ -776,10 +882,7 @@ namespace TestCase
                 return default!;
             }
 
-            return new global::TestCase.PairDestination()
-            {
-                Value = source.Value
-            };
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -798,6 +901,24 @@ namespace TestCase
                 throw new global::System.ArgumentNullException(nameof(destination));
             }
 
+            return UpdateImpl(source, destination, context);
+        }
+
+        private global::TestCase.PairDestination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.PairDestination()
+            {
+                Value = source.Value
+            };
+        }
+
+        private global::TestCase.PairDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.PairDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
             destination.Value = source.Value;
 
             return destination;
@@ -904,9 +1025,7 @@ namespace TestCase
         global::TestCase.SourceOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SourceOverrideDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-        {
-            return new global::TestCase.SourceOverrideDestination();
-        }
+            => CreateImpl(source, context);
 
         /// <inheritdoc/>
         global::TestCase.SourceOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SourceOverrideDestination>.Map(
@@ -916,20 +1035,40 @@ namespace TestCase
             => throw new global::System.NotSupportedException(
                 "The effective NullDestinationHandling is invalid.");
 
+        private global::TestCase.SourceOverrideDestination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.SourceOverrideDestination();
+        }
+
         /// <inheritdoc/>
         global::TestCase.FullOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FullOverrideDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-        {
-            return new global::TestCase.FullOverrideDestination();
-        }
+            => CreateImpl1(source, context);
 
         /// <inheritdoc/>
         global::TestCase.FullOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FullOverrideDestination>.Map(
             global::TestCase.Source source,
             global::TestCase.FullOverrideDestination destination,
             global::Morphant.Context.MappingContext context)
-            => destination;
+            => UpdateImpl(source, destination, context);
+
+        private global::TestCase.FullOverrideDestination CreateImpl1(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.FullOverrideDestination();
+        }
+
+        private global::TestCase.FullOverrideDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.FullOverrideDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
+        }
     }
 }
 """;

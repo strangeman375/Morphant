@@ -91,7 +91,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -107,22 +107,31 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Name = source.Name;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination()
             {
                 Id = source.Id,
                 Name = source.Name
             };
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Name = source.Name;
+
+            return destination;
         }
     }
 }

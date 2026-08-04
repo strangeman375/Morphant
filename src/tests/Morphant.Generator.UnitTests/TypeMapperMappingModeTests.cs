@@ -136,12 +136,7 @@ namespace TestCase
         global::TestCase.CreateDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.CreateDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-        {
-            return new global::TestCase.CreateDestination()
-            {
-                Value = source.Value
-            };
-        }
+            => CreateImpl(source, context);
 
         /// <inheritdoc/>
         global::TestCase.CreateDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.CreateDestination>.Map(
@@ -150,6 +145,16 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode does not include Update.");
+
+        private global::TestCase.CreateDestination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.CreateDestination()
+            {
+                Value = source.Value
+            };
+        }
 
         /// <inheritdoc/>
         global::TestCase.UpdateDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.UpdateDestination>.Map(
@@ -166,16 +171,15 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl1(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
-        private global::TestCase.UpdateDestination CreateImpl(
-            global::TestCase.Source source)
+        private global::TestCase.UpdateDestination CreateImpl1(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.UpdateDestination()
             {
@@ -183,11 +187,21 @@ namespace TestCase
             };
         }
 
+        private global::TestCase.UpdateDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.UpdateDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
+        }
+
         /// <inheritdoc/>
         global::TestCase.BothDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.BothDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => CreateImpl1(source);
+            => CreateImpl2(source, context);
 
         /// <inheritdoc/>
         global::TestCase.BothDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.BothDestination>.Map(
@@ -197,21 +211,30 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return CreateImpl1(source);
+                return CreateImpl2(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl1(source, destination, context);
         }
 
-        private global::TestCase.BothDestination CreateImpl1(
-            global::TestCase.Source source)
+        private global::TestCase.BothDestination CreateImpl2(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.BothDestination()
             {
                 Value = source.Value
             };
+        }
+
+        private global::TestCase.BothDestination UpdateImpl1(
+            global::TestCase.Source source,
+            global::TestCase.BothDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }
@@ -310,7 +333,15 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.AssemblyDestination destination,
             global::Morphant.Context.MappingContext context)
-            => destination;
+            => UpdateImpl(source, destination, context);
+
+        private global::TestCase.AssemblyDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.AssemblyDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
+        }
     }
 }
 """;
@@ -330,9 +361,7 @@ namespace TestCase
         global::TestCase.RootDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-        {
-            return new global::TestCase.RootDestination();
-        }
+            => CreateImpl(source, context);
 
         /// <inheritdoc/>
         global::TestCase.RootDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>.Map(
@@ -341,6 +370,13 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode does not include Update.");
+
+        private global::TestCase.RootDestination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.RootDestination();
+        }
     }
 }
 """;
@@ -368,7 +404,15 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.PairDestination destination,
             global::Morphant.Context.MappingContext context)
-            => destination;
+            => UpdateImpl(source, destination, context);
+
+        private global::TestCase.PairDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.PairDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
+        }
     }
 }
 """;
@@ -396,7 +440,15 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.ResetDestination destination,
             global::Morphant.Context.MappingContext context)
-            => destination;
+            => UpdateImpl(source, destination, context);
+
+        private global::TestCase.ResetDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.ResetDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
+        }
     }
 }
 """;
@@ -487,9 +539,7 @@ namespace TestCase
         global::TestCase.OverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.OverrideDestination>.Map(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-        {
-            return new global::TestCase.OverrideDestination();
-        }
+            => CreateImpl(source, context);
 
         /// <inheritdoc/>
         global::TestCase.OverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.OverrideDestination>.Map(
@@ -498,6 +548,13 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective MappingMode does not include Update.");
+
+        private global::TestCase.OverrideDestination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.OverrideDestination();
+        }
     }
 }
 """;

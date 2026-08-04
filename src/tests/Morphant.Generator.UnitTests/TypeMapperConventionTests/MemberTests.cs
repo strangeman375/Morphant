@@ -98,7 +98,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -114,17 +114,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             throw new global::System.NotSupportedException(
                 "Convention construction is not available for this destination.");
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
         }
     }
 }
@@ -227,7 +236,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -243,21 +252,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Visible = source.Visible;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.TestMapper.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.TestMapper.Destination()
             {
                 Visible = source.Visible
             };
+        }
+
+        private global::TestCase.TestMapper.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.TestMapper.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Visible = source.Visible;
+
+            return destination;
         }
     }
 }
@@ -469,7 +487,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -485,21 +503,15 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Inherited = source.Inherited;
-            destination.Settable = source.Settable;
-            destination.RequiredSet = source.RequiredSet;
-            destination.RequiredField = source.RequiredField;
-            destination.MutableField = source.MutableField;
-            destination.ReadonlySource = source.ReadonlySource;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination()
             {
@@ -512,6 +524,21 @@ namespace TestCase
                 MutableField = source.MutableField,
                 ReadonlySource = source.ReadonlySource
             };
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Inherited = source.Inherited;
+            destination.Settable = source.Settable;
+            destination.RequiredSet = source.RequiredSet;
+            destination.RequiredField = source.RequiredField;
+            destination.MutableField = source.MutableField;
+            destination.ReadonlySource = source.ReadonlySource;
+
+            return destination;
         }
     }
 }

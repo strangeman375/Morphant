@@ -90,7 +90,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -106,17 +106,26 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination(
                 id: source.Id);
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
         }
     }
 }
@@ -231,7 +240,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -247,19 +256,28 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.TestMapper.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             throw new global::System.NotSupportedException(
                 "Convention construction is not available for this destination.");
+        }
+
+        private global::TestCase.TestMapper.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.TestMapper.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }
@@ -367,7 +385,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -383,14 +401,15 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             var sourceValue = source.Value;
 
@@ -399,6 +418,14 @@ namespace TestCase
             {
                 Value = sourceValue
             };
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
         }
     }
 }
@@ -499,7 +526,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -515,21 +542,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination()
             {
                 Value = source.Value
             };
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }
@@ -638,7 +674,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -654,18 +690,27 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination(
                 id: source.Id,
                 name: source.Name);
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
         }
     }
 }
@@ -790,7 +835,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -806,19 +851,28 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.Destination CreateImpl(
-            global::TestCase.Source source)
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             throw new global::System.NotSupportedException(
                 "Convention construction is not available for this destination.");
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }

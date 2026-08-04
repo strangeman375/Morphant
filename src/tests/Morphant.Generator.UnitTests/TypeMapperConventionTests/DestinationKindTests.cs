@@ -105,7 +105,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -121,21 +121,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl(source, destination, context);
         }
 
         private global::TestCase.RecordDestination CreateImpl(
-            global::TestCase.NumberSource source)
+            global::TestCase.NumberSource source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.RecordDestination()
             {
                 Value = source.Value
             };
+        }
+
+        private global::TestCase.RecordDestination UpdateImpl(
+            global::TestCase.NumberSource source,
+            global::TestCase.RecordDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
 
         /// <inheritdoc/>
@@ -148,7 +157,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl1(source);
+            return CreateImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -164,21 +173,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl1(source);
+                return CreateImpl1(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl1(source, destination, context);
         }
 
         private global::TestCase.Box<string> CreateImpl1(
-            global::TestCase.TextSource source)
+            global::TestCase.TextSource source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Box<string>()
             {
                 Value = source.Value
             };
+        }
+
+        private global::TestCase.Box<string> UpdateImpl1(
+            global::TestCase.TextSource source,
+            global::TestCase.Box<string> destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }
@@ -297,10 +315,7 @@ namespace TestCase
                 return default!;
             }
 
-            return new global::TestCase.Destination()
-            {
-                Value = source.Value
-            };
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -314,6 +329,24 @@ namespace TestCase
                 return default!;
             }
 
+            return UpdateImpl(source, destination, context);
+        }
+
+        private global::TestCase.Destination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.Destination()
+            {
+                Value = source.Value
+            };
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
             destination.Value = source.Value;
 
             return destination;
@@ -329,7 +362,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -345,22 +378,30 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl1(source, context);
             }
 
-            var destinationValue = destination.Value;
-            destinationValue.Value = source.Value;
-
-            return destinationValue;
+            return UpdateImpl1(source, destination.Value, context);
         }
 
-        private global::TestCase.Destination? CreateImpl(
-            global::TestCase.Source source)
+        private global::TestCase.Destination? CreateImpl1(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination()
             {
                 Value = source.Value
             };
+        }
+
+        private global::TestCase.Destination? UpdateImpl1(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }
@@ -504,8 +545,7 @@ namespace TestCase
                 return default!;
             }
 
-            throw new global::System.NotSupportedException(
-                "Convention construction is not available for this destination.");
+            return CreateImpl(source, context);
         }
 
         /// <inheritdoc/>
@@ -519,6 +559,22 @@ namespace TestCase
                 return default!;
             }
 
+            return UpdateImpl(source, destination, context);
+        }
+
+        private int CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            throw new global::System.NotSupportedException(
+                "Convention construction is not available for this destination.");
+        }
+
+        private int UpdateImpl(
+            global::TestCase.Source source,
+            int destination,
+            global::Morphant.Context.MappingContext context)
+        {
             return destination;
         }
 
@@ -532,7 +588,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source);
+            return CreateImpl1(source, context);
         }
 
         /// <inheritdoc/>
@@ -548,19 +604,28 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source);
+                return CreateImpl1(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl1(source, destination, context);
         }
 
-        private global::TestCase.IInterfaceDestination CreateImpl(
-            global::TestCase.Source source)
+        private global::TestCase.IInterfaceDestination CreateImpl1(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             throw new global::System.NotSupportedException(
                 "Convention construction is not available for this destination.");
+        }
+
+        private global::TestCase.IInterfaceDestination UpdateImpl1(
+            global::TestCase.Source source,
+            global::TestCase.IInterfaceDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
 
         /// <inheritdoc/>
@@ -573,7 +638,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl1(source);
+            return CreateImpl2(source, context);
         }
 
         /// <inheritdoc/>
@@ -589,19 +654,28 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl1(source);
+                return CreateImpl2(source, context);
             }
 
-            destination.Value = source.Value;
-
-            return destination;
+            return UpdateImpl2(source, destination, context);
         }
 
-        private global::TestCase.AbstractDestination CreateImpl1(
-            global::TestCase.Source source)
+        private global::TestCase.AbstractDestination CreateImpl2(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
         {
             throw new global::System.NotSupportedException(
                 "Convention construction is not available for this destination.");
+        }
+
+        private global::TestCase.AbstractDestination UpdateImpl2(
+            global::TestCase.Source source,
+            global::TestCase.AbstractDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = source.Value;
+
+            return destination;
         }
     }
 }

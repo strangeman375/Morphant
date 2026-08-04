@@ -110,6 +110,12 @@ internal static class TypeMapperEmitter
             WriteMapNewImpl(writer, mapping);
         }
 
+        if (mapping.MapExistingImplMethodName is not null)
+        {
+            writer.Line();
+            WriteMapExistingImpl(writer, mapping);
+        }
+
         if (mapping.EffectiveSettings.IsMappingModeValid &&
             !mapping.HelperMethodDeclarations.IsDefaultOrEmpty)
         {
@@ -172,76 +178,13 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.MapNewImplMethodName is
-            { } mapNewImplMethodName)
-        {
-            writer.Line(
-                $"=> {BuildMapNewImplCall(mapping, mapNewImplMethodName)};");
-            writer.Unindent();
-            return;
-        }
-
-        if (mapping.UnsupportedExceptionMessage is
-            { } unsupportedExceptionMessage)
-        {
-            WriteUnsupportedMapping(
-                writer,
-                unsupportedExceptionMessage);
-            writer.Unindent();
-            return;
-        }
-
-        if (mapping.ControlFlow is { } controlFlow)
-        {
-            WriteControlFlowMapNew(
-                writer,
-                controlFlow);
-            return;
-        }
-
-        if (mapping.MapNewUnsupportedExceptionMessage is
-            { } mapNewUnsupportedExceptionMessage)
-        {
-            WriteUnsupportedMapping(
-                writer,
-                mapNewUnsupportedExceptionMessage);
-            writer.Unindent();
-            return;
-        }
-
-        if (mapping.MapNewDirectExpression is { } directExpression)
-        {
-            writer.Line($"=> {directExpression};");
-            writer.Unindent();
-            return;
-        }
-
-        if (mapping.MapNewFactory is { } factory)
-        {
-            WriteFactoryMapNew(
-                writer,
-                mapping,
-                factory);
-            return;
-        }
-
-        if (mapping.MapNewConstructor is
-            { } constructor)
-        {
-            writer.Unindent();
-            writer.Line("{");
-            writer.Indent();
-            WriteConstructorMapNewStatements(
-                writer,
-                mapping,
-                constructor);
-            writer.Unindent();
-            writer.Line("}");
-            return;
-        }
+        var methodName =
+            mapping.MapNewImplMethodName ??
+            throw new InvalidOperationException(
+                "A Create implementation method name is required.");
 
         writer.Line(
-            "=> throw new global::System.NotImplementedException();");
+            $"=> {BuildMapNewImplCall(mapping, methodName)};");
         writer.Unindent();
     }
 
@@ -308,38 +251,6 @@ internal static class TypeMapperEmitter
         WriteControlFlowMapNewLeaf(
             writer,
             mapping);
-    }
-
-    private static void WriteFactoryMapNew(
-        CodeWriter writer,
-        TypeMapperMappingModel mapping,
-        TypeMapperFactoryMappingModel factory)
-    {
-        writer.Unindent();
-        writer.Line("{");
-        writer.Indent();
-        WriteFactoryMapNewStatements(
-            writer,
-            mapping,
-            factory);
-        writer.Unindent();
-        writer.Line("}");
-    }
-
-    private static void WriteControlFlowMapNew(
-        CodeWriter writer,
-        TypeMapperControlFlowMappingModel controlFlow)
-    {
-        writer.Unindent();
-        writer.Line("{");
-        writer.Indent();
-
-        WriteControlFlowMapNewNode(
-            writer,
-            controlFlow.MapNewRoot);
-
-        writer.Unindent();
-        writer.Line("}");
     }
 
     private static void WriteControlFlowMapNewNode(
@@ -686,75 +597,14 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.UnsupportedExceptionMessage is
-            { } unsupportedExceptionMessage)
-        {
-            WriteUnsupportedMapping(
-                writer,
-                unsupportedExceptionMessage);
-            writer.Unindent();
-            return;
-        }
+        var methodName =
+            mapping.MapExistingImplMethodName ??
+            throw new InvalidOperationException(
+                "An Update implementation method name is required.");
 
-        if (mapping.ControlFlow is { } controlFlow)
-        {
-            WriteControlFlowMapExisting(
-                writer,
-                mapping,
-                controlFlow);
-            return;
-        }
-
-        if (mapping.MapExistingUnsupportedExceptionMessage is
-            { } mapExistingUnsupportedExceptionMessage)
-        {
-            WriteUnsupportedMapping(
-                writer,
-                mapExistingUnsupportedExceptionMessage);
-            writer.Unindent();
-            return;
-        }
-
-        if (mapping.MapExistingDirectExpression is { } directExpression)
-        {
-            writer.Line($"=> {directExpression};");
-            writer.Unindent();
-            return;
-        }
-
-        if (mapping.MapExistingKind ==
-            TypeMapperMapExistingKind.Unsupported)
-        {
-            writer.Line(
-                "=> throw new global::System.NotImplementedException();");
-            writer.Unindent();
-            return;
-        }
-
-        if (mapping.MapExistingKind ==
-            TypeMapperMapExistingKind.NullableValue)
-        {
-            WriteNullableValueMapExistingBody(
-                writer,
-                mapping);
-            return;
-        }
-
-        if (mapping.MapExistingMemberMappings.IsEmpty)
-        {
-            writer.Line("=> destination;");
-            writer.Unindent();
-            return;
-        }
-
+        writer.Line(
+            $"=> {BuildMapExistingImplCall(mapping, methodName)};");
         writer.Unindent();
-        writer.Line("{");
-        writer.Indent();
-        WriteMapExistingLeafStatements(
-            writer,
-            mapping);
-        writer.Unindent();
-        writer.Line("}");
     }
 
     private static void WriteMapExistingBody(
@@ -783,9 +633,13 @@ internal static class TypeMapperEmitter
             writer.Line();
         }
 
-        WriteMapExistingStatements(
-            writer,
-            mapping);
+        var methodName =
+            mapping.MapExistingImplMethodName ??
+            throw new InvalidOperationException(
+                "An Update implementation method name is required.");
+
+        writer.Line(
+            $"return {BuildMapExistingImplCall(mapping, methodName)};");
 
         writer.Unindent();
         writer.Line("}");
@@ -908,7 +762,7 @@ internal static class TypeMapperEmitter
         var methodName =
             mapping.MapNewImplMethodName ??
             throw new InvalidOperationException(
-                "A MapNew implementation method name is required.");
+                "A Create implementation method name is required.");
 
         writer.Line(
             $"private {mapping.DestinationTypeName} " +
@@ -916,14 +770,9 @@ internal static class TypeMapperEmitter
         writer.Indent();
         writer.Line(
             $"{mapping.NonNullSourceTypeName} " +
-            mapping.NonNullSourceName +
-            (mapping.MapNewImplUsesContext ? "," : ")"));
-
-        if (mapping.MapNewImplUsesContext)
-        {
-            writer.Line(
-                "global::Morphant.Context.MappingContext context)");
-        }
+            mapping.NonNullSourceName + ",");
+        writer.Line(
+            "global::Morphant.Context.MappingContext context)");
         writer.Unindent();
         writer.Line("{");
         writer.Indent();
@@ -940,9 +789,53 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         string methodName)
     {
-        return mapping.MapNewImplUsesContext
-            ? $"{methodName}({mapping.NonNullSourceName}, context)"
-            : $"{methodName}({mapping.NonNullSourceName})";
+        return $"{methodName}({mapping.NonNullSourceName}, context)";
+    }
+
+    private static void WriteMapExistingImpl(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        var methodName =
+            mapping.MapExistingImplMethodName ??
+            throw new InvalidOperationException(
+                "An Update implementation method name is required.");
+
+        writer.Line(
+            $"private {mapping.DestinationTypeName} " +
+            $"{methodName}(");
+        writer.Indent();
+        writer.Line(
+            $"{mapping.NonNullSourceTypeName} " +
+            mapping.NonNullSourceName + ",");
+        writer.Line(
+            $"{mapping.NonNullDestinationTypeName} destination,");
+        writer.Line(
+            "global::Morphant.Context.MappingContext context)");
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        WriteMapExistingStatements(
+            writer,
+            mapping);
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static string BuildMapExistingImplCall(
+        TypeMapperMappingModel mapping,
+        string methodName)
+    {
+        var destination = mapping.MapExistingKind ==
+            TypeMapperMapExistingKind.NullableValue
+                ? "destination.Value"
+                : "destination";
+        var arguments =
+            $"{mapping.NonNullSourceName}, {destination}";
+
+        return $"{methodName}({arguments}, context)";
     }
 
     private static void WriteArgumentNullException(
@@ -952,38 +845,6 @@ internal static class TypeMapperEmitter
         writer.Line(
             "throw new global::System.ArgumentNullException(" +
             $"nameof({parameterName}));");
-    }
-
-    private static void WriteNullableValueMapExistingBody(
-        CodeWriter writer,
-        TypeMapperMappingModel mapping)
-    {
-        writer.Unindent();
-        writer.Line("{");
-        writer.Indent();
-
-        WriteNullableValueMapExistingLeafStatements(
-            writer,
-            mapping);
-        writer.Unindent();
-        writer.Line("}");
-    }
-
-    private static void WriteControlFlowMapExisting(
-        CodeWriter writer,
-        TypeMapperMappingModel mapping,
-        TypeMapperControlFlowMappingModel controlFlow)
-    {
-        writer.Unindent();
-        writer.Line("{");
-        writer.Indent();
-
-        WriteControlFlowMapExistingNode(
-            writer,
-            controlFlow.MapExistingRoot);
-
-        writer.Unindent();
-        writer.Line("}");
     }
 
     private static void WriteControlFlowMapExistingNode(
@@ -1092,15 +953,6 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.MapExistingKind ==
-            TypeMapperMapExistingKind.NullableValue)
-        {
-            WriteNullableValueMapExistingLeafStatements(
-                writer,
-                mapping);
-            return;
-        }
-
         if (mapping.MapExistingMemberMappings.IsEmpty)
         {
             writer.Line("return destination;");
@@ -1123,42 +975,6 @@ internal static class TypeMapperEmitter
 
         writer.Line();
         writer.Line("return destination;");
-    }
-
-    private static void
-        WriteNullableValueMapExistingLeafStatements(
-            CodeWriter writer,
-            TypeMapperMappingModel mapping)
-    {
-        if (mapping.MapExistingMemberMappings.IsEmpty)
-        {
-            writer.Line("return destination;");
-            return;
-        }
-
-        var destinationLocalName =
-            mapping.MapExistingDestinationLocalName ??
-            throw new InvalidOperationException(
-                "Nullable destination member mappings require a local name.");
-
-        writer.Line(
-            $"var {destinationLocalName} = destination.Value;");
-        WriteMemberValueLocals(
-            writer,
-            mapping.MapExistingMemberMappings);
-
-        foreach (var memberMapping in
-                 mapping.MapExistingMemberMappings)
-        {
-            writer.Line(
-                $"{destinationLocalName}." +
-                $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(mapping, memberMapping) +
-                ";");
-        }
-
-        writer.Line();
-        writer.Line($"return {destinationLocalName};");
     }
 
     private static void WriteUnsupportedMapping(

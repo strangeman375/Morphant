@@ -494,6 +494,12 @@ executable mapper-а;
 `Nullable<TSource>` разворачивается в underlying `TSource`, а для definitely
 non-nullable values проверки не генерируются. Invalid effective settings
 сохраняются как детерминированные unsupported operations до diagnostics.
+Public `Map` methods выполняют только settings/null prelude и dispatch:
+достижимая no-previous ветка исполняется в collision-safe `CreateImpl`, а
+existing-destination ветка — в collision-safe `UpdateImpl`. Helpers получают
+нормализованный source и исходный `MappingContext`; `UpdateImpl` также получает
+non-null параметр `destination`, поскольку это фактический destination для
+обновления, а не отдельный снимок предыдущего состояния.
 Самостоятельные `TypeMapperMappingModeTests` и `TypeMapperNullHandlingTests`
 проверяют полный generated source, runtime laws, precedence, call order,
 nullable forms и invalid states. Их runtime-вызовы входят в уже отмеченный

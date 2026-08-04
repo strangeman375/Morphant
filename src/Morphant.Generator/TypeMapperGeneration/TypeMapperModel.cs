@@ -28,6 +28,7 @@ internal readonly record struct TypeMapperMappingModel
     string NonNullSourceName,
     string DestinationTypeName,
     string MaybeNullDestinationTypeName,
+    string NonNullDestinationTypeName,
     bool SourceCanBeNull,
     bool SourceIsNullableValue,
     bool DestinationCanBeNull,
@@ -36,7 +37,6 @@ internal readonly record struct TypeMapperMappingModel
     TypeMapperFactoryMappingModel? MapNewFactory,
     TypeMapperConstructorMappingModel? MapNewConstructor,
     TypeMapperMapExistingKind MapExistingKind,
-    string? MapExistingDestinationLocalName,
     ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
     TypeMapperControlFlowMappingModel? ControlFlow = null,
@@ -45,8 +45,8 @@ internal readonly record struct TypeMapperMappingModel
     string? UnsupportedExceptionMessage = null,
     EffectiveMappingSettings EffectiveSettings = default,
     string? MapNewImplMethodName = null,
-    ImmutableArray<string> HelperMethodDeclarations = default,
-    bool MapNewImplUsesContext = true
+    string? MapExistingImplMethodName = null,
+    ImmutableArray<string> HelperMethodDeclarations = default
 )
 {
     public string InterfaceTypeName =>
