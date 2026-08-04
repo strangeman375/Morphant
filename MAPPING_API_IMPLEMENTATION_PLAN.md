@@ -126,12 +126,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 2, этап 8 — исполнение structured `Construct`.**
+**Фаза 2, этап 9 — direct `Construct` и `ByFactory`.**
 
 Статус: ожидает ревью.
 
-Этап 7 принят. Этап 9 и все последующие этапы заблокированы до принятия
-этапа 8.
+Этап 8 принят. Этап 10 и все последующие этапы заблокированы до принятия
+этапа 9.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -508,7 +508,7 @@ nullable forms и invalid states. Их runtime-вызовы входят в уж
 
 ### Этап 8. Исполнение structured `Construct`
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — превратить generated construction plan в реальный выбор result.
 
@@ -591,7 +591,7 @@ class/struct/record/nullable/generic destinations. Её runtime-вызовы в�
 
 ### Этап 9. Direct `Construct` и `ByFactory`
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — закрыть получение уже готового destination instance без смешивания с
 manual mapping.
@@ -624,6 +624,37 @@ Production scope:
 
 Результат этапа: все creation capabilities способны получить настоящий result
 с единой дальнейшей member semantics.
+
+Реализовано: direct `Construct` исполняется для opaque destination и типов без
+structured constructor surface. Expression-body переносится как выражение,
+natural method group либо mapper delegate материализуется в типизированный
+local, а синхронный block-body целиком переносится в collision-safe private
+helper. Source-only форма вызывается только в no-previous ветке; существующий
+destination переиспользуется без вычисления пользовательского creation-кода.
+Previous-aware форма получает точный `Option.None` / `Option.Some(destination)`
+и может вернуть previous, replacement либо терминальный `null`.
+
+Structured `new(ByFactory(...))` поддерживает inline expression/block lambda,
+method group и `Func<TDestination>` из mapper member-а. Factory-body переносится
+как обычный синхронный C#-код с locals, mutation, loops, exceptions и local
+functions; source/previous передаются только при фактическом capture. Mapper
+members и compile-time constants сохраняются, обычные Configure-locals не
+переносятся. Имена generated helper/local function, delegate и result locals
+разрешаются collision-safe.
+
+Любой direct/factory result вычисляется и сохраняется ровно один раз. Runtime
+`null` немедленно завершает mapping до member stage; для non-null result
+применяется общий post-construction convention plan. Это одинаково работает
+для reference, scalar, enum, interface, abstract/factory-only, nullable value и
+constructed generic destinations; automatic construction у direct destination
+не появляется.
+
+Самостоятельная категория `TypeMapperCreationResultTests` содержит полные
+exact-source спецификации direct/factory lowering и executable-проверки всех
+форм, lifecycle, terminal null, side effects, exceptions, captures, collisions
+и destination kinds. Проверки проходят `9/9`. Runtime-вызовы входят в уже
+отмеченный временный integration debt и должны быть перенесены не позднее
+этапа 22; exact-source проверки остаются в unit-test project.
 
 ### Этап 10. Базовый explicit `Members` plan
 

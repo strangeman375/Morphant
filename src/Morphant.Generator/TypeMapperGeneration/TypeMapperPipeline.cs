@@ -167,6 +167,7 @@ internal static class TypeMapperPipeline
                 configuration.RootSettings,
                 compilation,
                 mapperType,
+                usedGeneratedMethodNames,
                 cancellationToken);
             var createMethodName = RequiresCreateMethod(
                     mapping,
@@ -194,6 +195,7 @@ internal static class TypeMapperPipeline
         PairConfigurationSettings rootSettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        HashSet<string> usedGeneratedMethodNames,
         CancellationToken cancellationToken)
     {
         var pair = configuration.Pair;
@@ -253,14 +255,34 @@ internal static class TypeMapperPipeline
 
         if (!configuration.Declarative.Constructs.IsEmpty)
         {
-            if (!pair.Capabilities.StructuredConstruction ||
-                destinationPlan.MemberType is not
-                    INamedTypeSymbol structuredDestination)
+            if (pair.Capabilities.DirectConstruction)
+            {
+                var directConstruct =
+                    DirectConstructMappingPlanner.Build(
+                        configuration.Declarative.Constructs[0],
+                        mapping,
+                        memberMappings,
+                        mapperType,
+                        usedGeneratedMethodNames,
+                        cancellationToken);
+
+                return mapping with
+                {
+                    ControlFlow = directConstruct.ControlFlow,
+                    HelperMethodDeclarations =
+                        directConstruct.HelperMethodDeclarations,
+                    UnsupportedExceptionMessage =
+                        directConstruct.UnsupportedMessage
+                };
+            }
+
+            if (destinationPlan.MemberType is not
+                INamedTypeSymbol structuredDestination)
             {
                 return mapping with
                 {
                     UnsupportedExceptionMessage =
-                        "Configured direct Construct plans are not executable yet."
+                        "Configured Construct plans are not executable yet."
                 };
             }
 

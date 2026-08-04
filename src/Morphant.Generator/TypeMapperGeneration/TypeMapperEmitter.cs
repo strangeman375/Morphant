@@ -521,6 +521,18 @@ internal static class TypeMapperEmitter
             factory.ValueExpression +
             ";");
 
+        if (factory.RequiresNullGuard)
+        {
+            writer.Line();
+            writer.Line($"if ({destinationLocalName} is null)");
+            writer.Line("{");
+            writer.Indent();
+            writer.Line("return default!;");
+            writer.Unindent();
+            writer.Line("}");
+            writer.Line();
+        }
+
         var assignmentTarget = destinationLocalName;
         var returnExpression = destinationLocalName;
 
@@ -534,13 +546,22 @@ internal static class TypeMapperEmitter
             writer.Line(
                 $"var {valueLocalName} = " +
                 $"{destinationLocalName}.Value;");
+            writer.Line();
 
             assignmentTarget = valueLocalName;
             returnExpression = valueLocalName;
         }
-        else if (factory.DestinationRequiresNullForgivingOperator)
+        else if (!factory.RequiresNullGuard &&
+                 factory.DestinationRequiresNullForgivingOperator)
         {
             assignmentTarget += "!";
+        }
+
+        if (!mapping.MapNewMemberMappings.IsEmpty &&
+            !factory.RequiresNullGuard &&
+            factory.NullableValueLocalName is null)
+        {
+            writer.Line();
         }
 
         foreach (var memberMapping in

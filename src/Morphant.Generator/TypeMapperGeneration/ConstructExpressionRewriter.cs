@@ -44,20 +44,56 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         CancellationToken cancellationToken,
         out string rewrittenExpression)
     {
-        if (!HasOnlyTransferableCaptures(
+        if (!TryRewriteSyntax(
                 expression,
+                semanticModel,
+                mapperType,
+                sourceParameter,
+                sourceName,
+                previousParameter,
+                previousSubstitution,
+                transferScope,
+                cancellationToken,
+                out var rewritten))
+        {
+            rewrittenExpression = string.Empty;
+            return false;
+        }
+
+        rewrittenExpression = rewritten
+            .WithoutTrivia()
+            .NormalizeWhitespace()
+            .ToFullString();
+        return true;
+    }
+
+    public static bool TryRewriteSyntax<TNode>(
+        TNode syntax,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        SyntaxNode transferScope,
+        CancellationToken cancellationToken,
+        out TNode rewrittenSyntax)
+        where TNode : CSharpSyntaxNode
+    {
+        if (!HasOnlyTransferableCaptures(
+                syntax,
                 transferScope,
                 semanticModel,
                 sourceParameter,
                 previousParameter,
                 cancellationToken))
         {
-            rewrittenExpression = string.Empty;
+            rewrittenSyntax = null!;
             return false;
         }
 
-        var rewritten =
-            (ExpressionSyntax)new ConstructExpressionRewriter(
+        rewrittenSyntax =
+            (TNode)new ConstructExpressionRewriter(
                     semanticModel,
                     mapperType,
                     sourceParameter,
@@ -65,12 +101,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     previousParameter,
                     previousSubstitution,
                     transferScope)
-                .Visit(expression)!;
-
-        rewrittenExpression = rewritten
-            .WithoutTrivia()
-            .NormalizeWhitespace()
-            .ToFullString();
+                .Visit(syntax)!;
         return true;
     }
 
@@ -180,10 +211,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         {
             if (node.Name.Identifier.ValueText == "HasValue")
             {
-                return SyntaxFactory.LiteralExpression(
-                        previous.HasValue
-                            ? SyntaxKind.TrueLiteralExpression
-                            : SyntaxKind.FalseLiteralExpression)
+                return SyntaxFactory.ParseExpression(
+                        previous.HasValueExpression)
                     .WithTriviaFrom(node);
             }
 
@@ -216,10 +245,132 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         return base.VisitMemberAccessExpression(node);
     }
 
+    public override SyntaxNode? VisitDeclarationPattern(
+        DeclarationPatternSyntax node)
+    {
+        return node
+            .WithType(RewriteType(node.Type))
+            .WithDesignation(
+                (VariableDesignationSyntax)Visit(node.Designation)!);
+    }
+
+    public override SyntaxNode? VisitRecursivePattern(
+        RecursivePatternSyntax node)
+    {
+        return node
+            .WithType(
+                node.Type is { } type
+                    ? RewriteType(type)
+                    : null)
+            .WithPositionalPatternClause(
+                node.PositionalPatternClause is { } positional
+                    ? (PositionalPatternClauseSyntax)Visit(positional)!
+                    : null)
+            .WithPropertyPatternClause(
+                node.PropertyPatternClause is { } property
+                    ? (PropertyPatternClauseSyntax)Visit(property)!
+                    : null)
+            .WithDesignation(
+                node.Designation is { } designation
+                    ? (VariableDesignationSyntax)Visit(designation)!
+                    : null);
+    }
+
+    public override SyntaxNode? VisitTypePattern(
+        TypePatternSyntax node)
+    {
+        return node.WithType(RewriteType(node.Type));
+    }
+
+    public override SyntaxNode? VisitVariableDeclaration(
+        VariableDeclarationSyntax node)
+    {
+        if (node.Type.IsVar ||
+            node.Type is RefTypeSyntax
+            {
+                Type: var referencedType
+            } && referencedType.IsVar)
+        {
+            return node.WithVariables(VisitList(node.Variables));
+        }
+
+        return node
+            .WithType(RewriteType(node.Type))
+            .WithVariables(VisitList(node.Variables));
+    }
+
+    public override SyntaxNode? VisitLocalFunctionStatement(
+        LocalFunctionStatementSyntax node)
+    {
+        if (_semanticModel.GetDeclaredSymbol(node) is not
+            IMethodSymbol function)
+        {
+            return base.VisitLocalFunctionStatement(node);
+        }
+
+        var returnType = SyntaxFactory.ParseTypeName(
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    function.ReturnType.WithNullableAnnotation(
+                        function.ReturnNullableAnnotation)))
+            .WithTriviaFrom(node.ReturnType);
+
+        if (node.ReturnType is RefTypeSyntax refReturnType)
+        {
+            returnType = refReturnType.WithType(returnType);
+        }
+
+        var parameters = node.ParameterList.Parameters
+            .Select((parameter, index) =>
+            {
+                var parameterSymbol = function.Parameters[index];
+                var rewritten = parameter.WithType(
+                    SyntaxFactory.ParseTypeName(
+                            TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                                parameterSymbol.Type.WithNullableAnnotation(
+                                    parameterSymbol.NullableAnnotation)))
+                        .WithTriviaFrom(parameter.Type!));
+
+                return parameter.Default is { } defaultValue
+                    ? rewritten.WithDefault(
+                        defaultValue.WithValue(
+                            (ExpressionSyntax)Visit(defaultValue.Value)!))
+                    : rewritten;
+            });
+        var constraints = node.ConstraintClauses.Select(clause =>
+            clause.WithConstraints(
+                SyntaxFactory.SeparatedList(
+                    clause.Constraints.Select(RewriteConstraint))));
+
+        return node
+            .WithReturnType(returnType)
+            .WithParameterList(
+                node.ParameterList.WithParameters(
+                    SyntaxFactory.SeparatedList(parameters)))
+            .WithConstraintClauses(SyntaxFactory.List(constraints))
+            .WithBody(
+                node.Body is null
+                    ? null
+                    : (BlockSyntax)Visit(node.Body)!)
+            .WithExpressionBody(
+                node.ExpressionBody is null
+                    ? null
+                    : node.ExpressionBody.WithExpression(
+                        (ExpressionSyntax)Visit(
+                            node.ExpressionBody.Expression)!));
+    }
+
     public override SyntaxNode? VisitIdentifierName(
         IdentifierNameSyntax node)
     {
         var symbol = GetReferencedSymbol(node);
+
+        if (symbol is IMethodSymbol
+            {
+                MethodKind: MethodKind.LocalFunction
+            })
+        {
+            return node;
+        }
 
         if (SymbolEqualityComparer.Default.Equals(
                 symbol,
@@ -310,6 +461,14 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     {
         var symbol = GetReferencedSymbol(node);
 
+        if (symbol is IMethodSymbol
+            {
+                MethodKind: MethodKind.LocalFunction
+            })
+        {
+            return node;
+        }
+
         if (symbol is INamedTypeSymbol type)
         {
             return SyntaxFactory.ParseTypeName(
@@ -357,6 +516,24 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         return IsMapperMember(symbol);
+    }
+
+    private TypeSyntax RewriteType(TypeSyntax syntax)
+    {
+        return _semanticModel.GetTypeInfo(syntax).Type is { } type
+            ? SyntaxFactory.ParseTypeName(
+                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(type))
+                .WithTriviaFrom(syntax)
+            : (TypeSyntax)base.Visit(syntax)!;
+    }
+
+    private TypeParameterConstraintSyntax RewriteConstraint(
+        TypeParameterConstraintSyntax constraint)
+    {
+        return constraint is TypeConstraintSyntax typeConstraint
+            ? typeConstraint.WithType(
+                RewriteType(typeConstraint.Type))
+            : constraint;
     }
 
     private bool IsMapperMember(ISymbol symbol)
@@ -566,4 +743,4 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 internal readonly record struct PreviousExpressionSubstitution(
     string OptionExpression,
     string ValueExpression,
-    bool HasValue);
+    string HasValueExpression);

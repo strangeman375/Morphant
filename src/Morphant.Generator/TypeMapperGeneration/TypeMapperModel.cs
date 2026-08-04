@@ -62,7 +62,8 @@ internal readonly record struct TypeMapperFactoryMappingModel
     ImmutableArray<string> RuntimeLocalDependencies,
     string DestinationLocalName,
     string? NullableValueLocalName,
-    bool DestinationRequiresNullForgivingOperator
+    bool DestinationRequiresNullForgivingOperator,
+    bool RequiresNullGuard = false
 );
 
 internal readonly record struct TypeMapperFactoryDelegateModel
