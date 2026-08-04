@@ -32,15 +32,6 @@ internal enum NullDestinationHandlingValue
     Throw
 }
 
-internal enum TemplateModeValue
-{
-    Default = 0,
-
-    Dsl,
-
-    Raw
-}
-
 internal enum ConstructorSelectionValue
 {
     Default = 0,
@@ -71,15 +62,13 @@ internal enum UnmappedMemberValidationValue
 internal readonly record struct MappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,
-    NullDestinationHandlingValue? NullDestinationHandling,
-    TemplateModeValue? TemplateMode)
+    NullDestinationHandlingValue? NullDestinationHandling)
 {
     public static MappingSettings Default =>
         new(
             MappingModeValue.Default,
             NullSourceHandlingValue.Default,
-            NullDestinationHandlingValue.Default,
-            TemplateModeValue.Default);
+            NullDestinationHandlingValue.Default);
 }
 
 internal readonly record struct EffectiveMappingSettings(
@@ -132,20 +121,5 @@ internal readonly record struct EffectiveMappingSettings(
                 rootSettings.NullDestinationHandling,
                 mappingSettings.NullDestinationHandling,
                 NullDestinationHandlingValue.Create));
-    }
-}
-
-internal static class EffectiveTemplateMode
-{
-    public static TemplateModeValue? Resolve(
-        MappingSettings assemblySettings,
-        MappingSettings rootSettings,
-        MappingSettings mappingSettings)
-    {
-        return SettingValueResolver.Resolve(
-            assemblySettings.TemplateMode,
-            rootSettings.TemplateMode,
-            mappingSettings.TemplateMode,
-            TemplateModeValue.Dsl);
     }
 }

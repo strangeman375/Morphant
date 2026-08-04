@@ -111,10 +111,10 @@ internal static class TypeMapperEmitter
         }
 
         if (mapping.EffectiveSettings.IsMappingModeValid &&
-            !mapping.TemplateHelperMethodDeclarations.IsDefaultOrEmpty)
+            !mapping.HelperMethodDeclarations.IsDefaultOrEmpty)
         {
             foreach (var declaration in
-                     mapping.TemplateHelperMethodDeclarations)
+                     mapping.HelperMethodDeclarations)
             {
                 writer.Line();
                 WriteMultilineDeclaration(

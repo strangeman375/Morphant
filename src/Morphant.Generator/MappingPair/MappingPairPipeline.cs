@@ -1,71 +1,11 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Morphant.Generator.MapperBuilderMap;
 
 namespace Morphant.Generator.MappingPair;
 
 internal static class MappingPairPipeline
 {
-    public static IncrementalValuesProvider<LegacyMapperMappingPairModel> Build(
-        IncrementalValueProvider<CompilationContext> compilationContext,
-        IncrementalValuesProvider<MapperBuilderMapInfo> mapInfos)
-    {
-        return mapInfos
-            .Combine(compilationContext)
-            .Select(static (source, cancellationToken) =>
-                BuildLegacyModel(
-                    source.Left,
-                    source.Right,
-                    cancellationToken))
-            .WhereHasValue()
-            .WithTrackingName(
-                MorphantGeneratorStageNames.BuildMappingPairModels);
-    }
-
-    private static LegacyMapperMappingPairModel? BuildLegacyModel(
-        MapperBuilderMapInfo mapInfo,
-        CompilationContext context,
-        CancellationToken cancellationToken)
-    {
-        var registrations = mapInfo.Registrations
-            .Select(static registration =>
-                new MappingPairRegistrationModel(
-                    registration.Syntax,
-                    registration.SourceType,
-                    registration.DestinationType))
-            .ToImmutableArray();
-        var mappingPairs = BuildModel(
-            new MapperMappingRegistrationModel(
-                mapInfo.ConfigureSyntax,
-                registrations),
-            context,
-            cancellationToken);
-
-        if (mappingPairs is not { } model)
-        {
-            return null;
-        }
-
-        var legacyRegistrations =
-            ImmutableArray.CreateBuilder<MapperBuilderMapRegistrationInfo>(
-                model.Pairs.Length);
-
-        foreach (var pair in model.Pairs)
-        {
-            var registration = mapInfo.Registrations.First(candidate =>
-                candidate.Syntax.SyntaxTree == pair.Registration.Syntax.SyntaxTree &&
-                candidate.Syntax.Span == pair.Registration.Syntax.Span);
-
-            legacyRegistrations.Add(registration);
-        }
-
-        return new LegacyMapperMappingPairModel(
-            model,
-            mapInfo.Settings,
-            legacyRegistrations.ToImmutable());
-    }
-
     internal static MapperMappingPairModel? BuildModel(
         MapperMappingRegistrationModel mappingInfo,
         CompilationContext context,

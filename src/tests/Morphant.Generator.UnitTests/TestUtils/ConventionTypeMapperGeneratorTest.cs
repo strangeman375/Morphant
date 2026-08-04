@@ -51,6 +51,8 @@ internal sealed class ConventionTypeMapperGeneratorTest
         await test.RunAsync();
     }
 
+    // TODO: Move runtime compilation and execution to
+    // Morphant.Generator.IntegrationTests.
     public static void RunAndExecute(
         LanguageVersion languageVersion,
         string source,

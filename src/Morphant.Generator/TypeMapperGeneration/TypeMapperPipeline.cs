@@ -357,8 +357,7 @@ internal static class TypeMapperPipeline
                 NullSourceHandlingValue.Default),
             GetSettingOrDefault(
                 settings.NullDestinationHandling,
-                NullDestinationHandlingValue.Default),
-            TemplateModeValue.Default);
+                NullDestinationHandlingValue.Default));
     }
 
     private static TValue? GetSettingOrDefault<TValue>(

@@ -5,9 +5,6 @@ namespace Morphant.Generator.Settings;
 
 internal static class AssemblyMappingSettingsPipeline
 {
-    private const string TemplateModePropertyName =
-        "build_property.MorphantTemplateMode";
-
     private const string MappingModePropertyName =
         "build_property.MorphantMappingMode";
 
@@ -37,11 +34,7 @@ internal static class AssemblyMappingSettingsPipeline
                     ParseNamedValue<NullDestinationHandlingValue>(
                         GetValue(
                             globalOptions,
-                            NullDestinationHandlingPropertyName)),
-                    ParseNamedValue<TemplateModeValue>(
-                        GetValue(
-                            globalOptions,
-                            TemplateModePropertyName)));
+                            NullDestinationHandlingPropertyName)));
             })
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildAssemblyMappingSettings);

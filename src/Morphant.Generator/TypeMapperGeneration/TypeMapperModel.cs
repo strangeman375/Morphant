@@ -43,7 +43,7 @@ internal readonly record struct TypeMapperMappingModel
     string? UnsupportedExceptionMessage = null,
     EffectiveMappingSettings EffectiveSettings = default,
     string? MapNewImplMethodName = null,
-    ImmutableArray<string> TemplateHelperMethodDeclarations = default,
+    ImmutableArray<string> HelperMethodDeclarations = default,
     bool MapNewImplUsesContext = true
 )
 {

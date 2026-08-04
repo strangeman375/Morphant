@@ -1,10 +1,12 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TypeMapperTests;
+namespace Morphant.Generator.UnitTests.TypeMapperConventionTests;
 
 [TestFixture]
-internal sealed class TypeMapperConventionOnlyBridgeTests
+// TODO: Move full production-generator composition to
+// Morphant.Generator.IntegrationTests.
+internal sealed class ProductionCompositionTests
 {
     [Test]
     public async Task Production_generator_composes_the_surface_with_the_mapper_bridge()
