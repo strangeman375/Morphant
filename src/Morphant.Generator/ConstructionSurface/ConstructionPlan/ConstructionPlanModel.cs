@@ -5,17 +5,14 @@ namespace Morphant.Generator.ConstructionSurface.ConstructionPlan;
 internal sealed record ConstructionPlanModel(
     string Namespace,
     string TypeName,
+    string ConstructorParametersTypeName,
     string DestinationTypeName,
     ImmutableArray<ConstructionTypeParameterModel> TypeParameters,
     ConstructionDocumentationModel DestinationDocumentation,
     string? ObsoleteAttributeSource,
     ImmutableArray<ConstructionConstructorModel> Constructors,
     ImmutableArray<ConstructionConstructorParameterFieldModel>
-        ConstructorParameterFields)
-{
-    public string ConstructorParametersTypeName =>
-        TypeName + "ConstructorParameters";
-}
+        ConstructorParameterFields);
 
 internal sealed record ConstructionTypeParameterModel(
     string Name,

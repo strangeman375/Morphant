@@ -17,7 +17,6 @@ internal sealed class ConstructionSurfaceConstructorTests
 
 using System;
 using Morphant;
-using Morphant.Members;
 
 namespace TestCase
 {
@@ -45,14 +44,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, Destination>()
-                .Construct(source => new(source.Id, source.Name))
-                .Construct(source => new(
-                    name: source.Name,
-                    id: source.Id))
-                .Construct(source => new(
-                    (ConstructorParameter<Guid>)Guid.NewGuid(),
-                    tags: new[] { source.Name }));
+            builder.Map<Source, Destination>();
         }
     }
 }
@@ -69,7 +61,7 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters
+    internal sealed class DestinationConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
@@ -109,7 +101,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters? parameters = null)
+            DestinationConstructorParameters? parameters = null)
         {
         }
 
@@ -239,10 +231,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, Destination>()
-                .Construct(_ => new(ByConvention()))
-                .Construct(_ => new(
-                    ByFactory(() => new Destination())));
+            builder.Map<Source, Destination>();
         }
     }
 }

@@ -1895,6 +1895,10 @@ destination constructor parameter или body-member:
 - generic argument `Member<T>` / `ConstructorParameter<T>` отражает тип
   принимаемого значения, а внешняя wrapper-аннотация допускает `null` только
   тогда, когда `null` является валидным explicit rule;
+- nullable-аннотация wrapper-а не делает parameter optional: required
+  destination input, допускающий `null`, остаётся required generated
+  constructor parameter без default value; optionality задаётся только
+  default argument-ом;
 - optional non-nullable constructor parameter использует suppressed `null!`
   только как generated omission sentinel, не ослабляя публичную nullable-
   аннотацию parameter-а;
@@ -1948,7 +1952,11 @@ Plan types находятся в destination-relative namespace `.Morphant.Gener
 Дополнительное слово `Morphant` в `DestinationConstruction`,
 `DestinationConstructorParameters` или `DestinationMembers` не добавляется:
 namespace уже изолирует generated surface, а реальные collisions разрешаются
-детерминированной naming policy.
+детерминированной naming policy. Для destination из global namespace пустой
+destination-prefix даёт `Morphant.Generated`, а ссылки используют
+`global::Morphant.Generated`. Искусственный segment `Global` не добавляется:
+он не является C# alias `global::` и создавал бы коллизию с реальным
+destination namespace `Global`.
 
 ## 12. Application registry и deterministic lookup
 

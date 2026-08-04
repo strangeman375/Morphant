@@ -30,6 +30,8 @@ namespace TestCase
     {
         public Destination(int id) { }
 
+        public Destination(string? label) { }
+
         public Destination(
             Guid id,
             bool enabled = true,
@@ -43,6 +45,7 @@ namespace TestCase
         {
             builder.Map<Source?, Destination?>()
                 .Construct(source => new(source.Id))
+                .Construct(_ => new(label: null))
                 .Construct((source, previous) =>
                 {
                     if (previous.HasValue)
@@ -82,12 +85,17 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters
+    internal sealed class DestinationConstructorParameters
     {
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
         /// </summary>
         public global::Morphant.Members.ConstructorParameter<int> idInt = null!;
+
+        /// <summary>
+        /// Configures the <c>label</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorParameter<string?>? label = null!;
 
         /// <summary>
         /// Configures the <c>id</c> constructor argument.
@@ -117,7 +125,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters? parameters = null)
+            DestinationConstructorParameters? parameters = null)
         {
         }
 
@@ -134,6 +142,14 @@ namespace TestCase.Morphant.Generated
         /// </summary>
         /// <param name="id">Configures the <c>id</c> constructor argument.</param>
         public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> id)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="label">Configures the <c>label</c> constructor argument.</param>
+        public DestinationConstruction(global::Morphant.Members.ConstructorParameter<string?>? label)
         {
         }
 

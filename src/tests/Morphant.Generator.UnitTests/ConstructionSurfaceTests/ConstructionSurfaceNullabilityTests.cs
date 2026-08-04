@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.ConstructionSurfaceTests;
 internal sealed class ConstructionSurfaceNullabilityTests
 {
     [Test]
-    public async Task Preserves_constructor_input_nullability_and_normalizes_mapping_roots()
+    public async Task Preserves_nullability_of_required_constructor_inputs_and_normalizes_mapping_roots()
     {
         // lang=c#
         const string source =
@@ -24,31 +24,21 @@ namespace TestCase
 
     public sealed class Destination
     {
+        // Every parameter is required. Nullable annotations describe whether
+        // an explicitly supplied null value is accepted.
         public Destination(
-            string required,
-            string? optional,
-            [AllowNull] string allowNull,
-            [DisallowNull] string? disallowNull,
+            string nonNullableReference,
+            string? nullableReference,
+            [AllowNull] string allowNullReference,
+            [DisallowNull] string? disallowNullReference,
             int? nullableValue) { }
     }
 
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
-        protected override void Configure(MapperBuilder builder)
-        {
-            builder.Map<Source?, Destination?>()
-                .Construct((Source source) => new(
-                    source.ToString()!,
-                    null,
-                    null,
-                    string.Empty,
-                    null))
-                .Convert((source, previous, _) =>
-                    previous.HasValue
-                        ? previous.Value
-                        : null);
-        }
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source?, Destination?>();
     }
 }
 """;
@@ -64,27 +54,27 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters
+    internal sealed class DestinationConstructorParameters
     {
         /// <summary>
-        /// Configures the <c>required</c> constructor argument.
+        /// Configures the <c>nonNullableReference</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorParameter<string> @required = null!;
+        public global::Morphant.Members.ConstructorParameter<string> nonNullableReference = null!;
 
         /// <summary>
-        /// Configures the <c>optional</c> constructor argument.
+        /// Configures the <c>nullableReference</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorParameter<string?>? optional = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? nullableReference = null!;
 
         /// <summary>
-        /// Configures the <c>allowNull</c> constructor argument.
+        /// Configures the <c>allowNullReference</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorParameter<string?>? allowNull = null!;
+        public global::Morphant.Members.ConstructorParameter<string?>? allowNullReference = null!;
 
         /// <summary>
-        /// Configures the <c>disallowNull</c> constructor argument.
+        /// Configures the <c>disallowNullReference</c> constructor argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorParameter<string> disallowNull = null!;
+        public global::Morphant.Members.ConstructorParameter<string> disallowNullReference = null!;
 
         /// <summary>
         /// Configures the <c>nullableValue</c> constructor argument.
@@ -104,7 +94,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters? parameters = null)
+            DestinationConstructorParameters? parameters = null)
         {
         }
 
@@ -119,16 +109,16 @@ namespace TestCase.Morphant.Generated
         /// <summary>
         /// Creates a destination instance using a corresponding constructor.
         /// </summary>
-        /// <param name="required">Configures the <c>required</c> constructor argument.</param>
-        /// <param name="optional">Configures the <c>optional</c> constructor argument.</param>
-        /// <param name="allowNull">Configures the <c>allowNull</c> constructor argument.</param>
-        /// <param name="disallowNull">Configures the <c>disallowNull</c> constructor argument.</param>
+        /// <param name="nonNullableReference">Configures the <c>nonNullableReference</c> constructor argument.</param>
+        /// <param name="nullableReference">Configures the <c>nullableReference</c> constructor argument.</param>
+        /// <param name="allowNullReference">Configures the <c>allowNullReference</c> constructor argument.</param>
+        /// <param name="disallowNullReference">Configures the <c>disallowNullReference</c> constructor argument.</param>
         /// <param name="nullableValue">Configures the <c>nullableValue</c> constructor argument.</param>
         public DestinationConstruction(
-            global::Morphant.Members.ConstructorParameter<string> @required,
-            global::Morphant.Members.ConstructorParameter<string?>? optional,
-            global::Morphant.Members.ConstructorParameter<string?>? allowNull,
-            global::Morphant.Members.ConstructorParameter<string> disallowNull,
+            global::Morphant.Members.ConstructorParameter<string> nonNullableReference,
+            global::Morphant.Members.ConstructorParameter<string?>? nullableReference,
+            global::Morphant.Members.ConstructorParameter<string?>? allowNullReference,
+            global::Morphant.Members.ConstructorParameter<string> disallowNullReference,
             global::Morphant.Members.ConstructorParameter<int?>? nullableValue)
         {
         }
@@ -228,12 +218,7 @@ namespace TestCase
     public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<List<string?>>?, Destination<List<string?>>?>()
-                .Construct(_ => new(new List<string?>()))
-                .Convert((source, previous, _) =>
-                    previous.HasValue
-                        ? previous.Value
-                        : default);
+            builder.Map<Source<List<string?>>?, Destination<List<string?>>?>();
     }
 }
 """;
@@ -249,7 +234,7 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination&lt;T&gt;"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters<T>
+    internal sealed class DestinationConstructorParameters<T>
     {
         /// <summary>
         /// Configures the <c>value</c> constructor argument.
@@ -269,7 +254,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters<T>? parameters = null)
+            DestinationConstructorParameters<T>? parameters = null)
         {
         }
 

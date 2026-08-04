@@ -34,6 +34,11 @@
   must remain useful and sufficient if all other test categories are removed.
 - Do not omit a scenario merely because another category happens to exercise
   it. Deliberate overlap between categories is acceptable.
+- Tests that specify generated declaration surface must derive it from bare
+  `Map<TSource, TDestination>()` registrations. Do not call generated
+  `Construct`, `Convert`, `Members`, or similar methods in their input code;
+  consumer calls belong only in an explicit Usage category. This keeps the
+  generation trigger independent from use of the generated API.
 - Optimize expected test code for human review, not for reducing repeated
   lines. Keep complete generated sources visible as local raw string literals
   in the test that specifies them. A large expected source may be split into
@@ -60,6 +65,8 @@
   only when an explicit `null` is a valid configured value. Optional
   non-nullable constructor mappings use a suppressed `null!` default as the
   omission sentinel without weakening the public parameter annotation.
+  A nullable wrapper annotation permits an explicit `null`; it does not make
+  a generated constructor parameter optional. Only a default argument does.
 - Defer nullable annotations whose correct contract depends on effective
   mapping settings, including what values a `Template()` lambda can observe,
   until those settings are implemented.
@@ -68,6 +75,10 @@
 - Generated hint names use
   `Morphant.Generated.<ArtifactKind>.<StableIdentity>.g.cs`, with a singular
   artifact kind.
+- A destination in the global namespace uses the plan namespace
+  `Morphant.Generated`, referenced as `global::Morphant.Generated`. Do not
+  synthesize a `Global` namespace segment: it is not the C# `global::` alias
+  and would collide with destinations in a real namespace named `Global`.
 - Add a stable hash suffix only when two generated files of the same artifact
   kind have an actual case-insensitive hint-name collision after sanitization.
 - Keep generated surface and binary size small. Do not add generated members,

@@ -59,7 +59,7 @@ namespace TestCase.Morphant.Generated.Outer1Scope
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Outer&lt;TOuter&gt;.Destination&lt;TValue, TFactory&gt;"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters<TOuter, TValue, TFactory>
+    internal sealed class DestinationConstructorParameters<TOuter, TValue, TFactory>
         where TOuter : class
         where TValue : unmanaged
         where TFactory : class?, new()
@@ -95,7 +95,7 @@ namespace TestCase.Morphant.Generated.Outer1Scope
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters<TOuter, TValue, TFactory>? parameters = null)
+            DestinationConstructorParameters<TOuter, TValue, TFactory>? parameters = null)
         {
         }
 
@@ -273,8 +273,7 @@ namespace TestCase
         where T : class, IFirst
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<T>, Destination<T>>()
-                .Construct(source => new(source.Value));
+            builder.Map<Source<T>, Destination<T>>();
     }
 
     [MorphantMapper]
@@ -282,8 +281,7 @@ namespace TestCase
         where U : class, ISecond
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<U>, Destination<U>>()
-                .Construct(source => new(source.Value));
+            builder.Map<Source<U>, Destination<U>>();
     }
 }
 """;
@@ -299,7 +297,7 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination&lt;T&gt;"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters<T>
+    internal sealed class DestinationConstructorParameters<T>
         where T : class
     {
         /// <summary>
@@ -321,7 +319,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters<T>? parameters = null)
+            DestinationConstructorParameters<T>? parameters = null)
         {
         }
 
@@ -445,8 +443,7 @@ namespace TestCase
         where T : class
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<T>, Destination<T>>()
-                .Construct(source => new(source.Value));
+            builder.Map<Source<T>, Destination<T>>();
     }
 
     [MorphantMapper]
@@ -454,8 +451,7 @@ namespace TestCase
         where T : struct
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<T>, Destination<T>>()
-                .Construct(source => new(source.Value));
+            builder.Map<Source<T>, Destination<T>>();
     }
 }
 """;
@@ -471,7 +467,7 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination&lt;T&gt;"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters<T>
+    internal sealed class DestinationConstructorParameters<T>
     {
         /// <summary>
         /// Configures the <c>value</c> constructor argument.
@@ -491,7 +487,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters<T>? parameters = null)
+            DestinationConstructorParameters<T>? parameters = null)
         {
         }
 
@@ -621,10 +617,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<
                     Source<TValue, TDependency>,
-                    Destination<TValue, TDependency>>()
-                .Construct(source => new(
-                    source.Value,
-                    new TDependency()));
+                    Destination<TValue, TDependency>>();
     }
 }
 """;
@@ -640,7 +633,7 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination&lt;TValue, TDependency&gt;"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters<TValue, TDependency>
+    internal sealed class DestinationConstructorParameters<TValue, TDependency>
         where TValue : notnull, global::TestCase.IMarker<TDependency>
         where TDependency : class?, new()
     {
@@ -669,7 +662,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters<TValue, TDependency>? parameters = null)
+            DestinationConstructorParameters<TValue, TDependency>? parameters = null)
         {
         }
 
@@ -811,8 +804,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<
                     Outer<TOuter>.Source<TValue>,
-                    Outer<TOuter>.Destination<TValue>>()
-                .Construct(source => new(source.Value));
+                    Outer<TOuter>.Destination<TValue>>();
     }
 }
 """;
@@ -828,7 +820,7 @@ namespace TestCase.Morphant.Generated.Outer1Scope
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Outer&lt;TOuter&gt;.Destination&lt;TValue&gt;"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters<TOuter, TValue>
+    internal sealed class DestinationConstructorParameters<TOuter, TValue>
         where TOuter : class
         where TValue : TOuter
     {
@@ -852,7 +844,7 @@ namespace TestCase.Morphant.Generated.Outer1Scope
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters<TOuter, TValue>? parameters = null)
+            DestinationConstructorParameters<TOuter, TValue>? parameters = null)
         {
         }
 
@@ -988,8 +980,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<
                     Source<TValue, int>,
-                    Destination<TValue, int>>()
-                .Construct(source => new(source.Value));
+                    Destination<TValue, int>>();
     }
 }
 """;
@@ -1005,7 +996,7 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination&lt;TValue, TMarker&gt;"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters<TValue, TMarker>
+    internal sealed class DestinationConstructorParameters<TValue, TMarker>
         where TValue : global::TestCase.IMarker<TMarker>
     {
         /// <summary>
@@ -1027,7 +1018,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters<TValue, TMarker>? parameters = null)
+            DestinationConstructorParameters<TValue, TMarker>? parameters = null)
         {
         }
 
@@ -1168,7 +1159,7 @@ namespace TestCase.Morphant.Generated.Outer1Scope
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Outer&lt;T&gt;.Destination&lt;T&gt;"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters<T, T2>
+    internal sealed class DestinationConstructorParameters<T, T2>
     {
         /// <summary>
         /// Configures the <c>outer</c> constructor argument.
@@ -1193,7 +1184,7 @@ namespace TestCase.Morphant.Generated.Outer1Scope
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters<T, T2>? parameters = null)
+            DestinationConstructorParameters<T, T2>? parameters = null)
         {
         }
 

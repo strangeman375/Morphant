@@ -46,4 +46,10 @@ internal static class ConstructionSurfaceNaming
     {
         return destinationDefinition.Name + "Construction";
     }
+
+    public static string BuildConstructorParametersTypeName(
+        INamedTypeSymbol destinationDefinition)
+    {
+        return destinationDefinition.Name + "ConstructorParameters";
+    }
 }

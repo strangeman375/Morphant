@@ -51,7 +51,7 @@ namespace TestCase.Morphant.Generated
     /// <summary>
     /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
     /// </summary>
-    internal sealed class DestinationConstructionConstructorParameters
+    internal sealed class DestinationConstructorParameters
     {
         /// <summary>
         /// Configures the <c>value</c> constructor argument.
@@ -69,7 +69,7 @@ namespace TestCase.Morphant.Generated
         /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
-            DestinationConstructionConstructorParameters? parameters = null)
+            DestinationConstructorParameters? parameters = null)
         {
         }
 

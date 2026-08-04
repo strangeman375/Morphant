@@ -1017,7 +1017,7 @@ lifecycle остаётся в `Convert`, а общие hooks/middleware гара
   | Область | Обязательный перенос |
   |---|---|
   | Typed DSL | `Auto<T>()`, `Ignore<T>()`, `Map<TDestination>(...)`, explicit `ConstructorParameter<T>` cast |
-  | Nullability | Nullable value/reference inputs, `AllowNull`/`DisallowNull`, oblivious context, outer wrapper только для допустимого explicit `null`, `null!` omission sentinel без ослабления annotation |
+  | Nullability | Nullable value/reference inputs, `AllowNull`/`DisallowNull`, oblivious context, outer wrapper только для допустимого explicit `null`, requiredness независимо от nullable annotation, `null!` omission sentinel без ослабления annotation |
   | Constructors | Compiler probe для positional/named/mixed/optional/`params`, declaration order и точный `Unambiguous` без fallback |
   | Generated UX | `inheritdoc` и fallback docs, `ObsoleteAttribute`, stable overload/member order, C# 9 и deterministic generated files/hint names |
   | Generics | Один plan на original destination definition с containing parameters и constraints; один extension для alpha-equivalent pairs с constraints только из source/destination definitions; diagnostic потенциально унифицирующихся pair shapes |
@@ -1094,7 +1094,9 @@ implementation terms.
 - generated types находятся в destination-relative namespace
   `.Morphant.Generated`, поэтому дополнительное слово `Morphant` в именах
   типов не добавляется. Реальные collisions разрешаются принятой
-  deterministic hint/type naming policy;
+  deterministic hint/type naming policy. Для global destination используется
+  `Morphant.Generated`, а не искусственный `Global.Morphant.Generated`,
+  который конфликтовал бы с реальным namespace `Global`;
 - `NullabilityMismatchValidation` удалена из целевого API, а не переименована.
   Automatic mappings допускают только warning-free implicit C# conversions,
   explicit expressions проверяет compiler; отдельной v0-policy здесь нет;
