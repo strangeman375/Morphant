@@ -2,8 +2,8 @@
 
 Дата составления: 2 августа 2026 года.
 
-Статус: текущий implementation roadmap и журнал прогресса для
-`Construct` / `Members` / `Convert`.
+Статус: текущий implementation roadmap и журнал прогресса по переходу с
+прежнего `Template()`-дизайна на `Construct` / `Members` / `Convert`.
 
 Нормативным источником семантики является
 [`MAPPING_API_DESIGN.md`](MAPPING_API_DESIGN.md). Итоговый продуктовый аудит и
@@ -25,16 +25,11 @@ observable behavior или границу поддержки, предварит
 актуализируется нормативный дизайн, а затем при необходимости roadmap, код и
 тесты.
 
-Прежний `Template()`-дизайн не является compatibility target. Его production-
-код не обязан компилироваться, а historical tests — проходить. Полный
-pre-cleanup срез потенциально полезных реализаций, тестовых сценариев и старых
-версий изменённых файлов сохранён вне solution в
-[`reference/legacy-template-design`](reference/legacy-template-design/README.md).
-[`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) восстановлен как
-исторический roadmap. Эти материалы не обслуживаются; удачные решения из них
-переносятся только осознанно и с новой спецификацией. Нельзя тратить работу на
-сохранение старого поведения как такового, но и удалять потенциально полезные
-наработки без отдельного reference-среза нельзя.
+[`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) относится к прежнему
+`Template()`-дизайну, сохранён только как исторический документ и больше не
+используется для выбора следующей работы. Завершённость пунктов старого плана
+не переносится автоматически: полезный production-код и тестовые сценарии
+переиспользуются только после проверки против нового контракта.
 
 ## Правила работы по плану
 
@@ -66,10 +61,8 @@ pre-cleanup срез потенциально полезных реализац�
 переход из `не начат` в `ожидает ревью` фиксируется только вместе с
 завершённой реализацией и тестами этапа.
 
-Каждый этап должен оставлять solution текущего дизайна собираемым, а уже
-принятые сценарии текущего дизайна — рабочими. Совместимость с отменённым
-дизайном не проверяется. Временный скрытый fallback на другой mapping
-algorithm недопустим.
+Каждый этап должен оставлять solution собираемым, а уже принятые сценарии —
+рабочими. Временный скрытый fallback на другой mapping algorithm недопустим.
 До позднего этапа diagnostics ошибочная конфигурация может получать
 детерминированный unsupported-path, но не должна молча менять выбранную
 семантику.
@@ -88,18 +81,10 @@ algorithm недопустим.
 - C# 9, nullable-контракт, CRLF, deterministic output и правила hint names
   сохраняются на каждом этапе.
 
-Тесты, которые собирают generated assembly, выполняют mapper runtime либо
-проверяют композицию полного production-generator-а, являются
-интеграционными по своей природе. Текущий `TypeMapperConventionTests` временно
-совмещает exact-source и runtime-проверки в unit-test project; runtime-часть и
-production composition нужно перенести в отдельный
-`Morphant.Generator.IntegrationTests` не позднее этапа 22. До переноса это
-явно считается техническим долгом, а не целевой организацией тестов.
-
 Публичные XML comments и пользовательская документация обновляются вместе с
-тем этапом, который вводит или меняет соответствующий контракт. Актуальная
-документация использует только текущий API; прежние имена допустимы лишь в
-явно обозначенном историческом контексте.
+тем этапом, который вводит или меняет соответствующий контракт. Нельзя
+оставлять старый `Template()`-нейминг в актуальной документации до финального
+этапа миграции.
 
 ## Граница текущего roadmap
 
@@ -124,12 +109,11 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 2, этап 7 — `MappingMode` и declarative null normalization.**
+**Фаза 2, этап 6 — convention-only `Create` и `Update`.**
 
-Статус: не начат.
+Статус: ожидает ревью.
 
-Этап 6 принят. Этап 8 и все последующие этапы заблокированы до принятия
-этапа 7.
+До его принятия этап 7 и все последующие этапы заблокированы.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -163,9 +147,9 @@ Production scope:
   временные универсальные overload-ы с неточной root-nullability;
 - удалить из публичного контракта `Template()`, `TemplateMode`,
   `NullabilityMismatchValidation` и `IContextualMapper`;
-- на время компилируемого перехода допускался внутренний adapter прежнего
-  generator-а; после перехода production `TypeMapper` на новую модель в
-  этапе 6 adapter и обслуживавшие его tests удалены.
+- временно оставить только тот внутренний adapter-код прежнего generator-а,
+  который нужен для компилируемого перехода. Он не считается compatibility
+  contract и должен быть удалён в финальном migration audit.
 
 Тестовый scope:
 
@@ -376,9 +360,10 @@ Implementation shape этапа:
   mixed состояния — явными flags без diagnostics либо last-call fallback;
 - `IncludeBase` зарезервирован отдельной composition-частью модели, но остаётся
   пустым до этапа mapper inheritance;
-- generated construction/member surfaces и executable `TypeMapper` получают
-  пары из новой модели; прежний Template-centric adapter удалён при принятии
-  этапа 6.
+- прежний Template-centric discovery остаётся только временным adapter-ом для
+  executable `TypeMapper`; generated construction/member surfaces уже получают
+  пары из новой модели. Adapter удаляется при переходе convention mapping на
+  новую модель в этапе 6.
 
 Тестовый scope:
 
@@ -401,7 +386,7 @@ API; observable реакция на invalid states остаётся поздне
 
 ### Этап 6. Convention-only `Create` и `Update`
 
-Статус: принят.
+Статус: ожидает ревью.
 
 Цель — перенести уже проверенный convention mapping на новую result/previous
 модель до добавления explicit plans.
@@ -438,12 +423,6 @@ Production scope:
 
 Результат этапа: `builder.Map<Source, Destination>()` работает по новому
 declarative lifecycle без explicit `Construct` и `Members`.
-При принятии этапа полностью удалены obsolete `TemplateSurface`, legacy
-discovery/planners и historical tests; они больше не входят ни в production,
-ни в обязательную проверку. Их точные pre-cleanup версии позднее восстановлены
-в исключённом из сборки reference-срезе для осознанного переноса решений в
-этапах 7–22. Runtime-сценарии этапа временно остаются рядом с exact-source
-тестами и помечены для переноса в integration project.
 
 ### Этап 7. MappingMode и declarative null normalization
 
@@ -1002,8 +981,10 @@ diagnostics и observable failures.
 
 Production scope:
 
-- проверить, что удалённые adapters, dead code и tests прежнего `Template()`
-  pipeline не были возвращены последующими этапами;
+- удалить все временные adapters и dead code прежнего `Template()` pipeline;
+- удалить либо переписать только те legacy tests, которые ещё проверяют
+  отменённый контракт; не считать механический rename достаточной новой
+  спецификацией;
 - проверить отсутствие публичных `Template`, `TemplateMode`,
   `IContextualMapper`, `MemberMatching`, `ConstructorMember`, старых enum
   values и `NullabilityMismatchValidation`;
