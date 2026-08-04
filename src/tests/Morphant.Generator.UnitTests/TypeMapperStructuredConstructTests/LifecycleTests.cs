@@ -39,13 +39,17 @@ namespace TestCase
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
-        public static int ConditionCount { get; private set; }
+        public static int BeforePreviousCount { get; private set; }
+
+        public static int AfterPreviousCount { get; private set; }
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
                 .Construct((source, previous) =>
                 {
-                    if (Track() && previous.HasValue)
+                    if (TrackBefore() &&
+                        previous.HasValue &&
+                        TrackAfter())
                     {
                         return previous;
                     }
@@ -53,9 +57,15 @@ namespace TestCase
                     return new(source.Id);
                 });
 
-        private static bool Track()
+        private static bool TrackBefore()
         {
-            ConditionCount++;
+            BeforePreviousCount++;
+            return true;
+        }
+
+        private static bool TrackAfter()
+        {
+            AfterPreviousCount++;
             return true;
         }
     }
@@ -76,7 +86,8 @@ namespace TestCase
             if (created.Id != 17 ||
                 createdByUpdate.Id != 17 ||
                 !ReferenceEquals(previous, updated) ||
-                TestMapper.ConditionCount != 3)
+                TestMapper.BeforePreviousCount != 3 ||
+                TestMapper.AfterPreviousCount != 1)
             {
                 throw new InvalidOperationException(
                     "Previous specialization changed condition evaluation.");

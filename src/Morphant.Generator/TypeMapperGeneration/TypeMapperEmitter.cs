@@ -261,6 +261,17 @@ internal static class TypeMapperEmitter
             writer,
             node.Locals);
 
+        if (node.EvaluationExpression is
+                { } evaluationExpression)
+        {
+            writer.Line($"_ = {evaluationExpression};");
+            writer.Line();
+            WriteControlFlowMapNewNode(
+                writer,
+                node.EvaluationContinuation!);
+            return;
+        }
+
         if (node.SwitchExpression is
                 { } switchExpression)
         {
@@ -863,6 +874,17 @@ internal static class TypeMapperEmitter
         WriteLocalValues(
             writer,
             node.Locals);
+
+        if (node.EvaluationExpression is
+                { } evaluationExpression)
+        {
+            writer.Line($"_ = {evaluationExpression};");
+            writer.Line();
+            WriteControlFlowMapExistingNode(
+                writer,
+                node.EvaluationContinuation!);
+            return;
+        }
 
         if (node.SwitchExpression is
                 { } switchExpression)

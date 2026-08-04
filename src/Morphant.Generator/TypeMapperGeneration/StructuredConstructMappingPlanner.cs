@@ -398,8 +398,15 @@ internal static class StructuredConstructMappingPlanner
 
         var rewrittenCondition = rewriteExpression(condition);
 
-        return rewrittenCondition is null
-            ? null
+        if (rewrittenCondition is null)
+        {
+            return null;
+        }
+
+        return Equals(whenTrue, whenFalse)
+            ? new StructuredConstructEvaluationNode(
+                rewrittenCondition,
+                whenTrue)
             : new StructuredConstructConditionalNode(
                 rewrittenCondition,
                 whenTrue,
@@ -1145,6 +1152,23 @@ internal static class StructuredConstructMappingPlanner
         ConventionMemberMappingPlan memberMappings,
         bool mapNew)
     {
+        if (node is StructuredConstructEvaluationNode evaluation)
+        {
+            return new TypeMapperControlFlowNode(
+                Locals: [],
+                Condition: null,
+                WhenTrue: null,
+                WhenFalse: null,
+                Leaf: null,
+                ThrowExpression: null,
+                EvaluationExpression: evaluation.Expression,
+                EvaluationContinuation: BuildRuntimeNode(
+                    evaluation.Continuation,
+                    mapping,
+                    memberMappings,
+                    mapNew));
+        }
+
         if (node is StructuredConstructConditionalNode conditional)
         {
             return new TypeMapperControlFlowNode(
@@ -1307,6 +1331,11 @@ internal readonly record struct StructuredConstructMappingResult(
 }
 
 internal abstract record StructuredConstructPlanNode;
+
+internal sealed record StructuredConstructEvaluationNode(
+    string Expression,
+    StructuredConstructPlanNode Continuation)
+    : StructuredConstructPlanNode;
 
 internal sealed record StructuredConstructConditionalNode(
     string Condition,

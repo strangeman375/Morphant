@@ -135,7 +135,9 @@ internal sealed record TypeMapperControlFlowNode
     ImmutableArray<TypeMapperSwitchSectionModel> SwitchSections = default,
     TypeMapperControlFlowNode? SwitchContinuation = null,
     bool SwitchRequiresFallback = false,
-    bool SwitchCanPassUnmatchedValue = true
+    bool SwitchCanPassUnmatchedValue = true,
+    string? EvaluationExpression = null,
+    TypeMapperControlFlowNode? EvaluationContinuation = null
 );
 
 internal readonly record struct TypeMapperSwitchSectionModel

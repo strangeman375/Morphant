@@ -564,6 +564,10 @@ emission, поэтому обычный Create не содержит синте�
 недостижимую previous-ветку, а Update работает напрямую с `destination`.
 Составные short-circuit conditions сохраняют порядок и side effects;
 действительно достижимый выбор previous в Create остаётся unsupported path.
+Если специализация приводит обе стороны ещё вычисляемого условия к одному
+plan, condition сохраняется как discard-expression, а общий plan генерируется
+один раз. Это убирает дублирование branch body без потери observable effects;
+части выражения, отсечённые short-circuit до condition lowering, не исполняются.
 
 Фактически сформированный constructor argument подавляет только соответствующую
 неявную member-convention. Опущенный optional/`params` parameter и `Ignore()`

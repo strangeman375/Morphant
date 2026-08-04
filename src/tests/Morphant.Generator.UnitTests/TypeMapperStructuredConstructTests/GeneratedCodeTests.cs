@@ -291,13 +291,17 @@ namespace TestCase
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
-        public static int ConditionCount { get; private set; }
+        public static int BeforePreviousCount { get; private set; }
+
+        public static int AfterPreviousCount { get; private set; }
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
                 .Construct((source, previous) =>
                 {
-                    if (Track() && previous.HasValue)
+                    if (TrackBefore() &&
+                        previous.HasValue &&
+                        TrackAfter())
                     {
                         return previous;
                     }
@@ -305,9 +309,15 @@ namespace TestCase
                     return new(source.Id);
                 });
 
-        private static bool Track()
+        private static bool TrackBefore()
         {
-            ConditionCount++;
+            BeforePreviousCount++;
+            return true;
+        }
+
+        private static bool TrackAfter()
+        {
+            AfterPreviousCount++;
             return true;
         }
     }
@@ -361,16 +371,10 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            if (global::TestCase.TestMapper.Track())
-            {
-                return new global::TestCase.Destination(
-                    id: source.Id);
-            }
-            else
-            {
-                return new global::TestCase.Destination(
-                    id: source.Id);
-            }
+            _ = global::TestCase.TestMapper.TrackBefore();
+
+            return new global::TestCase.Destination(
+                id: source.Id);
         }
 
         private global::TestCase.Destination UpdateImpl(
@@ -378,9 +382,17 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (global::TestCase.TestMapper.Track())
+            if (global::TestCase.TestMapper.TrackBefore())
             {
-                return destination;
+                if (global::TestCase.TestMapper.TrackAfter())
+                {
+                    return destination;
+                }
+                else
+                {
+                    return new global::TestCase.Destination(
+                        id: source.Id);
+                }
             }
             else
             {
