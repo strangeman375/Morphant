@@ -844,7 +844,7 @@ integration debt; exact-source проверки остаются в unit-test pr
 
 ### Этап 12. Declarative control flow и member-plan composition
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — перенести согласованную конечную DSL grammar на раздельные construction
 и member plans.
@@ -891,7 +891,7 @@ constructor/direct/factory/reuse/replacement result; terminal null заверш�
 ветку до member control. Direct `Construct` и `ByFactory` bodies остаются
 непрозрачным C#, а общий direct helper не дублируется между declarative member
 leaves. Cross-plan sharing одинаковых expressions намеренно не добавлено и
-остаётся этапу 13.
+реализовано отдельно на этапе 13.
 
 Compile-time Configure constants и доступные mapper/static captures
 сохраняются. Runtime Configure locals, mutation-oriented statements и прочая
@@ -910,7 +910,7 @@ construction, captures и неподдерживаемую grammar (`18/18`). Re
 
 ### Этап 13. Общий dependency graph и observable evaluation laws
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — выполнить главный carry-forward contract прежнего unified template:
 одинаковое bound expression между structured `Construct` и `Members`
@@ -946,6 +946,38 @@ Production scope:
 
 Результат этапа: split API не меняет число observable вычислений относительно
 согласованного dependency contract.
+
+Реализовано: structured construction и effective member plan после
+specialization, branch selection и `with` overlays получают общий
+path-sensitive dependency graph. Identity узла строится из bound Roslyn
+operation: учитываются symbols и overloads, receiver, ordered arguments,
+constants, types и nested operations; прозрачные parentheses и implicit target
+conversions не разрывают identity underlying value. Один выбранный path
+материализует общий узел в collision-safe typed local, а остальные paths его не
+вычисляют.
+
+Declarative locals сохраняют как symbol dependency, так и тип фактического
+storage после conversion. Поэтому общий underlying value разделяется до разных
+target conversions без недопустимого обратного преобразования. При выносе
+nested dependencies explicit constructor arguments по-прежнему вычисляются в
+порядке записи. Result-dependent nodes появляются только после создания
+фактического result; replacement/reuse и aliasing не создают отдельной
+evaluation semantics.
+
+Direct `Construct`, factory body и `Convert` не поставляют узлы в общий graph.
+Обычные guarantees о порядке независимых member expressions, generated
+assignments и setter side effects не расширены.
+
+Самостоятельная категория `TypeMapperDependencyGraphTests` содержит runtime и
+полный exact-source срез всех пяти generated files: constructor/member и
+duplicate-member sharing, nested operations, parentheses, target conversions,
+declarative locals, result-dependent values, selected branches, overridden
+rules, разные symbols/receivers/overloads, explicit constructor order,
+direct/factory opacity, observable target conversions, pattern-variable name
+collisions, nullable/parenthesis wrappers и aliasing (`13/13`).
+Exact-source regression-срезы этапов 12, 11 и 8 обновлены только на новые
+shared/order-preserving locals; их runtime semantics и остальные generated
+files не изменились.
 
 ## Фаза 3. Runtime dispatch, manual mapping и nested mappings
 

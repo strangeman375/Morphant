@@ -68,7 +68,8 @@ internal readonly record struct TypeMapperFactoryMappingModel
 internal readonly record struct TypeMapperConstructorMappingModel
 (
     string ConstructedTypeName,
-    ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments
+    ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments,
+    ImmutableArray<TypeMapperLocalValueModel> ValueLocals = default
 );
 
 internal enum TypeMapperMapExistingKind
@@ -86,7 +87,9 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
     string? ValueLocalName,
     string? ExplicitValueExpression = null,
     string? ValueLocalTypeName = null,
-    string? TargetTypeName = null
+    string? TargetTypeName = null,
+    TypeMapperDependencyExpressionModel? DependencyExpression = null,
+    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
 );
 
 internal readonly record struct TypeMapperMemberMappingModel
@@ -99,7 +102,9 @@ internal readonly record struct TypeMapperMemberMappingModel
     string? ExplicitValueTypeName = null,
     string? ValueLocalName = null,
     bool RequiresPreviousDestinationValueLocal = false,
-    bool IsResultDependent = false
+    bool IsResultDependent = false,
+    TypeMapperDependencyExpressionModel? DependencyExpression = null,
+    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
 );
 
 internal sealed record TypeMapperControlFlowMappingModel
@@ -114,7 +119,10 @@ internal readonly record struct TypeMapperLocalValueModel
     string Name,
     string ValueExpression,
     bool IsConst,
-    bool IsSynthetic = false
+    bool IsSynthetic = false,
+    TypeMapperDependencyExpressionModel? DependencyExpression = null,
+    string? DeclaredValueKey = null,
+    string? StoredValueTypeName = null
 );
 
 internal sealed record TypeMapperControlFlowNode
@@ -131,7 +139,11 @@ internal sealed record TypeMapperControlFlowNode
     bool SwitchRequiresFallback = false,
     bool SwitchCanPassUnmatchedValue = true,
     string? EvaluationExpression = null,
-    TypeMapperControlFlowNode? EvaluationContinuation = null
+    TypeMapperControlFlowNode? EvaluationContinuation = null,
+    TypeMapperDependencyExpressionModel? ConditionDependency = null,
+    TypeMapperDependencyExpressionModel? ThrowDependency = null,
+    TypeMapperDependencyExpressionModel? SwitchDependency = null,
+    TypeMapperDependencyExpressionModel? EvaluationDependency = null
 );
 
 internal readonly record struct TypeMapperSwitchSectionModel
@@ -156,11 +168,59 @@ internal sealed record TypeMapperMemberControlFlowNode
     bool SwitchRequiresFallback = false,
     bool SwitchCanPassUnmatchedValue = true,
     string? EvaluationExpression = null,
-    TypeMapperMemberControlFlowNode? EvaluationContinuation = null
+    TypeMapperMemberControlFlowNode? EvaluationContinuation = null,
+    TypeMapperDependencyExpressionModel? ConditionDependency = null,
+    TypeMapperDependencyExpressionModel? ThrowDependency = null,
+    TypeMapperDependencyExpressionModel? SwitchDependency = null,
+    TypeMapperDependencyExpressionModel? EvaluationDependency = null
 );
 
 internal readonly record struct TypeMapperMemberSwitchSectionModel
 (
     ImmutableArray<string> Labels,
     TypeMapperMemberControlFlowNode Branch
+);
+
+internal sealed record TypeMapperDependencyExpressionModel
+(
+    TypeMapperDependencyExpressionNodeModel Root
+)
+{
+    public string Render() => Root.Render();
+}
+
+internal sealed record TypeMapperDependencyExpressionNodeModel
+(
+    string Key,
+    string ValueTypeName,
+    bool CanMaterialize,
+    string Template,
+    ImmutableArray<TypeMapperDependencyExpressionChildModel> Children
+)
+{
+    public string Render()
+    {
+        var result = Template;
+
+        foreach (var child in Children)
+        {
+            result = result.Replace(
+                child.Placeholder,
+                child.Node.Render());
+        }
+
+        return result;
+    }
+}
+
+internal readonly record struct TypeMapperDependencyExpressionChildModel
+(
+    string Placeholder,
+    TypeMapperDependencyExpressionNodeModel Node
+);
+
+internal readonly record struct TypeMapperRewrittenDependencyExpression
+(
+    string Expression,
+    TypeMapperDependencyExpressionModel? DependencyExpression
 );

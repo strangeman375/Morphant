@@ -17,6 +17,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     private readonly SyntaxNode _transferScope;
     private readonly IReadOnlyDictionary<ISymbol, string>?
         _localSubstitutions;
+    private readonly IReadOnlyDictionary<SyntaxNode, SyntaxAnnotation>?
+        _dependencyAnnotations;
 
     private ConstructExpressionRewriter(
         SemanticModel semanticModel,
@@ -28,7 +30,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IParameterSymbol? resultParameter,
         string? resultName,
         SyntaxNode transferScope,
-        IReadOnlyDictionary<ISymbol, string>? localSubstitutions)
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
+        IReadOnlyDictionary<SyntaxNode, SyntaxAnnotation>?
+            dependencyAnnotations)
     {
         _semanticModel = semanticModel;
         _mapperType = mapperType;
@@ -40,6 +44,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _resultName = resultName;
         _transferScope = transferScope;
         _localSubstitutions = localSubstitutions;
+        _dependencyAnnotations = dependencyAnnotations;
     }
 
     public static bool TryRewrite(
@@ -241,9 +246,71 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     resultParameter,
                     resultName,
                     transferScope,
-                    localSubstitutions)
+                    localSubstitutions,
+                    dependencyAnnotations: null)
                 .Visit(syntax)!;
         return true;
+    }
+
+    internal static bool TryRewriteSyntaxWithAnnotations(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        SyntaxNode transferScope,
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
+        IReadOnlyDictionary<SyntaxNode, SyntaxAnnotation>
+            dependencyAnnotations,
+        CancellationToken cancellationToken,
+        out ExpressionSyntax rewrittenExpression)
+    {
+        if (!HasOnlyTransferableCaptures(
+                expression,
+                transferScope,
+                semanticModel,
+                sourceParameter,
+                previousParameter,
+                resultParameter,
+                cancellationToken))
+        {
+            rewrittenExpression = null!;
+            return false;
+        }
+
+        rewrittenExpression =
+            (ExpressionSyntax)new ConstructExpressionRewriter(
+                    semanticModel,
+                    mapperType,
+                    sourceParameter,
+                    sourceName,
+                    previousParameter,
+                    previousSubstitution,
+                    resultParameter,
+                    resultName,
+                    transferScope,
+                    localSubstitutions,
+                    dependencyAnnotations)
+                .Visit(expression)!;
+        return true;
+    }
+
+    public override SyntaxNode? Visit(SyntaxNode? node)
+    {
+        var rewritten = base.Visit(node);
+
+        return node is not null &&
+               rewritten is not null &&
+               _dependencyAnnotations is not null &&
+               _dependencyAnnotations.TryGetValue(
+                   node,
+                   out var annotation)
+            ? rewritten.WithAdditionalAnnotations(annotation)
+            : rewritten;
     }
 
     public override SyntaxNode? VisitInvocationExpression(

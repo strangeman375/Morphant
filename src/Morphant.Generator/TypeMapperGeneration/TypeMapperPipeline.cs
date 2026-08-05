@@ -381,18 +381,22 @@ internal static class TypeMapperPipeline
 
         if (members.ControlFlow is not { } membersControlFlow)
         {
-            return BuildFlatMapping(members.Plan);
+            return DeclarativeDependencyGraphOptimizer.Optimize(
+                BuildFlatMapping(members.Plan),
+                mapperType);
         }
 
-        return MembersControlFlowMappingPlanner.Build(
-            membersControlFlow,
-            mapping,
-            compilation,
-            mapperType,
-            usedGeneratedMethodNames,
-            pair.Capabilities.DirectConstruction,
-            BuildFlatMapping,
-            cancellationToken);
+        return DeclarativeDependencyGraphOptimizer.Optimize(
+            MembersControlFlowMappingPlanner.Build(
+                membersControlFlow,
+                mapping,
+                compilation,
+                mapperType,
+                usedGeneratedMethodNames,
+                pair.Capabilities.DirectConstruction,
+                BuildFlatMapping,
+                cancellationToken),
+            mapperType);
     }
 
     private static TypeMapperMappingModel BuildEmptyMapping(

@@ -189,7 +189,8 @@ internal static class DeclarativeControlFlowPlanner
                         var placeholder =
                             AllocatePlaceholder(
                                 ref placeholderOrdinal,
-                                reservedPlaceholderNames);
+                                reservedPlaceholderNames,
+                                lambda.SpanStart);
 
                         dslConditionPlaceholders.Add(
                             local,
@@ -213,7 +214,8 @@ internal static class DeclarativeControlFlowPlanner
                 var runtimePlaceholder =
                     AllocatePlaceholder(
                         ref placeholderOrdinal,
-                        reservedPlaceholderNames);
+                        reservedPlaceholderNames,
+                        lambda.SpanStart);
                 var declarationType =
                     declaration.Declaration.Type.IsVar
                         ? "var"
@@ -262,7 +264,8 @@ internal static class DeclarativeControlFlowPlanner
 
             var placeholder = AllocatePlaceholder(
                 ref placeholderOrdinal,
-                reservedPlaceholderNames);
+                reservedPlaceholderNames,
+                lambda.SpanStart);
 
             allLocals.Add(local);
             runtimeLocalPlaceholders.Add(
@@ -2606,12 +2609,16 @@ internal static class DeclarativeControlFlowPlanner
 
     private static string AllocatePlaceholder(
         ref int ordinal,
-        HashSet<string> reservedNames)
+        HashSet<string> reservedNames,
+        int scopeOrdinal)
     {
         while (true)
         {
             var candidate =
                 "__morphantDeclarativeLocal" +
+                scopeOrdinal.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture) +
+                "_" +
                 ordinal++.ToString(
                     System.Globalization.CultureInfo.InvariantCulture);
 

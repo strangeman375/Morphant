@@ -113,6 +113,42 @@ internal static class StructuredConstructMappingPlanner
                     : null;
             }
 
+            TypeMapperRewrittenDependencyExpression?
+                RewriteDependencyCore(
+                    ExpressionSyntax expression,
+                    ITypeSymbol? fallbackType)
+            {
+                return DeclarativeDependencyExpressionBuilder.TryRewrite(
+                        expression,
+                        configuration.Expression.SemanticModel,
+                        mapperType,
+                        sourceParameter,
+                        mapping.NonNullSourceName,
+                        previousParameter,
+                        previousSubstitution,
+                        resultParameter: null,
+                        resultName: null,
+                        transferScope,
+                        controlFlowProgram.RuntimeLocalPlaceholders,
+                        fallbackType,
+                        cancellationToken,
+                        out var rewritten,
+                        out var dependency)
+                    ? new TypeMapperRewrittenDependencyExpression(
+                        rewritten,
+                        dependency)
+                    : null;
+            }
+
+            TypeMapperRewrittenDependencyExpression?
+                RewriteDependency(
+                    ExpressionSyntax expression,
+                    IParameterSymbol parameter) =>
+                RewriteDependencyCore(
+                    expression,
+                    parameter.Type.WithNullableAnnotation(
+                        parameter.NullableAnnotation));
+
             StructuredConstructLeafNode? BuildFactory(
                 ImmutableArray<StructuredObjectArgument> arguments)
             {
@@ -163,6 +199,7 @@ internal static class StructuredConstructMappingPlanner
                     configuration.Expression.SemanticModel,
                     mapping.NonNullSourceName,
                     Rewrite,
+                    RewriteDependency,
                     (_, whenTrue, whenFalse) =>
                         Equals(whenTrue, whenFalse)
                             ? whenTrue
@@ -213,6 +250,7 @@ internal static class StructuredConstructMappingPlanner
                             configuration.Expression.SemanticModel,
                             mapping.NonNullSourceName,
                             Rewrite,
+                            RewriteDependency,
                             cancellationToken);
 
                         plannedLeaf = convention is null
@@ -246,6 +284,7 @@ internal static class StructuredConstructMappingPlanner
                                 mapperType,
                                 configuration.Expression.SemanticModel,
                                 Rewrite,
+                                RewriteDependency,
                                 cancellationToken);
 
                         plannedLeaf = explicitPlan is null
@@ -302,14 +341,18 @@ internal static class StructuredConstructMappingPlanner
                             condition,
                             whenTrue,
                             whenFalse,
-                            Rewrite,
+                            expression =>
+                                RewriteDependencyCore(
+                                    expression,
+                                    fallbackType: null),
                             previousParameter,
                             previousAvailable,
                             configuration.Expression.SemanticModel,
                             cancellationToken),
                     cancellationToken,
                     out var lowered)
-                ? lowered
+                ? DeclarativeControlFlowLowerer.PreserveLocalNames(
+                    lowered)
                 : null;
         }
 
@@ -391,7 +434,9 @@ internal static class StructuredConstructMappingPlanner
             ExpressionSyntax condition,
             TypeMapperControlFlowNode whenTrue,
             TypeMapperControlFlowNode whenFalse,
-            Func<ExpressionSyntax, string?> rewriteExpression,
+            Func<ExpressionSyntax,
+                TypeMapperRewrittenDependencyExpression?>
+                rewriteExpression,
             IParameterSymbol? previousParameter,
             bool? previousAvailable,
             SemanticModel semanticModel,
@@ -512,15 +557,20 @@ internal static class StructuredConstructMappingPlanner
                 WhenFalse: null,
                 Leaf: null,
                 ThrowExpression: null,
-                EvaluationExpression: rewrittenCondition,
-                EvaluationContinuation: whenTrue)
+                EvaluationExpression:
+                    rewrittenCondition.Value.Expression,
+                EvaluationContinuation: whenTrue,
+                EvaluationDependency:
+                    rewrittenCondition.Value.DependencyExpression)
             : new TypeMapperControlFlowNode(
                 Locals: [],
-                rewrittenCondition,
+                rewrittenCondition.Value.Expression,
                 whenTrue,
                 whenFalse,
                 Leaf: null,
-                ThrowExpression: null);
+                ThrowExpression: null,
+                ConditionDependency:
+                    rewrittenCondition.Value.DependencyExpression);
     }
 
     private static bool TryEvaluateKnownCondition(
@@ -680,6 +730,9 @@ internal static class StructuredConstructMappingPlanner
         SemanticModel semanticModel,
         string nonNullSourceName,
         Func<ExpressionSyntax, string?> rewriteExpression,
+        Func<ExpressionSyntax, IParameterSymbol,
+            TypeMapperRewrittenDependencyExpression?>
+            rewriteDependencyExpression,
         Func<
             ExpressionSyntax,
             StructuredConstructPlanNode,
@@ -707,6 +760,7 @@ internal static class StructuredConstructMappingPlanner
                 semanticModel,
                 nonNullSourceName,
                 rewriteExpression,
+                rewriteDependencyExpression,
                 buildCondition,
                 buildFactory,
                 previousParameter,
@@ -723,6 +777,7 @@ internal static class StructuredConstructMappingPlanner
                 semanticModel,
                 nonNullSourceName,
                 rewriteExpression,
+                rewriteDependencyExpression,
                 buildCondition,
                 buildFactory,
                 previousParameter,
@@ -772,6 +827,7 @@ internal static class StructuredConstructMappingPlanner
                 semanticModel,
                 nonNullSourceName,
                 rewriteExpression,
+                rewriteDependencyExpression,
                 cancellationToken);
 
             return convention is null
@@ -804,6 +860,7 @@ internal static class StructuredConstructMappingPlanner
                 mapperType,
                 semanticModel,
                 rewriteExpression,
+                rewriteDependencyExpression,
                 cancellationToken);
 
         if (explicitPlan is null)
@@ -842,6 +899,9 @@ internal static class StructuredConstructMappingPlanner
             SemanticModel semanticModel,
             string nonNullSourceName,
             Func<ExpressionSyntax, string?> rewriteExpression,
+            Func<ExpressionSyntax, IParameterSymbol,
+                TypeMapperRewrittenDependencyExpression?>
+                rewriteDependencyExpression,
             CancellationToken cancellationToken)
     {
         if (constructorSelection !=
@@ -955,6 +1015,18 @@ internal static class StructuredConstructMappingPlanner
                         semanticModel,
                         rewriteExpression,
                         cancellationToken);
+            var rewrittenDependency =
+                rewriteDependencyExpression(
+                    rule.Value,
+                    parameter);
+
+            if (rewrittenDependency is { } dependency &&
+                !StringComparer.Ordinal.Equals(
+                    dependency.Expression,
+                    explicitExpression))
+            {
+                rewrittenDependency = null;
+            }
 
             if (explicitExpression is null)
             {
@@ -972,7 +1044,9 @@ internal static class StructuredConstructMappingPlanner
                             .BuildExplicitValueLocalTypeName(parameter),
                     TargetTypeName:
                         ConventionConstructorMappingPlanner
-                            .BuildTargetValueLocalTypeName(parameter)));
+                            .BuildTargetValueLocalTypeName(parameter),
+                    DependencyExpression:
+                        rewrittenDependency?.DependencyExpression));
         }
 
         foreach (var parameter in constructor.Parameters)

@@ -404,7 +404,7 @@ internal static class BasicMembersMappingPlanner
         CancellationToken cancellationToken,
         out ExplicitMemberMappingPlan plan)
     {
-        if (!ConstructExpressionRewriter.TryRewrite(
+        if (!DeclarativeDependencyExpressionBuilder.TryRewrite(
                 expression,
                 semanticModel,
                 mapperType,
@@ -416,9 +416,11 @@ internal static class BasicMembersMappingPlanner
                 mapping.ResultLocalName,
                 transferScope,
                 localSubstitutions,
+                destinationMember.Type,
                 cancellationToken,
-                out var mapNewExpression) ||
-            !ConstructExpressionRewriter.TryRewrite(
+                out var mapNewExpression,
+                out var mapNewDependency) ||
+            !DeclarativeDependencyExpressionBuilder.TryRewrite(
                 expression,
                 semanticModel,
                 mapperType,
@@ -430,9 +432,11 @@ internal static class BasicMembersMappingPlanner
                 mapping.ResultLocalName,
                 transferScope,
                 localSubstitutions,
+                destinationMember.Type,
                 cancellationToken,
-                out var mapReplacementExpression) ||
-            !ConstructExpressionRewriter.TryRewrite(
+                out var mapReplacementExpression,
+                out var mapReplacementDependency) ||
+            !DeclarativeDependencyExpressionBuilder.TryRewrite(
                 expression,
                 semanticModel,
                 mapperType,
@@ -444,8 +448,10 @@ internal static class BasicMembersMappingPlanner
                 "destination",
                 transferScope,
                 localSubstitutions,
+                destinationMember.Type,
                 cancellationToken,
-                out var mapExistingExpression))
+                out var mapExistingExpression,
+                out var mapExistingDependency))
         {
             plan = default;
             return false;
@@ -463,7 +469,9 @@ internal static class BasicMembersMappingPlanner
         var valueTypeName =
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                 destinationMember.Type);
-        TypeMapperMemberMappingModel BuildMapping(string valueExpression) =>
+        TypeMapperMemberMappingModel BuildMapping(
+            string valueExpression,
+            TypeMapperDependencyExpressionModel? dependencyExpression) =>
             new(
                 SourceMemberName: string.Empty,
                 destinationMember.Name,
@@ -471,11 +479,18 @@ internal static class BasicMembersMappingPlanner
                 SourceValueLocalName: null,
                 ExplicitValueExpression: valueExpression,
                 ExplicitValueTypeName: valueTypeName,
-                IsResultDependent: isResultDependent);
+                IsResultDependent: isResultDependent,
+                DependencyExpression: dependencyExpression);
 
-        var mapNew = BuildMapping(mapNewExpression);
-        var mapReplacement = BuildMapping(mapReplacementExpression);
-        var mapExisting = BuildMapping(mapExistingExpression);
+        var mapNew = BuildMapping(
+            mapNewExpression,
+            mapNewDependency);
+        var mapReplacement = BuildMapping(
+            mapReplacementExpression,
+            mapReplacementDependency);
+        var mapExisting = BuildMapping(
+            mapExistingExpression,
+            mapExistingDependency);
 
         plan = new ExplicitMemberMappingPlan(
             MapNew: isResultDependent ? null : mapNew,

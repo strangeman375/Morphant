@@ -20,6 +20,9 @@ internal static class ExplicitStructuredConstructorPlanner
         INamedTypeSymbol mapperType,
         SemanticModel semanticModel,
         Func<ExpressionSyntax, string?> rewriteExpression,
+        Func<ExpressionSyntax, IParameterSymbol,
+            TypeMapperRewrittenDependencyExpression?>
+            rewriteDependencyExpression,
         CancellationToken cancellationToken)
     {
         if (destination.TypeKind == TypeKind.Interface ||
@@ -235,13 +238,27 @@ internal static class ExplicitStructuredConstructorPlanner
                 continue;
             }
 
-            var explicitValueExpression = RewriteArgumentExpression(
-                planArgument.Value,
-                destinationParameter,
-                compilation,
-                semanticModel,
-                rewriteExpression,
-                cancellationToken);
+            var rewrittenDependency =
+                !TryGetConstructorParameterCast(
+                    planArgument.Value,
+                    destinationParameter,
+                    compilation,
+                    semanticModel,
+                    cancellationToken,
+                    out _)
+                    ? rewriteDependencyExpression(
+                        planArgument.Value,
+                        destinationParameter)
+                    : null;
+            var explicitValueExpression =
+                rewrittenDependency?.Expression ??
+                RewriteArgumentExpression(
+                    planArgument.Value,
+                    destinationParameter,
+                    compilation,
+                    semanticModel,
+                    rewriteExpression,
+                    cancellationToken);
 
             if (explicitValueExpression is null)
             {
@@ -261,7 +278,9 @@ internal static class ExplicitStructuredConstructorPlanner
                     TargetTypeName:
                         ConventionConstructorMappingPlanner
                             .BuildTargetValueLocalTypeName(
-                                destinationParameter)));
+                                destinationParameter),
+                    DependencyExpression:
+                        rewrittenDependency?.DependencyExpression));
         }
 
         var argumentModels = arguments.ToImmutable();

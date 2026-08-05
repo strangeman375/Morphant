@@ -7,6 +7,54 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class DeclarativeControlFlowLowerer
 {
+    public static TypeMapperControlFlowNode PreserveLocalNames(
+        TypeMapperControlFlowNode node)
+    {
+        var locals = node.Locals.Select(local =>
+                local with { IsSynthetic = true })
+            .ToImmutableArray();
+
+        if (node.EvaluationContinuation is { } evaluationContinuation)
+        {
+            return node with
+            {
+                Locals = locals,
+                EvaluationContinuation = PreserveLocalNames(
+                    evaluationContinuation)
+            };
+        }
+
+        if (node.SwitchExpression is not null)
+        {
+            return node with
+            {
+                Locals = locals,
+                SwitchSections = node.SwitchSections.Select(section =>
+                        section with
+                        {
+                            Branch = PreserveLocalNames(section.Branch)
+                        })
+                    .ToImmutableArray(),
+                SwitchContinuation = node.SwitchContinuation is
+                    { } continuation
+                    ? PreserveLocalNames(continuation)
+                    : null
+            };
+        }
+
+        if (node.Condition is not null)
+        {
+            return node with
+            {
+                Locals = locals,
+                WhenTrue = PreserveLocalNames(node.WhenTrue!),
+                WhenFalse = PreserveLocalNames(node.WhenFalse!)
+            };
+        }
+
+        return node with { Locals = locals };
+    }
+
     public static bool TryBuildMemberControlFlow(
         DeclarativeControlFlowProgram program,
         SemanticModel semanticModel,
@@ -134,17 +182,45 @@ internal static class DeclarativeControlFlowLowerer
         CancellationToken cancellationToken,
         out TypeMapperControlFlowNode root)
     {
-        string? Rewrite(ExpressionSyntax expression)
+        TypeMapperRewrittenDependencyExpression?
+            RewriteDependency(ExpressionSyntax expression)
         {
             if (expression is IdentifierNameSyntax identifier &&
                 program.RuntimeLocalPlaceholders.Values.Contains(
                     identifier.Identifier.ValueText,
                     StringComparer.Ordinal))
             {
-                return identifier.Identifier.Text;
+                var symbol = program.RuntimeLocalPlaceholders.First(
+                    pair => StringComparer.Ordinal.Equals(
+                        pair.Value,
+                        identifier.Identifier.ValueText)).Key;
+                var type = symbol switch
+                {
+                    ILocalSymbol local => local.Type,
+                    IParameterSymbol parameter => parameter.Type,
+                    _ => null
+                };
+
+                return type is null
+                    ? null
+                    : new TypeMapperRewrittenDependencyExpression(
+                        identifier.Identifier.Text,
+                        new TypeMapperDependencyExpressionModel(
+                            new TypeMapperDependencyExpressionNodeModel(
+                                DeclarativeDependencyExpressionBuilder
+                                    .BuildDeclaredValueKey(
+                                        symbol,
+                                        sourceParameter,
+                                        previousParameter,
+                                        resultParameter),
+                                TypeMapperMappingTypePolicy
+                                    .GetGeneratedTypeName(type),
+                                CanMaterialize: false,
+                                identifier.Identifier.Text,
+                                [])));
             }
 
-            return ConstructExpressionRewriter.TryRewrite(
+            return DeclarativeDependencyExpressionBuilder.TryRewrite(
                     expression,
                     semanticModel,
                     mapperType,
@@ -156,11 +232,18 @@ internal static class DeclarativeControlFlowLowerer
                     resultName,
                     transferScope,
                     program.RuntimeLocalPlaceholders,
+                    fallbackType: null,
                     cancellationToken,
-                    out var rewritten)
-                ? rewritten
+                    out var rewritten,
+                    out var dependency)
+                ? new TypeMapperRewrittenDependencyExpression(
+                    rewritten,
+                    dependency)
                 : null;
         }
+
+        string? Rewrite(ExpressionSyntax expression) =>
+            RewriteDependency(expression)?.Expression;
 
         string? RewritePattern(PatternSyntax pattern)
         {
@@ -244,7 +327,8 @@ internal static class DeclarativeControlFlowLowerer
 
             if (node is DeclarativeThrowSyntaxNode throwNode)
             {
-                var throwExpression = Rewrite(throwNode.Expression);
+                var throwExpression =
+                    RewriteDependency(throwNode.Expression);
 
                 return throwExpression is null
                     ? null
@@ -254,7 +338,9 @@ internal static class DeclarativeControlFlowLowerer
                         WhenTrue: null,
                         WhenFalse: null,
                         Leaf: null,
-                        throwExpression);
+                        throwExpression.Value.Expression,
+                        ThrowDependency:
+                            throwExpression.Value.DependencyExpression);
             }
 
             if (node is DeclarativeLocalDeclarationsSyntaxNode locals)
@@ -283,9 +369,30 @@ internal static class DeclarativeControlFlowLowerer
                         return null;
                     }
 
-                    var initializer = Rewrite(local.Initializer);
+                    var initializer =
+                        RewriteDependency(local.Initializer);
 
                     if (initializer is null)
+                    {
+                        return null;
+                    }
+
+                    var declaredSymbol =
+                        program.RuntimeLocalPlaceholders
+                            .First(pair =>
+                                StringComparer.Ordinal.Equals(
+                                    pair.Value,
+                                    placeholder))
+                            .Key;
+                    var declaredType = declaredSymbol switch
+                    {
+                        ILocalSymbol declaredLocal => declaredLocal.Type,
+                        IParameterSymbol declaredParameter =>
+                            declaredParameter.Type,
+                        _ => null
+                    };
+
+                    if (declaredType is null)
                     {
                         return null;
                     }
@@ -294,8 +401,20 @@ internal static class DeclarativeControlFlowLowerer
                         new TypeMapperLocalValueModel(
                             local.DeclarationType,
                             placeholder,
-                            initializer,
-                            local.IsConst));
+                            initializer.Value.Expression,
+                            local.IsConst,
+                            DependencyExpression:
+                                initializer.Value.DependencyExpression,
+                            DeclaredValueKey:
+                                DeclarativeDependencyExpressionBuilder
+                                    .BuildDeclaredValueKey(
+                                        declaredSymbol,
+                                        sourceParameter,
+                                        previousParameter,
+                                        resultParameter),
+                            StoredValueTypeName:
+                                TypeMapperMappingTypePolicy
+                                    .GetGeneratedTypeName(declaredType)));
                 }
 
                 return next with
@@ -324,19 +443,24 @@ internal static class DeclarativeControlFlowLowerer
                         whenFalse);
                 }
 
-                var condition = Rewrite(conditional.Condition);
+                var condition =
+                    RewriteDependency(conditional.Condition);
 
                 if (condition is null)
                 {
                     return null;
                 }
 
-                if (StringComparer.Ordinal.Equals(condition, "true"))
+                if (StringComparer.Ordinal.Equals(
+                        condition.Value.Expression,
+                        "true"))
                 {
                     return whenTrue;
                 }
 
-                if (StringComparer.Ordinal.Equals(condition, "false"))
+                if (StringComparer.Ordinal.Equals(
+                        condition.Value.Expression,
+                        "false"))
                 {
                     return whenFalse;
                 }
@@ -349,19 +473,24 @@ internal static class DeclarativeControlFlowLowerer
                         WhenFalse: null,
                         Leaf: null,
                         ThrowExpression: null,
-                        EvaluationExpression: condition,
-                        EvaluationContinuation: whenTrue)
+                        EvaluationExpression:
+                            condition.Value.Expression,
+                        EvaluationContinuation: whenTrue,
+                        EvaluationDependency:
+                            condition.Value.DependencyExpression)
                     : new TypeMapperControlFlowNode(
                         Locals: [],
-                        condition,
+                        condition.Value.Expression,
                         whenTrue,
                         whenFalse,
                         Leaf: null,
-                        ThrowExpression: null);
+                        ThrowExpression: null,
+                        ConditionDependency:
+                            condition.Value.DependencyExpression);
             }
 
             var switchNode = (DeclarativeSwitchSyntaxNode)node;
-            var governingExpression = Rewrite(
+            var governingExpression = RewriteDependency(
                 switchNode.GoverningExpression);
 
             if (governingExpression is null)
@@ -421,11 +550,13 @@ internal static class DeclarativeControlFlowLowerer
                 WhenFalse: null,
                 Leaf: null,
                 ThrowExpression: null,
-                governingExpression,
+                governingExpression.Value.Expression,
                 sections.ToImmutable(),
                 continuation,
                 switchNode.RequiresFallback,
-                switchNode.CanPassUnmatchedValue);
+                switchNode.CanPassUnmatchedValue,
+                SwitchDependency:
+                    governingExpression.Value.DependencyExpression);
 
             return switchNode.RequiresFallback
                 ? MaterializeSwitchFallback(
@@ -487,7 +618,11 @@ internal static class DeclarativeControlFlowLowerer
                     switchValueName,
                     node.SwitchExpression!,
                     IsConst: false,
-                    IsSynthetic: true)),
+                    IsSynthetic: true,
+                    DependencyExpression:
+                        node.SwitchDependency,
+                    StoredValueTypeName:
+                        node.SwitchDependency?.Root.ValueTypeName)),
             SwitchExpression = switchValueName,
             SwitchContinuation = fallback,
             SwitchRequiresFallback = false
@@ -526,7 +661,11 @@ internal static class DeclarativeControlFlowLowerer
             node.EvaluationExpression,
             node.EvaluationContinuation is { } evaluationContinuation
                 ? ConvertMemberControlFlow(evaluationContinuation)
-                : null);
+                : null,
+            node.ConditionDependency,
+            node.ThrowDependency,
+            node.SwitchDependency,
+            node.EvaluationDependency);
     }
 
     private static string BuildUnmatchedSwitchException(
@@ -863,6 +1002,9 @@ internal static class DeclarativeControlFlowLowerer
                         : names[local.Name],
                     ValueExpression = RenameTokens(
                         local.ValueExpression,
+                        names),
+                    DependencyExpression = RenameDependencyExpression(
+                        local.DependencyExpression,
                         names)
                 })
             .ToImmutableArray();
@@ -874,6 +1016,9 @@ internal static class DeclarativeControlFlowLowerer
                 Locals = locals,
                 EvaluationExpression = RenameTokens(
                     node.EvaluationExpression!,
+                    names),
+                EvaluationDependency = RenameDependencyExpression(
+                    node.EvaluationDependency,
                     names),
                 EvaluationContinuation = RenameControlFlow(
                     evaluationContinuation,
@@ -888,6 +1033,9 @@ internal static class DeclarativeControlFlowLowerer
                 Locals = locals,
                 SwitchExpression = RenameTokens(
                     node.SwitchExpression,
+                    names),
+                SwitchDependency = RenameDependencyExpression(
+                    node.SwitchDependency,
                     names),
                 SwitchSections = node.SwitchSections.Select(section =>
                         section with
@@ -913,6 +1061,9 @@ internal static class DeclarativeControlFlowLowerer
             {
                 Locals = locals,
                 Condition = RenameTokens(node.Condition, names),
+                ConditionDependency = RenameDependencyExpression(
+                    node.ConditionDependency,
+                    names),
                 WhenTrue = RenameControlFlow(node.WhenTrue!, names),
                 WhenFalse = RenameControlFlow(node.WhenFalse!, names)
             };
@@ -924,6 +1075,9 @@ internal static class DeclarativeControlFlowLowerer
             ThrowExpression = node.ThrowExpression is { } throwExpression
                 ? RenameTokens(throwExpression, names)
                 : null,
+            ThrowDependency = RenameDependencyExpression(
+                node.ThrowDependency,
+                names),
             Leaf = node.Leaf is { } leaf
                 ? RenameMapping(leaf, names)
                 : null
@@ -938,10 +1092,19 @@ internal static class DeclarativeControlFlowLowerer
             TypeMapperMemberMappingModel member) =>
             member with
             {
+                DependencyExpression = RenameDependencyExpression(
+                    member.DependencyExpression,
+                    names),
                 ExplicitValueExpression =
-                    member.ExplicitValueExpression is { } expression
-                        ? RenameTokens(expression, names)
-                        : null
+                    member.DependencyExpression is { } dependency
+                        ? RenameDependencyExpression(
+                                dependency,
+                                names)!
+                            .Render()
+                        : member.ExplicitValueExpression is
+                            { } expression
+                            ? RenameTokens(expression, names)
+                            : null
             };
 
         return mapping with
@@ -970,11 +1133,21 @@ internal static class DeclarativeControlFlowLowerer
                     Arguments = constructor.Arguments.Select(argument =>
                             argument with
                             {
+                                DependencyExpression =
+                                    RenameDependencyExpression(
+                                        argument.DependencyExpression,
+                                        names),
                                 ExplicitValueExpression =
-                                    argument.ExplicitValueExpression is
-                                        { } expression
-                                        ? RenameTokens(expression, names)
-                                        : null
+                                    argument.DependencyExpression is
+                                        { } dependency
+                                        ? RenameDependencyExpression(
+                                                dependency,
+                                                names)!
+                                            .Render()
+                                        : argument.ExplicitValueExpression is
+                                            { } expression
+                                            ? RenameTokens(expression, names)
+                                            : null
                             })
                         .ToImmutableArray()
                 }
@@ -989,6 +1162,33 @@ internal static class DeclarativeControlFlowLowerer
                 .Select(RenameMember)
                 .ToImmutableArray()
         };
+    }
+
+    private static TypeMapperDependencyExpressionModel?
+        RenameDependencyExpression(
+            TypeMapperDependencyExpressionModel? expression,
+            IReadOnlyDictionary<string, string> names)
+    {
+        if (expression is null)
+        {
+            return null;
+        }
+
+        TypeMapperDependencyExpressionNodeModel RenameNode(
+            TypeMapperDependencyExpressionNodeModel node) =>
+            node with
+            {
+                Template = RenameTokens(node.Template, names),
+                Children = node.Children.Select(child =>
+                        child with
+                        {
+                            Node = RenameNode(child.Node)
+                        })
+                    .ToImmutableArray()
+            };
+
+        return new TypeMapperDependencyExpressionModel(
+            RenameNode(expression.Root));
     }
 
     private static IEnumerable<string> EnumerateExpressions(

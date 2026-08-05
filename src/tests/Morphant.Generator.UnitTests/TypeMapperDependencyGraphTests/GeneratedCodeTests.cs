@@ -1,13 +1,13 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TypeMapperDeclarativeControlFlowTests;
+namespace Morphant.Generator.UnitTests.TypeMapperDependencyGraphTests;
 
 [TestFixture]
 internal sealed class GeneratedCodeTests
 {
     [Test]
-    public async Task Emits_complete_result_dependent_control_flow()
+    public async Task Emits_one_shared_local_across_construction_and_members()
     {
         // lang=c#
         const string source =
@@ -40,24 +40,13 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct(source => new(seed: source.Value))
-                .Members((source, _, result) =>
+                .Construct(source => new(seed: Share(source.Value)))
+                .Members((source, _) => new()
                 {
-                    const int delta = 1;
-
-                    if (result.Seed > 0 && source.High)
-                    {
-                        return new()
-                        {
-                            Value = result.Seed + delta
-                        };
-                    }
-
-                    return new()
-                    {
-                        Value = source.Value - delta
-                    };
+                    Value = Share(source.Value)
                 });
+
+        private static int Share(int value) => value;
     }
 }
 """;
@@ -285,26 +274,14 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sharedSeed = source.Value;
+            int sharedValue = source.Value;
+            int sharedSeed = global::TestCase.TestMapper.Share(sharedValue);
 
-            var result = new global::TestCase.Destination(
-                seed: sharedSeed);
-
-            const int delta = 1;
-            int sharedValue = result.Seed;
-
-            if (sharedValue > 0 && source.High)
+            return new global::TestCase.Destination(
+                seed: sharedSeed)
             {
-                result.Value = sharedValue + delta;
-
-                return result;
-            }
-            else
-            {
-                result.Value = sharedSeed - delta;
-
-                return result;
-            }
+                Value = sharedSeed
+            };
         }
 
         private global::TestCase.Destination UpdateImpl(
@@ -312,21 +289,9 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            const int delta = 1;
-            int sharedValue1 = destination.Seed;
+            destination.Value = global::TestCase.TestMapper.Share(source.Value);
 
-            if (sharedValue1 > 0 && source.High)
-            {
-                destination.Value = sharedValue1 + delta;
-
-                return destination;
-            }
-            else
-            {
-                destination.Value = source.Value - delta;
-
-                return destination;
-            }
+            return destination;
         }
     }
 }

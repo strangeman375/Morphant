@@ -403,6 +403,14 @@ internal static class TypeMapperEmitter
 
         foreach (var argument in constructor.Arguments)
         {
+            foreach (var local in argument.EvaluationLocals.IsDefault
+                         ? []
+                         : argument.EvaluationLocals)
+            {
+                hasValueLocals = true;
+                WriteLocalValue(writer, local);
+            }
+
             if (argument.ValueLocalName is not
                 { } valueLocalName)
             {
@@ -417,6 +425,14 @@ internal static class TypeMapperEmitter
                     mapping,
                     argument) +
                 ";");
+        }
+
+        foreach (var local in constructor.ValueLocals.IsDefault
+                     ? []
+                     : constructor.ValueLocals)
+        {
+            hasValueLocals = true;
+            WriteLocalValue(writer, local);
         }
 
         if (hasValueLocals)
@@ -1281,13 +1297,7 @@ internal static class TypeMapperEmitter
     {
         foreach (var local in locals)
         {
-            writer.Line(
-                (local.IsConst
-                    ? "const "
-                    : string.Empty) +
-                $"{local.DeclarationType} {local.Name} = " +
-                local.ValueExpression +
-                ";");
+            WriteLocalValue(writer, local);
         }
 
         if (!locals.IsEmpty)
@@ -1339,6 +1349,14 @@ internal static class TypeMapperEmitter
 
         foreach (var mapping in mappings)
         {
+            foreach (var local in mapping.EvaluationLocals.IsDefault
+                         ? []
+                         : mapping.EvaluationLocals)
+            {
+                WriteLocalValue(writer, local);
+                wroteLocal = true;
+            }
+
             if (mapping.ValueLocalName is not { } valueLocalName)
             {
                 continue;
@@ -1364,6 +1382,19 @@ internal static class TypeMapperEmitter
         {
             writer.Line();
         }
+    }
+
+    private static void WriteLocalValue(
+        CodeWriter writer,
+        TypeMapperLocalValueModel local)
+    {
+        writer.Line(
+            (local.IsConst
+                ? "const "
+                : string.Empty) +
+            $"{local.DeclarationType} {local.Name} = " +
+            local.ValueExpression +
+            ";");
     }
 
     private static string ConstructorArgumentValueExpression(
