@@ -110,7 +110,8 @@ runtime-проверки к exact-source категориям в unit-test proje
 - точные `Create` / `Update` operations через две перегрузки `Map`;
 - declarative pipeline `Construct` + `Members`;
 - полностью ручной `Convert`;
-- application-wide exact-pair registry;
+- application-wide exact-pair dispatch поверх вручную зарегистрированных
+  mapping services;
 - root и scoped `IMapper`, `MappingContext` и `MappingScope`;
 - explicit nested `Create` / `Update`;
 - settings и явная композиция через mapper inheritance;
@@ -126,12 +127,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 2, этап 13 — общий dependency graph и observable evaluation laws.**
+**Фаза 3, этап 14 — application dispatch, root mapper и mapping scope.**
 
 Статус: ожидает ревью.
 
-Этап 12 принят. Этап 14 и все последующие этапы заблокированы до принятия
-этапа 13.
+Этап 13 принят. Этап 15 и все последующие этапы заблокированы до принятия
+этапа 14.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -365,7 +366,7 @@ Production scope:
   lowering;
 - отделить declarative plan от manual plan в модели;
 - хранить local root/map settings и подготовить места для `IncludeBase()`;
-- разрешать несколько descriptors одной canonical pair в разных mapper-ах;
+- разрешать несколько registrations одной canonical pair в разных mapper-ах;
 - выявлять конфликтующие local calls и generic unification как model states,
   не вводя diagnostics либо fallback на этом этапе;
 - не следовать за aliases, delegates и произвольными helper calls,
@@ -910,7 +911,7 @@ construction, captures и неподдерживаемую grammar (`18/18`). Re
 
 ### Этап 13. Общий dependency graph и observable evaluation laws
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — выполнить главный carry-forward contract прежнего unified template:
 одинаковое bound expression между structured `Construct` и `Members`
@@ -988,30 +989,35 @@ files не изменились.
 
 ## Фаза 3. Runtime dispatch, manual mapping и nested mappings
 
-### Этап 14. Application registry, root mapper и mapping scope
+### Этап 14. Application dispatch, root mapper и mapping scope
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — реализовать application-wide exact-pair dispatch без runtime reflection
 для поиска mappings.
 
-Перед кодом отдельно согласовать только внешний composition-root / DI
-registration API, поскольку нормативный дизайн фиксирует registry laws, но не
-публичную форму `AddMorphant(...)` и generated manifest wiring.
+5 августа 2026 года внешний composition-root / DI registration API явно
+отложен до после v0. В core v0 нет `AddMorphant(...)`, generated manifests,
+assembly attributes для регистрации или автоматического assembly scanning.
+Пользователь вручную регистрирует closed
+`ITypeMapper<TSource, TDestination>` services; стандартная
+`IEnumerable<ITypeMapper<TSource, TDestination>>` текущего
+`IServiceProvider` является множеством кандидатов exact pair. Это low-level
+workaround, а не окончательный convenience API.
 
 Production scope:
 
-- generated descriptors и manifest для mappings приложения и подключённых
-  assemblies;
-- immutable application registry по canonical type pair;
-- root `IMapper` с текущим `IServiceProvider` и активацией concrete generated
-  TypeMapper с его dependencies;
+- root `Mapper` с текущим `IServiceProvider` и ручной provider-registration
+  каждой closed `ITypeMapper<TSource, TDestination>` pair;
+- application-wide lookup запрашивает только точную
+  `IEnumerable<ITypeMapper<TSource, TDestination>>`, без runtime reflection,
+  mapper/assembly filtering или hidden fallback;
 - lookup law `0 / 1 / 2+` без first/last-registration-wins;
-- несколько descriptors одной canonical pair не являются compile-time
+- несколько registrations одной canonical pair не являются compile-time
   duplicate сами по себе;
-- `MappingMode` остаётся capability выбранного descriptor, а не частью key;
+- `MappingMode` остаётся capability выбранного mapper-а, а не частью key;
 - каждый root `Map` создаёт новый `MappingScope` и завершает его в `finally`;
-- scoped `IMapper` использует тот же registry/provider/scope, но новый
+- scoped `IMapper` использует тот же provider/scope, но новый
   immutable `MappingContext` frame;
 - source-only overload создаёт `Create` frame, two-argument — `Update` frame,
   включая explicit `null` destination;
@@ -1023,16 +1029,19 @@ Production scope:
 
 Тестовый scope:
 
-- registry construction из одного и нескольких assemblies;
-- zero, one и multiple candidates;
-- descriptor activation и scoped/transient mapper dependencies;
+- zero, one и multiple manual registrations/candidates exact pair;
+- provider activation и scoped/transient mapper dependencies;
 - root/nested frame operations, shared scope и provider identity;
 - recursion, reentrancy, caught nested exception и scope completion;
 - canonical nullable/generic pair lookup;
 - отсутствие зависимости от mapper type, assembly и registration order.
 
 Результат этапа: `IMapper` становится рабочей application-wide facade и
-создаёт корректный runtime lifecycle для последующих nested calls.
+создаёт корректный runtime lifecycle для последующих nested calls. Отдельная
+самостоятельная категория `MapperRuntimeTests` закрепляет manual lookup,
+operations, nested frames, completion, recursion/reentrancy, exception
+isolation, parallel root scopes, transient activation и type identity
+(`10/10`).
 
 ### Этап 15. Полностью ручной `Convert`
 
@@ -1092,7 +1101,7 @@ Production scope:
   подставляются generator-ом;
 - nested result авторитетен и присваивается outer target;
 - arguments вычисляются один раз слева направо;
-- dispatch использует тот же registry/provider/scope и новый call frame;
+- dispatch использует тот же provider/scope и новый call frame;
 - convention `Auto()` по-прежнему никогда не превращается в implicit nested
   mapping.
 
@@ -1212,7 +1221,7 @@ Production scope:
 - no-effect/invalid explicit settings как model states.
 
 Результат этапа: composition имеет один детерминированный путь и не зависит от
-application registry либо неявного поиска fragments.
+application dispatch либо неявного поиска fragments.
 
 ## Фаза 5. Надёжность, миграция и интеграция core v0
 
@@ -1228,7 +1237,7 @@ Production scope:
 - при необходимости исправить semantic dependencies pipelines, но не менять
   публичную семантику предыдущих этапов;
 - актуализировать construction/member plans, fluent extensions, generated
-  mapper contracts и runtime descriptors;
+  mapper contracts;
 - корректно реагировать на изменения source/destination/mapper, settings,
   constructors, members, attributes, docs, constraints и references;
 - удалять artifact, когда исчезает последняя причина его генерации;
@@ -1241,7 +1250,7 @@ Production scope:
 - add/change/remove lifecycle;
 - same destination через несколько pairs/mappers;
 - capability transitions structured <-> direct, members appear/disappear и
-  registry candidate count changes;
+  registration-compatible contract changes;
 - referenced assembly changes.
 
 Результат этапа: generated output всегда соответствует текущей compilation, а
@@ -1259,12 +1268,11 @@ Production scope:
 - ввести/уточнить value models и comparers для каждого incremental boundary;
 - не хранить syntax/symbol/compilation objects после semantic projection, где
   они не нужны;
-- rebuild только затронутой pair, destination plan, mapper или registry
-  manifest;
+- rebuild только затронутой pair, destination plan или mapper;
 - изменения method body, не участвующего в transferable code, не инвалидируют
   unrelated artifacts;
 - global coordination выполняется только там, где действительно требуется
-  registry либо hint collision resolution;
+  hint collision resolution;
 - output content equality предотвращает лишнюю emission.
 
 Тестовый scope:
@@ -1272,7 +1280,7 @@ Production scope:
 - caching, dependency isolation, per-pair/per-destination invalidation и
   global coordination;
 - unrelated syntax, using, docs, attributes, references и settings changes;
-- multiple mappers/assemblies and descriptor manifests;
+- multiple mappers/assemblies;
 - unchanged output identity после эквивалентной edit sequence.
 
 Результат этапа: новый дизайн сохраняет incremental свойства source generator-а
@@ -1294,8 +1302,8 @@ Production scope:
   values и `NullabilityMismatchValidation`;
 - проверить полный generated artifact naming и отсутствие лишних files;
 - собрать real consumer integration project из package-like references;
-- проверить DI registration, application registry, multiple assemblies,
-  generated mapper activation, root/manual/declarative nested calls,
+- проверить manual DI registration, multiple assemblies, generated mapper
+  activation, root/manual/declarative nested calls,
   nullable/generic destinations и mapper dependencies;
 - обновить README, quick start, conceptual docs для `Construct`, `Members`,
   `Convert`, `Option`, runtime dispatch и все settings pages;
@@ -1308,7 +1316,7 @@ Production scope:
 
 - focused integration suite поверх собранного runtime + analyzer package;
 - C# 9 consumer и newer-language consumer;
-- one/multiple assembly registries, generic closed descriptors и scoped
+- one/multiple assembly registrations, generic closed mappings и scoped
   dependencies;
 - happy-path examples из документации компилируются и выполняются;
 - публичная API baseline не содержит legacy surface.
@@ -1344,6 +1352,8 @@ algorithm.
 направления аудита, но требуют отдельного проектирования и собственных
 implementation plans:
 
+- composition-root / DI convenience API (`AddMorphant(...)`), generated
+  manifests и автоматическое подключение mappings из выбранных assemblies;
 - collections, dictionaries, buffers, getter-only collections, clear/fill,
   replacement, key reconciliation и element-path flattening;
 - `IncludeMembers` и convention flattening;

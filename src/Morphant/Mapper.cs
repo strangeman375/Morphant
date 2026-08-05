@@ -1,3 +1,5 @@
+using Morphant.Context;
+
 namespace Morphant;
 
 /// <summary>
@@ -29,17 +31,57 @@ public interface IMapper
 
 public sealed class Mapper : IMapper
 {
-    public TDestination Map<TSource, TDestination>(TSource? source)
+    private readonly IServiceProvider serviceProvider;
+
+    /// <summary>
+    /// Initializes a root mapper that resolves manually registered
+    /// <see cref="ITypeMapper{TSource, TDestination}"/> implementations from
+    /// the specified service provider.
+    /// </summary>
+    /// <param name="serviceProvider">
+    /// The service provider for the current application scope. For every
+    /// mapping pair it must expose the corresponding
+    /// <see cref="IEnumerable{T}"/> of
+    /// <see cref="ITypeMapper{TSource, TDestination}"/> implementations.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="serviceProvider"/> is <see langword="null"/>.
+    /// </exception>
+    public Mapper(IServiceProvider serviceProvider)
     {
-        // todo: get type mapper from DI and map
-        throw new NotImplementedException();
+        this.serviceProvider = serviceProvider ??
+            throw new ArgumentNullException(nameof(serviceProvider));
     }
 
+    /// <inheritdoc/>
+    public TDestination Map<TSource, TDestination>(TSource? source)
+    {
+        var scope = new MappingScope(serviceProvider);
+
+        try
+        {
+            return scope.Mapper.Map<TSource, TDestination>(source);
+        }
+        finally
+        {
+            scope.Complete();
+        }
+    }
+
+    /// <inheritdoc/>
     public TDestination Map<TSource, TDestination>(
         TSource? source,
         TDestination? destination)
     {
-        // todo: get type mapper from DI and map
-        throw new NotImplementedException();
+        var scope = new MappingScope(serviceProvider);
+
+        try
+        {
+            return scope.Mapper.Map(source, destination);
+        }
+        finally
+        {
+            scope.Complete();
+        }
     }
 }

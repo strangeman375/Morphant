@@ -235,7 +235,7 @@ Source generator не выполняет configuration code и не следуе
 
 Отдельные fragments для unrelated pairs, generic fragments и cross-assembly
 `IncludeBase()` не входят в v0. Mapping-и из внешних assemblies подключаются
-независимыми descriptors через application-wide registry; registry не
+независимыми manual runtime registrations; application-wide dispatch не
 становится неявным источником configuration composition и будущие keyed
 variants не меняют это правило.
 
@@ -1299,10 +1299,10 @@ mapping chain и создаёт новый scope для каждого публ�
 scope. Отдельный `IContextualMapper`, полностью повторяющий `IMapper`, не
 вводится.
 
-Оба экземпляра видят один application-wide registry mapping-ов и используют
-`IServiceProvider` текущего DI-scope. `MappingScope` сохраняет состояние одной
-mapping chain, но никогда не ограничивает набор доступных пар конкретным
-`TypeMapper`, mapper-графом или assembly.
+Оба экземпляра видят один application-wide набор manual registrations и
+используют `IServiceProvider` текущего DI-scope. `MappingScope` сохраняет
+состояние одной mapping chain, но никогда не ограничивает набор доступных пар
+конкретным `TypeMapper`, mapper-графом или assembly.
 
 Source-only перегрузка scoped mapper создаёт nested frame с
 `MappingOperation.Create`, а two-parameter перегрузка — с
@@ -2022,7 +2022,7 @@ destination definition, а не отдельный plan для каждой clos
 воспроизводит type parameters содержащих и вложенного типов, их порядок,
 nullable/oblivious contract и все допустимые C# constraints. Несколько
 `Envelope<User>` / `Envelope<Order>` используют один условный
-`EnvelopeMembers<T>` surface; runtime descriptors самих closed mapping-пар
+`EnvelopeMembers<T>` surface; runtime registrations самих closed mapping-пар
 при этом остаются независимыми.
 
 Alpha-equivalent open pair shapes разных mapper-ов также получают один общий
@@ -2060,50 +2060,60 @@ destination-prefix даёт `Morphant.Generated`, а ссылки использ
 он не является C# alias `global::` и создавал бы коллизию с реальным
 destination namespace `Global`.
 
-## 12. Application registry и deterministic lookup
+## 12. Application dispatch и deterministic lookup
 
 ### 12.1. Граница runtime `IMapper`
 
 `IMapper` является единой точкой входа во все mappings, зарегистрированные в
 приложении. Он не привязан к конкретному `TypeMapper`, compilation или
-mapper/profile graph. Application registry содержит descriptors пар из самого
-приложения и всех подключённых composition root-ом assemblies.
+mapper/profile graph. В core v0 application-wide множество кандидатов образуют
+вручную зарегистрированные closed
+`ITypeMapper<TSource, TDestination>` services текущего
+`IServiceProvider`.
 
 Concrete `TypeMapper` остаётся единицей объявления конфигурации, генерации и
-DI-активации. Он может иметь собственные dependencies, но его тип и assembly не
-входят в ключ обычного lookup и не образуют скрытый mapping scope. Перенос pair
-между mapper-классами сам по себе не должен менять поведение вызова.
+DI-активации. Он может иметь собственные dependencies, но его тип и assembly
+не входят в ключ обычного lookup и не образуют скрытый mapping scope. Перенос
+pair между mapper-классами сам по себе не должен менять поведение вызова, если
+соответствующая exact-pair registration обновлена.
 
-Registry может быть immutable singleton, а root `IMapper` использует
-`IServiceProvider` текущего DI-scope. Поэтому выбранный generated mapper
-разрешается вместе со своими scoped/transient dependencies из того provider,
-который обслуживает текущий публичный вызов. Точная registration-механика и
-generated manifest являются implementation details; runtime reflection для
-поиска pair не требуется.
+Root `Mapper` получает `IServiceProvider` текущего DI-scope. Для каждой pair он
+запрашивает только
+`IEnumerable<ITypeMapper<TSource, TDestination>>`, поэтому generated mapper и
+его scoped/transient dependencies создаются тем provider-ом, который
+обслуживает текущий публичный вызов. Набор registrations считается
+зафиксированным после построения application provider.
+
+В core v0 нет `AddMorphant(...)`, generated manifests, registration assembly
+attributes и automatic assembly scanning. Пользователь вручную регистрирует
+root `IMapper` и каждую closed `ITypeMapper<TSource, TDestination>` pair.
+Convenience API и manifest wiring проектируются отдельно после v0. Runtime
+reflection для поиска pair не требуется.
 
 ### 12.2. Lookup law v0
 
 Lookup key обычного `Map<TSource, TDestination>` — canonical type pair из
 раздела 11. Mapper-type, assembly и порядок DI registrations в этот ключ не
-входят. Registry хранит все кандидаты pair, а dispatch использует только их
-количество:
+входят. Provider возвращает все кандидаты pair, а dispatch использует только
+их количество:
 
 | Кандидаты canonical pair | Поведение |
 |---:|---|
 | `0` | Mapping не найден; вызов завершается явной runtime-ошибкой |
-| `1` | Кандидат разрешается через текущий `IServiceProvider` и выполняется |
+| `1` | Единственный mapper выполняется |
 | `2+` | Mapping неоднозначен; вызов завершается явной runtime-ошибкой |
 
 Несколько registrations одной canonical pair допустимы, в том числе в разных
-`TypeMapper` и assemblies. Само их наличие не является generator diagnostic и
-не запрещает построение application registry. Неоднозначность наблюдаема
-только при фактическом безымянном lookup этой pair.
+`TypeMapper` и assemblies. Само их наличие не является generator diagnostic
+или startup error. Неоднозначность наблюдаема только при фактическом
+безымянном lookup этой pair.
 
-Morphant никогда не выбирает первый или последний descriptor и не зависит от
-порядка `IServiceCollection` registrations, assembly discovery либо вызовов
-`AddMorphant`. `MappingMode` является capability выбранного mapping-а, а не
-дополнительной частью lookup identity и не используется для скрытого выбора
-между повторными pair registrations.
+Morphant никогда не выбирает первый или последний mapper и не зависит от
+порядка registrations. `MappingMode` является capability выбранного
+mapping-а, а не дополнительной частью lookup identity и не используется для
+скрытого выбора между повторными pair registrations. При ambiguity ни один
+candidate mapping method не вызывается; момент создания самих service
+instances определяется текущим `IServiceProvider`.
 
 Точные exception-типы и сообщения для missing/ambiguous lookup определяются на
 этапе observable failures. До этого отсутствие готового типа ошибки не даёт
@@ -2112,9 +2122,9 @@ Morphant никогда не выбирает первый или последн
 ### 12.3. Root и nested dispatch
 
 Root `IMapper.Map(...)` начинает новую mapping chain, создаёт `MappingScope` и
-выполняет lookup в application registry. Explicit nested `Map(...)` и ручной
-`context.Mapper.Map(...)` используют тот же registry и тот же текущий
-`IServiceProvider`, но создают новый immutable call frame внутри уже
+выполняет application-wide lookup. Explicit nested `Map(...)` и ручной
+`context.Mapper.Map(...)` используют тот же набор registrations и тот же
+текущий `IServiceProvider`, но создают новый immutable call frame внутри уже
 существующего scope.
 
 Nested lookup не предпочитает mapping из `TypeMapper`, которому принадлежит
@@ -2166,7 +2176,7 @@ registration, точнее может оказаться `WithMappingKey`. Са�
 Нестандартный polymorphic алгоритм выражается через `Convert` с явным
 type-switch и exact nested mappings. Основной массовый сценарий polymorphic
 collection elements отложен вместе с collection support. Поэтому базовые
-interfaces, call frames и registry в v0 не расширяются.
+interfaces, call frames и dispatch contract в v0 не расширяются.
 
 После v0 registry можно совместимо дополнить explicit derived links на
 конкретном base descriptor-е. Рабочее направление использует отдельный от
@@ -2233,9 +2243,9 @@ Constructed generic root со статически известной nominal-ф
 сгенерировать contract для `Page<T> -> PageDto<T>`, поскольку type parameter
 находится внутри известного root, а не непосредственно в root-позиции.
 
-Это не создаёт open-generic registration. Application registry v0 содержит
-только явно подключённые closed descriptors. Поэтому явно зарегистрированный
-`PageMapper<Order>` предоставляет closed pair, но registry не выводит `T` из
+Это не создаёт open-generic registration. Application dispatch v0 видит только
+явно зарегистрированные closed mappings. Поэтому явно зарегистрированный
+`PageMapper<Order>` предоставляет closed pair, но dispatch не выводит `T` из
 запрошенных типов, не закрывает `PageMapper<T>` автоматически и не
 сопоставляет generic definitions. Все closed pairs следуют обычному правилу
 `0 / 1 / 2+`.
@@ -2264,13 +2274,13 @@ source не нужны. Canonical identity учитывает типы и пор
 но не их имена. Пользовательский state является обычным элементом source и
 передаётся в nested tuple mappings явно, без ambient propagation.
 
-Отдельно от runtime registry generator проверяет pair shapes внутри одного
+Отдельно от runtime dispatch generator проверяет pair shapes внутри одного
 generic mapper contract. Если две различающиеся registrations могут стать
 одинаковым `ITypeMapper<TSource, TDestination>` при подстановке type parameters,
 mapper не генерируется и требуется configuration diagnostic. Это правило
 действует и для вложенных constructed roots (`Box<T>` против `Box<int>`);
 constraints не используются как неявное доказательство неравенства типов.
-Application-wide правило нескольких descriptors здесь не помогает: конфликт
+Application-wide правило нескольких registrations здесь не помогает: конфликт
 возникает раньше, при формировании списка interfaces и explicit implementations
 одного closed mapper type.
 
@@ -2291,7 +2301,7 @@ members. Это самостоятельная capability:
 В v0 `IncludeMembers` не генерируется. Точные API, precedence между root и
 included candidates, null semantics, ambiguity diagnostics и композиция через
 `IncludeBase()` согласуются отдельным post-v0 этапом. Текущая candidate model
-и application registry не должны блокировать его добавление, но до этого
+и application dispatch не должны блокировать его добавление, но до этого
 явный flattening остаётся обычным member expression.
 
 ## 13. Основные сценарии
@@ -2698,9 +2708,11 @@ diagnostic не должно вводить скрытый fallback на дру�
     запускают скрытый declarative pipeline; неприменимая explicit map-level
     setting является ошибкой, а inherited setting может быть безвредным no-op.
 46. Public `IMapper` является application-wide фасадом: concrete `TypeMapper`,
-    compilation и assembly не ограничивают видимый runtime registry.
-47. Root и scoped mapper используют один registry и `IServiceProvider`
-    текущего DI-scope; `MappingScope` хранит только состояние mapping chain.
+    compilation и assembly не ограничивают видимые manual registrations.
+47. Root и scoped mapper используют один фиксированный набор manual
+    registrations и `IServiceProvider` текущего DI-scope; `MappingScope`
+    хранит только состояние mapping chain. `AddMorphant(...)`, generated
+    manifests и assembly scanning остаются post-v0.
 48. Обычный v0 lookup идентифицируется canonical type pair. Ноль кандидатов
     означает missing mapping, один — выполнение, два и более — ambiguity.
 49. Повторные registrations pair допустимы и не являются generator/startup
@@ -2746,7 +2758,7 @@ diagnostic не должно вводить скрытый fallback на дру�
     него отдельным дизайном.
 61. В v0 configuration reuse следует только явно подключённой C#-иерархии
     mapper-ов. Generator не выполняет arbitrary builder helpers и не ищет
-    fragments или подходящие plans в application registry.
+    fragments или подходящие plans в application dispatch.
 62. `base.Configure(builder)` подключает base configuration chain и её root
     settings. Без него `IncludeBase()` является ошибочной конфигурацией.
 63. Повторно объявленная pair без `IncludeBase()` начинает с чистого map-level
@@ -2765,8 +2777,8 @@ diagnostic не должно вводить скрытый fallback на дру�
     независимо и не импортируют configuration друг друга.
 68. Constructed generic root с известной nominal-формой является обычной exact
     pair; mapper type parameters допустимы внутри его generic arguments.
-69. Generic mapper contract не является open-generic registration. Registry
-    v0 содержит только явно подключённые closed descriptors и не выводит
+69. Generic mapper contract не является open-generic registration. Dispatch
+    v0 видит только явно зарегистрированные closed mappings и не выводит
     arguments, не закрывает mapper type и не сопоставляет generic definitions.
 70. Reference nullable annotations не входят в canonical identity, включая
     annotations внутри generic arguments. `Nullable<T>` value type остаётся
@@ -2775,7 +2787,7 @@ diagnostic не должно вводить скрытый fallback на дру�
     категории как обычные единые значения, если полный root выразим из общего
     generated assembly-context; reflection-обхода недоступности нет.
 72. Bare root type parameter, open-generic registration и mapping по runtime
-    `Type` отсутствуют в v0 и не получают fallback через application registry.
+    `Type` отсутствуют в v0 и не получают fallback через application dispatch.
 73. После v0 tuple/multi-source mapping использует обычный tuple `TSource` без
     специальных overload-ов `IMapper`; identity учитывает типы и порядок
     элементов, но не имена, а пользовательский state передаётся детям явно.
@@ -2803,7 +2815,7 @@ diagnostic не должно вводить скрытый fallback на дру�
     definition и воспроизводит containing type parameters и constraints;
     alpha-equivalent pair extensions дедуплицируются и получают только
     definition-derived constraints, без mapper-specific `where`; closed
-    runtime descriptors при этом остаются отдельными.
+    runtime registrations при этом остаются отдельными.
 80. На одном C# settings-level побеждает последний вызов, включая `Default`,
     а root result не зависит от позиции в линейном `Configure`. Assembly
     settings передаются только compiler-visible MSBuild properties.
@@ -2943,8 +2955,8 @@ plan model текущей реализации. Этап 16 ограничил v
 mapper-иерархией: root settings подключаются через `base.Configure(builder)`,
 а map-level plan — отдельным `IncludeBase()`; fragments и cross-assembly plan
 inheritance остаются post-v0. Этап 17 сохранил exact constructed generic pairs
-и generic mapper contracts, но application registry содержит только явно
-подключённые closed descriptors; bare root type parameters, open-generic и
+и generic mapper contracts, но application dispatch видит только явно
+зарегистрированные closed mappings; bare root type parameters, open-generic и
 runtime-type lookup, tuple/multi-source и неявный state propagation остаются
 post-v0. Этап 18 закрыл result-dependent member rules двумя всегда
 генерируемыми `Members`-перегрузками, из которых локально выбирается одна. Вторая
