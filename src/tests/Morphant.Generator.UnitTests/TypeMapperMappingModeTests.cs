@@ -340,8 +340,7 @@ namespace TestCase
             global::TestCase.AssemblyDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::System.NotSupportedException(
-                "The declarative Update would inevitably return the previous destination unchanged.");
+            return destination;
         }
     }
 }
@@ -412,8 +411,7 @@ namespace TestCase
             global::TestCase.PairDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::System.NotSupportedException(
-                "The declarative Update would inevitably return the previous destination unchanged.");
+            return destination;
         }
     }
 }
@@ -449,8 +447,7 @@ namespace TestCase
             global::TestCase.ResetDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::System.NotSupportedException(
-                "The declarative Update would inevitably return the previous destination unchanged.");
+            return destination;
         }
     }
 }

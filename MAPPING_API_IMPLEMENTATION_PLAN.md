@@ -789,8 +789,10 @@ Production scope:
 - terminal null завершает mapping до всех member rules;
 - статически невозможный lifecycle сохраняется как invalid model state без
   другого fallback до diagnostics;
-- неизбежный immutable Update no-op также не маскируется молчаливой сменой
-  algorithm.
+- статически пустая existing-ветка является допустимым no-op и возвращает
+  исходный destination без требования previous-aware `Construct`;
+- допустимый no-op не включает скрытый replacement: source-only `Construct`
+  на existing-ветке по-прежнему не выполняется.
 
 Тестовый scope:
 
@@ -799,7 +801,8 @@ Production scope:
 - mixed result-dependent и result-independent rules в одной lambda;
 - init/required/set/field across all reachable creation branches;
 - unreachable expressions, side-effect counts и null short-circuit;
-- immutable Update: explicit replacement, explicit reuse и invalid no-op.
+- immutable Update: convention/source-only no-op, explicit `Ignore`,
+  неприменимый на reuse-ветке `init`, explicit reuse и replacement.
 
 Результат этапа: обе формы `Members` являются одним declarative plan, а phase
 каждого rule следует только его реальным dependencies.
@@ -824,20 +827,20 @@ rule переводит конфигурацию в детерминирован
 скрытого fallback; `[SetsRequiredMembers]` остаётся единственным C#-основанием
 допустить constructor до последующих required assignments.
 
-Неизбежный immutable `Update`, который может только вернуть previous без
-assignment, больше не маскируется успешным no-op. Он получает тот же
-детерминированный unsupported path во всех settings/nullability surfaces.
-Previous-aware `Construct` остаётся явным выражением намерения и поэтому
-разрешает как reuse, так и replacement.
+Статически пустой immutable `Update` является корректным no-op: existing-
+ветка возвращает тот же destination, не выполняя source-only `Construct` и
+не вычисляя неприменимые creation-time member expressions. Previous-aware
+`Construct` нужен только тогда, когда configuration действительно выбирает
+reuse либо replacement; доступность `Update` сама по себе не обещает mutation.
 
 Самостоятельная категория `TypeMapperMemberTests` дополнена lifecycle,
 immutable и result-aware сценариями, включая полный exact-source snapshot,
+no-op identity, отсутствие source-only и creation-time side effects,
 previous/replacement identity, constructor/factory/direct state, mixed
-dependencies, `init`/`required`/setter/field, side effects и terminal null
-(`14/14`). Regression-срезы этапов 9 и 8, conventions, null handling и mapping
-mode сохраняют прежнее поведение. Runtime-вызовы входят в уже отмеченный
-временный integration debt; exact-source проверки остаются в unit-test
-project.
+dependencies, `init`/`required`/setter/field и terminal null (`14/14`).
+Regression-срезы этапов 9 и 8, conventions, null handling и mapping mode
+сохраняют прежнее поведение. Runtime-вызовы входят в уже отмеченный временный
+integration debt; exact-source проверки остаются в unit-test project.
 
 ### Этап 12. Declarative control flow и member-plan composition
 

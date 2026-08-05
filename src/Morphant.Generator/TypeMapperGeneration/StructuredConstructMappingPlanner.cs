@@ -192,13 +192,11 @@ internal static class StructuredConstructMappingPlanner
                 plannedRoot,
                 mapping,
                 memberMappings,
-                mapNew: true,
-                explicitPreviousSelection: false);
+                mapNew: true);
             mapExistingRoot = BuildPreviousLeaf(
                 mapping,
                 memberMappings,
-                mapNew: false,
-                explicitPreviousSelection: false);
+                mapNew: false);
         }
         else
         {
@@ -216,14 +214,12 @@ internal static class StructuredConstructMappingPlanner
                 mapNewPlan,
                 mapping,
                 memberMappings,
-                mapNew: true,
-                explicitPreviousSelection: false);
+                mapNew: true);
             mapExistingRoot = BuildRuntimeNode(
                 mapExistingPlan,
                 mapping,
                 memberMappings,
-                mapNew: false,
-                explicitPreviousSelection: true);
+                mapNew: false);
         }
 
         return new StructuredConstructMappingResult(
@@ -1205,8 +1201,7 @@ internal static class StructuredConstructMappingPlanner
         StructuredConstructPlanNode node,
         TypeMapperMappingModel mapping,
         ConventionMemberMappingPlan memberMappings,
-        bool mapNew,
-        bool explicitPreviousSelection)
+        bool mapNew)
     {
         if (node is StructuredConstructEvaluationNode evaluation)
         {
@@ -1222,8 +1217,7 @@ internal static class StructuredConstructMappingPlanner
                     evaluation.Continuation,
                     mapping,
                     memberMappings,
-                    mapNew,
-                    explicitPreviousSelection));
+                    mapNew));
         }
 
         if (node is StructuredConstructConditionalNode conditional)
@@ -1235,14 +1229,12 @@ internal static class StructuredConstructMappingPlanner
                     conditional.WhenTrue,
                     mapping,
                     memberMappings,
-                    mapNew,
-                    explicitPreviousSelection),
+                    mapNew),
                 WhenFalse: BuildRuntimeNode(
                     conditional.WhenFalse,
                     mapping,
                     memberMappings,
-                    mapNew,
-                    explicitPreviousSelection),
+                    mapNew),
                 Leaf: null,
                 ThrowExpression: null);
         }
@@ -1265,8 +1257,7 @@ internal static class StructuredConstructMappingPlanner
                 BuildPreviousLeaf(
                     mapping,
                     memberMappings,
-                    mapNew,
-                    explicitPreviousSelection),
+                    mapNew),
             _ => BuildUnsupportedLeaf(
                 mapping,
                 mapNew,
@@ -1334,8 +1325,7 @@ internal static class StructuredConstructMappingPlanner
     private static TypeMapperControlFlowNode BuildPreviousLeaf(
         TypeMapperMappingModel mapping,
         ConventionMemberMappingPlan memberMappings,
-        bool mapNew,
-        bool explicitPreviousSelection)
+        bool mapNew)
     {
         if (mapNew)
         {
@@ -1343,15 +1333,6 @@ internal static class StructuredConstructMappingPlanner
                 mapping,
                 mapNew: true,
                 UnavailablePreviousMessage);
-        }
-
-        if (!explicitPreviousSelection &&
-            memberMappings.MapExisting.IsEmpty)
-        {
-            return BuildUnsupportedLeaf(
-                mapping,
-                mapNew: false,
-                TypeMapperPipeline.ImmutableUpdateNoOpMessage);
         }
 
         var leaf = mapping with

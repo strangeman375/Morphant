@@ -47,21 +47,16 @@ namespace TestCase
             {
                 Name = "preserved"
             };
+            var updated = mapper.Map(
+                new Source(),
+                previous,
+                default(MappingContext));
 
-            try
+            if (!ReferenceEquals(updated, previous) ||
+                updated.Name != "preserved")
             {
-                _ = mapper.Map(
-                    new Source(),
-                    previous,
-                    default(MappingContext));
                 throw new InvalidOperationException(
-                    "An immutable no-op Update was accepted.");
-            }
-            catch (NotSupportedException exception)
-                when (exception.Message ==
-                    "The declarative Update would inevitably return " +
-                    "the previous destination unchanged.")
-            {
+                    "An existing required value was not preserved.");
             }
 
             try
@@ -138,8 +133,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::System.NotSupportedException(
-                "The declarative Update would inevitably return the previous destination unchanged.");
+            return destination;
         }
     }
 }

@@ -2492,15 +2492,15 @@ member-а. Source-only `Construct` при существующем previous не
 replacement-path не образует. Это сохраняет явный контроль identity,
 copy-constructor semantics и derived runtime type.
 
-Статически неизбежный полный no-op является ошибочной конфигурацией: если
-declarative `Update` включён, existing-ветка не имеет previous-aware
-`Construct` и не содержит ни одного применимого post-construction assignment,
-generator должен выдать diagnostic вместо молчаливого возврата previous.
-Отключённый `Update`, `Convert` или explicit previous-aware `Construct`
-явно задают другое намерение и устраняют эту diagnostic. Наличие отдельных
-immutable members в смешанном mutable/immutable destination само по себе не
-делает всю operation ошибочной; неприменимые explicit rules и полнота
-conventions проверяются своими diagnostics/settings.
+Статически пустая existing-ветка является корректным no-op: declarative
+`Update` возвращает тот же destination, если не выбирает replacement и не
+содержит применимых post-construction assignments. Source-only `Construct`
+при этом не выполняется, а неприменимые creation-time expressions не
+вычисляются. Previous-aware `Construct` нужен только для реального выбора
+reuse/replacement, а не как обязательное подтверждение сохранения identity.
+Доступность `Update` означает наличие операции, но не гарантирует mutation;
+полнота mapping-а контролируется `UnmappedMemberValidation`, а неприменимые
+explicit rules — собственными diagnostics.
 
 После v0 запланирована отдельная opt-in setting условной reconstruction. Она
 сможет вычислить creation-only member candidates до первой generated mutation,
@@ -2525,8 +2525,6 @@ source, factory/derived behavior и точный evaluation order будут с�
   уже создан factory code либо value/условие rule транзитивно зависит от ещё
   не созданного result; previous-result сохраняет такой member без вычисления
   неприменимого expression;
-- статически неизбежный declarative `Update` no-op: existing-ветка не
-  может ни выбрать replacement, ни выполнить post-construction assignment;
 - reachable no-previous branch direct surface без configured `Construct`;
 - `null` вместо generated `DestinationConstruction` или `DestinationMembers`
   plan;
@@ -2722,9 +2720,9 @@ diagnostic не должно вводить скрытый fallback на дру�
     record cloning в v0 отсутствуют; member-plan overlay из закона 27 не
     создаёт replacement.
 54. Declarative existing-ветка, которая статически не может ни заменить result,
-    ни выполнить post-construction assignment, является configuration
-    diagnostic, если `Update` доступен и намерение не выражено
-    previous-aware `Construct` либо `Convert`.
+    ни выполнить post-construction assignment, возвращает исходный destination
+    без изменений. Для такого no-op не требуется previous-aware `Construct`;
+    доступность `Update` не гарантирует mutation.
 55. Отдельная post-v0 opt-in setting может условно реконструировать result при
     отличии хотя бы одного creation-only member candidate от previous. Эта
     identity-policy не является частью `NullAssignmentHandling`; её equality,
@@ -2915,16 +2913,17 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
   до выбора точного lifecycle API;
 - snapshot, порядок независимых member rules и видимость setter/nested side
   effects намеренно не являются контрактом;
-- неизбежный immutable `Update` no-op диагностируется вместо молчаливого
-  возврата previous.
+- immutable `Update` не реконструируется автоматически: статически пустая
+  existing-ветка сохраняет identity и возвращает previous без изменений.
 
 ## 17. Детали, которые ещё нужно закрепить перед реализацией
 
 Этапы 1–8 и 11 согласованы. Pair eligibility, capability/settings matrix,
-application-wide deterministic lookup и явная граница immutable
-`Update` зафиксированы. В v0 immutable replacement выполняется только
-через previous-aware `Construct` либо `Convert`; автоматическая условная
-reconstruction оставлена отдельной post-v0 setting. Этапы 9, 9A и 10 —
+application-wide deterministic lookup и граница immutable `Update`
+зафиксированы: статически пустой existing-path является допустимым no-op, а
+immutable replacement выполняется только через previous-aware `Construct`
+либо `Convert`. Автоматическая условная reconstruction оставлена отдельной
+post-v0 setting. Этапы 9, 9A и 10 —
 collections, `IncludeMembers`/convention flattening и patch/merge — также
 сознательно отложены за границу v0; исследование
 null-assignment policy сохранено отдельно и не меняет текущий default обычного

@@ -22,10 +22,6 @@ internal static class TypeMapperPipeline
     private const string InvalidMemberSelectionMessage =
         "The effective MemberSelection is invalid.";
 
-    internal const string ImmutableUpdateNoOpMessage =
-        "The declarative Update would inevitably return the previous " +
-        "destination unchanged.";
-
     public static void Register(
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
@@ -373,12 +369,7 @@ internal static class TypeMapperPipeline
                 [],
             MapExistingMemberMappings = memberMappings.MapExisting,
             MapNewUnsupportedExceptionMessage =
-                createUnsupportedMessage,
-            MapExistingUnsupportedExceptionMessage =
-                effectiveSettings.SupportsMapExisting &&
-                memberMappings.MapExisting.IsEmpty
-                    ? ImmutableUpdateNoOpMessage
-                    : null
+                createUnsupportedMessage
         };
     }
 

@@ -211,25 +211,14 @@ namespace TestCase
                 "00112233-4455-6677-8899-aabbccddeeff",
                 context);
             var existingGuid = Guid.NewGuid();
-
-            try
-            {
-                _ = guidMapper.Map(
-                    "ffffffff-ffff-ffff-ffff-ffffffffffff",
-                    existingGuid,
-                    context);
-                throw new InvalidOperationException(
-                    "An immutable source-only Update was accepted.");
-            }
-            catch (NotSupportedException exception)
-                when (exception.Message ==
-                    "The declarative Update would inevitably return " +
-                    "the previous destination unchanged.")
-            {
-            }
+            var preservedGuid = guidMapper.Map(
+                "ffffffff-ffff-ffff-ffff-ffffffffffff",
+                existingGuid,
+                context);
 
             if (parsed != Guid.Parse(
                     "00112233-4455-6677-8899-aabbccddeeff") ||
+                preservedGuid != existingGuid ||
                 TestMapper.ParseCount != 1)
             {
                 throw new InvalidOperationException(

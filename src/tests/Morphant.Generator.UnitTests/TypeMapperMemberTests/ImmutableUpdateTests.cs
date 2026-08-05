@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperMemberTests;
 internal sealed class ImmutableUpdateTests
 {
     [Test]
-    public void Requires_explicit_reuse_or_replacement_for_immutable_Update()
+    public void Allows_no_op_Update_without_explicit_construct_intent()
     {
         // lang=c#
         const string source =
@@ -24,16 +24,38 @@ namespace TestCase
     public sealed class Source
     {
         public int Value { get; init; }
+
+        public string Text { get; init; } = string.Empty;
     }
 
-    public sealed class InvalidDestination
+    public sealed class ConventionDestination
     {
-        public InvalidDestination(int value)
+        public ConventionDestination(int value)
         {
             Value = value;
         }
 
         public int Value { get; }
+    }
+
+    public sealed class SourceOnlyDestination
+    {
+        public SourceOnlyDestination(int value)
+        {
+            Value = value;
+        }
+
+        public int Value { get; }
+    }
+
+    public sealed class InitDestination
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class IgnoredDestination
+    {
+        public int Value { get; set; }
     }
 
     public sealed class ReusedDestination
@@ -59,10 +81,34 @@ namespace TestCase
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
+        public static int SourceOnlyConstructCount { get; private set; }
+
+        public static int DirectConstructCount { get; private set; }
+
+        public static int InitMemberCount { get; private set; }
+
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, InvalidDestination>()
-                .Construct(source => new(value: source.Value));
+            builder.Map<Source, ConventionDestination>();
+
+            builder.Map<Source, SourceOnlyDestination>()
+                .Construct(source =>
+                    new(value: TrackSourceOnlyConstruct(source.Value)));
+
+            builder.Map<Source, Guid>()
+                .Construct(source => TrackDirectConstruct(source.Text));
+
+            builder.Map<Source, InitDestination>()
+                .Members((source, previous) => new()
+                {
+                    Value = TrackInitMember(source.Value)
+                });
+
+            builder.Map<Source, IgnoredDestination>()
+                .Members((source, previous) => new()
+                {
+                    Value = Ignore<int>()
+                });
 
             builder.Map<Source, ReusedDestination>()
                 .Construct((source, previous) =>
@@ -81,6 +127,24 @@ namespace TestCase
 
             builder.Map<Source, int>();
         }
+
+        private static int TrackSourceOnlyConstruct(int value)
+        {
+            SourceOnlyConstructCount++;
+            return value;
+        }
+
+        private static Guid TrackDirectConstruct(string value)
+        {
+            DirectConstructCount++;
+            return Guid.Parse(value);
+        }
+
+        private static int TrackInitMember(int value)
+        {
+            InitMemberCount++;
+            return value;
+        }
     }
 
     public static class Scenario
@@ -88,10 +152,22 @@ namespace TestCase
         public static void Verify()
         {
             var mapper = new TestMapper();
-            var source = new Source { Value = 9 };
+            var source = new Source
+            {
+                Value = 9,
+                Text = "00112233-4455-6677-8899-aabbccddeeff"
+            };
             var context = default(MappingContext);
-            var invalidMapper =
-                (ITypeMapper<Source, InvalidDestination>)mapper;
+            var conventionMapper =
+                (ITypeMapper<Source, ConventionDestination>)mapper;
+            var sourceOnlyMapper =
+                (ITypeMapper<Source, SourceOnlyDestination>)mapper;
+            var directMapper =
+                (ITypeMapper<Source, Guid>)mapper;
+            var initMapper =
+                (ITypeMapper<Source, InitDestination>)mapper;
+            var ignoredMapper =
+                (ITypeMapper<Source, IgnoredDestination>)mapper;
             var reusedMapper =
                 (ITypeMapper<Source, ReusedDestination>)mapper;
             var replacementMapper =
@@ -99,21 +175,69 @@ namespace TestCase
             var scalarMapper =
                 (ITypeMapper<Source, int>)mapper;
 
-            var created = invalidMapper.Map(source, context);
+            var conventionCreated = conventionMapper.Map(source, context);
+            var sourceOnlyCreated = sourceOnlyMapper.Map(source, context);
+            var directCreated = directMapper.Map(source, context);
+            var initCreated = initMapper.Map(source, context);
 
-            if (created.Value != 9)
+            if (conventionCreated.Value != 9 ||
+                sourceOnlyCreated.Value != 9 ||
+                directCreated != Guid.Parse(source.Text) ||
+                initCreated.Value != 9 ||
+                TestMapper.SourceOnlyConstructCount != 1 ||
+                TestMapper.DirectConstructCount != 1 ||
+                TestMapper.InitMemberCount != 1)
             {
                 throw new InvalidOperationException(
                     "The valid Create path changed.");
             }
 
-            ExpectUnsupported(() =>
-                invalidMapper.Map(
-                    source,
-                    new InvalidDestination(1),
-                    context));
-            ExpectUnsupported(() =>
-                scalarMapper.Map(source, 1, context));
+            var conventionPrevious = new ConventionDestination(1);
+            var sourceOnlyPrevious = new SourceOnlyDestination(2);
+            var directPrevious = Guid.Parse(
+                "ffffffff-ffff-ffff-ffff-ffffffffffff");
+            var initPrevious = new InitDestination { Value = 3 };
+            var ignoredPrevious = new IgnoredDestination { Value = 4 };
+
+            var conventionResult = conventionMapper.Map(
+                source,
+                conventionPrevious,
+                context);
+            var sourceOnlyResult = sourceOnlyMapper.Map(
+                source,
+                sourceOnlyPrevious,
+                context);
+            var directResult = directMapper.Map(
+                source,
+                directPrevious,
+                context);
+            var initResult = initMapper.Map(
+                source,
+                initPrevious,
+                context);
+            var ignoredResult = ignoredMapper.Map(
+                source,
+                ignoredPrevious,
+                context);
+            var scalarResult = scalarMapper.Map(source, 5, context);
+
+            if (!ReferenceEquals(conventionPrevious, conventionResult) ||
+                conventionResult.Value != 1 ||
+                !ReferenceEquals(sourceOnlyPrevious, sourceOnlyResult) ||
+                sourceOnlyResult.Value != 2 ||
+                directResult != directPrevious ||
+                !ReferenceEquals(initPrevious, initResult) ||
+                initResult.Value != 3 ||
+                !ReferenceEquals(ignoredPrevious, ignoredResult) ||
+                ignoredResult.Value != 4 ||
+                scalarResult != 5 ||
+                TestMapper.SourceOnlyConstructCount != 1 ||
+                TestMapper.DirectConstructCount != 1 ||
+                TestMapper.InitMemberCount != 1)
+            {
+                throw new InvalidOperationException(
+                    "A no-op Update did not preserve the destination.");
+            }
 
             var previous = new ReusedDestination(2);
             var reused = reusedMapper.Map(
@@ -134,24 +258,6 @@ namespace TestCase
                 throw new InvalidOperationException(
                     "Explicit immutable intent was not authoritative.");
             }
-        }
-
-        private static void ExpectUnsupported(Action action)
-        {
-            try
-            {
-                action();
-            }
-            catch (NotSupportedException exception)
-                when (exception.Message ==
-                    "The declarative Update would inevitably return " +
-                    "the previous destination unchanged.")
-            {
-                return;
-            }
-
-            throw new InvalidOperationException(
-                "An inevitable immutable Update no-op was accepted.");
         }
     }
 }

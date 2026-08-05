@@ -62,23 +62,12 @@ namespace TestCase
             var context = default(MappingContext);
             var created = mapper.Map(source, context);
             var previous = new Destination(31);
-
-            try
-            {
-                _ = mapper.Map(source, previous, context);
-                throw new InvalidOperationException(
-                    "An immutable source-only Update was accepted.");
-            }
-            catch (NotSupportedException exception)
-                when (exception.Message ==
-                    "The declarative Update would inevitably return " +
-                    "the previous destination unchanged.")
-            {
-            }
+            var updated = mapper.Map(source, previous, context);
 
             if (created.Kind != "parameterized" ||
                 created.Id != 17 ||
-                previous.Id != 31)
+                !ReferenceEquals(previous, updated) ||
+                updated.Id != 31)
             {
                 throw new InvalidOperationException(
                     "ByConvention did not use unambiguous construction semantics.");

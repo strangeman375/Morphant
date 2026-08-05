@@ -654,11 +654,10 @@ type: explicit absence требует отдельного source contract. Эт
   вопросы copy-constructor/derived-runtime-type semantics;
 - source-only `Construct` не выполняется при существующем previous и потому не
   является replacement-path для immutable `Update`;
-- если включён declarative `Update`, но его existing-ветка статически не
-  может ни выбрать replacement, ни выполнить хотя бы один post-construction
-  assignment, это configuration diagnostic вместо молчаливого возврата
-  previous. Явный previous-aware `Construct`, `Convert` либо отключённый
-  `Update` делают намерение наблюдаемым и устраняют эту diagnostic;
+- если existing-ветка declarative `Update` статически не может ни выбрать
+  replacement, ни выполнить хотя бы один post-construction assignment, она
+  является допустимым no-op и возвращает исходный destination. Previous-aware
+  `Construct` для подтверждения reuse не требуется;
 - смешанный mutable/immutable destination не считается целиком ошибочным
   только из-за сохранённого immutable member. Неприменимый explicit
   `init`-rule диагностируется отдельно, а полнота convention mapping остаётся
@@ -680,9 +679,9 @@ v0. До этого никакой скрытой `EqualityComparer<T>.Default`-
 fallback reconstruction в контракте нет.
 
 **Результат этапа:** v0 использует только явный replacement через
-previous-aware `Construct` либо manual `with`/reconstruction, диагностирует
-статически неизбежный полный no-op и сохраняет совместимый путь к отдельной
-post-v0 настройке `recreate when changed`.
+previous-aware `Construct` либо manual `with`/reconstruction, допускает
+статически пустой existing-path как identity-preserving no-op и сохраняет
+совместимый путь к отдельной post-v0 настройке `recreate when changed`.
 
 ### Этап 12. Per-call data и пользовательский context
 
@@ -1145,7 +1144,6 @@ builder.Map<Source, Destination>()
 - невозможный creation/member/nested marker;
 - `null` вместо structured creation/member plan;
 - неприменимый `init`/`required` rule;
-- immutable existing no-op;
 - unsupported control flow/capture;
 - ambiguous polymorphic/generic/variant dispatch;
 - non-projectable mapping;

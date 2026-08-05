@@ -421,10 +421,7 @@ internal static class DirectConstructMappingPlanner
             MapExistingMemberMappings = memberMappings,
             ControlFlow = null,
             MapNewUnsupportedExceptionMessage = null,
-            MapExistingUnsupportedExceptionMessage =
-                memberMappings.IsEmpty
-                    ? TypeMapperPipeline.ImmutableUpdateNoOpMessage
-                    : null,
+            MapExistingUnsupportedExceptionMessage = null,
             UnsupportedExceptionMessage = null
         };
 
