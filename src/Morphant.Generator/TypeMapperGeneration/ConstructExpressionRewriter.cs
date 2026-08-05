@@ -12,6 +12,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     private readonly string _sourceName;
     private readonly IParameterSymbol? _previousParameter;
     private readonly PreviousExpressionSubstitution? _previousSubstitution;
+    private readonly IParameterSymbol? _resultParameter;
+    private readonly string? _resultName;
     private readonly SyntaxNode _transferScope;
 
     private ConstructExpressionRewriter(
@@ -21,6 +23,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         string sourceName,
         IParameterSymbol? previousParameter,
         PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
         SyntaxNode transferScope)
     {
         _semanticModel = semanticModel;
@@ -29,6 +33,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _sourceName = sourceName;
         _previousParameter = previousParameter;
         _previousSubstitution = previousSubstitution;
+        _resultParameter = resultParameter;
+        _resultName = resultName;
         _transferScope = transferScope;
     }
 
@@ -44,6 +50,35 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         CancellationToken cancellationToken,
         out string rewrittenExpression)
     {
+        return TryRewrite(
+            expression,
+            semanticModel,
+            mapperType,
+            sourceParameter,
+            sourceName,
+            previousParameter,
+            previousSubstitution,
+            resultParameter: null,
+            resultName: null,
+            transferScope,
+            cancellationToken,
+            out rewrittenExpression);
+    }
+
+    public static bool TryRewrite(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        SyntaxNode transferScope,
+        CancellationToken cancellationToken,
+        out string rewrittenExpression)
+    {
         if (!TryRewriteSyntax(
                 expression,
                 semanticModel,
@@ -52,6 +87,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 sourceName,
                 previousParameter,
                 previousSubstitution,
+                resultParameter,
+                resultName,
                 transferScope,
                 cancellationToken,
                 out var rewritten))
@@ -80,12 +117,43 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         out TNode rewrittenSyntax)
         where TNode : CSharpSyntaxNode
     {
+        return TryRewriteSyntax(
+            syntax,
+            semanticModel,
+            mapperType,
+            sourceParameter,
+            sourceName,
+            previousParameter,
+            previousSubstitution,
+            resultParameter: null,
+            resultName: null,
+            transferScope,
+            cancellationToken,
+            out rewrittenSyntax);
+    }
+
+    public static bool TryRewriteSyntax<TNode>(
+        TNode syntax,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        SyntaxNode transferScope,
+        CancellationToken cancellationToken,
+        out TNode rewrittenSyntax)
+        where TNode : CSharpSyntaxNode
+    {
         if (!HasOnlyTransferableCaptures(
                 syntax,
                 transferScope,
                 semanticModel,
                 sourceParameter,
                 previousParameter,
+                resultParameter,
                 cancellationToken))
         {
             rewrittenSyntax = null!;
@@ -100,6 +168,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     sourceName,
                     previousParameter,
                     previousSubstitution,
+                    resultParameter,
+                    resultName,
                     transferScope)
                 .Visit(syntax)!;
         return true;
@@ -200,6 +270,21 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         return rewritten.WithTriviaFrom(node);
+    }
+
+    public override SyntaxNode? VisitConditionalExpression(
+        ConditionalExpressionSyntax node)
+    {
+        if (TryEvaluateKnownBoolean(node.Condition, out var condition))
+        {
+            return Visit(
+                    condition
+                        ? node.WhenTrue
+                        : node.WhenFalse)!
+                .WithTriviaFrom(node);
+        }
+
+        return base.VisitConditionalExpression(node);
     }
 
     public override SyntaxNode? VisitMemberAccessExpression(
@@ -388,6 +473,16 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             return SyntaxFactory.ParseExpression(
                     _previousSubstitution?.OptionExpression ??
                     node.Identifier.Text)
+                .WithTriviaFrom(node);
+        }
+
+        if (_resultParameter is not null &&
+            SymbolEqualityComparer.Default.Equals(
+                symbol,
+                _resultParameter))
+        {
+            return SyntaxFactory.IdentifierName(
+                    _resultName ?? node.Identifier.Text)
                 .WithTriviaFrom(node);
         }
 
@@ -626,12 +721,104 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                    _previousParameter);
     }
 
+    private bool TryEvaluateKnownBoolean(
+        ExpressionSyntax expression,
+        out bool value)
+    {
+        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expression = parenthesized.Expression;
+        }
+
+        if (_semanticModel.GetConstantValue(expression) is
+            {
+                HasValue: true,
+                Value: bool constant
+            })
+        {
+            value = constant;
+            return true;
+        }
+
+        if (_previousSubstitution is { } previous &&
+            expression is MemberAccessExpressionSyntax
+            {
+                Expression: var receiver,
+                Name.Identifier.ValueText: "HasValue"
+            } &&
+            IsPreviousParameterExpression(receiver) &&
+            bool.TryParse(
+                previous.HasValueExpression,
+                out value))
+        {
+            return true;
+        }
+
+        if (expression is PrefixUnaryExpressionSyntax
+            {
+                RawKind: (int)SyntaxKind.LogicalNotExpression,
+                Operand: var operand
+            } &&
+            TryEvaluateKnownBoolean(operand, out var operandValue))
+        {
+            value = !operandValue;
+            return true;
+        }
+
+        if (expression is BinaryExpressionSyntax binary &&
+            TryEvaluateKnownBoolean(
+                binary.Left,
+                out var leftValue))
+        {
+            switch ((SyntaxKind)binary.RawKind)
+            {
+                case SyntaxKind.LogicalAndExpression
+                    when !leftValue:
+                    value = false;
+                    return true;
+
+                case SyntaxKind.LogicalOrExpression
+                    when leftValue:
+                    value = true;
+                    return true;
+            }
+
+            if (TryEvaluateKnownBoolean(
+                    binary.Right,
+                    out var rightValue))
+            {
+                switch ((SyntaxKind)binary.RawKind)
+                {
+                    case SyntaxKind.LogicalAndExpression:
+                        value = leftValue && rightValue;
+                        return true;
+
+                    case SyntaxKind.LogicalOrExpression:
+                        value = leftValue || rightValue;
+                        return true;
+
+                    case SyntaxKind.EqualsExpression:
+                        value = leftValue == rightValue;
+                        return true;
+
+                    case SyntaxKind.NotEqualsExpression:
+                        value = leftValue != rightValue;
+                        return true;
+                }
+            }
+        }
+
+        value = false;
+        return false;
+    }
+
     private static bool HasOnlyTransferableCaptures(
         SyntaxNode expression,
         SyntaxNode transferScope,
         SemanticModel semanticModel,
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
+        IParameterSymbol? resultParameter,
         CancellationToken cancellationToken)
     {
         foreach (var name in expression
@@ -661,7 +848,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 previousParameter is not null &&
                 SymbolEqualityComparer.Default.Equals(
                     symbol,
-                    previousParameter))
+                    previousParameter) ||
+                resultParameter is not null &&
+                SymbolEqualityComparer.Default.Equals(
+                    symbol,
+                    resultParameter))
             {
                 continue;
             }

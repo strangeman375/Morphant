@@ -126,12 +126,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 2, этап 10 — базовый explicit `Members` plan.**
+**Фаза 2, этап 11 — previous/result-aware members и lifecycle границы.**
 
 Статус: ожидает ревью.
 
-Этап 9 принят. Этап 11 и все последующие этапы заблокированы до принятия
-этапа 10.
+Этап 10 принят. Этап 12 и все последующие этапы заблокированы до принятия
+этапа 11.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -689,7 +689,7 @@ generic separation и semantic parameter names (`2/2`). Runtime-вызовы в�
 
 ### Этап 10. Базовый explicit `Members` plan
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — сделать `Members` единственным declarative surface настройки
 body-members; обычный C# внутри direct/factory/manual code остаётся свободен
@@ -767,7 +767,7 @@ unit-test project.
 
 ### Этап 11. Previous/result-aware members и lifecycle границы
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — реализовать точную связь previous, result и creation/post-creation
 assignments.
@@ -803,6 +803,41 @@ Production scope:
 
 Результат этапа: обе формы `Members` являются одним declarative plan, а phase
 каждого rule следует только его реальным dependencies.
+
+Реализовано: двух- и трёхпараметрические expression-lambda `Members`
+нормализуются в один operation-specific plan. Для `Create`, replacement и
+existing branches строятся отдельные expressions: `previous` всегда
+подставляется как исходный normalized destination, а `result` — как фактически
+выбранный non-null instance. Nullable value destination получает unwrapped
+non-null `result`; terminal `null` из direct/factory construction завершает
+ветку до member assignments.
+
+Result-dependency определяется отдельно для каждого effective rule; compile-
+time `nameof(result)` зависимостью не считается. Result-independent `init` и
+creation-time `required` остаются в initializer structured constructor,
+result-dependent setters и mutable fields выполняются после создания через
+collision-safe result local. Previous/reuse ветка выполняет только доступные
+post-construction assignments и не вычисляет неприменимые `init` expressions.
+Factory result принимает только post-construction rules; явный creation-only
+rule переводит конфигурацию в детерминированный unsupported state до появления
+публичной diagnostic. Result-dependent creation-only rule также не получает
+скрытого fallback; `[SetsRequiredMembers]` остаётся единственным C#-основанием
+допустить constructor до последующих required assignments.
+
+Неизбежный immutable `Update`, который может только вернуть previous без
+assignment, больше не маскируется успешным no-op. Он получает тот же
+детерминированный unsupported path во всех settings/nullability surfaces.
+Previous-aware `Construct` остаётся явным выражением намерения и поэтому
+разрешает как reuse, так и replacement.
+
+Самостоятельная категория `TypeMapperMemberTests` дополнена lifecycle,
+immutable и result-aware сценариями, включая полный exact-source snapshot,
+previous/replacement identity, constructor/factory/direct state, mixed
+dependencies, `init`/`required`/setter/field, side effects и terminal null
+(`14/14`). Regression-срезы этапов 9 и 8, conventions, null handling и mapping
+mode сохраняют прежнее поведение. Runtime-вызовы входят в уже отмеченный
+временный integration debt; exact-source проверки остаются в unit-test
+project.
 
 ### Этап 12. Declarative control flow и member-plan composition
 

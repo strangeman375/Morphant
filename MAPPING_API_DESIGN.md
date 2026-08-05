@@ -2522,8 +2522,9 @@ source, factory/derived behavior и точный evaluation order будут с�
 - pair-specific constructor/member settings, несовместимые с manual mapping;
 - достижимый explicit `init`-rule либо creation-time `required`-rule structured
   surface, который невозможно применить в конкретной creation branch: result
-  уже создан previous/factory code либо value/условие rule транзитивно зависит
-  от ещё не созданного result;
+  уже создан factory code либо value/условие rule транзитивно зависит от ещё
+  не созданного result; previous-result сохраняет такой member без вычисления
+  неприменимого expression;
 - статически неизбежный declarative `Update` no-op: existing-ветка не
   может ни выбрать replacement, ни выполнить post-construction assignment;
 - reachable no-previous branch direct surface без configured `Construct`;

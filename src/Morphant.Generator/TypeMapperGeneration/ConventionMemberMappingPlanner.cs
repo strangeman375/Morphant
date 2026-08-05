@@ -63,7 +63,11 @@ internal static class ConventionMemberMappingPlanner
                 [],
                 [],
                 [],
-                HasUnmappedRequiredMembers: false);
+                [],
+                [],
+                HasUnmappedRequiredMembers: false,
+                HasExplicitCreationOnlyMappings: false,
+                HasResultDependentCreationOnlyMappings: false);
         }
 
         var sourceMembers = BuildReadableMembers(
@@ -166,11 +170,17 @@ internal static class ConventionMemberMappingPlanner
 
         var immutableMapExisting = mapExisting.ToImmutable();
 
+        var immutableMapNew = mapNew.ToImmutable();
+
         return new ConventionMemberMappingPlan(
-            mapNew.ToImmutable(),
+            immutableMapNew,
+            immutableMapExisting,
+            immutableMapNew,
             immutableMapExisting,
             immutableMapExisting,
-            hasUnmappedRequiredMembers);
+            hasUnmappedRequiredMembers,
+            HasExplicitCreationOnlyMappings: false,
+            HasResultDependentCreationOnlyMappings: false);
     }
 
     internal static ImmutableArray<ConventionReadableMember>
@@ -872,8 +882,38 @@ internal static class ConventionMemberMappingPlanner
 internal readonly record struct ConventionMemberMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> MapNew,
     ImmutableArray<TypeMapperMemberMappingModel> MapNewPost,
+    ImmutableArray<TypeMapperMemberMappingModel> MapReplacement,
+    ImmutableArray<TypeMapperMemberMappingModel> MapReplacementPost,
     ImmutableArray<TypeMapperMemberMappingModel> MapExisting,
-    bool HasUnmappedRequiredMembers);
+    bool HasUnmappedRequiredMembers,
+    bool HasExplicitCreationOnlyMappings,
+    bool HasResultDependentCreationOnlyMappings)
+{
+    public ConstructorMemberMappingPlan BuildConstructorPlan(
+        bool replacement)
+    {
+        var initializerMappings = replacement
+            ? MapReplacement
+            : MapNew;
+        var postMappings = (replacement
+                ? MapReplacementPost
+                : MapNewPost)
+            .Where(static mapping => mapping.IsResultDependent)
+            .ToImmutableArray();
+
+        return new ConstructorMemberMappingPlan(
+            initializerMappings,
+            postMappings,
+            HasUnmappedRequiredMembers,
+            HasResultDependentCreationOnlyMappings);
+    }
+}
+
+internal readonly record struct ConstructorMemberMappingPlan(
+    ImmutableArray<TypeMapperMemberMappingModel> InitializerMappings,
+    ImmutableArray<TypeMapperMemberMappingModel> PostMappings,
+    bool HasUnmappedRequiredMembers,
+    bool HasResultDependentCreationOnlyMappings);
 
 internal readonly record struct ConventionReadableMember(
     string Name,

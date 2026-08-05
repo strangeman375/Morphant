@@ -424,10 +424,17 @@ internal static class TypeMapperEmitter
             writer.Line();
         }
 
+        var hasPostMappings =
+            !mapping.MapNewPostMemberMappings.IsEmpty;
+        var constructionPrefix = hasPostMappings
+            ? $"var {Identifier(mapping.ResultLocalName)} = "
+            : "return ";
+
         if (constructor.Arguments.IsEmpty)
         {
             writer.Line(
-                $"return new {constructor.ConstructedTypeName}()" +
+                $"{constructionPrefix}new " +
+                $"{constructor.ConstructedTypeName}()" +
                 (mapping.MapNewMemberMappings.IsEmpty
                     ? ";"
                     : string.Empty));
@@ -435,7 +442,8 @@ internal static class TypeMapperEmitter
         else
         {
             writer.Line(
-                $"return new {constructor.ConstructedTypeName}(");
+                $"{constructionPrefix}new " +
+                $"{constructor.ConstructedTypeName}(");
             writer.Indent();
 
             for (var index = 0;
@@ -464,31 +472,62 @@ internal static class TypeMapperEmitter
 
         if (mapping.MapNewMemberMappings.IsEmpty)
         {
+            if (!hasPostMappings)
+            {
+                return;
+            }
+        }
+        else
+        {
+            writer.Line("{");
+            writer.Indent();
+
+            for (var index = 0;
+                 index < mapping.MapNewMemberMappings.Length;
+                 index++)
+            {
+                var memberMapping =
+                    mapping.MapNewMemberMappings[index];
+                var suffix =
+                    index < mapping.MapNewMemberMappings.Length - 1
+                        ? ","
+                        : string.Empty;
+
+                writer.Line(
+                    $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                    MemberValueExpression(mapping, memberMapping) +
+                    suffix);
+            }
+
+            writer.Unindent();
+            writer.Line("};");
+        }
+
+        if (!hasPostMappings)
+        {
             return;
         }
 
-        writer.Line("{");
-        writer.Indent();
+        writer.Line();
+        WriteMemberValueLocals(
+            writer,
+            mapping.MapNewPostMemberMappings);
 
-        for (var index = 0;
-             index < mapping.MapNewMemberMappings.Length;
-             index++)
+        var resultLocalName =
+            Identifier(mapping.ResultLocalName);
+
+        foreach (var memberMapping in
+                 mapping.MapNewPostMemberMappings)
         {
-            var memberMapping =
-                mapping.MapNewMemberMappings[index];
-            var suffix =
-                index < mapping.MapNewMemberMappings.Length - 1
-                    ? ","
-                    : string.Empty;
-
             writer.Line(
+                $"{resultLocalName}." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
                 MemberValueExpression(mapping, memberMapping) +
-                suffix);
+                ";");
         }
 
-        writer.Unindent();
-        writer.Line("};");
+        writer.Line();
+        writer.Line($"return {resultLocalName};");
     }
 
     private static void WriteFactoryMapNewStatements(
@@ -519,7 +558,7 @@ internal static class TypeMapperEmitter
         var assignmentTarget = destinationLocalName;
         var returnExpression = destinationLocalName;
 
-        if (!mapping.MapNewMemberMappings.IsEmpty &&
+        if (!mapping.MapNewPostMemberMappings.IsEmpty &&
             factory.NullableValueLocalName is
                 { } nullableValueLocalName)
         {
@@ -540,7 +579,7 @@ internal static class TypeMapperEmitter
             assignmentTarget += "!";
         }
 
-        if (!mapping.MapNewMemberMappings.IsEmpty &&
+        if (!mapping.MapNewPostMemberMappings.IsEmpty &&
             !factory.RequiresNullGuard &&
             factory.NullableValueLocalName is null)
         {
@@ -548,7 +587,7 @@ internal static class TypeMapperEmitter
         }
 
         foreach (var memberMapping in
-                 mapping.MapNewMemberMappings)
+                 mapping.MapNewPostMemberMappings)
         {
             writer.Line(
                 $"{assignmentTarget}." +

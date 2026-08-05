@@ -29,6 +29,7 @@ internal readonly record struct TypeMapperMappingModel
     string DestinationTypeName,
     string MaybeNullDestinationTypeName,
     string NonNullDestinationTypeName,
+    string ResultLocalName,
     bool SourceCanBeNull,
     bool SourceIsNullableValue,
     bool DestinationCanBeNull,
@@ -38,6 +39,7 @@ internal readonly record struct TypeMapperMappingModel
     TypeMapperConstructorMappingModel? MapNewConstructor,
     TypeMapperMapExistingKind MapExistingKind,
     ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
+    ImmutableArray<TypeMapperMemberMappingModel> MapNewPostMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
     TypeMapperControlFlowMappingModel? ControlFlow = null,
     string? MapNewUnsupportedExceptionMessage = null,
@@ -95,7 +97,8 @@ internal readonly record struct TypeMapperMemberMappingModel
     string? ExplicitValueExpression = null,
     string? ExplicitValueTypeName = null,
     string? ValueLocalName = null,
-    bool RequiresPreviousDestinationValueLocal = false
+    bool RequiresPreviousDestinationValueLocal = false,
+    bool IsResultDependent = false
 );
 
 internal sealed record TypeMapperControlFlowMappingModel

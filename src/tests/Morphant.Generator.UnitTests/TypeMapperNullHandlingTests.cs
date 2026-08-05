@@ -1067,7 +1067,8 @@ namespace TestCase
             global::TestCase.FullOverrideDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            return destination;
+            throw new global::System.NotSupportedException(
+                "The declarative Update would inevitably return the previous destination unchanged.");
         }
     }
 }

@@ -151,7 +151,7 @@ internal static class DirectConstructMappingPlanner
             bool hasPrevious)
         {
             var postConstructionMembers = hasPrevious
-                ? memberMappings.MapExisting
+                ? memberMappings.MapReplacementPost
                 : memberMappings.MapNewPost;
             PreviousExpressionSubstitution? previousSubstitution =
                 previousParameter is null
@@ -235,7 +235,8 @@ internal static class DirectConstructMappingPlanner
                 MapExistingDirectExpression = null,
                 MapNewFactory = factory,
                 MapNewConstructor = null,
-                MapNewMemberMappings = postConstructionMembers,
+                MapNewMemberMappings = [],
+                MapNewPostMemberMappings = postConstructionMembers,
                 MapExistingMemberMappings = [],
                 ControlFlow = null,
                 MapNewUnsupportedExceptionMessage = null,
@@ -416,10 +417,14 @@ internal static class DirectConstructMappingPlanner
             MapNewFactory = null,
             MapNewConstructor = null,
             MapNewMemberMappings = [],
+            MapNewPostMemberMappings = [],
             MapExistingMemberMappings = memberMappings,
             ControlFlow = null,
             MapNewUnsupportedExceptionMessage = null,
-            MapExistingUnsupportedExceptionMessage = null,
+            MapExistingUnsupportedExceptionMessage =
+                memberMappings.IsEmpty
+                    ? TypeMapperPipeline.ImmutableUpdateNoOpMessage
+                    : null,
             UnsupportedExceptionMessage = null
         };
 

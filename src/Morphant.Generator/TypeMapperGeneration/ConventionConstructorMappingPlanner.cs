@@ -15,7 +15,7 @@ internal static class ConventionConstructorMappingPlanner
     public static ConventionConstructorMappingPlan? Build(
         ITypeSymbol sourceType,
         ITypeSymbol? destination,
-        ConventionMemberMappingPlan memberMappings,
+        ConstructorMemberMappingPlan memberMappings,
         MappingPairCapabilities capabilities,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -41,7 +41,8 @@ internal static class ConventionConstructorMappingPlanner
         var setsRequiredMembers =
             HasSetsRequiredMembersAttribute(constructor);
 
-        if (memberMappings.HasUnmappedRequiredMembers &&
+        if (memberMappings.HasResultDependentCreationOnlyMappings ||
+            memberMappings.HasUnmappedRequiredMembers &&
             !setsRequiredMembers)
         {
             return null;
@@ -147,7 +148,8 @@ internal static class ConventionConstructorMappingPlanner
 
         return BuildPlan(
             argumentArray,
-            memberMappings.MapNew,
+            memberMappings.InitializerMappings,
+            memberMappings.PostMappings,
             setsRequiredMembers,
             mapperType,
             nonNullSourceName,
@@ -442,6 +444,7 @@ internal static class ConventionConstructorMappingPlanner
     private static ConventionConstructorMappingPlan BuildPlan(
         ImmutableArray<ConstructorArgumentCandidate> arguments,
         ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
+        ImmutableArray<TypeMapperMemberMappingModel> postMappings,
         bool setsRequiredMembers,
         INamedTypeSymbol mapperType,
         string nonNullSourceName,
@@ -572,7 +575,8 @@ internal static class ConventionConstructorMappingPlanner
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     destination),
                 argumentModels.ToImmutableArray()),
-            memberModels.ToImmutable());
+            memberModels.ToImmutable(),
+            postMappings);
     }
 
     internal static HashSet<string> BuildUsedValueLocalNames(
@@ -677,7 +681,7 @@ internal static class ConventionConstructorMappingPlanner
 
     internal static ConventionConstructorMappingPlan? BuildExplicitPlan(
         ITypeSymbol destination,
-        ConventionMemberMappingPlan memberMappings,
+        ConstructorMemberMappingPlan memberMappings,
         IMethodSymbol constructor,
         ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
         INamedTypeSymbol mapperType,
@@ -686,7 +690,8 @@ internal static class ConventionConstructorMappingPlanner
         var setsRequiredMembers =
             HasSetsRequiredMembersAttribute(constructor);
 
-        if (memberMappings.HasUnmappedRequiredMembers &&
+        if (memberMappings.HasResultDependentCreationOnlyMappings ||
+            memberMappings.HasUnmappedRequiredMembers &&
             !setsRequiredMembers)
         {
             return null;
@@ -697,7 +702,7 @@ internal static class ConventionConstructorMappingPlanner
         foreach (var argument in arguments)
         {
             if (FindCorrespondingMemberIndex(
-                    memberMappings.MapNew,
+                    memberMappings.InitializerMappings,
                     argument.ParameterName) is { } memberIndex)
             {
                 correspondingMemberIndexes.Add(memberIndex);
@@ -705,14 +710,14 @@ internal static class ConventionConstructorMappingPlanner
         }
 
         var correspondingArgumentIndexes =
-            new List<int>[memberMappings.MapNew.Length];
+            new List<int>[memberMappings.InitializerMappings.Length];
 
         for (var argumentIndex = 0;
              argumentIndex < arguments.Length;
              argumentIndex++)
         {
             if (FindCorrespondingMemberIndex(
-                    memberMappings.MapNew,
+                    memberMappings.InitializerMappings,
                     arguments[argumentIndex].ParameterName) is not
                 { } memberIndex)
             {
@@ -731,10 +736,10 @@ internal static class ConventionConstructorMappingPlanner
             new List<(int MemberIndex, int ArgumentIndex)>();
 
         for (var index = 0;
-             index < memberMappings.MapNew.Length;
+             index < memberMappings.InitializerMappings.Length;
              index++)
         {
-            var mapping = memberMappings.MapNew[index];
+            var mapping = memberMappings.InitializerMappings[index];
 
             if (!correspondingMemberIndexes.Contains(index) ||
                 mapping.ExplicitValueExpression is not null ||
@@ -817,7 +822,8 @@ internal static class ConventionConstructorMappingPlanner
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     destination),
                 argumentModels.ToImmutableArray()),
-            mapNew.ToImmutable());
+            mapNew.ToImmutable(),
+            memberMappings.PostMappings);
     }
 
     internal static string BuildExplicitValueLocalTypeName(
@@ -939,4 +945,5 @@ internal static class ConventionConstructorMappingPlanner
 
 internal readonly record struct ConventionConstructorMappingPlan(
     TypeMapperConstructorMappingModel Constructor,
-    ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings);
+    ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
+    ImmutableArray<TypeMapperMemberMappingModel> MapNewPostMemberMappings);

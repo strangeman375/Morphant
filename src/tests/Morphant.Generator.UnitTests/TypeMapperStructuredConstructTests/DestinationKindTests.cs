@@ -98,10 +98,22 @@ namespace TestCase
                 (ITypeMapper<Source<string>, RecordDestination>)mapper;
             var createdRecord = recordMapper.Map(textSource, context);
             var previousRecord = new RecordDestination("previous");
-            var preservedRecord = recordMapper.Map(
-                textSource,
-                previousRecord,
-                context);
+
+            try
+            {
+                _ = recordMapper.Map(
+                    textSource,
+                    previousRecord,
+                    context);
+                throw new InvalidOperationException(
+                    "An immutable source-only Update was accepted.");
+            }
+            catch (NotSupportedException exception)
+                when (exception.Message ==
+                    "The declarative Update would inevitably return " +
+                    "the previous destination unchanged.")
+            {
+            }
 
             var genericMapper =
                 (ITypeMapper<
@@ -113,7 +125,6 @@ namespace TestCase
                 createdNullable?.Value != 17 ||
                 replacedNullable?.Value != 17 ||
                 createdRecord.Value != "mapped" ||
-                !ReferenceEquals(previousRecord, preservedRecord) ||
                 generic.Value != "mapped")
             {
                 throw new InvalidOperationException(

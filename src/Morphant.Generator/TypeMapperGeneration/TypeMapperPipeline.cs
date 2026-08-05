@@ -22,6 +22,10 @@ internal static class TypeMapperPipeline
     private const string InvalidMemberSelectionMessage =
         "The effective MemberSelection is invalid.";
 
+    internal const string ImmutableUpdateNoOpMessage =
+        "The declarative Update would inevitably return the previous " +
+        "destination unchanged.";
+
     public static void Register(
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
@@ -216,7 +220,8 @@ internal static class TypeMapperPipeline
             pair,
             destinationPlan,
             declarativeSourceType,
-            nonNullSourceName);
+            nonNullSourceName,
+            mapperType);
 
         if (configuration.Conflicts != PairConfigurationConflict.None ||
             !configuration.Manual.Conversions.IsEmpty)
@@ -342,7 +347,8 @@ internal static class TypeMapperPipeline
             constructorMapping = ConventionConstructorMappingPlanner.Build(
                 declarativeSourceType,
                 destinationPlan.MemberType,
-                memberMappings,
+                memberMappings.BuildConstructorPlan(
+                    replacement: false),
                 pair.Capabilities,
                 compilation,
                 mapperType,
@@ -362,9 +368,17 @@ internal static class TypeMapperPipeline
             MapNewMemberMappings =
                 constructorMapping?.MapNewMemberMappings ??
                 memberMappings.MapNew,
+            MapNewPostMemberMappings =
+                constructorMapping?.MapNewPostMemberMappings ??
+                [],
             MapExistingMemberMappings = memberMappings.MapExisting,
             MapNewUnsupportedExceptionMessage =
-                createUnsupportedMessage
+                createUnsupportedMessage,
+            MapExistingUnsupportedExceptionMessage =
+                effectiveSettings.SupportsMapExisting &&
+                memberMappings.MapExisting.IsEmpty
+                    ? ImmutableUpdateNoOpMessage
+                    : null
         };
     }
 
@@ -372,8 +386,17 @@ internal static class TypeMapperPipeline
         MappingPairModel pair,
         DestinationPlan destinationPlan,
         ITypeSymbol declarativeSourceType,
-        string nonNullSourceName)
+        string nonNullSourceName,
+        INamedTypeSymbol mapperType)
     {
+        var usedLocalNames =
+            UserResultMappingPlanner.BuildUsedLocalNames(mapperType);
+        usedLocalNames.Add(nonNullSourceName);
+        var resultLocalName =
+            UserResultMappingPlanner.AllocateName(
+                "result",
+                usedLocalNames);
+
         return new TypeMapperMappingModel(
             SourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
@@ -395,6 +418,7 @@ internal static class TypeMapperPipeline
             NonNullDestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     destinationPlan.MemberType),
+            ResultLocalName: resultLocalName,
             SourceCanBeNull: CanBeNull(pair.SourceType),
             SourceIsNullableValue:
                 MappingTypeNormalization.IsNullableValue(
@@ -406,6 +430,7 @@ internal static class TypeMapperPipeline
             MapNewConstructor: null,
             MapExistingKind: destinationPlan.MapExistingKind,
             MapNewMemberMappings: [],
+            MapNewPostMemberMappings: [],
             MapExistingMemberMappings: []);
     }
 

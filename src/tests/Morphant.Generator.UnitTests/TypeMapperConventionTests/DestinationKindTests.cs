@@ -481,11 +481,23 @@ namespace TestCase
             var interfacePrevious = new ConcreteDestination();
             var abstractPrevious = new ConcreteDestination();
 
-            if (scalarMapper.Map(
+            try
+            {
+                _ = scalarMapper.Map(
                     source,
                     13,
-                    default(MappingContext)) != 13 ||
-                !ReferenceEquals(
+                    default(MappingContext));
+                throw new InvalidOperationException(
+                    "An immutable scalar Update was accepted.");
+            }
+            catch (NotSupportedException exception)
+                when (exception.Message ==
+                    "The declarative Update would inevitably return " +
+                    "the previous destination unchanged.")
+            {
+            }
+
+            if (!ReferenceEquals(
                     interfaceMapper.Map(
                         source,
                         interfacePrevious,
@@ -575,7 +587,8 @@ namespace TestCase
             int destination,
             global::Morphant.Context.MappingContext context)
         {
-            return destination;
+            throw new global::System.NotSupportedException(
+                "The declarative Update would inevitably return the previous destination unchanged.");
         }
 
         /// <inheritdoc/>

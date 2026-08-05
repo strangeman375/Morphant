@@ -340,7 +340,8 @@ namespace TestCase
             global::TestCase.AssemblyDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            return destination;
+            throw new global::System.NotSupportedException(
+                "The declarative Update would inevitably return the previous destination unchanged.");
         }
     }
 }
@@ -411,7 +412,8 @@ namespace TestCase
             global::TestCase.PairDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            return destination;
+            throw new global::System.NotSupportedException(
+                "The declarative Update would inevitably return the previous destination unchanged.");
         }
     }
 }
@@ -447,7 +449,8 @@ namespace TestCase
             global::TestCase.ResetDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            return destination;
+            throw new global::System.NotSupportedException(
+                "The declarative Update would inevitably return the previous destination unchanged.");
         }
     }
 }
@@ -466,16 +469,16 @@ build_property.MorphantMappingMode = Update
                 assemblyExpected
             ),
             (
-                "Morphant.Generated.TypeMapper.TestCase_RootMapper.g.cs",
-                rootExpected
-            ),
-            (
                 "Morphant.Generated.TypeMapper.TestCase_PairMapper.g.cs",
                 pairExpected
             ),
             (
                 "Morphant.Generated.TypeMapper.TestCase_ResetMapper.g.cs",
                 resetExpected
+            ),
+            (
+                "Morphant.Generated.TypeMapper.TestCase_RootMapper.g.cs",
+                rootExpected
             ));
     }
 

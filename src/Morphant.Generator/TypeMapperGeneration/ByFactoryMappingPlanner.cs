@@ -18,10 +18,15 @@ internal static class ByFactoryMappingPlanner
     private const string UnsupportedFactoryMessage =
         "The configured ByFactory construction is not supported yet.";
 
+    private const string CreationOnlyMembersMessage =
+        "The configured Members plan contains a creation-only rule that " +
+        "cannot be applied to a factory result.";
+
     public static bool TryBuild(
         ImmutableArray<StructuredObjectArgument> arguments,
         TypeMapperMappingModel mapping,
         ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
+        bool hasExplicitCreationOnlyMappings,
         SemanticModel semanticModel,
         INamedTypeSymbol mapperType,
         IParameterSymbol sourceParameter,
@@ -90,6 +95,12 @@ internal static class ByFactoryMappingPlanner
 
         var factoryExpression =
             UnwrapParentheses(factoryArgument.Expression);
+
+        if (hasExplicitCreationOnlyMappings)
+        {
+            unsupportedMessage = CreationOnlyMembersMessage;
+            return true;
+        }
 
         TransferredFunctionPlan? BuildHelper(string functionName)
         {

@@ -355,20 +355,24 @@ internal static class UserResultMappingPlanner
     {
         var usedNames = BuildUsedLocalNames(mapperType);
         usedNames.Add(mapping.NonNullSourceName);
+        usedNames.Add(mapping.ResultLocalName);
 
         AddIdentifiers(valueExpression, usedNames);
 
-        var resultName = AllocateName("result", usedNames);
-        var nullableValueName =
+        var hasNullableValueResult =
             mapping.MapExistingKind ==
                 TypeMapperMapExistingKind.NullableValue &&
-            !memberMappings.IsEmpty
-                ? AllocateName("resultValue", usedNames)
-                : null;
+            !memberMappings.IsEmpty;
+        var destinationLocalName = hasNullableValueResult
+            ? AllocateName("nullableResult", usedNames)
+            : mapping.ResultLocalName;
+        var nullableValueName = hasNullableValueResult
+            ? mapping.ResultLocalName
+            : null;
 
         return new TypeMapperFactoryMappingModel(
             valueExpression,
-            resultName,
+            destinationLocalName,
             nullableValueName,
             DestinationRequiresNullForgivingOperator: false,
             RequiresNullGuard:

@@ -254,7 +254,8 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            return destination;
+            throw new global::System.NotSupportedException(
+                "The declarative Update would inevitably return the previous destination unchanged.");
         }
     }
 }
