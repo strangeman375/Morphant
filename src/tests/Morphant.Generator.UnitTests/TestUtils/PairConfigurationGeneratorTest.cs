@@ -21,8 +21,8 @@ internal sealed class PairConfigurationGeneratorTest :
 """
 #nullable enable
 
-using System;
 using Morphant.Context;
+using Morphant.Delegates;
 
 namespace Morphant
 {
@@ -30,23 +30,23 @@ namespace Morphant
     {
         public static MapperBuilder<TSource, TDestination> Construct<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,
-            Func<TSource, object> construct) => builder;
+            Construct<TSource, object> construct) => builder;
 
         public static MapperBuilder<TSource, TDestination> Construct<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,
-            Func<TSource, Option<TDestination>, object> construct) => builder;
+            Construct<TSource, TDestination, object> construct) => builder;
 
         public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,
-            Func<TSource, Option<TDestination>, object> members) => builder;
+            Members<TSource, TDestination, object> members) => builder;
 
         public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,
-            Func<TSource, Option<TDestination>, TDestination, object> members) => builder;
+            Members<TSource, TDestination, TDestination, object> members) => builder;
 
         public static MapperBuilder<TSource, TDestination> Convert<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,
-            Func<TSource, Option<TDestination>, MappingContext, TDestination> convert) => builder;
+            Convert<TSource, TDestination, TDestination> convert) => builder;
     }
 }
 """;

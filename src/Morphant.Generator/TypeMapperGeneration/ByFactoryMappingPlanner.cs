@@ -28,6 +28,7 @@ internal static class ByFactoryMappingPlanner
         IParameterSymbol? previousParameter,
         PreviousExpressionSubstitution? previousSubstitution,
         SyntaxNode transferScope,
+        ByFactoryHelperRegistry helperRegistry,
         CancellationToken cancellationToken,
         out TypeMapperFactoryMappingModel? factory,
         out string? unsupportedMessage)
@@ -89,29 +90,58 @@ internal static class ByFactoryMappingPlanner
 
         var factoryExpression =
             UnwrapParentheses(factoryArgument.Expression);
-        var usedNames =
-            UserResultMappingPlanner.BuildUsedLocalNames(mapperType);
-        UserResultMappingPlanner.AddIdentifiers(
-            factoryArgument.Expression,
-            usedNames);
 
-        if (factoryExpression is
-            ParenthesizedLambdaExpressionSyntax
-            {
-                ParameterList.Parameters.Count: 0
-            } factoryLambda)
+        TransferredFunctionPlan? BuildHelper(string functionName)
         {
-            var functionName =
-                UserResultMappingPlanner.AllocateName(
-                    "CreateByFactory",
-                    usedNames);
             var returnType = convertedType.TypeArguments[0]
                 .WithNullableAnnotation(
                     convertedType.TypeArgumentNullableAnnotations[0]);
 
-            if (!UserResultMappingPlanner.TryBuildTransferredFunction(
-                    factoryLambda,
-                    returnType,
+            if (factoryExpression is
+                    ParenthesizedLambdaExpressionSyntax
+                    {
+                        ParameterList.Parameters.Count: 0
+                    } factoryLambda)
+            {
+                return UserResultMappingPlanner
+                    .TryBuildTransferredFunction(
+                        factoryLambda,
+                        returnType,
+                        sourceParameter,
+                        previousParameter,
+                        semanticModel,
+                        mapperType,
+                        functionName,
+                        mapping.NonNullSourceName,
+                        previousSubstitution?.OptionExpression,
+                        cancellationToken,
+                        out var lambdaFunction)
+                        ? lambdaFunction
+                        : null;
+            }
+
+            var usedLocalNames =
+                UserResultMappingPlanner.BuildUsedLocalNames(mapperType);
+            UserResultMappingPlanner.AddIdentifiers(
+                factoryArgument.Expression,
+                usedLocalNames);
+            usedLocalNames.Add(sourceParameter.Name);
+
+            if (previousParameter is not null)
+            {
+                usedLocalNames.Add(previousParameter.Name);
+            }
+
+            var delegateName =
+                UserResultMappingPlanner.AllocateName(
+                    "factory",
+                    usedLocalNames);
+
+            return UserResultMappingPlanner
+                .TryBuildTransferredDelegateFunction(
+                    factoryArgument.Expression,
+                    convertedType,
+                    invocationParameters: [],
                     sourceParameter,
                     previousParameter,
                     semanticModel,
@@ -119,43 +149,18 @@ internal static class ByFactoryMappingPlanner
                     functionName,
                     mapping.NonNullSourceName,
                     previousSubstitution?.OptionExpression,
+                    transferScope,
                     cancellationToken,
-                    out var function))
-            {
-                unsupportedMessage = UnsupportedFactoryMessage;
-                return true;
-            }
-
-            factory = UserResultMappingPlanner.BuildFactoryMapping(
-                mapping,
-                memberMappings,
-                mapperType,
-                function.ValueExpression,
-                functionName,
-                function.Declaration,
-                factoryDelegate: null);
-            return true;
+                    delegateName,
+                    out var delegateFunction)
+                    ? delegateFunction
+                    : null;
         }
 
-        var delegateName =
-            UserResultMappingPlanner.AllocateName(
-                "factory",
-                usedNames);
-
-        if (!UserResultMappingPlanner.TryRewriteDelegate(
+        if (!helperRegistry.TryBuild(
                 factoryArgument.Expression,
-                convertedType,
-                invocationArguments: [],
-                semanticModel,
-                mapperType,
-                sourceParameter,
-                previousParameter,
-                previousSubstitution,
-                transferScope,
-                cancellationToken,
-                delegateName,
-                out var factoryDelegate,
-                out var valueExpression))
+                BuildHelper,
+                out var function))
         {
             unsupportedMessage = UnsupportedFactoryMessage;
             return true;
@@ -165,10 +170,7 @@ internal static class ByFactoryMappingPlanner
             mapping,
             memberMappings,
             mapperType,
-            valueExpression,
-            localFunctionName: null,
-            localFunctionDeclaration: null,
-            factoryDelegate);
+            function.ValueExpression);
         return true;
     }
 
@@ -228,4 +230,81 @@ internal static class ByFactoryMappingPlanner
 
         return expression;
     }
+}
+
+internal sealed class ByFactoryHelperRegistry
+{
+    private readonly Dictionary<int, HelperEntry> _entries = [];
+    private readonly ImmutableArray<string>.Builder _declarations =
+        ImmutableArray.CreateBuilder<string>();
+    private readonly HashSet<string> _usedGeneratedMethodNames;
+    private readonly HashSet<string> _allocatedNames =
+        new(StringComparer.Ordinal);
+
+    public ByFactoryHelperRegistry(
+        HashSet<string> usedGeneratedMethodNames)
+    {
+        _usedGeneratedMethodNames = usedGeneratedMethodNames;
+    }
+
+    public ImmutableArray<string> HelperMethodDeclarations =>
+        _declarations.ToImmutable();
+
+    public bool TryBuild(
+        ExpressionSyntax expression,
+        Func<string, TransferredFunctionPlan?> build,
+        out TransferredFunctionPlan function)
+    {
+        var key = expression.SpanStart;
+
+        if (_entries.TryGetValue(key, out var existing))
+        {
+            if (build(existing.Name) is not { } candidate ||
+                !StringComparer.Ordinal.Equals(
+                    candidate.Declaration,
+                    existing.Declaration))
+            {
+                function = default;
+                return false;
+            }
+
+            function = candidate;
+            return true;
+        }
+
+        var name = UserResultMappingPlanner.AllocateName(
+            "CreateByFactory",
+            _usedGeneratedMethodNames);
+
+        if (build(name) is not { } created)
+        {
+            _usedGeneratedMethodNames.Remove(name);
+            function = default;
+            return false;
+        }
+
+        _allocatedNames.Add(name);
+        _entries.Add(
+            key,
+            new HelperEntry(name, created.Declaration));
+        _declarations.Add("private " + created.Declaration);
+        function = created;
+        return true;
+    }
+
+    public void Rollback()
+    {
+        foreach (var name in _allocatedNames)
+        {
+            _usedGeneratedMethodNames.Remove(name);
+        }
+
+        _allocatedNames.Clear();
+        _entries.Clear();
+        _declarations.Clear();
+    }
+
+    private readonly record struct HelperEntry(
+        string Name,
+        string Declaration);
 }

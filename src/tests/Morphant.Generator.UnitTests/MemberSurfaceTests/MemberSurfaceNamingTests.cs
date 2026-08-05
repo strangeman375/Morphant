@@ -97,7 +97,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::Source, global::Destination> Members(
             this global::Morphant.MapperBuilder<global::Source, global::Destination> builder,
-            global::System.Func<global::Source, global::Morphant.Option<global::Destination>, global::Morphant.Generated.DestinationMembers> members)
+            global::Morphant.Delegates.Members<global::Source, global::Destination, global::Morphant.Generated.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::Source, global::Destination> Members(
             this global::Morphant.MapperBuilder<global::Source, global::Destination> builder,
-            global::System.Func<global::Source, global::Morphant.Option<global::Destination>, global::Destination, global::Morphant.Generated.DestinationMembers> members)
+            global::Morphant.Delegates.Members<global::Source, global::Destination, global::Destination, global::Morphant.Generated.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -286,7 +286,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.URL> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.URL> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.URL>, global::TestCase.Morphant.Generated.URLMembers> members)
+            global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.URL, global::TestCase.Morphant.Generated.URLMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -297,7 +297,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.URL> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.URL> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.URL>, global::TestCase.URL, global::TestCase.Morphant.Generated.URLMembers> members)
+            global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.URL, global::TestCase.URL, global::TestCase.Morphant.Generated.URLMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -321,7 +321,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Url> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Url> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Url>, global::TestCase.Morphant.Generated.UrlMembers> members)
+            global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Url, global::TestCase.Morphant.Generated.UrlMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -332,7 +332,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Url> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Url> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Url>, global::TestCase.Url, global::TestCase.Morphant.Generated.UrlMembers> members)
+            global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Url, global::TestCase.Url, global::TestCase.Morphant.Generated.UrlMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

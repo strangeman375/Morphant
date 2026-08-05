@@ -52,7 +52,7 @@ internal static class PairConfigurationEmitter
         WriteMethodStart(writer, model, "Construct");
         writer.Line($"    this {model.BuilderTypeName} builder,");
         writer.Line(
-            "    global::System.Func<" +
+            "    global::Morphant.Delegates.Construct<" +
             model.DeclarativeSourceTypeName +
             ", " +
             model.ConstructionResultTypeName +
@@ -84,11 +84,11 @@ internal static class PairConfigurationEmitter
         WriteMethodStart(writer, model, "Construct");
         writer.Line($"    this {model.BuilderTypeName} builder,");
         writer.Line(
-            "    global::System.Func<" +
+            "    global::Morphant.Delegates.Construct<" +
             model.DeclarativeSourceTypeName +
-            ", global::Morphant.Option<" +
+            ", " +
             model.PreviousDestinationTypeName +
-            ">, " +
+            ", " +
             model.ConstructionResultTypeName +
             "> construct)");
         WriteMethodEnd(writer, model.TypeParameters);
@@ -116,11 +116,11 @@ internal static class PairConfigurationEmitter
         WriteMethodStart(writer, model, "Convert");
         writer.Line($"    this {model.BuilderTypeName} builder,");
         writer.Line(
-            "    global::System.Func<" +
+            "    global::Morphant.Delegates.Convert<" +
             model.ManualSourceTypeName +
-            ", global::Morphant.Option<" +
+            ", " +
             model.PreviousDestinationTypeName +
-            ">, global::Morphant.Context.MappingContext, " +
+            ", " +
             model.DestinationTypeName +
             "> mapping)");
         WriteMethodEnd(writer, model.TypeParameters);

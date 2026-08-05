@@ -496,23 +496,6 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         TypeMapperFactoryMappingModel factory)
     {
-        if (factory.LocalFunctionDeclaration is
-            { } localFunctionDeclaration)
-        {
-            WriteLocalFunction(
-                writer,
-                localFunctionDeclaration);
-        }
-
-        if (factory.Delegate is { } factoryDelegate)
-        {
-            writer.Line(
-                $"{factoryDelegate.TypeName} " +
-                $"{Identifier(factoryDelegate.LocalName)} = " +
-                factoryDelegate.ValueExpression +
-                ";");
-        }
-
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);
 
@@ -709,7 +692,8 @@ internal static class TypeMapperEmitter
 
         WriteMapExistingLeafStatements(
             writer,
-            mapping);
+            mapping,
+            allowReplacement: false);
     }
 
     private static void WriteSourceNullHandling(
@@ -974,12 +958,14 @@ internal static class TypeMapperEmitter
 
         WriteMapExistingLeafStatements(
             writer,
-            node.Leaf!.Value);
+            node.Leaf!.Value,
+            allowReplacement: true);
     }
 
     private static void WriteMapExistingLeafStatements(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        bool allowReplacement)
     {
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedMappingMessage)
@@ -1006,7 +992,8 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.MapNewFactory is { } factory)
+        if (allowReplacement &&
+            mapping.MapNewFactory is { } factory)
         {
             WriteFactoryMapNewStatements(
                 writer,
@@ -1015,7 +1002,8 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.MapNewConstructor is { } constructor)
+        if (allowReplacement &&
+            mapping.MapNewConstructor is { } constructor)
         {
             WriteConstructorMapNewStatements(
                 writer,
@@ -1109,16 +1097,6 @@ internal static class TypeMapperEmitter
         {
             writer.Line();
         }
-    }
-
-    private static void WriteLocalFunction(
-        CodeWriter writer,
-        string declaration)
-    {
-        WriteMultilineDeclaration(
-            writer,
-            declaration);
-        writer.Line();
     }
 
     private static void WriteMultilineDeclaration(

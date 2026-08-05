@@ -160,7 +160,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
-            global::System.Func<global::TestCase.Source, int> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<int>, int> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, int, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<int>, global::Morphant.Context.MappingContext, int> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, int, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -206,7 +206,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.AbstractDestination> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.AbstractDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -217,7 +217,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.AbstractDestination>, global::TestCase.AbstractDestination> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.AbstractDestination, global::TestCase.AbstractDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.AbstractDestination>, global::Morphant.Context.MappingContext, global::TestCase.AbstractDestination> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.AbstractDestination, global::TestCase.AbstractDestination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -252,7 +252,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.CustomStructConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.CustomStructConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -263,7 +263,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.CustomStruct>, global::TestCase.Morphant.Generated.CustomStructConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.CustomStruct, global::TestCase.Morphant.Generated.CustomStructConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -274,7 +274,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.CustomStruct>, global::Morphant.Context.MappingContext, global::TestCase.CustomStruct> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.CustomStruct, global::TestCase.CustomStruct> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -298,7 +298,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.EmptyClassConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.EmptyClassConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -309,7 +309,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.EmptyClass>, global::TestCase.Morphant.Generated.EmptyClassConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.EmptyClass, global::TestCase.Morphant.Generated.EmptyClassConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -320,7 +320,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.EmptyClass>, global::Morphant.Context.MappingContext, global::TestCase.EmptyClass> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.EmptyClass, global::TestCase.EmptyClass> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -344,7 +344,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.FactoryOnly> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.FactoryOnly> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -355,7 +355,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.FactoryOnly>, global::TestCase.FactoryOnly> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.FactoryOnly, global::TestCase.FactoryOnly> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -366,7 +366,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.FactoryOnly>, global::Morphant.Context.MappingContext, global::TestCase.FactoryOnly> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.FactoryOnly, global::TestCase.FactoryOnly> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -390,7 +390,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.IDestination> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.IDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -401,7 +401,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.IDestination>, global::TestCase.IDestination> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.IDestination, global::TestCase.IDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -412,7 +412,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.IDestination>, global::Morphant.Context.MappingContext, global::TestCase.IDestination> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.IDestination, global::TestCase.IDestination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -595,7 +595,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -606,7 +606,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -617,7 +617,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.Destination>, global::Morphant.Context.MappingContext, global::TestCase.Destination> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -754,7 +754,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -765,7 +765,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -776,7 +776,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.Destination>, global::Morphant.Context.MappingContext, global::TestCase.Destination?> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -800,7 +800,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -811,7 +811,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -822,7 +822,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.Destination>, global::Morphant.Context.MappingContext, global::TestCase.Destination> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

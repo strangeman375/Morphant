@@ -22,6 +22,9 @@ internal static class DirectConstructMappingPlanner
         var postConstructionMembers = memberMappings.MapExisting;
         var helperDeclarations = ImmutableArray<string>.Empty;
         TransferredFunctionPlan? blockFunction = null;
+        TransferredFunctionPlan? delegateFunction = null;
+        string? delegateLocalName = null;
+        string? allocatedHelperName = null;
         IParameterSymbol? sourceParameter = null;
         IParameterSymbol? previousParameter = null;
         var syntax = configuration.Expression.Syntax;
@@ -45,6 +48,7 @@ internal static class DirectConstructMappingPlanner
                 var helperName = AllocateGeneratedMethodName(
                     "ConstructDestination",
                     usedGeneratedMethodNames);
+                allocatedHelperName = helperName;
                 var initialPreviousExpression =
                     configuration.Form ==
                     ConstructConfigurationForm.SourceAndPrevious
@@ -68,6 +72,7 @@ internal static class DirectConstructMappingPlanner
                         out var function))
                 {
                     usedGeneratedMethodNames.Remove(helperName);
+                    allocatedHelperName = null;
                     return DirectConstructMappingResult.Unsupported(
                         UnsupportedConstructMessage);
                 }
@@ -76,6 +81,71 @@ internal static class DirectConstructMappingPlanner
                 helperDeclarations =
                     ["private " + function.Declaration];
             }
+        }
+        else
+        {
+            sourceParameter =
+                configuration.Expression.DelegateInvokeMethod
+                    .Parameters[0];
+            previousParameter =
+                configuration.Form ==
+                    ConstructConfigurationForm.SourceAndPrevious
+                    ? configuration.Expression.DelegateInvokeMethod
+                        .Parameters[1]
+                    : null;
+            var helperName = AllocateGeneratedMethodName(
+                "ConstructDestination",
+                usedGeneratedMethodNames);
+            allocatedHelperName = helperName;
+            var usedLocalNames =
+                UserResultMappingPlanner.BuildUsedLocalNames(mapperType);
+            UserResultMappingPlanner.AddIdentifiers(
+                syntax,
+                usedLocalNames);
+            usedLocalNames.Add(sourceParameter.Name);
+
+            if (previousParameter is not null)
+            {
+                usedLocalNames.Add(previousParameter.Name);
+            }
+
+            delegateLocalName =
+                UserResultMappingPlanner.AllocateName(
+                    "construct",
+                    usedLocalNames);
+            var initialPreviousExpression =
+                previousParameter is null
+                    ? null
+                    : BuildPreviousOptionExpression(
+                        mapping,
+                        hasPrevious: false);
+
+            if (!UserResultMappingPlanner
+                    .TryBuildTransferredDelegateFunction(
+                        syntax,
+                        configuration.Expression.DelegateType,
+                        configuration.Expression.DelegateInvokeMethod
+                            .Parameters,
+                        sourceParameter,
+                        previousParameter,
+                        configuration.Expression.SemanticModel,
+                        mapperType,
+                        helperName,
+                        mapping.NonNullSourceName,
+                        initialPreviousExpression,
+                        syntax,
+                        cancellationToken,
+                        delegateLocalName,
+                        out var function))
+            {
+                usedGeneratedMethodNames.Remove(helperName);
+                return DirectConstructMappingResult.Unsupported(
+                    UnsupportedConstructMessage);
+            }
+
+            delegateFunction = function;
+            helperDeclarations =
+                ["private " + function.Declaration];
         }
 
         TypeMapperControlFlowNode? BuildUserResultLeaf(
@@ -86,9 +156,6 @@ internal static class DirectConstructMappingPlanner
                 ? null
                 : BuildPreviousSubstitution(mapping, hasPrevious);
             string valueExpression;
-            string? localFunctionName = null;
-            string? localFunctionDeclaration = null;
-            TypeMapperFactoryDelegateModel? factoryDelegate = null;
 
             if (syntax is LambdaExpressionSyntax lambda)
             {
@@ -131,48 +198,27 @@ internal static class DirectConstructMappingPlanner
                     return null;
                 }
             }
-            else
+            else if (delegateFunction is { } initialDelegateFunction)
             {
-                var usedNames =
-                    UserResultMappingPlanner.BuildUsedLocalNames(
-                        mapperType);
-                var delegateName =
-                    UserResultMappingPlanner.AllocateName(
-                        "construct",
-                        usedNames);
-                var invocationArguments =
-                    ImmutableArray.CreateBuilder<string>();
-                invocationArguments.Add(mapping.NonNullSourceName);
+                valueExpression = BuildDelegateInvocation(
+                    initialDelegateFunction,
+                    configuration,
+                    mapping,
+                    sourceParameter!,
+                    previousParameter,
+                    hasPrevious,
+                    mapperType,
+                    delegateLocalName!,
+                    cancellationToken);
 
-                if (configuration.Form ==
-                    ConstructConfigurationForm.SourceAndPrevious)
-                {
-                    invocationArguments.Add(
-                        BuildPreviousOptionExpression(
-                            mapping,
-                            hasPrevious));
-                }
-
-                if (!UserResultMappingPlanner.TryRewriteDelegate(
-                        syntax,
-                        configuration.Expression.DelegateType,
-                        invocationArguments.ToImmutable(),
-                        configuration.Expression.SemanticModel,
-                        mapperType,
-                        configuration.Expression.DelegateInvokeMethod
-                            .Parameters[0],
-                        previousParameter: null,
-                        previousSubstitution: null,
-                        syntax,
-                        cancellationToken,
-                        delegateName,
-                        out var rewrittenDelegate,
-                        out valueExpression))
+                if (valueExpression.Length == 0)
                 {
                     return null;
                 }
-
-                factoryDelegate = rewrittenDelegate;
+            }
+            else
+            {
+                return null;
             }
 
             var factory =
@@ -180,10 +226,7 @@ internal static class DirectConstructMappingPlanner
                     mapping,
                     postConstructionMembers,
                     mapperType,
-                    valueExpression,
-                    localFunctionName,
-                    localFunctionDeclaration,
-                    factoryDelegate);
+                    valueExpression);
             var leaf = mapping with
             {
                 MapNewDirectExpression = null,
@@ -205,6 +248,11 @@ internal static class DirectConstructMappingPlanner
 
         if (mapNewRoot is null)
         {
+            if (allocatedHelperName is not null)
+            {
+                usedGeneratedMethodNames.Remove(allocatedHelperName);
+            }
+
             return DirectConstructMappingResult.Unsupported(
                 UnsupportedConstructMessage);
         }
@@ -218,6 +266,11 @@ internal static class DirectConstructMappingPlanner
 
         if (mapExistingRoot is null)
         {
+            if (allocatedHelperName is not null)
+            {
+                usedGeneratedMethodNames.Remove(allocatedHelperName);
+            }
+
             return DirectConstructMappingResult.Unsupported(
                 UnsupportedConstructMessage);
         }
@@ -258,6 +311,48 @@ internal static class DirectConstructMappingPlanner
                         hasPrevious),
                 cancellationToken,
                 out var function) ||
+            !StringComparer.Ordinal.Equals(
+                function.Declaration,
+                initialFunction.Declaration))
+        {
+            return string.Empty;
+        }
+
+        return function.ValueExpression;
+    }
+
+    private static string BuildDelegateInvocation(
+        TransferredFunctionPlan initialFunction,
+        ConstructConfigurationModel configuration,
+        TypeMapperMappingModel mapping,
+        IParameterSymbol sourceParameter,
+        IParameterSymbol? previousParameter,
+        bool hasPrevious,
+        INamedTypeSymbol mapperType,
+        string delegateLocalName,
+        CancellationToken cancellationToken)
+    {
+        if (!UserResultMappingPlanner
+                .TryBuildTransferredDelegateFunction(
+                    configuration.Expression.Syntax,
+                    configuration.Expression.DelegateType,
+                    configuration.Expression.DelegateInvokeMethod
+                        .Parameters,
+                    sourceParameter,
+                    previousParameter,
+                    configuration.Expression.SemanticModel,
+                    mapperType,
+                    GetFunctionName(initialFunction.Declaration),
+                    mapping.NonNullSourceName,
+                    previousParameter is null
+                        ? null
+                        : BuildPreviousOptionExpression(
+                            mapping,
+                            hasPrevious),
+                    configuration.Expression.Syntax,
+                    cancellationToken,
+                    delegateLocalName,
+                    out var function) ||
             !StringComparer.Ordinal.Equals(
                 function.Declaration,
                 initialFunction.Declaration))

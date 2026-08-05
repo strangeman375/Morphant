@@ -366,14 +366,56 @@ post-construction writable members получает direct `Construct` вмес�
 
 ### 6.3. Две перегрузки и общая семантика arity
 
+Generated callback-параметры используют именованные delegate-типы из
+`Morphant.Delegates`, а не `Func<...>`. Это сохраняет в IntelliSense
+смысловые имена lambda-параметров независимо от конкретной generated pair:
+
+```csharp
+public delegate TResult Construct<in TSource, out TResult>(
+    TSource source);
+
+public delegate TResult Construct<in TSource, TPrevious, out TResult>(
+    TSource source,
+    Option<TPrevious> previous);
+
+public delegate TMembers Members<in TSource, TPrevious, out TMembers>(
+    TSource source,
+    Option<TPrevious> previous);
+
+public delegate TMembers Members<
+    in TSource,
+    TPrevious,
+    in TResult,
+    out TMembers>(
+    TSource source,
+    Option<TPrevious> previous,
+    TResult result);
+
+public delegate TResult Convert<in TSource, TPrevious, out TResult>(
+    TSource source,
+    Option<TPrevious> previous,
+    MappingContext context);
+```
+
+`Construct` и `Members` намеренно используют одно имя для обеих arity.
+`TPrevious` является root-normalized destination из раздела 5, а `TResult`
+сохраняет точный result contract; поэтому для nullable destination эти два
+generic argument-а могут различаться. Lambda и method group получают обычный
+target typing; заранее материализованный callback имеет соответствующий
+`Morphant.Delegates`-тип, поскольку разные concrete delegate-типы не имеют
+implicit conversion друг в друга.
+
 Для structured surface генерируются:
 
 ```csharp
 Construct(
-    Func<TSource, DestinationConstruction> construct);
+    Delegates.Construct<TSource, DestinationConstruction> construct);
 
 Construct(
-    Func<TSource, Option<TDestination>, DestinationConstruction> construct);
+    Delegates.Construct<
+        TSource,
+        TDestination,
+        DestinationConstruction> construct);
 ```
 
 `DestinationConstruction` — сгенерированный creation-plan для конкретного
@@ -383,10 +425,13 @@ destination. Это не настоящий `TDestination`.
 
 ```csharp
 Construct(
-    Func<TSource, TDestination> construct);
+    Delegates.Construct<TSource, TDestination> construct);
 
 Construct(
-    Func<TSource, Option<TDestination>, TDestination> construct);
+    Delegates.Construct<
+        TSource,
+        TDestination,
+        TDestination> construct);
 ```
 
 Обе формы используют один закон выбора result:
@@ -637,6 +682,13 @@ Direct `Construct` и тело `ByFactory` являются обычным си�
 result выполняется ровно один раз. После него действует общая member-фаза,
 если result не равен `null`.
 
+Переносимый block либо materialized method-group/delegate испускается одним
+collision-safe private helper-ом mapper-а. Если один callable достижим и в
+`CreateImpl`, и в `UpdateImpl`, обе operations вызывают этот общий helper;
+helper body и типизированный delegate local не дублируются в leaf-ветвях.
+Operation-specific source/previous передаются параметрами только при
+фактическом capture, поэтому reuse не меняет reachability и evaluation laws.
+
 ## 7. `Members`
 
 ### 7.1. Две альтернативные перегрузки
@@ -646,12 +698,15 @@ result выполняется ровно один раз. После него д
 
 ```csharp
 Members(
-    Func<TSource, Option<TDestination>, DestinationMembers> members);
+    Delegates.Members<
+        TSource,
+        TDestination,
+        DestinationMembers> members);
 
 Members(
-    Func<
+    Delegates.Members<
         TSource,
-        Option<TDestination>,
+        TDestination,
         TDestination,
         DestinationMembers> members);
 ```
@@ -1260,10 +1315,9 @@ Source-only перегрузка scoped mapper создаёт nested frame с
 
 ```csharp
 Convert(
-    Func<
+    Delegates.Convert<
         TSource?,
-        Option<TDestination>,
-        MappingContext,
+        TDestination,
         TDestination> mapping);
 ```
 

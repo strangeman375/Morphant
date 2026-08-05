@@ -294,14 +294,17 @@ internal static class TypeMapperPipeline
                     structuredDestination,
                     pair.Capabilities,
                     memberMappings,
-                    constructorSelection,
-                    compilation,
-                    mapperType,
-                    cancellationToken);
+                constructorSelection,
+                compilation,
+                mapperType,
+                usedGeneratedMethodNames,
+                cancellationToken);
 
             return mapping with
             {
                 ControlFlow = structuredConstruct.ControlFlow,
+                HelperMethodDeclarations =
+                    structuredConstruct.HelperMethodDeclarations,
                 UnsupportedExceptionMessage =
                     structuredConstruct.UnsupportedMessage
             };

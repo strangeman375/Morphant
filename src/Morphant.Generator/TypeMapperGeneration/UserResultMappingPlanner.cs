@@ -162,47 +162,188 @@ internal static class UserResultMappingPlanner
         return true;
     }
 
-    public static bool TryRewriteDelegate(
+    public static bool TryBuildTransferredDelegateFunction(
         ExpressionSyntax expression,
         INamedTypeSymbol delegateType,
-        ImmutableArray<string> invocationArguments,
-        SemanticModel semanticModel,
-        INamedTypeSymbol mapperType,
+        ImmutableArray<IParameterSymbol> invocationParameters,
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
-        PreviousExpressionSubstitution? previousSubstitution,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        string functionName,
+        string sourceInvocationExpression,
+        string? previousInvocationExpression,
         SyntaxNode transferScope,
         CancellationToken cancellationToken,
-        string localName,
-        out TypeMapperFactoryDelegateModel factoryDelegate,
-        out string valueExpression)
+        string delegateLocalName,
+        out TransferredFunctionPlan plan)
     {
+        if (delegateType.DelegateInvokeMethod is not
+                { } delegateInvokeMethod)
+        {
+            plan = default;
+            return false;
+        }
+
+        var allowedCaptures = new HashSet<ISymbol>(
+            SymbolEqualityComparer.Default)
+        {
+            sourceParameter
+        };
+
+        if (previousParameter is not null)
+        {
+            allowedCaptures.Add(previousParameter);
+        }
+
+        if (!TransferableLambdaSyntax.TryGetCaptures(
+                expression,
+                semanticModel,
+                allowedCaptures,
+                cancellationToken,
+                out var captures))
+        {
+            plan = default;
+            return false;
+        }
+
+        var needsSource = ContainsSymbol(captures, sourceParameter) ||
+                          ContainsSymbol(
+                              invocationParameters,
+                              sourceParameter);
+        var needsPrevious = previousParameter is not null &&
+                            (ContainsSymbol(
+                                 captures,
+                                 previousParameter) ||
+                             ContainsSymbol(
+                                 invocationParameters,
+                                 previousParameter));
+
+        if (invocationParameters.Any(parameter =>
+                !SymbolEqualityComparer.Default.Equals(
+                    parameter,
+                    sourceParameter) &&
+                (previousParameter is null ||
+                 !SymbolEqualityComparer.Default.Equals(
+                     parameter,
+                     previousParameter))) ||
+            needsPrevious && previousInvocationExpression is null)
+        {
+            plan = default;
+            return false;
+        }
+
+        var sourceParameterName = Identifier(sourceParameter.Name);
+        var previousParameterName = previousParameter is null
+            ? null
+            : Identifier(previousParameter.Name);
+        PreviousExpressionSubstitution? previousSubstitution =
+            previousParameterName is null
+                ? null
+                : new PreviousExpressionSubstitution(
+                    previousParameterName,
+                    previousParameterName + ".Value",
+                    previousParameterName + ".HasValue");
+
         if (!ConstructExpressionRewriter.TryRewrite(
                 expression,
                 semanticModel,
                 mapperType,
                 sourceParameter,
-                sourceParameter.Name,
+                sourceParameterName,
                 previousParameter,
                 previousSubstitution,
                 transferScope,
                 cancellationToken,
                 out var rewrittenExpression))
         {
-            factoryDelegate = default;
-            valueExpression = string.Empty;
+            plan = default;
             return false;
         }
 
-        factoryDelegate = new TypeMapperFactoryDelegateModel(
-            TypeMapperMappingTypePolicy.GetGeneratedTypeName(delegateType),
-            localName,
-            rewrittenExpression);
-        valueExpression =
-            localName +
+        var parameters = ImmutableArray.CreateBuilder<ParameterSyntax>();
+        var functionInvocationArguments =
+            ImmutableArray.CreateBuilder<string>();
+
+        if (needsSource)
+        {
+            parameters.Add(
+                BuildParameter(
+                    sourceParameterName,
+                    sourceParameter.Type.WithNullableAnnotation(
+                        sourceParameter.NullableAnnotation)));
+            functionInvocationArguments.Add(sourceInvocationExpression);
+        }
+
+        if (needsPrevious)
+        {
+            parameters.Add(
+                BuildParameter(
+                    previousParameterName!,
+                    previousParameter!.Type.WithNullableAnnotation(
+                        previousParameter.NullableAnnotation)));
+            functionInvocationArguments.Add(
+                previousInvocationExpression!);
+        }
+
+        var delegateInvocationArguments =
+            ImmutableArray.CreateBuilder<ArgumentSyntax>();
+
+        foreach (var parameter in invocationParameters)
+        {
+            var parameterName =
+                SymbolEqualityComparer.Default.Equals(
+                    parameter,
+                    sourceParameter)
+                    ? sourceParameterName
+                    : previousParameterName!;
+
+            delegateInvocationArguments.Add(
+                SyntaxFactory.Argument(
+                    SyntaxFactory.IdentifierName(parameterName)));
+        }
+
+        var delegateDeclaration =
+            SyntaxFactory.LocalDeclarationStatement(
+                SyntaxFactory.VariableDeclaration(
+                        SyntaxFactory.ParseTypeName(
+                            TypeMapperMappingTypePolicy
+                                .GetGeneratedTypeName(delegateType)))
+                    .WithVariables(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.VariableDeclarator(
+                                    SyntaxFactory.Identifier(
+                                        Identifier(delegateLocalName)))
+                                .WithInitializer(
+                                    SyntaxFactory.EqualsValueClause(
+                                        SyntaxFactory.ParseExpression(
+                                            rewrittenExpression))))));
+        var delegateInvocation = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.IdentifierName(
+                Identifier(delegateLocalName)),
+            SyntaxFactory.ArgumentList(
+                SyntaxFactory.SeparatedList(
+                    delegateInvocationArguments)));
+        var function = SyntaxFactory.LocalFunctionStatement(
+                SyntaxFactory.ParseTypeName(
+                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                        delegateInvokeMethod.ReturnType)),
+                SyntaxFactory.Identifier(functionName))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SeparatedList(parameters)))
+            .WithBody(
+                SyntaxFactory.Block(
+                    delegateDeclaration,
+                    SyntaxFactory.ReturnStatement(
+                        delegateInvocation)));
+
+        plan = new TransferredFunctionPlan(
+            NormalizeFunction(function),
+            functionName +
             "(" +
-            string.Join(", ", invocationArguments) +
-            ")";
+            string.Join(", ", functionInvocationArguments) +
+            ")");
         return true;
     }
 
@@ -210,24 +351,10 @@ internal static class UserResultMappingPlanner
         TypeMapperMappingModel mapping,
         ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
         INamedTypeSymbol mapperType,
-        string valueExpression,
-        string? localFunctionName,
-        string? localFunctionDeclaration,
-        TypeMapperFactoryDelegateModel? factoryDelegate)
+        string valueExpression)
     {
         var usedNames = BuildUsedLocalNames(mapperType);
         usedNames.Add(mapping.NonNullSourceName);
-
-        if (localFunctionDeclaration is not null)
-        {
-            AddIdentifiers(localFunctionDeclaration, usedNames);
-        }
-
-        if (factoryDelegate is { } delegateValue)
-        {
-            usedNames.Add(delegateValue.LocalName);
-            AddIdentifiers(delegateValue.ValueExpression, usedNames);
-        }
 
         AddIdentifiers(valueExpression, usedNames);
 
@@ -240,11 +367,7 @@ internal static class UserResultMappingPlanner
                 : null;
 
         return new TypeMapperFactoryMappingModel(
-            localFunctionName,
-            localFunctionDeclaration,
             valueExpression,
-            factoryDelegate,
-            RuntimeLocalDependencies: [],
             resultName,
             nullableValueName,
             DestinationRequiresNullForgivingOperator: false,
@@ -321,6 +444,16 @@ internal static class UserResultMappingPlanner
                 names.Add(token.ValueText);
             }
         }
+    }
+
+    private static bool ContainsSymbol(
+        IEnumerable<ISymbol> symbols,
+        ISymbol symbol)
+    {
+        return symbols.Any(candidate =>
+            SymbolEqualityComparer.Default.Equals(
+                candidate,
+                symbol));
     }
 
     private static ParameterSyntax BuildParameter(

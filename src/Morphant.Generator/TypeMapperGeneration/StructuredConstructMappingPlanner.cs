@@ -33,6 +33,7 @@ internal static class StructuredConstructMappingPlanner
         ConstructorSelectionValue? constructorSelection,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        HashSet<string> usedGeneratedMethodNames,
         CancellationToken cancellationToken)
     {
         if (configuration.Expression.Syntax is not
@@ -48,6 +49,9 @@ internal static class StructuredConstructMappingPlanner
             return StructuredConstructMappingResult.Unsupported(
                 UnsupportedConstructMessage);
         }
+
+        var factoryHelperRegistry =
+            new ByFactoryHelperRegistry(usedGeneratedMethodNames);
 
         var transferScope = (SyntaxNode?)lambda.ExpressionBody ??
                             lambda.Block;
@@ -113,6 +117,7 @@ internal static class StructuredConstructMappingPlanner
                         previousParameter,
                         previousSubstitution,
                         transferScope,
+                        factoryHelperRegistry,
                         cancellationToken,
                         out var factory,
                         out var unsupportedMessage))
@@ -171,6 +176,7 @@ internal static class StructuredConstructMappingPlanner
 
             if (plannedRoot is null)
             {
+                factoryHelperRegistry.Rollback();
                 return StructuredConstructMappingResult.Unsupported(
                     UnsupportedConstructMessage);
             }
@@ -192,6 +198,7 @@ internal static class StructuredConstructMappingPlanner
 
             if (mapNewPlan is null || mapExistingPlan is null)
             {
+                factoryHelperRegistry.Rollback();
                 return StructuredConstructMappingResult.Unsupported(
                     UnsupportedConstructMessage);
             }
@@ -212,6 +219,7 @@ internal static class StructuredConstructMappingPlanner
             new TypeMapperControlFlowMappingModel(
                 mapNewRoot,
                 mapExistingRoot),
+            factoryHelperRegistry.HelperMethodDeclarations,
             UnsupportedMessage: null);
     }
 
@@ -1391,11 +1399,15 @@ internal readonly record struct StructuredConstructorParameterRule(
 
 internal readonly record struct StructuredConstructMappingResult(
     TypeMapperControlFlowMappingModel? ControlFlow,
+    ImmutableArray<string> HelperMethodDeclarations,
     string? UnsupportedMessage)
 {
     public static StructuredConstructMappingResult Unsupported(
         string message) =>
-        new(ControlFlow: null, UnsupportedMessage: message);
+        new(
+            ControlFlow: null,
+            HelperMethodDeclarations: [],
+            UnsupportedMessage: message);
 }
 
 internal abstract record StructuredConstructPlanNode;

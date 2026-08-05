@@ -52,11 +52,11 @@ internal static class MemberConfigurationEmitter
         WriteMethodStart(writer, model);
         writer.Line($"    this {model.BuilderTypeName} builder,");
         writer.Line(
-            "    global::System.Func<" +
+            "    global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName +
-            ", global::Morphant.Option<" +
+            ", " +
             model.PreviousDestinationTypeName +
-            ">, " +
+            ", " +
             model.MembersPlanTypeName +
             "> members)");
         WriteMethodEnd(writer, model.TypeParameters);
@@ -86,11 +86,11 @@ internal static class MemberConfigurationEmitter
         WriteMethodStart(writer, model);
         writer.Line($"    this {model.BuilderTypeName} builder,");
         writer.Line(
-            "    global::System.Func<" +
+            "    global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName +
-            ", global::Morphant.Option<" +
+            ", " +
             model.PreviousDestinationTypeName +
-            ">, " +
+            ", " +
             model.PreviousDestinationTypeName +
             ", " +
             model.MembersPlanTypeName +

@@ -55,22 +55,11 @@ internal readonly record struct TypeMapperMappingModel
 
 internal readonly record struct TypeMapperFactoryMappingModel
 (
-    string? LocalFunctionName,
-    string? LocalFunctionDeclaration,
     string ValueExpression,
-    TypeMapperFactoryDelegateModel? Delegate,
-    ImmutableArray<string> RuntimeLocalDependencies,
     string DestinationLocalName,
     string? NullableValueLocalName,
     bool DestinationRequiresNullForgivingOperator,
     bool RequiresNullGuard = false
-);
-
-internal readonly record struct TypeMapperFactoryDelegateModel
-(
-    string TypeName,
-    string LocalName,
-    string ValueExpression
 );
 
 internal readonly record struct TypeMapperConstructorMappingModel

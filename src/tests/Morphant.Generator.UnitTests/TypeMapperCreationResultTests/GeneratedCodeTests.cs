@@ -78,7 +78,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.IDestination> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.IDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.IDestination>, global::TestCase.IDestination> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.IDestination, global::TestCase.IDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.IDestination>, global::Morphant.Context.MappingContext, global::TestCase.IDestination> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.IDestination, global::TestCase.IDestination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -359,7 +359,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -370,7 +370,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -381,7 +381,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.Destination>, global::Morphant.Context.MappingContext, global::TestCase.Destination> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -434,16 +434,6 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.Destination CreateByFactory1(global::TestCase.Source source)
-            {
-                if (source.ReturnNull)
-                {
-                    return null!;
-                }
-
-                return new global::TestCase.Destination(source.Id);
-            }
-
             global::TestCase.Destination result = CreateByFactory1(source);
 
             if (result is null)
@@ -469,16 +459,6 @@ namespace TestCase
             }
             else
             {
-                global::TestCase.Destination CreateByFactory1(global::TestCase.Source source)
-                {
-                    if (source.ReturnNull)
-                    {
-                        return null!;
-                    }
-
-                    return new global::TestCase.Destination(source.Id);
-                }
-
                 global::TestCase.Destination result = CreateByFactory1(source);
 
                 if (result is null)
@@ -490,6 +470,449 @@ namespace TestCase
 
                 return result;
             }
+        }
+
+        private global::TestCase.Destination CreateByFactory1(global::TestCase.Source source)
+        {
+            if (source.ReturnNull)
+            {
+                return null!;
+            }
+
+            return new global::TestCase.Destination(source.Id);
+        }
+    }
+}
+""";
+
+        await StructuredConstructTypeMapperGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+                expectedConstruction
+            ),
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination.g.cs",
+                expectedMappingExtension
+            ),
+            (
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                expectedTypeMapper
+            ));
+    }
+
+    [Test]
+    public async Task Emits_one_shared_helper_for_a_direct_delegate()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public int Value { get; init; }
+    }
+
+    public interface IDestination
+    {
+        int Value { get; set; }
+    }
+
+    public sealed class Destination : IDestination
+    {
+        public int Value { get; set; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        private readonly global::Morphant.Delegates.Construct<
+            Source,
+            IDestination,
+            IDestination> _construct = Create;
+
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, IDestination>()
+                .Construct(_construct);
+
+        private static IDestination Create(
+            Source source,
+            Option<IDestination> previous) =>
+            previous.HasValue
+                ? previous.Value
+                : new Destination { Value = -1 };
+    }
+}
+""";
+
+        // lang=c#
+        const string expectedMappingExtension =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace Morphant
+{
+    internal static partial class MorphantGeneratedMappingExtensions
+    {
+        /// <summary>
+        /// Configures how to construct a destination when no existing destination is used.
+        /// </summary>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
+        public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Construct(
+            this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.IDestination> construct)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Configures how to select or construct the destination from the source and an optional existing destination.
+        /// </summary>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="construct">A lambda expression that receives the non-null source and the optional existing destination and describes destination construction.</param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
+        public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Construct(
+            this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.IDestination, global::TestCase.IDestination> construct)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Configures a fully manual mapping algorithm.
+        /// </summary>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="mapping">A lambda expression that receives the original source, the optional existing destination, and the current mapping context.</param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
+        public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Convert(
+            this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.IDestination, global::TestCase.IDestination> mapping)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+    }
+}
+""";
+
+        // lang=c#
+        const string expectedTypeMapper =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace TestCase
+{
+    public partial class TestMapper :
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IDestination>
+    {
+        /// <inheritdoc/>
+        global::TestCase.IDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IDestination>.Map(
+            global::TestCase.Source? source,
+            global::Morphant.Context.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            return CreateImpl(source, context);
+        }
+
+        /// <inheritdoc/>
+        global::TestCase.IDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.IDestination>.Map(
+            global::TestCase.Source? source,
+            global::TestCase.IDestination? destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            if (destination is null)
+            {
+                return CreateImpl(source, context);
+            }
+
+            return UpdateImpl(source, destination, context);
+        }
+
+        private global::TestCase.IDestination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            global::TestCase.IDestination result = ConstructDestination(source, global::Morphant.Option<global::TestCase.IDestination>.None);
+
+            if (result is null)
+            {
+                return default!;
+            }
+
+            result.Value = source.Value;
+
+            return result;
+        }
+
+        private global::TestCase.IDestination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.IDestination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            global::TestCase.IDestination result = ConstructDestination(source, global::Morphant.Option<global::TestCase.IDestination>.Some(destination));
+
+            if (result is null)
+            {
+                return default!;
+            }
+
+            result.Value = source.Value;
+
+            return result;
+        }
+
+        private global::TestCase.IDestination ConstructDestination(global::TestCase.Source source, global::Morphant.Option<global::TestCase.IDestination> previous)
+        {
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.IDestination, global::TestCase.IDestination> construct = _construct;
+            return construct(source, previous);
+        }
+    }
+}
+""";
+
+        await StructuredConstructTypeMapperGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            (
+                "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_IDestination.g.cs",
+                expectedMappingExtension
+            ),
+            (
+                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+                expectedTypeMapper
+            ));
+    }
+
+    [Test]
+    public async Task Emits_one_shared_helper_for_a_factory_delegate()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+using System;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+    }
+
+    public sealed class Destination
+    {
+        public Destination(int id)
+        {
+            Id = id;
+        }
+
+        public int Id { get; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        private readonly Func<Destination> _factory = Create;
+
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Construct((source, previous) =>
+                    new(ByFactory(_factory)));
+
+        private static Destination Create() => new(1);
+    }
+}
+""";
+
+        // lang=c#
+        const string expectedConstruction =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace TestCase.Morphant.Generated
+{
+    /// <summary>
+    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationConstructorParameters
+    {
+        /// <summary>
+        /// Configures the <c>id</c> constructor argument.
+        /// </summary>
+        public global::Morphant.Members.ConstructorParameter<int> id = null!;
+    }
+
+    /// <summary>
+    /// Describes construction of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
+    internal sealed class DestinationConstruction
+    {
+        /// <summary>
+        /// Creates a destination instance using convention-based mapping.
+        /// </summary>
+        /// <param name="marker">Selects convention-based construction.</param>
+        /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
+        public DestinationConstruction(
+            global::Morphant.Markers.ByConventionMarker marker,
+            DestinationConstructorParameters? parameters = null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using factory-based construction.
+        /// </summary>
+        /// <param name="marker">Selects factory-based construction.</param>
+        public DestinationConstruction(global::Morphant.Markers.IByFactoryMarker<global::TestCase.Destination> marker)
+        {
+        }
+
+        /// <summary>
+        /// Creates a destination instance using a corresponding constructor.
+        /// </summary>
+        /// <param name="id">Configures the <c>id</c> constructor argument.</param>
+        public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> id)
+        {
+        }
+
+        /// <summary>
+        /// Selects an existing destination as the mapping result.
+        /// </summary>
+        /// <param name="previous">The existing destination to select.</param>
+        public static implicit operator DestinationConstruction(
+            global::Morphant.Option<global::TestCase.Destination> previous) =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+    }
+}
+""";
+
+        // lang=c#
+        const string expectedMappingExtension =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace Morphant
+{
+    internal static partial class MorphantGeneratedMappingExtensions
+    {
+        /// <summary>
+        /// Configures how to construct a destination when no existing destination is used.
+        /// </summary>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
+        public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
+            this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Configures how to select or construct the destination from the source and an optional existing destination.
+        /// </summary>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="construct">A lambda expression that receives the non-null source and the optional existing destination and describes destination construction.</param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
+        public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
+            this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Configures a fully manual mapping algorithm.
+        /// </summary>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="mapping">A lambda expression that receives the original source, the optional existing destination, and the current mapping context.</param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
+        public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
+            this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination> mapping)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+    }
+}
+""";
+
+        // lang=c#
+        const string expectedTypeMapper =
+"""
+// <auto-generated />
+#nullable enable
+
+namespace TestCase
+{
+    public partial class TestMapper :
+        global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
+    {
+        /// <inheritdoc/>
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+            global::TestCase.Source? source,
+            global::Morphant.Context.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            return CreateImpl(source, context);
+        }
+
+        /// <inheritdoc/>
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+            global::TestCase.Source? source,
+            global::TestCase.Destination? destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            if (destination is null)
+            {
+                return CreateImpl(source, context);
+            }
+
+            return UpdateImpl(source, destination, context);
+        }
+
+        private global::TestCase.Destination CreateImpl(
+            global::TestCase.Source source,
+            global::Morphant.Context.MappingContext context)
+        {
+            global::TestCase.Destination result = CreateByFactory();
+
+            return result;
+        }
+
+        private global::TestCase.Destination UpdateImpl(
+            global::TestCase.Source source,
+            global::TestCase.Destination destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            global::TestCase.Destination result = CreateByFactory();
+
+            return result;
+        }
+
+        private global::TestCase.Destination CreateByFactory()
+        {
+            global::System.Func<global::TestCase.Destination> factory = _factory;
+            return factory();
         }
     }
 }

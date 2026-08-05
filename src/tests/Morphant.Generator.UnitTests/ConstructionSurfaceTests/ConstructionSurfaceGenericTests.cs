@@ -149,7 +149,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<object, long, global::TestCase.Factory>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<object, long, global::TestCase.Factory>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -160,7 +160,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<object, long, global::TestCase.Factory>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<object, long, global::TestCase.Factory>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>>, global::Morphant.Context.MappingContext, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>, global::TestCase.Outer<object>.Destination<long, global::TestCase.Factory>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -195,7 +195,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<string, int, global::TestCase.Factory>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<string, int, global::TestCase.Factory>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -206,7 +206,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<string, int, global::TestCase.Factory>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<string, int, global::TestCase.Factory>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -217,7 +217,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>>, global::Morphant.Context.MappingContext, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>, global::TestCase.Outer<string>.Destination<int, global::TestCase.Factory>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -369,7 +369,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Construct<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
-            global::System.Func<global::TestCase.Source<T>, global::TestCase.Morphant.Generated.DestinationConstruction<T>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source<T>, global::TestCase.Morphant.Generated.DestinationConstruction<T>> construct)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -382,7 +382,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Construct<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
-            global::System.Func<global::TestCase.Source<T>, global::Morphant.Option<global::TestCase.Destination<T>>, global::TestCase.Morphant.Generated.DestinationConstruction<T>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Morphant.Generated.DestinationConstruction<T>> construct)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -395,7 +395,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Convert<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
-            global::System.Func<global::TestCase.Source<T>?, global::Morphant.Option<global::TestCase.Destination<T>>, global::Morphant.Context.MappingContext, global::TestCase.Destination<T>> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source<T>?, global::TestCase.Destination<T>, global::TestCase.Destination<T>> mapping)
             where T : class
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -537,7 +537,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Construct<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
-            global::System.Func<global::TestCase.Source<T>, global::TestCase.Morphant.Generated.DestinationConstruction<T>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source<T>, global::TestCase.Morphant.Generated.DestinationConstruction<T>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -549,7 +549,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Construct<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
-            global::System.Func<global::TestCase.Source<T>, global::Morphant.Option<global::TestCase.Destination<T>>, global::TestCase.Morphant.Generated.DestinationConstruction<T>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Morphant.Generated.DestinationConstruction<T>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -561,7 +561,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Convert<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
-            global::System.Func<global::TestCase.Source<T>?, global::Morphant.Option<global::TestCase.Destination<T>>, global::Morphant.Context.MappingContext, global::TestCase.Destination<T>> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source<T>?, global::TestCase.Destination<T>, global::TestCase.Destination<T>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -716,7 +716,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<TValue, TDependency>, global::TestCase.Destination<TValue, TDependency>> Construct<TValue, TDependency>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<TValue, TDependency>, global::TestCase.Destination<TValue, TDependency>> builder,
-            global::System.Func<global::TestCase.Source<TValue, TDependency>, global::TestCase.Morphant.Generated.DestinationConstruction<TValue, TDependency>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source<TValue, TDependency>, global::TestCase.Morphant.Generated.DestinationConstruction<TValue, TDependency>> construct)
             where TValue : class, global::TestCase.IMarker<TDependency>
             where TDependency : class, new()
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -731,7 +731,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<TValue, TDependency>, global::TestCase.Destination<TValue, TDependency>> Construct<TValue, TDependency>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<TValue, TDependency>, global::TestCase.Destination<TValue, TDependency>> builder,
-            global::System.Func<global::TestCase.Source<TValue, TDependency>, global::Morphant.Option<global::TestCase.Destination<TValue, TDependency>>, global::TestCase.Morphant.Generated.DestinationConstruction<TValue, TDependency>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source<TValue, TDependency>, global::TestCase.Destination<TValue, TDependency>, global::TestCase.Morphant.Generated.DestinationConstruction<TValue, TDependency>> construct)
             where TValue : class, global::TestCase.IMarker<TDependency>
             where TDependency : class, new()
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -746,7 +746,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<TValue, TDependency>, global::TestCase.Destination<TValue, TDependency>> Convert<TValue, TDependency>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<TValue, TDependency>, global::TestCase.Destination<TValue, TDependency>> builder,
-            global::System.Func<global::TestCase.Source<TValue, TDependency>?, global::Morphant.Option<global::TestCase.Destination<TValue, TDependency>>, global::Morphant.Context.MappingContext, global::TestCase.Destination<TValue, TDependency>> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source<TValue, TDependency>?, global::TestCase.Destination<TValue, TDependency>, global::TestCase.Destination<TValue, TDependency>> mapping)
             where TValue : class, global::TestCase.IMarker<TDependency>
             where TDependency : class, new()
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -895,7 +895,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Outer<TOuter>.Destination<TValue>> Construct<TOuter, TValue>(
             this global::Morphant.MapperBuilder<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Outer<TOuter>.Destination<TValue>> builder,
-            global::System.Func<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<TOuter, TValue>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<TOuter, TValue>> construct)
             where TOuter : class
             where TValue : TOuter
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -910,7 +910,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Outer<TOuter>.Destination<TValue>> Construct<TOuter, TValue>(
             this global::Morphant.MapperBuilder<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Outer<TOuter>.Destination<TValue>> builder,
-            global::System.Func<global::TestCase.Outer<TOuter>.Source<TValue>, global::Morphant.Option<global::TestCase.Outer<TOuter>.Destination<TValue>>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<TOuter, TValue>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Outer<TOuter>.Destination<TValue>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<TOuter, TValue>> construct)
             where TOuter : class
             where TValue : TOuter
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -925,7 +925,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Outer<TOuter>.Destination<TValue>> Convert<TOuter, TValue>(
             this global::Morphant.MapperBuilder<global::TestCase.Outer<TOuter>.Source<TValue>, global::TestCase.Outer<TOuter>.Destination<TValue>> builder,
-            global::System.Func<global::TestCase.Outer<TOuter>.Source<TValue>?, global::Morphant.Option<global::TestCase.Outer<TOuter>.Destination<TValue>>, global::Morphant.Context.MappingContext, global::TestCase.Outer<TOuter>.Destination<TValue>> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Outer<TOuter>.Source<TValue>?, global::TestCase.Outer<TOuter>.Destination<TValue>, global::TestCase.Outer<TOuter>.Destination<TValue>> mapping)
             where TOuter : class
             where TValue : TOuter
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1068,7 +1068,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<TValue, int>, global::TestCase.Destination<TValue, int>> Construct<TValue>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<TValue, int>, global::TestCase.Destination<TValue, int>> builder,
-            global::System.Func<global::TestCase.Source<TValue, int>, global::TestCase.Morphant.Generated.DestinationConstruction<TValue, int>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source<TValue, int>, global::TestCase.Morphant.Generated.DestinationConstruction<TValue, int>> construct)
             where TValue : global::TestCase.IMarker<int>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1081,7 +1081,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<TValue, int>, global::TestCase.Destination<TValue, int>> Construct<TValue>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<TValue, int>, global::TestCase.Destination<TValue, int>> builder,
-            global::System.Func<global::TestCase.Source<TValue, int>, global::Morphant.Option<global::TestCase.Destination<TValue, int>>, global::TestCase.Morphant.Generated.DestinationConstruction<TValue, int>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source<TValue, int>, global::TestCase.Destination<TValue, int>, global::TestCase.Morphant.Generated.DestinationConstruction<TValue, int>> construct)
             where TValue : global::TestCase.IMarker<int>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
@@ -1094,7 +1094,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<TValue, int>, global::TestCase.Destination<TValue, int>> Convert<TValue>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<TValue, int>, global::TestCase.Destination<TValue, int>> builder,
-            global::System.Func<global::TestCase.Source<TValue, int>?, global::Morphant.Option<global::TestCase.Destination<TValue, int>>, global::Morphant.Context.MappingContext, global::TestCase.Destination<TValue, int>> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source<TValue, int>?, global::TestCase.Destination<TValue, int>, global::TestCase.Destination<TValue, int>> mapping)
             where TValue : global::TestCase.IMarker<int>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
@@ -1236,7 +1236,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int>> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int>> builder,
-            global::System.Func<global::TestCase.Source, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<string, int>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<string, int>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -1247,7 +1247,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int>> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int>> builder,
-            global::System.Func<global::TestCase.Source, global::Morphant.Option<global::TestCase.Outer<string>.Destination<int>>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<string, int>> construct)
+            global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int>, global::TestCase.Morphant.Generated.Outer1Scope.DestinationConstruction<string, int>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
@@ -1258,7 +1258,7 @@ namespace Morphant
         /// <returns>The <paramref name="builder"/> instance.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int>> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Outer<string>.Destination<int>> builder,
-            global::System.Func<global::TestCase.Source?, global::Morphant.Option<global::TestCase.Outer<string>.Destination<int>>, global::Morphant.Context.MappingContext, global::TestCase.Outer<string>.Destination<int>> mapping)
+            global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Outer<string>.Destination<int>, global::TestCase.Outer<string>.Destination<int>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

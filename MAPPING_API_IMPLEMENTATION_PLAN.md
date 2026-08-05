@@ -263,6 +263,10 @@ Production scope:
   `Option<TDestination>` и `MappingContext`; не пытаться выразить его обычным
   методом runtime `MapperBuilder<TSource, TDestination>`, поскольку для
   nullable value destination это дало бы неверный `Option<TDestination?>`;
+- использовать именованные runtime delegates `Morphant.Delegates.Construct`
+  и `Morphant.Delegates.Convert` вместо голых `Func`, чтобы IntelliSense
+  сохранял `source`, `previous` и `context`; отдельные generic arguments для
+  normalized previous и точного result сохраняют nullable contract;
 - сохранить positional, named, mixed, optional и whole-array `params` forms,
   а также explicit `ConstructorParameter<T>` cast;
 - переиспользовать один generic plan original destination definition для
@@ -313,6 +317,9 @@ Production scope:
 - использовать `Member<T>` с точным input-nullability destination member-а;
 - генерировать две альтернативные `Members` overloads:
   `(source, previous)` и `(source, previous, result)`;
+- типизировать обе overloads именованными `Morphant.Delegates.Members` с
+  общей family name и различной generic arity, чтобы IntelliSense сохранял
+  смысловые имена lambda-параметров;
 - нормализовать root nullability у previous и result, сохраняя nested nullable
   annotations;
 - сохранить object initializer и record `with` как compile-time composition
@@ -642,6 +649,20 @@ members и compile-time constants сохраняются, обычные Configu
 переносятся. Имена generated helper/local function, delegate и result locals
 разрешаются collision-safe.
 
+Factory callable переносится в один collision-safe private helper mapper-а и
+переиспользуется всеми reachable `CreateImpl` / `UpdateImpl` branches. Это
+относится как к lambda body, так и к materialized method-group/delegate:
+типизированный delegate local и invocation находятся внутри общего helper-а,
+а operation-specific код передаёт только фактически captured source/previous.
+Direct block и direct method-group/delegate используют тот же mapper-level
+закон; одинаковый callable больше не объявляется заново внутри leaf-ветвей.
+
+Полная production-композиция также закрепляет границу replacement lowering:
+`MapNewFactory` / `MapNewConstructor` разрешены в `UpdateImpl` только внутри
+явно выбранного control-flow replacement leaf. Обычный convention-only
+`Update` не проходит через creation plan и переиспользует переданный
+destination.
+
 Любой direct/factory result вычисляется и сохраняется ровно один раз. Runtime
 `null` немедленно завершает mapping до member stage; для non-null result
 применяется общий post-construction convention plan. Это одинаково работает
@@ -649,10 +670,20 @@ members и compile-time constants сохраняются, обычные Configu
 constructed generic destinations; automatic construction у direct destination
 не появляется.
 
+Аудит остальных generated callbacks выявил ту же потерю semantic parameter
+names у всех pair-specific `Construct`, `Members` и `Convert` overloads. Они
+переведены с `Func` на единый runtime-набор `Morphant.Delegates.Construct`,
+`Members` и `Convert`; `Members` overloads различаются generic arity. У
+`ByFactory(Func<TDestination>)` параметров callback-а нет, поэтому эта
+zero-argument marker-фабрика намеренно остаётся `Func<TDestination>`.
+
 Самостоятельная категория `TypeMapperCreationResultTests` содержит полные
 exact-source спецификации direct/factory lowering и executable-проверки всех
 форм, lifecycle, terminal null, side effects, exceptions, captures, collisions
-и destination kinds. Проверки проходят `9/9`. Runtime-вызовы входят в уже
+и destination kinds. Два отдельных snapshots фиксируют общий mapper-level
+helper для direct delegate и `ByFactory` delegate. Проверки проходят `11/11`.
+Самостоятельные `MappingDelegateTests` проверяют пять runtime-сигнатур, их
+generic separation и semantic parameter names (`2/2`). Runtime-вызовы входят в уже
 отмеченный временный integration debt и должны быть перенесены не позднее
 этапа 22; exact-source проверки остаются в unit-test project.
 
