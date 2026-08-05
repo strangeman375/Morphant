@@ -110,7 +110,9 @@ internal static class StructuredConstructMappingPlanner
                 if (!ByFactoryMappingPlanner.TryBuild(
                         arguments,
                         mapping,
-                        memberMappings.MapExisting,
+                        previousAvailable == true
+                            ? memberMappings.MapExisting
+                            : memberMappings.MapNewPost,
                         configuration.Expression.SemanticModel,
                         mapperType,
                         sourceParameter,
@@ -1244,7 +1246,8 @@ internal static class StructuredConstructMappingPlanner
                 BuildFactoryLeaf(
                     mapping,
                     memberMappings,
-                    factory),
+                    factory,
+                    mapNew),
             StructuredConstructLeafKind.Previous =>
                 BuildPreviousLeaf(
                     mapping,
@@ -1260,13 +1263,16 @@ internal static class StructuredConstructMappingPlanner
     private static TypeMapperControlFlowNode BuildFactoryLeaf(
         TypeMapperMappingModel mapping,
         ConventionMemberMappingPlan memberMappings,
-        TypeMapperFactoryMappingModel factory)
+        TypeMapperFactoryMappingModel factory,
+        bool mapNew)
     {
         var leaf = mapping with
         {
             MapNewFactory = factory,
             MapNewConstructor = null,
-            MapNewMemberMappings = memberMappings.MapExisting,
+            MapNewMemberMappings = mapNew
+                ? memberMappings.MapNewPost
+                : memberMappings.MapExisting,
             MapExistingMemberMappings = [],
             ControlFlow = null,
             MapNewUnsupportedExceptionMessage = null,

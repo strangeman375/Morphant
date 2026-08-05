@@ -11,7 +11,7 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class TypeMapperPipeline
 {
     private const string ConfiguredPlanUnsupportedMessage =
-        "Configured Members and Convert plans are not executable yet.";
+        "Configured plan conflicts and Convert plans are not executable yet.";
 
     private const string ConventionConstructionUnavailableMessage =
         "Convention construction is not available for this destination.";
@@ -19,8 +19,8 @@ internal static class TypeMapperPipeline
     private const string ConstructorSelectionUnsupportedMessage =
         "The effective ConstructorSelection is not supported yet.";
 
-    private const string MemberSelectionUnsupportedMessage =
-        "The effective MemberSelection is not supported yet.";
+    private const string InvalidMemberSelectionMessage =
+        "The effective MemberSelection is invalid.";
 
     public static void Register(
         IncrementalGeneratorInitializationContext context,
@@ -165,6 +165,7 @@ internal static class TypeMapperPipeline
             var mapping = BuildMapping(
                 pairConfiguration,
                 configuration.RootSettings,
+                effectiveSettings,
                 compilation,
                 mapperType,
                 usedGeneratedMethodNames,
@@ -193,6 +194,7 @@ internal static class TypeMapperPipeline
     private static TypeMapperMappingModel BuildMapping(
         PairConfigurationModel configuration,
         PairConfigurationSettings rootSettings,
+        EffectiveMappingSettings effectiveSettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
@@ -217,7 +219,6 @@ internal static class TypeMapperPipeline
             nonNullSourceName);
 
         if (configuration.Conflicts != PairConfigurationConflict.None ||
-            !configuration.Declarative.Members.IsEmpty ||
             !configuration.Manual.Conversions.IsEmpty)
         {
             return mapping with
@@ -227,27 +228,45 @@ internal static class TypeMapperPipeline
             };
         }
 
-        var memberSelection = ResolveSetting(
-            configuration.Settings.MemberSelection,
-            rootSettings.MemberSelection,
-            MemberSelectionValue.Auto);
-
-        if (memberSelection != MemberSelectionValue.Auto)
+        if (!effectiveSettings.IsMemberSelectionValid)
         {
             return mapping with
             {
                 UnsupportedExceptionMessage =
-                    MemberSelectionUnsupportedMessage
+                    InvalidMemberSelectionMessage
             };
         }
 
-        var memberMappings = ConventionMemberMappingPlanner.Build(
+        var conventionMemberMappings =
+            ConventionMemberMappingPlanner.Build(
             declarativeSourceType,
             destinationPlan.MemberType,
             pair.Capabilities,
             compilation,
             mapperType,
             cancellationToken);
+        var members = BasicMembersMappingPlanner.Build(
+            configuration.Declarative.Members.IsEmpty
+                ? null
+                : configuration.Declarative.Members[0],
+            effectiveSettings.MemberSelection!.Value,
+            mapping,
+            conventionMemberMappings,
+            destinationPlan.MemberType,
+            pair.Capabilities,
+            compilation,
+            mapperType,
+            cancellationToken);
+
+        if (members.UnsupportedMessage is { } membersUnsupportedMessage)
+        {
+            return mapping with
+            {
+                UnsupportedExceptionMessage = membersUnsupportedMessage
+            };
+        }
+
+        var memberMappings = members.Plan;
         var constructorSelection = ResolveSetting(
             configuration.Settings.ConstructorSelection,
             rootSettings.ConstructorSelection,
@@ -447,7 +466,10 @@ internal static class TypeMapperPipeline
                 NullSourceHandlingValue.Default),
             GetSettingOrDefault(
                 settings.NullDestinationHandling,
-                NullDestinationHandlingValue.Default));
+                NullDestinationHandlingValue.Default),
+            GetSettingOrDefault(
+                settings.MemberSelection,
+                MemberSelectionValue.Default));
     }
 
     private static TValue? GetSettingOrDefault<TValue>(

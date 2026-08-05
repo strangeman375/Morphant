@@ -62,19 +62,22 @@ internal enum UnmappedMemberValidationValue
 internal readonly record struct MappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,
-    NullDestinationHandlingValue? NullDestinationHandling)
+    NullDestinationHandlingValue? NullDestinationHandling,
+    MemberSelectionValue? MemberSelection)
 {
     public static MappingSettings Default =>
         new(
             MappingModeValue.Default,
             NullSourceHandlingValue.Default,
-            NullDestinationHandlingValue.Default);
+            NullDestinationHandlingValue.Default,
+            MemberSelectionValue.Default);
 }
 
 internal readonly record struct EffectiveMappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,
-    NullDestinationHandlingValue? NullDestinationHandling)
+    NullDestinationHandlingValue? NullDestinationHandling,
+    MemberSelectionValue? MemberSelection)
 {
     public bool IsMappingModeValid =>
         MappingMode.HasValue;
@@ -84,6 +87,9 @@ internal readonly record struct EffectiveMappingSettings(
 
     public bool IsNullDestinationHandlingValid =>
         NullDestinationHandling.HasValue;
+
+    public bool IsMemberSelectionValid =>
+        MemberSelection.HasValue;
 
     public bool SupportsMapNew =>
         MappingMode is { } mappingMode &&
@@ -120,6 +126,11 @@ internal readonly record struct EffectiveMappingSettings(
                 assemblySettings.NullDestinationHandling,
                 rootSettings.NullDestinationHandling,
                 mappingSettings.NullDestinationHandling,
-                NullDestinationHandlingValue.Create));
+                NullDestinationHandlingValue.Create),
+            SettingValueResolver.Resolve(
+                assemblySettings.MemberSelection,
+                rootSettings.MemberSelection,
+                mappingSettings.MemberSelection,
+                MemberSelectionValue.Auto));
     }
 }

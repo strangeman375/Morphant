@@ -126,12 +126,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 2, этап 9 — direct `Construct` и `ByFactory`.**
+**Фаза 2, этап 10 — базовый explicit `Members` plan.**
 
 Статус: ожидает ревью.
 
-Этап 8 принят. Этап 10 и все последующие этапы заблокированы до принятия
-этапа 9.
+Этап 9 принят. Этап 11 и все последующие этапы заблокированы до принятия
+этапа 10.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -598,7 +598,7 @@ class/struct/record/nullable/generic destinations. Её runtime-вызовы в�
 
 ### Этап 9. Direct `Construct` и `ByFactory`
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — закрыть получение уже готового destination instance без смешивания с
 manual mapping.
@@ -689,7 +689,7 @@ generic separation и semantic parameter names (`2/2`). Runtime-вызовы в�
 
 ### Этап 10. Базовый explicit `Members` plan
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — сделать `Members` единственным declarative surface настройки
 body-members; обычный C# внутри direct/factory/manual code остаётся свободен
@@ -723,6 +723,47 @@ Production scope:
 
 Результат этапа: двухпараметрический `Members` выполняет полный обычный member
 plan поверх любого выбранного result.
+
+Реализовано: двухпараметрический expression-lambda `Members` разбирается как
+самостоятельный declarative member plan. Явное expression, `Auto()` /
+`Auto<T>()` и `Ignore()` / `Ignore<T>()` занимают member в пользовательском
+порядке до применения conventions. Явное expression остаётся сильнее
+одноимённого constructor argument; `Ignore()` не создаёт assignment, а
+`Auto()` обязан разрешиться теми же exact-name и warning-free implicit C#-
+правилами, что обычная convention. При `MemberSelection.Auto` conventions
+добавляются только для оставшихся незанятых members, при `Explicit` — не
+добавляются.
+
+Effective `MemberSelection` разрешается по цепочке
+`current map -> current mapper root -> MorphantMemberSelection -> Auto`;
+`Default` продолжает цепочку, last-call-wins на C#-уровне сохраняется, а
+invalid effective value остаётся детерминированным unsupported path. Public
+XML comments, `docs/settings/member-selection.md` и README актуализированы
+вместе с реализацией.
+
+Effective plan передаётся в существующий construction lowering до выбора
+ветви. Structured constructor получает допустимые `init`, `required`, setter
+и field rules в initializer; previous получает только post-construction
+setters/fields; direct и factory results также получают только доступный
+post-construction plan. Create-post и Update-post mappings хранятся раздельно,
+поэтому direct/factory Create использует `Option.None`, а existing Update —
+исходный destination; Create не заимствует expression, специализированное под
+наличие previous. Неприменимое `init` expression в existing-ветке не
+вычисляется. Явные и automatic expressions испускаются по одному разу на
+применимом path. Точная previous/result-aware связь replacement-ветвей,
+трёхпараметрический overload и статически невозможные lifecycle-комбинации
+остаются этапу 11; declarative blocks, locals и control-flow composition —
+этапу 12.
+
+Самостоятельная категория `TypeMapperMemberTests` разделена на
+`ExplicitRules`, `Markers`, `MemberSelection`, `ConventionMembers` и
+`Compatibility`. Она содержит полный exact-source snapshot всех пяти
+generated files и executable-проверки Create/Update, constructor/direct/
+factory results, `set`/`init`/`required`/field, marker preservation,
+precedence, implicit/nullability conversions и однократное вычисление
+(`8/8`). Runtime-вызовы входят в уже отмеченный временный integration debt и
+должны быть перенесены не позднее этапа 22; exact-source проверки остаются в
+unit-test project.
 
 ### Этап 11. Previous/result-aware members и lifecycle границы
 

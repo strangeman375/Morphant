@@ -19,7 +19,6 @@ internal static class DirectConstructMappingPlanner
         HashSet<string> usedGeneratedMethodNames,
         CancellationToken cancellationToken)
     {
-        var postConstructionMembers = memberMappings.MapExisting;
         var helperDeclarations = ImmutableArray<string>.Empty;
         TransferredFunctionPlan? blockFunction = null;
         TransferredFunctionPlan? delegateFunction = null;
@@ -151,6 +150,9 @@ internal static class DirectConstructMappingPlanner
         TypeMapperControlFlowNode? BuildUserResultLeaf(
             bool hasPrevious)
         {
+            var postConstructionMembers = hasPrevious
+                ? memberMappings.MapExisting
+                : memberMappings.MapNewPost;
             PreviousExpressionSubstitution? previousSubstitution =
                 previousParameter is null
                 ? null
@@ -261,7 +263,7 @@ internal static class DirectConstructMappingPlanner
             configuration.Form == ConstructConfigurationForm.Source
                 ? BuildPreviousLeaf(
                     mapping,
-                    postConstructionMembers)
+                    memberMappings.MapExisting)
                 : BuildUserResultLeaf(hasPrevious: true);
 
         if (mapExistingRoot is null)

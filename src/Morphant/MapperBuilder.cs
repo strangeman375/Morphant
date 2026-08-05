@@ -49,6 +49,21 @@ public abstract class MapperBuilderBase<T>
     public T ConstructorSelection(ConstructorSelection constructorSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Configures how destination members without an explicit
+    /// <c>Members</c> rule are selected.
+    /// </summary>
+    /// <param name="memberSelection">
+    /// The selection policy to apply.
+    /// <see cref="Morphant.MemberSelection.Default"/> inherits the
+    /// mapper-level setting for a mapping builder, or the assembly-level
+    /// <c>MorphantMemberSelection</c> MSBuild property for the mapper builder.
+    /// If all levels inherit, Morphant uses
+    /// <see cref="Morphant.MemberSelection.Auto"/>.
+    /// The argument expression must be a compile-time constant whose value is
+    /// defined by <see cref="Morphant.MemberSelection"/>.
+    /// </param>
+    /// <returns>This builder.</returns>
     public T MemberSelection(MemberSelection memberSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 

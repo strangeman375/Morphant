@@ -62,6 +62,7 @@ internal static class ConventionMemberMappingPlanner
             return new ConventionMemberMappingPlan(
                 [],
                 [],
+                [],
                 HasUnmappedRequiredMembers: false);
         }
 
@@ -163,9 +164,12 @@ internal static class ConventionMemberMappingPlanner
             }
         }
 
+        var immutableMapExisting = mapExisting.ToImmutable();
+
         return new ConventionMemberMappingPlan(
             mapNew.ToImmutable(),
-            mapExisting.ToImmutable(),
+            immutableMapExisting,
+            immutableMapExisting,
             hasUnmappedRequiredMembers);
     }
 
@@ -197,6 +201,78 @@ internal static class ConventionMemberMappingPlanner
         }
 
         return result.ToImmutable();
+    }
+
+    internal static ImmutableArray<ConventionWritableMember>
+        BuildWritableMembers(
+            ITypeSymbol destination,
+            MappingPairCapabilities capabilities,
+            CSharpCompilation compilation,
+            CancellationToken cancellationToken)
+    {
+        if (!capabilities.Members)
+        {
+            return [];
+        }
+
+        var result =
+            ImmutableArray.CreateBuilder<ConventionWritableMember>();
+
+        foreach (var memberGroup in BuildEffectiveMemberGroups(
+                     destination,
+                     cancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsGeneratedPlanMemberName(
+                    memberGroup.Name,
+                    destination) ||
+                TryBuildWritableMember(
+                    memberGroup,
+                    destination,
+                    compilation,
+                    compilation.Assembly,
+                    capabilities.StructuredConstruction) is not
+                    { } writableMember)
+            {
+                continue;
+            }
+
+            result.Add(
+                new ConventionWritableMember(
+                    writableMember.Name,
+                    writableMember.Type,
+                    writableMember.CanAssign,
+                    IsRequiredInstanceMember(memberGroup)));
+        }
+
+        return result.ToImmutable();
+    }
+
+    internal static bool HasUnmappedRequiredMembers(
+        ITypeSymbol destination,
+        ImmutableArray<TypeMapperMemberMappingModel> mappings,
+        CancellationToken cancellationToken)
+    {
+        var mappedNames = new HashSet<string>(
+            mappings.Select(
+                static mapping => mapping.DestinationMemberName),
+            StringComparer.Ordinal);
+
+        foreach (var memberGroup in BuildEffectiveMemberGroups(
+                     destination,
+                     cancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsRequiredInstanceMember(memberGroup) &&
+                !mappedNames.Contains(memberGroup.Name))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static ImmutableArray<EffectiveMemberGroup>
@@ -795,9 +871,16 @@ internal static class ConventionMemberMappingPlanner
 
 internal readonly record struct ConventionMemberMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> MapNew,
+    ImmutableArray<TypeMapperMemberMappingModel> MapNewPost,
     ImmutableArray<TypeMapperMemberMappingModel> MapExisting,
     bool HasUnmappedRequiredMembers);
 
 internal readonly record struct ConventionReadableMember(
     string Name,
     ITypeSymbol Type);
+
+internal readonly record struct ConventionWritableMember(
+    string Name,
+    ITypeSymbol Type,
+    bool CanAssign,
+    bool IsRequired);

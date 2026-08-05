@@ -14,6 +14,9 @@ internal static class AssemblyMappingSettingsPipeline
     private const string NullDestinationHandlingPropertyName =
         "build_property.MorphantNullDestinationHandling";
 
+    private const string MemberSelectionPropertyName =
+        "build_property.MorphantMemberSelection";
+
     public static IncrementalValueProvider<MappingSettings> Build(
         IncrementalGeneratorInitializationContext context)
     {
@@ -34,7 +37,11 @@ internal static class AssemblyMappingSettingsPipeline
                     ParseNamedValue<NullDestinationHandlingValue>(
                         GetValue(
                             globalOptions,
-                            NullDestinationHandlingPropertyName)));
+                            NullDestinationHandlingPropertyName)),
+                    ParseNamedValue<MemberSelectionValue>(
+                        GetValue(
+                            globalOptions,
+                            MemberSelectionPropertyName)));
             })
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildAssemblyMappingSettings);
