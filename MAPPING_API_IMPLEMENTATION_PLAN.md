@@ -126,12 +126,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 2, этап 11 — previous/result-aware members и lifecycle границы.**
+**Фаза 2, этап 12 — declarative control flow и member-plan composition.**
 
 Статус: ожидает ревью.
 
-Этап 10 принят. Этап 12 и все последующие этапы заблокированы до принятия
-этапа 11.
+Этап 11 принят. Этап 13 и все последующие этапы заблокированы до принятия
+этапа 12.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -767,7 +767,7 @@ unit-test project.
 
 ### Этап 11. Previous/result-aware members и lifecycle границы
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — реализовать точную связь previous, result и creation/post-creation
 assignments.
@@ -844,7 +844,7 @@ integration debt; exact-source проверки остаются в unit-test pr
 
 ### Этап 12. Declarative control flow и member-plan composition
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — перенести согласованную конечную DSL grammar на раздельные construction
 и member plans.
@@ -875,6 +875,38 @@ Production scope:
 
 Результат этапа: пользователь может декларативно выбирать plan и rules, не
 получая скрытой imperative execution semantics.
+
+Реализовано: structured `Construct` и обе формы `Members` используют общий
+конечный declarative control-flow planner. Он поддерживает initialized/const
+locals, nested blocks, complete `if` и statement `switch`, conditional и
+switch expressions на уровнях whole plan, strategy, rule и marker, несколько
+`return`, явный `throw`, pattern variables и `DestinationMembers` `with`
+overlays. Не выбранные paths не вычисляются, а overridden rules и ставшие
+ненужными dependencies удаляются до lowering.
+
+Lowering остаётся operation- и lifecycle-aware: source/previous/result,
+declarative locals и pattern variables получают collision-safe substitutions;
+result-dependent member control выполняется после появления фактического
+constructor/direct/factory/reuse/replacement result; terminal null завершает
+ветку до member control. Direct `Construct` и `ByFactory` bodies остаются
+непрозрачным C#, а общий direct helper не дублируется между declarative member
+leaves. Cross-plan sharing одинаковых expressions намеренно не добавлено и
+остаётся этапу 13.
+
+Compile-time Configure constants и доступные mapper/static captures
+сохраняются. Runtime Configure locals, mutation-oriented statements и прочая
+grammar за согласованной boundary переводятся в deterministic invalid model
+state без попытки исполнения как imperative DSL. Неполный switch expression
+сохраняет обычный runtime fallback C#.
+
+Самостоятельная категория `TypeMapperDeclarativeControlFlowTests` содержит
+runtime и полный exact-source срез всех пяти generated files: locals/if,
+statement и expression switch, plan/rule/marker branches, patterns/guards,
+throws, `with` overlays, result-aware lifecycle, structured/direct/factory
+construction, captures и неподдерживаемую grammar (`18/18`). Regression-срезы
+этапов 11, 9 и 8 сохраняют прежнее construction/member поведение. Runtime-
+вызовы входят в уже отмеченный временный integration debt; exact-source
+проверки остаются в unit-test project.
 
 ### Этап 13. Общий dependency graph и observable evaluation laws
 

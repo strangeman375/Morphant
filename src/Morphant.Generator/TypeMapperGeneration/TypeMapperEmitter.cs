@@ -425,7 +425,8 @@ internal static class TypeMapperEmitter
         }
 
         var hasPostMappings =
-            !mapping.MapNewPostMemberMappings.IsEmpty;
+            !mapping.MapNewPostMemberMappings.IsEmpty ||
+            mapping.PostMemberControlFlow is not null;
         var constructionPrefix = hasPostMappings
             ? $"var {Identifier(mapping.ResultLocalName)} = "
             : "return ";
@@ -509,6 +510,17 @@ internal static class TypeMapperEmitter
         }
 
         writer.Line();
+
+        if (mapping.PostMemberControlFlow is { } postControlFlow)
+        {
+            WritePostMemberControlFlow(
+                writer,
+                mapping,
+                postControlFlow,
+                Identifier(mapping.ResultLocalName));
+            return;
+        }
+
         WriteMemberValueLocals(
             writer,
             mapping.MapNewPostMemberMappings);
@@ -557,8 +569,11 @@ internal static class TypeMapperEmitter
 
         var assignmentTarget = destinationLocalName;
         var returnExpression = destinationLocalName;
+        var hasPostMappings =
+            !mapping.MapNewPostMemberMappings.IsEmpty ||
+            mapping.PostMemberControlFlow is not null;
 
-        if (!mapping.MapNewPostMemberMappings.IsEmpty &&
+        if (hasPostMappings &&
             factory.NullableValueLocalName is
                 { } nullableValueLocalName)
         {
@@ -579,11 +594,22 @@ internal static class TypeMapperEmitter
             assignmentTarget += "!";
         }
 
-        if (!mapping.MapNewPostMemberMappings.IsEmpty &&
+        if (hasPostMappings &&
             !factory.RequiresNullGuard &&
             factory.NullableValueLocalName is null)
         {
             writer.Line();
+        }
+
+        if (mapping.PostMemberControlFlow is { } postControlFlow)
+        {
+            WritePostMemberControlFlow(
+                writer,
+                mapping,
+                postControlFlow,
+                assignmentTarget,
+                returnExpression);
+            return;
         }
 
         foreach (var memberMapping in
@@ -1059,6 +1085,16 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (mapping.PostMemberControlFlow is { } postControlFlow)
+        {
+            WritePostMemberControlFlow(
+                writer,
+                mapping,
+                postControlFlow,
+                "destination");
+            return;
+        }
+
         if (mapping.MapExistingMemberMappings.IsEmpty)
         {
             writer.Line("return destination;");
@@ -1081,6 +1117,128 @@ internal static class TypeMapperEmitter
 
         writer.Line();
         writer.Line("return destination;");
+    }
+
+    private static void WritePostMemberControlFlow(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperMemberControlFlowNode node,
+        string assignmentTarget,
+        string? returnExpression = null)
+    {
+        WriteLocalValues(writer, node.Locals);
+
+        if (node.EvaluationExpression is { } evaluationExpression)
+        {
+            writer.Line($"_ = {evaluationExpression};");
+            writer.Line();
+            WritePostMemberControlFlow(
+                writer,
+                mapping,
+                node.EvaluationContinuation!,
+                assignmentTarget,
+                returnExpression);
+            return;
+        }
+
+        if (node.SwitchExpression is { } switchExpression)
+        {
+            writer.Line($"switch ({switchExpression})");
+            writer.Line("{");
+            writer.Indent();
+
+            foreach (var section in node.SwitchSections)
+            {
+                foreach (var label in section.Labels)
+                {
+                    writer.Line(label);
+                }
+
+                writer.Line("{");
+                writer.Indent();
+                WritePostMemberControlFlow(
+                    writer,
+                    mapping,
+                    section.Branch,
+                    assignmentTarget,
+                    returnExpression);
+                writer.Unindent();
+                writer.Line("}");
+            }
+
+            writer.Unindent();
+            writer.Line("}");
+
+            if (node.SwitchContinuation is { } continuation)
+            {
+                writer.Line();
+                WritePostMemberControlFlow(
+                    writer,
+                    mapping,
+                    continuation,
+                    assignmentTarget,
+                    returnExpression);
+            }
+
+            return;
+        }
+
+        if (node.Condition is { } condition)
+        {
+            writer.Line($"if ({condition})");
+            writer.Line("{");
+            writer.Indent();
+            WritePostMemberControlFlow(
+                writer,
+                mapping,
+                node.WhenTrue!,
+                assignmentTarget,
+                returnExpression);
+            writer.Unindent();
+            writer.Line("}");
+            writer.Line("else");
+            writer.Line("{");
+            writer.Indent();
+            WritePostMemberControlFlow(
+                writer,
+                mapping,
+                node.WhenFalse!,
+                assignmentTarget,
+                returnExpression);
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
+
+        if (node.ThrowExpression is { } throwExpression)
+        {
+            writer.Line($"throw {throwExpression};");
+            return;
+        }
+
+        if (node.UnsupportedExceptionMessage is { } unsupportedMessage)
+        {
+            WriteUnsupportedMappingStatement(writer, unsupportedMessage);
+            return;
+        }
+
+        WriteMemberValueLocals(writer, node.MemberMappings);
+
+        foreach (var memberMapping in node.MemberMappings)
+        {
+            writer.Line(
+                assignmentTarget + "." +
+                $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                MemberValueExpression(mapping, memberMapping) +
+                ";");
+        }
+
+        if (!node.MemberMappings.IsEmpty)
+        {
+            writer.Line();
+        }
+
+        writer.Line($"return {returnExpression ?? assignmentTarget};");
     }
 
     private static void WriteUnsupportedMapping(

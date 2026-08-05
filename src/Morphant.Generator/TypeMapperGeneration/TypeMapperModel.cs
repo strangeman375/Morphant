@@ -45,6 +45,7 @@ internal readonly record struct TypeMapperMappingModel
     string? MapNewUnsupportedExceptionMessage = null,
     string? MapExistingUnsupportedExceptionMessage = null,
     string? UnsupportedExceptionMessage = null,
+    TypeMapperMemberControlFlowNode? PostMemberControlFlow = null,
     EffectiveMappingSettings EffectiveSettings = default,
     string? MapNewImplMethodName = null,
     string? MapExistingImplMethodName = null,
@@ -137,4 +138,29 @@ internal readonly record struct TypeMapperSwitchSectionModel
 (
     ImmutableArray<string> Labels,
     TypeMapperControlFlowNode Branch
+);
+
+internal sealed record TypeMapperMemberControlFlowNode
+(
+    ImmutableArray<TypeMapperLocalValueModel> Locals,
+    string? Condition,
+    TypeMapperMemberControlFlowNode? WhenTrue,
+    TypeMapperMemberControlFlowNode? WhenFalse,
+    ImmutableArray<TypeMapperMemberMappingModel> MemberMappings,
+    string? ThrowExpression,
+    string? UnsupportedExceptionMessage = null,
+    string? SwitchExpression = null,
+    ImmutableArray<TypeMapperMemberSwitchSectionModel> SwitchSections =
+        default,
+    TypeMapperMemberControlFlowNode? SwitchContinuation = null,
+    bool SwitchRequiresFallback = false,
+    bool SwitchCanPassUnmatchedValue = true,
+    string? EvaluationExpression = null,
+    TypeMapperMemberControlFlowNode? EvaluationContinuation = null
+);
+
+internal readonly record struct TypeMapperMemberSwitchSectionModel
+(
+    ImmutableArray<string> Labels,
+    TypeMapperMemberControlFlowNode Branch
 );

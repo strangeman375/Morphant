@@ -15,6 +15,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     private readonly IParameterSymbol? _resultParameter;
     private readonly string? _resultName;
     private readonly SyntaxNode _transferScope;
+    private readonly IReadOnlyDictionary<ISymbol, string>?
+        _localSubstitutions;
 
     private ConstructExpressionRewriter(
         SemanticModel semanticModel,
@@ -25,7 +27,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         PreviousExpressionSubstitution? previousSubstitution,
         IParameterSymbol? resultParameter,
         string? resultName,
-        SyntaxNode transferScope)
+        SyntaxNode transferScope,
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions)
     {
         _semanticModel = semanticModel;
         _mapperType = mapperType;
@@ -36,6 +39,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _resultParameter = resultParameter;
         _resultName = resultName;
         _transferScope = transferScope;
+        _localSubstitutions = localSubstitutions;
     }
 
     public static bool TryRewrite(
@@ -61,6 +65,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             resultParameter: null,
             resultName: null,
             transferScope,
+            localSubstitutions: null,
             cancellationToken,
             out rewrittenExpression);
     }
@@ -79,6 +84,37 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         CancellationToken cancellationToken,
         out string rewrittenExpression)
     {
+        return TryRewrite(
+            expression,
+            semanticModel,
+            mapperType,
+            sourceParameter,
+            sourceName,
+            previousParameter,
+            previousSubstitution,
+            resultParameter,
+            resultName,
+            transferScope,
+            localSubstitutions: null,
+            cancellationToken,
+            out rewrittenExpression);
+    }
+
+    public static bool TryRewrite(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        SyntaxNode transferScope,
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
+        CancellationToken cancellationToken,
+        out string rewrittenExpression)
+    {
         if (!TryRewriteSyntax(
                 expression,
                 semanticModel,
@@ -90,6 +126,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 resultParameter,
                 resultName,
                 transferScope,
+                localSubstitutions,
                 cancellationToken,
                 out var rewritten))
         {
@@ -128,6 +165,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             resultParameter: null,
             resultName: null,
             transferScope,
+            localSubstitutions: null,
             cancellationToken,
             out rewrittenSyntax);
     }
@@ -143,6 +181,38 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IParameterSymbol? resultParameter,
         string? resultName,
         SyntaxNode transferScope,
+        CancellationToken cancellationToken,
+        out TNode rewrittenSyntax)
+        where TNode : CSharpSyntaxNode
+    {
+        return TryRewriteSyntax(
+            syntax,
+            semanticModel,
+            mapperType,
+            sourceParameter,
+            sourceName,
+            previousParameter,
+            previousSubstitution,
+            resultParameter,
+            resultName,
+            transferScope,
+            localSubstitutions: null,
+            cancellationToken,
+            out rewrittenSyntax);
+    }
+
+    public static bool TryRewriteSyntax<TNode>(
+        TNode syntax,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        SyntaxNode transferScope,
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
         CancellationToken cancellationToken,
         out TNode rewrittenSyntax)
         where TNode : CSharpSyntaxNode
@@ -170,7 +240,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     previousSubstitution,
                     resultParameter,
                     resultName,
-                    transferScope)
+                    transferScope,
+                    localSubstitutions)
                 .Visit(syntax)!;
         return true;
     }
@@ -449,6 +520,16 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     {
         var symbol = GetReferencedSymbol(node);
 
+        if (symbol is not null &&
+            _localSubstitutions is not null &&
+            _localSubstitutions.TryGetValue(
+                symbol,
+                out var localName))
+        {
+            return SyntaxFactory.IdentifierName(localName)
+                .WithTriviaFrom(node);
+        }
+
         if (symbol is IMethodSymbol
             {
                 MethodKind: MethodKind.LocalFunction
@@ -550,6 +631,22 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         return base.VisitIdentifierName(node);
+    }
+
+    public override SyntaxNode? VisitSingleVariableDesignation(
+        SingleVariableDesignationSyntax node)
+    {
+        var symbol = _semanticModel.GetDeclaredSymbol(node);
+
+        return symbol is not null &&
+               _localSubstitutions is not null &&
+               _localSubstitutions.TryGetValue(
+                   symbol,
+                   out var localName)
+            ? node.WithIdentifier(
+                SyntaxFactory.Identifier(localName)
+                    .WithTriviaFrom(node.Identifier))
+            : base.VisitSingleVariableDesignation(node);
     }
 
     public override SyntaxNode? VisitGenericName(GenericNameSyntax node)

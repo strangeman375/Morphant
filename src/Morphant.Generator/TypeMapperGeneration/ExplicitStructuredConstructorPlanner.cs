@@ -455,9 +455,12 @@ internal static class ExplicitStructuredConstructorPlanner
 
                         writer.Line(
                             $"{Identifier(argument.ParameterName)}: " +
-                            (argument.ExplicitValueExpression ??
-                             "source." +
-                             Identifier(argument.SourceMemberName)) +
+                            (argument.ExplicitValueExpression is not null
+                                ? "default(" +
+                                  (argument.TargetTypeName ?? "object") +
+                                  ")"
+                                : "source." +
+                                  Identifier(argument.SourceMemberName)) +
                             suffix);
                     }
 
@@ -570,6 +573,34 @@ internal static class ExplicitStructuredConstructorPlanner
         Func<ExpressionSyntax, string?> rewriteExpression,
         CancellationToken cancellationToken)
     {
+        if (expression.DescendantNodesAndSelf()
+                .OfType<IdentifierNameSyntax>()
+                .Any(identifier =>
+                    semanticModel.GetSymbolInfo(
+                            identifier,
+                            cancellationToken)
+                        .Symbol is ILocalSymbol
+                    {
+                        IsConst: false
+                    }))
+        {
+            var expressionType = semanticModel.GetTypeInfo(
+                    expression,
+                    cancellationToken)
+                .Type;
+
+            if (expressionType is null ||
+                expressionType.TypeKind == TypeKind.Error)
+            {
+                return null;
+            }
+
+            return "default(" +
+                   TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                       expressionType) +
+                   ")";
+        }
+
         if (!TryGetConstructorParameterCast(
                 expression,
                 compilation,

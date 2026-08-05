@@ -34,7 +34,8 @@ internal static class StructuredConstructMappingPlanner
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ByFactoryHelperRegistry? sharedFactoryHelperRegistry = null)
     {
         if (configuration.Expression.Syntax is not
                 LambdaExpressionSyntax lambda ||
@@ -50,7 +51,10 @@ internal static class StructuredConstructMappingPlanner
                 UnsupportedConstructMessage);
         }
 
+        var ownsFactoryHelperRegistry =
+            sharedFactoryHelperRegistry is null;
         var factoryHelperRegistry =
+            sharedFactoryHelperRegistry ??
             new ByFactoryHelperRegistry(usedGeneratedMethodNames);
 
         var transferScope = (SyntaxNode?)lambda.ExpressionBody ??
@@ -62,7 +66,17 @@ internal static class StructuredConstructMappingPlanner
                 UnsupportedConstructMessage);
         }
 
-        StructuredConstructPlanNode? BuildPlan(
+        if (DeclarativeControlFlowPlanner.Build(
+                lambda,
+                configuration.Expression.SemanticModel,
+                cancellationToken) is not
+            DeclarativeControlFlowProgram controlFlowProgram)
+        {
+            return StructuredConstructMappingResult.Unsupported(
+                UnsupportedConstructMessage);
+        }
+
+        TypeMapperControlFlowNode? BuildPlan(
             bool? previousAvailable)
         {
             var replacement = previousAvailable == true;
@@ -89,26 +103,15 @@ internal static class StructuredConstructMappingPlanner
                         mapping.NonNullSourceName,
                         previousParameter,
                         previousSubstitution,
+                        resultParameter: null,
+                        resultName: null,
                         transferScope,
+                        controlFlowProgram.RuntimeLocalPlaceholders,
                         cancellationToken,
                         out var rewritten)
                     ? rewritten
                     : null;
             }
-
-            StructuredConstructPlanNode? BuildCondition(
-                ExpressionSyntax condition,
-                StructuredConstructPlanNode whenTrue,
-                StructuredConstructPlanNode whenFalse) =>
-                BuildConditionNode(
-                    condition,
-                    whenTrue,
-                    whenFalse,
-                    Rewrite,
-                    previousParameter,
-                    previousAvailable,
-                    configuration.Expression.SemanticModel,
-                    cancellationToken);
 
             StructuredConstructLeafNode? BuildFactory(
                 ImmutableArray<StructuredObjectArgument> arguments)
@@ -160,18 +163,154 @@ internal static class StructuredConstructMappingPlanner
                     configuration.Expression.SemanticModel,
                     mapping.NonNullSourceName,
                     Rewrite,
-                    BuildCondition,
+                    (_, whenTrue, whenFalse) =>
+                        Equals(whenTrue, whenFalse)
+                            ? whenTrue
+                            : null,
                     BuildFactory,
                     previousParameter,
                     cancellationToken);
 
-            return lambda.ExpressionBody is { } resultExpression
-                ? BuildExpression(resultExpression)
-                : BuildPlanStatements(
-                    lambda.Block!.Statements,
-                    continuation: null,
-                    BuildExpression,
-                    BuildCondition);
+            TypeMapperControlFlowNode? BuildLeaf(
+                DeclarativeLeafSyntaxNode leaf)
+            {
+                StructuredConstructPlanNode? plannedLeaf;
+
+                if (leaf.DirectExpression is
+                        { } directExpression)
+                {
+                    plannedLeaf = leaf.ObjectCreation is null &&
+                                  leaf.Arguments.IsEmpty &&
+                                  leaf.MemberAssignments.IsEmpty
+                        ? BuildExpression(directExpression)
+                        : null;
+                }
+                else if (leaf.ObjectCreation is not null &&
+                         leaf.MemberAssignments.IsEmpty)
+                {
+                    var arguments = leaf.Arguments.Select(argument =>
+                            new StructuredObjectArgument(
+                                argument.Syntax,
+                                argument.Value,
+                                argument.MemberAssignments))
+                        .ToImmutableArray();
+
+                    if (ContainsMarker(
+                            arguments,
+                            ByConventionMarkerMetadataName,
+                            configuration.Expression.SemanticModel,
+                            cancellationToken))
+                    {
+                        var convention = BuildByConventionPlan(
+                            arguments,
+                            sourceType,
+                            destination,
+                            capabilities,
+                            constructorMembers,
+                            constructorSelection,
+                            compilation,
+                            mapperType,
+                            configuration.Expression.SemanticModel,
+                            mapping.NonNullSourceName,
+                            Rewrite,
+                            cancellationToken);
+
+                        plannedLeaf = convention is null
+                            ? new StructuredConstructLeafNode(
+                                StructuredConstructLeafKind.Unsupported,
+                                Constructor: null,
+                                Factory: null,
+                                UnsupportedMessage: constructorSelection ==
+                                    ConstructorSelectionValue.Unambiguous
+                                    ? UnsupportedConstructMessage
+                                    : ConstructorSelectionUnsupportedMessage)
+                            : new StructuredConstructLeafNode(
+                                StructuredConstructLeafKind.Constructor,
+                                convention,
+                                Factory: null,
+                                UnsupportedMessage: null);
+                    }
+                    else if (BuildFactory(arguments) is
+                             { } factory)
+                    {
+                        plannedLeaf = factory;
+                    }
+                    else
+                    {
+                        var explicitPlan =
+                            ExplicitStructuredConstructorPlanner.Build(
+                                arguments,
+                                sourceType,
+                                destination,
+                                compilation,
+                                mapperType,
+                                configuration.Expression.SemanticModel,
+                                Rewrite,
+                                cancellationToken);
+
+                        plannedLeaf = explicitPlan is null
+                            ? StructuredConstructLeafNode.Unsupported
+                            : ConventionConstructorMappingPlanner
+                                .BuildExplicitPlan(
+                                    destination,
+                                    constructorMembers,
+                                    explicitPlan.Value.Constructor,
+                                    explicitPlan.Value.Arguments,
+                                    mapperType,
+                                    mapping.NonNullSourceName) is
+                                { } constructor
+                                ? new StructuredConstructLeafNode(
+                                    StructuredConstructLeafKind.Constructor,
+                                    constructor,
+                                    Factory: null,
+                                    UnsupportedMessage: null)
+                                : StructuredConstructLeafNode.Unsupported;
+                    }
+                }
+                else
+                {
+                    plannedLeaf = null;
+                }
+
+                if (plannedLeaf is null)
+                {
+                    return null;
+                }
+
+                return BuildRuntimeNode(
+                    plannedLeaf,
+                    mapping,
+                    memberMappings,
+                    mapNew: previousAvailable != true);
+            }
+
+            return DeclarativeControlFlowLowerer.TryBuild(
+                    controlFlowProgram,
+                    configuration.Expression.SemanticModel,
+                    compilation,
+                    mapperType,
+                    sourceParameter,
+                    mapping.NonNullSourceName,
+                    previousParameter,
+                    previousSubstitution,
+                    resultParameter: null,
+                    resultName: null,
+                    transferScope,
+                    BuildLeaf,
+                    (condition, whenTrue, whenFalse) =>
+                        BuildRuntimeConditionNode(
+                            condition,
+                            whenTrue,
+                            whenFalse,
+                            Rewrite,
+                            previousParameter,
+                            previousAvailable,
+                            configuration.Expression.SemanticModel,
+                            cancellationToken),
+                    cancellationToken,
+                    out var lowered)
+                ? lowered
+                : null;
         }
 
         TypeMapperControlFlowNode mapNewRoot;
@@ -183,16 +322,15 @@ internal static class StructuredConstructMappingPlanner
 
             if (plannedRoot is null)
             {
-                factoryHelperRegistry.Rollback();
+                if (ownsFactoryHelperRegistry)
+                {
+                    factoryHelperRegistry.Rollback();
+                }
                 return StructuredConstructMappingResult.Unsupported(
                     UnsupportedConstructMessage);
             }
 
-            mapNewRoot = BuildRuntimeNode(
-                plannedRoot,
-                mapping,
-                memberMappings,
-                mapNew: true);
+            mapNewRoot = plannedRoot;
             mapExistingRoot = BuildPreviousLeaf(
                 mapping,
                 memberMappings,
@@ -205,113 +343,26 @@ internal static class StructuredConstructMappingPlanner
 
             if (mapNewPlan is null || mapExistingPlan is null)
             {
-                factoryHelperRegistry.Rollback();
+                if (ownsFactoryHelperRegistry)
+                {
+                    factoryHelperRegistry.Rollback();
+                }
                 return StructuredConstructMappingResult.Unsupported(
                     UnsupportedConstructMessage);
             }
 
-            mapNewRoot = BuildRuntimeNode(
-                mapNewPlan,
-                mapping,
-                memberMappings,
-                mapNew: true);
-            mapExistingRoot = BuildRuntimeNode(
-                mapExistingPlan,
-                mapping,
-                memberMappings,
-                mapNew: false);
+            mapNewRoot = mapNewPlan;
+            mapExistingRoot = mapExistingPlan;
         }
 
         return new StructuredConstructMappingResult(
             new TypeMapperControlFlowMappingModel(
                 mapNewRoot,
                 mapExistingRoot),
-            factoryHelperRegistry.HelperMethodDeclarations,
+            ownsFactoryHelperRegistry
+                ? factoryHelperRegistry.HelperMethodDeclarations
+                : [],
             UnsupportedMessage: null);
-    }
-
-    private static StructuredConstructPlanNode? BuildPlanStatements(
-        SyntaxList<StatementSyntax> statements,
-        StructuredConstructPlanNode? continuation,
-        Func<ExpressionSyntax, StructuredConstructPlanNode?> buildExpression,
-        Func<
-            ExpressionSyntax,
-            StructuredConstructPlanNode,
-            StructuredConstructPlanNode,
-            StructuredConstructPlanNode?> buildCondition)
-    {
-        var result = continuation;
-
-        for (var index = statements.Count - 1;
-             index >= 0;
-             index--)
-        {
-            result = BuildPlanStatement(
-                statements[index],
-                result,
-                buildExpression,
-                buildCondition);
-
-            if (result is null)
-            {
-                return null;
-            }
-        }
-
-        return result;
-    }
-
-    private static StructuredConstructPlanNode? BuildPlanStatement(
-        StatementSyntax statement,
-        StructuredConstructPlanNode? continuation,
-        Func<ExpressionSyntax, StructuredConstructPlanNode?> buildExpression,
-        Func<
-            ExpressionSyntax,
-            StructuredConstructPlanNode,
-            StructuredConstructPlanNode,
-            StructuredConstructPlanNode?> buildCondition)
-    {
-        switch (statement)
-        {
-            case ReturnStatementSyntax
-            {
-                Expression: { } expression
-            }:
-                return buildExpression(expression);
-
-            case BlockSyntax block:
-                return BuildPlanStatements(
-                    block.Statements,
-                    continuation,
-                    buildExpression,
-                    buildCondition);
-
-            case IfStatementSyntax ifStatement:
-            {
-                var whenTrue = BuildPlanStatement(
-                    ifStatement.Statement,
-                    continuation,
-                    buildExpression,
-                    buildCondition);
-                var whenFalse = ifStatement.Else is { } elseClause
-                    ? BuildPlanStatement(
-                        elseClause.Statement,
-                        continuation,
-                        buildExpression,
-                        buildCondition)
-                    : continuation;
-
-                return whenTrue is null || whenFalse is null
-                    ? null
-                    : buildCondition(
-                        ifStatement.Condition,
-                        whenTrue,
-                        whenFalse);
-            }
-
-            default:
-                return null;
-        }
     }
 
     private static PreviousExpressionSubstitution
@@ -335,15 +386,16 @@ internal static class StructuredConstructMappingPlanner
                 HasValueExpression: "false");
     }
 
-    private static StructuredConstructPlanNode? BuildConditionNode(
-        ExpressionSyntax condition,
-        StructuredConstructPlanNode whenTrue,
-        StructuredConstructPlanNode whenFalse,
-        Func<ExpressionSyntax, string?> rewriteExpression,
-        IParameterSymbol? previousParameter,
-        bool? previousAvailable,
-        SemanticModel semanticModel,
-        CancellationToken cancellationToken)
+    private static TypeMapperControlFlowNode?
+        BuildRuntimeConditionNode(
+            ExpressionSyntax condition,
+            TypeMapperControlFlowNode whenTrue,
+            TypeMapperControlFlowNode whenFalse,
+            Func<ExpressionSyntax, string?> rewriteExpression,
+            IParameterSymbol? previousParameter,
+            bool? previousAvailable,
+            SemanticModel semanticModel,
+            CancellationToken cancellationToken)
     {
         condition = UnwrapParentheses(condition);
 
@@ -375,7 +427,7 @@ internal static class StructuredConstructMappingPlanner
                     Operand: var operand
                 })
             {
-                return BuildConditionNode(
+                return BuildRuntimeConditionNode(
                     operand,
                     whenFalse,
                     whenTrue,
@@ -392,19 +444,20 @@ internal static class StructuredConstructMappingPlanner
                 {
                     case SyntaxKind.LogicalAndExpression:
                     {
-                        var whenLeftTrue = BuildConditionNode(
-                            binary.Right,
-                            whenTrue,
-                            whenFalse,
-                            rewriteExpression,
-                            previousParameter,
-                            previousAvailable,
-                            semanticModel,
-                            cancellationToken);
+                        var whenLeftTrue =
+                            BuildRuntimeConditionNode(
+                                binary.Right,
+                                whenTrue,
+                                whenFalse,
+                                rewriteExpression,
+                                previousParameter,
+                                previousAvailable,
+                                semanticModel,
+                                cancellationToken);
 
                         return whenLeftTrue is null
                             ? null
-                            : BuildConditionNode(
+                            : BuildRuntimeConditionNode(
                                 binary.Left,
                                 whenLeftTrue,
                                 whenFalse,
@@ -417,19 +470,20 @@ internal static class StructuredConstructMappingPlanner
 
                     case SyntaxKind.LogicalOrExpression:
                     {
-                        var whenLeftFalse = BuildConditionNode(
-                            binary.Right,
-                            whenTrue,
-                            whenFalse,
-                            rewriteExpression,
-                            previousParameter,
-                            previousAvailable,
-                            semanticModel,
-                            cancellationToken);
+                        var whenLeftFalse =
+                            BuildRuntimeConditionNode(
+                                binary.Right,
+                                whenTrue,
+                                whenFalse,
+                                rewriteExpression,
+                                previousParameter,
+                                previousAvailable,
+                                semanticModel,
+                                cancellationToken);
 
                         return whenLeftFalse is null
                             ? null
-                            : BuildConditionNode(
+                            : BuildRuntimeConditionNode(
                                 binary.Left,
                                 whenTrue,
                                 whenLeftFalse,
@@ -451,13 +505,22 @@ internal static class StructuredConstructMappingPlanner
         }
 
         return Equals(whenTrue, whenFalse)
-            ? new StructuredConstructEvaluationNode(
-                rewrittenCondition,
-                whenTrue)
-            : new StructuredConstructConditionalNode(
+            ? new TypeMapperControlFlowNode(
+                Locals: [],
+                Condition: null,
+                WhenTrue: null,
+                WhenFalse: null,
+                Leaf: null,
+                ThrowExpression: null,
+                EvaluationExpression: rewrittenCondition,
+                EvaluationContinuation: whenTrue)
+            : new TypeMapperControlFlowNode(
+                Locals: [],
                 rewrittenCondition,
                 whenTrue,
-                whenFalse);
+                whenFalse,
+                Leaf: null,
+                ThrowExpression: null);
     }
 
     private static bool TryEvaluateKnownCondition(
@@ -1047,6 +1110,29 @@ internal static class StructuredConstructMappingPlanner
             ImmutableArray.CreateBuilder<
                 StructuredConstructorParameterRule>();
 
+        if (parameters.MemberAssignments is
+                { } configuredAssignments)
+        {
+            foreach (var assignment in configuredAssignments)
+            {
+                if (!parameterNames.TryGetValue(
+                        assignment.MemberName,
+                        out var parameterName))
+                {
+                    rules = default;
+                    return false;
+                }
+
+                result.Add(
+                    new StructuredConstructorParameterRule(
+                        parameterName,
+                        assignment.Value));
+            }
+
+            rules = result.ToImmutable();
+            return true;
+        }
+
         foreach (var expression in initializer.Expressions)
         {
             if (expression is not AssignmentExpressionSyntax
@@ -1203,42 +1289,6 @@ internal static class StructuredConstructMappingPlanner
         ConventionMemberMappingPlan memberMappings,
         bool mapNew)
     {
-        if (node is StructuredConstructEvaluationNode evaluation)
-        {
-            return new TypeMapperControlFlowNode(
-                Locals: [],
-                Condition: null,
-                WhenTrue: null,
-                WhenFalse: null,
-                Leaf: null,
-                ThrowExpression: null,
-                EvaluationExpression: evaluation.Expression,
-                EvaluationContinuation: BuildRuntimeNode(
-                    evaluation.Continuation,
-                    mapping,
-                    memberMappings,
-                    mapNew));
-        }
-
-        if (node is StructuredConstructConditionalNode conditional)
-        {
-            return new TypeMapperControlFlowNode(
-                Locals: [],
-                Condition: conditional.Condition,
-                WhenTrue: BuildRuntimeNode(
-                    conditional.WhenTrue,
-                    mapping,
-                    memberMappings,
-                    mapNew),
-                WhenFalse: BuildRuntimeNode(
-                    conditional.WhenFalse,
-                    mapping,
-                    memberMappings,
-                    mapNew),
-                Leaf: null,
-                ThrowExpression: null);
-        }
-
         var leaf = (StructuredConstructLeafNode)node;
 
         return leaf.Kind switch
@@ -1406,7 +1456,9 @@ internal static class StructuredConstructMappingPlanner
 
 internal readonly record struct StructuredObjectArgument(
     ArgumentSyntax Syntax,
-    ExpressionSyntax Value);
+    ExpressionSyntax Value,
+    ImmutableArray<DeclarativeMemberAssignmentSyntax>?
+        MemberAssignments = null);
 
 internal readonly record struct StructuredConstructorParameterRule(
     string ParameterName,
@@ -1426,17 +1478,6 @@ internal readonly record struct StructuredConstructMappingResult(
 }
 
 internal abstract record StructuredConstructPlanNode;
-
-internal sealed record StructuredConstructEvaluationNode(
-    string Expression,
-    StructuredConstructPlanNode Continuation)
-    : StructuredConstructPlanNode;
-
-internal sealed record StructuredConstructConditionalNode(
-    string Condition,
-    StructuredConstructPlanNode WhenTrue,
-    StructuredConstructPlanNode WhenFalse)
-    : StructuredConstructPlanNode;
 
 internal sealed record StructuredConstructLeafNode(
     StructuredConstructLeafKind Kind,

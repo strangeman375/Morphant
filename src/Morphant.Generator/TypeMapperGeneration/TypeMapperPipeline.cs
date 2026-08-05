@@ -267,110 +267,132 @@ internal static class TypeMapperPipeline
             };
         }
 
-        var memberMappings = members.Plan;
         var constructorSelection = ResolveSetting(
             configuration.Settings.ConstructorSelection,
             rootSettings.ConstructorSelection,
             ConstructorSelectionValue.Unambiguous);
 
-        if (!configuration.Declarative.Constructs.IsEmpty)
+        TypeMapperMappingModel BuildFlatMapping(
+            ConventionMemberMappingPlan memberMappings,
+            ByFactoryHelperRegistry? sharedFactoryHelpers = null)
         {
-            if (pair.Capabilities.DirectConstruction)
+            if (!configuration.Declarative.Constructs.IsEmpty)
             {
-                var directConstruct =
-                    DirectConstructMappingPlanner.Build(
+                if (pair.Capabilities.DirectConstruction)
+                {
+                    var directConstruct =
+                        DirectConstructMappingPlanner.Build(
+                            configuration.Declarative.Constructs[0],
+                            mapping,
+                            memberMappings,
+                            mapperType,
+                            usedGeneratedMethodNames,
+                            cancellationToken);
+
+                    return mapping with
+                    {
+                        ControlFlow = directConstruct.ControlFlow,
+                        HelperMethodDeclarations =
+                            directConstruct.HelperMethodDeclarations,
+                        UnsupportedExceptionMessage =
+                            directConstruct.UnsupportedMessage
+                    };
+                }
+
+                if (destinationPlan.MemberType is not
+                    INamedTypeSymbol structuredDestination)
+                {
+                    return mapping with
+                    {
+                        UnsupportedExceptionMessage =
+                            "Configured Construct plans are not executable yet."
+                    };
+                }
+
+                var structuredConstruct =
+                    StructuredConstructMappingPlanner.Build(
                         configuration.Declarative.Constructs[0],
                         mapping,
+                        declarativeSourceType,
+                        structuredDestination,
+                        pair.Capabilities,
                         memberMappings,
+                        constructorSelection,
+                        compilation,
                         mapperType,
                         usedGeneratedMethodNames,
+                        cancellationToken,
+                        sharedFactoryHelpers);
+
+                return mapping with
+                {
+                    ControlFlow = structuredConstruct.ControlFlow,
+                    HelperMethodDeclarations =
+                        structuredConstruct.HelperMethodDeclarations,
+                    UnsupportedExceptionMessage =
+                        structuredConstruct.UnsupportedMessage
+                };
+            }
+
+            ConventionConstructorMappingPlan? constructorMapping = null;
+            string? createUnsupportedMessage = null;
+
+            if (constructorSelection !=
+                ConstructorSelectionValue.Unambiguous)
+            {
+                createUnsupportedMessage =
+                    ConstructorSelectionUnsupportedMessage;
+            }
+            else
+            {
+                constructorMapping =
+                    ConventionConstructorMappingPlanner.Build(
+                        declarativeSourceType,
+                        destinationPlan.MemberType,
+                        memberMappings.BuildConstructorPlan(
+                            replacement: false),
+                        pair.Capabilities,
+                        compilation,
+                        mapperType,
+                        nonNullSourceName,
                         cancellationToken);
 
-                return mapping with
+                if (constructorMapping is null)
                 {
-                    ControlFlow = directConstruct.ControlFlow,
-                    HelperMethodDeclarations =
-                        directConstruct.HelperMethodDeclarations,
-                    UnsupportedExceptionMessage =
-                        directConstruct.UnsupportedMessage
-                };
+                    createUnsupportedMessage =
+                        ConventionConstructionUnavailableMessage;
+                }
             }
-
-            if (destinationPlan.MemberType is not
-                INamedTypeSymbol structuredDestination)
-            {
-                return mapping with
-                {
-                    UnsupportedExceptionMessage =
-                        "Configured Construct plans are not executable yet."
-                };
-            }
-
-            var structuredConstruct =
-                StructuredConstructMappingPlanner.Build(
-                    configuration.Declarative.Constructs[0],
-                    mapping,
-                    declarativeSourceType,
-                    structuredDestination,
-                    pair.Capabilities,
-                    memberMappings,
-                constructorSelection,
-                compilation,
-                mapperType,
-                usedGeneratedMethodNames,
-                cancellationToken);
 
             return mapping with
             {
-                ControlFlow = structuredConstruct.ControlFlow,
-                HelperMethodDeclarations =
-                    structuredConstruct.HelperMethodDeclarations,
-                UnsupportedExceptionMessage =
-                    structuredConstruct.UnsupportedMessage
+                MapNewConstructor = constructorMapping?.Constructor,
+                MapNewMemberMappings =
+                    constructorMapping?.MapNewMemberMappings ??
+                    memberMappings.MapNew,
+                MapNewPostMemberMappings =
+                    constructorMapping?.MapNewPostMemberMappings ??
+                    [],
+                MapExistingMemberMappings = memberMappings.MapExisting,
+                MapNewUnsupportedExceptionMessage =
+                    createUnsupportedMessage
             };
         }
 
-        ConventionConstructorMappingPlan? constructorMapping = null;
-        string? createUnsupportedMessage = null;
-
-        if (constructorSelection != ConstructorSelectionValue.Unambiguous)
+        if (members.ControlFlow is not { } membersControlFlow)
         {
-            createUnsupportedMessage =
-                ConstructorSelectionUnsupportedMessage;
-        }
-        else
-        {
-            constructorMapping = ConventionConstructorMappingPlanner.Build(
-                declarativeSourceType,
-                destinationPlan.MemberType,
-                memberMappings.BuildConstructorPlan(
-                    replacement: false),
-                pair.Capabilities,
-                compilation,
-                mapperType,
-                nonNullSourceName,
-                cancellationToken);
-
-            if (constructorMapping is null)
-            {
-                createUnsupportedMessage =
-                    ConventionConstructionUnavailableMessage;
-            }
+            return BuildFlatMapping(members.Plan);
         }
 
-        return mapping with
-        {
-            MapNewConstructor = constructorMapping?.Constructor,
-            MapNewMemberMappings =
-                constructorMapping?.MapNewMemberMappings ??
-                memberMappings.MapNew,
-            MapNewPostMemberMappings =
-                constructorMapping?.MapNewPostMemberMappings ??
-                [],
-            MapExistingMemberMappings = memberMappings.MapExisting,
-            MapNewUnsupportedExceptionMessage =
-                createUnsupportedMessage
-        };
+        return MembersControlFlowMappingPlanner.Build(
+            membersControlFlow,
+            mapping,
+            compilation,
+            mapperType,
+            usedGeneratedMethodNames,
+            pair.Capabilities.DirectConstruction,
+            BuildFlatMapping,
+            cancellationToken);
     }
 
     private static TypeMapperMappingModel BuildEmptyMapping(

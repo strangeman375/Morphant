@@ -33,6 +33,7 @@ internal static class BasicMembersMappingPlanner
             {
                 return new BasicMembersMappingResult(
                     convention,
+                    ControlFlow: null,
                     UnsupportedMessage: null);
             }
 
@@ -53,6 +54,7 @@ internal static class BasicMembersMappingPlanner
                             cancellationToken),
                     HasExplicitCreationOnlyMappings: false,
                     HasResultDependentCreationOnlyMappings: false),
+                ControlFlow: null,
                 UnsupportedMessage: null);
         }
 
@@ -67,10 +69,26 @@ internal static class BasicMembersMappingPlanner
                 cancellationToken,
                 out var sourceParameter,
                 out var previousParameter,
-                out var resultParameter) ||
-            !TryGetAssignments(
-                lambda,
-                out var assignments))
+                out var resultParameter))
+        {
+            return BasicMembersMappingResult.Unsupported(
+                UnsupportedMembersMessage);
+        }
+
+        var controlFlowResult = DeclarativeControlFlowPlanner.Build(
+            lambda,
+            configured.Expression.SemanticModel,
+            cancellationToken);
+
+        if (controlFlowResult is UnsupportedDeclarativeControlFlow
+            unsupportedControlFlow)
+        {
+            return BasicMembersMappingResult.Unsupported(
+                unsupportedControlFlow.Message);
+        }
+
+        if (controlFlowResult is not DeclarativeControlFlowProgram
+            controlFlow)
         {
             return BasicMembersMappingResult.Unsupported(
                 UnsupportedMembersMessage);
@@ -96,6 +114,113 @@ internal static class BasicMembersMappingPlanner
             convention.MapNewPost.ToDictionary(
                 static member => member.DestinationMemberName,
                 StringComparer.Ordinal);
+        var runtimeLocalInitializers =
+            controlFlow.RuntimeLocals.ToDictionary(
+                local => controlFlow.RuntimeLocalPlaceholders.First(pair =>
+                        StringComparer.Ordinal.Equals(
+                            pair.Value,
+                            local.PlaceholderName))
+                    .Key,
+                static local => local.Initializer,
+                SymbolEqualityComparer.Default);
+        var leaves =
+            new Dictionary<
+                DeclarativeLeafSyntaxNode,
+                ConventionMemberMappingPlan>();
+        string? leafUnsupportedMessage = null;
+
+        bool BuildLeaf(DeclarativeLeafSyntaxNode leaf)
+        {
+            if (leaf.ObjectCreation is null ||
+                !leaf.Arguments.IsEmpty ||
+                !TryBuildLeafPlan(
+                    leaf.MemberAssignments,
+                    memberSelection,
+                    mapping,
+                    convention,
+                    destination,
+                    writableMembersByName,
+                    conventionMapNewByName,
+                    conventionMapNewPostByName,
+                    conventionMapExistingByName,
+                    configured.Expression.SemanticModel,
+                    mapperType,
+                    sourceParameter,
+                    previousParameter,
+                    resultParameter,
+                    lambda,
+                    controlFlow.RuntimeLocalPlaceholders,
+                    runtimeLocalInitializers,
+                    cancellationToken,
+                    out var plan,
+                    out leafUnsupportedMessage))
+            {
+                return false;
+            }
+
+            leaves.Add(leaf, plan);
+            return true;
+        }
+
+        foreach (var leaf in EnumerateLeaves(controlFlow.Root))
+        {
+            if (!BuildLeaf(leaf))
+            {
+                return BasicMembersMappingResult.Unsupported(
+                    leafUnsupportedMessage ??
+                    UnsupportedMembersMessage);
+            }
+        }
+
+        var representativePlan = leaves.Values.First();
+        var hasControlFlow =
+            controlFlow.Root is not DeclarativeLeafSyntaxNode ||
+            !controlFlow.RuntimeLocals.IsEmpty ||
+            !controlFlow.BoundLocals.IsEmpty;
+
+        return new BasicMembersMappingResult(
+            representativePlan,
+            hasControlFlow
+                ? new MembersDeclarativeControlFlowPlan(
+                    controlFlow,
+                    leaves,
+                    configured.Expression.SemanticModel,
+                    mapperType,
+                    sourceParameter,
+                    previousParameter,
+                    resultParameter,
+                    lambda,
+                    runtimeLocalInitializers)
+                : null,
+            UnsupportedMessage: null);
+    }
+
+    private static bool TryBuildLeafPlan(
+        ImmutableArray<DeclarativeMemberAssignmentSyntax> assignments,
+        MemberSelectionValue memberSelection,
+        TypeMapperMappingModel mapping,
+        ConventionMemberMappingPlan convention,
+        ITypeSymbol destination,
+        IReadOnlyDictionary<string, ConventionWritableMember>
+            writableMembersByName,
+        IReadOnlyDictionary<string, TypeMapperMemberMappingModel>
+            conventionMapNewByName,
+        IReadOnlyDictionary<string, TypeMapperMemberMappingModel>
+            conventionMapNewPostByName,
+        IReadOnlyDictionary<string, TypeMapperMemberMappingModel>
+            conventionMapExistingByName,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        IParameterSymbol previousParameter,
+        IParameterSymbol? resultParameter,
+        LambdaExpressionSyntax transferScope,
+        IReadOnlyDictionary<ISymbol, string> localSubstitutions,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
+        CancellationToken cancellationToken,
+        out ConventionMemberMappingPlan plan,
+        out string? unsupportedMessage)
+    {
         var mapNew =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var mapNewPost =
@@ -114,22 +239,19 @@ internal static class BasicMembersMappingPlanner
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (configured.Expression.SemanticModel.GetSymbolInfo(
-                    assignment.Left,
-                    cancellationToken).Symbol is not
-                    IPropertySymbol planMember ||
-                !occupiedNames.Add(planMember.Name) ||
+            if (!occupiedNames.Add(assignment.MemberName) ||
                 !writableMembersByName.TryGetValue(
-                    planMember.Name,
+                    assignment.MemberName,
                     out var destinationMember))
             {
-                return BasicMembersMappingResult.Unsupported(
-                    UnsupportedMembersMessage);
+                plan = default;
+                unsupportedMessage = UnsupportedMembersMessage;
+                return false;
             }
 
             if (DeclarativeMemberMarker.TryGetKind(
-                    assignment.Right,
-                    configured.Expression.SemanticModel,
+                    assignment.Value,
+                    semanticModel,
                     cancellationToken,
                     out var markerKind))
             {
@@ -142,8 +264,10 @@ internal static class BasicMembersMappingPlanner
                         destinationMember.Name,
                         out var automaticMapNew))
                 {
-                    return BasicMembersMappingResult.Unsupported(
-                        AutomaticMemberUnavailableMessage);
+                    plan = default;
+                    unsupportedMessage =
+                        AutomaticMemberUnavailableMessage;
+                    return false;
                 }
 
                 mapNew.Add(automaticMapNew);
@@ -166,25 +290,27 @@ internal static class BasicMembersMappingPlanner
 
                 hasExplicitCreationOnlyMappings |=
                     !destinationMember.CanAssign;
-
                 continue;
             }
 
             if (!TryBuildExplicitMapping(
-                    assignment.Right,
+                    assignment.Value,
                     destinationMember,
                     mapping,
-                    configured.Expression.SemanticModel,
+                    semanticModel,
                     mapperType,
                     sourceParameter,
                     previousParameter,
                     resultParameter,
-                    lambda,
+                    transferScope,
+                    localSubstitutions,
+                    localInitializers,
                     cancellationToken,
                     out var explicitPlan))
             {
-                return BasicMembersMappingResult.Unsupported(
-                    UnsupportedMembersMessage);
+                plan = default;
+                unsupportedMessage = UnsupportedMembersMessage;
+                return false;
             }
 
             if (explicitPlan.MapNew is { } explicitMapNew)
@@ -224,44 +350,43 @@ internal static class BasicMembersMappingPlanner
         if (memberSelection == MemberSelectionValue.Auto)
         {
             mapNew.AddRange(
-                convention.MapNew.Where(mapping =>
+                convention.MapNew.Where(candidate =>
                     !occupiedNames.Contains(
-                        mapping.DestinationMemberName)));
+                        candidate.DestinationMemberName)));
             mapNewPost.AddRange(
-                convention.MapNewPost.Where(mapping =>
+                convention.MapNewPost.Where(candidate =>
                     !occupiedNames.Contains(
-                        mapping.DestinationMemberName)));
+                        candidate.DestinationMemberName)));
             mapReplacement.AddRange(
-                convention.MapReplacement.Where(mapping =>
+                convention.MapReplacement.Where(candidate =>
                     !occupiedNames.Contains(
-                        mapping.DestinationMemberName)));
+                        candidate.DestinationMemberName)));
             mapReplacementPost.AddRange(
-                convention.MapReplacementPost.Where(mapping =>
+                convention.MapReplacementPost.Where(candidate =>
                     !occupiedNames.Contains(
-                        mapping.DestinationMemberName)));
+                        candidate.DestinationMemberName)));
             mapExisting.AddRange(
-                convention.MapExisting.Where(mapping =>
+                convention.MapExisting.Where(candidate =>
                     !occupiedNames.Contains(
-                        mapping.DestinationMemberName)));
+                        candidate.DestinationMemberName)));
         }
 
         var immutableMapNew = mapNew.ToImmutable();
 
-        return new BasicMembersMappingResult(
-            new ConventionMemberMappingPlan(
+        plan = new ConventionMemberMappingPlan(
+            immutableMapNew,
+            mapNewPost.ToImmutable(),
+            mapReplacement.ToImmutable(),
+            mapReplacementPost.ToImmutable(),
+            mapExisting.ToImmutable(),
+            ConventionMemberMappingPlanner.HasUnmappedRequiredMembers(
+                destination,
                 immutableMapNew,
-                mapNewPost.ToImmutable(),
-                mapReplacement.ToImmutable(),
-                mapReplacementPost.ToImmutable(),
-                mapExisting.ToImmutable(),
-                ConventionMemberMappingPlanner
-                    .HasUnmappedRequiredMembers(
-                        destination,
-                        immutableMapNew,
-                        cancellationToken),
-                hasExplicitCreationOnlyMappings,
-                hasResultDependentCreationOnlyMappings),
-            UnsupportedMessage: null);
+                cancellationToken),
+            hasExplicitCreationOnlyMappings,
+            hasResultDependentCreationOnlyMappings);
+        unsupportedMessage = null;
+        return true;
     }
 
     private static bool TryBuildExplicitMapping(
@@ -274,6 +399,8 @@ internal static class BasicMembersMappingPlanner
         IParameterSymbol previousParameter,
         IParameterSymbol? resultParameter,
         LambdaExpressionSyntax transferScope,
+        IReadOnlyDictionary<ISymbol, string> localSubstitutions,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
         CancellationToken cancellationToken,
         out ExplicitMemberMappingPlan plan)
     {
@@ -288,6 +415,7 @@ internal static class BasicMembersMappingPlanner
                 resultParameter,
                 mapping.ResultLocalName,
                 transferScope,
+                localSubstitutions,
                 cancellationToken,
                 out var mapNewExpression) ||
             !ConstructExpressionRewriter.TryRewrite(
@@ -301,6 +429,7 @@ internal static class BasicMembersMappingPlanner
                 resultParameter,
                 mapping.ResultLocalName,
                 transferScope,
+                localSubstitutions,
                 cancellationToken,
                 out var mapReplacementExpression) ||
             !ConstructExpressionRewriter.TryRewrite(
@@ -314,6 +443,7 @@ internal static class BasicMembersMappingPlanner
                 resultParameter,
                 "destination",
                 transferScope,
+                localSubstitutions,
                 cancellationToken,
                 out var mapExistingExpression))
         {
@@ -326,6 +456,9 @@ internal static class BasicMembersMappingPlanner
                 expression,
                 resultParameter,
                 semanticModel,
+                localInitializers,
+                new HashSet<ISymbol>(
+                    SymbolEqualityComparer.Default),
                 cancellationToken);
         var valueTypeName =
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
@@ -367,6 +500,8 @@ internal static class BasicMembersMappingPlanner
         ExpressionSyntax expression,
         IParameterSymbol parameter,
         SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
+        HashSet<ISymbol> visitedLocals,
         CancellationToken cancellationToken)
     {
         foreach (var identifier in expression
@@ -385,9 +520,84 @@ internal static class BasicMembersMappingPlanner
             {
                 return true;
             }
+
+            var symbol = semanticModel.GetSymbolInfo(
+                    identifier,
+                    cancellationToken)
+                .Symbol;
+
+            if (symbol is not null &&
+                visitedLocals.Add(symbol) &&
+                localInitializers.TryGetValue(
+                    symbol,
+                    out var initializer) &&
+                ReferencesParameterAtRuntime(
+                    initializer,
+                    parameter,
+                    semanticModel,
+                    localInitializers,
+                    visitedLocals,
+                    cancellationToken))
+            {
+                return true;
+            }
         }
 
         return false;
+    }
+
+    private static IEnumerable<DeclarativeLeafSyntaxNode>
+        EnumerateLeaves(DeclarativeControlFlowSyntaxNode node)
+    {
+        switch (node)
+        {
+            case DeclarativeLeafSyntaxNode leaf:
+                yield return leaf;
+                yield break;
+
+            case DeclarativeLocalDeclarationsSyntaxNode locals:
+                foreach (var leaf in EnumerateLeaves(locals.Next))
+                {
+                    yield return leaf;
+                }
+
+                yield break;
+
+            case DeclarativeConditionalSyntaxNode conditional:
+                foreach (var leaf in EnumerateLeaves(
+                             conditional.WhenTrue))
+                {
+                    yield return leaf;
+                }
+
+                foreach (var leaf in EnumerateLeaves(
+                             conditional.WhenFalse))
+                {
+                    yield return leaf;
+                }
+
+                yield break;
+
+            case DeclarativeSwitchSyntaxNode switchNode:
+                foreach (var section in switchNode.Sections)
+                {
+                    foreach (var leaf in EnumerateLeaves(
+                                 section.Branch))
+                    {
+                        yield return leaf;
+                    }
+                }
+
+                if (switchNode.Continuation is { } continuation)
+                {
+                    foreach (var leaf in EnumerateLeaves(continuation))
+                    {
+                        yield return leaf;
+                    }
+                }
+
+                yield break;
+        }
     }
 
     private static bool IsConstantNameOf(
@@ -521,11 +731,25 @@ internal static class BasicMembersMappingPlanner
 
 internal readonly record struct BasicMembersMappingResult(
     ConventionMemberMappingPlan Plan,
+    MembersDeclarativeControlFlowPlan? ControlFlow,
     string? UnsupportedMessage)
 {
     public static BasicMembersMappingResult Unsupported(string message) =>
-        new(default, message);
+        new(default, ControlFlow: null, message);
 }
+
+internal sealed record MembersDeclarativeControlFlowPlan(
+    DeclarativeControlFlowProgram Program,
+    IReadOnlyDictionary<
+        DeclarativeLeafSyntaxNode,
+        ConventionMemberMappingPlan> Leaves,
+    SemanticModel SemanticModel,
+    INamedTypeSymbol MapperType,
+    IParameterSymbol SourceParameter,
+    IParameterSymbol PreviousParameter,
+    IParameterSymbol? ResultParameter,
+    LambdaExpressionSyntax TransferScope,
+    IReadOnlyDictionary<ISymbol, ExpressionSyntax> LocalInitializers);
 
 internal readonly record struct ExplicitMemberMappingPlan(
     TypeMapperMemberMappingModel? MapNew,
