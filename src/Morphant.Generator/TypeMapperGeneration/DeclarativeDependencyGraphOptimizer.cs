@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -10,23 +11,26 @@ internal static class DeclarativeDependencyGraphOptimizer
         TypeMapperMappingModel mapping,
         INamedTypeSymbol mapperType)
     {
-        var usedNames = UserResultMappingPlanner.BuildUsedLocalNames(
-            mapperType);
-        CollectDeclaredNames(mapping, usedNames);
-        var allocator = new DependencyLocalNameAllocator(usedNames);
-
         if (mapping.ControlFlow is { } controlFlow)
         {
             var mapNew = OptimizeNode(
                 controlFlow.MapNewRoot,
                 mapNew: true,
                 new Dictionary<string, string>(StringComparer.Ordinal),
-                allocator);
+                BuildAllocator(
+                    mapping,
+                    controlFlow.MapNewRoot,
+                    mapNew: true,
+                    mapperType));
             var mapExisting = OptimizeNode(
                 controlFlow.MapExistingRoot,
                 mapNew: false,
                 new Dictionary<string, string>(StringComparer.Ordinal),
-                allocator);
+                BuildAllocator(
+                    mapping,
+                    controlFlow.MapExistingRoot,
+                    mapNew: false,
+                    mapperType));
 
             return !mapNew.Changed && !mapExisting.Changed
                 ? mapping
@@ -52,12 +56,20 @@ internal static class DeclarativeDependencyGraphOptimizer
             createRoot,
             mapNew: true,
             new Dictionary<string, string>(StringComparer.Ordinal),
-            allocator);
+            BuildAllocator(
+                mapping,
+                createRoot,
+                mapNew: true,
+                mapperType));
         var optimizedExisting = OptimizeNode(
             existingRoot,
             mapNew: false,
             new Dictionary<string, string>(StringComparer.Ordinal),
-            allocator);
+            BuildAllocator(
+                mapping,
+                existingRoot,
+                mapNew: false,
+                mapperType));
 
         return !optimizedCreate.Changed && !optimizedExisting.Changed
             ? mapping
@@ -102,7 +114,6 @@ internal static class DeclarativeDependencyGraphOptimizer
                     environment,
                     later,
                     allocator,
-                    "sharedValue",
                     CanStoreRoot(local, dependency)
                         ? local.Name
                         : null);
@@ -141,8 +152,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 node.EvaluationDependency,
                 environment,
                 later,
-                allocator,
-                "sharedEvaluation");
+                allocator);
             var continuation = OptimizeNode(
                 evaluationContinuation,
                 mapNew,
@@ -180,8 +190,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 node.SwitchDependency,
                 environment,
                 later,
-                allocator,
-                "sharedSwitchValue");
+                allocator);
             var sections = node.SwitchSections.Select(section =>
             {
                 var branch = OptimizeNode(
@@ -227,8 +236,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 node.ConditionDependency,
                 environment,
                 later,
-                allocator,
-                "sharedCondition");
+                allocator);
             var whenTrue = OptimizeNode(
                 node.WhenTrue!,
                 mapNew,
@@ -261,8 +269,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 node.ThrowDependency,
                 environment,
                 new HashSet<string>(StringComparer.Ordinal),
-                allocator,
-                "sharedException");
+                allocator);
 
             return new NodeOptimizationResult(
                 node with
@@ -406,7 +413,6 @@ internal static class DeclarativeDependencyGraphOptimizer
                 environment,
                 later,
                 allocator,
-                "shared" + Pascal(argument.ParameterName),
                 argument.ValueLocalName);
             argument = argument with
             {
@@ -476,8 +482,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 dependency,
                 environment,
                 later,
-                allocator,
-                "shared" + Pascal(member.DestinationMemberName));
+                allocator);
             valueLocals.AddRange(optimized.PrefixLocals);
             initializerArray[index] = member with
             {
@@ -550,7 +555,6 @@ internal static class DeclarativeDependencyGraphOptimizer
                 environment,
                 later,
                 allocator,
-                "shared" + Pascal(member.DestinationMemberName),
                 member.ValueLocalName);
             result[index] = member with
             {
@@ -598,7 +602,6 @@ internal static class DeclarativeDependencyGraphOptimizer
                     environment,
                     later,
                     allocator,
-                    "sharedValue",
                     CanStoreRoot(local, dependency)
                         ? local.Name
                         : null);
@@ -628,8 +631,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 node.EvaluationDependency,
                 environment,
                 CollectKeys(evaluationContinuation),
-                allocator,
-                "sharedEvaluation");
+                allocator);
             var continuation = OptimizeMemberNode(
                 evaluationContinuation,
                 environment,
@@ -666,8 +668,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 node.SwitchDependency,
                 environment,
                 later,
-                allocator,
-                "sharedSwitchValue");
+                allocator);
             var sections = node.SwitchSections.Select(section =>
             {
                 var branch = OptimizeMemberNode(
@@ -711,8 +712,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 node.ConditionDependency,
                 environment,
                 later,
-                allocator,
-                "sharedCondition");
+                allocator);
             var whenTrue = OptimizeMemberNode(
                 node.WhenTrue!,
                 Clone(environment),
@@ -743,8 +743,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 node.ThrowDependency,
                 environment,
                 new HashSet<string>(StringComparer.Ordinal),
-                allocator,
-                "sharedException");
+                allocator);
 
             return new MemberNodeOptimizationResult(
                 node with
@@ -776,8 +775,7 @@ internal static class DeclarativeDependencyGraphOptimizer
         TypeMapperDependencyExpressionModel? dependency,
         Dictionary<string, string> environment,
         HashSet<string> later,
-        DependencyLocalNameAllocator allocator,
-        string preferredName)
+        DependencyLocalNameAllocator allocator)
     {
         return dependency is null
             ? new ExpressionOptimizationResult(
@@ -788,8 +786,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 dependency,
                 environment,
                 later,
-                allocator,
-                preferredName);
+                allocator);
     }
 
     private static ExpressionOptimizationResult OptimizeExpression(
@@ -797,7 +794,6 @@ internal static class DeclarativeDependencyGraphOptimizer
         Dictionary<string, string> environment,
         HashSet<string> later,
         DependencyLocalNameAllocator allocator,
-        string preferredName,
         string? rootStorageName = null)
     {
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -864,7 +860,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                         }
 
                         var evaluationName = allocator.Allocate(
-                            "evaluatedValue");
+                            BuildValueName(previousNode));
                         prefix.Add(
                             new TypeMapperLocalValueModel(
                                 previousNode.ValueTypeName,
@@ -921,9 +917,7 @@ internal static class DeclarativeDependencyGraphOptimizer
             }
 
             var localName = allocator.Allocate(
-                isRoot
-                    ? preferredName
-                    : "sharedValue");
+                BuildValueName(node));
             prefix.Add(
                 new TypeMapperLocalValueModel(
                     node.ValueTypeName,
@@ -1187,27 +1181,92 @@ internal static class DeclarativeDependencyGraphOptimizer
             : char.ToUpperInvariant(value[0]) + value.Substring(1);
     }
 
-    private static void CollectDeclaredNames(
-        TypeMapperMappingModel mapping,
-        HashSet<string> names)
+    private static string BuildValueName(
+        TypeMapperDependencyExpressionNodeModel node)
     {
+        var segments = new List<string>();
+
+        if (!TryCollectValuePath(
+                SyntaxFactory.ParseExpression(node.Render()),
+                segments) ||
+            segments.Count == 0)
+        {
+            return "value";
+        }
+
+        var name = char.ToLowerInvariant(segments[0][0]) +
+                   segments[0].Substring(1);
+
+        for (var index = 1; index < segments.Count; index++)
+        {
+            name += Pascal(segments[index]);
+        }
+
+        return SyntaxFacts.IsValidIdentifier(name)
+            ? name
+            : "value";
+    }
+
+    private static bool TryCollectValuePath(
+        ExpressionSyntax expression,
+        List<string> segments)
+    {
+        while (true)
+        {
+            switch (expression)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    expression = parenthesized.Expression;
+                    continue;
+
+                case PostfixUnaryExpressionSyntax postfix
+                    when postfix.IsKind(
+                        SyntaxKind.SuppressNullableWarningExpression):
+                    expression = postfix.Operand;
+                    continue;
+            }
+
+            break;
+        }
+
+        switch (expression)
+        {
+            case IdentifierNameSyntax identifier:
+                segments.Add(identifier.Identifier.ValueText);
+                return true;
+
+            case MemberAccessExpressionSyntax memberAccess
+                when memberAccess.IsKind(
+                    SyntaxKind.SimpleMemberAccessExpression) &&
+                     TryCollectValuePath(
+                         memberAccess.Expression,
+                         segments):
+                segments.Add(memberAccess.Name.Identifier.ValueText);
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    private static DependencyLocalNameAllocator BuildAllocator(
+        TypeMapperMappingModel mapping,
+        TypeMapperControlFlowNode root,
+        bool mapNew,
+        INamedTypeSymbol mapperType)
+    {
+        var names = UserResultMappingPlanner.BuildUsedLocalNames(
+            mapperType);
         names.Add(mapping.NonNullSourceName);
         names.Add(mapping.ResultLocalName);
         names.Add("destination");
-
-        if (mapping.ControlFlow is { } controlFlow)
-        {
-            CollectDeclaredNames(controlFlow.MapNewRoot, names);
-            CollectDeclaredNames(controlFlow.MapExistingRoot, names);
-        }
-        else
-        {
-            CollectLeafDeclaredNames(mapping, names);
-        }
+        CollectDeclaredNames(root, mapNew, names);
+        return new DependencyLocalNameAllocator(names);
     }
 
     private static void CollectDeclaredNames(
         TypeMapperControlFlowNode node,
+        bool mapNew,
         HashSet<string> names)
     {
         AddIdentifiers(node.Condition, names);
@@ -1232,35 +1291,35 @@ internal static class DeclarativeDependencyGraphOptimizer
 
         if (node.Leaf is { } leaf)
         {
-            CollectLeafDeclaredNames(leaf, names);
+            CollectLeafDeclaredNames(leaf, mapNew, names);
             return;
         }
 
         if (node.EvaluationContinuation is { } evaluation)
         {
-            CollectDeclaredNames(evaluation, names);
+            CollectDeclaredNames(evaluation, mapNew, names);
         }
 
         foreach (var section in node.SwitchSections.IsDefault
                      ? []
                      : node.SwitchSections)
         {
-            CollectDeclaredNames(section.Branch, names);
+            CollectDeclaredNames(section.Branch, mapNew, names);
         }
 
         if (node.SwitchContinuation is { } continuation)
         {
-            CollectDeclaredNames(continuation, names);
+            CollectDeclaredNames(continuation, mapNew, names);
         }
 
         if (node.WhenTrue is { } whenTrue)
         {
-            CollectDeclaredNames(whenTrue, names);
+            CollectDeclaredNames(whenTrue, mapNew, names);
         }
 
         if (node.WhenFalse is { } whenFalse)
         {
-            CollectDeclaredNames(whenFalse, names);
+            CollectDeclaredNames(whenFalse, mapNew, names);
         }
     }
 
@@ -1323,9 +1382,16 @@ internal static class DeclarativeDependencyGraphOptimizer
 
     private static void CollectLeafDeclaredNames(
         TypeMapperMappingModel mapping,
+        bool mapNew,
         HashSet<string> names)
     {
-        if (mapping.MapNewFactory is { } factory)
+        var replacement = !mapNew &&
+            (mapping.MapNewConstructor is not null ||
+             mapping.MapNewFactory is not null ||
+             mapping.MapNewDirectExpression is not null);
+
+        if ((mapNew || replacement) &&
+            mapping.MapNewFactory is { } factory)
         {
             names.Add(factory.DestinationLocalName);
 
@@ -1335,7 +1401,8 @@ internal static class DeclarativeDependencyGraphOptimizer
             }
         }
 
-        if (mapping.MapNewConstructor is { } constructor)
+        if ((mapNew || replacement) &&
+            mapping.MapNewConstructor is { } constructor)
         {
             AddLocalNames(constructor.ValueLocals, names);
 
@@ -1350,9 +1417,12 @@ internal static class DeclarativeDependencyGraphOptimizer
             }
         }
 
-        foreach (var member in mapping.MapNewMemberMappings
-                     .AddRange(mapping.MapNewPostMemberMappings)
-                     .AddRange(mapping.MapExistingMemberMappings))
+        var members = mapNew || replacement
+            ? mapping.MapNewMemberMappings.AddRange(
+                mapping.MapNewPostMemberMappings)
+            : mapping.MapExistingMemberMappings;
+
+        foreach (var member in members)
         {
             AddMemberLocalNames(member, names);
         }

@@ -33,6 +33,8 @@ namespace TestCase
         public int Seed { get; }
 
         public int Value { get; set; }
+
+        public int Other { get; set; }
     }
 
     [MorphantMapper]
@@ -43,7 +45,8 @@ namespace TestCase
                 .Construct(source => new(seed: Share(source.Value)))
                 .Members((source, _) => new()
                 {
-                    Value = Share(source.Value)
+                    Value = Share(source.Value),
+                    Other = Share(source.Value)
                 });
 
         private static int Share(int value) => value;
@@ -181,6 +184,15 @@ namespace TestCase.Morphant.Generated
             set { }
         }
 
+        /// <summary>
+        /// Configures mapping for <see cref="global::TestCase.Destination.Other"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int> Other
+        {
+            get => null!;
+            set { }
+        }
+
         public bool Equals(DestinationMembers? other) => false;
 
         public override int GetHashCode() => 0;
@@ -274,13 +286,14 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sharedValue = source.Value;
-            int sharedSeed = global::TestCase.TestMapper.Share(sharedValue);
+            int sourceValue = source.Value;
+            int value = global::TestCase.TestMapper.Share(sourceValue);
 
             return new global::TestCase.Destination(
-                seed: sharedSeed)
+                seed: value)
             {
-                Value = sharedSeed
+                Value = value,
+                Other = value
             };
         }
 
@@ -289,7 +302,11 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.Value = global::TestCase.TestMapper.Share(source.Value);
+            int sourceValue = source.Value;
+            int value = global::TestCase.TestMapper.Share(sourceValue);
+
+            destination.Value = value;
+            destination.Other = value;
 
             return destination;
         }

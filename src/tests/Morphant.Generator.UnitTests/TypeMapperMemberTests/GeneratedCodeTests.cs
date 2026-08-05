@@ -339,13 +339,13 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sharedId = source.Id;
+            int sourceId = source.Id;
 
             return new global::TestCase.Destination(
-                id: sharedId)
+                id: sourceId)
             {
                 Field = source.Field + 1,
-                Id = sharedId + 10,
+                Id = sourceId + 10,
                 Name = source.Name,
                 Automatic = source.Automatic,
                 Initial = source.Initial,

@@ -285,23 +285,23 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sharedSeed = source.Value;
+            int sourceValue = source.Value;
 
             var result = new global::TestCase.Destination(
-                seed: sharedSeed);
+                seed: sourceValue);
 
             const int delta = 1;
-            int sharedValue = result.Seed;
+            int resultSeed = result.Seed;
 
-            if (sharedValue > 0 && source.High)
+            if (resultSeed > 0 && source.High)
             {
-                result.Value = sharedValue + delta;
+                result.Value = resultSeed + delta;
 
                 return result;
             }
             else
             {
-                result.Value = sharedSeed - delta;
+                result.Value = sourceValue - delta;
 
                 return result;
             }
@@ -313,11 +313,11 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             const int delta = 1;
-            int sharedValue1 = destination.Seed;
+            int destinationSeed = destination.Seed;
 
-            if (sharedValue1 > 0 && source.High)
+            if (destinationSeed > 0 && source.High)
             {
-                destination.Value = sharedValue1 + delta;
+                destination.Value = destinationSeed + delta;
 
                 return destination;
             }

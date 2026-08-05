@@ -126,12 +126,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 2, этап 12 — declarative control flow и member-plan composition.**
+**Фаза 2, этап 13 — общий dependency graph и observable evaluation laws.**
 
 Статус: ожидает ревью.
 
-Этап 11 принят. Этап 13 и все последующие этапы заблокированы до принятия
-этапа 12.
+Этап 12 принят. Этап 14 и все последующие этапы заблокированы до принятия
+этапа 13.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -964,6 +964,13 @@ nested dependencies explicit constructor arguments по-прежнему выч�
 фактического result; replacement/reuse и aliasing не создают отдельной
 evaluation semantics.
 
+Имя synthetic local описывает сохранённое значение, а не внутреннюю причину
+его materialization. Простые member paths получают имя из полного пути
+(`source.Customer.Id` → `sourceCustomerId`), произвольные вычисления используют
+нейтральный fallback `value`. Collision suffixes распределяются отдельно в
+области каждого generated method, поэтому имена из `CreateImpl` не влияют на
+имена в `UpdateImpl`.
+
 Direct `Construct`, factory body и `Convert` не поставляют узлы в общий graph.
 Обычные guarantees о порядке независимых member expressions, generated
 assignments и setter side effects не расширены.
@@ -976,7 +983,7 @@ rules, разные symbols/receivers/overloads, explicit constructor order,
 direct/factory opacity, observable target conversions, pattern-variable name
 collisions, nullable/parenthesis wrappers и aliasing (`13/13`).
 Exact-source regression-срезы этапов 12, 11 и 8 обновлены только на новые
-shared/order-preserving locals; их runtime semantics и остальные generated
+dependency/order-preserving locals; их runtime semantics и остальные generated
 files не изменились.
 
 ## Фаза 3. Runtime dispatch, manual mapping и nested mappings

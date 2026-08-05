@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperDependencyGraphTests;
 internal sealed class NameCollisionTests
 {
     [Test]
-    public void Avoids_pattern_variable_names_for_shared_locals()
+    public void Avoids_pattern_variable_names_for_dependency_locals()
     {
         // lang=c#
         const string source =
@@ -44,11 +44,11 @@ namespace TestCase
                 {
                     switch (source.Value)
                     {
-                        case int sharedValue:
+                        case int value:
                             return new()
                             {
-                                Value = Touch(sharedValue),
-                                Other = Touch(sharedValue)
+                                Value = Touch(value),
+                                Other = Touch(value)
                             };
 
                         default:
