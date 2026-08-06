@@ -130,7 +130,7 @@ Collections, projection и остальные post-v0 возможности в 
 
 **Фаза 4, этап 17 — полный `ConstructorSelection`.**
 
-Статус: не начат.
+Статус: реализован, ожидает ревью.
 
 Этап 16 принят. Этап 18 и все последующие этапы заблокированы до принятия
 этапа 17.
@@ -1194,7 +1194,7 @@ generated read-only marker shape.
 
 ### Этап 17. Полный `ConstructorSelection`
 
-Статус: не начат.
+Статус: реализован, ожидает ревью.
 
 Цель — реализовать все согласованные стратегии выбора convention constructor,
 не затрагивая explicit structured `Construct`.
@@ -1224,6 +1224,17 @@ Production scope:
 
 Результат этапа: convention construction целиком управляется публичной
 настройкой с `Unambiguous` default.
+
+Реализовано: все семь значений разрешаются на mapping-, mapper-, assembly- и
+library-level. Shape-стратегии выбирают constructor до проверки применимости и
+не делают fallback; `Greediest` сравнивает число реально emitted arguments
+warning-free применимых plans, а `Largest` — declared parameter count.
+Optional/`params`, ties, required initialization, `SetsRequiredMembers`,
+`ByConvention` rules и explicit `Construct` следуют описанному контракту.
+Inherited setting остаётся no-op для direct/`Convert`, explicit map-level use
+сохраняет invalid state до диагностик. Самостоятельная категория
+`TypeMapperConstructorSelectionTests` фиксирует runtime, exact-source,
+configuration и capability matrix.
 
 ### Этап 18. Automatic boxing policy
 

@@ -46,7 +46,23 @@ public abstract class MapperBuilderBase<T>
         NullDestinationHandling nullDestinationHandling) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T ConstructorSelection(ConstructorSelection constructorSelection) =>
+    /// <summary>
+    /// Configures how this builder selects a constructor for
+    /// convention-based destination creation.
+    /// </summary>
+    /// <param name="constructorSelection">
+    /// The selection policy to apply.
+    /// <see cref="Morphant.ConstructorSelection.Default"/> inherits the
+    /// mapper-level setting for a mapping builder, or the assembly-level
+    /// <c>MorphantConstructorSelection</c> MSBuild property for the mapper
+    /// builder. If all levels inherit, Morphant uses
+    /// <see cref="Morphant.ConstructorSelection.Unambiguous"/>.
+    /// The argument expression must be a compile-time constant whose value is
+    /// defined by <see cref="Morphant.ConstructorSelection"/>.
+    /// </param>
+    /// <returns>This builder.</returns>
+    public T ConstructorSelection(
+        ConstructorSelection constructorSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>

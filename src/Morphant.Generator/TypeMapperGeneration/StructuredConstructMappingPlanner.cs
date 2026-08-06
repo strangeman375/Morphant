@@ -17,9 +17,6 @@ internal static class StructuredConstructMappingPlanner
     private const string UnavailablePreviousMessage =
         "The configured Construct selected an unavailable previous destination.";
 
-    private const string ConstructorSelectionUnsupportedMessage =
-        "The effective ConstructorSelection is not supported yet.";
-
     private const string ByConventionMarkerMetadataName =
         "Morphant.Markers.ByConventionMarker";
 
@@ -293,10 +290,8 @@ internal static class StructuredConstructMappingPlanner
                                 StructuredConstructLeafKind.Unsupported,
                                 Constructor: null,
                                 Factory: null,
-                                UnsupportedMessage: constructorSelection ==
-                                    ConstructorSelectionValue.Unambiguous
-                                    ? UnsupportedConstructMessage
-                                    : ConstructorSelectionUnsupportedMessage)
+                                UnsupportedMessage:
+                                    UnsupportedConstructMessage)
                             : new StructuredConstructLeafNode(
                                 StructuredConstructLeafKind.Constructor,
                                 convention,
@@ -871,10 +866,7 @@ internal static class StructuredConstructMappingPlanner
                     StructuredConstructLeafKind.Unsupported,
                     Constructor: null,
                     Factory: null,
-                    UnsupportedMessage: constructorSelection ==
-                        ConstructorSelectionValue.Unambiguous
-                        ? UnsupportedConstructMessage
-                        : ConstructorSelectionUnsupportedMessage)
+                    UnsupportedMessage: UnsupportedConstructMessage)
                 : new StructuredConstructLeafNode(
                     StructuredConstructLeafKind.Constructor,
                     convention,
@@ -940,22 +932,13 @@ internal static class StructuredConstructMappingPlanner
                 rewriteDependencyExpression,
             CancellationToken cancellationToken)
     {
-        if (constructorSelection !=
-            ConstructorSelectionValue.Unambiguous)
-        {
-            return null;
-        }
-
         var constructors =
             DestinationCapabilityPolicy.GetSupportedConstructors(
                 destination,
                 compilation,
                 cancellationToken);
-        var constructor =
-            ConventionConstructorMappingPlanner.TrySelectConstructor(
-                constructors);
 
-        if (constructor is null ||
+        if (constructorSelection is null ||
             !TryGetByConventionRules(
                 arguments,
                 destination,
@@ -974,6 +957,7 @@ internal static class StructuredConstructMappingPlanner
                 destination,
                 memberMappings,
                 capabilities,
+                constructorSelection,
                 compilation,
                 mapperType,
                 nonNullSourceName,
@@ -986,6 +970,71 @@ internal static class StructuredConstructMappingPlanner
                 compilation,
                 mapperType,
                 cancellationToken);
+
+        if (constructorSelection ==
+            ConstructorSelectionValue.Greediest)
+        {
+            return ConventionConstructorMappingPlanner
+                .TrySelectGreediestPlan(
+                    constructors,
+                    candidate => BuildByConventionPlanForConstructor(
+                        candidate,
+                        sourceType,
+                        rules,
+                        sourceMembers,
+                        destination,
+                        memberMappings,
+                        compilation,
+                        mapperType,
+                        semanticModel,
+                        nonNullSourceName,
+                        rewriteExpression,
+                        rewriteDependencyExpression,
+                        cancellationToken),
+                    cancellationToken);
+        }
+
+        if (ConventionConstructorMappingPlanner.TrySelectConstructor(
+                constructors,
+                constructorSelection.Value) is not { } constructor)
+        {
+            return null;
+        }
+
+        return BuildByConventionPlanForConstructor(
+            constructor,
+            sourceType,
+            rules,
+            sourceMembers,
+            destination,
+            memberMappings,
+            compilation,
+            mapperType,
+            semanticModel,
+            nonNullSourceName,
+            rewriteExpression,
+            rewriteDependencyExpression,
+            cancellationToken);
+    }
+
+    private static ConventionConstructorMappingPlan?
+        BuildByConventionPlanForConstructor(
+            IMethodSymbol constructor,
+            ITypeSymbol sourceType,
+            ImmutableArray<StructuredConstructorParameterRule> rules,
+            ImmutableArray<ConventionReadableMember> sourceMembers,
+            INamedTypeSymbol destination,
+            ConstructorMemberMappingPlan memberMappings,
+            CSharpCompilation compilation,
+            INamedTypeSymbol mapperType,
+            SemanticModel semanticModel,
+            string nonNullSourceName,
+            Func<ExpressionSyntax, string?> rewriteExpression,
+            Func<ExpressionSyntax, IParameterSymbol,
+                TypeMapperRewrittenDependencyExpression?>
+                rewriteDependencyExpression,
+            CancellationToken cancellationToken)
+    {
         var configuredParameterNames =
             new HashSet<string>(StringComparer.Ordinal);
         var mappedArguments =
@@ -1097,11 +1146,26 @@ internal static class StructuredConstructMappingPlanner
             }
         }
 
+        var argumentArray = mappedArguments.ToImmutable();
+
+        if (!ConventionConstructorMappingPlanner
+                .HasCompatibleAutomaticArguments(
+                    sourceType,
+                    destination,
+                    constructor,
+                    argumentArray,
+                    compilation,
+                    mapperType,
+                    cancellationToken))
+        {
+            return null;
+        }
+
         return ConventionConstructorMappingPlanner.BuildExplicitPlan(
             destination,
             memberMappings,
             constructor,
-            mappedArguments.ToImmutable(),
+            argumentArray,
             mapperType,
             nonNullSourceName);
     }

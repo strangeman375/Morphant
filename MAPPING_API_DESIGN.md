@@ -618,6 +618,30 @@ parameterless-constructor. Если parameterized-конструкторов н�
 Morphant не делает fallback к parameterless либо другому constructor-у из-за
 отсутствующего или несовместимого обязательного argument-а.
 
+Остальные стратегии следуют той же stable supported-constructor surface:
+
+- `Explicit` запрещает автоматический выбор, включая `ByConvention()`;
+- `Parameterless` выбирает только поддерживаемый parameterless-constructor;
+- `Single` требует ровно один поддерживаемый constructor независимо от его
+  параметров;
+- `Greediest` строит все применимые warning-free convention plans и выбирает
+  уникальный plan с наибольшим числом фактически переданных arguments;
+- `Largest` сначала выбирает уникальный supported constructor с наибольшим
+  числом объявленных parameters и только затем проверяет его применимость.
+
+Опущенные optional/`params` parameters не увеличивают score `Greediest`, а
+переданный `params` array считается одним argument. Равенство лучших scores у
+`Greediest` либо максимального declared size у `Largest` не разрешается
+порядком объявления и требует explicit `Construct`. `Largest`, `Single`,
+`Unambiguous` и `Parameterless` не откатываются к другому constructor-у, если
+уже выбранный кандидат неприменим. Required initializer plan и
+`SetsRequiredMembers` участвуют в применимости constructor-а.
+
+В `ByConvention()` written parameter rules участвуют в применимости и score:
+явное expression и успешный `Auto()` считаются переданными arguments,
+`Ignore()` — нет. Explicit constructor и `ByFactory()` внутри `Construct` не
+зависят от `ConstructorSelection`.
+
 Direct destination не имеет поддерживаемого constructor surface, поэтому
 reachable no-previous ветка требует configured direct `Construct`. То же
 правило действует для opaque destination: даже если C# технически позволяет

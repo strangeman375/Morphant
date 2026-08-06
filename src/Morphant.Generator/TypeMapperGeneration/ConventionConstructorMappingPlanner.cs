@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -17,6 +18,7 @@ internal static class ConventionConstructorMappingPlanner
         ITypeSymbol? destination,
         ConstructorMemberMappingPlan memberMappings,
         MappingPairCapabilities capabilities,
+        ConstructorSelectionValue? constructorSelection,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         string nonNullSourceName,
@@ -29,15 +31,62 @@ internal static class ConventionConstructorMappingPlanner
 
         if (destination is not INamedTypeSymbol namedDestination ||
             namedDestination.IsAbstract ||
-            TrySelectConstructor(
-                DestinationCapabilityPolicy.GetSupportedConstructors(
-                    namedDestination,
-                    compilation,
-                    cancellationToken)) is not { } constructor)
+            constructorSelection is null)
         {
             return null;
         }
 
+        var constructors =
+            DestinationCapabilityPolicy.GetSupportedConstructors(
+                namedDestination,
+                compilation,
+                cancellationToken);
+
+        if (constructorSelection == ConstructorSelectionValue.Greediest)
+        {
+            return TrySelectGreediestPlan(
+                constructors,
+                constructor => BuildPlanForConstructor(
+                    sourceType,
+                    namedDestination,
+                    memberMappings,
+                    constructor,
+                    compilation,
+                    mapperType,
+                    nonNullSourceName,
+                    cancellationToken),
+                cancellationToken);
+        }
+
+        if (TrySelectConstructor(
+                constructors,
+                constructorSelection.Value) is not { } constructor)
+        {
+            return null;
+        }
+
+        return BuildPlanForConstructor(
+            sourceType,
+            namedDestination,
+            memberMappings,
+            constructor,
+            compilation,
+            mapperType,
+            nonNullSourceName,
+            cancellationToken);
+    }
+
+    private static ConventionConstructorMappingPlan?
+        BuildPlanForConstructor(
+            ITypeSymbol sourceType,
+            INamedTypeSymbol namedDestination,
+            ConstructorMemberMappingPlan memberMappings,
+            IMethodSymbol constructor,
+            CSharpCompilation compilation,
+            INamedTypeSymbol mapperType,
+            string nonNullSourceName,
+            CancellationToken cancellationToken)
+    {
         var setsRequiredMembers =
             HasSetsRequiredMembersAttribute(constructor);
 
@@ -167,6 +216,69 @@ internal static class ConventionConstructorMappingPlanner
     }
 
     internal static IMethodSymbol? TrySelectConstructor(
+        ImmutableArray<IMethodSymbol> constructors,
+        ConstructorSelectionValue constructorSelection)
+    {
+        return constructorSelection switch
+        {
+            ConstructorSelectionValue.Default or
+            ConstructorSelectionValue.Unambiguous =>
+                TrySelectUnambiguousConstructor(constructors),
+            ConstructorSelectionValue.Explicit => null,
+            ConstructorSelectionValue.Parameterless =>
+                constructors.FirstOrDefault(
+                    static constructor =>
+                        constructor.Parameters.IsEmpty),
+            ConstructorSelectionValue.Single =>
+                constructors.Length == 1
+                    ? constructors[0]
+                    : null,
+            ConstructorSelectionValue.Largest =>
+                TrySelectLargestConstructor(constructors),
+            ConstructorSelectionValue.Greediest => null,
+            _ => null
+        };
+    }
+
+    internal static ConventionConstructorMappingPlan?
+        TrySelectGreediestPlan(
+            ImmutableArray<IMethodSymbol> constructors,
+            Func<IMethodSymbol, ConventionConstructorMappingPlan?> buildPlan,
+            CancellationToken cancellationToken)
+    {
+        ConventionConstructorMappingPlan? selectedPlan = null;
+        var selectedArgumentCount = -1;
+        var hasTie = false;
+
+        foreach (var constructor in constructors)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (buildPlan(constructor) is not { } plan)
+            {
+                continue;
+            }
+
+            var argumentCount = plan.Constructor.Arguments.Length;
+
+            if (argumentCount > selectedArgumentCount)
+            {
+                selectedPlan = plan;
+                selectedArgumentCount = argumentCount;
+                hasTie = false;
+            }
+            else if (argumentCount == selectedArgumentCount)
+            {
+                hasTie = true;
+            }
+        }
+
+        return hasTie
+            ? null
+            : selectedPlan;
+    }
+
+    private static IMethodSymbol? TrySelectUnambiguousConstructor(
         ImmutableArray<IMethodSymbol> constructors)
     {
         IMethodSymbol? parameterlessConstructor = null;
@@ -192,10 +304,168 @@ internal static class ConventionConstructorMappingPlanner
                parameterlessConstructor;
     }
 
+    private static IMethodSymbol? TrySelectLargestConstructor(
+        ImmutableArray<IMethodSymbol> constructors)
+    {
+        IMethodSymbol? selectedConstructor = null;
+        var selectedParameterCount = -1;
+        var hasTie = false;
+
+        foreach (var constructor in constructors)
+        {
+            var parameterCount = constructor.Parameters.Length;
+
+            if (parameterCount > selectedParameterCount)
+            {
+                selectedConstructor = constructor;
+                selectedParameterCount = parameterCount;
+                hasTie = false;
+            }
+            else if (parameterCount == selectedParameterCount)
+            {
+                hasTie = true;
+            }
+        }
+
+        return hasTie
+            ? null
+            : selectedConstructor;
+    }
+
     internal static bool CanOmit(IParameterSymbol parameter)
     {
         return parameter.IsOptional ||
                parameter.IsParams;
+    }
+
+    internal static bool HasCompatibleAutomaticArguments(
+        ITypeSymbol sourceType,
+        INamedTypeSymbol destination,
+        IMethodSymbol constructor,
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        var probeTree = BuildAutomaticArgumentProbeTree(
+            sourceType,
+            destination,
+            arguments,
+            mapperType);
+        var probeCompilation = compilation
+            .WithOptions(
+                compilation.Options
+                    .WithReportSuppressedDiagnostics(true))
+            .AddSyntaxTrees(probeTree);
+        var semanticModel =
+            probeCompilation.GetSemanticModel(probeTree);
+        var objectCreation = probeTree
+            .GetRoot(cancellationToken)
+            .DescendantNodes()
+            .OfType<ObjectCreationExpressionSyntax>()
+            .Single();
+        var boundConstructor = semanticModel.GetSymbolInfo(
+                objectCreation,
+                cancellationToken)
+            .Symbol as IMethodSymbol;
+
+        if (boundConstructor is null ||
+            !AreSameConstructor(boundConstructor, constructor))
+        {
+            return false;
+        }
+
+        var diagnostics = semanticModel.GetDiagnostics(
+            cancellationToken: cancellationToken);
+        var syntaxArguments = objectCreation.ArgumentList!.Arguments;
+
+        for (var index = 0; index < arguments.Length; index++)
+        {
+            if (arguments[index].ExplicitValueExpression is not null)
+            {
+                continue;
+            }
+
+            var expression = syntaxArguments[index].Expression;
+            var conversion = semanticModel.GetConversion(
+                expression,
+                cancellationToken);
+
+            if (!conversion.IsImplicit ||
+                conversion.IsDynamic ||
+                MappingExpressionCompatibility.HasNullableWarning(
+                    diagnostics,
+                    expression.Span))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static SyntaxTree BuildAutomaticArgumentProbeTree(
+        ITypeSymbol sourceType,
+        INamedTypeSymbol destination,
+        ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
+        INamedTypeSymbol mapperType)
+    {
+        var sourceTypeName =
+            TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                sourceType);
+        var destinationTypeName =
+            TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                destination);
+
+        return MapperProbeSyntax.Build(
+            mapperType,
+            "Morphant.ByConventionTypeCompatibilityProbe.g.cs",
+            writer =>
+            {
+                writer.Line(
+                    $"private static {destinationTypeName} " +
+                    "__MorphantByConventionTypeCompatibilityProbe(" +
+                    $"{sourceTypeName} source)");
+                writer.Line("{");
+                writer.Indent();
+
+                if (arguments.IsEmpty)
+                {
+                    writer.Line(
+                        $"return new {destinationTypeName}();");
+                }
+                else
+                {
+                    writer.Line(
+                        $"return new {destinationTypeName}(");
+                    writer.Indent();
+
+                    for (var index = 0;
+                         index < arguments.Length;
+                         index++)
+                    {
+                        var argument = arguments[index];
+                        var valueExpression =
+                            argument.ExplicitValueExpression is null
+                                ? "source!." +
+                                  Identifier(argument.SourceMemberName)
+                                : "(" + argument.TargetTypeName +
+                                  ")default!";
+                        var suffix = index < arguments.Length - 1
+                            ? ","
+                            : ");";
+
+                        writer.Line(
+                            $"{Identifier(argument.ParameterName)}: " +
+                            valueExpression + suffix);
+                    }
+
+                    writer.Unindent();
+                }
+
+                writer.Unindent();
+                writer.Line("}");
+            });
     }
 
     internal static ConventionReadableMember?

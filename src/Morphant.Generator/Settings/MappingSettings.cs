@@ -63,6 +63,7 @@ internal readonly record struct MappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,
     NullDestinationHandlingValue? NullDestinationHandling,
+    ConstructorSelectionValue? ConstructorSelection,
     MemberSelectionValue? MemberSelection)
 {
     public static MappingSettings Default =>
@@ -70,6 +71,7 @@ internal readonly record struct MappingSettings(
             MappingModeValue.Default,
             NullSourceHandlingValue.Default,
             NullDestinationHandlingValue.Default,
+            ConstructorSelectionValue.Default,
             MemberSelectionValue.Default);
 }
 
@@ -77,6 +79,7 @@ internal readonly record struct EffectiveMappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,
     NullDestinationHandlingValue? NullDestinationHandling,
+    ConstructorSelectionValue? ConstructorSelection,
     MemberSelectionValue? MemberSelection)
 {
     public bool IsMappingModeValid =>
@@ -87,6 +90,9 @@ internal readonly record struct EffectiveMappingSettings(
 
     public bool IsNullDestinationHandlingValid =>
         NullDestinationHandling.HasValue;
+
+    public bool IsConstructorSelectionValid =>
+        ConstructorSelection.HasValue;
 
     public bool IsMemberSelectionValid =>
         MemberSelection.HasValue;
@@ -127,6 +133,11 @@ internal readonly record struct EffectiveMappingSettings(
                 rootSettings.NullDestinationHandling,
                 mappingSettings.NullDestinationHandling,
                 NullDestinationHandlingValue.Create),
+            SettingValueResolver.Resolve(
+                assemblySettings.ConstructorSelection,
+                rootSettings.ConstructorSelection,
+                mappingSettings.ConstructorSelection,
+                ConstructorSelectionValue.Unambiguous),
             SettingValueResolver.Resolve(
                 assemblySettings.MemberSelection,
                 rootSettings.MemberSelection,

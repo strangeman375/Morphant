@@ -19,8 +19,12 @@ internal static class TypeMapperPipeline
     private const string ConventionConstructionUnavailableMessage =
         "Convention construction is not available for this destination.";
 
-    private const string ConstructorSelectionUnsupportedMessage =
-        "The effective ConstructorSelection is not supported yet.";
+    private const string InvalidConstructorSelectionMessage =
+        "The effective ConstructorSelection is invalid.";
+
+    private const string DirectConstructorSelectionConflictMessage =
+        "The configured map-level ConstructorSelection is not applicable " +
+        "to direct construction.";
 
     private const string InvalidMemberSelectionMessage =
         "The effective MemberSelection is invalid.";
@@ -167,7 +171,6 @@ internal static class TypeMapperPipeline
                 ToMappingSettings(pairConfiguration.Settings));
             var mapping = BuildMapping(
                 pairConfiguration,
-                configuration.RootSettings,
                 effectiveSettings,
                 compilation,
                 mapperType,
@@ -198,7 +201,6 @@ internal static class TypeMapperPipeline
 
     private static TypeMapperMappingModel BuildMapping(
         PairConfigurationModel configuration,
-        PairConfigurationSettings rootSettings,
         EffectiveMappingSettings effectiveSettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -276,6 +278,17 @@ internal static class TypeMapperPipeline
             };
         }
 
+        if (pair.Capabilities.DirectConstruction &&
+            configuration.Settings.ConstructorSelection.Origin ==
+                PairConfigurationSettingOrigin.Explicit)
+        {
+            return mapping with
+            {
+                UnsupportedExceptionMessage =
+                    DirectConstructorSelectionConflictMessage
+            };
+        }
+
         var conventionMemberMappings =
             ConventionMemberMappingPlanner.Build(
             declarativeSourceType,
@@ -305,10 +318,8 @@ internal static class TypeMapperPipeline
             };
         }
 
-        var constructorSelection = ResolveSetting(
-            configuration.Settings.ConstructorSelection,
-            rootSettings.ConstructorSelection,
-            ConstructorSelectionValue.Unambiguous);
+        var constructorSelection =
+            effectiveSettings.ConstructorSelection;
 
         TypeMapperMappingModel BuildFlatMapping(
             ConventionMemberMappingPlan memberMappings,
@@ -375,31 +386,24 @@ internal static class TypeMapperPipeline
             ConventionConstructorMappingPlan? constructorMapping = null;
             string? createUnsupportedMessage = null;
 
-            if (constructorSelection !=
-                ConstructorSelectionValue.Unambiguous)
-            {
-                createUnsupportedMessage =
-                    ConstructorSelectionUnsupportedMessage;
-            }
-            else
-            {
-                constructorMapping =
-                    ConventionConstructorMappingPlanner.Build(
-                        declarativeSourceType,
-                        destinationPlan.MemberType,
-                        memberMappings.BuildConstructorPlan(
-                            replacement: false),
-                        pair.Capabilities,
-                        compilation,
-                        mapperType,
-                        nonNullSourceName,
-                        cancellationToken);
+            constructorMapping =
+                ConventionConstructorMappingPlanner.Build(
+                    declarativeSourceType,
+                    destinationPlan.MemberType,
+                    memberMappings.BuildConstructorPlan(
+                        replacement: false),
+                    pair.Capabilities,
+                    constructorSelection,
+                    compilation,
+                    mapperType,
+                    nonNullSourceName,
+                    cancellationToken);
 
-                if (constructorMapping is null)
-                {
-                    createUnsupportedMessage =
-                        ConventionConstructionUnavailableMessage;
-                }
+            if (constructorMapping is null)
+            {
+                createUnsupportedMessage = constructorSelection is null
+                    ? InvalidConstructorSelectionMessage
+                    : ConventionConstructionUnavailableMessage;
             }
 
             return mapping with
@@ -548,6 +552,9 @@ internal static class TypeMapperPipeline
                 settings.NullDestinationHandling,
                 NullDestinationHandlingValue.Default),
             GetSettingOrDefault(
+                settings.ConstructorSelection,
+                ConstructorSelectionValue.Default),
+            GetSettingOrDefault(
                 settings.MemberSelection,
                 MemberSelectionValue.Default));
     }
@@ -560,37 +567,6 @@ internal static class TypeMapperPipeline
         return setting.Origin == PairConfigurationSettingOrigin.Unset
             ? defaultValue
             : setting.Value;
-    }
-
-    private static TValue? ResolveSetting<TValue>(
-        PairConfigurationSetting<TValue> pairSetting,
-        PairConfigurationSetting<TValue> rootSetting,
-        TValue defaultValue)
-        where TValue : struct, Enum
-    {
-        foreach (var setting in new[]
-                 {
-                     pairSetting,
-                     rootSetting
-                 })
-        {
-            if (setting.Origin == PairConfigurationSettingOrigin.Unset)
-            {
-                continue;
-            }
-
-            if (setting.Value is not { } value)
-            {
-                return null;
-            }
-
-            if (!EqualityComparer<TValue>.Default.Equals(value, default))
-            {
-                return value;
-            }
-        }
-
-        return defaultValue;
     }
 
     private static bool RequiresCreateMethod(

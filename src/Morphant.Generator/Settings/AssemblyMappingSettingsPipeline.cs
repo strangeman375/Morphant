@@ -14,6 +14,9 @@ internal static class AssemblyMappingSettingsPipeline
     private const string NullDestinationHandlingPropertyName =
         "build_property.MorphantNullDestinationHandling";
 
+    private const string ConstructorSelectionPropertyName =
+        "build_property.MorphantConstructorSelection";
+
     private const string MemberSelectionPropertyName =
         "build_property.MorphantMemberSelection";
 
@@ -38,6 +41,10 @@ internal static class AssemblyMappingSettingsPipeline
                         GetValue(
                             globalOptions,
                             NullDestinationHandlingPropertyName)),
+                    ParseNamedValue<ConstructorSelectionValue>(
+                        GetValue(
+                            globalOptions,
+                            ConstructorSelectionPropertyName)),
                     ParseNamedValue<MemberSelectionValue>(
                         GetValue(
                             globalOptions,
