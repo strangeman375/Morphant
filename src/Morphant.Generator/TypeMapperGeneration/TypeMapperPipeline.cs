@@ -176,12 +176,12 @@ internal static class TypeMapperPipeline
             var createMethodName = RequiresCreateMethod(
                     mapping,
                     effectiveSettings)
-                ? AllocateName("CreateImpl", usedGeneratedMethodNames)
+                ? AllocateName("__Create", usedGeneratedMethodNames)
                 : null;
             var updateMethodName = RequiresUpdateMethod(
                     mapping,
                     effectiveSettings)
-                ? AllocateName("UpdateImpl", usedGeneratedMethodNames)
+                ? AllocateName("__Update", usedGeneratedMethodNames)
                 : null;
 
             mappings.Add(

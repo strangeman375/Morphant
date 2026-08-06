@@ -95,7 +95,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -111,13 +111,13 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source, context);
+                return __Create(source, context);
             }
 
-            return UpdateImpl(source, destination, context);
+            return __Update(source, destination, context);
         }
 
-        private global::TestCase.Destination CreateImpl(
+        private global::TestCase.Destination __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
@@ -128,7 +128,7 @@ namespace TestCase
             };
         }
 
-        private global::TestCase.Destination UpdateImpl(
+        private global::TestCase.Destination __Update(
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
@@ -177,9 +177,9 @@ namespace TestCase
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
-        private static void CreateImpl() { }
+        private static void __Create() { }
 
-        private static void UpdateImpl() { }
+        private static void __Update() { }
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -202,7 +202,7 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => CreateImpl1(source, context);
+            => __Create1(source, context);
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -212,13 +212,13 @@ namespace TestCase
         {
             if (destination is null)
             {
-                return CreateImpl1(source, context);
+                return __Create1(source, context);
             }
 
-            return UpdateImpl1(source, destination, context);
+            return __Update1(source, destination, context);
         }
 
-        private global::TestCase.Destination CreateImpl1(
+        private global::TestCase.Destination __Create1(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
@@ -228,7 +228,7 @@ namespace TestCase
             };
         }
 
-        private global::TestCase.Destination UpdateImpl1(
+        private global::TestCase.Destination __Update1(
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)

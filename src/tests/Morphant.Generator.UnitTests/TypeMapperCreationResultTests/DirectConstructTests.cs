@@ -155,7 +155,7 @@ namespace TestCase
             return Guid.Parse(source);
         }
 
-        private static IDestination ConstructDestination() =>
+        private static IDestination __ConstructDestination() =>
             new Destination(-1);
     }
 

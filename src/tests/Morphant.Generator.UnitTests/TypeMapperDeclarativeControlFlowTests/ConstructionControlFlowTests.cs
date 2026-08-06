@@ -198,7 +198,7 @@ namespace TestCase
                 System.Reflection.BindingFlags.NonPublic))
             {
                 if (method.Name.StartsWith(
-                    "ConstructDestination",
+                    "__ConstructDestination",
                     StringComparison.Ordinal))
                 {
                     directHelperCount++;

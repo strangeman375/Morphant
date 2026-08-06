@@ -501,7 +501,7 @@ Production scope:
 Реализовано: effective settings разрешаются по полной precedence chain,
 `MappingMode` остаётся единым operation gate, null-source обрабатывается до
 destination, а `NullDestinationHandling.Create` использует отдельный
-`CreateImpl` helper внутри `Update` без зависимости от public `Create`. Helper
+`__Create` helper внутри `Update` без зависимости от public `Create`. Helper
 генерируется и для `MappingMode.Update`, когда public `Create` отключён.
 Declarative source нормализуется единым policy для generated surface и
 executable mapper-а;
@@ -509,9 +509,9 @@ executable mapper-а;
 non-nullable values проверки не генерируются. Invalid effective settings
 сохраняются как детерминированные unsupported operations до diagnostics.
 Public `Map` methods выполняют только settings/null prelude и dispatch:
-достижимая no-previous ветка исполняется в collision-safe `CreateImpl`, а
-existing-destination ветка — в collision-safe `UpdateImpl`. Helpers получают
-нормализованный source и исходный `MappingContext`; `UpdateImpl` также получает
+достижимая no-previous ветка исполняется в collision-safe `__Create`, а
+existing-destination ветка — в collision-safe `__Update`. Helpers получают
+нормализованный source и исходный `MappingContext`; `__Update` также получает
 non-null параметр `destination`, поскольку это фактический destination для
 обновления, а не отдельный снимок предыдущего состояния.
 Самостоятельные `TypeMapperMappingModeTests` и `TypeMapperNullHandlingTests`
@@ -571,7 +571,7 @@ casts, positional/named/mixed argument order, optional и целиком пер�
 строит отдельный constructor/previous/unsupported leaf, поэтому невыбранные
 arguments не вычисляются, а выбранные выполняются ровно один раз слева направо.
 
-Previous-aware tree строится отдельно для `CreateImpl` и `UpdateImpl`:
+Previous-aware tree строится отдельно для `__Create` и `__Update`:
 известные `previous.HasValue` и защищённые `previous.Value` специализируются до
 emission, поэтому обычный Create не содержит синтетический `Option.None` и
 недостижимую previous-ветку, а Update работает напрямую с `destination`.
@@ -656,7 +656,7 @@ members и compile-time constants сохраняются, обычные Configu
 разрешаются collision-safe.
 
 Factory callable переносится в один collision-safe private helper mapper-а и
-переиспользуется всеми reachable `CreateImpl` / `UpdateImpl` branches. Это
+переиспользуется всеми reachable `__Create` / `__Update` branches. Это
 относится как к lambda body, так и к materialized method-group/delegate:
 типизированный delegate local и invocation находятся внутри общего helper-а,
 а operation-specific код передаёт только фактически captured source/previous.
@@ -664,7 +664,7 @@ Direct block и direct method-group/delegate используют тот же ma
 закон; одинаковый callable больше не объявляется заново внутри leaf-ветвей.
 
 Полная production-композиция также закрепляет границу replacement lowering:
-`MapNewFactory` / `MapNewConstructor` разрешены в `UpdateImpl` только внутри
+`MapNewFactory` / `MapNewConstructor` разрешены в `__Update` только внутри
 явно выбранного control-flow replacement leaf. Обычный convention-only
 `Update` не проходит через creation plan и переиспользует переданный
 destination.
@@ -974,8 +974,8 @@ evaluation semantics.
 его materialization. Простые member paths получают имя из полного пути
 (`source.Customer.Id` → `sourceCustomerId`), произвольные вычисления используют
 нейтральный fallback `value`. Collision suffixes распределяются отдельно в
-области каждого generated method, поэтому имена из `CreateImpl` не влияют на
-имена в `UpdateImpl`.
+области каждого generated method, поэтому имена из `__Create` не влияют на
+имена в `__Update`.
 
 Direct `Construct`, factory body и `Convert` не поставляют узлы в общий graph.
 Обычные guarantees о порядке независимых member expressions, generated

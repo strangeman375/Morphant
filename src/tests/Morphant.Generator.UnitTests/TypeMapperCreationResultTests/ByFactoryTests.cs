@@ -109,7 +109,7 @@ namespace TestCase
                 .Construct(_ => new(ByFactory(_factory)));
         }
 
-        private static BlockDestination CreateByFactory() =>
+        private static BlockDestination __CreateByFactory() =>
             new(-1);
     }
 

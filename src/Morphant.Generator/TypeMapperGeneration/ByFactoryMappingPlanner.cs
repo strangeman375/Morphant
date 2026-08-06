@@ -284,7 +284,7 @@ internal sealed class ByFactoryHelperRegistry
         }
 
         var name = UserResultMappingPlanner.AllocateName(
-            "CreateByFactory",
+            "__CreateByFactory",
             _usedGeneratedMethodNames);
 
         if (build(name) is not { } created)

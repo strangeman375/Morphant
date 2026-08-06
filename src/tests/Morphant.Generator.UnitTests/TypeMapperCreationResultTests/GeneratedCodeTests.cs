@@ -54,7 +54,7 @@ namespace TestCase
                     return new Destination { Value = -1 };
                 });
 
-        private static IDestination ConstructDestination() =>
+        private static IDestination __ConstructDestination() =>
             new Destination();
     }
 }
@@ -127,7 +127,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -143,17 +143,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source, context);
+                return __Create(source, context);
             }
 
-            return UpdateImpl(source, destination, context);
+            return __Update(source, destination, context);
         }
 
-        private global::TestCase.IDestination CreateImpl(
+        private global::TestCase.IDestination __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.IDestination result = ConstructDestination1(source, global::Morphant.Option<global::TestCase.IDestination>.None);
+            global::TestCase.IDestination result = __ConstructDestination1(source, global::Morphant.Option<global::TestCase.IDestination>.None);
 
             if (result is null)
             {
@@ -165,12 +165,12 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.IDestination UpdateImpl(
+        private global::TestCase.IDestination __Update(
             global::TestCase.Source source,
             global::TestCase.IDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.IDestination result = ConstructDestination1(source, global::Morphant.Option<global::TestCase.IDestination>.Some(destination));
+            global::TestCase.IDestination result = __ConstructDestination1(source, global::Morphant.Option<global::TestCase.IDestination>.Some(destination));
 
             if (result is null)
             {
@@ -182,7 +182,7 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.IDestination ConstructDestination1(global::TestCase.Source source, global::Morphant.Option<global::TestCase.IDestination> previous)
+        private global::TestCase.IDestination __ConstructDestination1(global::TestCase.Source source, global::Morphant.Option<global::TestCase.IDestination> previous)
         {
             if (previous.HasValue && source.Value == 0)
             {
@@ -273,7 +273,7 @@ namespace TestCase
                     }));
                 });
 
-        private static Destination CreateByFactory() =>
+        private static Destination __CreateByFactory() =>
             new(-1);
     }
 }
@@ -408,7 +408,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -424,17 +424,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source, context);
+                return __Create(source, context);
             }
 
-            return UpdateImpl(source, destination, context);
+            return __Update(source, destination, context);
         }
 
-        private global::TestCase.Destination CreateImpl(
+        private global::TestCase.Destination __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.Destination result = CreateByFactory1(source);
+            global::TestCase.Destination result = __CreateByFactory1(source);
 
             if (result is null)
             {
@@ -446,7 +446,7 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.Destination UpdateImpl(
+        private global::TestCase.Destination __Update(
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
@@ -459,7 +459,7 @@ namespace TestCase
             }
             else
             {
-                global::TestCase.Destination result = CreateByFactory1(source);
+                global::TestCase.Destination result = __CreateByFactory1(source);
 
                 if (result is null)
                 {
@@ -472,7 +472,7 @@ namespace TestCase
             }
         }
 
-        private global::TestCase.Destination CreateByFactory1(global::TestCase.Source source)
+        private global::TestCase.Destination __CreateByFactory1(global::TestCase.Source source)
         {
             if (source.ReturnNull)
             {
@@ -619,7 +619,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -635,17 +635,17 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source, context);
+                return __Create(source, context);
             }
 
-            return UpdateImpl(source, destination, context);
+            return __Update(source, destination, context);
         }
 
-        private global::TestCase.IDestination CreateImpl(
+        private global::TestCase.IDestination __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.IDestination result = ConstructDestination(source, global::Morphant.Option<global::TestCase.IDestination>.None);
+            global::TestCase.IDestination result = __ConstructDestination(source, global::Morphant.Option<global::TestCase.IDestination>.None);
 
             if (result is null)
             {
@@ -657,12 +657,12 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.IDestination UpdateImpl(
+        private global::TestCase.IDestination __Update(
             global::TestCase.Source source,
             global::TestCase.IDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.IDestination result = ConstructDestination(source, global::Morphant.Option<global::TestCase.IDestination>.Some(destination));
+            global::TestCase.IDestination result = __ConstructDestination(source, global::Morphant.Option<global::TestCase.IDestination>.Some(destination));
 
             if (result is null)
             {
@@ -674,7 +674,7 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.IDestination ConstructDestination(global::TestCase.Source source, global::Morphant.Option<global::TestCase.IDestination> previous)
+        private global::TestCase.IDestination __ConstructDestination(global::TestCase.Source source, global::Morphant.Option<global::TestCase.IDestination> previous)
         {
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.IDestination, global::TestCase.IDestination> construct = _construct;
             return construct(source, previous);
@@ -868,7 +868,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -884,32 +884,32 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source, context);
+                return __Create(source, context);
             }
 
-            return UpdateImpl(source, destination, context);
+            return __Update(source, destination, context);
         }
 
-        private global::TestCase.Destination CreateImpl(
+        private global::TestCase.Destination __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.Destination result = CreateByFactory();
+            global::TestCase.Destination result = __CreateByFactory();
 
             return result;
         }
 
-        private global::TestCase.Destination UpdateImpl(
+        private global::TestCase.Destination __Update(
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.Destination result = CreateByFactory();
+            global::TestCase.Destination result = __CreateByFactory();
 
             return result;
         }
 
-        private global::TestCase.Destination CreateByFactory()
+        private global::TestCase.Destination __CreateByFactory()
         {
             global::System.Func<global::TestCase.Destination> factory = _factory;
             return factory();

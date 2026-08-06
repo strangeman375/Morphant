@@ -107,7 +107,7 @@ internal static class ManualConvertMappingPlanner
         }
 
         var helperMethodName = UserResultMappingPlanner.AllocateName(
-            "ConvertDestination",
+            "__ConvertDestination",
             usedGeneratedMethodNames);
         var helper = SyntaxFactory.MethodDeclaration(
                 SyntaxFactory.ParseTypeName(

@@ -687,7 +687,7 @@ result выполняется ровно один раз. После него д
 
 Переносимый block либо materialized method-group/delegate испускается одним
 collision-safe private helper-ом mapper-а. Если один callable достижим и в
-`CreateImpl`, и в `UpdateImpl`, обе operations вызывают этот общий helper;
+`__Create`, и в `__Update`, обе operations вызывают этот общий helper;
 helper body и типизированный delegate local не дублируются в leaf-ветвях.
 Operation-specific source/previous передаются параметрами только при
 фактическом capture, поэтому reuse не меняет reachability и evaluation laws.
@@ -2880,6 +2880,12 @@ diagnostic не должно вводить скрытый fallback на дру�
 83. `IncludeMembers` как first-class convention flattening обязателен после
     v0; explicit member expressions, tuple-source и nested `Map` его не
     заменяют.
+84. Непубличные generated execution helpers, которые становятся членами
+    пользовательского mapper-а, используют зарезервированный префикс `__`:
+    `__Create`, `__Update`, `__ConstructDestination`, `__CreateByFactory` и
+    `__ConvertDestination`. При конфликте добавляется числовой суффикс;
+    explicit implementations `ITypeMapper.Create` / `Update` сохраняют имена
+    публичного контракта.
 
 ## 16. Аудит переноса прежнего `Template()`-дизайна
 

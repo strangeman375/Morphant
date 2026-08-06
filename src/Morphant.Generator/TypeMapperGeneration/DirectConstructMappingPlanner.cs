@@ -45,7 +45,7 @@ internal static class DirectConstructMappingPlanner
             if (lambda.Block is not null)
             {
                 var helperName = AllocateGeneratedMethodName(
-                    "ConstructDestination",
+                    "__ConstructDestination",
                     usedGeneratedMethodNames);
                 allocatedHelperName = helperName;
                 var initialPreviousExpression =
@@ -93,7 +93,7 @@ internal static class DirectConstructMappingPlanner
                         .Parameters[1]
                     : null;
             var helperName = AllocateGeneratedMethodName(
-                "ConstructDestination",
+                "__ConstructDestination",
                 usedGeneratedMethodNames);
             allocatedHelperName = helperName;
             var usedLocalNames =

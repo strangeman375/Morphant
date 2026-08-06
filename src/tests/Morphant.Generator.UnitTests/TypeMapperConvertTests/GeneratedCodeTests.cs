@@ -43,7 +43,7 @@ namespace TestCase
                     return source.Value;
                 });
 
-        private static int? ConvertDestination() => null;
+        private static int? __ConvertDestination() => null;
     }
 }
 """;
@@ -109,7 +109,7 @@ namespace TestCase
         int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
-            => ConvertDestination1(
+            => __ConvertDestination1(
                 source,
                 global::Morphant.Option<int>.None,
                 context);
@@ -119,14 +119,14 @@ namespace TestCase
             global::TestCase.Source? source,
             int? destination,
             global::Morphant.Context.MappingContext context)
-            => ConvertDestination1(
+            => __ConvertDestination1(
                 source,
                 destination is null
                     ? global::Morphant.Option<int>.None
                     : global::Morphant.Option<int>.Some(destination.Value),
                 context);
 
-        private int? ConvertDestination1(global::TestCase.Source? source, global::Morphant.Option<int> previous, global::Morphant.Context.MappingContext context)
+        private int? __ConvertDestination1(global::TestCase.Source? source, global::Morphant.Option<int> previous, global::Morphant.Context.MappingContext context)
         {
             if (source is null)
             {

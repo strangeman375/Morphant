@@ -105,7 +105,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -121,13 +121,13 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl(source, context);
+                return __Create(source, context);
             }
 
-            return UpdateImpl(source, destination, context);
+            return __Update(source, destination, context);
         }
 
-        private global::TestCase.RecordDestination CreateImpl(
+        private global::TestCase.RecordDestination __Create(
             global::TestCase.NumberSource source,
             global::Morphant.Context.MappingContext context)
         {
@@ -137,7 +137,7 @@ namespace TestCase
             };
         }
 
-        private global::TestCase.RecordDestination UpdateImpl(
+        private global::TestCase.RecordDestination __Update(
             global::TestCase.NumberSource source,
             global::TestCase.RecordDestination destination,
             global::Morphant.Context.MappingContext context)
@@ -157,7 +157,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl1(source, context);
+            return __Create1(source, context);
         }
 
         /// <inheritdoc/>
@@ -173,13 +173,13 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl1(source, context);
+                return __Create1(source, context);
             }
 
-            return UpdateImpl1(source, destination, context);
+            return __Update1(source, destination, context);
         }
 
-        private global::TestCase.Box<string> CreateImpl1(
+        private global::TestCase.Box<string> __Create1(
             global::TestCase.TextSource source,
             global::Morphant.Context.MappingContext context)
         {
@@ -189,7 +189,7 @@ namespace TestCase
             };
         }
 
-        private global::TestCase.Box<string> UpdateImpl1(
+        private global::TestCase.Box<string> __Update1(
             global::TestCase.TextSource source,
             global::TestCase.Box<string> destination,
             global::Morphant.Context.MappingContext context)
@@ -315,7 +315,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -329,10 +329,10 @@ namespace TestCase
                 return default!;
             }
 
-            return UpdateImpl(source, destination, context);
+            return __Update(source, destination, context);
         }
 
-        private global::TestCase.Destination CreateImpl(
+        private global::TestCase.Destination __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
@@ -342,7 +342,7 @@ namespace TestCase
             };
         }
 
-        private global::TestCase.Destination UpdateImpl(
+        private global::TestCase.Destination __Update(
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
@@ -362,7 +362,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl1(source, context);
+            return __Create1(source, context);
         }
 
         /// <inheritdoc/>
@@ -378,13 +378,13 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl1(source, context);
+                return __Create1(source, context);
             }
 
-            return UpdateImpl1(source, destination.Value, context);
+            return __Update1(source, destination.Value, context);
         }
 
-        private global::TestCase.Destination? CreateImpl1(
+        private global::TestCase.Destination? __Create1(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
@@ -394,7 +394,7 @@ namespace TestCase
             };
         }
 
-        private global::TestCase.Destination? UpdateImpl1(
+        private global::TestCase.Destination? __Update1(
             global::TestCase.Source source,
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
@@ -545,7 +545,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl(source, context);
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -559,10 +559,10 @@ namespace TestCase
                 return default!;
             }
 
-            return UpdateImpl(source, destination, context);
+            return __Update(source, destination, context);
         }
 
-        private int CreateImpl(
+        private int __Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
@@ -570,7 +570,7 @@ namespace TestCase
                 "Convention construction is not available for this destination.");
         }
 
-        private int UpdateImpl(
+        private int __Update(
             global::TestCase.Source source,
             int destination,
             global::Morphant.Context.MappingContext context)
@@ -588,7 +588,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl1(source, context);
+            return __Create1(source, context);
         }
 
         /// <inheritdoc/>
@@ -604,13 +604,13 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl1(source, context);
+                return __Create1(source, context);
             }
 
-            return UpdateImpl1(source, destination, context);
+            return __Update1(source, destination, context);
         }
 
-        private global::TestCase.IInterfaceDestination CreateImpl1(
+        private global::TestCase.IInterfaceDestination __Create1(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
@@ -618,7 +618,7 @@ namespace TestCase
                 "Convention construction is not available for this destination.");
         }
 
-        private global::TestCase.IInterfaceDestination UpdateImpl1(
+        private global::TestCase.IInterfaceDestination __Update1(
             global::TestCase.Source source,
             global::TestCase.IInterfaceDestination destination,
             global::Morphant.Context.MappingContext context)
@@ -638,7 +638,7 @@ namespace TestCase
                 return default!;
             }
 
-            return CreateImpl2(source, context);
+            return __Create2(source, context);
         }
 
         /// <inheritdoc/>
@@ -654,13 +654,13 @@ namespace TestCase
 
             if (destination is null)
             {
-                return CreateImpl2(source, context);
+                return __Create2(source, context);
             }
 
-            return UpdateImpl2(source, destination, context);
+            return __Update2(source, destination, context);
         }
 
-        private global::TestCase.AbstractDestination CreateImpl2(
+        private global::TestCase.AbstractDestination __Create2(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
@@ -668,7 +668,7 @@ namespace TestCase
                 "Convention construction is not available for this destination.");
         }
 
-        private global::TestCase.AbstractDestination UpdateImpl2(
+        private global::TestCase.AbstractDestination __Update2(
             global::TestCase.Source source,
             global::TestCase.AbstractDestination destination,
             global::Morphant.Context.MappingContext context)
