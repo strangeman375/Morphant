@@ -141,7 +141,7 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.ReadOnlyProperty"/> for a nested Update mapping.
+        /// Selects <see cref="global::TestCase.Destination.ReadOnlyProperty"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> ReadOnlyProperty
         {
@@ -149,7 +149,7 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.PrivateSetter"/> for a nested Update mapping.
+        /// Selects <see cref="global::TestCase.Destination.PrivateSetter"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> PrivateSetter
         {
@@ -157,9 +157,17 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.ProtectedSetter"/> for a nested Update mapping.
+        /// Selects <see cref="global::TestCase.Destination.ProtectedSetter"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> ProtectedSetter
+        {
+            get => null!;
+        }
+
+        /// <summary>
+        /// Selects <see cref="global::TestCase.Destination.ReadOnlyField"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<int> ReadOnlyField
         {
             get => null!;
         }

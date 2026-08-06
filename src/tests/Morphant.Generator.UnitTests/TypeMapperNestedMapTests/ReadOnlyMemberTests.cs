@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperNestedMapTests;
 internal sealed class ReadOnlyMemberTests
 {
     [Test]
-    public void Updates_non_null_get_only_member_and_skips_null_member()
+    public void Updates_non_null_read_only_members_and_skips_null_members()
     {
         // lang=c#
         const string source =
@@ -42,6 +42,10 @@ namespace TestCase
     public sealed class OuterDestination
     {
         private readonly ChildDestination _existing = new(10);
+
+        public readonly ChildDestination ExistingField = new(20);
+
+        public readonly ChildDestination? EmptyField;
 
         public string Name { get; set; } = string.Empty;
 
@@ -81,11 +85,15 @@ namespace TestCase
                     if (source.Name.Length > 0)
                     {
                         Update(GetSource(source), members.Existing);
+                        Update(GetSource(source), members.ExistingField);
                     }
 
                     Update<ChildDestination>(
                         ThrowingSource(source),
                         members.Empty);
+                    Update<ChildDestination>(
+                        ThrowingSource(source),
+                        members.EmptyField);
 
                     return members;
                 });
@@ -98,7 +106,7 @@ namespace TestCase
 
         private static ChildSource ThrowingSource(OuterSource source) =>
             throw new InvalidOperationException(
-                "A null get-only member evaluated its source.");
+                "A null read-only member evaluated its source.");
     }
 
     public sealed class ChildMapper :
@@ -110,7 +118,7 @@ namespace TestCase
             ChildSource? source,
             MappingContext context) =>
             throw new InvalidOperationException(
-                "A get-only member selected nested Create.");
+                "A read-only member selected nested Create.");
 
         public ChildDestination Map(
             ChildSource? source,
@@ -123,7 +131,7 @@ namespace TestCase
                 destination is null)
             {
                 throw new InvalidOperationException(
-                    "A get-only member supplied the wrong destination.");
+                    "A read-only member supplied the wrong destination.");
             }
 
             destination.Value += source!.Value;
@@ -159,7 +167,7 @@ namespace TestCase
             var source = new OuterSource("created", new ChildSource(3));
             var created = mapper.Map<OuterSource, OuterDestination>(source);
 
-            AssertState(created, "created", 13, 1, child, 1);
+            AssertState(created, "created", 13, 23, 1, child, 2);
 
             var updated = mapper.Map(
                 new OuterSource("updated", new ChildSource(4)),
@@ -173,18 +181,19 @@ namespace TestCase
 
             if (created.Name != "created" ||
                 created.ExistingValue != 13 ||
+                created.ExistingField.Value != 23 ||
                 created.GetterCalls != 1)
             {
                 throw new InvalidOperationException(
-                    "The get-only mapping mutated outer previous.");
+                    "The read-only mapping mutated outer previous.");
             }
 
-            AssertState(updated, "updated", 14, 1, child, 2);
+            AssertState(updated, "updated", 14, 24, 1, child, 4);
 
-            if (OuterMapper.SourceCalls != 2)
+            if (OuterMapper.SourceCalls != 4)
             {
                 throw new InvalidOperationException(
-                    "A get-only source was not evaluated exactly once.");
+                    "A read-only source was not evaluated exactly once.");
             }
         }
 
@@ -192,17 +201,19 @@ namespace TestCase
             OuterDestination value,
             string name,
             int childValue,
+            int fieldValue,
             int getterCalls,
             ChildMapper mapper,
             int mapperCalls)
         {
             if (value.Name != name ||
                 value.ExistingValue != childValue ||
+                value.ExistingField.Value != fieldValue ||
                 value.GetterCalls != getterCalls ||
                 mapper.Calls != mapperCalls)
             {
                 throw new InvalidOperationException(
-                    "The get-only member mapping state is incorrect.");
+                    "The read-only member mapping state is incorrect.");
             }
         }
     }

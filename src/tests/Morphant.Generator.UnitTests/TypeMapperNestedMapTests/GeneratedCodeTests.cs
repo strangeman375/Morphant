@@ -172,7 +172,7 @@ namespace TestCase.Morphant.Generated
     internal sealed record DestinationMembers
     {
         /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.Constructed"/> for a nested Update mapping.
+        /// Selects <see cref="global::TestCase.Destination.Constructed"/>.
         /// </summary>
         public global::Morphant.Members.Member<global::TestCase.ChildDestination> Constructed
         {

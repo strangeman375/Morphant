@@ -329,7 +329,6 @@ internal static class DestinationMemberPolicy
         return member is IFieldSymbol field &&
                !field.IsStatic &&
                !field.IsConst &&
-               !field.IsReadOnly &&
                !field.IsImplicitlyDeclared &&
                compilation.IsSymbolAccessibleWithin(
                    field,

@@ -90,13 +90,15 @@ The nested result is authoritative for writable targets. A nested Update may
 reuse its destination or return a replacement, and the returned value is
 assigned to the outer target.
 
-## Get-only members
+## Read-only members
 
-A generated `DestinationMembers` surface exposes true get-only properties and
-properties whose ordinary setter is inaccessible to generated code as get-only
-marker properties. Direct `init`-only properties remain creation-only and are
-not converted into read-only proxies. A proxy can select an in-place nested
-Update without exposing the actual outer result for mutation:
+A generated `DestinationMembers` surface exposes readable non-writable
+destination members as get-only marker properties. This includes true get-only
+properties, properties whose ordinary setter is inaccessible to generated
+code, and accessible `readonly` fields. Direct `init`-only properties remain
+creation-only and are not converted into read-only proxies. A proxy can select
+an in-place nested Update without exposing the actual outer result for
+mutation:
 
 ```csharp
 .Members((source, _) =>
@@ -111,29 +113,30 @@ Update without exposing the actual outer result for mutation:
 });
 ```
 
-The standalone form is accepted only for `Update(..., members.Property)` when
-`Property` is get-only in the generated surface. Morphant reads the property
-from the actual selected result exactly once. If it is null, the nested call
-is skipped and the source expression is not evaluated. Otherwise Morphant
+The standalone form is accepted only for `Update(..., members.Member)` when
+`Member` is get-only in the generated surface. Morphant reads the destination
+member from the actual selected result exactly once. If it is null, the nested
+call is skipped and the source expression is not evaluated. Otherwise Morphant
 performs an ordinary nested Update and discards its return value because the
-outer property cannot accept a replacement. Get-only value-type targets are
+outer member cannot accept a replacement. Read-only value-type targets are
 unsupported.
 
-Get-only markers do not participate in conventions, `Auto()`, or unmapped
-member validation. They exist only for an explicit standalone nested Update.
+Read-only markers do not participate in conventions, `Auto()`, or unmapped
+member validation, and they do not make the corresponding destination member
+writable.
 
 ## Declarative inputs
 
 `previous` and `result` are read-only information sources in `Construct` and
 `Members`. Assignments, increments, decrements, and passing either input or a
 member rooted in it through `ref` or `out` make the declarative plan
-unsupported. Nested in-place updates of get-only members are expressed through
-the generated `members.Property` marker shown above.
+unsupported. Nested in-place updates of read-only members are expressed
+through the generated `members.Member` marker shown above.
 
 ## Execution
 
 Arguments are evaluated once, left to right in source order, including
-reordered named arguments. A null guard for a get-only member runs before its
+reordered named arguments. A null guard for a read-only member runs before its
 source expression. Equivalent declarative calls participate in the same
 path-sensitive dependency graph as other `Construct` and `Members`
 expressions.

@@ -100,7 +100,7 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.PrivateSetter"/> for a nested Update mapping.
+        /// Selects <see cref="global::TestCase.Destination.PrivateSetter"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> PrivateSetter
         {
@@ -214,7 +214,7 @@ namespace Morphant.Generator.UnitTests.TestAssets.Morphant.Generated
         }
 
         /// <summary>
-        /// Selects <see cref="global::Morphant.Generator.UnitTests.TestAssets.ReferencedDestination.PropertyWithPrivateSetter"/> for a nested Update mapping.
+        /// Selects <see cref="global::Morphant.Generator.UnitTests.TestAssets.ReferencedDestination.PropertyWithPrivateSetter"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> PropertyWithPrivateSetter
         {

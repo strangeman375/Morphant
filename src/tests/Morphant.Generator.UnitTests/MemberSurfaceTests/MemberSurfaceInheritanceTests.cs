@@ -71,7 +71,7 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.Hidden"/> for a nested Update mapping.
+        /// Selects <see cref="global::TestCase.Destination.Hidden"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> Hidden
         {

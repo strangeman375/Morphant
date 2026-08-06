@@ -1128,11 +1128,12 @@ Production scope:
 - adaptive generic Update проверяет runtime-совместимость текущего destination;
   incompatible non-null value приводит к `InvalidCastException`, а не к
   скрытому Create;
-- true get-only destination properties и properties с недоступным обычным
-  setter-ом входят в `DestinationMembers` как get-only markers и допускают
-  standalone `Update(source, members.Member)`; direct `init`-only остаётся
-  creation-only и proxy не получает;
-- get-only target читается один раз; при `null` nested call и source-expression
+- true get-only destination properties, properties с недоступным обычным
+  setter-ом и доступные `readonly` fields входят в `DestinationMembers` как
+  get-only markers и допускают standalone
+  `Update(source, members.Member)`; direct `init`-only остаётся creation-only и
+  proxy не получает;
+- read-only target читается один раз; при `null` nested call и source-expression
   пропускаются, при non-null выполняется Update с discard returned replacement;
 - `previous` и `result` являются read-only inputs: assignment, increment,
   decrement и `ref`/`out` mutation запрещены declarative plan-ом;
@@ -1149,13 +1150,14 @@ Production scope:
 - source/target inference, typed и untyped locals, interfaces, conversions и
   incompatible runtime destination;
 - explicit null, nullable sources и destination values;
-- get-only non-null/null paths, single evaluation и discarded replacement;
+- read-only property/field non-null/null paths, single evaluation и discarded
+  replacement;
 - ambiguous adaptive local reuse и mutation `previous`/`result`;
 - argument evaluation order, graph sharing, exception propagation и
   application-wide lookup вне outer mapper/assembly.
 
 Результат этапа: основной nested rule следует фактической outer lifecycle
-ветке, а принудительные Create/Update и in-place get-only update выражаются
+ветке, а принудительные Create/Update и in-place read-only update выражаются
 явно без ручной мутации outer destination.
 
 Реализовано: marker-вызовы семантически связываются с конечной target-позицией
@@ -1172,11 +1174,11 @@ Explicit Update не меняет operation для `null`; adaptive no-previous 
 выполняет Create. Generic adaptive Update генерирует проверяемое runtime
 приведение.
 
-Readable non-writable properties добавлены в generated member surface без
-setter-а. Standalone Update через такой marker генерирует null guard до source,
-однократный getter и discard nested result. Эти markers не участвуют в
-conventions, `Auto()` и unmapped validation. Declarative input mutation
-отсекается до lowering.
+Readable non-writable properties и доступные `readonly` fields добавлены в
+generated member surface без setter-а. Standalone Update через такой marker
+генерирует null guard до source, однократное чтение member-а и discard nested
+result. Эти markers не участвуют в conventions, `Auto()` и unmapped
+validation. Declarative input mutation отсекается до lowering.
 
 Самостоятельная категория `TypeMapperNestedMapTests` содержит runtime и полный
 exact-source срез перечисленного контракта; `MemberSurfaceTests` фиксирует

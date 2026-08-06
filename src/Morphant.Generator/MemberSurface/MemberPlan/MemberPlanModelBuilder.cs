@@ -229,7 +229,7 @@ internal static class MemberPlanModelBuilder
                     field.Name,
                     fieldTypeName,
                     BuildDocumentation(field, cancellationToken),
-                    true,
+                    !field.IsReadOnly,
                     fieldAcceptsNull,
                     fieldRequiresNullableAnnotationsDisabled,
                     BuildObsoleteAttributeSource(field)));
