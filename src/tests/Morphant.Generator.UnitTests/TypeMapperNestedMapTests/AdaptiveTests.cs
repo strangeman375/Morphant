@@ -120,7 +120,7 @@ namespace TestCase
     {
         public List<Call> Calls { get; } = new();
 
-        public ChildDestination Map(
+        public ChildDestination Create(
             ChildSource? source,
             MappingContext context)
         {
@@ -128,7 +128,7 @@ namespace TestCase
             return new ChildDestination(source.Value * 10);
         }
 
-        public ChildDestination Map(
+        public ChildDestination Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context)
@@ -349,12 +349,12 @@ namespace TestCase
     {
         public int? UpdateDestination { get; private set; }
 
-        public ChildDestination Map(
+        public ChildDestination Create(
             ChildSource? source,
             MappingContext context) =>
             new(source!.Value * 10);
 
-        public ChildDestination Map(
+        public ChildDestination Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context)
@@ -450,10 +450,10 @@ namespace TestCase
 
     public sealed class NumberMapper : ITypeMapper<int, int>
     {
-        public int Map(int source, MappingContext context) =>
+        public int Create(int source, MappingContext context) =>
             source * 10;
 
-        public int Map(
+        public int Update(
             int source,
             int destination,
             MappingContext context) =>

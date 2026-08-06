@@ -175,10 +175,10 @@ namespace TestCase
             var scalarMapper =
                 (ITypeMapper<Source, int>)mapper;
 
-            var conventionCreated = conventionMapper.Map(source, context);
-            var sourceOnlyCreated = sourceOnlyMapper.Map(source, context);
-            var directCreated = directMapper.Map(source, context);
-            var initCreated = initMapper.Map(source, context);
+            var conventionCreated = conventionMapper.Create(source, context);
+            var sourceOnlyCreated = sourceOnlyMapper.Create(source, context);
+            var directCreated = directMapper.Create(source, context);
+            var initCreated = initMapper.Create(source, context);
 
             if (conventionCreated.Value != 9 ||
                 sourceOnlyCreated.Value != 9 ||
@@ -199,27 +199,27 @@ namespace TestCase
             var initPrevious = new InitDestination { Value = 3 };
             var ignoredPrevious = new IgnoredDestination { Value = 4 };
 
-            var conventionResult = conventionMapper.Map(
+            var conventionResult = conventionMapper.Update(
                 source,
                 conventionPrevious,
                 context);
-            var sourceOnlyResult = sourceOnlyMapper.Map(
+            var sourceOnlyResult = sourceOnlyMapper.Update(
                 source,
                 sourceOnlyPrevious,
                 context);
-            var directResult = directMapper.Map(
+            var directResult = directMapper.Update(
                 source,
                 directPrevious,
                 context);
-            var initResult = initMapper.Map(
+            var initResult = initMapper.Update(
                 source,
                 initPrevious,
                 context);
-            var ignoredResult = ignoredMapper.Map(
+            var ignoredResult = ignoredMapper.Update(
                 source,
                 ignoredPrevious,
                 context);
-            var scalarResult = scalarMapper.Map(source, 5, context);
+            var scalarResult = scalarMapper.Update(source, 5, context);
 
             if (!ReferenceEquals(conventionPrevious, conventionResult) ||
                 conventionResult.Value != 1 ||
@@ -240,13 +240,13 @@ namespace TestCase
             }
 
             var previous = new ReusedDestination(2);
-            var reused = reusedMapper.Map(
+            var reused = reusedMapper.Update(
                 source,
                 previous,
                 context);
             var replacementPrevious =
                 new ReplacementDestination(3);
-            var replacement = replacementMapper.Map(
+            var replacement = replacementMapper.Update(
                 source,
                 replacementPrevious,
                 context);

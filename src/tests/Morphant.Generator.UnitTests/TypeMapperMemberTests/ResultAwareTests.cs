@@ -112,7 +112,7 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var created = mapper.Map(
+            var created = mapper.Create(
                 new Source { Id = 1, Delta = 3 },
                 context);
 
@@ -132,7 +132,7 @@ namespace TestCase
             {
                 Initial = 70
             };
-            var reused = mapper.Map(
+            var reused = mapper.Update(
                 new Source
                 {
                     Id = 2,
@@ -154,7 +154,7 @@ namespace TestCase
                     "The explicit previous result was not preserved.");
             }
 
-            var replacement = mapper.Map(
+            var replacement = mapper.Update(
                 new Source { Id = 9, Delta = 2 },
                 previous,
                 context);
@@ -301,33 +301,33 @@ namespace TestCase
             var factoryPrevious = new FactoryDestination(7);
             var directPrevious = new DirectDestination(8);
 
-            var factoryCreated = factoryMapper.Map(
+            var factoryCreated = factoryMapper.Create(
                 new Source { Seed = 2, Delta = 3 },
                 context);
-            var factoryReused = factoryMapper.Map(
+            var factoryReused = factoryMapper.Update(
                 new Source { Delta = 4, Reuse = true },
                 factoryPrevious,
                 context);
-            var factoryReplacement = factoryMapper.Map(
+            var factoryReplacement = factoryMapper.Update(
                 new Source { Seed = 5, Delta = 6 },
                 factoryPrevious,
                 context);
-            var factoryNull = factoryMapper.Map(
+            var factoryNull = factoryMapper.Create(
                 new Source { ReturnNull = true },
                 context);
 
-            var directCreated = directMapper.Map(
+            var directCreated = directMapper.Create(
                 new Source { Seed = 3, Delta = 7 },
                 context);
-            var directReused = directMapper.Map(
+            var directReused = directMapper.Update(
                 new Source { Delta = 8, Reuse = true },
                 directPrevious,
                 context);
-            var directReplacement = directMapper.Map(
+            var directReplacement = directMapper.Update(
                 new Source { Seed = 4, Delta = 9 },
                 directPrevious,
                 context);
-            var directNull = directMapper.Map(
+            var directNull = directMapper.Create(
                 new Source { ReturnNull = true },
                 context);
 
@@ -413,10 +413,10 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination?>)
                 new TestMapper();
             var context = default(MappingContext);
-            var created = mapper.Map(
+            var created = mapper.Create(
                 new Source { Seed = 2, Delta = 3 },
                 context);
-            var updated = mapper.Map(
+            var updated = mapper.Update(
                 new Source { Delta = 4 },
                 new Destination(5),
                 context);

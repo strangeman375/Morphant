@@ -97,7 +97,7 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var created = mapper.Map(
+            var created = mapper.Create(
                 new Source
                 {
                     Id = 1,
@@ -128,7 +128,7 @@ namespace TestCase
                 Required = "required-previous",
                 Convention = "old"
             };
-            var updated = mapper.Map(
+            var updated = mapper.Update(
                 new Source
                 {
                     Id = 2,

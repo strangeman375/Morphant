@@ -96,11 +96,11 @@ namespace TestCase
         {
             var mapper = new TestMapper();
             var factory =
-                ((ITypeMapper<Source, Destination>)mapper).Map(
+                ((ITypeMapper<Source, Destination>)mapper).Create(
                     new Source { Value = 1 },
                     default(MappingContext));
             var direct =
-                ((ITypeMapper<Source, IDirectDestination>)mapper).Map(
+                ((ITypeMapper<Source, IDirectDestination>)mapper).Create(
                     new Source { Value = 2 },
                     default(MappingContext));
 

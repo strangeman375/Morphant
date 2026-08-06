@@ -60,9 +60,9 @@ namespace TestCase
                 (ITypeMapper<Source, Destination>)new TestMapper();
             var source = new Source { Id = 17 };
             var context = default(MappingContext);
-            var created = mapper.Map(source, context);
+            var created = mapper.Create(source, context);
             var previous = new Destination(31);
-            var updated = mapper.Map(source, previous, context);
+            var updated = mapper.Update(source, previous, context);
 
             if (created.Kind != "parameterized" ||
                 created.Id != 17 ||
@@ -169,7 +169,7 @@ namespace TestCase
         {
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
-            var destination = mapper.Map(
+            var destination = mapper.Create(
                 new Source(17, "configured"),
                 default(MappingContext));
 

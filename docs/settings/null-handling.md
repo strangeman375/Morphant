@@ -156,7 +156,7 @@ defined by the corresponding enum. MSBuild properties must use a named enum
 value.
 
 An invalid effective `NullSourceHandling` keeps the generated mapping
-contract, but both overloads throw `NotSupportedException`. An invalid
+contract, but both methods throw `NotSupportedException`. An invalid
 effective `NullDestinationHandling` affects only `Update`; public `Create`
 remains available.
 

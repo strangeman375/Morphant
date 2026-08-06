@@ -143,7 +143,7 @@ namespace TestCase
 
             try
             {
-                mapper.Map(
+                mapper.Create(
                     new Source { Value = 3 },
                     default(MappingContext));
             }

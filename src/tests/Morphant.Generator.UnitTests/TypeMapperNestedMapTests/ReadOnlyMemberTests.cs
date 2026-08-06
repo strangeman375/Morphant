@@ -114,13 +114,13 @@ namespace TestCase
     {
         public int Calls { get; private set; }
 
-        public ChildDestination Map(
+        public ChildDestination Create(
             ChildSource? source,
             MappingContext context) =>
             throw new InvalidOperationException(
                 "A read-only member selected nested Create.");
 
-        public ChildDestination Map(
+        public ChildDestination Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context)

@@ -78,7 +78,7 @@ once, the last call wins, including a last call with `Default`.
 
 ## Mode behavior
 
-| Effective mode | `Map(source, context)` | `Map(source, destination, context)` |
+| Effective mode | `Create(source, context)` | `Update(source, destination, context)` |
 |---|---|---|
 | `Create` | Maps to a new destination | Throws `NotSupportedException` |
 | `Update` | Throws `NotSupportedException` | Maps to the supplied destination |
@@ -87,9 +87,9 @@ once, the last call wins, including a last call with `Default`.
 `Default` means inheritance; it is not an operation by itself.
 
 Every generated mapping continues to implement the single
-`ITypeMapper<TSource, TDestination>` interface with both overloads. This keeps
-runtime resolution uniform. Invoking an overload excluded by the effective
-mode fails immediately in the generated mapper.
+`ITypeMapper<TSource, TDestination>` interface with both methods. This keeps
+runtime resolution uniform. Invoking a method excluded by the effective mode
+fails immediately in the generated mapper.
 
 The same gate applies to a manual `Convert`. `MappingMode` is the only
 effective setting used by a manual mapping; once the selected operation is
@@ -104,13 +104,13 @@ of the named values listed above.
 If a C# mode is not a compile-time constant, contains undefined flags, or an
 inherited `MorphantMappingMode` value is not recognized, Morphant still
 generates the `ITypeMapper<TSource, TDestination>` implementation for the
-registered pair. Both mapping overloads throw `NotSupportedException` when
+registered pair. Both mapping methods throw `NotSupportedException` when
 invoked.
 
 An explicit valid mapping-level mode still overrides an invalid mapper-level
 value. A mapping that uses `Default` inherits the invalid mapper-level value
-and therefore has two throwing overloads.
+and therefore has two throwing methods.
 
 The same rule applies to the assembly level: a valid mapper-level or
 mapping-level value overrides an invalid `MorphantMappingMode`, while a
-mapping that inherits the invalid property has two throwing overloads.
+mapping that inherits the invalid property has two throwing methods.

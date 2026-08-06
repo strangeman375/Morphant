@@ -138,13 +138,13 @@ namespace TestCase
                 (ITypeMapper<Source, Destination>)generated;
             var complex =
                 (ITypeMapper<ComplexSource, ComplexDestination?>)generated;
-            var expressionResult = expression.Map(new Source(4), context);
-            var nullResult = complex.Map(null, context);
-            var early = complex.Map(
+            var expressionResult = expression.Create(new Source(4), context);
+            var nullResult = complex.Create(null, context);
+            var early = complex.Create(
                 new ComplexSource(4, ReturnEarly: true),
                 context);
             var previous = new ComplexDestination(5);
-            var recovered = complex.Map(
+            var recovered = complex.Update(
                 new ComplexSource(3, Recover: true),
                 previous,
                 context);
@@ -166,7 +166,7 @@ namespace TestCase
 
             try
             {
-                complex.Map(
+                complex.Create(
                     new ComplexSource(2, Fail: true),
                     context);
             }

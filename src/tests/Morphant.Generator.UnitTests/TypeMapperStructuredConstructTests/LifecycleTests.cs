@@ -78,10 +78,10 @@ namespace TestCase
                 (ITypeMapper<Source, Destination>)new TestMapper();
             var source = new Source { Id = 17 };
             var context = default(MappingContext);
-            var created = mapper.Map(source, context);
-            var createdByUpdate = mapper.Map(source, null, context);
+            var created = mapper.Create(source, context);
+            var createdByUpdate = mapper.Update(source, null, context);
             var previous = new Destination(31);
-            var updated = mapper.Map(source, previous, context);
+            var updated = mapper.Update(source, previous, context);
 
             if (created.Id != 17 ||
                 createdByUpdate.Id != 17 ||
@@ -158,11 +158,11 @@ namespace TestCase
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
             var context = default(MappingContext);
-            var created = mapper.Map(
+            var created = mapper.Create(
                 new Source { Id = 17 },
                 context);
             var previous = new Destination(31);
-            var updated = mapper.Map(
+            var updated = mapper.Update(
                 new Source { Reuse = true },
                 previous,
                 context);
@@ -176,7 +176,7 @@ namespace TestCase
 
             try
             {
-                mapper.Map(
+                mapper.Create(
                     new Source { Reuse = true },
                     context);
             }
@@ -269,11 +269,11 @@ namespace TestCase
                 Id = 17,
                 Name = "mapped"
             };
-            var created = mapper.Map(source, context);
-            var createdByUpdate = mapper.Map(source, null, context);
+            var created = mapper.Create(source, context);
+            var createdByUpdate = mapper.Update(source, null, context);
             var reusable = new Destination(17);
-            var reused = mapper.Map(source, reusable, context);
-            var replaced = mapper.Map(
+            var reused = mapper.Update(source, reusable, context);
+            var replaced = mapper.Update(
                 source,
                 new Destination(31),
                 context);
@@ -352,7 +352,7 @@ namespace TestCase
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
             var context = default(MappingContext);
-            var valid = mapper.Map(
+            var valid = mapper.Create(
                 new Source { Id = 17 },
                 context);
 
@@ -364,7 +364,7 @@ namespace TestCase
 
             try
             {
-                mapper.Map(
+                mapper.Create(
                     new Source { Id = 17, Invalid = true },
                     context);
             }

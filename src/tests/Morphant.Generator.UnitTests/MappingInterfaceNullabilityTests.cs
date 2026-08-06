@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests;
 internal sealed class MappingInterfaceNullabilityTests
 {
     [Test]
-    public void Consumer_observes_nullable_inputs_and_non_nullable_results()
+    public void Consumer_observes_operation_names_nullable_inputs_and_non_nullable_results()
     {
         var compilation = CreateCompilation();
         var mapperMethods = compilation
@@ -16,38 +16,53 @@ internal sealed class MappingInterfaceNullabilityTests
             .OfType<IMethodSymbol>()
             .OrderBy(static method => method.Parameters.Length)
             .ToArray();
-        var typeMapperMethods = compilation
-            .GetTypeByMetadataName("Morphant.ITypeMapper`2")!
-            .GetMembers(nameof(ITypeMapper<object, object>.Map))
+        var typeMapper = compilation
+            .GetTypeByMetadataName("Morphant.ITypeMapper`2")!;
+        var createMethod = typeMapper
+            .GetMembers(nameof(ITypeMapper<object, object>.Create))
             .OfType<IMethodSymbol>()
-            .OrderBy(static method => method.Parameters.Length)
-            .ToArray();
+            .Single();
+        var updateMethod = typeMapper
+            .GetMembers(nameof(ITypeMapper<object, object>.Update))
+            .OfType<IMethodSymbol>()
+            .Single();
 
         Assert.Multiple(() =>
         {
             Assert.That(mapperMethods, Has.Length.EqualTo(2));
-            AssertMethod(mapperMethods[0], expectedParameterCount: 1);
-            AssertMethod(mapperMethods[1], expectedParameterCount: 2);
-            Assert.That(typeMapperMethods, Has.Length.EqualTo(2));
             AssertMethod(
-                typeMapperMethods[0],
+                mapperMethods[0],
+                nameof(IMapper.Map),
+                expectedParameterCount: 1);
+            AssertMethod(
+                mapperMethods[1],
+                nameof(IMapper.Map),
+                expectedParameterCount: 2);
+            AssertMethod(
+                createMethod,
+                nameof(ITypeMapper<object, object>.Create),
                 expectedParameterCount: 2,
                 contextParameterIndex: 1);
             AssertMethod(
-                typeMapperMethods[1],
+                updateMethod,
+                nameof(ITypeMapper<object, object>.Update),
                 expectedParameterCount: 3,
                 contextParameterIndex: 2);
+            Assert.That(
+                typeMapper.GetMembers(nameof(IMapper.Map)),
+                Is.Empty);
         });
     }
 
     private static void AssertMethod(
         IMethodSymbol method,
+        string expectedName,
         int expectedParameterCount,
         int? contextParameterIndex = null)
     {
         Assert.Multiple(() =>
         {
-            Assert.That(method.Name, Is.EqualTo(nameof(IMapper.Map)));
+            Assert.That(method.Name, Is.EqualTo(expectedName));
             Assert.That(
                 method.ReturnNullableAnnotation,
                 Is.EqualTo(NullableAnnotation.NotAnnotated));

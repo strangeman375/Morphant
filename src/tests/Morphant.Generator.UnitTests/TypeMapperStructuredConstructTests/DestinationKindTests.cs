@@ -78,27 +78,27 @@ namespace TestCase
 
             var structMapper =
                 (ITypeMapper<Source<int>, StructDestination>)mapper;
-            var replacedStruct = structMapper.Map(
+            var replacedStruct = structMapper.Update(
                 numberSource,
                 new StructDestination(31),
                 context);
 
             var nullableMapper =
                 (ITypeMapper<Source<int>, StructDestination?>)mapper;
-            var createdNullable = nullableMapper.Map(
+            var createdNullable = nullableMapper.Update(
                 numberSource,
                 null,
                 context);
-            var replacedNullable = nullableMapper.Map(
+            var replacedNullable = nullableMapper.Update(
                 numberSource,
                 new StructDestination(31),
                 context);
 
             var recordMapper =
                 (ITypeMapper<Source<string>, RecordDestination>)mapper;
-            var createdRecord = recordMapper.Map(textSource, context);
+            var createdRecord = recordMapper.Create(textSource, context);
             var previousRecord = new RecordDestination("previous");
-            var preservedRecord = recordMapper.Map(
+            var preservedRecord = recordMapper.Update(
                 textSource,
                 previousRecord,
                 context);
@@ -107,7 +107,7 @@ namespace TestCase
                 (ITypeMapper<
                     Source<string>,
                     GenericDestination<string>>)mapper;
-            var generic = genericMapper.Map(textSource, context);
+            var generic = genericMapper.Create(textSource, context);
 
             if (replacedStruct.Value != 17 ||
                 createdNullable?.Value != 17 ||

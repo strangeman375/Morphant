@@ -32,7 +32,7 @@ public sealed class ReferencedNestedMapper :
 {
     public int Calls { get; private set; }
 
-    public ReferencedNestedDestination Map(
+    public ReferencedNestedDestination Create(
         IReferencedNestedSource? source,
         MappingContext context)
     {
@@ -40,7 +40,7 @@ public sealed class ReferencedNestedMapper :
         return new ReferencedNestedDestination(source?.Value + 10 ?? -1);
     }
 
-    public ReferencedNestedDestination Map(
+    public ReferencedNestedDestination Update(
         IReferencedNestedSource? source,
         ReferencedNestedDestination? destination,
         MappingContext context) =>

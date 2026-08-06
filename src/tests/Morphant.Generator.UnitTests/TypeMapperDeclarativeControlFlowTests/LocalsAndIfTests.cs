@@ -96,11 +96,11 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var positive = mapper.Map(
+            var positive = mapper.Create(
                 new Source { Value = 3 },
                 context);
             var previous = new Destination();
-            var negative = mapper.Map(
+            var negative = mapper.Update(
                 new Source { Value = 4, Negate = true },
                 previous,
                 context);
@@ -124,7 +124,7 @@ namespace TestCase
 
             try
             {
-                mapper.Map(
+                mapper.Create(
                     new Source { Value = 5, Fail = true },
                     context);
             }

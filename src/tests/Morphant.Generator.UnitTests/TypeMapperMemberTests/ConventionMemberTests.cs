@@ -145,13 +145,13 @@ namespace TestCase
             };
             var structured =
                 ((ITypeMapper<Source, StructuredDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
             var direct =
                 ((ITypeMapper<Source, IDirectDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
             var factory =
                 ((ITypeMapper<Source, FactoryDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
 
             if (structured.Seed != 7 ||
                 structured.Explicit != "explicit-structured" ||
@@ -174,7 +174,7 @@ namespace TestCase
             previous.Explicit = "previous";
             var updated =
                 ((ITypeMapper<Source, IDirectDestination>)mapper)
-                .Map(source, previous, context);
+                .Update(source, previous, context);
 
             if (!ReferenceEquals(previous, updated) ||
                 updated.Seed != 99 ||
@@ -192,7 +192,7 @@ namespace TestCase
             };
             var updatedFactory =
                 ((ITypeMapper<Source, FactoryDestination>)mapper)
-                .Map(source, previousFactory, context);
+                .Update(source, previousFactory, context);
 
             if (!ReferenceEquals(previousFactory, updatedFactory) ||
                 updatedFactory.Explicit != "factory-previous-updated" ||

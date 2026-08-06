@@ -82,24 +82,25 @@ public interface IMapper
 ```
 
 Generated `ITypeMapper<TSource, TDestination>` повторяет тот же nullable-
-контракт и добавляет `MappingContext`:
+контракт, явно называет обе операции и добавляет `MappingContext`:
 
 ```csharp
 public interface ITypeMapper<in TSource, TDestination>
 {
-    TDestination Map(
+    TDestination Create(
         TSource? source,
         MappingContext context);
 
-    TDestination Map(
+    TDestination Update(
         TSource? source,
         TDestination? destination,
         MappingContext context);
 }
 ```
 
-Публичные операции называются `Create` и `Update`, хотя обе по-прежнему
-вызываются через перегрузки `Map`. Их доступность задаёт flags-setting:
+Универсальный facade выражает операции двумя перегрузками `IMapper.Map`, а
+контракт конкретной pair — отдельными `ITypeMapper.Create` и
+`ITypeMapper.Update`. Их доступность задаёт flags-setting:
 
 ```csharp
 [Flags]
@@ -1387,7 +1388,7 @@ Source-only перегрузки нет. Если сведения о вызов
 destination instance, а `MappingContext` — текущий call frame, включая его
 операцию и scoped mapper для ручных nested mappings.
 `MappingContext` является последним параметром, как и в generated
-`ITypeMapper.Map(...)` contract.
+`ITypeMapper.Create(...)` / `ITypeMapper.Update(...)` contract.
 
 ### 8.2. Почему одного `Option<T>` недостаточно
 
@@ -2181,7 +2182,8 @@ nested вызовы применяют одинаковое правило `0 / 
 модель descriptor-а тогда имеет lookup identity
 `(canonical pair, service key)`, где отсутствие ключа означает default-вариант.
 Core-shape `IMapper.Map(...)` и generated
-`ITypeMapper<TSource, TDestination>` при этом не меняются.
+`ITypeMapper<TSource, TDestination>.Create(...)` / `Update(...)` при этом не
+меняются.
 
 Возможный terminal extension API:
 

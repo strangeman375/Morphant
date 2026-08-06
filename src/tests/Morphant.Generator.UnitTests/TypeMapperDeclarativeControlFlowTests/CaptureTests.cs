@@ -77,7 +77,7 @@ namespace TestCase
             var mapper = new TestMapper();
             var context = default(MappingContext);
             var good = ((ITypeMapper<Source, GoodDestination>)mapper)
-                .Map(new Source { Value = 4 }, context);
+                .Create(new Source { Value = 4 }, context);
 
             if (good.Value != 27)
             {
@@ -88,7 +88,7 @@ namespace TestCase
             try
             {
                 ((ITypeMapper<Source, BadDestination>)mapper)
-                    .Map(new Source { Value = 4 }, context);
+                    .Create(new Source { Value = 4 }, context);
             }
             catch (NotSupportedException exception)
                 when (exception.Message.Contains(

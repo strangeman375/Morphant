@@ -106,7 +106,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, int?>
     {
         /// <inheritdoc/>
-        int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Map(
+        int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
             => ConvertDestination1(
@@ -115,7 +115,7 @@ namespace TestCase
                 context);
 
         /// <inheritdoc/>
-        int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Map(
+        int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Update(
             global::TestCase.Source? source,
             int? destination,
             global::Morphant.Context.MappingContext context)

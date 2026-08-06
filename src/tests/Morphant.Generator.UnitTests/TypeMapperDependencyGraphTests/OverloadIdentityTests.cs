@@ -82,7 +82,7 @@ namespace TestCase
         {
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
-            var result = mapper.Map(
+            var result = mapper.Create(
                 new Source { Value = 1 },
                 default(MappingContext));
 

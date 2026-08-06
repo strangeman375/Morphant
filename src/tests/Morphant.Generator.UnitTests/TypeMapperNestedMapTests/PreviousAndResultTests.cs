@@ -69,13 +69,13 @@ namespace TestCase
     {
         public List<int?> PreviousValues { get; } = new();
 
-        public ChildDestination Map(
+        public ChildDestination Create(
             ChildSource? source,
             MappingContext context) =>
             throw new InvalidOperationException(
                 "A two-argument nested Map became Create.");
 
-        public ChildDestination Map(
+        public ChildDestination Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context)

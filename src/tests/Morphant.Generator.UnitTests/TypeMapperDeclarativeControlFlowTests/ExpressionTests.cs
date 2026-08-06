@@ -83,7 +83,7 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var automatic = mapper.Map(
+            var automatic = mapper.Create(
                 new Source
                 {
                     Value = 2,
@@ -97,7 +97,7 @@ namespace TestCase
                 Value = 17,
                 Automatic = 1
             };
-            var ignored = mapper.Map(
+            var ignored = mapper.Update(
                 new Source
                 {
                     Value = 3,
@@ -107,7 +107,7 @@ namespace TestCase
                 },
                 previous,
                 context);
-            var explicitValue = mapper.Map(
+            var explicitValue = mapper.Create(
                 new Source
                 {
                     Value = 4,

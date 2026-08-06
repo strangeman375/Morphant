@@ -58,7 +58,7 @@ namespace TestCase
             var mapper = (ITypeMapper<Mutable, Mutable>)
                 new TestMapper();
             var value = new Mutable(5);
-            var result = mapper.Map(
+            var result = mapper.Update(
                 value,
                 value,
                 default(MappingContext));

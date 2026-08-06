@@ -17,7 +17,7 @@ internal sealed class MappingScope
     {
         ThrowIfCompleted();
 
-        return Resolve<TSource, TDestination>().Map(
+        return Resolve<TSource, TDestination>().Create(
             source,
             new MappingContext(MappingOperation.Create, Mapper));
     }
@@ -28,7 +28,7 @@ internal sealed class MappingScope
     {
         ThrowIfCompleted();
 
-        return Resolve<TSource, TDestination>().Map(
+        return Resolve<TSource, TDestination>().Update(
             source,
             destination,
             new MappingContext(MappingOperation.Update, Mapper));

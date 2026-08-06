@@ -128,7 +128,7 @@ namespace TestCase
 
         ChildDestination ITypeMapper<
             ChildSource,
-            ChildDestination>.Map(
+            ChildDestination>.Create(
             ChildSource? source,
             MappingContext context)
         {
@@ -138,7 +138,7 @@ namespace TestCase
 
         ChildDestination ITypeMapper<
             ChildSource,
-            ChildDestination>.Map(
+            ChildDestination>.Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context)
@@ -153,7 +153,7 @@ namespace TestCase
 
         IChildDestination ITypeMapper<
             ChildSource,
-            IChildDestination>.Map(
+            IChildDestination>.Create(
             ChildSource? source,
             MappingContext context)
         {
@@ -163,7 +163,7 @@ namespace TestCase
 
         IChildDestination ITypeMapper<
             ChildSource,
-            IChildDestination>.Map(
+            IChildDestination>.Update(
             ChildSource? source,
             IChildDestination? destination,
             MappingContext context)

@@ -74,10 +74,10 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var selected = mapper.Map(
+            var selected = mapper.Create(
                 new Source { Value = 3 },
                 context);
-            var skipped = mapper.Map(
+            var skipped = mapper.Create(
                 new Source { Value = "other" },
                 context);
 

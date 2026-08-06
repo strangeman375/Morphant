@@ -63,7 +63,7 @@ namespace TestCase
 
         public int UpdateCalls { get; private set; }
 
-        public ChildDestination Map(
+        public ChildDestination Create(
             ChildSource? source,
             MappingContext context)
         {
@@ -71,7 +71,7 @@ namespace TestCase
             return new ChildDestination(source!.Value + 10);
         }
 
-        public ChildDestination Map(
+        public ChildDestination Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context)

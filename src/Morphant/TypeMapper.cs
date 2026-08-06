@@ -17,7 +17,7 @@ namespace Morphant;
 public interface ITypeMapper<in TSource, TDestination>
 {
     /// <summary>
-    /// Maps the specified source to a new destination.
+    /// Maps the specified source without a supplied destination.
     /// </summary>
     /// <param name="source">
     /// The source to map. May be <see langword="null"/>. Declarative mappings
@@ -37,10 +37,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// <see cref="NullSourceHandling"/> is
     /// <see cref="Morphant.NullSourceHandling.Throw"/>.
     /// </exception>
-    TDestination Map(TSource? source, MappingContext context);
+    TDestination Create(TSource? source, MappingContext context);
 
     /// <summary>
-    /// Maps the specified source to the specified destination.
+    /// Maps the specified source with a supplied destination.
     /// </summary>
     /// <param name="source">
     /// The source to map. May be <see langword="null"/>. Declarative mappings
@@ -54,7 +54,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// <see cref="Option{TDestination}.None"/> instead.
     /// </param>
     /// <param name="context">The context for the mapping operation.</param>
-    /// <returns>The mapped destination.</returns>
+    /// <returns>
+    /// The authoritative mapped destination. It may be a replacement for
+    /// <paramref name="destination"/>.
+    /// </returns>
     /// <exception cref="NotSupportedException">
     /// The effective <see cref="MappingMode"/> is invalid or does not include
     /// <see cref="MappingMode.Update"/>, or a null-handling setting required
@@ -69,7 +72,7 @@ public interface ITypeMapper<in TSource, TDestination>
     /// effective <see cref="NullDestinationHandling"/> is
     /// <see cref="Morphant.NullDestinationHandling.Throw"/>.
     /// </exception>
-    TDestination Map(
+    TDestination Update(
         TSource? source,
         TDestination? destination,
         MappingContext context);

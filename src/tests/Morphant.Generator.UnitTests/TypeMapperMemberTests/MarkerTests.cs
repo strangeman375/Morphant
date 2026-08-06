@@ -51,7 +51,7 @@ namespace TestCase
 
             try
             {
-                mapper.Map(
+                mapper.Create(
                     new Source(),
                     default(MappingContext));
                 throw new InvalidOperationException(
@@ -155,7 +155,7 @@ namespace TestCase
                 Explicit = "explicit",
                 Convention = "convention"
             };
-            var created = mapper.Map(source, context);
+            var created = mapper.Create(source, context);
 
             if (created.Automatic != 1 ||
                 created.TypedAutomatic != 2 ||
@@ -173,7 +173,7 @@ namespace TestCase
                 Ignored = "existing-ignore",
                 TypedIgnored = "existing-typed-ignore"
             };
-            var updated = mapper.Map(source, previous, context);
+            var updated = mapper.Update(source, previous, context);
 
             if (!ReferenceEquals(previous, updated) ||
                 updated.Automatic != 1 ||

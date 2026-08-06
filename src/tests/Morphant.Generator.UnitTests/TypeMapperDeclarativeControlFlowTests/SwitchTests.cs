@@ -83,15 +83,15 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var number = mapper.Map(
+            var number = mapper.Create(
                 new Source { Value = 7 },
                 context);
             var previous = new Destination();
-            var text = mapper.Map(
+            var text = mapper.Update(
                 new Source { Value = "abcd" },
                 previous,
                 context);
-            var fallback = mapper.Map(
+            var fallback = mapper.Create(
                 new Source { Value = 0 },
                 context);
 

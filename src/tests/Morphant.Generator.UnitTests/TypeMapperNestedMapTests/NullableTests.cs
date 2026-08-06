@@ -52,7 +52,7 @@ namespace TestCase
     {
         public int Calls { get; private set; }
 
-        public string? Map(
+        public string? Create(
             string? source,
             MappingContext context)
         {
@@ -66,7 +66,7 @@ namespace TestCase
             return source ?? "text-null";
         }
 
-        public string? Map(
+        public string? Update(
             string? source,
             string? destination,
             MappingContext context) =>
@@ -78,7 +78,7 @@ namespace TestCase
     {
         public List<MappingOperation> Operations { get; } = new();
 
-        public int? Map(
+        public int? Create(
             int? source,
             MappingContext context)
         {
@@ -86,7 +86,7 @@ namespace TestCase
             return source ?? 7;
         }
 
-        public int? Map(
+        public int? Update(
             int? source,
             int? destination,
             MappingContext context)

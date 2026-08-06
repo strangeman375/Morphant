@@ -139,7 +139,7 @@ namespace TestCase
         {
             try
             {
-                ((ITypeMapper<Source, TDestination>)mapper).Map(
+                ((ITypeMapper<Source, TDestination>)mapper).Create(
                     source,
                     default(MappingContext));
                 throw new InvalidOperationException(

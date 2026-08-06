@@ -57,17 +57,17 @@ namespace TestCase
     public sealed class ChildMapper :
         ITypeMapper<ChildSource, ChildDestination>
     {
-        public ChildDestination Map(
+        public ChildDestination Create(
             ChildSource? source,
             MappingContext context) =>
             new(source!.Value + 1);
 
-        public ChildDestination Map(
+        public ChildDestination Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context) =>
             throw new InvalidOperationException(
-                "The nested Update overload was selected.");
+                "The nested Update method was selected.");
     }
 
     public sealed class ManualServiceProvider : IServiceProvider

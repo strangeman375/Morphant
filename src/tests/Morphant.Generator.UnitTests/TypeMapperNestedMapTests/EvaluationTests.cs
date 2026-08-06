@@ -84,13 +84,13 @@ namespace TestCase
     {
         public int Calls { get; private set; }
 
-        public ChildDestination Map(
+        public ChildDestination Create(
             ChildSource? source,
             MappingContext context) =>
             throw new InvalidOperationException(
-                "The nested Create overload was selected.");
+                "The nested Create method was selected.");
 
-        public ChildDestination Map(
+        public ChildDestination Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context)

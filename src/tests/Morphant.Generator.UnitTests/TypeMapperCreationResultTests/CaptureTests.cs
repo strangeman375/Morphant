@@ -62,10 +62,10 @@ namespace TestCase
 
             AssertUnsupported(() =>
                 ((ITypeMapper<Source, int>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             AssertUnsupported(() =>
                 ((ITypeMapper<Source, Destination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
         }
 
         private static void AssertUnsupported(Action action)
@@ -138,7 +138,7 @@ namespace TestCase
             var source = new Source { Value = 7 };
             var context = default(MappingContext);
             var previous = new Destination();
-            var updated = mapper.Map(source, previous, context);
+            var updated = mapper.Update(source, previous, context);
 
             if (!ReferenceEquals(previous, updated) ||
                 updated.Value != 7)
@@ -149,7 +149,7 @@ namespace TestCase
 
             try
             {
-                mapper.Map(source, context);
+                mapper.Create(source, context);
             }
             catch (NotSupportedException)
             {

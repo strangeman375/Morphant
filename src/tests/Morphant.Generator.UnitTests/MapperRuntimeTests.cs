@@ -472,10 +472,10 @@ public sealed class MapperRuntimeTests
             _update = update;
         }
 
-        public TDestination Map(TSource? source, MappingContext context) =>
+        public TDestination Create(TSource? source, MappingContext context) =>
             _create(source, context);
 
-        public TDestination Map(
+        public TDestination Update(
             TSource? source,
             TDestination? destination,
             MappingContext context) =>

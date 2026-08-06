@@ -101,11 +101,11 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var created = mapper.Map(
+            var created = mapper.Create(
                 new Source { Seed = 2, Delta = 3 },
                 context);
             var previous = new Destination(3);
-            var updated = mapper.Map(
+            var updated = mapper.Update(
                 new Source { Seed = 99, Delta = 4 },
                 previous,
                 context);

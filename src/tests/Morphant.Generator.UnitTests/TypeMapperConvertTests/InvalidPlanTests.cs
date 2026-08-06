@@ -94,22 +94,22 @@ namespace TestCase
 
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, CapturedDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, FunctionDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, DuplicateDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, MixedConstructDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, MixedMembersDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, SettingDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
         }
 
         private static void ExpectUnsupported(Action action)
@@ -223,7 +223,7 @@ namespace TestCase
             var source = new Source(42);
             var plain =
                 ((ITypeMapper<Source, PlainDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
 
             if (plain.Value != -1)
             {
@@ -233,19 +233,19 @@ namespace TestCase
 
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, AutoDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, IgnoreDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, ConventionDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, FactoryDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, MapDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
         }
 
         private static void ExpectUnsupported(Action action)

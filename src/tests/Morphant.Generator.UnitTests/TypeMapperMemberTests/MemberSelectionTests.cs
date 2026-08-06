@@ -53,7 +53,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -66,7 +66,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
@@ -220,16 +220,16 @@ namespace TestCase
             var explicitMapper = new ExplicitMapper();
             var explicitResult =
                 ((ITypeMapper<Source, ExplicitDestination>)
-                    explicitMapper).Map(source, context);
+                    explicitMapper).Create(source, context);
             var autoResult =
                 ((ITypeMapper<Source, AutoDestination>)
-                    explicitMapper).Map(source, context);
+                    explicitMapper).Create(source, context);
             var defaultResult =
                 ((ITypeMapper<Source, DefaultDestination>)
-                    explicitMapper).Map(source, context);
+                    explicitMapper).Create(source, context);
             var libraryDefaultResult =
                 ((ITypeMapper<Source, LibraryDefaultDestination>)
-                    new LibraryDefaultMapper()).Map(source, context);
+                    new LibraryDefaultMapper()).Create(source, context);
 
             if (explicitResult.Explicit != 11 ||
                 explicitResult.Convention != -1 ||

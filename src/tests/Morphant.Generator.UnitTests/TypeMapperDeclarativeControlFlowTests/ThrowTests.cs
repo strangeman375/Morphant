@@ -69,7 +69,7 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var mapped = mapper.Map(
+            var mapped = mapper.Create(
                 new Source { Mode = 0 },
                 context);
 
@@ -83,7 +83,7 @@ namespace TestCase
 
             try
             {
-                mapper.Map(new Source { Mode = 1 }, context);
+                mapper.Create(new Source { Mode = 1 }, context);
             }
             catch (InvalidOperationException exception)
                 when (exception.Message == "explicit" &&
@@ -94,7 +94,7 @@ namespace TestCase
 
             try
             {
-                mapper.Map(new Source { Mode = 2 }, context);
+                mapper.Create(new Source { Mode = 2 }, context);
             }
             catch (SwitchExpressionException exception)
                 when ((int?)exception.UnmatchedValue == 2 &&

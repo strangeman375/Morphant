@@ -107,7 +107,8 @@ runtime-проверки к exact-source категориям в unit-test proje
 
 Этот план доводит до готовности согласованный core v0:
 
-- точные `Create` / `Update` operations через две перегрузки `Map`;
+- universal `IMapper.Map` facade и точные
+  `ITypeMapper.Create` / `ITypeMapper.Update` operations;
 - declarative pipeline `Construct` + `Members`;
 - полностью ручной `Convert`;
 - application-wide exact-pair dispatch поверх вручную зарегистрированных
@@ -127,12 +128,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 3, этап 16 — declarative nested mapping.**
+**Фаза 4, этап 17 — полный `ConstructorSelection`.**
 
-Статус: реализован, ожидает ревью.
+Статус: не начат.
 
-Этап 15 принят. Этап 17 и все последующие этапы заблокированы до принятия
-этапа 16.
+Этап 16 принят. Этап 18 и все последующие этапы заблокированы до принятия
+этапа 17.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -147,6 +148,9 @@ Production scope:
 
 - изменить `IMapper` и `ITypeMapper<TSource, TDestination>` на целевой
   nullable-input / non-nullable-return contract;
+- сохранить universal entry point как две перегрузки `IMapper.Map`, а
+  операции exact-pair contract назвать `ITypeMapper.Create` и
+  `ITypeMapper.Update` без legacy-алиасов `Map`;
 - ввести `Option<T>` с именованным `None`, явной фабрикой `Some(T)`,
   различием `None`, `Some(default)` и `Some(null)`, а также точным
   `Value` / `TryGetValue` contract; публичный constructor и implicit
@@ -1022,6 +1026,8 @@ Production scope:
   immutable `MappingContext` frame;
 - source-only overload создаёт `Create` frame, two-argument — `Update` frame,
   включая explicit `null` destination;
+- source-only facade dispatch вызывает `ITypeMapper.Create`, а facade с
+  destination — `ITypeMapper.Update`;
 - последовательная recursion/reentrancy и exception isolation;
 - независимые root scopes допускают parallel calls; parallel nested use одного
   scope не получает guarantee;
@@ -1104,7 +1110,7 @@ conventions и collision-safe helper (`8/8`).
 
 ### Этап 16. Declarative nested mapping
 
-Статус: реализован, ожидает ревью.
+Статус: принят.
 
 Цель — дать common-case nested mapping короткое adaptive API, сохранив явный
 выбор Create/Update для специальных случаев.

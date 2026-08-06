@@ -158,10 +158,10 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var explicitValue = mapper.Map(
+            var explicitValue = mapper.Create(
                 new Source { Id = 3, Mode = 0 },
                 context);
-            var overridden = mapper.Map(
+            var overridden = mapper.Create(
                 new Source
                 {
                     Id = 3,
@@ -169,25 +169,25 @@ namespace TestCase
                     Override = true
                 },
                 context);
-            var automatic = mapper.Map(
+            var automatic = mapper.Create(
                 new Source { Id = 4, Mode = 1 },
                 context);
-            var factory = mapper.Map(
+            var factory = mapper.Create(
                 new Source { Id = 5, Mode = 2 },
                 context);
             var previous = new Destination(17);
-            var reused = mapper.Map(
+            var reused = mapper.Update(
                 new Source { Id = 6, Reuse = true },
                 previous,
                 context);
             var directMapper =
                 (ITypeMapper<Source, IDirectDestination>)
                 new TestMapper();
-            var directCreated = directMapper.Map(
+            var directCreated = directMapper.Create(
                 new Source { Id = 7, Override = true },
                 context);
             var directPrevious = new DirectDestination(3);
-            var directUpdated = directMapper.Map(
+            var directUpdated = directMapper.Update(
                 new Source { Id = 8 },
                 directPrevious,
                 context);

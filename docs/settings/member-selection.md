@@ -125,5 +125,5 @@ defined by `MemberSelection`. The MSBuild property must use one of the named
 values above.
 
 An invalid effective value keeps the generated `ITypeMapper` contract, but
-both mapping overloads throw `NotSupportedException` when invoked. A valid
+both mapping methods throw `NotSupportedException` when invoked. A valid
 value at a more specific level overrides an invalid outer value.

@@ -135,7 +135,7 @@ namespace TestCase
             };
             var result =
                 ((ITypeMapper<Source, Destination>)new TestMapper())
-                .Map(source, default(MappingContext));
+                .Create(source, default(MappingContext));
 
             if (result.Numeric != 7 ||
                 result.NullableNumber != 8 ||

@@ -52,7 +52,7 @@ namespace TestCase
         {
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
-            var result = mapper.Map(
+            var result = mapper.Create(
                 new Source
                 {
                     Id = 83
@@ -81,7 +81,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -94,7 +94,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
@@ -187,7 +187,7 @@ namespace TestCase
                 (ITypeMapper<Source, TestMapper.Destination>)
                 new TestMapper();
             var previous = TestMapper.Destination.Existing();
-            var updated = mapper.Map(
+            var updated = mapper.Update(
                 new Source
                 {
                     Value = 67
@@ -203,7 +203,7 @@ namespace TestCase
 
             try
             {
-                _ = mapper.Map(
+                _ = mapper.Create(
                     new Source(),
                     default(MappingContext));
             }
@@ -231,7 +231,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.TestMapper.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.TestMapper.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.TestMapper.Destination>.Map(
+        global::TestCase.TestMapper.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.TestMapper.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -244,7 +244,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.TestMapper.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.TestMapper.Destination>.Map(
+        global::TestCase.TestMapper.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.TestMapper.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.TestMapper.Destination? destination,
             global::Morphant.Context.MappingContext context)
@@ -350,7 +350,7 @@ namespace TestCase
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
             var source = new Source();
-            var result = mapper.Map(source, default(MappingContext));
+            var result = mapper.Create(source, default(MappingContext));
 
             if (result.ConstructorValue != 61 ||
                 result.Value != 61 ||
@@ -376,7 +376,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -389,7 +389,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
@@ -488,7 +488,7 @@ namespace TestCase
         {
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
-            var result = mapper.Map(
+            var result = mapper.Create(
                 new Source
                 {
                     Value = 59
@@ -517,7 +517,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -530,7 +530,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
@@ -635,7 +635,7 @@ namespace TestCase
         {
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
-            var result = mapper.Map(
+            var result = mapper.Create(
                 new Source
                 {
                     Id = 23,
@@ -665,7 +665,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -678,7 +678,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
@@ -782,7 +782,7 @@ namespace TestCase
             {
                 Value = 1
             };
-            var updated = mapper.Map(
+            var updated = mapper.Update(
                 new Source
                 {
                     Value = 9
@@ -798,7 +798,7 @@ namespace TestCase
 
             try
             {
-                _ = mapper.Map(
+                _ = mapper.Create(
                     new Source(),
                     default(MappingContext));
             }
@@ -826,7 +826,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>
     {
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -839,7 +839,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Map(
+        global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
             global::TestCase.Source? source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)

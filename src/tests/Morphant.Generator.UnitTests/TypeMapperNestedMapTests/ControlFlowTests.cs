@@ -71,7 +71,7 @@ namespace TestCase
     {
         public List<int> Values { get; } = new();
 
-        public ChildDestination Map(
+        public ChildDestination Create(
             ChildSource? source,
             MappingContext context)
         {
@@ -85,12 +85,12 @@ namespace TestCase
             return new ChildDestination(source.Value * 10);
         }
 
-        public ChildDestination Map(
+        public ChildDestination Update(
             ChildSource? source,
             ChildDestination? destination,
             MappingContext context) =>
             throw new InvalidOperationException(
-                "The nested Update overload was selected.");
+                "The nested Update method was selected.");
     }
 
     public sealed class ManualServiceProvider : IServiceProvider

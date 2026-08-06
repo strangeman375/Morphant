@@ -63,9 +63,9 @@ namespace TestCase
                 Name = "mapped"
             };
             var context = default(MappingContext);
-            var created = mapper.Map(source, context);
+            var created = mapper.Create(source, context);
             var previous = new Destination(0);
-            var updated = mapper.Map(source, previous, context);
+            var updated = mapper.Update(source, previous, context);
 
             if (created.Id != 18 ||
                 created.Name != "mapped" ||
@@ -145,7 +145,7 @@ namespace TestCase
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
             var source = new Source();
-            var destination = mapper.Map(
+            var destination = mapper.Create(
                 source,
                 default(MappingContext));
 
@@ -229,10 +229,10 @@ namespace TestCase
                 Name = "mapped"
             };
             var context = default(MappingContext);
-            var created = mapper.Map(source, context);
-            var createdByUpdate = mapper.Map(source, null, context);
+            var created = mapper.Create(source, context);
+            var createdByUpdate = mapper.Update(source, null, context);
             var previous = new Destination(31);
-            var updated = mapper.Map(source, previous, context);
+            var updated = mapper.Update(source, previous, context);
 
             if (created.Id != 17 ||
                 created.Name != "mapped" ||
@@ -389,13 +389,13 @@ namespace TestCase
             var context = default(MappingContext);
             var overloaded =
                 ((ITypeMapper<Source, OverloadedDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
             var optional =
                 ((ITypeMapper<Source, OptionalDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
             var withParams =
                 ((ITypeMapper<Source, ParamsDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
 
             if (overloaded.Kind != "long" ||
                 overloaded.Id != 17 ||

@@ -80,10 +80,10 @@ namespace TestCase
             var context = default(MappingContext);
             var valueMapper =
                 (ITypeMapper<Source, ValueDestination?>)mapper;
-            var created = valueMapper.Map(source, context);
-            var createdByUpdate = valueMapper.Map(source, null, context);
+            var created = valueMapper.Create(source, context);
+            var createdByUpdate = valueMapper.Update(source, null, context);
             var previous = new ValueDestination(40);
-            var updated = valueMapper.Map(source, previous, context);
+            var updated = valueMapper.Update(source, previous, context);
 
             if (!created.HasValue || created.Value.Seed != 6 ||
                 created.Value.Value != 5 ||
@@ -100,7 +100,7 @@ namespace TestCase
 
             var generic =
                 ((ITypeMapper<Source, GenericDestination<int>>)mapper)
-                .Map(source, context);
+                .Create(source, context);
 
             if (generic.Seed != 7 || generic.Value != 5)
             {

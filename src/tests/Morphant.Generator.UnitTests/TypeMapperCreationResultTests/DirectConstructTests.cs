@@ -167,18 +167,18 @@ namespace TestCase
             var context = default(MappingContext);
             var typed = (ITypeMapper<Source, IDestination>)mapper;
             var source = new Source { Value = 3 };
-            var created = typed.Map(source, context);
-            var createdByUpdate = typed.Map(source, null, context);
+            var created = typed.Create(source, context);
+            var createdByUpdate = typed.Update(source, null, context);
             var previous = new Destination(41);
-            var reused = typed.Map(
+            var reused = typed.Update(
                 new Source { Value = 5, Reuse = true },
                 previous,
                 context);
-            var replaced = typed.Map(
+            var replaced = typed.Update(
                 new Source { Value = 4 },
                 previous,
                 context);
-            var nullResult = typed.Map(
+            var nullResult = typed.Create(
                 new Source { ReturnNull = true },
                 context);
 
@@ -197,7 +197,7 @@ namespace TestCase
 
             try
             {
-                typed.Map(new Source { Fail = true }, context);
+                typed.Create(new Source { Fail = true }, context);
                 throw new InvalidOperationException(
                     "Direct block exception was swallowed.");
             }
@@ -207,11 +207,11 @@ namespace TestCase
             }
 
             var guidMapper = (ITypeMapper<string, Guid>)mapper;
-            var parsed = guidMapper.Map(
+            var parsed = guidMapper.Create(
                 "00112233-4455-6677-8899-aabbccddeeff",
                 context);
             var existingGuid = Guid.NewGuid();
-            var preservedGuid = guidMapper.Map(
+            var preservedGuid = guidMapper.Update(
                 "ffffffff-ffff-ffff-ffff-ffffffffffff",
                 existingGuid,
                 context);
@@ -226,13 +226,13 @@ namespace TestCase
             }
 
             var level = ((ITypeMapper<Source, Level>)mapper)
-                .Map(new Source { Value = 2 }, context);
+                .Create(new Source { Value = 2 }, context);
             var abstractResult =
                 ((ITypeMapper<Source, AbstractDestination>)mapper)
-                .Map(new Source { Value = 8 }, context);
+                .Create(new Source { Value = 8 }, context);
             var factoryOnly =
                 ((ITypeMapper<Source, FactoryOnly>)mapper)
-                .Map(new Source { Value = 9 }, context);
+                .Create(new Source { Value = 9 }, context);
 
             if (level != Level.Two ||
                 abstractResult is not ConcreteDestination ||
@@ -307,9 +307,9 @@ namespace TestCase
                 (ITypeMapper<Source, IDestination>)new TestMapper();
             var context = default(MappingContext);
             var source = new Source { Value = 7 };
-            var created = mapper.Map(source, context);
+            var created = mapper.Create(source, context);
             var previous = new Destination();
-            var updated = mapper.Map(source, previous, context);
+            var updated = mapper.Update(source, previous, context);
 
             if (created.Value != 7 ||
                 !ReferenceEquals(previous, updated) ||

@@ -87,14 +87,14 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var primary = mapper.Map(
+            var primary = mapper.Create(
                 new Source { Value = 1 },
                 context);
-            var alternate = mapper.Map(
+            var alternate = mapper.Create(
                 new Source { Value = 2, Alternate = true },
                 context);
             var previous = new Destination(9);
-            var updated = mapper.Map(
+            var updated = mapper.Update(
                 new Source { Value = 3, Alternate = true },
                 previous,
                 context);

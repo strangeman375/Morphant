@@ -103,14 +103,14 @@ namespace TestCase
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source,
                     ResultDependentInitDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, FactoryInitDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source,
                     ResultDependentRequiredDestination>)mapper)
-                .Map(source, context));
+                .Create(source, context));
         }
 
         private static void ExpectUnsupported(Action action)

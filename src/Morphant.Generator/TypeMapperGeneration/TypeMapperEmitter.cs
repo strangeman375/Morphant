@@ -137,7 +137,7 @@ internal static class TypeMapperEmitter
         writer.Line("/// <inheritdoc/>");
         writer.Line(
             $"{mapping.DestinationTypeName} " +
-            $"{mapping.InterfaceTypeName}.Map(");
+            $"{mapping.InterfaceTypeName}.Create(");
         writer.Indent();
         writer.Line(
             $"{mapping.MaybeNullSourceTypeName} source,");
@@ -660,7 +660,7 @@ internal static class TypeMapperEmitter
         writer.Line("/// <inheritdoc/>");
         writer.Line(
             $"{mapping.DestinationTypeName} " +
-            $"{mapping.InterfaceTypeName}.Map(");
+            $"{mapping.InterfaceTypeName}.Update(");
         writer.Indent();
         writer.Line(
             $"{mapping.MaybeNullSourceTypeName} source,");

@@ -126,10 +126,10 @@ namespace TestCase
             };
             var blockMapper =
                 (ITypeMapper<Source, BlockDestination>)mapper;
-            var created = blockMapper.Map(source, context);
-            var createdByUpdate = blockMapper.Map(source, null, context);
+            var created = blockMapper.Create(source, context);
+            var createdByUpdate = blockMapper.Update(source, null, context);
             var previous = new BlockDestination(41);
-            var updated = blockMapper.Map(source, previous, context);
+            var updated = blockMapper.Update(source, previous, context);
 
             if (created.Seed != 16 || created.Name != "mapped" ||
                 createdByUpdate.Seed != 16 ||
@@ -144,10 +144,10 @@ namespace TestCase
 
             var methodGroup =
                 ((ITypeMapper<Source, MethodGroupDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
             var delegated =
                 ((ITypeMapper<Source, DelegateDestination>)mapper)
-                .Map(source, context);
+                .Create(source, context);
 
             if (methodGroup.Value != 4 ||
                 delegated.Value != 4 ||
@@ -262,11 +262,11 @@ namespace TestCase
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
             var context = default(MappingContext);
-            var created = mapper.Map(
+            var created = mapper.Create(
                 new Source { Id = 1, Name = "created" },
                 context);
             var previous = new Destination(7, false);
-            var reused = mapper.Map(
+            var reused = mapper.Update(
                 new Source
                 {
                     Id = 2,
@@ -275,11 +275,11 @@ namespace TestCase
                 },
                 previous,
                 context);
-            var replaced = mapper.Map(
+            var replaced = mapper.Update(
                 new Source { Id = 3, Name = "replaced" },
                 previous,
                 context);
-            var nullResult = mapper.Map(
+            var nullResult = mapper.Create(
                 new Source
                 {
                     Id = 4,

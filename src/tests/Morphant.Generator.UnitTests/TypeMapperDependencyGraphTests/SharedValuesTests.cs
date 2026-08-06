@@ -72,7 +72,7 @@ namespace TestCase
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
             var context = default(MappingContext);
-            var created = mapper.Map(
+            var created = mapper.Create(
                 new Source { Value = 3 },
                 context);
 
@@ -90,7 +90,7 @@ namespace TestCase
             }
 
             var previous = new Destination(7);
-            var updated = mapper.Map(
+            var updated = mapper.Update(
                 new Source { Value = 4 },
                 previous,
                 context);

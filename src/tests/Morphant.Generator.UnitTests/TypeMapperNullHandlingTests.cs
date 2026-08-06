@@ -76,12 +76,12 @@ namespace TestCase
             var nullPrevious = new ReturnNullDestination();
             var preserved = new ReturnDestinationDestination();
 
-            if (!ReferenceEquals(returnNull.Map(null, context), null) ||
+            if (!ReferenceEquals(returnNull.Create(null, context), null) ||
                 !ReferenceEquals(
-                    returnNull.Map(null, nullPrevious, context),
+                    returnNull.Update(null, nullPrevious, context),
                     null) ||
                 !ReferenceEquals(
-                    returnNull.Map(null, null, context),
+                    returnNull.Update(null, null, context),
                     null))
             {
                 throw new InvalidOperationException(
@@ -89,13 +89,13 @@ namespace TestCase
             }
 
             if (!ReferenceEquals(
-                    returnDestination.Map(null, context),
+                    returnDestination.Create(null, context),
                     null) ||
                 !ReferenceEquals(
-                    returnDestination.Map(null, preserved, context),
+                    returnDestination.Update(null, preserved, context),
                     preserved) ||
                 !ReferenceEquals(
-                    returnDestination.Map(null, null, context),
+                    returnDestination.Update(null, null, context),
                     null))
             {
                 throw new InvalidOperationException(
@@ -104,18 +104,18 @@ namespace TestCase
 
             ExpectArgumentNull(
                 "destination",
-                () => returnNull.Map(
+                () => returnNull.Update(
                     new Source(),
                     null,
                     context));
             ExpectArgumentNull(
                 "source",
-                () => throwMapper.Map(null, context));
+                () => throwMapper.Create(null, context));
             ExpectArgumentNull(
                 "source",
-                () => throwMapper.Map(null, null, context));
+                () => throwMapper.Update(null, null, context));
 
-            var created = throwMapper.Map(
+            var created = throwMapper.Update(
                 new Source { Value = 23 },
                 null,
                 context);
@@ -162,7 +162,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ThrowDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.ReturnNullDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ReturnNullDestination>.Map(
+        global::TestCase.ReturnNullDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ReturnNullDestination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -175,7 +175,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ReturnNullDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ReturnNullDestination>.Map(
+        global::TestCase.ReturnNullDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ReturnNullDestination>.Update(
             global::TestCase.Source? source,
             global::TestCase.ReturnNullDestination? destination,
             global::Morphant.Context.MappingContext context)
@@ -214,7 +214,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ReturnDestinationDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ReturnDestinationDestination>.Map(
+        global::TestCase.ReturnDestinationDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ReturnDestinationDestination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -227,7 +227,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ReturnDestinationDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ReturnDestinationDestination>.Map(
+        global::TestCase.ReturnDestinationDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ReturnDestinationDestination>.Update(
             global::TestCase.Source? source,
             global::TestCase.ReturnDestinationDestination? destination,
             global::Morphant.Context.MappingContext context)
@@ -266,7 +266,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ThrowDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ThrowDestination>.Map(
+        global::TestCase.ThrowDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ThrowDestination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -279,7 +279,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ThrowDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ThrowDestination>.Map(
+        global::TestCase.ThrowDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ThrowDestination>.Update(
             global::TestCase.Source? source,
             global::TestCase.ThrowDestination? destination,
             global::Morphant.Context.MappingContext context)
@@ -402,8 +402,8 @@ namespace TestCase
             var valueToReference =
                 (ITypeMapper<ValueSource, ReferenceDestination>)mapper;
 
-            if (nullable.Map(null, context).HasValue ||
-                nullable.Map(null, new NullableDestination(), context)
+            if (nullable.Create(null, context).HasValue ||
+                nullable.Update(null, new NullableDestination(), context)
                     .HasValue)
             {
                 throw new InvalidOperationException(
@@ -411,9 +411,9 @@ namespace TestCase
             }
 
             var source = new NullableSource { Value = 31 };
-            var created = nullable.Map(source, context);
-            var createdByUpdate = nullable.Map(source, null, context);
-            var updated = nullable.Map(
+            var created = nullable.Create(source, context);
+            var createdByUpdate = nullable.Update(source, null, context);
+            var updated = nullable.Update(
                 source,
                 new NullableDestination { Value = 1 },
                 context);
@@ -426,7 +426,7 @@ namespace TestCase
                     "Nullable value mapping used the wrong underlying value.");
             }
 
-            var valueResult = values.Map(
+            var valueResult = values.Update(
                 new ValueSource { Value = 47 },
                 new ValueDestination(),
                 context);
@@ -437,12 +437,12 @@ namespace TestCase
                     "Non-nullable value mapping failed.");
             }
 
-            if (referenceToValue.Map(null, context).Value != 0 ||
-                referenceToValue.Map(
+            if (referenceToValue.Create(null, context).Value != 0 ||
+                referenceToValue.Update(
                     new ReferenceSource { Value = 53 },
                     new ValueDestination(),
                     context).Value != 53 ||
-                valueToReference.Map(
+                valueToReference.Update(
                     new ValueSource { Value = 59 },
                     null,
                     context).Value != 59)
@@ -470,7 +470,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.NullableDestination? global::Morphant.ITypeMapper<global::TestCase.NullableSource?, global::TestCase.NullableDestination?>.Map(
+        global::TestCase.NullableDestination? global::Morphant.ITypeMapper<global::TestCase.NullableSource?, global::TestCase.NullableDestination?>.Create(
             global::TestCase.NullableSource? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -485,7 +485,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.NullableDestination? global::Morphant.ITypeMapper<global::TestCase.NullableSource?, global::TestCase.NullableDestination?>.Map(
+        global::TestCase.NullableDestination? global::Morphant.ITypeMapper<global::TestCase.NullableSource?, global::TestCase.NullableDestination?>.Update(
             global::TestCase.NullableSource? source,
             global::TestCase.NullableDestination? destination,
             global::Morphant.Context.MappingContext context)
@@ -526,13 +526,13 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ValueDestination>.Map(
+        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ValueDestination>.Create(
             global::TestCase.ValueSource source,
             global::Morphant.Context.MappingContext context)
             => CreateImpl1(source, context);
 
         /// <inheritdoc/>
-        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ValueDestination>.Map(
+        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ValueDestination>.Update(
             global::TestCase.ValueSource source,
             global::TestCase.ValueDestination destination,
             global::Morphant.Context.MappingContext context)
@@ -559,7 +559,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ReferenceSource, global::TestCase.ValueDestination>.Map(
+        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ReferenceSource, global::TestCase.ValueDestination>.Create(
             global::TestCase.ReferenceSource? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -572,7 +572,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ReferenceSource, global::TestCase.ValueDestination>.Map(
+        global::TestCase.ValueDestination global::Morphant.ITypeMapper<global::TestCase.ReferenceSource, global::TestCase.ValueDestination>.Update(
             global::TestCase.ReferenceSource? source,
             global::TestCase.ValueDestination destination,
             global::Morphant.Context.MappingContext context)
@@ -606,13 +606,13 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.ReferenceDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>.Map(
+        global::TestCase.ReferenceDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>.Create(
             global::TestCase.ValueSource source,
             global::Morphant.Context.MappingContext context)
             => CreateImpl3(source, context);
 
         /// <inheritdoc/>
-        global::TestCase.ReferenceDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>.Map(
+        global::TestCase.ReferenceDestination global::Morphant.ITypeMapper<global::TestCase.ValueSource, global::TestCase.ReferenceDestination>.Update(
             global::TestCase.ValueSource source,
             global::TestCase.ReferenceDestination? destination,
             global::Morphant.Context.MappingContext context)
@@ -741,7 +741,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AssemblyDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.AssemblyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AssemblyDestination>.Map(
+        global::TestCase.AssemblyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AssemblyDestination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -754,7 +754,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.AssemblyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AssemblyDestination>.Map(
+        global::TestCase.AssemblyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AssemblyDestination>.Update(
             global::TestCase.Source? source,
             global::TestCase.AssemblyDestination? destination,
             global::Morphant.Context.MappingContext context)
@@ -807,7 +807,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.RootDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>.Map(
+        global::TestCase.RootDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -820,7 +820,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.RootDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>.Map(
+        global::TestCase.RootDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.RootDestination>.Update(
             global::TestCase.Source? source,
             global::TestCase.RootDestination? destination,
             global::Morphant.Context.MappingContext context)
@@ -873,7 +873,7 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.PairDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.PairDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.PairDestination>.Map(
+        global::TestCase.PairDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.PairDestination>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
         {
@@ -886,7 +886,7 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.PairDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.PairDestination>.Map(
+        global::TestCase.PairDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.PairDestination>.Update(
             global::TestCase.Source? source,
             global::TestCase.PairDestination? destination,
             global::Morphant.Context.MappingContext context)
@@ -1007,14 +1007,14 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FullOverrideDestination>
     {
         /// <inheritdoc/>
-        global::TestCase.InvalidDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InvalidDestination>.Map(
+        global::TestCase.InvalidDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InvalidDestination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
             => throw new global::System.NotSupportedException(
                 "The effective NullSourceHandling is invalid.");
 
         /// <inheritdoc/>
-        global::TestCase.InvalidDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InvalidDestination>.Map(
+        global::TestCase.InvalidDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InvalidDestination>.Update(
             global::TestCase.Source source,
             global::TestCase.InvalidDestination destination,
             global::Morphant.Context.MappingContext context)
@@ -1022,13 +1022,13 @@ namespace TestCase
                 "The effective NullSourceHandling is invalid.");
 
         /// <inheritdoc/>
-        global::TestCase.SourceOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SourceOverrideDestination>.Map(
+        global::TestCase.SourceOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SourceOverrideDestination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
             => CreateImpl(source, context);
 
         /// <inheritdoc/>
-        global::TestCase.SourceOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SourceOverrideDestination>.Map(
+        global::TestCase.SourceOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SourceOverrideDestination>.Update(
             global::TestCase.Source source,
             global::TestCase.SourceOverrideDestination destination,
             global::Morphant.Context.MappingContext context)
@@ -1043,13 +1043,13 @@ namespace TestCase
         }
 
         /// <inheritdoc/>
-        global::TestCase.FullOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FullOverrideDestination>.Map(
+        global::TestCase.FullOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FullOverrideDestination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
             => CreateImpl1(source, context);
 
         /// <inheritdoc/>
-        global::TestCase.FullOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FullOverrideDestination>.Map(
+        global::TestCase.FullOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.FullOverrideDestination>.Update(
             global::TestCase.Source source,
             global::TestCase.FullOverrideDestination destination,
             global::Morphant.Context.MappingContext context)

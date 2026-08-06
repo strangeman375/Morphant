@@ -120,7 +120,7 @@ namespace TestCase
         {
             var mapper = (ITypeMapper<Source, Destination>)
                 new TestMapper();
-            var result = mapper.Map(
+            var result = mapper.Create(
                 new Source { Value = 10 },
                 default(MappingContext));
             var order = TestMapper.Order;
