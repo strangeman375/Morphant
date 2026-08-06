@@ -31,7 +31,7 @@ public interface IMapper
 
 public sealed class Mapper : IMapper
 {
-    private readonly IServiceProvider serviceProvider;
+    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// Initializes a root mapper that resolves manually registered
@@ -49,14 +49,14 @@ public sealed class Mapper : IMapper
     /// </exception>
     public Mapper(IServiceProvider serviceProvider)
     {
-        this.serviceProvider = serviceProvider ??
+        _serviceProvider = serviceProvider ??
             throw new ArgumentNullException(nameof(serviceProvider));
     }
 
     /// <inheritdoc/>
     public TDestination Map<TSource, TDestination>(TSource? source)
     {
-        var scope = new MappingScope(serviceProvider);
+        var scope = new MappingScope(_serviceProvider);
 
         try
         {
@@ -73,7 +73,7 @@ public sealed class Mapper : IMapper
         TSource? source,
         TDestination? destination)
     {
-        var scope = new MappingScope(serviceProvider);
+        var scope = new MappingScope(_serviceProvider);
 
         try
         {

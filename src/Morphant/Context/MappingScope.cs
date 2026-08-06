@@ -2,12 +2,12 @@ namespace Morphant.Context;
 
 internal sealed class MappingScope
 {
-    private readonly IServiceProvider serviceProvider;
-    private bool isCompleted;
+    private readonly IServiceProvider _serviceProvider;
+    private bool _isCompleted;
 
     public MappingScope(IServiceProvider serviceProvider)
     {
-        this.serviceProvider = serviceProvider;
+        _serviceProvider = serviceProvider;
         Mapper = new ScopedMapper(this);
     }
 
@@ -34,14 +34,14 @@ internal sealed class MappingScope
             new MappingContext(MappingOperation.Update, Mapper));
     }
 
-    public void Complete() => isCompleted = true;
+    public void Complete() => _isCompleted = true;
 
     private ITypeMapper<TSource, TDestination>
         Resolve<TSource, TDestination>()
     {
         var serviceType =
             typeof(IEnumerable<ITypeMapper<TSource, TDestination>>);
-        var service = serviceProvider.GetService(serviceType);
+        var service = _serviceProvider.GetService(serviceType);
 
         if (service is not
             IEnumerable<ITypeMapper<TSource, TDestination>> candidates)
@@ -78,7 +78,7 @@ internal sealed class MappingScope
 
     private void ThrowIfCompleted()
     {
-        if (isCompleted)
+        if (_isCompleted)
         {
             throw new InvalidOperationException(
                 "The mapping scope has already completed.");
@@ -87,19 +87,19 @@ internal sealed class MappingScope
 
     private sealed class ScopedMapper : IMapper
     {
-        private readonly MappingScope scope;
+        private readonly MappingScope _scope;
 
         public ScopedMapper(MappingScope scope)
         {
-            this.scope = scope;
+            _scope = scope;
         }
 
         public TDestination Map<TSource, TDestination>(TSource? source) =>
-            scope.Map<TSource, TDestination>(source);
+            _scope.Map<TSource, TDestination>(source);
 
         public TDestination Map<TSource, TDestination>(
             TSource? source,
             TDestination? destination) =>
-            scope.Map(source, destination);
+            _scope.Map(source, destination);
     }
 }

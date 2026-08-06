@@ -432,17 +432,17 @@ public sealed class MapperRuntimeTests
 
     private sealed class ManualServiceProvider : IServiceProvider
     {
-        private readonly Dictionary<Type, Func<object>> services = new();
+        private readonly Dictionary<Type, Func<object>> _services = new();
 
         public object? GetService(Type serviceType) =>
-            services.TryGetValue(serviceType, out var factory)
+            _services.TryGetValue(serviceType, out var factory)
                 ? factory()
                 : null;
 
         public void Add<TService>(params Func<TService>[] factories)
             where TService : class
         {
-            services[typeof(IEnumerable<TService>)] = () =>
+            _services[typeof(IEnumerable<TService>)] = () =>
                 factories.Select(static factory => factory()).ToArray();
         }
     }
@@ -453,12 +453,12 @@ public sealed class MapperRuntimeTests
         private readonly Func<
             TSource?,
             MappingContext,
-            TDestination> create;
+            TDestination> _create;
         private readonly Func<
             TSource?,
             TDestination?,
             MappingContext,
-            TDestination> update;
+            TDestination> _update;
 
         public DelegateTypeMapper(
             Func<TSource?, MappingContext, TDestination> create,
@@ -468,18 +468,18 @@ public sealed class MapperRuntimeTests
                 MappingContext,
                 TDestination> update)
         {
-            this.create = create;
-            this.update = update;
+            _create = create;
+            _update = update;
         }
 
         public TDestination Map(TSource? source, MappingContext context) =>
-            create(source, context);
+            _create(source, context);
 
         public TDestination Map(
             TSource? source,
             TDestination? destination,
             MappingContext context) =>
-            update(source, destination, context);
+            _update(source, destination, context);
     }
 
     private sealed record Source(int Value);

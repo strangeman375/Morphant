@@ -127,12 +127,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 3, этап 14 — application dispatch, root mapper и mapping scope.**
+**Фаза 3, этап 15 — полностью ручной `Convert`.**
 
-Статус: ожидает ревью.
+Статус: не начат.
 
-Этап 13 принят. Этап 15 и все последующие этапы заблокированы до принятия
-этапа 14.
+Этап 14 принят. Этап 16 и все последующие этапы заблокированы до принятия
+этапа 15.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -991,7 +991,7 @@ files не изменились.
 
 ### Этап 14. Application dispatch, root mapper и mapping scope
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — реализовать application-wide exact-pair dispatch без runtime reflection
 для поиска mappings.
@@ -1354,6 +1354,8 @@ implementation plans:
 
 - composition-root / DI convenience API (`AddMorphant(...)`), generated
   manifests и автоматическое подключение mappings из выбранных assemblies;
+- оптимизация per-call allocations в runtime dispatch и mapping scope без
+  изменения lookup/lifecycle semantics;
 - collections, dictionaries, buffers, getter-only collections, clear/fill,
   replacement, key reconciliation и element-path flattening;
 - `IncludeMembers` и convention flattening;
