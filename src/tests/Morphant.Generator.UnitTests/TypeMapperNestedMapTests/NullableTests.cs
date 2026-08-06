@@ -40,9 +40,9 @@ namespace TestCase
             builder.Map<OuterSource, OuterDestination>()
                 .Members((source, _) => new()
                 {
-                    Text = Map<string?>(source.Text),
-                    CreatedNumber = Map(source.Number),
-                    UpdatedNumber = Map<int?>(
+                    Text = Create<string?>(source.Text),
+                    CreatedNumber = Create(source.Number),
+                    UpdatedNumber = Update<int?>(
                         source.Number,
                         (int?)null)
                 });

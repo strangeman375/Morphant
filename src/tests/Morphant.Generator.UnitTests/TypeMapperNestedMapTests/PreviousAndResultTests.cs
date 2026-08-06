@@ -53,12 +53,12 @@ namespace TestCase
                         : new(new ChildDestination(10)))
                 .Members((source, previous, result) => new()
                 {
-                    FromPrevious = Map<ChildDestination>(
+                    FromPrevious = Update<ChildDestination>(
                         source.Child,
                         previous.HasValue
                             ? previous.Value.Seed
                             : null),
-                    FromResult = Map<ChildDestination>(
+                    FromResult = Update<ChildDestination>(
                         source.Child,
                         result.Seed)
                 });

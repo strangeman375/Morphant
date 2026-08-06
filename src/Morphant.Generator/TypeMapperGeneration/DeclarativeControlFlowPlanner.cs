@@ -14,6 +14,10 @@ internal static class DeclarativeControlFlowPlanner
         "Declarative plan contains a capture that cannot be transferred " +
         "to the generated mapper.";
 
+    private const string ReadOnlyInputMutationMessage =
+        "The previous and result inputs are read-only in declarative " +
+        "Construct and Members plans.";
+
     private const string MemberMetadataName =
         "Morphant.Members.Member`1";
 
@@ -31,6 +35,24 @@ internal static class DeclarativeControlFlowPlanner
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
+        if (ContainsReadOnlyInputMutation(
+                lambda,
+                semanticModel,
+                cancellationToken))
+        {
+            return new UnsupportedDeclarativeControlFlow(
+                ReadOnlyInputMutationMessage);
+        }
+
+        if (ContainsUnsupportedExpressionStatement(
+                lambda,
+                semanticModel,
+                cancellationToken))
+        {
+            return new UnsupportedDeclarativeControlFlow(
+                UnsupportedBlockMessage);
+        }
+
         ImmutableArray<LocalDeclarationStatementSyntax>
             localDeclarations;
         ExpressionSyntax? resultExpression = null;
@@ -150,17 +172,6 @@ internal static class DeclarativeControlFlowPlanner
                         variable,
                         cancellationToken) is not
                         ILocalSymbol local)
-                {
-                    return new UnsupportedDeclarativeControlFlow(
-                        UnsupportedBlockMessage);
-                }
-
-                if (DeclarativeNestedMapExpression.IsMapMarkerType(
-                        local.Type) &&
-                    !DeclarativeNestedMapExpression
-                        .TryGetMarkerDestinationType(
-                            local.Type,
-                            out _))
                 {
                     return new UnsupportedDeclarativeControlFlow(
                         UnsupportedBlockMessage);
@@ -379,6 +390,126 @@ internal static class DeclarativeControlFlowPlanner
             boundLocals.ToImmutable());
     }
 
+    private static bool ContainsReadOnlyInputMutation(
+        LambdaExpressionSyntax lambda,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var parameters = lambda switch
+        {
+            ParenthesizedLambdaExpressionSyntax parenthesized =>
+                parenthesized.ParameterList.Parameters,
+            SimpleLambdaExpressionSyntax simple =>
+                SyntaxFactory.SingletonSeparatedList(simple.Parameter),
+            _ => default
+        };
+
+        if (parameters.Count < 2)
+        {
+            return false;
+        }
+
+        var readOnlyParameters = new HashSet<ISymbol>(
+            parameters.Skip(1)
+                .Select(parameter => semanticModel.GetDeclaredSymbol(
+                    parameter,
+                    cancellationToken))
+                .OfType<ISymbol>(),
+            SymbolEqualityComparer.Default);
+
+        foreach (var identifier in lambda.DescendantNodes()
+                     .OfType<IdentifierNameSyntax>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var symbol = semanticModel.GetSymbolInfo(
+                    identifier,
+                    cancellationToken)
+                .Symbol;
+
+            if (symbol is null ||
+                !readOnlyParameters.Contains(symbol))
+            {
+                continue;
+            }
+
+            foreach (var ancestor in identifier.Ancestors()
+                         .TakeWhile(node =>
+                             !ReferenceEquals(node, lambda)))
+            {
+                if (IsMutationOf(ancestor, identifier))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsUnsupportedExpressionStatement(
+        LambdaExpressionSyntax lambda,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        foreach (var statement in lambda.DescendantNodes(
+                     descendIntoChildren: node =>
+                         ReferenceEquals(node, lambda) ||
+                         node is not (
+                             LambdaExpressionSyntax or
+                             AnonymousMethodExpressionSyntax or
+                             LocalFunctionStatementSyntax))
+                     .OfType<ExpressionStatementSyntax>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!DeclarativeNestedMapExpression
+                    .IsReadOnlyMemberUpdateStatement(
+                        statement.Expression,
+                        semanticModel,
+                        cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsMutationOf(
+        SyntaxNode ancestor,
+        IdentifierNameSyntax identifier)
+    {
+        return ancestor switch
+        {
+            AssignmentExpressionSyntax assignment =>
+                assignment.Left.Span.Contains(identifier.Span),
+            PrefixUnaryExpressionSyntax prefix =>
+                prefix.Operand.Span.Contains(identifier.Span) &&
+                prefix.IsKind(
+                    SyntaxKind.PreIncrementExpression) ||
+                prefix.Operand.Span.Contains(identifier.Span) &&
+                prefix.IsKind(
+                    SyntaxKind.PreDecrementExpression),
+            PostfixUnaryExpressionSyntax postfix =>
+                postfix.Operand.Span.Contains(identifier.Span) &&
+                postfix.IsKind(
+                    SyntaxKind.PostIncrementExpression) ||
+                postfix.Operand.Span.Contains(identifier.Span) &&
+                postfix.IsKind(
+                    SyntaxKind.PostDecrementExpression),
+            ArgumentSyntax argument =>
+                argument.Expression.Span.Contains(identifier.Span) &&
+                (argument.RefKindKeyword.IsKind(
+                     SyntaxKind.RefKeyword) ||
+                 argument.RefKindKeyword.IsKind(
+                     SyntaxKind.OutKeyword)),
+            RefExpressionSyntax reference =>
+                reference.Expression.Span.Contains(identifier.Span),
+            _ => false
+        };
+    }
+
     private static bool CanReuseForSwitchFallback(
         ILocalSymbol local,
         LambdaExpressionSyntax lambda,
@@ -543,6 +674,7 @@ internal static class DeclarativeControlFlowPlanner
                 {
                     Expression: not null
                 }:
+            case ExpressionStatementSyntax:
                 return true;
 
             default:
@@ -726,6 +858,10 @@ internal static class DeclarativeControlFlowPlanner
                 }:
                 yield return throwExpression;
                 yield break;
+
+            case ExpressionStatementSyntax expressionStatement:
+                yield return expressionStatement.Expression;
+                yield break;
         }
     }
 
@@ -796,6 +932,17 @@ internal static class DeclarativeControlFlowPlanner
                         declarationRuntimeLocalPlaceholders,
                         semanticModel,
                         cancellationToken);
+                    break;
+
+                case ExpressionStatementSyntax expressionStatement:
+                    if (root is null)
+                    {
+                        return false;
+                    }
+
+                    root = new DeclarativeEvaluationSyntaxNode(
+                        expressionStatement.Expression,
+                        root);
                     break;
 
                 case BlockSyntax block:
@@ -1445,6 +1592,14 @@ internal static class DeclarativeControlFlowPlanner
             };
         }
 
+        if (node is DeclarativeEvaluationSyntaxNode evaluation)
+        {
+            return evaluation with
+            {
+                Next = ApplyOverlay(evaluation.Next, overlay)
+            };
+        }
+
         if (node is DeclarativeConditionalSyntaxNode conditional)
         {
             return conditional with
@@ -1526,6 +1681,21 @@ internal static class DeclarativeControlFlowPlanner
                 {
                     Next = next
                 };
+        }
+
+        if (node is DeclarativeEvaluationSyntaxNode evaluation)
+        {
+            var next = ExpandMemberConditions(
+                evaluation.Next,
+                localInitializers,
+                dslLocals,
+                dslConditionPlaceholders,
+                semanticModel,
+                cancellationToken);
+
+            return next is null
+                ? null
+                : evaluation with { Next = next };
         }
 
         if (node is DeclarativeThrowSyntaxNode)
@@ -2723,6 +2893,11 @@ internal abstract record DeclarativeControlFlowSyntaxNode;
 
 internal sealed record DeclarativeLocalDeclarationsSyntaxNode(
     ImmutableArray<string> RuntimeLocalPlaceholders,
+    DeclarativeControlFlowSyntaxNode Next)
+    : DeclarativeControlFlowSyntaxNode;
+
+internal sealed record DeclarativeEvaluationSyntaxNode(
+    ExpressionSyntax Expression,
     DeclarativeControlFlowSyntaxNode Next)
     : DeclarativeControlFlowSyntaxNode;
 

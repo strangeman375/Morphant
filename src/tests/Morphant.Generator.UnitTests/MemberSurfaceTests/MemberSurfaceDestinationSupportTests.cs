@@ -221,8 +221,6 @@ namespace TestCase
 
     public sealed class UnsupportedMembersDestination
     {
-        public int ReadOnlyProperty { get; }
-
         public readonly int ReadOnlyField;
 
         public static int StaticProperty { get; set; }

@@ -50,7 +50,7 @@ namespace TestCase
                     ByConvention(),
                     new()
                     {
-                        child = Map<ChildDestination>(source.Child)
+                        child = Create<ChildDestination>(source.Child)
                     }));
     }
 

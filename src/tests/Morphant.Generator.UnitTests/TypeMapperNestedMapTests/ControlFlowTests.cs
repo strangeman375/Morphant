@@ -48,12 +48,12 @@ namespace TestCase
                 .Members((source, _) =>
                 {
                     var shared =
-                        Map<ChildDestination>(source.First);
+                        Create<ChildDestination>(source.First);
                     var selected = source.Mode switch
                     {
                         0 => shared,
-                        1 => Map<ChildDestination>(source.Second),
-                        _ => Map<ChildDestination>(source.Third)
+                        1 => Create<ChildDestination>(source.Second),
+                        _ => Create<ChildDestination>(source.Third)
                     };
 
                     return new()
@@ -61,7 +61,7 @@ namespace TestCase
                         Child = selected,
                         Other = source.Mode == 0
                             ? shared
-                            : Map<ChildDestination>(source.Fourth)
+                            : Create<ChildDestination>(source.Fourth)
                     };
                 });
     }

@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperNestedMapTests;
 internal sealed class UnsupportedTests
 {
     [Test]
-    public void Rejects_untyped_or_incompatible_maps_without_implicit_auto_dispatch()
+    public void Rejects_ambiguous_or_incompatible_maps_without_implicit_auto_dispatch()
     {
         // lang=c#
         const string source =
@@ -28,9 +28,11 @@ namespace TestCase
 
     public sealed record Source(ChildSource Child);
 
-    public sealed class UntypedLocalDestination
+    public sealed class AmbiguousDestination
     {
-        public ChildDestination Child { get; set; } = new(-1);
+        public ChildDestination First { get; set; } = new(-1);
+
+        public ChildDestination Second { get; set; } = new(-1);
     }
 
     public sealed class IncompatibleDestination
@@ -48,16 +50,30 @@ namespace TestCase
         public ChildDestination Child { get; set; } = new(-1);
     }
 
+    public sealed class SpoofedSelectorDestination
+    {
+        public ChildDestination Child { get; set; } = new(-1);
+    }
+
+    public sealed class SpoofedMembers
+    {
+        public global::Morphant.Members.Member<ChildDestination> Child => null!;
+    }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, UntypedLocalDestination>()
+            builder.Map<Source, AmbiguousDestination>()
                 .Members((source, _) =>
                 {
                     var child = Map(source.Child);
-                    return new() { Child = child };
+                    return new()
+                    {
+                        First = child,
+                        Second = child
+                    };
                 });
 
             builder.Map<Source, IncompatibleDestination>()
@@ -77,6 +93,14 @@ namespace TestCase
                 {
                     Child = Auto()
                 });
+
+            builder.Map<Source, SpoofedSelectorDestination>()
+                .Members((source, _) =>
+                {
+                    var members = new SpoofedMembers();
+                    Update(source.Child, members.Child);
+                    return new();
+                });
         }
     }
 
@@ -87,10 +111,11 @@ namespace TestCase
             var mapper = new TestMapper();
             var source = new Source(new ChildSource(1));
 
-            AssertUnsupported<UntypedLocalDestination>(mapper, source);
+            AssertUnsupported<AmbiguousDestination>(mapper, source);
             AssertUnsupported<IncompatibleDestination>(mapper, source);
             AssertUnsupported<NullableResultDestination>(mapper, source);
             AssertUnsupported<AutomaticDestination>(mapper, source);
+            AssertUnsupported<SpoofedSelectorDestination>(mapper, source);
         }
 
         private static void AssertUnsupported<TDestination>(

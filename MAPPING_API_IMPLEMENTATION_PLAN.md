@@ -113,7 +113,7 @@ runtime-проверки к exact-source категориям в unit-test proje
 - application-wide exact-pair dispatch поверх вручную зарегистрированных
   mapping services;
 - root и scoped `IMapper`, `MappingContext` и `MappingScope`;
-- explicit nested `Create` / `Update`;
+- adaptive nested `Map` и explicit nested `Create` / `Update`;
 - settings и явная композиция через mapper inheritance;
 - generated surface, actualization, incrementality и интеграционный сценарий.
 
@@ -127,9 +127,9 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 3, этап 16 — explicit declarative nested `Map`.**
+**Фаза 3, этап 16 — declarative nested mapping.**
 
-Статус: ожидает ревью.
+Статус: реализован, ожидает ревью.
 
 Этап 15 принят. Этап 17 и все последующие этапы заблокированы до принятия
 этапа 16.
@@ -162,7 +162,8 @@ Production scope:
   `ConstructorParameter<T>`;
 - подготовить общий builder- и marker-фундамент для будущих pair-specific
   `Construct`, `Members` и `Convert`, включая `Auto`, `Ignore`,
-  `ByConvention`, `ByFactory` и четыре формы explicit `Map(...)`; не вводить
+  `ByConvention`, `ByFactory` и marker hierarchy для будущих adaptive
+  `Map` / explicit `Create` / explicit `Update`; не вводить
   временные универсальные overload-ы с неточной root-nullability;
 - удалить из публичного контракта `Template()`, `TemplateMode`,
   `NullabilityMismatchValidation` и `IContextualMapper`;
@@ -1101,68 +1102,85 @@ mutation, loops, exceptions, local functions, record `with`, nested scoped
 dispatch, nullable value pairs, captures/conflicts/markers, отсутствие
 conventions и collision-safe helper (`8/8`).
 
-### Этап 16. Explicit declarative nested `Map`
+### Этап 16. Declarative nested mapping
 
-Статус: ожидает ревью.
+Статус: реализован, ожидает ревью.
 
-Цель — реализовать nested dispatch как явный member/constructor rule.
+Цель — дать common-case nested mapping короткое adaptive API, сохранив явный
+выбор Create/Update для специальных случаев.
 
 Production scope:
 
-- четыре формы `Map(source)`, `Map<TDestination>(source)`,
-  `Map(source, destination)` и
-  `Map<TDestination>(source, destination)`;
-- one-argument form всегда вызывает nested `Create`, two-argument — nested
-  `Update`, независимо от outer operation;
-- static nested source выводится из первого argument, destination — из target
-  либо explicit generic argument;
-- generic result обязан warning-free преобразовываться в target type;
-- explicit `null` second argument сохраняет nested Update и не заменяется
-  Create;
-- child previous передаётся только явно; outer previous/result не
-  подставляются generator-ом;
-- nested result авторитетен и присваивается outer target;
-- arguments вычисляются один раз слева направо;
-- dispatch использует тот же provider/scope и новый call frame;
+- adaptive forms `Map()`, `Map<TDestination>()`, `Map(source)` и
+  `Map<TDestination>(source)` во всех target-typed member/constructor
+  позициях, declarative control flow и locals;
+- parameterless forms выводят readable source-member из имени target-а;
+- adaptive no-previous branch вызывает nested Create, existing outer Update —
+  nested Update с текущим member-ом фактического `result` либо соответствующим
+  readable member-ом outer `previous` для constructor parameter;
+- explicit forms `Create(source)`, `Create<TDestination>(source)`,
+  `Update(source, destination)` и
+  `Update<TDestination>(source, destination)` всегда сохраняют выбранную
+  nested operation;
+- static nested source выводится из source-expression, destination — из target
+  либо explicit generic argument; generic result обязан warning-free
+  преобразовываться в target type;
+- adaptive generic Update проверяет runtime-совместимость текущего destination;
+  incompatible non-null value приводит к `InvalidCastException`, а не к
+  скрытому Create;
+- true get-only destination properties и properties с недоступным обычным
+  setter-ом входят в `DestinationMembers` как get-only markers и допускают
+  standalone `Update(source, members.Member)`; direct `init`-only остаётся
+  creation-only и proxy не получает;
+- get-only target читается один раз; при `null` nested call и source-expression
+  пропускаются, при non-null выполняется Update с discard returned replacement;
+- `previous` и `result` являются read-only inputs: assignment, increment,
+  decrement и `ref`/`out` mutation запрещены declarative plan-ом;
+- arguments вычисляются один раз слева направо; dispatch использует тот же
+  provider/scope и новый call frame;
 - convention `Auto()` по-прежнему никогда не превращается в implicit nested
   mapping.
 
 Тестовый scope:
 
-- все четыре forms в constructor и member targets;
-- outer Create/Update x nested Create/Update matrix;
-- target inference, explicit destination, interfaces и conversions;
+- все восемь forms в constructor и member targets;
+- adaptive outer Create/Update matrix, normalized null destination,
+  replacement result и constructor previous-member association;
+- source/target inference, typed и untyped locals, interfaces, conversions и
+  incompatible runtime destination;
 - explicit null, nullable sources и destination values;
-- previous-vs-result child expressions;
-- argument evaluation order, nested replacement и exception propagation;
-- application-wide lookup вне outer mapper/assembly.
+- get-only non-null/null paths, single evaluation и discarded replacement;
+- ambiguous adaptive local reuse и mutation `previous`/`result`;
+- argument evaluation order, graph sharing, exception propagation и
+  application-wide lookup вне outer mapper/assembly.
 
-Результат этапа: declarative mapping поддерживает graph composition без
-скрытого выбора nested pair или operation.
+Результат этапа: основной nested rule следует фактической outer lifecycle
+ветке, а принудительные Create/Update и in-place get-only update выражаются
+явно без ручной мутации outer destination.
 
-Реализовано: все четыре marker-формы семантически связываются в target-typed
-member/constructor position и понижаются в вызов scoped
-`context.Mapper.Map<TSource, TDestination>`. Статический source берётся из
-первого argument-а, destination — из target либо generic argument-а;
-warning-free conversion проверяется compiler probe-ом. Generic marker может
-храниться в declarative `var` local как фактический nested result, а
-non-generic marker без target typing детерминированно unsupported.
+Реализовано: marker-вызовы семантически связываются с конечной target-позицией
+и понижаются в scoped `context.Mapper.Map<TSource, TDestination>`. Adaptive
+locals остаются aliases и получают source/destination context от конечного
+member-а либо constructor parameter-а; reuse одного вызова для разных current
+destinations в Update детерминированно unsupported. Parameterless source
+выводится из readable source surface, constructor parameter предварительно
+связывается с readable destination-member.
 
-One-argument и two-argument forms сохраняют соответственно `Create` и
-`Update` независимо от outer operation; explicit `null`, outer `previous` и
-фактический `result` не подменяются. Named arguments сохраняют обычный C#
-порядок записи. Nested invocation является нодой общего path-sensitive
-dependency graph, поэтому совпадающие pair/operation/arguments разделяются
-между constructor и members, а различающиеся операции не объединяются.
-Dispatch использует текущий scoped mapper, новый immutable call frame и
-application-wide exact-pair lookup; `Auto()` остаётся только direct
-convention conversion.
+Writable member в existing Update использует member фактического `result`,
+включая replacement. Constructor parameter использует member outer previous.
+Explicit Update не меняет operation для `null`; adaptive no-previous ветка
+выполняет Create. Generic adaptive Update генерирует проверяемое runtime
+приведение.
+
+Readable non-writable properties добавлены в generated member surface без
+setter-а. Standalone Update через такой marker генерирует null guard до source,
+однократный getter и discard nested result. Эти markers не участвуют в
+conventions, `Auto()` и unmapped validation. Declarative input mutation
+отсекается до lowering.
 
 Самостоятельная категория `TypeMapperNestedMapTests` содержит runtime и полный
-exact-source срез: четыре формы, constructor/member/convention targets,
-outer-operation matrix, typed locals/control flow, graph sharing, nullable
-reference/value pairs, previous-vs-result, named-argument order, replacement,
-исключения, invalid forms и mapper из отдельной assembly (`10/10`).
+exact-source срез перечисленного контракта; `MemberSurfaceTests` фиксирует
+generated read-only marker shape.
 
 ## Фаза 4. Settings и configuration composition
 

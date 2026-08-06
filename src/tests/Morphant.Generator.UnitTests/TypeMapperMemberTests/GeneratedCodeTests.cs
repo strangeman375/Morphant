@@ -579,6 +579,14 @@ namespace TestCase.Morphant.Generated
     internal sealed record DestinationMembers
     {
         /// <summary>
+        /// Selects <see cref="global::TestCase.Destination.Seed"/> for a nested Update mapping.
+        /// </summary>
+        public global::Morphant.Members.Member<int> Seed
+        {
+            get => null!;
+        }
+
+        /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.Initial"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> Initial

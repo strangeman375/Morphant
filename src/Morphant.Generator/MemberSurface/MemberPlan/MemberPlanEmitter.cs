@@ -78,7 +78,12 @@ internal static class MemberPlanEmitter
                 (member.AcceptsNull ? "? " : " ") +
                 Identifier(member.Name));
             writer.Line("get => null!;");
-            writer.Line("set { }");
+
+            if (member.CanWrite)
+            {
+                writer.Line("set { }");
+            }
+
             writer.CloseBlock();
 
             var nextRequiresDisabled =
@@ -130,7 +135,10 @@ internal static class MemberPlanEmitter
 
         WriteSummary(
             writer,
-            $"Configures mapping for <see cref=\"{cref}\"/>.");
+            member.CanWrite
+                ? $"Configures mapping for <see cref=\"{cref}\"/>."
+                : "Selects " +
+                  $"<see cref=\"{cref}\"/> for a nested Update mapping.");
     }
 
     private static void WriteTypeDeclaration(

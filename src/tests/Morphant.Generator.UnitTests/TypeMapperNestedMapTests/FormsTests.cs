@@ -83,14 +83,14 @@ namespace TestCase
         {
             builder.Map<OuterSource, ConstructorDestination>()
                 .Construct((source, previous) => new(
-                    Map(source.First),
-                    Map<ChildDestination>(source.Second),
-                    Map(
+                    Create(source.First),
+                    Create<ChildDestination>(source.Second),
+                    Update(
                         source.Third,
                         previous.HasValue
                             ? previous.Value.Third
                             : null),
-                    Map<ChildDestination>(
+                    Update<ChildDestination>(
                         source.Fourth,
                         previous.HasValue
                             ? (ChildDestination?)previous.Value.Fourth
@@ -99,14 +99,14 @@ namespace TestCase
             builder.Map<OuterSource, MemberDestination>()
                 .Members((source, previous) => new()
                 {
-                    First = Map(source.First),
-                    Second = Map<ChildDestination>(source.Second),
-                    Third = Map(
+                    First = Create(source.First),
+                    Second = Create<ChildDestination>(source.Second),
+                    Third = Update(
                         source.Third,
                         previous.HasValue
                             ? previous.Value.Third
                             : null),
-                    Fourth = Map<ChildDestination>(
+                    Fourth = Update<ChildDestination>(
                         source.Fourth,
                         previous.HasValue
                             ? (ChildDestination?)previous.Value.Fourth

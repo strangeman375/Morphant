@@ -140,6 +140,30 @@ namespace TestCase.Morphant.Generated
             set { }
         }
 
+        /// <summary>
+        /// Selects <see cref="global::TestCase.Destination.ReadOnlyProperty"/> for a nested Update mapping.
+        /// </summary>
+        public global::Morphant.Members.Member<int> ReadOnlyProperty
+        {
+            get => null!;
+        }
+
+        /// <summary>
+        /// Selects <see cref="global::TestCase.Destination.PrivateSetter"/> for a nested Update mapping.
+        /// </summary>
+        public global::Morphant.Members.Member<int> PrivateSetter
+        {
+            get => null!;
+        }
+
+        /// <summary>
+        /// Selects <see cref="global::TestCase.Destination.ProtectedSetter"/> for a nested Update mapping.
+        /// </summary>
+        public global::Morphant.Members.Member<int> ProtectedSetter
+        {
+            get => null!;
+        }
+
         public bool Equals(DestinationMembers? other) => false;
 
         public override int GetHashCode() => 0;

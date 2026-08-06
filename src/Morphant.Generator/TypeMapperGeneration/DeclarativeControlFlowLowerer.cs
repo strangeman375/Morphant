@@ -182,6 +182,9 @@ internal static class DeclarativeControlFlowLowerer
         CancellationToken cancellationToken,
         out TypeMapperControlFlowNode root)
     {
+        var nestedMapUsages =
+            new DeclarativeNestedMapUsageRegistry();
+
         TypeMapperRewrittenDependencyExpression?
             RewriteDependency(ExpressionSyntax expression)
         {
@@ -246,6 +249,8 @@ internal static class DeclarativeControlFlowLowerer
                     transferScope,
                     program.RuntimeLocalPlaceholders,
                     fallbackType: null,
+                    nestedMapTarget: null,
+                    nestedMapUsageRegistry: nestedMapUsages,
                     cancellationToken,
                     out var rewritten,
                     out var dependency)
@@ -455,6 +460,37 @@ internal static class DeclarativeControlFlowLowerer
                     Locals = runtimeLocals.ToImmutable()
                         .AddRange(next.Locals)
                 };
+            }
+
+            if (node is DeclarativeEvaluationSyntaxNode evaluation)
+            {
+                if (!DeclarativeNestedMapExpression
+                        .IsReadOnlyMemberUpdateStatement(
+                            evaluation.Expression,
+                            semanticModel,
+                            cancellationToken))
+                {
+                    return null;
+                }
+
+                var expression = RewriteDependency(
+                    evaluation.Expression);
+                var evaluationContinuation = BuildNode(evaluation.Next);
+
+                return expression is null || evaluationContinuation is null
+                    ? null
+                    : new TypeMapperControlFlowNode(
+                        Locals: [],
+                        Condition: null,
+                        WhenTrue: null,
+                        WhenFalse: null,
+                        Leaf: null,
+                        ThrowExpression: null,
+                        EvaluationExpression:
+                            expression.Value.Expression,
+                        EvaluationContinuation: evaluationContinuation,
+                        EvaluationDependency:
+                            expression.Value.DependencyExpression);
             }
 
             if (node is DeclarativeConditionalSyntaxNode conditional)

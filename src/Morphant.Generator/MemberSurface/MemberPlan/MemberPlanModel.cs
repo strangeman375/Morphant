@@ -23,6 +23,7 @@ internal sealed record MemberPlanPropertyModel(
     string Name,
     string TypeName,
     MemberPlanDocumentationModel Documentation,
+    bool CanWrite,
     bool AcceptsNull,
     bool RequiresNullableAnnotationsDisabled,
     string? ObsoleteAttributeSource);

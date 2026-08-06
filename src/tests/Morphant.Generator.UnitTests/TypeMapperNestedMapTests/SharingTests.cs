@@ -47,12 +47,12 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<OuterSource, OuterDestination>()
-                .Construct(source => new(Map(source.Child)))
+                .Construct(source => new(Create(source.Child)))
                 .Members((source, _) => new()
                 {
                     MemberValue =
-                        Map<ChildDestination>(source.Child),
-                    UpdateValue = Map(source.Child, null)
+                        Create<ChildDestination>(source.Child),
+                    UpdateValue = Update(source.Child, null)
                 });
     }
 

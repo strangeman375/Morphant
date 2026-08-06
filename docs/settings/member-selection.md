@@ -110,8 +110,8 @@ builder.Map<OrderDto, Order>()
 
 Conventions and `Auto()` require an exact case-sensitive member name and a
 warning-free implicit C# conversion. They never start a nested mapping merely
-because two member names match. Nested mapping uses an explicit `Map(...)`
-rule.
+because two member names match. Nested mapping uses an explicit `Map(...)`,
+`Create(...)`, or `Update(...)` rule.
 
 The policy applies after constructor, direct `Construct`, and `ByFactory`
 result selection. A direct or factory result only exposes post-construction

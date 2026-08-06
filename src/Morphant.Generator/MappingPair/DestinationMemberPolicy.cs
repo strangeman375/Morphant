@@ -295,19 +295,35 @@ internal static class DestinationMemberPolicy
     {
         if (member is IPropertySymbol property)
         {
-            return !property.IsStatic &&
-                   !property.IsIndexer &&
-                   property.SetMethod is { } setter &&
-                   (includeInitOnlyProperties || !setter.IsInitOnly) &&
-                   compilation.IsSymbolAccessibleWithin(
-                       property,
-                       compilation.Assembly) &&
-                   compilation.IsSymbolAccessibleWithin(
-                       setter,
-                       compilation.Assembly) &&
-                   MappingTypeEligibilityPolicy.CanBeNamed(
-                       property.Type,
-                       compilation);
+            if (property.IsStatic ||
+                property.IsIndexer ||
+                !compilation.IsSymbolAccessibleWithin(
+                    property,
+                    compilation.Assembly) ||
+                !MappingTypeEligibilityPolicy.CanBeNamed(
+                    property.Type,
+                    compilation))
+            {
+                return false;
+            }
+
+            var canWrite = property.SetMethod is { } setter &&
+                (includeInitOnlyProperties || !setter.IsInitOnly) &&
+                compilation.IsSymbolAccessibleWithin(
+                    setter,
+                    compilation.Assembly);
+            var isExcludedInitOnly =
+                !includeInitOnlyProperties &&
+                property.SetMethod?.IsInitOnly == true;
+            var canRead = property.GetMethod is { } getter &&
+                !isExcludedInitOnly &&
+                !property.ReturnsByRef &&
+                !property.ReturnsByRefReadonly &&
+                compilation.IsSymbolAccessibleWithin(
+                    getter,
+                    compilation.Assembly);
+
+            return canWrite || canRead;
         }
 
         return member is IFieldSymbol field &&

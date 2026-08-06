@@ -98,11 +98,53 @@ public abstract class TypeMapper
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
+    /// Configures a declarative nested mapping whose source is inferred from
+    /// the target name and whose operation follows the outer mapping.
+    /// </summary>
+    protected static MapMarker Map() =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
+    /// Configures a declarative nested mapping whose operation follows the
+    /// outer mapping.
+    /// </summary>
+    /// <param name="source">The source passed to the nested mapping.</param>
+    protected static MapMarker Map(object? source) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
+    /// Configures a declarative nested mapping to <typeparamref name="T"/>
+    /// whose source is inferred from the target name and whose operation
+    /// follows the outer mapping.
+    /// </summary>
+    /// <typeparam name="T">The nested destination type.</typeparam>
+    protected static MapMarker<T> Map<T>() =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
+    /// Configures a declarative nested mapping to <typeparamref name="T"/>
+    /// whose operation follows the outer mapping.
+    /// </summary>
+    /// <typeparam name="T">The nested destination type.</typeparam>
+    /// <param name="source">The source passed to the nested mapping.</param>
+    protected static MapMarker<T> Map<T>(object? source) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
     /// Configures a declarative nested Create mapping whose destination type
     /// is inferred from the target member or constructor parameter.
     /// </summary>
     /// <param name="source">The source passed to the nested mapping.</param>
-    protected static MapMarker Map(object? source) =>
+    protected static MapMarker Create(object? source) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
+    /// Configures a declarative nested Create mapping to
+    /// <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The nested destination type.</typeparam>
+    /// <param name="source">The source passed to the nested mapping.</param>
+    protected static MapMarker<T> Create<T>(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
@@ -114,16 +156,9 @@ public abstract class TypeMapper
     /// The destination passed to the nested mapping, including an explicit
     /// <see langword="null"/> destination.
     /// </param>
-    protected static MapMarker Map(object? source, object? destination) =>
-        throw new RuntimeInvocationNotSupportedException();
-
-    /// <summary>
-    /// Configures a declarative nested Create mapping to
-    /// <typeparamref name="T"/>.
-    /// </summary>
-    /// <typeparam name="T">The nested destination type.</typeparam>
-    /// <param name="source">The source passed to the nested mapping.</param>
-    protected static MapMarker<T> Map<T>(object? source) =>
+    protected static MapMarker Update(
+        object? source,
+        object? destination) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
@@ -136,6 +171,8 @@ public abstract class TypeMapper
     /// The destination passed to the nested mapping, including an explicit
     /// <see langword="null"/> destination.
     /// </param>
-    protected static MapMarker<T> Map<T>(object? source, object? destination) =>
+    protected static MapMarker<T> Update<T>(
+        object? source,
+        object? destination) =>
         throw new RuntimeInvocationNotSupportedException();
 }

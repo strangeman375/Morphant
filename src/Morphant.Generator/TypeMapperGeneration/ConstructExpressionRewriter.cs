@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -236,6 +237,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 sourceParameter,
                 previousParameter,
                 resultParameter,
+                nestedMapMappings: null,
                 cancellationToken))
         {
             rewrittenSyntax = null!;
@@ -287,6 +289,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 sourceParameter,
                 previousParameter,
                 resultParameter,
+                nestedMapMappings,
                 cancellationToken))
         {
             rewrittenExpression = null!;
@@ -333,20 +336,89 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 node,
                 out var nestedMap))
         {
-            var arguments = node.ArgumentList.Arguments.Select(
-                argument => (ArgumentSyntax)Visit(argument)!);
             var method = SyntaxFactory.ParseExpression(
                 "context.Mapper.Map<" +
                 nestedMap.SourceTypeName +
                 ", " +
                 nestedMap.DestinationTypeName +
                 ">");
+            SeparatedSyntaxList<ArgumentSyntax> arguments;
 
-            return node
+            if (nestedMap.InferredSourceMemberName is { } sourceMember)
+            {
+                arguments = SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Argument(
+                        SyntaxFactory.ParseExpression(
+                            _sourceName + "." +
+                            Identifier(sourceMember))));
+            }
+            else if (nestedMap.GuardNullDestination)
+            {
+                if (GetSourceArgument(node) is not { } sourceArgument)
+                {
+                    return node;
+                }
+
+                arguments = SyntaxFactory.SingletonSeparatedList(
+                    (ArgumentSyntax)Visit(sourceArgument)!);
+            }
+            else
+            {
+                arguments = SyntaxFactory.SeparatedList(
+                    node.ArgumentList.Arguments.Select(
+                        argument => (ArgumentSyntax)Visit(argument)!));
+            }
+
+            if (nestedMap.GeneratedDestinationExpression is
+                    { } destinationExpression &&
+                nestedMap.GeneratedDestinationType is
+                    { } destinationType)
+            {
+                var generatedDestination =
+                    nestedMap.GuardNullDestination
+                        ? BuildDestinationConversion(
+                            nestedMap.GuardVariableName!,
+                            destinationType,
+                            nestedMap.DestinationType,
+                            nestedMap.DestinationTypeName,
+                            allowNull: false)
+                        : BuildDestinationConversion(
+                            destinationExpression,
+                            destinationType,
+                            nestedMap.DestinationType,
+                            nestedMap.DestinationTypeName,
+                            allowNull: true);
+                arguments = arguments.Add(
+                    SyntaxFactory.Argument(generatedDestination)
+                        .WithNameColon(
+                            SyntaxFactory.NameColon("destination")));
+            }
+
+            var rewrittenInvocation = node
                 .WithExpression(method)
                 .WithArgumentList(
-                    node.ArgumentList.WithArguments(
-                        SyntaxFactory.SeparatedList(arguments)))
+                    node.ArgumentList.WithArguments(arguments));
+
+            if (nestedMap.GuardNullDestination &&
+                nestedMap.GeneratedDestinationExpression is
+                    { } guardedDestination &&
+                nestedMap.GuardVariableName is { } guardVariable)
+            {
+                return SyntaxFactory.ParseExpression(
+                        guardedDestination +
+                        " is { } " +
+                        Identifier(guardVariable) +
+                        " ? " +
+                        rewrittenInvocation.WithoutTrivia()
+                            .NormalizeWhitespace()
+                            .ToFullString() +
+                        " : default(" +
+                        nestedMap.DestinationTypeName +
+                        ")")
+                    .WithTriviaFrom(node);
+            }
+
+            return rewrittenInvocation
                 .WithTriviaFrom(node);
         }
 
@@ -413,6 +485,83 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         return base.VisitInvocationExpression(node);
+    }
+
+    private ArgumentSyntax? GetSourceArgument(
+        InvocationExpressionSyntax invocation)
+    {
+        return (_semanticModel.GetOperation(invocation) as
+                IInvocationOperation)?
+            .Arguments.FirstOrDefault(argument =>
+                argument.Parameter?.Name == "source")?
+            .Syntax as ArgumentSyntax;
+    }
+
+    private static ExpressionSyntax BuildDestinationConversion(
+        string expression,
+        ITypeSymbol sourceType,
+        ITypeSymbol destinationType,
+        string destinationTypeName,
+        bool allowNull)
+    {
+        if (SymbolEqualityComparer.IncludeNullability.Equals(
+                sourceType,
+                destinationType))
+        {
+            return SyntaxFactory.ParseExpression(expression);
+        }
+
+        var castTypeName = allowNull
+            ? BuildMaybeNullTypeName(
+                destinationType,
+                destinationTypeName)
+            : destinationTypeName;
+
+        ExpressionSyntax value = SyntaxFactory.ParseExpression(expression);
+
+        if (destinationType.IsValueType &&
+            destinationType is not INamedTypeSymbol
+            {
+                OriginalDefinition.SpecialType:
+                    SpecialType.System_Nullable_T
+            })
+        {
+            value = SyntaxFactory.PostfixUnaryExpression(
+                SyntaxKind.SuppressNullableWarningExpression,
+                value);
+        }
+
+        return SyntaxFactory.CastExpression(
+            SyntaxFactory.ParseTypeName(castTypeName),
+            value);
+    }
+
+    private static string BuildMaybeNullTypeName(
+        ITypeSymbol type,
+        string typeName)
+    {
+        if (type is INamedTypeSymbol namedType &&
+            namedType.OriginalDefinition.SpecialType ==
+                SpecialType.System_Nullable_T)
+        {
+            return typeName;
+        }
+
+        if (type.IsValueType)
+        {
+            return typeName;
+        }
+
+        return TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+            type.WithNullableAnnotation(NullableAnnotation.Annotated));
+    }
+
+    private static string Identifier(string value)
+    {
+        return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
+            ? "@" + value
+            : value;
     }
 
     public override SyntaxNode? VisitObjectCreationExpression(
@@ -1017,6 +1166,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
         IParameterSymbol? resultParameter,
+        IReadOnlyDictionary<
+            InvocationExpressionSyntax,
+            TypeMapperNestedMapExpressionModel>? nestedMapMappings,
         CancellationToken cancellationToken)
     {
         foreach (var name in expression
@@ -1026,6 +1178,15 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             cancellationToken.ThrowIfCancellationRequested();
 
             if (name.Parent is NameColonSyntax)
+            {
+                continue;
+            }
+
+            if (IsGeneratedDestinationReference(
+                    name,
+                    nestedMapMappings,
+                    semanticModel,
+                    cancellationToken))
             {
                 continue;
             }
@@ -1082,6 +1243,41 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         return true;
+    }
+
+    private static bool IsGeneratedDestinationReference(
+        SimpleNameSyntax name,
+        IReadOnlyDictionary<
+            InvocationExpressionSyntax,
+            TypeMapperNestedMapExpressionModel>? nestedMapMappings,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (nestedMapMappings is null)
+        {
+            return false;
+        }
+
+        var invocation = name.AncestorsAndSelf()
+            .OfType<InvocationExpressionSyntax>()
+            .FirstOrDefault(candidate =>
+                nestedMapMappings.TryGetValue(
+                    candidate,
+                    out var mapping) &&
+                mapping.GuardNullDestination);
+
+        if (invocation is null ||
+            semanticModel.GetOperation(
+                invocation,
+                cancellationToken) is not IInvocationOperation operation ||
+            operation.Arguments.FirstOrDefault(argument =>
+                argument.Parameter?.Name == "destination")?.Syntax is not
+                ArgumentSyntax destinationArgument)
+        {
+            return false;
+        }
+
+        return destinationArgument.Span.Contains(name.Span);
     }
 
     private static bool IsDeclaredWithin(

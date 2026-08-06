@@ -24,6 +24,10 @@ internal static class MembersControlFlowMappingPlanner
         CancellationToken cancellationToken)
     {
         var hasResultDependentControlFlow =
+            ContainsReadOnlyMemberUpdate(
+                members.Program.Root,
+                members.SemanticModel,
+                cancellationToken) ||
             members.ResultParameter is { } resultParameter &&
             ReferencesResultInControlFlow(
                 members.Program.Root,
@@ -306,8 +310,9 @@ internal static class MembersControlFlowMappingPlanner
         CancellationToken cancellationToken,
         out TypeMapperControlFlowMappingModel controlFlow)
     {
-        if (members.ResultParameter is not { } resultParameter ||
-            !TryBuildPostControlFlow(
+        var resultParameter = members.ResultParameter;
+
+        if (!TryBuildPostControlFlow(
                 members,
                 mapping,
                 compilation,
@@ -812,6 +817,16 @@ internal static class MembersControlFlowMappingPlanner
                            localPlaceholders,
                            cancellationToken);
 
+            case DeclarativeEvaluationSyntaxNode evaluation:
+                return References(evaluation.Expression) ||
+                       ReferencesResultInControlFlow(
+                           evaluation.Next,
+                           resultParameter,
+                           semanticModel,
+                           localInitializers,
+                           localPlaceholders,
+                           cancellationToken);
+
             case DeclarativeConditionalSyntaxNode conditional:
                 return References(conditional.Condition) ||
                        ReferencesResultInControlFlow(
@@ -857,6 +872,52 @@ internal static class MembersControlFlowMappingPlanner
                 return false;
         }
 
+    }
+
+    private static bool ContainsReadOnlyMemberUpdate(
+        DeclarativeControlFlowSyntaxNode node,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        return node switch
+        {
+            DeclarativeEvaluationSyntaxNode evaluation =>
+                DeclarativeNestedMapExpression
+                    .IsReadOnlyMemberUpdateStatement(
+                        evaluation.Expression,
+                        semanticModel,
+                        cancellationToken) ||
+                ContainsReadOnlyMemberUpdate(
+                    evaluation.Next,
+                    semanticModel,
+                    cancellationToken),
+            DeclarativeLocalDeclarationsSyntaxNode locals =>
+                ContainsReadOnlyMemberUpdate(
+                    locals.Next,
+                    semanticModel,
+                    cancellationToken),
+            DeclarativeConditionalSyntaxNode conditional =>
+                ContainsReadOnlyMemberUpdate(
+                    conditional.WhenTrue,
+                    semanticModel,
+                    cancellationToken) ||
+                ContainsReadOnlyMemberUpdate(
+                    conditional.WhenFalse,
+                    semanticModel,
+                    cancellationToken),
+            DeclarativeSwitchSyntaxNode switchNode =>
+                switchNode.Sections.Any(section =>
+                    ContainsReadOnlyMemberUpdate(
+                        section.Branch,
+                        semanticModel,
+                        cancellationToken)) ||
+                switchNode.Continuation is { } continuation &&
+                ContainsReadOnlyMemberUpdate(
+                    continuation,
+                    semanticModel,
+                    cancellationToken),
+            _ => false
+        };
     }
 
     private static bool ReferencesParameter(

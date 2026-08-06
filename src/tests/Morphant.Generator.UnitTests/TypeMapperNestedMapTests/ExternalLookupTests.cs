@@ -37,7 +37,7 @@ namespace TestCase
             builder.Map<OuterSource, OuterDestination>()
                 .Members((source, _) => new()
                 {
-                    Child = Map(source.Child)
+                    Child = Create(source.Child)
                 });
     }
 

@@ -234,6 +234,12 @@ internal static class BasicMembersMappingPlanner
         var occupiedNames = new HashSet<string>(StringComparer.Ordinal);
         var hasExplicitCreationOnlyMappings = false;
         var hasResultDependentCreationOnlyMappings = false;
+        var mapNewNestedMapUsages =
+            new DeclarativeNestedMapUsageRegistry();
+        var mapReplacementNestedMapUsages =
+            new DeclarativeNestedMapUsageRegistry();
+        var mapExistingNestedMapUsages =
+            new DeclarativeNestedMapUsageRegistry();
 
         foreach (var assignment in assignments)
         {
@@ -305,6 +311,9 @@ internal static class BasicMembersMappingPlanner
                     transferScope,
                     localSubstitutions,
                     localInitializers,
+                    mapNewNestedMapUsages,
+                    mapReplacementNestedMapUsages,
+                    mapExistingNestedMapUsages,
                     cancellationToken,
                     out var explicitPlan))
             {
@@ -401,6 +410,9 @@ internal static class BasicMembersMappingPlanner
         LambdaExpressionSyntax transferScope,
         IReadOnlyDictionary<ISymbol, string> localSubstitutions,
         IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
+        DeclarativeNestedMapUsageRegistry mapNewNestedMapUsages,
+        DeclarativeNestedMapUsageRegistry mapReplacementNestedMapUsages,
+        DeclarativeNestedMapUsageRegistry mapExistingNestedMapUsages,
         CancellationToken cancellationToken,
         out ExplicitMemberMappingPlan plan)
     {
@@ -417,6 +429,12 @@ internal static class BasicMembersMappingPlanner
                 transferScope,
                 localSubstitutions,
                 destinationMember.Type,
+                new DeclarativeNestedMapTargetContext(
+                    destinationMember.Type,
+                    destinationMember.Name,
+                    DeclarativeNestedMapOperation.Create,
+                    CurrentDestinationExpression: null),
+                mapNewNestedMapUsages,
                 cancellationToken,
                 out var mapNewExpression,
                 out var mapNewDependency) ||
@@ -433,6 +451,13 @@ internal static class BasicMembersMappingPlanner
                 transferScope,
                 localSubstitutions,
                 destinationMember.Type,
+                new DeclarativeNestedMapTargetContext(
+                    destinationMember.Type,
+                    destinationMember.Name,
+                    DeclarativeNestedMapOperation.Update,
+                    mapping.ResultLocalName + "." +
+                    Identifier(destinationMember.Name)),
+                mapReplacementNestedMapUsages,
                 cancellationToken,
                 out var mapReplacementExpression,
                 out var mapReplacementDependency) ||
@@ -449,6 +474,13 @@ internal static class BasicMembersMappingPlanner
                 transferScope,
                 localSubstitutions,
                 destinationMember.Type,
+                new DeclarativeNestedMapTargetContext(
+                    destinationMember.Type,
+                    destinationMember.Name,
+                    DeclarativeNestedMapOperation.Update,
+                    "destination." +
+                    Identifier(destinationMember.Name)),
+                mapExistingNestedMapUsages,
                 cancellationToken,
                 out var mapExistingExpression,
                 out var mapExistingDependency))
@@ -471,7 +503,8 @@ internal static class BasicMembersMappingPlanner
                 destinationMember.Type);
         TypeMapperMemberMappingModel BuildMapping(
             string valueExpression,
-            TypeMapperDependencyExpressionModel? dependencyExpression) =>
+            TypeMapperDependencyExpressionModel? dependencyExpression,
+            bool resultDependent) =>
             new(
                 SourceMemberName: string.Empty,
                 destinationMember.Name,
@@ -479,25 +512,33 @@ internal static class BasicMembersMappingPlanner
                 SourceValueLocalName: null,
                 ExplicitValueExpression: valueExpression,
                 ExplicitValueTypeName: valueTypeName,
-                IsResultDependent: isResultDependent,
+                IsResultDependent: resultDependent,
                 DependencyExpression: dependencyExpression);
 
         var mapNew = BuildMapping(
             mapNewExpression,
-            mapNewDependency);
+            mapNewDependency,
+            isResultDependent);
+        var replacementIsResultDependent =
+            isResultDependent ||
+            ReferencesIdentifier(
+                mapReplacementExpression,
+                mapping.ResultLocalName);
         var mapReplacement = BuildMapping(
             mapReplacementExpression,
-            mapReplacementDependency);
+            mapReplacementDependency,
+            replacementIsResultDependent);
         var mapExisting = BuildMapping(
             mapExistingExpression,
-            mapExistingDependency);
+            mapExistingDependency,
+            isResultDependent);
 
         plan = new ExplicitMemberMappingPlan(
             MapNew: isResultDependent ? null : mapNew,
             MapNewPost: destinationMember.CanAssign
                 ? mapNew
                 : null,
-            MapReplacement: isResultDependent
+            MapReplacement: replacementIsResultDependent
                 ? null
                 : mapReplacement,
             MapReplacementPost: destinationMember.CanAssign
@@ -578,6 +619,14 @@ internal static class BasicMembersMappingPlanner
 
                 yield break;
 
+            case DeclarativeEvaluationSyntaxNode evaluation:
+                foreach (var leaf in EnumerateLeaves(evaluation.Next))
+                {
+                    yield return leaf;
+                }
+
+                yield break;
+
             case DeclarativeConditionalSyntaxNode conditional:
                 foreach (var leaf in EnumerateLeaves(
                              conditional.WhenTrue))
@@ -627,6 +676,27 @@ internal static class BasicMembersMappingPlanner
                    }
                } invocation &&
                semanticModel.GetConstantValue(invocation).HasValue;
+    }
+
+    private static bool ReferencesIdentifier(
+        string expression,
+        string identifier)
+    {
+        return SyntaxFactory.ParseExpression(expression)
+            .DescendantTokens()
+            .Any(token =>
+                token.IsKind(SyntaxKind.IdentifierToken) &&
+                StringComparer.Ordinal.Equals(
+                    token.ValueText,
+                    identifier));
+    }
+
+    private static string Identifier(string value)
+    {
+        return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
+            ? "@" + value
+            : value;
     }
 
     private static PreviousExpressionSubstitution

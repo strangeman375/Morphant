@@ -40,11 +40,11 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct(source => new(Map(source.Child)))
+                .Construct(source => new(Create(source.Child)))
                 .Members((source, _) => new()
                 {
-                    Created = Map<ChildDestination>(source.Child),
-                    Updated = Map(source.Child, source.Previous)
+                    Created = Create<ChildDestination>(source.Child),
+                    Updated = Update(source.Child, source.Previous)
                 });
     }
 }
@@ -171,6 +171,14 @@ namespace TestCase.Morphant.Generated
     /// </summary>
     internal sealed record DestinationMembers
     {
+        /// <summary>
+        /// Selects <see cref="global::TestCase.Destination.Constructed"/> for a nested Update mapping.
+        /// </summary>
+        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Constructed
+        {
+            get => null!;
+        }
+
         /// <summary>
         /// Configures mapping for <see cref="global::TestCase.Destination.Created"/>.
         /// </summary>

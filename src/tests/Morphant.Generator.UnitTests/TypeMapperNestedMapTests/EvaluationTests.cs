@@ -50,7 +50,7 @@ namespace TestCase
             builder.Map<OuterSource, OuterDestination>()
                 .Members((source, previous) => new()
                 {
-                    Child = Map<ChildDestination>(
+                    Child = Update<ChildDestination>(
                         destination: GetDestination(previous),
                         source: GetSource(source.Child, source.Fail))
                 });

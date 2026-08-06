@@ -579,11 +579,13 @@ Constructor-parameter rules сохраняют текущую модель:
 | Явное выражение | Вычислить и передать значение параметра |
 | `Auto()` | Обязательно получить параметр по convention |
 | `Ignore()` | Опустить параметр, когда это допустимо для optional / `params` |
-| `Map(source)` / `Map<TDestination>(source)` | Выполнить nested `Create` и передать его результат |
-| `Map(source, destination)` / `Map<TDestination>(source, destination)` | Выполнить nested `Update` и передать его результат |
+| `Map()` / `Map<TDestination>()` | Вывести source по target-name и выполнить adaptive nested mapping |
+| `Map(source)` / `Map<TDestination>(source)` | Выполнить adaptive nested mapping явного source |
+| `Create(source)` / `Create<TDestination>(source)` | Принудительно выполнить nested `Create` |
+| `Update(source, destination)` / `Update<TDestination>(source, destination)` | Принудительно выполнить nested `Update` |
 
-Typed-формы `Auto<T>()` и `Ignore<T>()` сохраняются вместе с
-`Map<TDestination>(...)`. Они нужны там, где обычного target typing
+Typed-формы `Auto<T>()` и `Ignore<T>()` сохраняются вместе с generic-формами
+nested markers. Они нужны там, где обычного target typing
 недостаточно, например внутри declarative local, conditional- либо
 switch-expression. Generic argument типизирует marker; окончательную
 совместимость с constructor parameter по-прежнему проверяют обычные правила
@@ -826,7 +828,7 @@ builder.Map<OrderDto, Order>()
     .Members((source, _, result) => new()
     {
         Revision = result.Revision + 1,
-        Details = Map(source.Details, result.Details)
+        Details = Map(source.Details)
     });
 ```
 
@@ -918,8 +920,11 @@ Generator самостоятельно раскладывает единый mem
 | Явное выражение | Вычислить и присвоить member выбранного result |
 | `Auto()` | Обязательно найти convention mapping |
 | `Ignore()` | Не маппить member и сохранить значение выбранного result |
-| `Map(source)` / `Map<TDestination>(source)` | Выполнить nested `Create` и присвоить результат |
-| `Map(source, destination)` / `Map<TDestination>(source, destination)` | Выполнить nested `Update` и присвоить результат |
+| `Map()` / `Map<TDestination>()` | Вывести source по target-name и выполнить adaptive nested mapping |
+| `Map(source)` / `Map<TDestination>(source)` | Выполнить adaptive nested mapping явного source |
+| `Create(source)` / `Create<TDestination>(source)` | Принудительно выполнить nested `Create` и присвоить результат |
+| `Update(source, destination)` / `Update<TDestination>(source, destination)` | Принудительно выполнить nested `Update` и присвоить результат |
+| Standalone `Update(source, members.GetOnly)` | Обновить non-null get-only member in-place и отбросить nested result |
 | Member не указан | Применить эффективный `MemberSelection` |
 
 У `Auto` и `Ignore` сохраняются обе формы: `Auto()` / `Auto<T>()` и
@@ -1000,55 +1005,91 @@ constraints и oblivious-контекст. Generator не вставляет cas
 null-forgiving operator, чтобы сделать несовместимый convention candidate
 допустимым.
 
-Nested mapping всегда задаётся одной из четырёх явных форм:
+Nested mapping задаётся восемью marker-формами:
 
-| Форма | Nested destination | Операция |
-|---|---|---|
-| `Map(source)` | Выводится из целевого member или constructor parameter | `Create` |
-| `Map<TDestination>(source)` | Явно заданный `TDestination` | `Create` |
-| `Map(source, destination)` | Выводится из целевого member или constructor parameter | `Update` |
-| `Map<TDestination>(source, destination)` | Явно заданный `TDestination` | `Update` |
+| Форма | Nested source | Nested destination | Операция |
+|---|---|---|---|
+| `Map()` | Выводится по имени target | Выводится из target | Adaptive |
+| `Map<TDestination>()` | Выводится по имени target | Явный `TDestination` | Adaptive |
+| `Map(source)` | Явное выражение | Выводится из target | Adaptive |
+| `Map<TDestination>(source)` | Явное выражение | Явный `TDestination` | Adaptive |
+| `Create(source)` | Явное выражение | Выводится из target | `Create` |
+| `Create<TDestination>(source)` | Явное выражение | Явный `TDestination` | `Create` |
+| `Update(source, destination)` | Явное выражение | Выводится из target | `Update` |
+| `Update<TDestination>(source, destination)` | Явное выражение | Явный `TDestination` | `Update` |
 
-Форм `Map()` и `Map<TDestination>()` без аргументов нет: source и, когда нужен
-existing-вызов, child destination выбирает пользователь. Это правило одинаково
-для body-members и constructor parameters; автоматической связи имени параметра
-конструктора с member-ом внешнего previous не существует.
+Короткий `Map` предназначен для обычного member-aware сценария. В
+no-previous outer branch он вызывает nested Create. В existing outer Update
+он вызывает nested Update: writable member передаёт текущий member фактически
+выбранного `result`, а constructor parameter — соответствующий readable member
+исходного outer `previous`, поскольку новый result ещё не создан.
 
-Статический тип nested source определяется первым аргументом. Runtime-тип не
-меняет выбранную пару, а `Map(null)` без типизирующего cast не определяет
-source-тип и потому недопустим. В generic-форме возвращаемый `TDestination`
-должен warning-free неявно преобразовываться в тип целевого member или
-constructor parameter; это позволяет, например, явно получить concrete child
-для interface-typed места.
+При replacement-ветке writable member использует именно replacement-result.
+Если public outer Update с `null` вследствие `NullDestinationHandling.Create`
+нормализован в no-previous branch, adaptive `Map` выполняет nested Create.
+Явный `Update(source, null)` остаётся nested Update; дальнейшее поведение
+определяет null policy вложенной mapping-пары.
 
-Явный `Map(...)` требует nested mapping даже тогда, когда source можно напрямую
-присвоить целевому месту. One-argument форма всегда означает `Create`, а
-two-argument — `Update`, независимо от outer operation. Это сохраняется и
-для explicit `null` во втором аргументе: null handling выполняет сама вложенная
-mapping-пара, без внешней подстановки, fallback или смены операции.
+Parameterless `Map` ищет readable source property/field по точному имени
+target-member-а. Constructor parameter сначала связывается с readable
+destination-member: точное совпадение имеет приоритет, иначе допускается одно
+уникальное `OrdinalIgnoreCase`-совпадение. Source затем ищется по фактическому
+имени этого destination-member-а. Если связи нет, no-previous ветка ищет
+source по имени самого parameter-а. Existing Update без однозначно связанного
+readable destination-member unsupported; пользователь выбирает source и
+operation явно.
 
-Child previous также передаётся только явно. Если нужная операция зависит от
-наличия outer previous, пользователь выражает обе ветки непосредственно:
+Статический тип nested source определяется source-expression либо найденным
+source-member. Runtime-тип не меняет выбранную пару. В generic-форме
+возвращаемый `TDestination` должен warning-free неявно преобразовываться в тип
+целевого member или constructor parameter. В adaptive Update текущее значение
+должно быть `null` либо runtime-совместимо с `TDestination`; incompatible
+non-null value приводит к `InvalidCastException`, а не превращается в `null`
+или скрытый Create. `null` передаётся дальше только если выбранный
+`TDestination` способен его представить; для non-nullable value destination
+ошибка преобразования происходит до nested dispatch.
+
+Все формы могут храниться в declarative local. Local остаётся alias marker-а и
+получает target context от конечного member-а либо constructor parameter-а.
+Один adaptive local нельзя использовать для разных current destinations в
+Update: такой plan неоднозначен и unsupported.
+
+Для writable target nested result авторитетен и присваивается фактическому
+outer result; nested Update может сохранить аргумент либо вернуть replacement.
+True get-only destination property и property с недоступным обычным setter-ом
+появляются в generated `DestinationMembers` как get-only markers. Direct
+`init`-only property остаётся creation-only и такого proxy не получает. Для
+get-only marker разрешена только standalone форма:
 
 ```csharp
-.Members((source, previous) => new()
+.Members((source, _) =>
 {
-    Address = previous.HasValue
-        ? Map(source.Address, previous.Value.Address)
-        : Map(source.Address)
+    var members = new DestinationMembers
+    {
+        Name = source.Name
+    };
+
+    Update(source.Address, members.Address);
+    return members;
 });
 ```
 
-В existing-ветке здесь читается именно исходный outer `previous`, а не
-replacement, выбранный `Construct`. Если `previous.Value.Address` равен `null`,
-вызывается nested `Update` с explicit `null`. Возвращённый nested result
-авторитетен и присваивается выбранному outer result; nested `Update` может
-как сохранить или изменить старый child, так и вернуть replacement.
+Generator читает `result.Address` один раз. При `null` nested mapper не
+вызывается и source-expression не вычисляется. При non-null выполняется обычный
+nested Update, но returned replacement отбрасывается, потому что присвоить его
+некуда. Get-only value-type target unsupported. Такие markers не участвуют в
+conventions, `Auto()` и unmapped-member validation.
 
-Аргументы каждого `Map(...)` вычисляются ровно один раз слева направо в порядке
-записи, включая переставленные named arguments. Scoped `IMapper` создаёт для
-вложенного вызова новый immutable call frame с выбранной operation и сохраняет
-общий mapping scope.
+Параметры `previous` и `result` в declarative `Construct`/`Members` являются
+read-only источниками информации. Assignment, increment/decrement и передача
+через `ref`/`out` самого параметра либо rooted member-а делают plan unsupported.
+Контролируемый in-place update get-only graph выражается через
+`members.Member`, а не прямой мутацией `result`.
+
+Аргументы каждого nested marker-а вычисляются ровно один раз слева направо в
+порядке записи, включая переставленные named arguments. Get-only null guard
+выполняется до source-expression. Scoped `IMapper` создаёт новый immutable call
+frame с выбранной operation и сохраняет общий mapping scope.
 
 ### 7.5. Dependencies и порядок вычислений
 
@@ -1064,13 +1105,14 @@ Rule считается result-dependent, если его value либо усл�
 .Members((source, _, result) => new()
 {
     Name = source.Name,
-    Details = Map(source.Details, result.Details)
+    Details = Map(source.Details)
 });
 ```
 
 `Name` не зависит от result и может участвовать в creation-time initializer,
-если этого требует destination member. `Details` можно вычислить только после
-создания result. Использование `result` одним rule не переводит весь
+если этого требует destination member. Adaptive `Details` в Update использует
+`result.Details` и потому может быть вычислен только после создания result.
+Использование `result` одним rule не переводит весь
 `Members` в post-creation и не меняет фазу независимых rules.
 
 Для structured constructor/convention result применимые result-independent
@@ -1461,8 +1503,8 @@ Exception из nested mapping не меняет outer frame. Его можно �
 - convention construction не применяется;
 - convention member mapping не применяется;
 - `Construct` и `Members` не выполняются;
-- `Auto()`, `Ignore()`, `Map(...)`, `ByConvention()` и `ByFactory()` не являются
-  DSL-маркерами и недоступны;
+- `Auto()`, `Ignore()`, `Map(...)`, `Create(...)`, `Update(...)`,
+  `ByConvention()` и `ByFactory()` не являются DSL-маркерами и недоступны;
 - ручные nested mappings доступны через `context.Mapper.Map(...)`;
 - scoped mapper автоматически создаёт для вложенного вызова новый
   `MappingContext` и сохраняет общий scope;
@@ -1477,8 +1519,9 @@ Exception из nested mapping не меняет outer frame. Его можно �
 ### 8.4. Использование context за пределами `Convert`
 
 `MappingContext` участвует не только в manual mapping. Declarative pipeline
-использует его внутренне для каждого explicit nested `Map(...)`: текущий вызов
-получает собственный frame, а все frame mapping chain разделяют один scope.
+использует его внутренне для каждого nested `Map` / `Create` / `Update`:
+текущий вызов получает собственный frame, а все frame mapping chain разделяют
+один scope.
 
 Scope завершается в `finally` вместе с root `Map`. Сохранять
 `context.Mapper` и вызывать его после завершения root mapping нельзя;
@@ -2122,10 +2165,10 @@ instances определяется текущим `IServiceProvider`.
 ### 12.3. Root и nested dispatch
 
 Root `IMapper.Map(...)` начинает новую mapping chain, создаёт `MappingScope` и
-выполняет application-wide lookup. Explicit nested `Map(...)` и ручной
-`context.Mapper.Map(...)` используют тот же набор registrations и тот же
-текущий `IServiceProvider`, но создают новый immutable call frame внутри уже
-существующего scope.
+выполняет application-wide lookup. Declarative nested `Map` / `Create` /
+`Update` и ручной `context.Mapper.Map(...)` используют тот же набор
+registrations и тот же текущий `IServiceProvider`, но создают новый immutable
+call frame внутри уже существующего scope.
 
 Nested lookup не предпочитает mapping из `TypeMapper`, которому принадлежит
 outer pair, и не ограничивается его assembly. Для одной canonical pair root и
@@ -2157,7 +2200,7 @@ registration, точнее может оказаться `WithMappingKey`. Са�
 Перед добавлением keyed mappings отдельно согласуются:
 
 - назначается ли ключ всему concrete `TypeMapper` или отдельной pair;
-- наследует ли explicit nested `Map(...)` текущий ключ;
+- наследует ли declarative nested mapping текущий ключ;
 - разрешён ли fallback keyed lookup к default-варианту;
 - как выглядит terminal fluent API для обеих mapping-операций;
 - что происходит при нескольких кандидатах с одной pair и одним ключом.
@@ -2570,7 +2613,9 @@ diagnostic не должно вводить скрытый fallback на дру�
 8. `Members` является единственным declarative API для body-members. Structured
    surface включает `init` и `required`; direct surface включает обычные
    setters и mutable fields, в том числе `required`, но не `init`-only
-   properties.
+   properties. True get-only properties и properties с недоступным обычным
+   setter-ом дополнительно входят в обе поверхности только как get-only proxy
+   для явного nested Update и не участвуют в обычных member rules.
 9. Для member-capable pair всегда генерируются две альтернативные
    `Members`-перегрузки: с `source`/`previous` и с
    `source`/`previous`/`result`. В локальной pair можно вызвать
@@ -2582,7 +2627,8 @@ diagnostic не должно вводить скрытый fallback на дру�
 11. `previous` в `Members` всегда означает исходный нормализованный input, а не
     выбранный result. В трёхпараметрической форме `result` — это
     фактически выбранный non-null destination без presence-wrapper и без
-    корневой nullability.
+    корневой nullability. Оба параметра являются read-only источниками:
+    assignment, increment/decrement и `ref`/`out` mutation запрещены.
 12. Неприменимое `init`-выражение в already-created-result ветке не
     вычисляется. В structured creation result-independent `init` и
     creation-time `required` rules допустимы в обеих формах `Members`;
@@ -2591,14 +2637,17 @@ diagnostic не должно вводить скрытый fallback на дру�
 13. Member, не указанный в `Members`, следует effective `MemberSelection`.
 14. `MemberSelection.Explicit` является статическим способом полностью
     отключить implicit member mapping; отдельного `Skip()` нет.
-15. Nested mapping выполняется только через явные `Map(source)`,
-    `Map<TDestination>(source)`, `Map(source, destination)` и
-    `Map<TDestination>(source, destination)`. Форм без аргументов нет;
-    conventions и `Auto()` используют только warning-free implicit
-    C#-преобразование и не предполагают наличие mapping-пары. One-argument
-    формы всегда вызывают nested `Create`, two-argument формы — nested
-    `Update`, включая explicit `null`, независимо от outer operation;
-    child previous при необходимости передаёт сам пользователь.
+15. Nested mapping имеет adaptive формы `Map()`, `Map<TDestination>()`,
+    `Map(source)`, `Map<TDestination>(source)` и explicit формы
+    `Create(source)`, `Create<TDestination>(source)`,
+    `Update(source, destination)`,
+    `Update<TDestination>(source, destination)`. Adaptive `Map` следует
+    фактической outer lifecycle branch и использует current destination;
+    explicit forms всегда сохраняют выбранную nested operation. Conventions и
+    `Auto()` используют только warning-free implicit C#-преобразование и не
+    предполагают наличие mapping-пары. Get-only member обновляется только
+    standalone `Update(..., members.Member)` с generated null guard и discard
+    returned result.
 16. `Convert` является методом обычного pair-builder, а не отдельным
     builder-типом.
 17. У `Convert` есть только одна перегрузка с

@@ -55,6 +55,8 @@ internal static class MemberPlanModelBuilder
             BuildMembers(
                 members,
                 typeParameterNames,
+                includeInitOnlyProperties,
+                compilation,
                 cancellationToken));
     }
 
@@ -165,6 +167,8 @@ internal static class MemberPlanModelBuilder
     private static ImmutableArray<MemberPlanPropertyModel> BuildMembers(
         ImmutableArray<ISymbol> members,
         IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterNames,
+        bool includeInitOnlyProperties,
+        Compilation compilation,
         CancellationToken cancellationToken)
     {
         var result =
@@ -177,12 +181,19 @@ internal static class MemberPlanModelBuilder
 
             if (member is IPropertySymbol property)
             {
-                var setter = property.SetMethod!;
-                var setterParameter =
-                    setter.Parameters[setter.Parameters.Length - 1];
+                var setter = property.SetMethod;
+                var canWrite = setter is not null &&
+                    (includeInitOnlyProperties || !setter.IsInitOnly) &&
+                    compilation.IsSymbolAccessibleWithin(
+                        setter,
+                        compilation.Assembly);
+                var setterParameter = canWrite
+                    ? setter!.Parameters[setter.Parameters.Length - 1]
+                    : null;
                 var typeName = BuildInputTypeName(
                     property.Type,
-                    setterParameter.NullableAnnotation,
+                    setterParameter?.NullableAnnotation ??
+                    property.NullableAnnotation,
                     property,
                     setterParameter,
                     typeParameterNames,
@@ -196,6 +207,7 @@ internal static class MemberPlanModelBuilder
                         BuildDocumentation(
                             property,
                             cancellationToken),
+                        canWrite,
                         acceptsNull,
                         requiresNullableAnnotationsDisabled,
                         BuildObsoleteAttributeSource(property)));
@@ -217,6 +229,7 @@ internal static class MemberPlanModelBuilder
                     field.Name,
                     fieldTypeName,
                     BuildDocumentation(field, cancellationToken),
+                    true,
                     fieldAcceptsNull,
                     fieldRequiresNullableAnnotationsDisabled,
                     BuildObsoleteAttributeSource(field)));

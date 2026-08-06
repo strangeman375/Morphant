@@ -48,6 +48,8 @@ internal static class DeclarativeDependencyExpressionBuilder
         SyntaxNode transferScope,
         IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
         ITypeSymbol? fallbackType,
+        DeclarativeNestedMapTargetContext? nestedMapTarget,
+        DeclarativeNestedMapUsageRegistry? nestedMapUsageRegistry,
         CancellationToken cancellationToken,
         out string rewrittenExpression,
         out TypeMapperDependencyExpressionModel? dependencyExpression)
@@ -55,6 +57,11 @@ internal static class DeclarativeDependencyExpressionBuilder
         if (!DeclarativeNestedMapExpression.TryBuild(
                 expression,
                 fallbackType,
+                nestedMapTarget,
+                nestedMapUsageRegistry ??
+                new DeclarativeNestedMapUsageRegistry(),
+                sourceParameter,
+                resultName,
                 semanticModel,
                 mapperType,
                 cancellationToken,
@@ -592,13 +599,31 @@ internal static class DeclarativeDependencyExpressionBuilder
                 {
                     builder.Append("|nested-map:");
                     builder.Append(
-                        nestedMap.IsUpdate
+                        nestedMap.Operation ==
+                        DeclarativeNestedMapOperation.Update
                             ? "Update"
                             : "Create");
                     builder.Append("|source:");
                     AppendType(builder, nestedMap.SourceType);
                     builder.Append("|destination:");
                     AppendType(builder, nestedMap.DestinationType);
+
+                    if (nestedMap.InferredSourceMemberName is
+                        { } inferredSourceMember)
+                    {
+                        builder.Append("|inferred-source:");
+                        builder.Append(inferredSourceMember);
+                    }
+
+                    if (nestedMap.GeneratedDestinationExpression is
+                        { } generatedDestination)
+                    {
+                        builder.Append("|generated-destination:");
+                        builder.Append(generatedDestination);
+                    }
+
+                    builder.Append("|guard-destination:");
+                    builder.Append(nestedMap.GuardNullDestination);
                 }
                 else
                 {

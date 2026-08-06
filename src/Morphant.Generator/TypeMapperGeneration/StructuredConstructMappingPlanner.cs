@@ -79,6 +79,8 @@ internal static class StructuredConstructMappingPlanner
         TypeMapperControlFlowNode? BuildPlan(
             bool? previousAvailable)
         {
+            var nestedMapUsages =
+                new DeclarativeNestedMapUsageRegistry();
             var replacement = previousAvailable == true;
             var constructorMembers =
                 memberMappings.BuildConstructorPlan(replacement);
@@ -116,7 +118,8 @@ internal static class StructuredConstructMappingPlanner
             TypeMapperRewrittenDependencyExpression?
                 RewriteDependencyCore(
                     ExpressionSyntax expression,
-                    ITypeSymbol? fallbackType)
+                    ITypeSymbol? fallbackType,
+                    DeclarativeNestedMapTargetContext? nestedMapTarget = null)
             {
                 return DeclarativeDependencyExpressionBuilder.TryRewrite(
                         expression,
@@ -131,6 +134,8 @@ internal static class StructuredConstructMappingPlanner
                         transferScope,
                         controlFlowProgram.RuntimeLocalPlaceholders,
                         fallbackType,
+                        nestedMapTarget,
+                        nestedMapUsages,
                         cancellationToken,
                         out var rewritten,
                         out var dependency)
@@ -143,11 +148,41 @@ internal static class StructuredConstructMappingPlanner
             TypeMapperRewrittenDependencyExpression?
                 RewriteDependency(
                     ExpressionSyntax expression,
-                    IParameterSymbol parameter) =>
-                RewriteDependencyCore(
+                    IParameterSymbol parameter)
+            {
+                var parameterType = parameter.Type.WithNullableAnnotation(
+                    parameter.NullableAnnotation);
+                var destinationMembers =
+                    ConventionMemberMappingPlanner.BuildReadableMembers(
+                        destination,
+                        compilation,
+                        mapperType,
+                        cancellationToken);
+                var destinationMember =
+                    ConventionConstructorMappingPlanner
+                        .TryFindSourceMember(
+                            destinationMembers,
+                            parameter.Name);
+                var targetName = destinationMember?.Name ??
+                    parameter.Name;
+                var currentDestination =
+                    previousAvailable == true &&
+                    destinationMember is { } currentMember
+                        ? "destination." +
+                          Identifier(currentMember.Name)
+                        : null;
+
+                return RewriteDependencyCore(
                     expression,
-                    parameter.Type.WithNullableAnnotation(
-                        parameter.NullableAnnotation));
+                    parameterType,
+                    new DeclarativeNestedMapTargetContext(
+                        parameterType,
+                        targetName,
+                        previousAvailable == true
+                            ? DeclarativeNestedMapOperation.Update
+                            : DeclarativeNestedMapOperation.Create,
+                        currentDestination));
+            }
 
             StructuredConstructLeafNode? BuildFactory(
                 ImmutableArray<StructuredObjectArgument> arguments)
@@ -344,7 +379,8 @@ internal static class StructuredConstructMappingPlanner
                             expression =>
                                 RewriteDependencyCore(
                                     expression,
-                                    fallbackType: null),
+                                    fallbackType: null,
+                                    nestedMapTarget: null),
                             previousParameter,
                             previousAvailable,
                             configuration.Expression.SemanticModel,
@@ -1493,6 +1529,14 @@ internal static class StructuredConstructMappingPlanner
             WhenFalse: null,
             Leaf: leaf,
             ThrowExpression: null);
+    }
+
+    private static string Identifier(string value)
+    {
+        return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
+            ? "@" + value
+            : value;
     }
 
     private static bool IsOmitted(ExpressionSyntax expression)

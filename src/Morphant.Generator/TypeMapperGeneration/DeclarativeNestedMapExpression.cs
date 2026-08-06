@@ -20,6 +20,10 @@ internal static class DeclarativeNestedMapExpression
     public static bool TryBuild(
         ExpressionSyntax expression,
         ITypeSymbol? targetType,
+        DeclarativeNestedMapTargetContext? targetContext,
+        DeclarativeNestedMapUsageRegistry usageRegistry,
+        IParameterSymbol sourceParameter,
+        string? resultName,
         SemanticModel semanticModel,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken,
@@ -60,6 +64,10 @@ internal static class DeclarativeNestedMapExpression
                     invocation,
                     method,
                     targetType,
+                    targetContext,
+                    usageRegistry,
+                    sourceParameter,
+                    resultName,
                     semanticModel,
                     mapperType,
                     cancellationToken,
@@ -98,7 +106,10 @@ internal static class DeclarativeNestedMapExpression
             }
         }
         else if (IsNonGenericMapMarker(expressionType) &&
-                 targetType is null)
+                 targetType is null &&
+                 !result.Keys.Any(invocation =>
+                     UnwrapParentheses(expression).Span.Equals(
+                         invocation.Span)))
         {
             mappings = ImmutableDictionary<
                 InvocationExpressionSyntax,
@@ -167,10 +178,44 @@ internal static class DeclarativeNestedMapExpression
                IsNonGenericMapMarker(type);
     }
 
+    public static bool IsReadOnlyMemberUpdateStatement(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        expression = UnwrapParentheses(expression);
+
+        if (expression is not InvocationExpressionSyntax invocation ||
+            !TryGetMapMethod(
+                invocation,
+                semanticModel,
+                cancellationToken,
+                out var method) ||
+            method.Name != "Update" ||
+            semanticModel.GetOperation(
+                invocation,
+                cancellationToken) is not IInvocationOperation operation)
+        {
+            return false;
+        }
+
+        return TryBuildReadOnlyMemberUpdateTarget(
+            invocation,
+            operation,
+            resultName: "result",
+            semanticModel,
+            cancellationToken,
+            out _);
+    }
+
     private static bool TryBuildMapping(
         InvocationExpressionSyntax invocation,
         IMethodSymbol method,
         ITypeSymbol? targetType,
+        DeclarativeNestedMapTargetContext? targetContext,
+        DeclarativeNestedMapUsageRegistry usageRegistry,
+        IParameterSymbol sourceParameter,
+        string? resultName,
         SemanticModel semanticModel,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken,
@@ -181,19 +226,41 @@ internal static class DeclarativeNestedMapExpression
             cancellationToken) as IInvocationOperation;
 
         if (operation is null ||
-            method.Parameters.Length is not (1 or 2) ||
-            operation.Arguments.FirstOrDefault(argument =>
-                argument.Parameter?.Name == "source") is not
-                { Syntax: ArgumentSyntax sourceArgument })
+            !TryGetOperation(method, targetContext, out var nestedOperation))
         {
             mapping = default;
             return false;
         }
 
-        var sourceTypeInfo = semanticModel.GetTypeInfo(
-            sourceArgument.Expression,
-            cancellationToken);
-        var sourceType = sourceTypeInfo.Type;
+        var sourceArgument = operation.Arguments.FirstOrDefault(argument =>
+            argument.Parameter?.Name == "source")?.Syntax as ArgumentSyntax;
+        ITypeSymbol? sourceType;
+        string? inferredSourceMemberName = null;
+
+        if (sourceArgument is not null)
+        {
+            var sourceTypeInfo = semanticModel.GetTypeInfo(
+                sourceArgument.Expression,
+                cancellationToken);
+            sourceType = sourceTypeInfo.Type?.WithNullableAnnotation(
+                sourceTypeInfo.Nullability.Annotation);
+        }
+        else if (method.Name == "Map" &&
+                 targetContext is { } inferredTarget &&
+                 TryFindInferredSourceMember(
+                     inferredTarget.SourceMemberName,
+                     sourceParameter,
+                     semanticModel,
+                     mapperType,
+                     cancellationToken) is { } sourceMember)
+        {
+            sourceType = sourceMember.Type;
+            inferredSourceMemberName = sourceMember.Name;
+        }
+        else
+        {
+            sourceType = null;
+        }
 
         if (sourceType is null ||
             !CanUseAsGenericArgument(sourceType))
@@ -202,16 +269,30 @@ internal static class DeclarativeNestedMapExpression
             return false;
         }
 
-        sourceType = sourceType.WithNullableAnnotation(
-            sourceTypeInfo.Nullability.Annotation);
-
         ITypeSymbol? destinationType;
+        var readOnlyTarget = default(ReadOnlyMemberUpdateTarget?);
+
+        if (nestedOperation == DeclarativeNestedMapOperation.Update &&
+            TryBuildReadOnlyMemberUpdateTarget(
+                invocation,
+                operation,
+                resultName,
+                semanticModel,
+                cancellationToken,
+                out var resolvedReadOnlyTarget))
+        {
+            readOnlyTarget = resolvedReadOnlyTarget;
+        }
 
         if (method.IsGenericMethod && method.TypeArguments.Length == 1)
         {
             destinationType = method.TypeArguments[0]
                 .WithNullableAnnotation(
                     method.TypeArgumentNullableAnnotations[0]);
+        }
+        else if (readOnlyTarget is { } inferredReadOnlyTarget)
+        {
+            destinationType = inferredReadOnlyTarget.MemberType;
         }
         else
         {
@@ -227,7 +308,9 @@ internal static class DeclarativeNestedMapExpression
                 semanticModel.Compilation,
                 mapperType,
                 cancellationToken) ||
-            method.Parameters.Length == 2 &&
+            nestedOperation == DeclarativeNestedMapOperation.Update &&
+            readOnlyTarget is null &&
+            method.Name == "Update" &&
             !HasCompatibleDestinationArgument(
                 operation,
                 destinationType,
@@ -239,13 +322,69 @@ internal static class DeclarativeNestedMapExpression
             return false;
         }
 
+        string? generatedDestinationExpression = null;
+        ITypeSymbol? generatedDestinationType = null;
+        var guardNullDestination = false;
+        string? guardVariableName = null;
+
+        if (readOnlyTarget is { } readOnly)
+        {
+            if (!readOnly.MemberType.IsReferenceType ||
+                !HasRuntimeDestinationConversion(
+                    readOnly.MemberType,
+                    destinationType,
+                    semanticModel.Compilation,
+                    mapperType,
+                    cancellationToken))
+            {
+                mapping = default;
+                return false;
+            }
+
+            generatedDestinationExpression = readOnly.Expression;
+            generatedDestinationType = readOnly.MemberType;
+            guardNullDestination = true;
+            guardVariableName = usageRegistry.AllocateGuardName(
+                "destination" + readOnly.MemberName,
+                mapperType);
+        }
+        else if (nestedOperation == DeclarativeNestedMapOperation.Update &&
+                 method.Name == "Map")
+        {
+            if (targetContext is not
+                    {
+                        CurrentDestinationExpression: { } currentDestination
+                    } adaptiveTarget ||
+                !HasRuntimeDestinationConversion(
+                    adaptiveTarget.Type,
+                    destinationType,
+                    semanticModel.Compilation,
+                    mapperType,
+                    cancellationToken) ||
+                !usageRegistry.TryRegisterAdaptiveUpdate(
+                    invocation,
+                    currentDestination))
+            {
+                mapping = default;
+                return false;
+            }
+
+            generatedDestinationExpression = currentDestination;
+            generatedDestinationType = adaptiveTarget.Type;
+        }
+
         mapping = new TypeMapperNestedMapExpressionModel(
             sourceType,
             destinationType,
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(sourceType),
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                 destinationType),
-            IsUpdate: method.Parameters.Length == 2);
+            nestedOperation,
+            inferredSourceMemberName,
+            generatedDestinationExpression,
+            generatedDestinationType,
+            guardNullDestination,
+            guardVariableName);
         return true;
     }
 
@@ -299,6 +438,216 @@ internal static class DeclarativeNestedMapExpression
             semanticModel.Compilation,
             mapperType,
             cancellationToken);
+    }
+
+    private static bool TryGetOperation(
+        IMethodSymbol method,
+        DeclarativeNestedMapTargetContext? targetContext,
+        out DeclarativeNestedMapOperation operation)
+    {
+        switch (method.Name)
+        {
+            case "Map" when method.Parameters.Length is 0 or 1 &&
+                                 targetContext is { } target:
+                operation = target.Operation;
+                return true;
+
+            case "Create" when method.Parameters.Length == 1:
+                operation = DeclarativeNestedMapOperation.Create;
+                return true;
+
+            case "Update" when method.Parameters.Length == 2:
+                operation = DeclarativeNestedMapOperation.Update;
+                return true;
+
+            default:
+                operation = default;
+                return false;
+        }
+    }
+
+    private static ConventionReadableMember? TryFindInferredSourceMember(
+        string memberName,
+        IParameterSymbol sourceParameter,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        if (semanticModel.Compilation is not
+            CSharpCompilation compilation)
+        {
+            return null;
+        }
+
+        var accessibleWithin = compilation.GetTypeByMetadataName(
+                SymbolNameHelper.GetFullMetadataName(
+                    mapperType.OriginalDefinition)) ??
+            mapperType;
+
+        return ConventionMemberMappingPlanner.BuildReadableMembers(
+                sourceParameter.Type,
+                compilation,
+                accessibleWithin,
+                cancellationToken)
+            .FirstOrDefault(member => StringComparer.Ordinal.Equals(
+                member.Name,
+                memberName));
+    }
+
+    private static bool TryBuildReadOnlyMemberUpdateTarget(
+        InvocationExpressionSyntax invocation,
+        IInvocationOperation operation,
+        string? resultName,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out ReadOnlyMemberUpdateTarget target)
+    {
+        if (resultName is null ||
+            invocation.Parent is not ExpressionStatementSyntax ||
+            operation.Arguments.FirstOrDefault(argument =>
+                argument.Parameter?.Name == "destination") is not
+                { Syntax: ArgumentSyntax destinationArgument } ||
+            UnwrapParentheses(destinationArgument.Expression) is not
+                MemberAccessExpressionSyntax memberAccess ||
+            UnwrapParentheses(memberAccess.Expression) is not
+                IdentifierNameSyntax receiver ||
+            semanticModel.GetSymbolInfo(
+                    receiver,
+                    cancellationToken)
+                .Symbol is not ILocalSymbol receiverLocal ||
+            !IsDeclarativeResultLocal(
+                invocation,
+                receiverLocal,
+                semanticModel,
+                cancellationToken) ||
+            semanticModel.GetSymbolInfo(
+                    memberAccess,
+                    cancellationToken)
+                .Symbol is not IPropertySymbol
+                {
+                    GetMethod: not null,
+                    SetMethod: null,
+                    Type: INamedTypeSymbol
+                    {
+                        TypeArguments.Length: 1
+                    } memberMarkerType
+                } property ||
+            !StringComparer.Ordinal.Equals(
+                SymbolNameHelper.GetFullMetadataName(
+                    memberMarkerType.OriginalDefinition),
+                "Morphant.Members.Member`1"))
+        {
+            target = default;
+            return false;
+        }
+
+        var memberType = memberMarkerType.TypeArguments[0]
+            .WithNullableAnnotation(
+                memberMarkerType.TypeArgumentNullableAnnotations[0]);
+        target = new ReadOnlyMemberUpdateTarget(
+            property.Name,
+            memberType,
+            resultName + "." + Identifier(property.Name));
+        return true;
+    }
+
+    private static bool IsDeclarativeResultLocal(
+        InvocationExpressionSyntax invocation,
+        ILocalSymbol local,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var lambda = invocation.Ancestors()
+            .OfType<LambdaExpressionSyntax>()
+            .FirstOrDefault();
+        var resultType = lambda is null
+            ? null
+            : (semanticModel.GetTypeInfo(
+                    lambda,
+                    cancellationToken)
+                .ConvertedType as INamedTypeSymbol)?
+                .DelegateInvokeMethod?
+                .ReturnType;
+
+        return resultType is not null &&
+               SymbolEqualityComparer.Default.Equals(
+                   local.Type,
+                   resultType);
+    }
+
+    private static bool HasRuntimeDestinationConversion(
+        ITypeSymbol sourceType,
+        ITypeSymbol destinationType,
+        Compilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        if (compilation is not CSharpCompilation csharpCompilation)
+        {
+            return false;
+        }
+
+        var usedNames = UserResultMappingPlanner.BuildUsedLocalNames(
+            mapperType);
+        var methodName = UserResultMappingPlanner.AllocateName(
+            "__MorphantBindNestedUpdateDestination",
+            usedNames);
+        var sourceTypeName =
+            TypeMapperMappingTypePolicy.GetGeneratedTypeName(sourceType);
+        var destinationTypeName = BuildMaybeNullTypeName(
+            destinationType);
+        var probeTree = MapperProbeSyntax.Build(
+            mapperType,
+            "Morphant.NestedUpdateDestinationProbe.g.cs",
+            writer =>
+            {
+                writer.OpenBlock(
+                    $"private void {methodName}({sourceTypeName} value)");
+                writer.Line($"_ = ({destinationTypeName})value;");
+                writer.CloseBlock();
+            });
+        var diagnostics = csharpCompilation
+            .WithOptions(
+                csharpCompilation.Options
+                    .WithReportSuppressedDiagnostics(true))
+            .AddSyntaxTrees(probeTree)
+            .GetSemanticModel(probeTree)
+            .GetDiagnostics(cancellationToken: cancellationToken);
+
+        return diagnostics.All(diagnostic =>
+            diagnostic.Severity != DiagnosticSeverity.Error);
+    }
+
+    private static string BuildMaybeNullTypeName(ITypeSymbol type)
+    {
+        var typeName =
+            TypeMapperMappingTypePolicy.GetGeneratedTypeName(type);
+
+        if (type is INamedTypeSymbol namedType &&
+            namedType.OriginalDefinition.SpecialType ==
+                SpecialType.System_Nullable_T)
+        {
+            return typeName;
+        }
+
+        if (type.IsValueType)
+        {
+            return typeName;
+        }
+
+        return TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+            type.WithNullableAnnotation(NullableAnnotation.Annotated));
+    }
+
+    private static ExpressionSyntax UnwrapParentheses(
+        ExpressionSyntax expression)
+    {
+        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expression = parenthesized.Expression;
+        }
+
+        return expression;
     }
 
     private static bool HasWarningFreeImplicitConversion(
@@ -391,7 +740,7 @@ internal static class DeclarativeNestedMapExpression
             .Symbol as IMethodSymbol ?? null!;
 
         if (method is null ||
-            method.Name != "Map" ||
+            method.Name is not ("Map" or "Create" or "Update") ||
             !method.IsStatic ||
             !StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
@@ -420,7 +769,15 @@ internal static class DeclarativeNestedMapExpression
                    MapMarkerMetadataName);
     }
 
-    private sealed class InvocationReferenceComparer
+    private static string Identifier(string value)
+    {
+        return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
+               SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
+            ? "@" + value
+            : value;
+    }
+
+    internal sealed class InvocationReferenceComparer
         : IEqualityComparer<InvocationExpressionSyntax>
     {
         public static InvocationReferenceComparer Instance { get; } = new();
@@ -441,5 +798,71 @@ internal readonly record struct TypeMapperNestedMapExpressionModel
     ITypeSymbol DestinationType,
     string SourceTypeName,
     string DestinationTypeName,
-    bool IsUpdate
+    DeclarativeNestedMapOperation Operation,
+    string? InferredSourceMemberName,
+    string? GeneratedDestinationExpression,
+    ITypeSymbol? GeneratedDestinationType,
+    bool GuardNullDestination,
+    string? GuardVariableName
 );
+
+internal enum DeclarativeNestedMapOperation
+{
+    Create,
+    Update
+}
+
+internal readonly record struct DeclarativeNestedMapTargetContext(
+    ITypeSymbol Type,
+    string SourceMemberName,
+    DeclarativeNestedMapOperation Operation,
+    string? CurrentDestinationExpression);
+
+internal sealed class DeclarativeNestedMapUsageRegistry
+{
+    private readonly Dictionary<InvocationExpressionSyntax, string>
+        _adaptiveUpdateTargets = new(
+            DeclarativeNestedMapExpression
+                .InvocationReferenceComparer.Instance);
+    private readonly HashSet<string> _usedGuardNames =
+        new(StringComparer.Ordinal);
+
+    public bool TryRegisterAdaptiveUpdate(
+        InvocationExpressionSyntax invocation,
+        string currentDestinationExpression)
+    {
+        if (_adaptiveUpdateTargets.TryGetValue(
+                invocation,
+                out var existingTarget))
+        {
+            return StringComparer.Ordinal.Equals(
+                existingTarget,
+                currentDestinationExpression);
+        }
+
+        _adaptiveUpdateTargets.Add(
+            invocation,
+            currentDestinationExpression);
+        return true;
+    }
+
+    public string AllocateGuardName(
+        string preferredName,
+        INamedTypeSymbol mapperType)
+    {
+        if (_usedGuardNames.Count == 0)
+        {
+            _usedGuardNames.UnionWith(
+                UserResultMappingPlanner.BuildUsedLocalNames(mapperType));
+        }
+
+        return UserResultMappingPlanner.AllocateName(
+            preferredName,
+            _usedGuardNames);
+    }
+}
+
+internal readonly record struct ReadOnlyMemberUpdateTarget(
+    string MemberName,
+    ITypeSymbol MemberType,
+    string Expression);
