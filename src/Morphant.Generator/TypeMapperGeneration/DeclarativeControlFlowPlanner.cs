@@ -155,6 +155,17 @@ internal static class DeclarativeControlFlowPlanner
                         UnsupportedBlockMessage);
                 }
 
+                if (DeclarativeNestedMapExpression.IsMapMarkerType(
+                        local.Type) &&
+                    !DeclarativeNestedMapExpression
+                        .TryGetMarkerDestinationType(
+                            local.Type,
+                            out _))
+                {
+                    return new UnsupportedDeclarativeControlFlow(
+                        UnsupportedBlockMessage);
+                }
+
                 allLocals.Add(local);
                 localInitializers.Add(local, initializer);
 

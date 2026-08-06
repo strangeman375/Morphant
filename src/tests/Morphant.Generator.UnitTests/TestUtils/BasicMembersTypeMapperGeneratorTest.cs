@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
+using Morphant.Generator.UnitTests.TestAssets;
 
 namespace Morphant.Generator.UnitTests.TestUtils;
 
@@ -22,6 +23,8 @@ internal sealed class BasicMembersTypeMapperGeneratorTest
         _languageVersion = languageVersion;
         CompilerDiagnostics = CompilerDiagnostics.Warnings;
         TestState.AdditionalReferences.Add(typeof(TypeMapper).Assembly);
+        TestState.AdditionalReferences.Add(
+            typeof(ReferencedNestedSource).Assembly);
     }
 
     protected override ParseOptions CreateParseOptions()
@@ -162,7 +165,10 @@ internal sealed class BasicMembersTypeMapperGeneratorTest
             .ToImmutableArray()
             .Add(
                 MetadataReference.CreateFromFile(
-                    typeof(TypeMapper).Assembly.Location));
+                    typeof(TypeMapper).Assembly.Location))
+            .Add(
+                MetadataReference.CreateFromFile(
+                    typeof(ReferencedNestedSource).Assembly.Location));
 
         return references;
     }

@@ -201,6 +201,19 @@ internal static class DeclarativeControlFlowLowerer
                     _ => null
                 };
 
+                if (DeclarativeNestedMapExpression
+                    .TryGetMarkerDestinationType(
+                        type,
+                        out var nestedDestinationType))
+                {
+                    type = nestedDestinationType;
+                }
+                else if (DeclarativeNestedMapExpression
+                         .IsMapMarkerType(type))
+                {
+                    type = null;
+                }
+
                 return type is null
                     ? null
                     : new TypeMapperRewrittenDependencyExpression(
@@ -397,6 +410,26 @@ internal static class DeclarativeControlFlowLowerer
                         return null;
                     }
 
+                    ITypeSymbol storedType = declaredType;
+
+                    if (DeclarativeNestedMapExpression
+                        .TryGetMarkerDestinationType(
+                            declaredType,
+                            out var nestedDestinationType))
+                    {
+                        if (local.DeclarationType != "var")
+                        {
+                            return null;
+                        }
+
+                        storedType = nestedDestinationType;
+                    }
+                    else if (DeclarativeNestedMapExpression
+                             .IsMapMarkerType(declaredType))
+                    {
+                        return null;
+                    }
+
                     runtimeLocals.Add(
                         new TypeMapperLocalValueModel(
                             local.DeclarationType,
@@ -414,7 +447,7 @@ internal static class DeclarativeControlFlowLowerer
                                         resultParameter),
                             StoredValueTypeName:
                                 TypeMapperMappingTypePolicy
-                                    .GetGeneratedTypeName(declaredType)));
+                                    .GetGeneratedTypeName(storedType)));
                 }
 
                 return next with

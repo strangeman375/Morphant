@@ -195,12 +195,6 @@ internal static class ExplicitStructuredConstructorPlanner
                     out var markerKind))
             {
                 if (markerKind ==
-                    DeclarativeConstructorMarkerKind.Map)
-                {
-                    return null;
-                }
-
-                if (markerKind ==
                     DeclarativeConstructorMarkerKind.Ignore)
                 {
                     if (!ConventionConstructorMappingPlanner.CanOmit(
@@ -212,30 +206,34 @@ internal static class ExplicitStructuredConstructorPlanner
                     continue;
                 }
 
-                if (ConventionConstructorMappingPlanner
-                        .TryFindSourceMember(
-                            sourceMembers,
-                            destinationParameter.Name) is not
-                    { } sourceMember ||
-                    !MappingExpressionCompatibility
-                        .HasPotentiallyCompatibleConversion(
-                            sourceMember.Type,
-                            destinationParameter.Type,
-                            compilation))
+                if (markerKind ==
+                    DeclarativeConstructorMarkerKind.Auto)
                 {
-                    return null;
-                }
+                    if (ConventionConstructorMappingPlanner
+                            .TryFindSourceMember(
+                                sourceMembers,
+                                destinationParameter.Name) is not
+                        { } sourceMember ||
+                        !MappingExpressionCompatibility
+                            .HasPotentiallyCompatibleConversion(
+                                sourceMember.Type,
+                                destinationParameter.Type,
+                                compilation))
+                    {
+                        return null;
+                    }
 
-                arguments.Add(
-                    new TypeMapperConstructorArgumentMappingModel(
-                        destinationParameter.Name,
-                        sourceMember.Name,
-                        ValueLocalName: null,
-                        TargetTypeName:
-                            ConventionConstructorMappingPlanner
-                                .BuildTargetValueLocalTypeName(
-                                    destinationParameter)));
-                continue;
+                    arguments.Add(
+                        new TypeMapperConstructorArgumentMappingModel(
+                            destinationParameter.Name,
+                            sourceMember.Name,
+                            ValueLocalName: null,
+                            TargetTypeName:
+                                ConventionConstructorMappingPlanner
+                                    .BuildTargetValueLocalTypeName(
+                                        destinationParameter)));
+                    continue;
+                }
             }
 
             var rewrittenDependency =
@@ -360,7 +358,9 @@ internal static class ExplicitStructuredConstructorPlanner
                     $"{sourceTypeName} source, " +
                     "global::Morphant.Option<" +
                     destinationTypeName +
-                    "> previous)");
+                    "> previous, " +
+                    destinationTypeName +
+                    " destination)");
                 writer.Line("{");
                 writer.Indent();
 

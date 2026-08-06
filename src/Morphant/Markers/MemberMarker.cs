@@ -45,12 +45,12 @@ public abstract class IgnoreMarker<T> : MemberMarker
 
 public abstract class MapMarker : MemberMarker
 {
-    private MapMarker()
+    private protected MapMarker()
     {
     }
 }
 
-public abstract class MapMarker<T> : MemberMarker
+public abstract class MapMarker<T> : MapMarker
 {
     private MapMarker()
     {

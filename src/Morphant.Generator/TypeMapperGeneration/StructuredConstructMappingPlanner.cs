@@ -976,12 +976,6 @@ internal static class StructuredConstructMappingPlanner
                     out var markerKind))
             {
                 if (markerKind ==
-                    DeclarativeConstructorMarkerKind.Map)
-                {
-                    return null;
-                }
-
-                if (markerKind ==
                     DeclarativeConstructorMarkerKind.Ignore)
                 {
                     if (!ConventionConstructorMappingPlanner.CanOmit(
@@ -993,20 +987,29 @@ internal static class StructuredConstructMappingPlanner
                     continue;
                 }
 
-                if (!TryBuildAutomaticArgument(
-                        sourceMembers,
-                        parameter,
-                        compilation,
-                        out var automaticArgument))
+                if (markerKind ==
+                    DeclarativeConstructorMarkerKind.Auto)
                 {
-                    return null;
-                }
+                    if (!TryBuildAutomaticArgument(
+                            sourceMembers,
+                            parameter,
+                            compilation,
+                            out var automaticArgument))
+                    {
+                        return null;
+                    }
 
-                mappedArguments.Add(automaticArgument);
-                continue;
+                    mappedArguments.Add(automaticArgument);
+                    continue;
+                }
             }
 
+            var rewrittenDependency =
+                rewriteDependencyExpression(
+                    rule.Value,
+                    parameter);
             var explicitExpression =
+                rewrittenDependency?.Expression ??
                 ExplicitStructuredConstructorPlanner
                     .RewriteArgumentExpression(
                         rule.Value,
@@ -1015,18 +1018,6 @@ internal static class StructuredConstructMappingPlanner
                         semanticModel,
                         rewriteExpression,
                         cancellationToken);
-            var rewrittenDependency =
-                rewriteDependencyExpression(
-                    rule.Value,
-                    parameter);
-
-            if (rewrittenDependency is { } dependency &&
-                !StringComparer.Ordinal.Equals(
-                    dependency.Expression,
-                    explicitExpression))
-            {
-                rewrittenDependency = null;
-            }
 
             if (explicitExpression is null)
             {

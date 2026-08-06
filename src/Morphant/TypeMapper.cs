@@ -97,15 +97,45 @@ public abstract class TypeMapper
     protected static IgnoreMarker<T> Ignore<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Configures a declarative nested Create mapping whose destination type
+    /// is inferred from the target member or constructor parameter.
+    /// </summary>
+    /// <param name="source">The source passed to the nested mapping.</param>
     protected static MapMarker Map(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Configures a declarative nested Update mapping whose destination type
+    /// is inferred from the target member or constructor parameter.
+    /// </summary>
+    /// <param name="source">The source passed to the nested mapping.</param>
+    /// <param name="destination">
+    /// The destination passed to the nested mapping, including an explicit
+    /// <see langword="null"/> destination.
+    /// </param>
     protected static MapMarker Map(object? source, object? destination) =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Configures a declarative nested Create mapping to
+    /// <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The nested destination type.</typeparam>
+    /// <param name="source">The source passed to the nested mapping.</param>
     protected static MapMarker<T> Map<T>(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Configures a declarative nested Update mapping to
+    /// <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The nested destination type.</typeparam>
+    /// <param name="source">The source passed to the nested mapping.</param>
+    /// <param name="destination">
+    /// The destination passed to the nested mapping, including an explicit
+    /// <see langword="null"/> destination.
+    /// </param>
     protected static MapMarker<T> Map<T>(object? source, object? destination) =>
         throw new RuntimeInvocationNotSupportedException();
 }

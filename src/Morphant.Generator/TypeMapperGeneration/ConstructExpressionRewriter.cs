@@ -19,6 +19,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _localSubstitutions;
     private readonly IReadOnlyDictionary<SyntaxNode, SyntaxAnnotation>?
         _dependencyAnnotations;
+    private readonly IReadOnlyDictionary<
+        InvocationExpressionSyntax,
+        TypeMapperNestedMapExpressionModel>? _nestedMapMappings;
 
     private ConstructExpressionRewriter(
         SemanticModel semanticModel,
@@ -32,7 +35,10 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         SyntaxNode transferScope,
         IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
         IReadOnlyDictionary<SyntaxNode, SyntaxAnnotation>?
-            dependencyAnnotations)
+            dependencyAnnotations,
+        IReadOnlyDictionary<
+            InvocationExpressionSyntax,
+            TypeMapperNestedMapExpressionModel>? nestedMapMappings)
     {
         _semanticModel = semanticModel;
         _mapperType = mapperType;
@@ -45,6 +51,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _transferScope = transferScope;
         _localSubstitutions = localSubstitutions;
         _dependencyAnnotations = dependencyAnnotations;
+        _nestedMapMappings = nestedMapMappings;
     }
 
     public static bool TryRewrite(
@@ -247,7 +254,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     resultName,
                     transferScope,
                     localSubstitutions,
-                    dependencyAnnotations: null)
+                    dependencyAnnotations: null,
+                    nestedMapMappings: null)
                 .Visit(syntax)!;
         return true;
     }
@@ -266,6 +274,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
         IReadOnlyDictionary<SyntaxNode, SyntaxAnnotation>
             dependencyAnnotations,
+        IReadOnlyDictionary<
+            InvocationExpressionSyntax,
+            TypeMapperNestedMapExpressionModel> nestedMapMappings,
         CancellationToken cancellationToken,
         out ExpressionSyntax rewrittenExpression)
     {
@@ -294,7 +305,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     resultName,
                     transferScope,
                     localSubstitutions,
-                    dependencyAnnotations)
+                    dependencyAnnotations,
+                    nestedMapMappings)
                 .Visit(expression)!;
         return true;
     }
@@ -316,6 +328,28 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     public override SyntaxNode? VisitInvocationExpression(
         InvocationExpressionSyntax node)
     {
+        if (_nestedMapMappings is not null &&
+            _nestedMapMappings.TryGetValue(
+                node,
+                out var nestedMap))
+        {
+            var arguments = node.ArgumentList.Arguments.Select(
+                argument => (ArgumentSyntax)Visit(argument)!);
+            var method = SyntaxFactory.ParseExpression(
+                "context.Mapper.Map<" +
+                nestedMap.SourceTypeName +
+                ", " +
+                nestedMap.DestinationTypeName +
+                ">");
+
+            return node
+                .WithExpression(method)
+                .WithArgumentList(
+                    node.ArgumentList.WithArguments(
+                        SyntaxFactory.SeparatedList(arguments)))
+                .WithTriviaFrom(node);
+        }
+
         if (node.Expression is IdentifierNameSyntax
             {
                 Identifier.ValueText: "nameof"
@@ -990,6 +1024,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                      .OfType<SimpleNameSyntax>())
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (name.Parent is NameColonSyntax)
+            {
+                continue;
+            }
 
             var symbol = semanticModel.GetSymbolInfo(
                     name,

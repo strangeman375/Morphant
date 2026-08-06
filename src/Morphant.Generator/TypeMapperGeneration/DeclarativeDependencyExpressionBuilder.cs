@@ -52,6 +52,19 @@ internal static class DeclarativeDependencyExpressionBuilder
         out string rewrittenExpression,
         out TypeMapperDependencyExpressionModel? dependencyExpression)
     {
+        if (!DeclarativeNestedMapExpression.TryBuild(
+                expression,
+                fallbackType,
+                semanticModel,
+                mapperType,
+                cancellationToken,
+                out var nestedMapMappings))
+        {
+            rewrittenExpression = string.Empty;
+            dependencyExpression = null;
+            return false;
+        }
+
         var dependencyRoot = UnwrapTransparentSyntax(expression);
         var candidates = BuildCandidates(
             dependencyRoot,
@@ -60,12 +73,13 @@ internal static class DeclarativeDependencyExpressionBuilder
             previousParameter,
             resultParameter,
             fallbackType,
+            nestedMapMappings,
             cancellationToken);
 
         if (candidates.IsEmpty)
         {
             dependencyExpression = null;
-            return ConstructExpressionRewriter.TryRewrite(
+            if (!ConstructExpressionRewriter.TryRewriteSyntaxWithAnnotations(
                 expression,
                 semanticModel,
                 mapperType,
@@ -77,8 +91,20 @@ internal static class DeclarativeDependencyExpressionBuilder
                 resultName,
                 transferScope,
                 localSubstitutions,
+                ImmutableDictionary<SyntaxNode, SyntaxAnnotation>.Empty,
+                nestedMapMappings,
                 cancellationToken,
-                out rewrittenExpression);
+                out var directlyRewritten))
+            {
+                rewrittenExpression = string.Empty;
+                return false;
+            }
+
+            rewrittenExpression = directlyRewritten
+                .WithoutTrivia()
+                .NormalizeWhitespace()
+                .ToFullString();
+            return true;
         }
 
         var annotations = candidates.ToDictionary(
@@ -99,6 +125,7 @@ internal static class DeclarativeDependencyExpressionBuilder
                 transferScope,
                 localSubstitutions,
                 annotations,
+                nestedMapMappings,
                 cancellationToken,
                 out var rewritten))
         {
@@ -175,6 +202,9 @@ internal static class DeclarativeDependencyExpressionBuilder
         IParameterSymbol? previousParameter,
         IParameterSymbol? resultParameter,
         ITypeSymbol? fallbackType,
+        IReadOnlyDictionary<
+            InvocationExpressionSyntax,
+            TypeMapperNestedMapExpressionModel> nestedMapMappings,
         CancellationToken cancellationToken)
     {
         var result =
@@ -197,10 +227,12 @@ internal static class DeclarativeDependencyExpressionBuilder
             }
 
             operation = UnwrapTransparentOperation(operation);
-            var type = operation.Type ??
-                       (ReferenceEquals(expression, root)
-                           ? fallbackType
-                           : null);
+            var type = DeclarativeNestedMapExpression.GetEffectiveType(
+                operation,
+                ReferenceEquals(expression, root)
+                    ? fallbackType
+                    : null,
+                nestedMapMappings);
 
             if (type is null || type.TypeKind == TypeKind.Error)
             {
@@ -212,6 +244,7 @@ internal static class DeclarativeDependencyExpressionBuilder
                 sourceParameter,
                 previousParameter,
                 resultParameter,
+                nestedMapMappings,
                 cancellationToken);
 
             if (key is null)
@@ -480,6 +513,9 @@ internal static class DeclarativeDependencyExpressionBuilder
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
         IParameterSymbol? resultParameter,
+        IReadOnlyDictionary<
+            InvocationExpressionSyntax,
+            TypeMapperNestedMapExpressionModel> nestedMapMappings,
         CancellationToken cancellationToken)
     {
         var builder = new StringBuilder();
@@ -489,6 +525,7 @@ internal static class DeclarativeDependencyExpressionBuilder
             sourceParameter,
             previousParameter,
             resultParameter,
+            nestedMapMappings,
             cancellationToken);
         return builder.Length == 0
             ? null
@@ -501,6 +538,9 @@ internal static class DeclarativeDependencyExpressionBuilder
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
         IParameterSymbol? resultParameter,
+        IReadOnlyDictionary<
+            InvocationExpressionSyntax,
+            TypeMapperNestedMapExpressionModel> nestedMapMappings,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -508,7 +548,12 @@ internal static class DeclarativeDependencyExpressionBuilder
         builder.Append('[');
         builder.Append(operation.Kind);
         builder.Append('|');
-        AppendType(builder, operation.Type);
+        AppendType(
+            builder,
+            DeclarativeNestedMapExpression.GetEffectiveType(
+                operation,
+                fallbackType: null,
+                nestedMapMappings));
 
         if (operation.ConstantValue is { HasValue: true } constant)
         {
@@ -539,7 +584,26 @@ internal static class DeclarativeDependencyExpressionBuilder
                 break;
 
             case IInvocationOperation invocation:
-                AppendSymbol(builder, invocation.TargetMethod);
+                if (invocation.Syntax is
+                        InvocationExpressionSyntax invocationSyntax &&
+                    nestedMapMappings.TryGetValue(
+                        invocationSyntax,
+                        out var nestedMap))
+                {
+                    builder.Append("|nested-map:");
+                    builder.Append(
+                        nestedMap.IsUpdate
+                            ? "Update"
+                            : "Create");
+                    builder.Append("|source:");
+                    AppendType(builder, nestedMap.SourceType);
+                    builder.Append("|destination:");
+                    AppendType(builder, nestedMap.DestinationType);
+                }
+                else
+                {
+                    AppendSymbol(builder, invocation.TargetMethod);
+                }
                 break;
 
             case IObjectCreationOperation creation:
@@ -605,6 +669,7 @@ internal static class DeclarativeDependencyExpressionBuilder
                 sourceParameter,
                 previousParameter,
                 resultParameter,
+                nestedMapMappings,
                 cancellationToken);
         }
 

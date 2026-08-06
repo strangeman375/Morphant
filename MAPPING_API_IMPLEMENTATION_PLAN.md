@@ -127,12 +127,12 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 3, этап 15 — полностью ручной `Convert`.**
+**Фаза 3, этап 16 — explicit declarative nested `Map`.**
 
 Статус: ожидает ревью.
 
-Этап 14 принят. Этап 16 и все последующие этапы заблокированы до принятия
-этапа 15.
+Этап 15 принят. Этап 17 и все последующие этапы заблокированы до принятия
+этапа 16.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -1045,7 +1045,7 @@ isolation, parallel root scopes, transient activation и type identity
 
 ### Этап 15. Полностью ручной `Convert`
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — реализовать `Convert` как отдельную альтернативу declarative pipeline.
 
@@ -1103,7 +1103,7 @@ conventions и collision-safe helper (`8/8`).
 
 ### Этап 16. Explicit declarative nested `Map`
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — реализовать nested dispatch как явный member/constructor rule.
 
@@ -1139,6 +1139,30 @@ Production scope:
 
 Результат этапа: declarative mapping поддерживает graph composition без
 скрытого выбора nested pair или operation.
+
+Реализовано: все четыре marker-формы семантически связываются в target-typed
+member/constructor position и понижаются в вызов scoped
+`context.Mapper.Map<TSource, TDestination>`. Статический source берётся из
+первого argument-а, destination — из target либо generic argument-а;
+warning-free conversion проверяется compiler probe-ом. Generic marker может
+храниться в declarative `var` local как фактический nested result, а
+non-generic marker без target typing детерминированно unsupported.
+
+One-argument и two-argument forms сохраняют соответственно `Create` и
+`Update` независимо от outer operation; explicit `null`, outer `previous` и
+фактический `result` не подменяются. Named arguments сохраняют обычный C#
+порядок записи. Nested invocation является нодой общего path-sensitive
+dependency graph, поэтому совпадающие pair/operation/arguments разделяются
+между constructor и members, а различающиеся операции не объединяются.
+Dispatch использует текущий scoped mapper, новый immutable call frame и
+application-wide exact-pair lookup; `Auto()` остаётся только direct
+convention conversion.
+
+Самостоятельная категория `TypeMapperNestedMapTests` содержит runtime и полный
+exact-source срез: четыре формы, constructor/member/convention targets,
+outer-operation matrix, typed locals/control flow, graph sharing, nullable
+reference/value pairs, previous-vs-result, named-argument order, replacement,
+исключения, invalid forms и mapper из отдельной assembly (`10/10`).
 
 ## Фаза 4. Settings и configuration composition
 
