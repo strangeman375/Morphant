@@ -30,6 +30,10 @@ internal static class UserResultMappingPlanner
             return false;
         }
 
+        var typeSubstitutions = BuildTypeSubstitutions(
+            semanticModel,
+            mapperType);
+
         var allowedCaptures = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default)
         {
@@ -100,8 +104,11 @@ internal static class UserResultMappingPlanner
                 parameters.Add(
                     BuildParameter(
                         sourceParameterName,
-                        sourceParameter.Type.WithNullableAnnotation(
-                            sourceParameter.NullableAnnotation)));
+                        SubstituteType(
+                            sourceParameter.Type.WithNullableAnnotation(
+                                sourceParameter.NullableAnnotation),
+                            typeSubstitutions,
+                            semanticModel.Compilation)));
                 invocationArguments.Add(sourceInvocationExpression);
                 continue;
             }
@@ -115,8 +122,11 @@ internal static class UserResultMappingPlanner
                 parameters.Add(
                     BuildParameter(
                         previousParameterName!,
-                        previousParameter.Type.WithNullableAnnotation(
-                            previousParameter.NullableAnnotation)));
+                        SubstituteType(
+                            previousParameter.Type.WithNullableAnnotation(
+                                previousParameter.NullableAnnotation),
+                            typeSubstitutions,
+                            semanticModel.Compilation)));
                 invocationArguments.Add(previousInvocationExpression);
                 continue;
             }
@@ -128,7 +138,10 @@ internal static class UserResultMappingPlanner
         var function = SyntaxFactory.LocalFunctionStatement(
                 SyntaxFactory.ParseTypeName(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                        returnType)),
+                        SubstituteType(
+                            returnType,
+                            typeSubstitutions,
+                            semanticModel.Compilation))),
                 SyntaxFactory.Identifier(functionName))
             .WithParameterList(
                 SyntaxFactory.ParameterList(
@@ -184,6 +197,10 @@ internal static class UserResultMappingPlanner
             plan = default;
             return false;
         }
+
+        var typeSubstitutions = BuildTypeSubstitutions(
+            semanticModel,
+            mapperType);
 
         var allowedCaptures = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default)
@@ -270,8 +287,11 @@ internal static class UserResultMappingPlanner
             parameters.Add(
                 BuildParameter(
                     sourceParameterName,
-                    sourceParameter.Type.WithNullableAnnotation(
-                        sourceParameter.NullableAnnotation)));
+                    SubstituteType(
+                        sourceParameter.Type.WithNullableAnnotation(
+                            sourceParameter.NullableAnnotation),
+                        typeSubstitutions,
+                        semanticModel.Compilation)));
             functionInvocationArguments.Add(sourceInvocationExpression);
         }
 
@@ -280,8 +300,11 @@ internal static class UserResultMappingPlanner
             parameters.Add(
                 BuildParameter(
                     previousParameterName!,
-                    previousParameter!.Type.WithNullableAnnotation(
-                        previousParameter.NullableAnnotation)));
+                    SubstituteType(
+                        previousParameter!.Type.WithNullableAnnotation(
+                            previousParameter.NullableAnnotation),
+                        typeSubstitutions,
+                        semanticModel.Compilation)));
             functionInvocationArguments.Add(
                 previousInvocationExpression!);
         }
@@ -308,7 +331,11 @@ internal static class UserResultMappingPlanner
                 SyntaxFactory.VariableDeclaration(
                         SyntaxFactory.ParseTypeName(
                             TypeMapperMappingTypePolicy
-                                .GetGeneratedTypeName(delegateType)))
+                                .GetGeneratedTypeName(
+                                    SubstituteType(
+                                        delegateType,
+                                        typeSubstitutions,
+                                        semanticModel.Compilation))))
                     .WithVariables(
                         SyntaxFactory.SingletonSeparatedList(
                             SyntaxFactory.VariableDeclarator(
@@ -327,7 +354,10 @@ internal static class UserResultMappingPlanner
         var function = SyntaxFactory.LocalFunctionStatement(
                 SyntaxFactory.ParseTypeName(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                        delegateInvokeMethod.ReturnType)),
+                        SubstituteType(
+                            delegateInvokeMethod.ReturnType,
+                            typeSubstitutions,
+                            semanticModel.Compilation))),
                 SyntaxFactory.Identifier(functionName))
             .WithParameterList(
                 SyntaxFactory.ParameterList(
@@ -469,6 +499,31 @@ internal static class UserResultMappingPlanner
             .WithType(
                 SyntaxFactory.ParseTypeName(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)));
+    }
+
+    private static IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
+        BuildTypeSubstitutions(
+            SemanticModel semanticModel,
+            INamedTypeSymbol mapperType)
+    {
+        var semanticMapperType = semanticModel.Compilation
+                .GetTypeByMetadataName(
+                    SymbolNameHelper.GetFullMetadataName(mapperType)) ??
+            mapperType;
+
+        return MapperTypeSubstitution.BuildForHierarchy(
+            semanticMapperType);
+    }
+
+    private static ITypeSymbol SubstituteType(
+        ITypeSymbol type,
+        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol> substitutions,
+        Compilation compilation)
+    {
+        return MapperTypeSubstitution.Substitute(
+            type,
+            substitutions,
+            compilation);
     }
 
     private static string NormalizeFunction(

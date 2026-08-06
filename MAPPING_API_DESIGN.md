@@ -197,6 +197,15 @@ builder.Map<Source, Destination>()
 chain базового mapper-а и наследует его root-level settings. Без этого вызова
 base configuration не участвует в текущем mapper-е.
 
+Распознаётся только прямой вызов отдельным statement либо expression-bodied
+override; generator не выполняет helper methods и control flow вокруг
+builder-а. Повторный `base.Configure(builder)` является ошибкой конфигурации.
+Base mapper не обязан иметь `MorphantMapperAttribute`, но его `Configure` body
+должен быть доступен как source в текущей compilation. Для generic base
+mapper-а generator сохраняет открытый fluent surface исходного DSL и
+подставляет constructed type arguments в effective derived plan; это работает
+и для nested partial mapper declarations.
+
 Повторное объявление canonical pair в derived mapper-е не наследует её plan
 автоматически. Оно начинает с чистого map-level plan и использует только
 унаследованные root settings, пока пользователь явно не вызовет
@@ -228,6 +237,13 @@ Plan объединяется по собственным правилам:
 - локальный `Convert` заменяет весь унаследованный declarative plan;
 - унаследованный manual plan нельзя частично объединить с локальными `Construct`
   или `Members`.
+
+Переносимый plan испускается внутри derived mapper-а, поэтому все mapper-members
+в expression должны быть доступны из derived type. Обычные public, internal и
+protected helpers поддерживаются согласно C# accessibility; private members и
+явный `base.` в inherited expression делают effective plan ошибочным. Полная
+локальная замена `Construct` либо `Convert` удаляет заменённый inaccessible
+plan до emission.
 
 Source generator не выполняет configuration code и не следует за
 произвольными helper calls, которые изменяют builder. Переиспользуемые
@@ -2847,64 +2863,70 @@ diagnostic не должно вводить скрытый fallback на дру�
     members и dependencies effective rules анализируются отдельно.
 66. Локальный `Convert` заменяет весь унаследованный declarative plan, а
     manual plan не смешивается частично с `Construct`/`Members`.
-67. General-purpose и generic fragments, а также cross-assembly
+67. Base mapper не требует `MorphantMapperAttribute`, если его `Configure`
+    доступен как source в текущей compilation. Прямой
+    `base.Configure(builder)` поддерживается statement- и expression-bodied
+    формой; повторный вызов ошибочен. Generic base DSL сохраняет открытый
+    generated surface, а effective derived plan использует constructed type
+    arguments, включая nested mapper declarations.
+68. General-purpose и generic fragments, а также cross-assembly
     `IncludeBase()` отсутствуют в v0. Внешние mappings регистрируются
     независимо и не импортируют configuration друг друга.
-68. Constructed generic root с известной nominal-формой является обычной exact
+69. Constructed generic root с известной nominal-формой является обычной exact
     pair; mapper type parameters допустимы внутри его generic arguments.
-69. Generic mapper contract не является open-generic registration. Dispatch
+70. Generic mapper contract не является open-generic registration. Dispatch
     v0 видит только явно зарегистрированные closed mappings и не выводит
     arguments, не закрывает mapper type и не сопоставляет generic definitions.
-70. Reference nullable annotations не входят в canonical identity, включая
+71. Reference nullable annotations не входят в canonical identity, включая
     annotations внутри generic arguments. `Nullable<T>` value type остаётся
     настоящей частью constructed type и меняет identity.
-71. Generic arguments могут содержать type parameters и отложенные root-
+72. Generic arguments могут содержать type parameters и отложенные root-
     категории как обычные единые значения, если полный root выразим из общего
     generated assembly-context; reflection-обхода недоступности нет.
-72. Bare root type parameter, open-generic registration и mapping по runtime
+73. Bare root type parameter, open-generic registration и mapping по runtime
     `Type` отсутствуют в v0 и не получают fallback через application dispatch.
-73. После v0 tuple/multi-source mapping использует обычный tuple `TSource` без
+74. После v0 tuple/multi-source mapping использует обычный tuple `TSource` без
     специальных overload-ов `IMapper`; identity учитывает типы и порядок
     элементов, но не имена, а пользовательский state передаётся детям явно.
-74. Result-dependent rules `Members` остаются declarative и выполняются после
+75. Result-dependent rules `Members` остаются declarative и выполняются после
     появления result; остальные rules не меняют фазу из-за формы перегрузки.
     Зависимость от порядка независимых rules, setter/nested mapping side
     effects, mutation между assignments, replacement-result и полный
     imperative lifecycle требуют `Convert`.
-75. `BeforeMap`, `AfterMap`, middleware либо эквивалентные lifecycle hooks не
+76. `BeforeMap`, `AfterMap`, middleware либо эквивалентные lifecycle hooks не
     входят в v0, но обязательно будут поддержаны после v0; точная
     форма будущего API пока не выбрана.
-76. Typed `Auto<T>()` и `Ignore<T>()`, generic
+77. Typed `Auto<T>()` и `Ignore<T>()`, generic
     `Map<TDestination>(...)` и явный `ConstructorParameter<T>` cast сохраняются
     как target-typing и overload-selection affordances declarative DSL.
-77. Общий destination constructor/member surface использует стабильную
+78. Общий destination constructor/member surface использует стабильную
     assembly-accessibility без private/protected-привилегий mapper-а. Остальные
     accessibility/hiding/order rules, exact-name body matching,
     exact-then-unique-`OrdinalIgnoreCase` constructor matching и warning-free
     implicit C# conversion matrix переносятся без упрощения.
-78. Generated wrappers точно отражают nullable input contract destination,
+79. Generated wrappers точно отражают nullable input contract destination,
     включая attributes и oblivious context; optional non-nullable omission
     использует только suppressed `null!` sentinel. Documentation,
     `ObsoleteAttribute` и deterministic IntelliSense order также сохраняются.
-79. Один generic generated plan переиспользуется для original destination
+80. Один generic generated plan переиспользуется для original destination
     definition и воспроизводит containing type parameters и constraints;
     alpha-equivalent pair extensions дедуплицируются и получают только
     definition-derived constraints, без mapper-specific `where`; closed
     runtime registrations при этом остаются отдельными.
-80. На одном C# settings-level побеждает последний вызов, включая `Default`,
+81. На одном C# settings-level побеждает последний вызов, включая `Default`,
     а root result не зависит от позиции в линейном `Configure`. Assembly
     settings передаются только compiler-visible MSBuild properties.
-81. Built-in scalars, enums, `Guid`, `DateTime`, `DateTimeOffset`, `DateOnly`,
+82. Built-in scalars, enums, `Guid`, `DateTime`, `DateTimeOffset`, `DateOnly`,
     `TimeOnly`, `TimeSpan`, `Half`, `Int128`, `UInt128`, `Uri`, `Version`,
     `BigInteger`, `Complex`, `Rune`, `Index` и `Range` являются opaque/direct
     destinations без `Members` и automatic convention construction; custom
     value type следует обычной capability model.
-82. Потенциально унифицирующиеся pair shapes одного generic mapper-а являются
+83. Потенциально унифицирующиеся pair shapes одного generic mapper-а являются
     compile-time configuration conflict, а не runtime duplicate registration.
-83. `IncludeMembers` как first-class convention flattening обязателен после
+84. `IncludeMembers` как first-class convention flattening обязателен после
     v0; explicit member expressions, tuple-source и nested `Map` его не
     заменяют.
-84. Непубличные generated execution helpers, которые становятся членами
+85. Непубличные generated execution helpers, которые становятся членами
     пользовательского mapper-а, используют зарезервированный префикс `__`:
     `__Create`, `__Update`, `__ConstructDestination`, `__CreateByFactory` и
     `__ConvertDestination`. При конфликте добавляется числовой суффикс;

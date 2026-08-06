@@ -89,6 +89,33 @@ namespace Morphant
         await test.RunAsync();
     }
 
+    public static async Task RunAndAssertWithAnalyzerConfig(
+        LanguageVersion languageVersion,
+        string sourceFileContent,
+        string analyzerConfig,
+        string expectedSource)
+    {
+        var test = new PairConfigurationGeneratorTest(languageVersion)
+        {
+            TestCode = sourceFileContent
+        };
+
+        test.TestState.Sources.Add(CompilerFallbackSource);
+        test.TestState.AnalyzerConfigFiles.Add(
+        (
+            "/.globalconfig",
+            analyzerConfig
+        ));
+        test.TestState.GeneratedSources.Add(
+        (
+            typeof(TestPairConfigurationGenerator),
+            "PairConfigurationModel.g.cs",
+            NormalizeGeneratedSource(expectedSource)
+        ));
+
+        await test.RunAsync();
+    }
+
     private static string NormalizeGeneratedSource(string source)
     {
         var normalized = source

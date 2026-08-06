@@ -167,8 +167,18 @@ internal static class TypeMapperPipeline
 
             var effectiveSettings = EffectiveMappingSettings.Resolve(
                 assemblySettings,
-                ToMappingSettings(configuration.RootSettings),
-                ToMappingSettings(pairConfiguration.Settings));
+                new[]
+                {
+                    ToMappingSettings(pairConfiguration.Settings)
+                }.Concat(
+                    pairConfiguration.Composition.IncludedBaseSettings
+                        .Select(ToMappingSettings)),
+                new[]
+                {
+                    ToMappingSettings(configuration.RootSettings)
+                }.Concat(
+                    configuration.BaseRootSettings
+                        .Select(ToMappingSettings)));
             var mapping = BuildMapping(
                 pairConfiguration,
                 effectiveSettings,
@@ -176,6 +186,15 @@ internal static class TypeMapperPipeline
                 mapperType,
                 usedGeneratedMethodNames,
                 cancellationToken);
+
+            if (configuration.HasInvalidBaseConfiguration)
+            {
+                mapping = mapping with
+                {
+                    UnsupportedExceptionMessage =
+                        ConfiguredPlanConflictMessage
+                };
+            }
             var createMethodName = RequiresCreateMethod(
                     mapping,
                     effectiveSettings)
@@ -298,9 +317,7 @@ internal static class TypeMapperPipeline
             mapperType,
             cancellationToken);
         var members = BasicMembersMappingPlanner.Build(
-            configuration.Declarative.Members.IsEmpty
-                ? null
-                : configuration.Declarative.Members[0],
+            configuration.Declarative.Members,
             effectiveSettings.MemberSelection!.Value,
             mapping,
             conventionMemberMappings,
@@ -556,7 +573,10 @@ internal static class TypeMapperPipeline
                 ConstructorSelectionValue.Default),
             GetSettingOrDefault(
                 settings.MemberSelection,
-                MemberSelectionValue.Default));
+                MemberSelectionValue.Default),
+            GetSettingOrDefault(
+                settings.UnmappedMemberValidation,
+                UnmappedMemberValidationValue.Default));
     }
 
     private static TValue? GetSettingOrDefault<TValue>(

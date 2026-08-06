@@ -15,9 +15,10 @@ public abstract class MapperBuilderBase<T>
     /// </summary>
     /// <param name="nullSourceHandling">
     /// The behavior to apply. <see cref="Morphant.NullSourceHandling.Default"/>
-    /// inherits the mapper-level setting for a mapping builder, or the
-    /// assembly-level <c>MorphantNullSourceHandling</c> MSBuild property for
-    /// the mapper builder. If all levels inherit, Morphant uses
+    /// continues through the included base pair, the current mapper root,
+    /// connected base mapper roots, and the assembly-level
+    /// <c>MorphantNullSourceHandling</c> MSBuild property. Levels that do not
+    /// apply to this builder are skipped. If all levels inherit, Morphant uses
     /// <see cref="Morphant.NullSourceHandling.ReturnNull"/>.
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.NullSourceHandling"/>.
@@ -34,9 +35,10 @@ public abstract class MapperBuilderBase<T>
     /// <param name="nullDestinationHandling">
     /// The behavior to apply.
     /// <see cref="Morphant.NullDestinationHandling.Default"/> inherits the
-    /// mapper-level setting for a mapping builder, or the assembly-level
-    /// <c>MorphantNullDestinationHandling</c> MSBuild property for the mapper
-    /// builder. If all levels inherit, Morphant uses
+    /// included base pair, current mapper root, connected base mapper roots,
+    /// and assembly-level <c>MorphantNullDestinationHandling</c> MSBuild
+    /// property. Levels that do not apply to this builder are skipped. If all
+    /// levels inherit, Morphant uses
     /// <see cref="Morphant.NullDestinationHandling.Create"/>.
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.NullDestinationHandling"/>.
@@ -53,9 +55,10 @@ public abstract class MapperBuilderBase<T>
     /// <param name="constructorSelection">
     /// The selection policy to apply.
     /// <see cref="Morphant.ConstructorSelection.Default"/> inherits the
-    /// mapper-level setting for a mapping builder, or the assembly-level
-    /// <c>MorphantConstructorSelection</c> MSBuild property for the mapper
-    /// builder. If all levels inherit, Morphant uses
+    /// included base pair, current mapper root, connected base mapper roots,
+    /// and assembly-level <c>MorphantConstructorSelection</c> MSBuild
+    /// property. Levels that do not apply to this builder are skipped. If all
+    /// levels inherit, Morphant uses
     /// <see cref="Morphant.ConstructorSelection.Unambiguous"/>.
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.ConstructorSelection"/>.
@@ -72,9 +75,10 @@ public abstract class MapperBuilderBase<T>
     /// <param name="memberSelection">
     /// The selection policy to apply.
     /// <see cref="Morphant.MemberSelection.Default"/> inherits the
-    /// mapper-level setting for a mapping builder, or the assembly-level
-    /// <c>MorphantMemberSelection</c> MSBuild property for the mapper builder.
-    /// If all levels inherit, Morphant uses
+    /// included base pair, current mapper root, connected base mapper roots,
+    /// and assembly-level <c>MorphantMemberSelection</c> MSBuild property.
+    /// Levels that do not apply to this builder are skipped. If all levels
+    /// inherit, Morphant uses
     /// <see cref="Morphant.MemberSelection.Auto"/>.
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.MemberSelection"/>.
@@ -83,7 +87,24 @@ public abstract class MapperBuilderBase<T>
     public T MemberSelection(MemberSelection memberSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public T UnmappedMemberValidation(UnmappedMemberValidation unmappedMemberValidation) =>
+    /// <summary>
+    /// Configures validation of source and destination members not used by
+    /// the effective mapping plan.
+    /// </summary>
+    /// <param name="unmappedMemberValidation">
+    /// The validation policy to apply.
+    /// <see cref="Morphant.UnmappedMemberValidation.Default"/> inherits the
+    /// included base pair, current mapper root, connected base mapper roots,
+    /// and assembly-level <c>MorphantUnmappedMemberValidation</c> MSBuild
+    /// property. Levels that do not apply to this builder are skipped. If all
+    /// levels inherit, Morphant uses
+    /// <see cref="Morphant.UnmappedMemberValidation.None"/>.
+    /// The argument expression must be a compile-time constant whose value is
+    /// defined by <see cref="Morphant.UnmappedMemberValidation"/>.
+    /// </param>
+    /// <returns>This builder.</returns>
+    public T UnmappedMemberValidation(
+        UnmappedMemberValidation unmappedMemberValidation) =>
         throw new RuntimeInvocationNotSupportedException();
 }
 
@@ -99,8 +120,8 @@ public abstract class MapperBuilder : MapperBuilderBase<MapperBuilder>
     /// </summary>
     /// <param name="mappingMode">
     /// The mapping operations to support. <see cref="Morphant.MappingMode.Default"/>
-    /// inherits the assembly-level <c>MorphantMappingMode</c> MSBuild
-    /// property. If that property is not set or is also <c>Default</c>,
+    /// inherits connected base mapper roots, then the assembly-level
+    /// <c>MorphantMappingMode</c> MSBuild property. If every level inherits,
     /// Morphant uses <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
     /// The argument expression must be a compile-time constant composed only
     /// from the defined mapping mode flags.
@@ -117,7 +138,8 @@ public abstract class MapperBuilder : MapperBuilderBase<MapperBuilder>
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="mappingMode">
     /// The mapping operations to support. <see cref="Morphant.MappingMode.Default"/>
-    /// inherits the mapper-level setting, then the assembly-level
+    /// inherits an included base pair, the current mapper root, connected
+    /// base mapper roots, and then the assembly-level
     /// <c>MorphantMappingMode</c> MSBuild property.
     /// The argument expression must be a compile-time constant composed only
     /// from the defined mapping mode flags.
@@ -132,4 +154,20 @@ public abstract class MapperBuilder<TSource, TDestination> : MapperBuilderBase<M
     private MapperBuilder()
     {
     }
+
+    /// <summary>
+    /// Includes the nearest mapping for the same source and destination types
+    /// from the base mapper configuration chain.
+    /// </summary>
+    /// <remarks>
+    /// The mapper must connect that chain with an explicit
+    /// <c>base.Configure(builder)</c> call. The included mapping contributes
+    /// its map-level settings and plan. A local <c>Construct</c> or
+    /// <c>Convert</c> replaces the corresponding inherited plan, while local
+    /// <c>Members</c> rules override inherited rules for the same destination
+    /// member.
+    /// </remarks>
+    /// <returns>This mapping builder.</returns>
+    public MapperBuilder<TSource, TDestination> IncludeBase() =>
+        throw new RuntimeInvocationNotSupportedException();
 }

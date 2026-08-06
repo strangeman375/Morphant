@@ -128,12 +128,13 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 4, этап 17 — полный `ConstructorSelection`.**
+**Фаза 4, этап 19 — mapper inheritance, `IncludeBase()` и settings
+composition.**
 
 Статус: реализован, ожидает ревью.
 
-Этап 16 принят. Этап 18 и все последующие этапы заблокированы до принятия
-этапа 17.
+Этап 17 принят. Этап 18 по решению от 6 августа 2026 года перенесён за границу
+core v0. Этап 20 и все последующие этапы заблокированы до принятия этапа 19.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -1194,7 +1195,7 @@ generated read-only marker shape.
 
 ### Этап 17. Полный `ConstructorSelection`
 
-Статус: реализован, ожидает ревью.
+Статус: принят.
 
 Цель — реализовать все согласованные стратегии выбора convention constructor,
 не затрагивая explicit structured `Construct`.
@@ -1238,7 +1239,7 @@ configuration и capability matrix.
 
 ### Этап 18. Automatic boxing policy
 
-Статус: не начат.
+Статус: не начат; отложен до post-v0 по решению от 6 августа 2026 года.
 
 Цель — добавить согласованный opt-in strict mode для automatic mappings,
 требующих boxing.
@@ -1266,7 +1267,7 @@ automatic mapping, не меняя общую conversion model.
 
 ### Этап 19. Mapper inheritance, `IncludeBase()` и settings composition
 
-Статус: не начат.
+Статус: реализован, ожидает ревью.
 
 Цель — реализовать единственную v0-модель переиспользования configuration.
 
@@ -1306,11 +1307,33 @@ Production scope:
 Результат этапа: composition имеет один детерминированный путь и не зависит от
 application dispatch либо неявного поиска fragments.
 
+Реализовано: source-visible mapper hierarchy подключается только прямым
+`base.Configure(builder)`, включая expression-bodied overrides, generic base
+mapper-ы и nested mapper declarations. Base mapper не требует
+`MorphantMapperAttribute`; для закрытого generic наследника дополнительно
+эмитируется открытый fluent surface, необходимый исходному base DSL.
+Inherited-only pairs переносятся автоматически, повторная local pair начинает
+с чистого plan, а `IncludeBase()` выбирает ближайшую matching pair.
+
+Settings разрешаются в полном порядке current pair -> included base pairs ->
+current root -> connected base roots -> assembly -> library; last-call-wins и
+`Default` работают независимо для всех slices, включая
+`UnmappedMemberValidation`. `Construct`/`Convert` заменяются целиком,
+`Members` объединяются по destination member с локальным приоритетом и
+повторным построением dependency graph. Inaccessible transferred plan,
+отсутствующая base pair/chain и повторные composition calls сохраняются как
+детерминированные unsupported states до diagnostics.
+
+Самостоятельная категория `TypeMapperInheritanceTests` фиксирует runtime,
+полную configuration model, C# 9 generic/accessibility boundaries и exact
+production snapshot всех generated artifacts. XML comments, settings pages и
+отдельное руководство по configuration inheritance актуализированы.
+
 ## Фаза 5. Надёжность, миграция и интеграция core v0
 
 ### Этап 20. Actualization нового generated surface и mapper-а
 
-Статус: не начат.
+Статус: не начат; заблокирован до принятия этапа 19.
 
 Цель — доказать корректное появление, обновление и исчезновение всех artifacts
 нового дизайна.
@@ -1456,6 +1479,8 @@ implementation plans:
 - identity-preserving declarative update get-only complex child;
 - first-class enum mapping;
 - opt-in scalable name matching;
+- opt-in policy, запрещающая automatic boxing в constructor/member
+  candidates (отложенный этап 18);
 - automatic reverse mapping, async/I/O mapping и остальные предложенные
   non-goals — только после отдельного продуктового решения.
 

@@ -77,7 +77,8 @@ internal static class TypeMapperConfigurePipeline
                     } configureSyntax)
             {
                 return new TypeMapperConfigureInfo(
-                    configureSyntax);
+                    configureSyntax,
+                    mapperType);
             }
 
             if (syntaxReference.GetSyntax(cancellationToken)
@@ -87,7 +88,8 @@ internal static class TypeMapperConfigurePipeline
                     } expressionBodiedSyntax)
             {
                 return new TypeMapperConfigureInfo(
-                    expressionBodiedSyntax);
+                    expressionBodiedSyntax,
+                    mapperType);
             }
         }
 

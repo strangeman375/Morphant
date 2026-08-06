@@ -67,14 +67,21 @@ protected override void Configure(MapperBuilder builder)
 The effective value is selected in this order:
 
 1. A non-`Default` value passed to `Map<TSource, TDestination>()`.
-2. A non-`Default` mapper-level value passed to `builder.MappingMode(...)`.
-3. A non-`Default` `MorphantMappingMode` MSBuild property.
-4. `MappingMode.CreateAndUpdate`.
+2. A non-`Default` value from a pair imported with `IncludeBase()`, nearest
+   first.
+3. A non-`Default` mapper-level value passed to `builder.MappingMode(...)`.
+4. Non-`Default` root values from connected base mappers, nearest first.
+5. A non-`Default` `MorphantMappingMode` MSBuild property.
+6. `MappingMode.CreateAndUpdate`.
 
 `Default` continues to the next level. Mapper-level settings apply to the
 whole mapper, regardless of whether the setting call appears before or after
 its mapping registrations. If `builder.MappingMode(...)` is called more than
 once, the last call wins, including a last call with `Default`.
+
+Base roots participate only after an explicit `base.Configure(builder)` call,
+and base pair values participate only after `IncludeBase()`. See
+[Configuration inheritance](../configuration-inheritance.md).
 
 ## Mode behavior
 

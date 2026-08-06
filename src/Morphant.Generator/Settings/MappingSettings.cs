@@ -64,7 +64,8 @@ internal readonly record struct MappingSettings(
     NullSourceHandlingValue? NullSourceHandling,
     NullDestinationHandlingValue? NullDestinationHandling,
     ConstructorSelectionValue? ConstructorSelection,
-    MemberSelectionValue? MemberSelection)
+    MemberSelectionValue? MemberSelection,
+    UnmappedMemberValidationValue? UnmappedMemberValidation)
 {
     public static MappingSettings Default =>
         new(
@@ -72,7 +73,8 @@ internal readonly record struct MappingSettings(
             NullSourceHandlingValue.Default,
             NullDestinationHandlingValue.Default,
             ConstructorSelectionValue.Default,
-            MemberSelectionValue.Default);
+            MemberSelectionValue.Default,
+            UnmappedMemberValidationValue.Default);
 }
 
 internal readonly record struct EffectiveMappingSettings(
@@ -80,7 +82,8 @@ internal readonly record struct EffectiveMappingSettings(
     NullSourceHandlingValue? NullSourceHandling,
     NullDestinationHandlingValue? NullDestinationHandling,
     ConstructorSelectionValue? ConstructorSelection,
-    MemberSelectionValue? MemberSelection)
+    MemberSelectionValue? MemberSelection,
+    UnmappedMemberValidationValue? UnmappedMemberValidation)
 {
     public bool IsMappingModeValid =>
         MappingMode.HasValue;
@@ -96,6 +99,9 @@ internal readonly record struct EffectiveMappingSettings(
 
     public bool IsMemberSelectionValid =>
         MemberSelection.HasValue;
+
+    public bool IsUnmappedMemberValidationValid =>
+        UnmappedMemberValidation.HasValue;
 
     public bool SupportsMapNew =>
         MappingMode is { } mappingMode &&
@@ -114,34 +120,44 @@ internal readonly record struct EffectiveMappingSettings(
 
     public static EffectiveMappingSettings Resolve(
         MappingSettings assemblySettings,
-        MappingSettings rootSettings,
-        MappingSettings mappingSettings)
+        IEnumerable<MappingSettings> mappingSettings,
+        IEnumerable<MappingSettings> rootSettings)
     {
+        var mappingLevels = mappingSettings.ToArray();
+        var rootLevels = rootSettings.ToArray();
+
+        IEnumerable<TValue?> Values<TValue>(
+            Func<MappingSettings, TValue?> selector)
+            where TValue : struct, Enum =>
+            mappingLevels.Select(selector)
+                .Concat(rootLevels.Select(selector));
+
         return new EffectiveMappingSettings(
             SettingValueResolver.Resolve(
                 assemblySettings.MappingMode,
-                rootSettings.MappingMode,
-                mappingSettings.MappingMode,
+                Values(static settings => settings.MappingMode),
                 MappingModeValue.CreateAndUpdate),
             SettingValueResolver.Resolve(
                 assemblySettings.NullSourceHandling,
-                rootSettings.NullSourceHandling,
-                mappingSettings.NullSourceHandling,
+                Values(static settings => settings.NullSourceHandling),
                 NullSourceHandlingValue.ReturnNull),
             SettingValueResolver.Resolve(
                 assemblySettings.NullDestinationHandling,
-                rootSettings.NullDestinationHandling,
-                mappingSettings.NullDestinationHandling,
+                Values(static settings =>
+                    settings.NullDestinationHandling),
                 NullDestinationHandlingValue.Create),
             SettingValueResolver.Resolve(
                 assemblySettings.ConstructorSelection,
-                rootSettings.ConstructorSelection,
-                mappingSettings.ConstructorSelection,
+                Values(static settings => settings.ConstructorSelection),
                 ConstructorSelectionValue.Unambiguous),
             SettingValueResolver.Resolve(
                 assemblySettings.MemberSelection,
-                rootSettings.MemberSelection,
-                mappingSettings.MemberSelection,
-                MemberSelectionValue.Auto));
+                Values(static settings => settings.MemberSelection),
+                MemberSelectionValue.Auto),
+            SettingValueResolver.Resolve(
+                assemblySettings.UnmappedMemberValidation,
+                Values(static settings =>
+                    settings.UnmappedMemberValidation),
+                UnmappedMemberValidationValue.None));
     }
 }

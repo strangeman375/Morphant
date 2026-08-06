@@ -5,8 +5,8 @@ namespace Morphant;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A mapping-level <see cref="Default"/> value inherits the mapper-level
-/// setting. A mapper-level <see cref="Default"/> value inherits the
+/// A mapping-level <see cref="Default"/> value continues through an included
+/// base pair, the current mapper root, connected base mapper roots, and the
 /// assembly-level <c>MorphantMappingMode</c> MSBuild property. If no level
 /// specifies a mode, the effective mode is <see cref="CreateAndUpdate"/>.
 /// </para>

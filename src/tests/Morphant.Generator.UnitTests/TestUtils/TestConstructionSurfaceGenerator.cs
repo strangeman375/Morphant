@@ -20,8 +20,9 @@ internal sealed class TestConstructionSurfaceGenerator :
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var mappingPairs = pairConfigurations.Select(
-            static (configuration, _) => configuration.MappingPairs);
+        var mappingPairs = pairConfigurations.SelectMany(
+            static (configuration, _) =>
+                configuration.SurfaceMappingPairs);
 
         ConstructionSurfacePipeline.Register(
             context,

@@ -1,14 +1,37 @@
 namespace Morphant;
 
+/// <summary>
+/// Specifies which unused source and destination members are validated.
+/// </summary>
 public enum UnmappedMemberValidation
 {
-    Default = 0, // None
+    /// <summary>
+    /// Inherits the next less specific setting. If no level specifies a
+    /// value, Morphant uses <see cref="None"/>.
+    /// </summary>
+    Default = 0,
 
-    None, // обычный режим = варнинги только по required destination свойствам
+    /// <summary>
+    /// Does not require every source or destination member to participate in
+    /// the mapping plan.
+    /// </summary>
+    None,
 
-    Source, // все свойства source должны участвовать, варнинги по всем unmapped source свойствам + required destination свойствам
+    /// <summary>
+    /// Requires every supported source member to participate in the mapping
+    /// plan.
+    /// </summary>
+    Source,
 
-    Destination, // все свойства destination должны участвовать, варнинги по всем unmapped destination свойствам
+    /// <summary>
+    /// Requires every supported destination member to participate in the
+    /// mapping plan.
+    /// </summary>
+    Destination,
 
-    Strict // все свойства source и destination должны участвовать, варнинги по всем unmapped свойствам source и destination
+    /// <summary>
+    /// Requires every supported source and destination member to participate
+    /// in the mapping plan.
+    /// </summary>
+    Strict
 }

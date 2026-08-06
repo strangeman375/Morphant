@@ -9,8 +9,11 @@ namespace Morphant.Generator.PairConfiguration;
 
 internal readonly record struct MapperPairConfigurationModel(
     MapperMappingPairModel MappingPairs,
+    ImmutableArray<MapperMappingPairModel> SurfaceMappingPairs,
     PairConfigurationSettings RootSettings,
-    ImmutableArray<PairConfigurationModel> Pairs);
+    ImmutableArray<PairConfigurationSettings> BaseRootSettings,
+    ImmutableArray<PairConfigurationModel> Pairs,
+    bool HasInvalidBaseConfiguration);
 
 internal readonly record struct PairConfigurationModel(
     MappingPairModel Pair,
@@ -46,15 +49,16 @@ internal sealed record BoundConfigurationExpression(
     SemanticModel SemanticModel,
     IOperation? Operation,
     INamedTypeSymbol DelegateType,
-    IMethodSymbol DelegateInvokeMethod);
+    IMethodSymbol DelegateInvokeMethod,
+    INamedTypeSymbol DeclaringMapperType,
+    bool IsAccessibleFromTargetMapper);
 
 internal readonly record struct PairConfigurationCompositionModel(
-    ImmutableArray<InvocationExpressionSyntax> IncludeBaseCalls)
+    ImmutableArray<InvocationExpressionSyntax> IncludeBaseCalls,
+    ImmutableArray<PairConfigurationSettings> IncludedBaseSettings)
 {
-    // IncludeBase becomes discoverable when mapper composition is introduced.
-    // Keeping it in the model now avoids changing every downstream plan shape.
     public static PairConfigurationCompositionModel Empty =>
-        new([]);
+        new([], []);
 }
 
 internal readonly record struct PairConfigurationSettings(
@@ -102,5 +106,9 @@ internal enum PairConfigurationConflict
     DuplicateConstruct = 1 << 0,
     DuplicateMembers = 1 << 1,
     DuplicateConvert = 1 << 2,
-    MixedManualAndDeclarative = 1 << 3
+    MixedManualAndDeclarative = 1 << 3,
+    DuplicateIncludeBase = 1 << 4,
+    MissingBaseConfiguration = 1 << 5,
+    MissingBasePair = 1 << 6,
+    InaccessibleInheritedPlan = 1 << 7
 }

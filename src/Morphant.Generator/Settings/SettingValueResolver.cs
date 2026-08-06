@@ -4,29 +4,21 @@ internal static class SettingValueResolver
 {
     public static TValue? Resolve<TValue>(
         TValue? assemblyValue,
-        TValue? rootValue,
-        TValue? mappingValue,
+        IEnumerable<TValue?> configuredValues,
         TValue libraryDefault)
         where TValue : struct, Enum
     {
-        if (mappingValue is not { } value)
+        foreach (var configuredValue in configuredValues)
         {
-            return null;
-        }
+            if (configuredValue is not { } value)
+            {
+                return null;
+            }
 
-        if (!IsDefault(value))
-        {
-            return value;
-        }
-
-        if (rootValue is not { } root)
-        {
-            return null;
-        }
-
-        if (!IsDefault(root))
-        {
-            return root;
+            if (!IsDefault(value))
+            {
+                return value;
+            }
         }
 
         if (assemblyValue is not { } assembly)

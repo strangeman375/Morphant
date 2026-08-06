@@ -17,6 +17,72 @@ internal static class BasicMembersMappingPlanner
         "A configured Auto member cannot be mapped by convention.";
 
     public static BasicMembersMappingResult Build(
+        ImmutableArray<MembersConfigurationModel> configurations,
+        MemberSelectionValue memberSelection,
+        TypeMapperMappingModel mapping,
+        ConventionMemberMappingPlan convention,
+        ITypeSymbol destination,
+        MappingPairCapabilities capabilities,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        if (configurations.Length <= 1)
+        {
+            return BuildSingle(
+                configurations.IsEmpty ? null : configurations[0],
+                memberSelection,
+                mapping,
+                convention,
+                destination,
+                capabilities,
+                compilation,
+                mapperType,
+                cancellationToken);
+        }
+
+        var results = ImmutableArray.CreateBuilder<BasicMembersMappingResult>(
+            configurations.Length);
+
+        foreach (var configuration in configurations)
+        {
+            var result = BuildSingle(
+                configuration,
+                MemberSelectionValue.Explicit,
+                mapping,
+                convention,
+                destination,
+                capabilities,
+                compilation,
+                mapperType,
+                cancellationToken);
+
+            if (result.UnsupportedMessage is not null ||
+                result.ControlFlow is not null)
+            {
+                return result.UnsupportedMessage is { } message
+                    ? BasicMembersMappingResult.Unsupported(message)
+                    : BasicMembersMappingResult.Unsupported(
+                        UnsupportedMembersMessage);
+            }
+
+            results.Add(result);
+        }
+
+        return new BasicMembersMappingResult(
+            MergePlans(
+                results.Select(static result => result.Plan),
+                memberSelection,
+                convention,
+                destination,
+                capabilities,
+                compilation,
+                cancellationToken),
+            ControlFlow: null,
+            UnsupportedMessage: null);
+    }
+
+    private static BasicMembersMappingResult BuildSingle(
         MembersConfigurationModel? configuration,
         MemberSelectionValue memberSelection,
         TypeMapperMappingModel mapping,
@@ -393,9 +459,110 @@ internal static class BasicMembersMappingPlanner
                 immutableMapNew,
                 cancellationToken),
             hasExplicitCreationOnlyMappings,
-            hasResultDependentCreationOnlyMappings);
+            hasResultDependentCreationOnlyMappings,
+            occupiedNames.ToImmutableArray());
         unsupportedMessage = null;
         return true;
+    }
+
+    private static ConventionMemberMappingPlan MergePlans(
+        IEnumerable<ConventionMemberMappingPlan> plans,
+        MemberSelectionValue memberSelection,
+        ConventionMemberMappingPlan convention,
+        ITypeSymbol destination,
+        MappingPairCapabilities capabilities,
+        CSharpCompilation compilation,
+        CancellationToken cancellationToken)
+    {
+        var immutablePlans = plans.ToImmutableArray();
+        var occupiedNames = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var plan in immutablePlans)
+        {
+            occupiedNames.UnionWith(
+                plan.ConfiguredMemberNames.IsDefault
+                    ? []
+                    : plan.ConfiguredMemberNames);
+        }
+
+        ImmutableArray<TypeMapperMemberMappingModel> Merge(
+            Func<
+                ConventionMemberMappingPlan,
+                ImmutableArray<TypeMapperMemberMappingModel>> selector,
+            ImmutableArray<TypeMapperMemberMappingModel> conventions)
+        {
+            var result = new List<TypeMapperMemberMappingModel>();
+
+            foreach (var plan in immutablePlans)
+            {
+                var overriddenNames = plan.ConfiguredMemberNames.IsDefault
+                    ? []
+                    : plan.ConfiguredMemberNames;
+
+                result.RemoveAll(mapping =>
+                    overriddenNames.Contains(
+                        mapping.DestinationMemberName,
+                        StringComparer.Ordinal));
+                result.AddRange(selector(plan));
+            }
+
+            if (memberSelection == MemberSelectionValue.Auto)
+            {
+                result.AddRange(conventions.Where(mapping =>
+                    !occupiedNames.Contains(
+                        mapping.DestinationMemberName)));
+            }
+
+            return result.ToImmutableArray();
+        }
+
+        var mapNew = Merge(
+            static plan => plan.MapNew,
+            convention.MapNew);
+        var mapNewPost = Merge(
+            static plan => plan.MapNewPost,
+            convention.MapNewPost);
+        var mapReplacement = Merge(
+            static plan => plan.MapReplacement,
+            convention.MapReplacement);
+        var mapReplacementPost = Merge(
+            static plan => plan.MapReplacementPost,
+            convention.MapReplacementPost);
+        var mapExisting = Merge(
+            static plan => plan.MapExisting,
+            convention.MapExisting);
+        var writableMembers =
+            ConventionMemberMappingPlanner.BuildWritableMembers(
+                destination,
+                capabilities,
+                compilation,
+                cancellationToken)
+            .ToDictionary(
+                static member => member.Name,
+                StringComparer.Ordinal);
+        var creationOnlyMappings = mapNew
+            .Where(mapping =>
+                occupiedNames.Contains(mapping.DestinationMemberName) &&
+                writableMembers.TryGetValue(
+                    mapping.DestinationMemberName,
+                    out var member) &&
+                !member.CanAssign)
+            .ToArray();
+
+        return new ConventionMemberMappingPlan(
+            mapNew,
+            mapNewPost,
+            mapReplacement,
+            mapReplacementPost,
+            mapExisting,
+            ConventionMemberMappingPlanner.HasUnmappedRequiredMembers(
+                destination,
+                mapNew,
+                cancellationToken),
+            creationOnlyMappings.Length > 0,
+            creationOnlyMappings.Any(static mapping =>
+                mapping.IsResultDependent),
+            occupiedNames.ToImmutableArray());
     }
 
     private static bool TryBuildExplicitMapping(

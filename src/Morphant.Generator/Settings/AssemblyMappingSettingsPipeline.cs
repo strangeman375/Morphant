@@ -20,6 +20,9 @@ internal static class AssemblyMappingSettingsPipeline
     private const string MemberSelectionPropertyName =
         "build_property.MorphantMemberSelection";
 
+    private const string UnmappedMemberValidationPropertyName =
+        "build_property.MorphantUnmappedMemberValidation";
+
     public static IncrementalValueProvider<MappingSettings> Build(
         IncrementalGeneratorInitializationContext context)
     {
@@ -48,7 +51,11 @@ internal static class AssemblyMappingSettingsPipeline
                     ParseNamedValue<MemberSelectionValue>(
                         GetValue(
                             globalOptions,
-                            MemberSelectionPropertyName)));
+                            MemberSelectionPropertyName)),
+                    ParseNamedValue<UnmappedMemberValidationValue>(
+                        GetValue(
+                            globalOptions,
+                            UnmappedMemberValidationPropertyName)));
             })
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildAssemblyMappingSettings);

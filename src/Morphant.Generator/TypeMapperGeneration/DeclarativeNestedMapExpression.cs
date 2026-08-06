@@ -35,6 +35,29 @@ internal static class DeclarativeNestedMapExpression
             InvocationExpressionSyntax,
             TypeMapperNestedMapExpressionModel>(
             InvocationReferenceComparer.Instance);
+        var semanticMapperType = semanticModel.Compilation
+                .GetTypeByMetadataName(
+                    SymbolNameHelper.GetFullMetadataName(mapperType)) ??
+            mapperType;
+        var mapperTypeSubstitutions =
+            MapperTypeSubstitution.BuildForHierarchy(
+                semanticMapperType);
+        var effectiveTargetType = targetType is null
+            ? null
+            : MapperTypeSubstitution.Substitute(
+                targetType,
+                mapperTypeSubstitutions,
+                semanticModel.Compilation);
+        DeclarativeNestedMapTargetContext? effectiveTargetContext =
+            targetContext is { } context
+                ? context with
+                {
+                    Type = MapperTypeSubstitution.Substitute(
+                        context.Type,
+                        mapperTypeSubstitutions,
+                        semanticModel.Compilation)
+                }
+                : null;
 
         foreach (var invocation in expression
                      .DescendantNodesAndSelf()
@@ -63,13 +86,14 @@ internal static class DeclarativeNestedMapExpression
                 !TryBuildMapping(
                     invocation,
                     method,
-                    targetType,
-                    targetContext,
+                    effectiveTargetType,
+                    effectiveTargetContext,
                     usageRegistry,
                     sourceParameter,
                     resultName,
                     semanticModel,
                     mapperType,
+                    mapperTypeSubstitutions,
                     cancellationToken,
                     out var mapping))
             {
@@ -91,10 +115,15 @@ internal static class DeclarativeNestedMapExpression
                 expressionType,
                 out var markerDestination))
         {
-            if (targetType is not null &&
+            markerDestination = MapperTypeSubstitution.Substitute(
+                markerDestination,
+                mapperTypeSubstitutions,
+                semanticModel.Compilation);
+
+            if (effectiveTargetType is not null &&
                 !HasWarningFreeImplicitConversion(
                     markerDestination,
-                    targetType,
+                    effectiveTargetType,
                     semanticModel.Compilation,
                     mapperType,
                     cancellationToken))
@@ -218,6 +247,8 @@ internal static class DeclarativeNestedMapExpression
         string? resultName,
         SemanticModel semanticModel,
         INamedTypeSymbol mapperType,
+        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
+            mapperTypeSubstitutions,
         CancellationToken cancellationToken,
         out TypeMapperNestedMapExpressionModel mapping)
     {
@@ -262,6 +293,14 @@ internal static class DeclarativeNestedMapExpression
             sourceType = null;
         }
 
+        if (sourceType is not null)
+        {
+            sourceType = MapperTypeSubstitution.Substitute(
+                sourceType,
+                mapperTypeSubstitutions,
+                semanticModel.Compilation);
+        }
+
         if (sourceType is null ||
             !CanUseAsGenericArgument(sourceType))
         {
@@ -281,7 +320,13 @@ internal static class DeclarativeNestedMapExpression
                 cancellationToken,
                 out var resolvedReadOnlyTarget))
         {
-            readOnlyTarget = resolvedReadOnlyTarget;
+            readOnlyTarget = resolvedReadOnlyTarget with
+            {
+                MemberType = MapperTypeSubstitution.Substitute(
+                    resolvedReadOnlyTarget.MemberType,
+                    mapperTypeSubstitutions,
+                    semanticModel.Compilation)
+            };
         }
 
         if (method.IsGenericMethod && method.TypeArguments.Length == 1)
@@ -297,6 +342,14 @@ internal static class DeclarativeNestedMapExpression
         else
         {
             destinationType = targetType;
+        }
+
+        if (destinationType is not null)
+        {
+            destinationType = MapperTypeSubstitution.Substitute(
+                destinationType,
+                mapperTypeSubstitutions,
+                semanticModel.Compilation);
         }
 
         if (destinationType is null ||
@@ -316,6 +369,7 @@ internal static class DeclarativeNestedMapExpression
                 destinationType,
                 semanticModel,
                 mapperType,
+                mapperTypeSubstitutions,
                 cancellationToken))
         {
             mapping = default;
@@ -393,6 +447,8 @@ internal static class DeclarativeNestedMapExpression
         ITypeSymbol destinationType,
         SemanticModel semanticModel,
         INamedTypeSymbol mapperType,
+        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
+            mapperTypeSubstitutions,
         CancellationToken cancellationToken)
     {
         if (operation.Arguments.FirstOrDefault(argument =>
@@ -426,6 +482,11 @@ internal static class DeclarativeNestedMapExpression
         {
             return false;
         }
+
+        argumentType = MapperTypeSubstitution.Substitute(
+            argumentType,
+            mapperTypeSubstitutions,
+            semanticModel.Compilation);
 
         var inputType = destinationType.IsReferenceType
             ? destinationType.WithNullableAnnotation(

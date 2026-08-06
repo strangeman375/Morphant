@@ -109,6 +109,13 @@ internal static class ManualConvertMappingPlanner
         var helperMethodName = UserResultMappingPlanner.AllocateName(
             "__ConvertDestination",
             usedGeneratedMethodNames);
+        var semanticMapperType = configuration.Expression.SemanticModel
+                .Compilation.GetTypeByMetadataName(
+                    SymbolNameHelper.GetFullMetadataName(mapperType)) ??
+            mapperType;
+        var mapperTypeSubstitutions =
+            MapperTypeSubstitution.BuildForHierarchy(
+                semanticMapperType);
         var helper = SyntaxFactory.MethodDeclaration(
                 SyntaxFactory.ParseTypeName(
                     mapping.DestinationTypeName),
@@ -128,13 +135,22 @@ internal static class ManualConvertMappingPlanner
                         {
                             BuildParameter(
                                 parameterNames.Source,
-                                sourceParameter),
+                                sourceParameter,
+                                mapperTypeSubstitutions,
+                                configuration.Expression.SemanticModel
+                                    .Compilation),
                             BuildParameter(
                                 parameterNames.Previous,
-                                previousParameter),
+                                previousParameter,
+                                mapperTypeSubstitutions,
+                                configuration.Expression.SemanticModel
+                                    .Compilation),
                             BuildParameter(
                                 parameterNames.Context,
-                                contextParameter)
+                                contextParameter,
+                                mapperTypeSubstitutions,
+                                configuration.Expression.SemanticModel
+                                    .Compilation)
                         })));
 
         helper = rewrittenSyntax switch
@@ -232,15 +248,22 @@ internal static class ManualConvertMappingPlanner
 
     private static ParameterSyntax BuildParameter(
         string name,
-        IParameterSymbol parameter)
+        IParameterSymbol parameter,
+        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol> substitutions,
+        Compilation compilation)
     {
+        var parameterType = MapperTypeSubstitution.Substitute(
+            parameter.Type.WithNullableAnnotation(
+                parameter.NullableAnnotation),
+            substitutions,
+            compilation);
+
         return SyntaxFactory.Parameter(
                 SyntaxFactory.Identifier(name))
             .WithType(
                 SyntaxFactory.ParseTypeName(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                        parameter.Type.WithNullableAnnotation(
-                            parameter.NullableAnnotation))));
+                        parameterType)));
     }
 
     private static bool ContainsDslMarker(

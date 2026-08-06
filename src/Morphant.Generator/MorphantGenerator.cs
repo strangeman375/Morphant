@@ -20,8 +20,9 @@ public sealed class MorphantGenerator : IIncrementalGenerator
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var surfaceMappingPairs = pairConfigurations.Select(
-            static (configuration, _) => configuration.MappingPairs);
+        var surfaceMappingPairs = pairConfigurations.SelectMany(
+            static (configuration, _) =>
+                configuration.SurfaceMappingPairs);
         ConstructionSurfacePipeline.Register(
             context,
             compilationContext,

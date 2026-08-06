@@ -887,7 +887,8 @@ internal readonly record struct ConventionMemberMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> MapExisting,
     bool HasUnmappedRequiredMembers,
     bool HasExplicitCreationOnlyMappings,
-    bool HasResultDependentCreationOnlyMappings)
+    bool HasResultDependentCreationOnlyMappings,
+    ImmutableArray<string> ConfiguredMemberNames = default)
 {
     public ConstructorMemberMappingPlan BuildConstructorPlan(
         bool replacement)

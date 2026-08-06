@@ -24,9 +24,9 @@ internal sealed class TestBasicMembersTypeMapperGenerator
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var mappingPairs = pairConfigurations.Select(
+        var mappingPairs = pairConfigurations.SelectMany(
             static (configuration, _) =>
-                configuration.MappingPairs);
+                configuration.SurfaceMappingPairs);
 
         ConstructionSurfacePipeline.Register(
             context,
