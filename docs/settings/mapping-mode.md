@@ -91,6 +91,10 @@ Every generated mapping continues to implement the single
 runtime resolution uniform. Invoking an overload excluded by the effective
 mode fails immediately in the generated mapper.
 
+The same gate applies to a manual `Convert`. `MappingMode` is the only
+effective setting used by a manual mapping; once the selected operation is
+enabled, the lambda itself owns the complete mapping lifecycle.
+
 Mapping mode expressions must be compile-time constants composed only from
 the defined `Create` and `Update` flags. The MSBuild property must use one
 of the named values listed above.

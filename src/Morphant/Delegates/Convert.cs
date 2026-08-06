@@ -12,6 +12,13 @@ namespace Morphant.Delegates;
 /// <param name="previous">The optional existing destination.</param>
 /// <param name="context">The current mapping context.</param>
 /// <returns>The mapping result.</returns>
+/// <remarks>
+/// A manual mapping receives the original source before null handling. An
+/// absent destination is represented by
+/// <see cref="Option{TPrevious}.None"/>, while
+/// <paramref name="context"/> distinguishes Create from Update. The returned
+/// value is authoritative and is not processed by the declarative pipeline.
+/// </remarks>
 public delegate TResult Convert<in TSource, TPrevious, out TResult>(
     TSource source,
     Option<TPrevious> previous,

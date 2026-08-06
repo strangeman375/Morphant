@@ -129,7 +129,7 @@ Collections, projection и остальные post-v0 возможности в 
 
 **Фаза 3, этап 15 — полностью ручной `Convert`.**
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Этап 14 принят. Этап 16 и все последующие этапы заблокированы до принятия
 этапа 15.
@@ -1045,7 +1045,7 @@ isolation, parallel root scopes, transient activation и type identity
 
 ### Этап 15. Полностью ручной `Convert`
 
-Статус: не начат.
+Статус: ожидает ревью.
 
 Цель — реализовать `Convert` как отдельную альтернативу declarative pipeline.
 
@@ -1078,6 +1078,28 @@ Production scope:
 
 Результат этапа: любой сложный синхронный mapping можно выразить явно, не
 расширяя declarative grammar.
+
+`Convert` переносится в один collision-safe private helper и вызывается обеими
+generated operations с исходным source, точным `Option<TDestination>` и
+неизменённым `MappingContext`. Helper сохраняет expression/static/block lambda,
+обычные C# statements, mapper members и локальные объявления, но не допускает
+runtime captures из `Configure`. Declarative marker-вызовы внутри manual body,
+повторный `Convert`, смешанный manual/declarative plan и неприменимые explicit
+map-level settings остаются deterministic invalid state до diagnostics.
+
+Emitter обходит source/destination null handling и весь declarative lowering
+до любой normalization. `MappingMode` проверяется до manual helper; nullable
+reference/value destination превращается в `Option.None` либо
+`Option.Some(non-null value)` непосредственно из фактического argument-а.
+Returned `null`, previous instance и replacement возвращаются без guard или
+post-processing.
+
+Самостоятельная категория `TypeMapperConvertTests` содержит runtime и полный
+exact-source срез: call-state matrix, inherited no-effect settings,
+`MappingMode`, expression/static/block bodies, constructors/factories,
+mutation, loops, exceptions, local functions, record `with`, nested scoped
+dispatch, nullable value pairs, captures/conflicts/markers, отсутствие
+conventions и collision-safe helper (`8/8`).
 
 ### Этап 16. Explicit declarative nested `Map`
 

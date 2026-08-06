@@ -161,6 +161,17 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (mapping.ManualMapping is { } manualMapping)
+        {
+            WriteManualMapping(
+                writer,
+                mapping,
+                manualMapping,
+                mapExisting: false);
+            writer.Unindent();
+            return;
+        }
+
         if (!mapping.EffectiveSettings.IsNullSourceHandlingValid)
         {
             WriteUnsupportedMapping(
@@ -675,6 +686,17 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (mapping.ManualMapping is { } manualMapping)
+        {
+            WriteManualMapping(
+                writer,
+                mapping,
+                manualMapping,
+                mapExisting: true);
+            writer.Unindent();
+            return;
+        }
+
         if (!mapping.EffectiveSettings.IsNullSourceHandlingValid)
         {
             WriteUnsupportedMapping(
@@ -710,6 +732,68 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"=> {BuildMapExistingImplCall(mapping, methodName)};");
         writer.Unindent();
+    }
+
+    private static void WriteManualMapping(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperManualMappingModel manualMapping,
+        bool mapExisting)
+    {
+        if (mapping.UnsupportedExceptionMessage is
+            { } unsupportedExceptionMessage)
+        {
+            WriteUnsupportedMapping(
+                writer,
+                unsupportedExceptionMessage);
+            return;
+        }
+
+        var helperMethodName = manualMapping.HelperMethodName ??
+            throw new InvalidOperationException(
+                "A Convert helper method name is required.");
+
+        writer.Line($"=> {helperMethodName}(");
+        writer.Indent();
+        writer.Line("source,");
+
+        if (!mapExisting)
+        {
+            writer.Line(BuildOptionTypeName(mapping) + ".None,");
+        }
+        else if (!mapping.DestinationCanBeNull)
+        {
+            writer.Line(
+                BuildOptionTypeName(mapping) +
+                ".Some(destination),");
+        }
+        else
+        {
+            writer.Line("destination is null");
+            writer.Indent();
+            writer.Line(
+                "? " + BuildOptionTypeName(mapping) + ".None");
+            writer.Line(
+                ": " + BuildOptionTypeName(mapping) +
+                ".Some(" +
+                (mapping.MapExistingKind ==
+                    TypeMapperMapExistingKind.NullableValue
+                    ? "destination.Value"
+                    : "destination") +
+                "),");
+            writer.Unindent();
+        }
+
+        writer.Line("context);");
+        writer.Unindent();
+    }
+
+    private static string BuildOptionTypeName(
+        TypeMapperMappingModel mapping)
+    {
+        return "global::Morphant.Option<" +
+               mapping.NonNullDestinationTypeName +
+               ">";
     }
 
     private static void WriteMapExistingBody(

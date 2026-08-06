@@ -10,8 +10,11 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TypeMapperPipeline
 {
-    private const string ConfiguredPlanUnsupportedMessage =
-        "Configured plan conflicts and Convert plans are not executable yet.";
+    private const string ConfiguredPlanConflictMessage =
+        "The configured mapping plan is conflicting.";
+
+    private const string ManualSettingConflictMessage =
+        "The configured map-level setting is not applicable to Convert.";
 
     private const string ConventionConstructionUnavailableMessage =
         "Convention construction is not available for this destination.";
@@ -175,7 +178,9 @@ internal static class TypeMapperPipeline
                     effectiveSettings)
                 ? AllocateName("CreateImpl", usedGeneratedMethodNames)
                 : null;
-            var updateMethodName = RequiresUpdateMethod(effectiveSettings)
+            var updateMethodName = RequiresUpdateMethod(
+                    mapping,
+                    effectiveSettings)
                 ? AllocateName("UpdateImpl", usedGeneratedMethodNames)
                 : null;
 
@@ -219,13 +224,46 @@ internal static class TypeMapperPipeline
             nonNullSourceName,
             mapperType);
 
-        if (configuration.Conflicts != PairConfigurationConflict.None ||
-            !configuration.Manual.Conversions.IsEmpty)
+        if (configuration.Conflicts != PairConfigurationConflict.None)
         {
             return mapping with
             {
+                ManualMapping = configuration.Manual.Conversions.IsEmpty
+                    ? null
+                    : new TypeMapperManualMappingModel(null),
                 UnsupportedExceptionMessage =
-                    ConfiguredPlanUnsupportedMessage
+                    ConfiguredPlanConflictMessage
+            };
+        }
+
+        if (!configuration.Manual.Conversions.IsEmpty)
+        {
+            if (HasExplicitManualSettingConflict(configuration.Settings))
+            {
+                return mapping with
+                {
+                    ManualMapping = new TypeMapperManualMappingModel(null),
+                    UnsupportedExceptionMessage =
+                        ManualSettingConflictMessage
+                };
+            }
+
+            var manual = ManualConvertMappingPlanner.Build(
+                configuration.Manual.Conversions[0],
+                mapping,
+                mapperType,
+                usedGeneratedMethodNames,
+                cancellationToken);
+
+            return mapping with
+            {
+                ManualMapping = new TypeMapperManualMappingModel(
+                    manual.HelperMethodName),
+                HelperMethodDeclarations = manual.HelperMethodDeclaration is
+                    { } helperMethodDeclaration
+                    ? [helperMethodDeclaration]
+                    : [],
+                UnsupportedExceptionMessage = manual.UnsupportedMessage
             };
         }
 
@@ -559,7 +597,8 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel mapping,
         EffectiveMappingSettings settings)
     {
-        if (!settings.IsMappingModeValid ||
+        if (mapping.ManualMapping is not null ||
+            !settings.IsMappingModeValid ||
             !settings.IsNullSourceHandlingValid)
         {
             return false;
@@ -574,12 +613,29 @@ internal static class TypeMapperPipeline
     }
 
     private static bool RequiresUpdateMethod(
+        TypeMapperMappingModel mapping,
         EffectiveMappingSettings settings)
     {
-        return settings.IsMappingModeValid &&
+        return mapping.ManualMapping is null &&
+               settings.IsMappingModeValid &&
                settings.SupportsMapExisting &&
                settings.IsNullSourceHandlingValid &&
                settings.IsNullDestinationHandlingValid;
+    }
+
+    private static bool HasExplicitManualSettingConflict(
+        PairConfigurationSettings settings)
+    {
+        return settings.NullSourceHandling.Origin ==
+                   PairConfigurationSettingOrigin.Explicit ||
+               settings.NullDestinationHandling.Origin ==
+                   PairConfigurationSettingOrigin.Explicit ||
+               settings.ConstructorSelection.Origin ==
+                   PairConfigurationSettingOrigin.Explicit ||
+               settings.MemberSelection.Origin ==
+                   PairConfigurationSettingOrigin.Explicit ||
+               settings.UnmappedMemberValidation.Origin ==
+                   PairConfigurationSettingOrigin.Explicit;
     }
 
     private static bool CanBeNull(ITypeSymbol type)

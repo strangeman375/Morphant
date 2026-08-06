@@ -20,18 +20,20 @@ public interface ITypeMapper<in TSource, TDestination>
     /// Maps the specified source to a new destination.
     /// </summary>
     /// <param name="source">
-    /// The source to map. May be <see langword="null"/>; the effective
-    /// <see cref="NullSourceHandling"/> setting determines how it is handled.
+    /// The source to map. May be <see langword="null"/>. Declarative mappings
+    /// apply the effective <see cref="NullSourceHandling"/> setting; a manual
+    /// <c>Convert</c> receives the original value instead.
     /// </param>
     /// <param name="context">The context for the mapping operation.</param>
     /// <returns>The mapped destination.</returns>
     /// <exception cref="NotSupportedException">
     /// The effective <see cref="MappingMode"/> is invalid or does not include
-    /// <see cref="MappingMode.Create"/>, or the effective
-    /// <see cref="NullSourceHandling"/> is invalid.
+    /// <see cref="MappingMode.Create"/>, or a null-handling setting required
+    /// by the selected declarative mapping is invalid.
     /// </exception>
     /// <exception cref="ArgumentNullException">
-    /// <paramref name="source"/> is <see langword="null"/> and the effective
+    /// A declarative mapping is selected, <paramref name="source"/> is
+    /// <see langword="null"/>, and the effective
     /// <see cref="NullSourceHandling"/> is
     /// <see cref="Morphant.NullSourceHandling.Throw"/>.
     /// </exception>
@@ -41,23 +43,26 @@ public interface ITypeMapper<in TSource, TDestination>
     /// Maps the specified source to the specified destination.
     /// </summary>
     /// <param name="source">
-    /// The source to map. May be <see langword="null"/>; the effective
-    /// <see cref="NullSourceHandling"/> setting determines how it is handled.
+    /// The source to map. May be <see langword="null"/>. Declarative mappings
+    /// apply the effective <see cref="NullSourceHandling"/> setting; a manual
+    /// <c>Convert</c> receives the original value instead.
     /// </param>
     /// <param name="destination">
-    /// The destination to map to. May be <see langword="null"/>; the effective
-    /// <see cref="NullDestinationHandling"/> setting determines how it is
-    /// handled.
+    /// The destination to map to. May be <see langword="null"/>. Declarative
+    /// mappings apply the effective <see cref="NullDestinationHandling"/>
+    /// setting; a manual <c>Convert</c> receives
+    /// <see cref="Option{TDestination}.None"/> instead.
     /// </param>
     /// <param name="context">The context for the mapping operation.</param>
     /// <returns>The mapped destination.</returns>
     /// <exception cref="NotSupportedException">
     /// The effective <see cref="MappingMode"/> is invalid or does not include
-    /// <see cref="MappingMode.Update"/>, or an effective null-handling
-    /// setting is invalid.
+    /// <see cref="MappingMode.Update"/>, or a null-handling setting required
+    /// by the selected declarative mapping is invalid.
     /// </exception>
     /// <exception cref="ArgumentNullException">
-    /// <paramref name="source"/> is <see langword="null"/> and the effective
+    /// A declarative mapping is selected, <paramref name="source"/> is
+    /// <see langword="null"/>, and the effective
     /// <see cref="NullSourceHandling"/> is
     /// <see cref="Morphant.NullSourceHandling.Throw"/>, or
     /// <paramref name="destination"/> is <see langword="null"/> and the

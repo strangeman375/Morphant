@@ -129,6 +129,26 @@ the destination check, so declarative mapping sees a non-null source.
 No source or destination runtime null check is generated for a definitely
 non-nullable value type.
 
+## Manual `Convert`
+
+Both null-handling settings are bypassed by a mapping configured with
+`Convert`. The lambda receives the original source, including `null`, and an
+`Option<TDestination>` describing the actual destination instance:
+
+| Call | `context.Operation` | `previous` |
+|---|---|---|
+| `Map(source)` | `Create` | `None` |
+| `Map(source, null)` | `Update` | `None` |
+| `Map(source, destination)` | `Update` | `Some(destination)` |
+
+Inherited null-handling settings remain useful to declarative mappings in the
+same mapper but have no effect on `Convert`. Setting either policy explicitly
+on a manual pair is an invalid configuration. Until configuration diagnostics
+are implemented, invoking that pair throws `NotSupportedException`.
+
+The value returned by `Convert`, including `null`, is final. Morphant does not
+apply a null guard, construction fallback, or member mapping afterward.
+
 ## Invalid values
 
 C# setting expressions must be compile-time constants whose values are

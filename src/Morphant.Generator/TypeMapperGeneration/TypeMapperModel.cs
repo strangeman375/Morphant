@@ -42,6 +42,7 @@ internal readonly record struct TypeMapperMappingModel
     ImmutableArray<TypeMapperMemberMappingModel> MapNewPostMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
     TypeMapperControlFlowMappingModel? ControlFlow = null,
+    TypeMapperManualMappingModel? ManualMapping = null,
     string? MapNewUnsupportedExceptionMessage = null,
     string? MapExistingUnsupportedExceptionMessage = null,
     string? UnsupportedExceptionMessage = null,
@@ -55,6 +56,11 @@ internal readonly record struct TypeMapperMappingModel
     public string InterfaceTypeName =>
         $"global::Morphant.ITypeMapper<{SourceTypeName}, {DestinationTypeName}>";
 }
+
+internal readonly record struct TypeMapperManualMappingModel
+(
+    string? HelperMethodName
+);
 
 internal readonly record struct TypeMapperFactoryMappingModel
 (
