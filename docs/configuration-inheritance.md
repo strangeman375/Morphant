@@ -5,8 +5,9 @@ operations have separate purposes:
 
 - `base.Configure(builder)` connects base mapper registrations and root-level
   settings.
-- `IncludeBase()` composes one locally repeated mapping pair with the nearest
-  matching pair in that connected chain.
+- `IncludeBase<TBaseSource, TBaseDestination>()` imports reusable
+  configuration from one explicitly named base mapping pair into the current
+  pair.
 
 There is no runtime configuration dispatch. The source generator resolves the
 chain and emits one effective mapper implementation.
@@ -56,44 +57,59 @@ protected override void Configure(MapperBuilder builder) =>
     base.Configure(builder);
 ```
 
-## Repeat a pair locally
+## Include a base pair
 
-Repeating a pair in the derived mapper starts a clean pair plan:
+Use the generic arguments to name the mapping pair whose configuration the
+current pair should reuse:
 
 ```csharp
-protected override void Configure(MapperBuilder builder)
+public abstract class AnimalMapper : TypeMapper
 {
-    base.Configure(builder);
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Animal, AnimalDto>()
+            .Members((source, _) => new()
+            {
+                Name = source.Name
+            });
+}
 
-    builder.Map<Order, OrderDto>()
-        .Members((source, _) => new()
-        {
-            Status = source.Status
-        });
+[MorphantMapper]
+public partial class DogMapper : AnimalMapper
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        base.Configure(builder);
+
+        builder.Map<Dog, DogDto>()
+            .IncludeBase<Animal, AnimalDto>()
+            .Members((source, _) => new()
+            {
+                Breed = source.Breed
+            });
+    }
 }
 ```
 
-The local pair still uses connected base root settings, but it does not inherit
-the base pair's map-level settings, `Construct`, `Members`, or `Convert`.
+`Dog` must be assignable to `Animal`, and `DogDto` must be assignable to
+`AnimalDto`. Class inheritance and interface implementation are both valid.
+Morphant searches only mapper levels connected through
+`base.Configure(builder)`; a base pair declared beside the derived pair in the
+same `Configure` method does not qualify. When several connected levels declare
+the exact requested base pair, the nearest declaration wins.
 
-Call `IncludeBase()` to compose with the nearest matching base pair:
+The call is invalid when either type is not assignable, the base configuration
+is not connected, the exact base pair is absent, or `IncludeBase` is called
+more than once on the current pair.
 
-```csharp
-builder.Map<Order, OrderDto>()
-    .IncludeBase()
-    .Members((source, _) => new()
-    {
-        Status = source.Status
-    });
-```
-
-`IncludeBase()` is invalid when the base configuration is not connected, no
-matching base pair exists, or it is called more than once on the same local
-pair.
+A local mapping without `IncludeBase` starts with a clean pair plan. It still
+uses connected root settings, but it does not import another pair's map-level
+settings or member rules.
 
 ## Settings precedence
 
-Each setting is resolved independently from the most specific level:
+Every map-level setting is inherited, including `MappingMode` and
+`ConstructorSelection`. Each setting is resolved independently from the most
+specific level:
 
 1. The current pair.
 2. Included base pairs, nearest first.
@@ -105,6 +121,10 @@ Each setting is resolved independently from the most specific level:
 `Default` continues to the next level. Within one `Configure` level, the last
 recognized call for a setting wins, including a final call with `Default`.
 
+The inherited value is a policy for the current pair. For example, an included
+`ConstructorSelection.Largest` selects again among constructors of `DogDto`;
+it does not reuse a constructor chosen for `AnimalDto`.
+
 An inherited setting that does not apply to the selected mapping model has no
 effect. For example, inherited constructor and member settings do not
 invalidate a local `Convert`. The same setting written explicitly on that
@@ -112,33 +132,39 @@ manual pair remains an invalid configuration.
 
 ## Plan composition
 
-An included plan follows these rules:
+`IncludeBase` imports explicit `Members` rules and evaluates them against the
+current pair:
 
-- A local `Construct` replaces the inherited `Construct` completely.
-- Inherited and local `Members` rules merge by destination member. A local
-  expression, `Auto()`, or `Ignore()` replaces the inherited rule for that
-  member. Conventions run only for members left unoccupied after the merge.
-- A local `Convert` replaces the entire inherited declarative plan.
-- An inherited `Convert` cannot be partially combined with local `Construct`
-  or `Members` rules.
+- inherited and local rules merge by destination member;
+- a local expression, `Auto()`, or `Ignore()` replaces the inherited rule for
+  that member;
+- `Auto()` and conventions are evaluated again for the current source and
+  destination types;
+- conventions run only for members left unoccupied after the merge;
+- dependencies are rebuilt from the effective rules, so an overridden
+  inherited expression is not evaluated.
 
-The generator rebuilds dependencies from the effective member rules, so an
-overridden inherited expression is not evaluated.
+`Construct` and `Convert` are tied to the concrete types of their declaring
+pair and are never imported. Construction is selected again for the current
+destination, unless the current pair supplies its own `Construct`. A local
+`Convert` owns the complete current mapping and therefore discards included
+member rules.
 
 ## Accessibility and generics
 
-Transferred configuration is emitted inside the derived mapper. Referenced
-base members must therefore be accessible there. `protected`, `internal`, and
-public helpers can be reused when ordinary C# accessibility permits it;
-private helpers and expressions containing an explicit `base.` access form an
-unsupported inherited plan. A local `Construct` or `Convert` replacement can
-remove an inaccessible inherited plan before emission.
+Effective inherited member expressions are emitted inside the derived mapper.
+Referenced base members must therefore be accessible there. `protected`,
+`internal`, and public helpers can be reused when ordinary C# accessibility
+permits it. A non-overridden rule that refers to a private helper or contains an
+explicit `base.` access is unsupported. An inaccessible rule that is fully
+overridden locally is removed before emission.
 
 Source-visible generic base mappers are supported for both open and closed
 derived mappers, including nested partial mapper declarations. Morphant emits
 the open configuration surface required to compile the generic base DSL and
-specializes the effective mapping for the derived mapper's type arguments.
+specializes both the selected base-pair types and effective member rules for
+the derived mapper's type arguments.
 
-Cross-assembly `IncludeBase()` is not part of v0 because the source generator
+Cross-assembly `IncludeBase` is not part of v0 because the source generator
 cannot transfer a base `Configure` body that is unavailable in the current
 compilation. Register mappings from another assembly independently instead.

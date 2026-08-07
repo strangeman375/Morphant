@@ -20,30 +20,54 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source
-    {
-        public int Value { get; init; }
-    }
-
-    public sealed class MissingDestination
+    public class Animal
     {
     }
 
-    public sealed class ExistingDestination
+    public sealed class Dog : Animal
+    {
+    }
+
+    public sealed class Cat : Animal
+    {
+    }
+
+    public sealed class UnrelatedSource
+    {
+    }
+
+    public class AnimalDto
+    {
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+    }
+
+    public class MissingBaseDto
+    {
+    }
+
+    public sealed class CatDto : MissingBaseDto
+    {
+    }
+
+    public sealed class UnrelatedDestination
     {
     }
 
     public abstract class BaseMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, ExistingDestination>();
+            builder.Map<Animal, AnimalDto>();
     }
 
     [MorphantMapper]
     public partial class NoChainMapper : BaseMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, MissingDestination>().IncludeBase();
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>();
     }
 
     [MorphantMapper]
@@ -52,7 +76,30 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<Source, MissingDestination>().IncludeBase();
+            builder.Map<Cat, CatDto>()
+                .IncludeBase<Animal, MissingBaseDto>();
+        }
+    }
+
+    [MorphantMapper]
+    public partial class IncompatibleSourceMapper : BaseMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            base.Configure(builder);
+            builder.Map<UnrelatedSource, DogDto>()
+                .IncludeBase<Animal, AnimalDto>();
+        }
+    }
+
+    [MorphantMapper]
+    public partial class IncompatibleDestinationMapper : BaseMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            base.Configure(builder);
+            builder.Map<Dog, UnrelatedDestination>()
+                .IncludeBase<Animal, AnimalDto>();
         }
     }
 
@@ -62,9 +109,20 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<Source, ExistingDestination>()
-                .IncludeBase()
-                .IncludeBase();
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>()
+                .IncludeBase<Animal, AnimalDto>();
+        }
+    }
+
+    [MorphantMapper]
+    public partial class SameLevelMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Animal, AnimalDto>();
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>();
         }
     }
 
@@ -72,17 +130,26 @@ namespace TestCase
     {
         public static void Verify()
         {
-            var source = new Source { Value = 17 };
-
             ExpectNotSupported(() =>
-                ((ITypeMapper<Source, MissingDestination>)
-                    new NoChainMapper()).Create(source, default));
+                ((ITypeMapper<Dog, DogDto>)new NoChainMapper())
+                    .Create(new Dog(), default));
             ExpectNotSupported(() =>
-                ((ITypeMapper<Source, MissingDestination>)
-                    new MissingPairMapper()).Create(source, default));
+                ((ITypeMapper<Cat, CatDto>)new MissingPairMapper())
+                    .Create(new Cat(), default));
             ExpectNotSupported(() =>
-                ((ITypeMapper<Source, ExistingDestination>)
-                    new DuplicateIncludeMapper()).Create(source, default));
+                ((ITypeMapper<UnrelatedSource, DogDto>)
+                    new IncompatibleSourceMapper())
+                    .Create(new UnrelatedSource(), default));
+            ExpectNotSupported(() =>
+                ((ITypeMapper<Dog, UnrelatedDestination>)
+                    new IncompatibleDestinationMapper())
+                    .Create(new Dog(), default));
+            ExpectNotSupported(() =>
+                ((ITypeMapper<Dog, DogDto>)new DuplicateIncludeMapper())
+                    .Create(new Dog(), default));
+            ExpectNotSupported(() =>
+                ((ITypeMapper<Dog, DogDto>)new SameLevelMapper())
+                    .Create(new Dog(), default));
         }
 
         private static void ExpectNotSupported(Action action)
@@ -175,7 +242,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Ignores_inherited_declarative_settings_after_local_Convert_replacement()
+    public void Keeps_included_declarative_settings_inactive_for_local_Convert()
     {
         // lang=c#
         const string source =
@@ -188,37 +255,48 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source
+    public class Animal
     {
         public int Value { get; init; }
     }
 
-    public sealed class Destination
+    public sealed class Dog : Animal
     {
-        public Destination(int value) => Value = value;
+    }
+
+    public class AnimalDto
+    {
+        public AnimalDto(int value) => Value = value;
 
         public int Value { get; }
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+        public DogDto(int value) : base(value)
+        {
+        }
     }
 
     public abstract class BaseMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>()
+            builder.Map<Animal, AnimalDto>()
                 .ConstructorSelection(ConstructorSelection.Explicit)
                 .MemberSelection(MemberSelection.Explicit)
                 .Construct(source => new(source.Value));
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DogMapper : BaseMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<Source, Destination>()
-                .IncludeBase()
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>()
                 .Convert((source, _, _) =>
-                    new Destination(source?.Value ?? -1));
+                    new DogDto(source?.Value ?? -1));
         }
     }
 
@@ -227,13 +305,14 @@ namespace TestCase
         public static void Verify()
         {
             var result =
-                ((ITypeMapper<Source, Destination>)new DerivedMapper())
-                    .Create(new Source { Value = 17 }, default);
+                ((ITypeMapper<Dog, DogDto>)new DogMapper()).Create(
+                    new Dog { Value = 17 },
+                    default);
 
             if (result.Value != 17)
             {
                 throw new InvalidOperationException(
-                    "Inherited no-effect settings invalidated local Convert.");
+                    "Included no-effect settings invalidated local Convert.");
             }
         }
     }

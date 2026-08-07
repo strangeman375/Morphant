@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperInheritanceTests;
 internal sealed class SettingsCompositionTests
 {
     [Test]
-    public void Resolves_pair_then_current_and_connected_root_settings_with_Default()
+    public void Resolves_all_included_pair_settings_before_mapper_roots()
     {
         // lang=c#
         const string source =
@@ -20,30 +20,48 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source
+    public class Entity
     {
         public int Id { get; init; }
 
         public int Value { get; init; }
     }
 
-    public sealed class IncludedDestination
+    public class Animal : Entity
     {
-        public IncludedDestination()
+    }
+
+    public sealed class Dog : Animal
+    {
+    }
+
+    public class EntityDto
+    {
+        public int Value { get; set; }
+    }
+
+    public class AnimalDto : EntityDto
+    {
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+        public DogDto()
         {
             Kind = "parameterless";
         }
 
-        public IncludedDestination(
-            int id,
-            string label = "largest")
+        public DogDto(int id, string label = "largest")
         {
             Kind = label + ":" + id;
         }
 
         public string Kind { get; }
+    }
 
-        public int Value { get; set; }
+    public sealed class RootSource
+    {
+        public int Value { get; init; }
     }
 
     public sealed class RootDestination
@@ -63,11 +81,9 @@ namespace TestCase
             builder.UnmappedMemberValidation(
                 UnmappedMemberValidation.Strict);
 
-            builder.Map<Source, IncludedDestination>(
-                    MappingMode.CreateAndUpdate)
+            builder.Map<Entity, EntityDto>(MappingMode.CreateAndUpdate)
                 .NullSourceHandling(NullSourceHandling.ReturnNull)
-                .NullDestinationHandling(
-                    NullDestinationHandling.Create)
+                .NullDestinationHandling(NullDestinationHandling.Create)
                 .ConstructorSelection(ConstructorSelection.Largest)
                 .MemberSelection(MemberSelection.Auto)
                 .UnmappedMemberValidation(
@@ -92,17 +108,22 @@ namespace TestCase
             builder.UnmappedMemberValidation(
                 UnmappedMemberValidation.Source);
 
-            builder.Map<Source, IncludedDestination>()
-                .IncludeBase()
+            builder.Map<Animal, AnimalDto>()
+                .IncludeBase<Entity, EntityDto>()
                 .NullSourceHandling(NullSourceHandling.Throw)
                 .NullSourceHandling(NullSourceHandling.Default)
                 .ConstructorSelection(ConstructorSelection.Explicit)
-                .ConstructorSelection(ConstructorSelection.Default);
+                .ConstructorSelection(ConstructorSelection.Default)
+                .MemberSelection(MemberSelection.Explicit)
+                .MemberSelection(MemberSelection.Default)
+                .UnmappedMemberValidation(UnmappedMemberValidation.None)
+                .UnmappedMemberValidation(
+                    UnmappedMemberValidation.Default);
         }
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : NearMapper
+    public partial class DogMapper : NearMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -116,8 +137,7 @@ namespace TestCase
                 NullDestinationHandling.Create);
             builder.NullDestinationHandling(
                 NullDestinationHandling.Default);
-            builder.ConstructorSelection(
-                ConstructorSelection.Explicit);
+            builder.ConstructorSelection(ConstructorSelection.Explicit);
             builder.ConstructorSelection(ConstructorSelection.Default);
             builder.MemberSelection(MemberSelection.Explicit);
             builder.MemberSelection(MemberSelection.Default);
@@ -126,9 +146,9 @@ namespace TestCase
             builder.UnmappedMemberValidation(
                 UnmappedMemberValidation.Default);
 
-            builder.Map<Source, IncludedDestination>()
-                .IncludeBase();
-            builder.Map<Source, RootDestination>();
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>();
+            builder.Map<RootSource, RootDestination>();
         }
     }
 
@@ -136,10 +156,9 @@ namespace TestCase
     {
         public static void Verify()
         {
-            var mapper = new DerivedMapper();
-            var included =
-                (ITypeMapper<Source, IncludedDestination>)mapper;
-            var source = new Source { Id = 17, Value = 31 };
+            var mapper = new DogMapper();
+            var included = (ITypeMapper<Dog, DogDto>)mapper;
+            var source = new Dog { Id = 17, Value = 31 };
             var created = included.Create(source, default);
             var recreated = included.Update(source, null, default);
 
@@ -149,10 +168,11 @@ namespace TestCase
                 included.Create(null, default) is not null)
             {
                 throw new InvalidOperationException(
-                    "Included pair settings did not outrank connected roots.");
+                    "Included settings did not outrank mapper roots.");
             }
 
-            var root = (ITypeMapper<Source, RootDestination>)mapper;
+            var root =
+                (ITypeMapper<RootSource, RootDestination>)mapper;
             var previous = new RootDestination { Value = 7 };
 
             if (!ReferenceEquals(
@@ -163,8 +183,13 @@ namespace TestCase
                     "Default did not continue to the nearest base root.");
             }
 
-            ExpectNotSupported(() => root.Create(source, default));
-            ExpectArgumentNull(() => root.Update(source, null, default));
+            ExpectNotSupported(() =>
+                root.Create(new RootSource { Value = 17 }, default));
+            ExpectArgumentNull(() =>
+                root.Update(
+                    new RootSource { Value = 17 },
+                    null,
+                    default));
         }
 
         private static void ExpectNotSupported(Action action)

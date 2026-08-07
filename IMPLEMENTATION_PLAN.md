@@ -720,7 +720,8 @@ parameters, затем добавить строгий opt-in режим без 
 
 - [ ] Наследование конфигурации.
 
-  `base.Configure(builder)`, затем `IncludeBase()` и правила наследования
+  `base.Configure(builder)`, затем
+  `IncludeBase<TBaseSource, TBaseDestination>()` и правила наследования
   root-level/map-level настроек и member mappings.
 
 ## Фаза 5. Надёжность и завершение

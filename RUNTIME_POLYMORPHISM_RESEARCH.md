@@ -42,11 +42,12 @@ AnimalDto result = mapper.Map<Animal, AnimalDto>(source);
 - generated closed-world dispatcher без runtime reflection;
 - взаимодействие с application-wide registry, keyed variants и projection.
 
-## 2. Почему `IncludeBase()` не должен включать dispatch
+## 2. Почему typed `IncludeBase` не должен включать dispatch
 
-В Morphant `IncludeBase()` уже имеет самостоятельный смысл: derived mapping
-наследует map-level settings и member/creation rules base mapping-а. Это
-compile-time композиция plan-а.
+В Morphant `IncludeBase<TBaseSource, TBaseDestination>()` уже имеет
+самостоятельный смысл: derived mapping наследует map-level settings и member
+rules явно названной base mapping pair. Это compile-time композиция plan-а;
+`Construct` и `Convert` base pair не импортируются.
 
 Runtime dispatch отвечает на другой вопрос: какую mapping pair выполнить для
 конкретного объекта. Объединение этих обязанностей создаёт неочевидные
@@ -54,7 +55,8 @@ Runtime dispatch отвечает на другой вопрос: какую map
 
 - derived mapping начинает влиять на все вызовы base pair, хотя пользователь
   мог хотеть только переиспользовать правила;
-- удаление `IncludeBase()` ради другой precedence внезапно отключает dispatch;
+- удаление typed `IncludeBase` ради другой precedence внезапно отключает
+  dispatch;
 - base pair становится зависимой от registrations, которые сама явно не
   перечисляет;
 - `Update` получает неявный выбор другой destination pair и потенциальную
@@ -63,7 +65,7 @@ Runtime dispatch отвечает на другой вопрос: какую map
 
 Поэтому принятая v0-граница однозначна:
 
-- `IncludeBase()` наследует конфигурацию и не включает runtime dispatch;
+- typed `IncludeBase` наследует конфигурацию и не включает runtime dispatch;
 - runtime-тип аргумента не меняет canonical pair, выбранную generic-вызовом;
 - base и derived registrations остаются независимыми;
 - нужный special-case выражается обычным `Convert` и явным `switch`.
@@ -107,7 +109,7 @@ AutoMapper одним механизмом решает две задачи: `In
 конфигурации; документация отдельно отмечает стоимость такого поиска.
 
 Это удобный short path, но не лучший ориентир для Morphant: уже принятый
-`IncludeBase()` имеет узкую inheritance-семантику, а registry допускает
+typed `IncludeBase` имеет узкую inheritance-семантику, а registry допускает
 несколько registrations одной canonical pair. Смешивание обязанностей снова
 сделало бы lookup зависимым от неявного graph traversal.
 
@@ -309,4 +311,4 @@ breaking change для будущего расширения.
 - нужен ли пользовательский dispatcher hook сверх `Convert`.
 
 До этих решений v0 всегда выполняет exact requested pair и не выводит dispatch
-из type hierarchy, `IncludeBase()` или набора registrations.
+из type hierarchy, typed `IncludeBase` или набора registrations.

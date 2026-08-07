@@ -80,15 +80,15 @@ protected override void Configure(MapperBuilder builder)
 Each property is resolved independently in this order:
 
 1. A non-`Default` mapping-level value.
-2. A non-`Default` value from a pair imported with `IncludeBase()`, nearest
-   first.
+2. A non-`Default` value from a pair imported with
+   `IncludeBase<TBaseSource, TBaseDestination>()`, nearest first.
 3. A non-`Default` mapper-level value.
 4. Non-`Default` root values from connected base mappers, nearest first.
 5. A non-`Default` MSBuild property.
 6. The library default.
 
 Base roots participate only after an explicit `base.Configure(builder)` call,
-and base pair values participate only after `IncludeBase()`. See
+and base pair values participate only after a typed `IncludeBase` call. See
 [Configuration inheritance](../configuration-inheritance.md).
 
 ## Null source behavior

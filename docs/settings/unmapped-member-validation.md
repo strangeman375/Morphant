@@ -33,8 +33,8 @@ The effective value is selected in this order:
 5. A non-`Default` `MorphantUnmappedMemberValidation` MSBuild property.
 6. `UnmappedMemberValidation.None`.
 
-The setting already participates in complete inheritance and `IncludeBase()`
-composition. Warning emission is intentionally deferred to Morphant's
+The setting already participates in complete inheritance and typed
+`IncludeBase` composition. Warning emission is intentionally deferred to Morphant's
 diagnostics phase; changing this value does not currently change generated
 runtime behavior.
 

@@ -576,7 +576,7 @@ key-based reconciliation не должен иметь скрытого default �
 - precedence root source, нескольких includes, explicit rules и `Auto()`;
 - ambiguity, name matching и conversion diagnostics;
 - null semantics included source и path-sensitive evaluation;
-- взаимодействие с `IncludeBase()`, generic mapper-ами, projection и
+- взаимодействие с typed `IncludeBase`, generic mapper-ами, projection и
   collection members;
 - whether reverse unflattening is a separate explicit capability rather than
   an automatic inverse.
@@ -735,8 +735,8 @@ tuple/multi-source support; его точная generated surface согласу
 
 - обычный lookup всегда выполняет ровно requested canonical pair; runtime-тип
   source не выбирает derived registration автоматически;
-- `IncludeBase()` наследует только mapping-конфигурацию и не включает runtime
-  dispatch;
+- `IncludeBase<TBaseSource, TBaseDestination>()` наследует только
+  mapping-конфигурацию и не включает runtime dispatch;
 - base и derived registrations независимы. Само наличие `Dog -> DogDto` не
   меняет поведение `Animal -> AnimalDto`;
 - специальный polymorphic алгоритм уже выражается через `Convert` с явным
@@ -836,43 +836,47 @@ expression-compatible подмножество и внутренняя represent
   наследует его root-level settings;
 - повторное объявление canonical pair в derived mapper-е само по себе не
   наследует её map-level plan;
-- `IncludeBase()` на текущей pair явно подключает plan и map-level settings
-  ближайшего matching mapping-а из подключённой base chain;
-- без `base.Configure(builder)` либо без matching base pair вызов
-  `IncludeBase()` является ошибочной конфигурацией;
-- pair без `IncludeBase()` начинает с чистого map-level plan, но продолжает
+- `IncludeBase<TBaseSource, TBaseDestination>()` на текущей pair явно указывает
+  точную base pair; текущие source и destination должны быть приводимы к
+  соответствующим base types;
+- base pair ищется только среди mapper-level-ов подключённой base chain,
+  исключая текущий level; при нескольких точных совпадениях выбирается
+  ближайшее;
+- без `base.Configure(builder)`, без указанной base pair либо при несовместимых
+  типах typed `IncludeBase` является ошибочной конфигурацией;
+- pair без typed `IncludeBase` начинает с чистого map-level plan, но продолжает
   видеть root settings, унаследованные через `base.Configure(builder)`.
 
 Effective settings разрешаются в порядке:
 
 1. текущая pair;
-2. pair, подключённая через `IncludeBase()`;
+2. pair, подключённая через typed `IncludeBase`;
 3. root текущего mapper-а;
 4. roots подключённых base mapper-ов от ближайшего к дальнему;
 5. assembly;
 6. library default.
 
-Plan объединяется отдельно от settings:
+Typed `IncludeBase` наследует все явно заданные map-level settings, включая
+`MappingMode` и `ConstructorSelection`; `Default` продолжает поиск на менее
+конкретном уровне. Из mapping plan импортируются только `Members`:
 
-- локальный `Construct` целиком заменяет унаследованный `Construct`;
-- `Members` объединяются по destination member независимо от формы
-  перегрузки, а локальное правило, включая `Ignore()`, перекрывает
-  унаследованное. После объединения зависимости каждого effective rule
-  анализируются отдельно;
-- conventions применяются после объединения только к ещё не занятым members;
-- локальный `Convert` заменяет весь унаследованный declarative plan;
-- manual plan нельзя частично объединять с локальными `Construct` или `Members`.
+- правила объединяются по destination member независимо от формы перегрузки;
+- локальный expression, `Auto()` или `Ignore()` перекрывает унаследованное
+  правило, после чего зависимости effective rules анализируются отдельно;
+- conventions и constructor selection вычисляются заново для текущей pair;
+- `Construct` и `Convert` base pair не импортируются;
+- локальный `Convert` отбрасывает все импортированные member rules.
 
 Generator не следует за произвольными helper calls, изменяющими builder, и не
 выполняет пользовательский configuration code. Обычные instance/static методы
 остаются способом переиспользовать вычисления внутри `Construct`, `Members` и
 `Convert`, где они являются обычным C#.
 
-General-purpose fragments для unrelated pairs, generic fragments и
-cross-assembly `IncludeBase()` откладываются. Готовые mappings из внешней
-assembly независимо попадают в application-wide registry и не импортируют
-configuration plan друг друга. Будущие keyed variants также не выводят
-composition из registry.
+General-purpose fragments для unrelated pairs и cross-assembly typed
+`IncludeBase` откладываются. Generic и nested mapper-ы поддерживаются внутри
+одной compilation. Готовые mappings из внешней assembly независимо попадают в
+application-wide registry и не импортируют configuration plan друг друга.
+Будущие keyed variants также не выводят composition из registry.
 
 **Результат этапа:** v0 использует только явную hierarchy-based composition;
 следующий активный этап — 17.
@@ -941,7 +945,7 @@ destination с состоянием, которого нет ни в source, н�
   ```
 
 - в локальной pair можно вызвать только один `Members`; любой второй
-  вызов даёт configuration diagnostic. `IncludeBase()` объединяет
+  вызов даёт configuration diagnostic. Typed `IncludeBase` объединяет
   унаследованный и локальный plans независимо от формы перегрузки;
 - обе перегрузки генерируются независимо от стратегии `Construct`.
   Форма с параметром `result` одинаково доступна для constructor/convention,
@@ -1230,7 +1234,7 @@ builder.Map<Source, Destination>()
 **Этапы 18, 18A и 19 завершены.** Для result-dependent structural rules зафиксирована
 всегда генерируемая result-aware `Members`-перегрузка с non-null result
 без presence-wrapper. В локальной pair можно вызвать только один
-`Members`; `IncludeBase()` объединяет plans независимо от формы перегрузки.
+`Members`; typed `IncludeBase` объединяет plans независимо от формы перегрузки.
 Фаза каждого rule определяется только его фактической зависимостью от
 `result`, а snapshot и порядок независимых rules остаются деталями lowering.
 Hooks и middleware гарантированы после v0, но их точная форма пока не выбрана.

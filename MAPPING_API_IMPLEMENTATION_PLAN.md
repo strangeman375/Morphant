@@ -128,10 +128,10 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 4, этап 19 — mapper inheritance, `IncludeBase()` и settings
-composition.**
+**Фаза 4, этап 19 — mapper inheritance,
+`IncludeBase<TBaseSource, TBaseDestination>()` и settings composition.**
 
-Статус: реализован, ожидает ревью.
+Статус: исправлен после ревью, ожидает повторного ревью.
 
 Этап 17 принят. Этап 18 по решению от 6 августа 2026 года перенесён за границу
 core v0. Этап 20 и все последующие этапы заблокированы до принятия этапа 19.
@@ -371,7 +371,8 @@ Production scope:
 - сохранять syntax и bound semantic information lambdas без преждевременного
   lowering;
 - отделить declarative plan от manual plan в модели;
-- хранить local root/map settings и подготовить места для `IncludeBase()`;
+- хранить local root/map settings и подготовить места для typed
+  `IncludeBase`;
 - разрешать несколько registrations одной canonical pair в разных mapper-ах;
 - выявлять конфликтующие local calls и generic unification как model states,
   не вводя diagnostics либо fallback на этом этапе;
@@ -1265,9 +1266,9 @@ parameters. Семантическая основа уже зафиксиров�
 Результат этапа: пользователь может запретить неявные allocations/boxing в
 automatic mapping, не меняя общую conversion model.
 
-### Этап 19. Mapper inheritance, `IncludeBase()` и settings composition
+### Этап 19. Mapper inheritance, typed `IncludeBase` и settings composition
 
-Статус: реализован, ожидает ревью.
+Статус: исправлен после ревью, ожидает повторного ревью.
 
 Цель — реализовать единственную v0-модель переиспользования configuration.
 
@@ -1276,32 +1277,42 @@ Production scope:
 - распознавать явный `base.Configure(builder)` и подключать chain base
   mapper-ов;
 - без этого вызова base configuration и roots не участвуют;
-- повторная local pair без `IncludeBase()` начинает с чистого pair plan, но
-  наследует подключённые root settings;
-- `IncludeBase()` импортирует ближайший matching base pair и её map-level
-  settings;
+- local pair без typed `IncludeBase` начинает с чистого pair plan, но наследует
+  подключённые root settings;
+- `IncludeBase<TBaseSource, TBaseDestination>()` выбирает явно названную exact
+  pair только в подключённой base chain; pair на том же mapper-level не
+  участвует;
+- current source/destination должны быть assignable к указанным base
+  source/destination; при нескольких registrations указанной pair выбирается
+  ближайший base mapper level;
+- импортируются все map-level settings, включая `MappingMode` и
+  `ConstructorSelection`;
 - exact precedence: current pair -> included base pair -> current root ->
   connected base roots nearest-first -> assembly -> library default;
 - last-call-wins на каждом C# level, включая `Default`;
-- local `Construct` целиком заменяет inherited `Construct`;
-- local/inherited `Members` объединяются по destination member, local rule и
-  `Ignore` перекрывают inherited, conventions заполняют остаток;
+- `Construct` и `Convert` base pair не импортируются;
+- imported/local `Members` объединяются по destination member, local rule,
+  `Auto` и `Ignore` перекрывают imported rule, а conventions вычисляются
+  заново для current pair и заполняют остаток;
 - dependencies строятся заново только для effective rules;
-- local `Convert` заменяет весь inherited declarative plan;
-- manual plan нельзя частично смешивать с local declarative configuration;
+- local `Convert` заменяет imported member plan и остаётся полной manual
+  реализацией current pair;
 - `UnmappedMemberValidation` получает полную effective setting model, но её
   diagnostic enforcement остаётся позднему diagnostics-этапу;
 - general fragments, arbitrary builder helpers и cross-assembly
-  `IncludeBase()` не добавляются.
+  `IncludeBase` не добавляются.
 
 Тестовый scope:
 
-- base chain presence/absence и nearest matching pair;
-- root settings без IncludeBase, pair settings только с IncludeBase;
-- Construct replacement, Members merge/override/Ignore и Convert replacement;
+- base chain presence/absence, same-level exclusion, exact nearest base pair и
+  source/destination assignability;
+- root settings без IncludeBase, все pair settings только с typed IncludeBase;
+- отсутствие импорта `Construct`/`Convert`, Members merge/override/Auto/Ignore
+  и local Convert replacement;
 - mixed overload forms Members в base/derived;
 - multiple inheritance levels, Default clearing и call order;
-- generic/nested mapper declarations и inaccessible base plans;
+- generic/nested mapper declarations, nested mappings внутри imported rules и
+  accessibility только effective member expressions;
 - no-effect/invalid explicit settings как model states.
 
 Результат этапа: composition имеет один детерминированный путь и не зависит от
@@ -1313,21 +1324,26 @@ mapper-ы и nested mapper declarations. Base mapper не требует
 `MorphantMapperAttribute`; для закрытого generic наследника дополнительно
 эмитируется открытый fluent surface, необходимый исходному base DSL.
 Inherited-only pairs переносятся автоматически, повторная local pair начинает
-с чистого plan, а `IncludeBase()` выбирает ближайшую matching pair.
+с чистого plan. Typed `IncludeBase` хранит exact base pair после generic
+substitution, ищет её только в connected base levels и проверяет assignability
+обоих типов.
 
 Settings разрешаются в полном порядке current pair -> included base pairs ->
 current root -> connected base roots -> assembly -> library; last-call-wins и
 `Default` работают независимо для всех slices, включая
-`UnmappedMemberValidation`. `Construct`/`Convert` заменяются целиком,
-`Members` объединяются по destination member с локальным приоритетом и
-повторным построением dependency graph. Inaccessible transferred plan,
-отсутствующая base pair/chain и повторные composition calls сохраняются как
-детерминированные unsupported states до diagnostics.
+`UnmappedMemberValidation`, `MappingMode` и `ConstructorSelection`.
+`Construct`/`Convert` не импортируются; `Members` объединяются по destination
+member с локальным приоритетом, повторным применением conventions и
+перестроением dependency graph. Перекрытая inaccessible rule удаляется до
+emission; effective inaccessible rule, несовместимые типы, отсутствующая base
+pair/chain и повторные composition calls сохраняются как детерминированные
+unsupported states до diagnostics.
 
 Самостоятельная категория `TypeMapperInheritanceTests` фиксирует runtime,
-полную configuration model, C# 9 generic/accessibility boundaries и exact
-production snapshot всех generated artifacts. XML comments, settings pages и
-отдельное руководство по configuration inheritance актуализированы.
+полную cross-pair configuration model, C# 9 generic/accessibility boundaries,
+transitive composition и exact production snapshot всех generated artifacts.
+XML comments, settings pages и отдельное руководство по configuration
+inheritance актуализированы.
 
 ## Фаза 5. Надёжность, миграция и интеграция core v0
 

@@ -156,18 +156,27 @@ public abstract class MapperBuilder<TSource, TDestination> : MapperBuilderBase<M
     }
 
     /// <summary>
-    /// Includes the nearest mapping for the same source and destination types
-    /// from the base mapper configuration chain.
+    /// Includes configuration from the nearest mapping of the specified base
+    /// source and destination types in the base mapper configuration chain.
     /// </summary>
+    /// <typeparam name="TBaseSource">
+    /// The base source type. <typeparamref name="TSource"/> must be assignable
+    /// to this type.
+    /// </typeparam>
+    /// <typeparam name="TBaseDestination">
+    /// The base destination type. <typeparamref name="TDestination"/> must be
+    /// assignable to this type.
+    /// </typeparam>
     /// <remarks>
     /// The mapper must connect that chain with an explicit
     /// <c>base.Configure(builder)</c> call. The included mapping contributes
-    /// its map-level settings and plan. A local <c>Construct</c> or
-    /// <c>Convert</c> replaces the corresponding inherited plan, while local
-    /// <c>Members</c> rules override inherited rules for the same destination
-    /// member.
+    /// all of its map-level settings and its explicit <c>Members</c> rules.
+    /// Conventions are evaluated again for the current source and destination
+    /// types, and local rules override included rules for the same destination
+    /// member. <c>Construct</c> and <c>Convert</c> plans are not included.
     /// </remarks>
     /// <returns>This mapping builder.</returns>
-    public MapperBuilder<TSource, TDestination> IncludeBase() =>
+    public MapperBuilder<TSource, TDestination>
+        IncludeBase<TBaseSource, TBaseDestination>() =>
         throw new RuntimeInvocationNotSupportedException();
 }

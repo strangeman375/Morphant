@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperInheritanceTests;
 internal sealed class PlanCompositionTests
 {
     [Test]
-    public void Merges_Members_by_destination_member_and_rebuilds_dependencies()
+    public void Merges_included_Members_by_destination_member_and_rebuilds_dependencies()
     {
         // lang=c#
         const string source =
@@ -20,7 +20,7 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source
+    public class Animal
     {
         public string Name { get; init; } = string.Empty;
 
@@ -29,25 +29,35 @@ namespace TestCase
         public string Kept { get; init; } = string.Empty;
     }
 
-    public sealed class Destination
+    public sealed class Dog : Animal
+    {
+        public string Breed { get; init; } = string.Empty;
+    }
+
+    public class AnimalDto
     {
         public string Name { get; set; } = string.Empty;
 
         public string Code { get; set; } = string.Empty;
 
         public string Kept { get; set; } = string.Empty;
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+        public string Breed { get; set; } = string.Empty;
 
         public string Extra { get; set; } = string.Empty;
     }
 
     public abstract class BaseMapper : TypeMapper
     {
-        protected static string ObsoleteName(Source source) =>
+        protected static string ObsoleteName(Animal source) =>
             throw new InvalidOperationException(
                 "An overridden dependency was evaluated.");
 
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>()
+            builder.Map<Animal, AnimalDto>()
                 .NullSourceHandling(NullSourceHandling.Throw)
                 .MemberSelection(MemberSelection.Explicit)
                 .Members((source, _) => new()
@@ -59,19 +69,20 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DogMapper : BaseMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<Source, Destination>()
-                .IncludeBase()
+            builder.Map<Dog, DogDto>()
                 .Members((source, _, result) => new()
                 {
-                    Name = "derived:" + source.Name,
+                    Name = "dog:" + source.Name,
                     Code = Ignore(),
+                    Breed = source.Breed,
                     Extra = result.Name + ":extra"
-                });
+                })
+                .IncludeBase<Animal, AnimalDto>();
         }
     }
 
@@ -79,21 +90,22 @@ namespace TestCase
     {
         public static void Verify()
         {
-            var mapper =
-                (ITypeMapper<Source, Destination>)new DerivedMapper();
+            var mapper = (ITypeMapper<Dog, DogDto>)new DogMapper();
             var result = mapper.Create(
-                new Source
+                new Dog
                 {
                     Name = "name",
                     Code = "code",
-                    Kept = "kept"
+                    Kept = "kept",
+                    Breed = "breed"
                 },
                 default);
 
-            if (result.Name != "derived:name" ||
+            if (result.Name != "dog:name" ||
                 result.Code != string.Empty ||
                 result.Kept != "base:kept" ||
-                result.Extra != "derived:name:extra")
+                result.Breed != "breed" ||
+                result.Extra != "dog:name:extra")
             {
                 throw new InvalidOperationException(
                     "The effective Members plan was composed incorrectly.");
@@ -122,7 +134,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Keeps_convention_only_creation_members_out_of_the_explicit_factory_check()
+    public void Accepts_interface_base_pair_assignability()
     {
         // lang=c#
         const string source =
@@ -135,50 +147,45 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source
+    public interface IAnimal
     {
-        public int Seed { get; init; }
-
-        public string BaseValue { get; init; } = string.Empty;
-
-        public string DerivedValue { get; init; } = string.Empty;
+        string Name { get; }
     }
 
-    public sealed class Destination
+    public sealed class Dog : IAnimal
     {
-        public Destination(int seed) => Seed = seed;
+        public string Name { get; init; } = string.Empty;
+    }
 
-        public int Seed { get; }
+    public interface IAnimalDto
+    {
+        string Name { get; set; }
+    }
 
-        public string BaseValue { get; set; } = string.Empty;
-
-        public string DerivedValue { get; set; } = string.Empty;
+    public sealed class DogDto : IAnimalDto
+    {
+        public string Name { get; set; } = string.Empty;
     }
 
     public abstract class BaseMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>()
-                .Construct(source => new(ByFactory(() =>
-                    new Destination(source.Seed))))
+            builder.Map<IAnimal, IAnimalDto>()
+                .MemberSelection(MemberSelection.Explicit)
                 .Members((source, _) => new()
                 {
-                    BaseValue = "base:" + source.BaseValue
+                    Name = "base:" + source.Name
                 });
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DogMapper : BaseMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<Source, Destination>()
-                .IncludeBase()
-                .Members((source, _) => new()
-                {
-                    DerivedValue = "derived:" + source.DerivedValue
-                });
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<IAnimal, IAnimalDto>();
         }
     }
 
@@ -187,22 +194,14 @@ namespace TestCase
         public static void Verify()
         {
             var result =
-                ((ITypeMapper<Source, Destination>)new DerivedMapper())
-                    .Create(
-                        new Source
-                        {
-                            Seed = 17,
-                            BaseValue = "base",
-                            DerivedValue = "derived"
-                        },
-                        default);
+                ((ITypeMapper<Dog, DogDto>)new DogMapper()).Create(
+                    new Dog { Name = "name" },
+                    default);
 
-            if (result.Seed != 17 ||
-                result.BaseValue != "base:base" ||
-                result.DerivedValue != "derived:derived")
+            if (result.Name != "base:name")
             {
                 throw new InvalidOperationException(
-                    "Members composition changed ByFactory applicability.");
+                    "Interface base-pair composition was not applied.");
             }
         }
     }
@@ -216,7 +215,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Uses_the_nearest_base_pair_and_replaces_Construct_as_a_unit()
+    public void Does_not_include_Construct_and_recomputes_derived_construction()
     {
         // lang=c#
         const string source =
@@ -229,33 +228,157 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source
+    public class Animal
     {
-        public int Value { get; init; }
+        public int Seed { get; init; }
+
+        public string Name { get; init; } = string.Empty;
     }
 
-    public sealed class NearestDestination
+    public sealed class Dog : Animal
     {
-        public NearestDestination(string kind) => Kind = kind;
-
-        public string Kind { get; }
+        public string Breed { get; init; } = string.Empty;
     }
 
-    public sealed class ReplacementDestination
+    public class AnimalDto
     {
-        public ReplacementDestination(string kind) => Kind = kind;
+        public AnimalDto(int seed) => Seed = seed;
 
-        public string Kind { get; }
+        public int Seed { get; }
+
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+        public DogDto(int seed) : base(seed)
+        {
+        }
+
+        public string Breed { get; set; } = string.Empty;
+    }
+
+    public abstract class BaseMapper : TypeMapper
+    {
+        private static AnimalDto CreateBase(int seed) => new(seed + 1000);
+
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Animal, AnimalDto>()
+                .Construct(source => new(ByFactory(() =>
+                    CreateBase(source.Seed))))
+                .Members((source, _) => new()
+                {
+                    Name = "base:" + source.Name
+                });
+    }
+
+    [MorphantMapper]
+    public partial class DogMapper : BaseMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            base.Configure(builder);
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>()
+                .Members((source, _) => new()
+                {
+                    Breed = "dog:" + source.Breed
+                });
+        }
+    }
+
+    public static class Scenario
+    {
+        public static void Verify()
+        {
+            var result =
+                ((ITypeMapper<Dog, DogDto>)new DogMapper()).Create(
+                    new Dog
+                    {
+                        Seed = 17,
+                        Name = "name",
+                        Breed = "breed"
+                    },
+                    default);
+
+            if (result.Seed != 17 ||
+                result.Name != "base:name" ||
+                result.Breed != "dog:breed")
+            {
+                throw new InvalidOperationException(
+                    "Construct was included or derived construction was not recomputed.");
+            }
+        }
+    }
+}
+""";
+
+        BasicMembersTypeMapperGeneratorTest.RunAndExecute(
+            LanguageVersion.CSharp9,
+            source,
+            "TestCase.Scenario");
+    }
+
+    [Test]
+    public void Uses_the_nearest_explicit_base_pair_and_composes_transitively()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+using System;
+
+namespace TestCase
+{
+    public class Entity
+    {
+        public string Id { get; init; } = string.Empty;
+    }
+
+    public class Animal : Entity
+    {
+        public string Name { get; init; } = string.Empty;
+    }
+
+    public sealed class Dog : Animal
+    {
+        public string Breed { get; init; } = string.Empty;
+    }
+
+    public class EntityDto
+    {
+        public string Id { get; set; } = string.Empty;
+    }
+
+    public class AnimalDto : EntityDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+        public string Breed { get; set; } = string.Empty;
     }
 
     public abstract class FarMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, NearestDestination>()
-                .Construct(source => new("far:" + source.Value));
-            builder.Map<Source, ReplacementDestination>()
-                .Construct(source => new("far:" + source.Value));
+            builder.Map<Entity, EntityDto>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Members((source, _) => new()
+                {
+                    Id = "entity:" + source.Id
+                });
+            builder.Map<Animal, AnimalDto>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Members((source, _) => new()
+                {
+                    Name = "far:" + source.Name
+                });
         }
     }
 
@@ -264,26 +387,27 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<Source, NearestDestination>()
-                .IncludeBase()
-                .Construct(source => new("near:" + source.Value));
-            builder.Map<Source, ReplacementDestination>()
-                .IncludeBase()
-                .Construct(source => new("near:" + source.Value));
+            builder.Map<Animal, AnimalDto>()
+                .IncludeBase<Entity, EntityDto>()
+                .Members((source, _) => new()
+                {
+                    Name = "near:" + source.Name
+                });
         }
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : NearMapper
+    public partial class DogMapper : NearMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<Source, NearestDestination>()
-                .IncludeBase();
-            builder.Map<Source, ReplacementDestination>()
-                .IncludeBase()
-                .Construct(source => new("current:" + source.Value));
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>()
+                .Members((source, _) => new()
+                {
+                    Breed = "dog:" + source.Breed
+                });
         }
     }
 
@@ -291,34 +415,36 @@ namespace TestCase
     {
         public static void Verify()
         {
-            var mapper = new DerivedMapper();
-            var source = new Source { Value = 17 };
-            var nearest =
-                ((ITypeMapper<Source, NearestDestination>)mapper)
-                    .Create(source, default);
-            var replacement =
-                ((ITypeMapper<Source, ReplacementDestination>)mapper)
-                    .Create(source, default);
+            var result =
+                ((ITypeMapper<Dog, DogDto>)new DogMapper()).Create(
+                    new Dog
+                    {
+                        Id = "17",
+                        Name = "name",
+                        Breed = "breed"
+                    },
+                    default);
 
-            if (nearest.Kind != "near:17" ||
-                replacement.Kind != "current:17")
+            if (result.Id != "entity:17" ||
+                result.Name != "near:name" ||
+                result.Breed != "dog:breed")
             {
                 throw new InvalidOperationException(
-                    "Construct inheritance did not use replacement semantics.");
+                    "The nearest or transitive base pair was not composed.");
             }
         }
     }
 }
 """;
 
-        StructuredConstructTypeMapperGeneratorTest.RunAndExecute(
+        BasicMembersTypeMapperGeneratorTest.RunAndExecute(
             LanguageVersion.CSharp9,
             source,
             "TestCase.Scenario");
     }
 
     [Test]
-    public void Replaces_Convert_and_rejects_partial_manual_declarative_mix()
+    public void Does_not_include_Convert_and_local_Convert_replaces_included_Members()
     {
         // lang=c#
         const string source =
@@ -331,43 +457,56 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source
+    public class Animal
     {
         public int Value { get; init; }
     }
 
-    public sealed class DeclarativeDestination
+    public sealed class Dog : Animal
     {
-        public DeclarativeDestination(string kind) => Kind = kind;
-
-        public string Kind { get; }
     }
 
-    public sealed class ManualDestination
-    {
-        public ManualDestination(string kind) => Kind = kind;
-
-        public string Kind { get; }
-    }
-
-    public sealed class MixedDestination
+    public class AnimalDto
     {
         public string Kind { get; set; } = string.Empty;
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+    }
+
+    public class Vehicle
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class Car : Vehicle
+    {
+    }
+
+    public class VehicleDto
+    {
+        public string Kind { get; set; } = string.Empty;
+    }
+
+    public sealed class CarDto : VehicleDto
+    {
     }
 
     public abstract class BaseMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, DeclarativeDestination>()
-                .Construct(source => new("base:" + source.Value));
-            builder.Map<Source, ManualDestination>()
-                .Convert((source, _, _) =>
-                    new ManualDestination("base:" + source!.Value));
-            builder.Map<Source, MixedDestination>()
-                .Convert((source, _, _) => new MixedDestination
+            builder.Map<Animal, AnimalDto>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Convert((source, _, _) => new AnimalDto
                 {
-                    Kind = "base:" + source!.Value
+                    Kind = "animal:" + source!.Value
+                });
+            builder.Map<Vehicle, VehicleDto>()
+                .Members((source, _) => new()
+                {
+                    Kind = "vehicle:" + source.Value
                 });
         }
     }
@@ -378,20 +517,17 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
-            builder.Map<Source, DeclarativeDestination>()
-                .IncludeBase()
-                .Convert((source, _, _) =>
-                    new DeclarativeDestination(
-                        "current:" + source!.Value));
-            builder.Map<Source, ManualDestination>()
-                .IncludeBase()
-                .Convert((source, _, _) =>
-                    new ManualDestination("current:" + source!.Value));
-            builder.Map<Source, MixedDestination>()
-                .IncludeBase()
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>()
                 .Members((source, _) => new()
                 {
-                    Kind = "current:" + source.Value
+                    Kind = "dog:" + source.Value
+                });
+            builder.Map<Car, CarDto>()
+                .IncludeBase<Vehicle, VehicleDto>()
+                .Convert((source, _, _) => new CarDto
+                {
+                    Kind = "car:" + source!.Value
                 });
         }
     }
@@ -401,33 +537,18 @@ namespace TestCase
         public static void Verify()
         {
             var mapper = new DerivedMapper();
-            var source = new Source { Value = 17 };
-            var declarative =
-                ((ITypeMapper<Source, DeclarativeDestination>)mapper)
-                    .Create(source, default);
-            var manual =
-                ((ITypeMapper<Source, ManualDestination>)mapper)
-                    .Create(source, default);
+            var dog = ((ITypeMapper<Dog, DogDto>)mapper).Create(
+                new Dog { Value = 17 },
+                default);
+            var car = ((ITypeMapper<Car, CarDto>)mapper).Create(
+                new Car { Value = 31 },
+                default);
 
-            if (declarative.Kind != "current:17" ||
-                manual.Kind != "current:17")
+            if (dog.Kind != "dog:17" || car.Kind != "car:31")
             {
                 throw new InvalidOperationException(
-                    "A local Convert did not replace the inherited plan.");
+                    "Convert crossed the IncludeBase boundary.");
             }
-
-            try
-            {
-                ((ITypeMapper<Source, MixedDestination>)mapper)
-                    .Create(source, default);
-            }
-            catch (NotSupportedException)
-            {
-                return;
-            }
-
-            throw new InvalidOperationException(
-                "An inherited manual plan was partially mixed with Members.");
         }
     }
 }

@@ -53,8 +53,13 @@ internal sealed record BoundConfigurationExpression(
     INamedTypeSymbol DeclaringMapperType,
     bool IsAccessibleFromTargetMapper);
 
+internal readonly record struct IncludeBaseConfigurationModel(
+    InvocationExpressionSyntax Invocation,
+    ITypeSymbol SourceType,
+    ITypeSymbol DestinationType);
+
 internal readonly record struct PairConfigurationCompositionModel(
-    ImmutableArray<InvocationExpressionSyntax> IncludeBaseCalls,
+    ImmutableArray<IncludeBaseConfigurationModel> IncludeBaseCalls,
     ImmutableArray<PairConfigurationSettings> IncludedBaseSettings)
 {
     public static PairConfigurationCompositionModel Empty =>
@@ -110,5 +115,6 @@ internal enum PairConfigurationConflict
     DuplicateIncludeBase = 1 << 4,
     MissingBaseConfiguration = 1 << 5,
     MissingBasePair = 1 << 6,
-    InaccessibleInheritedPlan = 1 << 7
+    IncompatibleBasePair = 1 << 7,
+    InaccessibleInheritedPlan = 1 << 8
 }

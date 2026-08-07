@@ -207,6 +207,21 @@ internal sealed class TestPairConfigurationGenerator :
             .Append(model.Composition.IncludeBaseCalls.Length)
             .Append(newLine);
 
+        for (var callIndex = 0;
+             callIndex < model.Composition.IncludeBaseCalls.Length;
+             callIndex++)
+        {
+            var call = model.Composition.IncludeBaseCalls[callIndex];
+
+            builder.Append("// IncludeBase ")
+                .Append(callIndex)
+                .Append(": ")
+                .Append(call.SourceType.ToDisplayString(TypeDisplayFormat))
+                .Append(" -> ")
+                .Append(call.DestinationType.ToDisplayString(TypeDisplayFormat))
+                .Append(newLine);
+        }
+
         if (!model.Composition.IncludedBaseSettings.IsEmpty)
         {
             builder.Append("// Included settings: ")

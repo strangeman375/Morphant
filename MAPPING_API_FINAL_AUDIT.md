@@ -111,7 +111,7 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 |---|---|
 | Приходится дублировать правила для Create и Update в [Mapperly #1294][mapperly-1294] | Решено архитектурно: один `Members` обслуживает обе операции |
 | Global transform перебивает explicit mapping в [Mapster #952][mapster-952] | Предотвращено явным precedence и отсутствием скрытых transforms |
-| Неявное inheritance переносит неподходящие settings в [Mapster #947][mapster-947] | Решено разделением `base.Configure(builder)` и `IncludeBase()` |
+| Неявное inheritance переносит неподходящие settings в [Mapster #947][mapster-947] | Решено разделением `base.Configure(builder)` и typed `IncludeBase` |
 | Nullable DTO должен сохранять initializer destination в [Mapperly #2178][mapperly-2178] | Входит в будущий patch/null-assignment design, но публичный контракт ещё не закрыт |
 | Нужен не только ignore-null, но и ignore-default в [Mapster #982][mapster-982] | Patch-этап следует расширить до общей presence/default policy |
 | Projection приходится объявлять и конфигурировать повторно в [Mapperly #2252][mapperly-2252] | Есть риск повторить проблему: projection обещана, но её связь с основным pair-plan пока не зафиксирована |

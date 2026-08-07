@@ -209,10 +209,17 @@ mapper-а generator сохраняет открытый fluent surface исхо�
 Повторное объявление canonical pair в derived mapper-е не наследует её plan
 автоматически. Оно начинает с чистого map-level plan и использует только
 унаследованные root settings, пока пользователь явно не вызовет
-`IncludeBase()` на pair-builder-е. `IncludeBase()` импортирует plan и map-level
-settings ближайшей matching pair из подключённой base chain. Если
-`base.Configure(builder)` не вызван либо matching base pair отсутствует,
-конфигурация ошибочна.
+`IncludeBase<TBaseSource, TBaseDestination>()` на pair-builder-е. Generic-
+аргументы указывают конкретную base pair: текущий source type должен быть
+приводим к `TBaseSource`, а текущий destination type — к
+`TBaseDestination`. Проверка охватывает class- и interface-иерархии.
+
+Base pair ищется только среди mapper-level-ов, подключённых через
+`base.Configure(builder)`: объявление на текущем level не считается base pair.
+Если одна и та же pair встречается на нескольких подключённых уровнях,
+используется ближайшее точное совпадение. Отсутствие configuration chain,
+указанной pair или совместимости типов, а также повторный вызов `IncludeBase`
+для одной текущей pair являются ошибками конфигурации.
 
 Effective settings разрешаются от более конкретного уровня к менее
 конкретному:
@@ -220,41 +227,47 @@ Effective settings разрешаются от более конкретного
 | Уровень | Приоритет |
 |---|---:|
 | Текущая pair | 1 |
-| Pair из `IncludeBase()` | 2 |
+| Pair из `IncludeBase<TBaseSource, TBaseDestination>()` | 2 |
 | Root текущего mapper-а | 3 |
 | Roots подключённых base mapper-ов, от ближайшего к дальнему | 4 |
 | Assembly | 5 |
 | Library default | 6 |
 
-Plan объединяется по собственным правилам:
+Через `IncludeBase<TBaseSource, TBaseDestination>()` наследуются все явно
+заданные map-level settings, включая `MappingMode` и `ConstructorSelection`.
+Наследуется именно policy, а не выбранный для base destination constructor;
+локальное значение перекрывает унаследованное, а `Default` продолжает поиск по
+таблице приоритетов.
 
-- локальный `Construct` целиком заменяет унаследованный `Construct`;
-- `Members` объединяются по destination member независимо от формы
-  перегрузки; локальное правило перекрывает унаследованное, после чего
-  зависимости каждого effective rule анализируются отдельно;
-- локальный `Ignore()` является таким же явным перекрытием;
-- conventions применяются после объединения только к ещё не занятым members;
-- локальный `Convert` заменяет весь унаследованный declarative plan;
-- унаследованный manual plan нельзя частично объединить с локальными `Construct`
-  или `Members`.
+Из mapping plan импортируются только правила `Members`:
 
-Переносимый plan испускается внутри derived mapper-а, поэтому все mapper-members
-в expression должны быть доступны из derived type. Обычные public, internal и
-protected helpers поддерживаются согласно C# accessibility; private members и
-явный `base.` в inherited expression делают effective plan ошибочным. Полная
-локальная замена `Construct` либо `Convert` удаляет заменённый inaccessible
-plan до emission.
+- правила объединяются по destination member независимо от формы перегрузки;
+- локальный expression, `Auto()` или `Ignore()` перекрывает унаследованное
+  правило, после чего зависимости каждого effective rule анализируются
+  отдельно;
+- conventions и constructor selection вычисляются заново для текущей pair;
+- `Construct` и `Convert` base pair не импортируются;
+- локальный `Convert` владеет всей текущей pair и отбрасывает импортированные
+  member rules.
+
+Переносимые effective member rules испускаются внутри derived mapper-а, поэтому
+все mapper-members в них должны быть доступны из derived type. Обычные public,
+internal и protected helpers поддерживаются согласно C# accessibility;
+private members и явный `base.` в оставшемся inherited expression делают
+effective plan ошибочным. Полное локальное перекрытие destination member
+удаляет заменённое inaccessible правило до проверки accessibility.
 
 Source generator не выполняет configuration code и не следует за
 произвольными helper calls, которые изменяют builder. Переиспользуемые
 вычисления остаются обычными instance/static методами mapper-а, вызываемыми
 внутри `Construct`, `Members` или `Convert`.
 
-Отдельные fragments для unrelated pairs, generic fragments и cross-assembly
-`IncludeBase()` не входят в v0. Mapping-и из внешних assemblies подключаются
-независимыми manual runtime registrations; application-wide dispatch не
-становится неявным источником configuration composition и будущие keyed
-variants не меняют это правило.
+Отдельные fragments для unrelated pairs и cross-assembly
+`IncludeBase<TBaseSource, TBaseDestination>()` не входят в v0. Generic и nested
+mapper-ы поддерживаются внутри одной compilation. Mapping-и из внешних
+assemblies подключаются независимыми manual runtime registrations;
+application-wide dispatch не становится неявным источником configuration
+composition и будущие keyed variants не меняют это правило.
 
 ## 5. `Option<T>`
 
@@ -763,8 +776,9 @@ Members(
 direct surface — только post-construction assignable members.
 
 В локальной конфигурации pair можно вызвать ровно один `Members`.
-Любой второй локальный вызов является ошибкой. `IncludeBase()` объединяет
-унаследованный и локальный member plans независимо от формы перегрузки:
+Любой второй локальный вызов является ошибкой.
+`IncludeBase<TBaseSource, TBaseDestination>()` объединяет унаследованный и
+локальный member plans независимо от формы перегрузки:
 rules с двумя и тремя lambda-параметрами являются одинаковыми элементами
 effective plan. Source-only перегрузки нет. Если previous или result не нужны,
 пользователь пишет `_`:
@@ -2009,7 +2023,8 @@ members, поэтому `Convert` нужен лишь для действите�
 `current map -> included base map -> current mapper root -> connected base
 mapper roots -> assembly -> library default`; `Default` продолжает поиск менее
 конкретного уровня. Base-уровни появляются только через явно распознанные
-`base.Configure(builder)` и `IncludeBase()`, описанные в разделе 4.1.
+`base.Configure(builder)` и
+`IncludeBase<TBaseSource, TBaseDestination>()`, описанные в разделе 4.1.
 Applicability определяется выбранной model и capabilities пары:
 
 На одном C#-уровне побеждает последний распознанный вызов конкретной setting,
@@ -2255,8 +2270,8 @@ registration, точнее может оказаться `WithMappingKey`. Са�
 В v0 runtime-тип source не меняет requested canonical pair. Вызов
 `Map<Animal, AnimalDto>` всегда разрешает `Animal -> AnimalDto`, даже если
 фактический source является `Dog` и отдельно зарегистрирована
-`Dog -> DogDto`. `IncludeBase()` наследует только mapping-конфигурацию и не
-включает runtime dispatch.
+`Dog -> DogDto`. `IncludeBase<TBaseSource, TBaseDestination>()` наследует
+только mapping-конфигурацию и не включает runtime dispatch.
 
 Нестандартный polymorphic алгоритм выражается через `Convert` с явным
 type-switch и exact nested mappings. Основной массовый сценарий polymorphic
@@ -2265,7 +2280,7 @@ interfaces, call frames и dispatch contract в v0 не расширяются.
 
 После v0 registry можно совместимо дополнить explicit derived links на
 конкретном base descriptor-е. Рабочее направление использует отдельный от
-`IncludeBase()` API с условным именем
+`IncludeBase<TBaseSource, TBaseDestination>()` API с условным именем
 `IncludeDerived<TSource, TDestination>()`, closed-world generated dispatcher и
 most-specific selection. Оно не предусматривает `IncludeAllDerived`, поиск
 всех assignable application registrations или зависимость от порядка
@@ -2385,9 +2400,10 @@ members. Это самостоятельная capability:
 
 В v0 `IncludeMembers` не генерируется. Точные API, precedence между root и
 included candidates, null semantics, ambiguity diagnostics и композиция через
-`IncludeBase()` согласуются отдельным post-v0 этапом. Текущая candidate model
-и application dispatch не должны блокировать его добавление, но до этого
-явный flattening остаётся обычным member expression.
+`IncludeBase<TBaseSource, TBaseDestination>()` согласуются отдельным post-v0
+этапом. Текущая candidate model и application dispatch не должны блокировать
+его добавление, но до этого явный flattening остаётся обычным member
+expression.
 
 ## 13. Основные сценарии
 
@@ -2661,8 +2677,9 @@ diagnostic не должно вводить скрытый fallback на дру�
 9. Для member-capable pair всегда генерируются две альтернативные
    `Members`-перегрузки: с `source`/`previous` и с
    `source`/`previous`/`result`. В локальной pair можно вызвать
-   ровно один `Members`; любой второй вызов ошибочен. `IncludeBase()` объединяет
-   унаследованный и локальный plans независимо от формы перегрузки.
+   ровно один `Members`; любой второй вызов ошибочен.
+   `IncludeBase<TBaseSource, TBaseDestination>()` объединяет унаследованный и
+   локальный plans независимо от формы перегрузки.
 10. Обе формы `Members` являются одним declarative DSL и применяются к
     выбранному result; выбор overload сам по себе не задаёт evaluation phase.
     Набор доступных members определяется construction capability.
@@ -2835,8 +2852,9 @@ diagnostic не должно вводить скрытый fallback на дру�
     передаётся в nested mappings явно; он не хранится в `MappingContext` или
     `MappingScope` и не распространяется ambient-механизмом.
 57. В v0 runtime-тип source не меняет requested canonical pair.
-    `IncludeBase()` наследует только конфигурацию и не включает runtime
-    dispatch; special-case остаётся областью explicit `Convert`.
+    `IncludeBase<TBaseSource, TBaseDestination>()` наследует только
+    конфигурацию и не включает runtime dispatch; special-case остаётся областью
+    explicit `Convert`.
 58. В v0 reference tracking отсутствует. `MappingScope` резервирует
     chain-wide extension point, но shared source может породить разные result,
     а cyclic graph не получает built-in завершение.
@@ -2851,27 +2869,37 @@ diagnostic не должно вводить скрытый fallback на дру�
     mapper-ов. Generator не выполняет arbitrary builder helpers и не ищет
     fragments или подходящие plans в application dispatch.
 62. `base.Configure(builder)` подключает base configuration chain и её root
-    settings. Без него `IncludeBase()` является ошибочной конфигурацией.
-63. Повторно объявленная pair без `IncludeBase()` начинает с чистого map-level
-    plan, сохраняя унаследованные root settings. `IncludeBase()` импортирует
-    ближайший matching base plan и его map-level settings.
-64. Settings precedence — current pair, included base pair, current mapper
-    root, connected base roots, assembly, library default.
-65. Локальный `Construct` заменяет унаследованный; `Members` независимо от формы
+    settings. Без этой chain typed `IncludeBase` является ошибочной
+    конфигурацией.
+63. Повторно объявленная pair без
+    `IncludeBase<TBaseSource, TBaseDestination>()` начинает с чистого map-level
+    plan, сохраняя унаследованные root settings. Generic-аргументы задают
+    точную base pair; текущие source и destination должны быть приводимы к
+    соответствующим base types. Поиск идёт только по подключённым base levels,
+    исключая текущий level, и выбирает ближайшее точное совпадение.
+64. Через typed `IncludeBase` наследуются все map-level settings, включая
+    `MappingMode` и `ConstructorSelection`. Settings precedence — current pair,
+    included base pair, current mapper root, connected base roots, assembly,
+    library default; `Default` продолжает поиск на следующем уровне.
+65. Из base plan импортируются только `Members`. Правила независимо от формы
     перегрузки объединяются по destination member с локальным приоритетом,
-    включая `Ignore()`, после чего conventions заполняют только незанятые
-    members и dependencies effective rules анализируются отдельно.
-66. Локальный `Convert` заменяет весь унаследованный declarative plan, а
-    manual plan не смешивается частично с `Construct`/`Members`.
+    включая expression, `Auto()` и `Ignore()`. Conventions и constructor
+    selection вычисляются заново для текущей pair, а dependencies effective
+    rules анализируются отдельно.
+66. `Construct` и `Convert` base pair не импортируются. Локальный `Convert`
+    владеет всей текущей pair и отбрасывает импортированные member rules.
 67. Base mapper не требует `MorphantMapperAttribute`, если его `Configure`
     доступен как source в текущей compilation. Прямой
     `base.Configure(builder)` поддерживается statement- и expression-bodied
     формой; повторный вызов ошибочен. Generic base DSL сохраняет открытый
     generated surface, а effective derived plan использует constructed type
-    arguments, включая nested mapper declarations.
-68. General-purpose и generic fragments, а также cross-assembly
-    `IncludeBase()` отсутствуют в v0. Внешние mappings регистрируются
-    независимо и не импортируют configuration друг друга.
+    arguments, включая nested mapper declarations. Проверка accessibility
+    выполняется только для оставшихся effective member rules, поэтому полное
+    локальное перекрытие удаляет недоступное base rule до emission.
+68. General-purpose fragments и cross-assembly typed `IncludeBase` отсутствуют
+    в v0. Generic и nested mapper-ы поддерживаются внутри одной compilation;
+    внешние mappings регистрируются независимо и не импортируют configuration
+    друг друга.
 69. Constructed generic root с известной nominal-формой является обычной exact
     pair; mapper type parameters допустимы внутри его generic arguments.
 70. Generic mapper contract не является open-generic registration. Dispatch
@@ -2989,7 +3017,7 @@ generic pair unification не проектируются заново: они з
 | Constructor/member markers | Сохранены на соответствующей plan-части |
 | `IContextualMapper`-подобный nested dispatch | Scoped `context.Mapper : IMapper` |
 | Record `with` настоящего destination | Обычный C# внутри `Convert` |
-| `base.Configure` и `IncludeBase` | Явно разделённое наследование root settings и pair plan |
+| `base.Configure` и typed `IncludeBase` | Явно разделённое наследование root settings и member rules конкретной base pair |
 
 Крупной потерянной feature в core v0 после этих поправок нет.
 
@@ -3048,7 +3076,7 @@ push-sequence categories также остаются post-v0. Этап 12 так
 отдельного per-call contract в v0 нет, а будущий tuple-source должен покрыть
 multi-source mapping и явно передаваемый strongly typed state без изменения
 базовых mapper interfaces. Этап 13 также отложен: runtime lookup остаётся
-exact-pair, `IncludeBase()` не включает dispatch, а исследование explicit
+exact-pair, typed `IncludeBase` не включает dispatch, а исследование explicit
 derived links сохранено отдельно. Keyed mappings оставлены совместимым
 extension path. Этап 14 также отложен: `MappingScope` сохраняет место для
 будущего opt-in reference cache, но v0 не сохраняет shared identity и не
@@ -3056,15 +3084,16 @@ extension path. Этап 14 также отложен: `MappingScope` сохра
 до после v0 без дополнительного исследования и без требований к внутренней
 plan model текущей реализации. Этап 16 ограничил v0-composition явной
 mapper-иерархией: root settings подключаются через `base.Configure(builder)`,
-а map-level plan — отдельным `IncludeBase()`; fragments и cross-assembly plan
-inheritance остаются post-v0. Этап 17 сохранил exact constructed generic pairs
+а map-level settings и member rules конкретной base pair — отдельным typed
+`IncludeBase`; fragments и cross-assembly plan inheritance остаются post-v0.
+Этап 17 сохранил exact constructed generic pairs
 и generic mapper contracts, но application dispatch видит только явно
 зарегистрированные closed mappings; bare root type parameters, open-generic и
 runtime-type lookup, tuple/multi-source и неявный state propagation остаются
 post-v0. Этап 18 закрыл result-dependent member rules двумя всегда
 генерируемыми `Members`-перегрузками, из которых локально выбирается одна. Вторая
 предоставляет фактический non-null result без presence-wrapper, но обе формы
-остаются одним DSL и могут объединяться через `IncludeBase()`. Фаза каждого
+остаются одним DSL и могут объединяться через typed `IncludeBase`. Фаза каждого
 rule определяется его фактическими dependencies; snapshot и порядок
 независимых rules не входят в контракт. Hooks и middleware гарантированно
 остаются в roadmap, но сознательно отложены до после v0.
