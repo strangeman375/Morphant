@@ -10,4 +10,10 @@ internal sealed class MemberSelectionTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberSelection_ac87953f.Scenario.Verify();
     }
+
+    [Test]
+    public void Preserves_an_invalid_effective_MemberSelection_as_a_complete_stub()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidMemberSelection_5d3e2b8a.Scenario.Verify();
+    }
 }

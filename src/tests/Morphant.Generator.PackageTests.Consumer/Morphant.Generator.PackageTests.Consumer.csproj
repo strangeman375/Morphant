@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>9.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+        <MorphantTestPackageVersion Condition="'$(MorphantTestPackageVersion)' == ''">0.0.0-package-consumption</MorphantTestPackageVersion>
+        <MorphantMemberSelection>Explicit</MorphantMemberSelection>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Morphant"
+                          Version="$(MorphantTestPackageVersion)" />
+    </ItemGroup>
+
+    <Target Name="VerifyMorphantCompilerVisibleProperties"
+            BeforeTargets="CoreCompile">
+        <ItemGroup>
+            <_MissingMorphantCompilerVisibleProperty Include="MorphantMappingMode;MorphantNullSourceHandling;MorphantNullDestinationHandling;MorphantConstructorSelection;MorphantMemberSelection;MorphantUnmappedMemberValidation" />
+            <_MissingMorphantCompilerVisibleProperty Remove="@(CompilerVisibleProperty)" />
+        </ItemGroup>
+
+        <Error Condition="'@(_MissingMorphantCompilerVisibleProperty)' != ''"
+               Text="The Morphant package did not import CompilerVisibleProperty entries: @(_MissingMorphantCompilerVisibleProperty)." />
+    </Target>
+
+</Project>
