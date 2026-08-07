@@ -206,8 +206,8 @@ internal static class TypeMapperPipeline
                 mapping with
                 {
                     EffectiveSettings = effectiveSettings,
-                    MapNewImplMethodName = createMethodName,
-                    MapExistingImplMethodName = updateMethodName
+                    CreateImplMethodName = createMethodName,
+                    UpdateImplMethodName = updateMethodName
                 });
         }
 
@@ -403,7 +403,7 @@ internal static class TypeMapperPipeline
                 ConventionConstructorMappingPlanner.Build(
                     declarativeSourceType,
                     destinationPlan.MemberType,
-                    memberMappings.BuildConstructorPlan(
+                    memberMappings.BuildConstructorInitializationPlan(
                         replacement: false),
                     pair.Capabilities,
                     constructorSelection,
@@ -421,15 +421,15 @@ internal static class TypeMapperPipeline
 
             return mapping with
             {
-                MapNewConstructor = constructorMapping?.Constructor,
-                MapNewMemberMappings =
-                    constructorMapping?.MapNewMemberMappings ??
-                    memberMappings.MapNew,
-                MapNewPostMemberMappings =
-                    constructorMapping?.MapNewPostMemberMappings ??
+                CreateConstructor = constructorMapping?.Constructor,
+                CreateMemberMappings =
+                    constructorMapping?.CreateMemberMappings ??
+                    memberMappings.Create,
+                CreatePostMemberMappings =
+                    constructorMapping?.CreatePostMemberMappings ??
                     [],
-                MapExistingMemberMappings = memberMappings.MapExisting,
-                MapNewUnsupportedExceptionMessage =
+                UpdateMemberMappings = memberMappings.Update,
+                CreateUnsupportedExceptionMessage =
                     createUnsupportedMessage
             };
         }
@@ -496,14 +496,14 @@ internal static class TypeMapperPipeline
                 MappingTypeNormalization.IsNullableValue(
                     pair.SourceType),
             DestinationCanBeNull: CanBeNull(pair.DestinationType),
-            MapNewDirectExpression: null,
-            MapExistingDirectExpression: null,
-            MapNewFactory: null,
-            MapNewConstructor: null,
-            MapExistingKind: destinationPlan.MapExistingKind,
-            MapNewMemberMappings: [],
-            MapNewPostMemberMappings: [],
-            MapExistingMemberMappings: []);
+            CreateDirectExpression: null,
+            UpdateDirectExpression: null,
+            CreateFactory: null,
+            CreateConstructor: null,
+            UpdateKind: destinationPlan.UpdateKind,
+            CreateMemberMappings: [],
+            CreatePostMemberMappings: [],
+            UpdateMemberMappings: []);
     }
 
     private static DestinationPlan BuildDestinationPlan(
@@ -520,18 +520,18 @@ internal static class TypeMapperPipeline
                 destinationType,
                 compilation)
             .WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-        var mapExistingKind = memberType.TypeKind switch
+        var updateKind = memberType.TypeKind switch
         {
             TypeKind.Class or TypeKind.Interface =>
-                TypeMapperMapExistingKind.Reference,
+                TypeMapperUpdateKind.Reference,
             TypeKind.Struct or TypeKind.Enum =>
                 isNullableValue
-                    ? TypeMapperMapExistingKind.NullableValue
-                    : TypeMapperMapExistingKind.Value,
-            _ => TypeMapperMapExistingKind.Unsupported
+                    ? TypeMapperUpdateKind.NullableValue
+                    : TypeMapperUpdateKind.Value,
+            _ => TypeMapperUpdateKind.Unsupported
         };
 
-        return new DestinationPlan(memberType, mapExistingKind);
+        return new DestinationPlan(memberType, updateKind);
     }
 
     private static string BuildNonNullSourceName(
@@ -596,9 +596,9 @@ internal static class TypeMapperPipeline
             return false;
         }
 
-        return settings.SupportsMapNew ||
+        return settings.SupportsCreate ||
                mapping.DestinationCanBeNull &&
-               settings.SupportsMapExisting &&
+               settings.SupportsUpdate &&
                settings.IsNullDestinationHandlingValid &&
                settings.NullDestinationHandling ==
                    NullDestinationHandlingValue.Create;
@@ -610,7 +610,7 @@ internal static class TypeMapperPipeline
     {
         return mapping.ManualMapping is null &&
                settings.IsMappingModeValid &&
-               settings.SupportsMapExisting &&
+               settings.SupportsUpdate &&
                settings.IsNullSourceHandlingValid &&
                settings.IsNullDestinationHandlingValid;
     }
@@ -822,5 +822,5 @@ internal static class TypeMapperPipeline
 
     private readonly record struct DestinationPlan(
         ITypeSymbol MemberType,
-        TypeMapperMapExistingKind MapExistingKind);
+        TypeMapperUpdateKind UpdateKind);
 }

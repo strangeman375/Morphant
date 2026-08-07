@@ -103,20 +103,20 @@ internal static class BasicMembersMappingPlanner
                     UnsupportedMessage: null);
             }
 
-            var emptyMapNew =
+            var emptyCreate =
                 ImmutableArray<TypeMapperMemberMappingModel>.Empty;
 
             return new BasicMembersMappingResult(
                 new ConventionMemberMappingPlan(
-                    emptyMapNew,
+                    emptyCreate,
                     [],
-                    emptyMapNew,
+                    emptyCreate,
                     [],
                     [],
                     ConventionMemberMappingPlanner
                         .HasUnmappedRequiredMembers(
                             destination,
-                            emptyMapNew,
+                            emptyCreate,
                             cancellationToken),
                     HasExplicitCreationOnlyMappings: false,
                     HasResultDependentCreationOnlyMappings: false),
@@ -169,15 +169,15 @@ internal static class BasicMembersMappingPlanner
         var writableMembersByName = writableMembers.ToDictionary(
             static member => member.Name,
             StringComparer.Ordinal);
-        var conventionMapNewByName = convention.MapNew.ToDictionary(
+        var conventionCreateByName = convention.Create.ToDictionary(
             static member => member.DestinationMemberName,
             StringComparer.Ordinal);
-        var conventionMapExistingByName =
-            convention.MapExisting.ToDictionary(
+        var conventionUpdateByName =
+            convention.Update.ToDictionary(
                 static member => member.DestinationMemberName,
                 StringComparer.Ordinal);
-        var conventionMapNewPostByName =
-            convention.MapNewPost.ToDictionary(
+        var conventionCreatePostByName =
+            convention.CreatePost.ToDictionary(
                 static member => member.DestinationMemberName,
                 StringComparer.Ordinal);
         var runtimeLocalInitializers =
@@ -206,9 +206,9 @@ internal static class BasicMembersMappingPlanner
                     convention,
                     destination,
                     writableMembersByName,
-                    conventionMapNewByName,
-                    conventionMapNewPostByName,
-                    conventionMapExistingByName,
+                    conventionCreateByName,
+                    conventionCreatePostByName,
+                    conventionUpdateByName,
                     configured.Expression.SemanticModel,
                     mapperType,
                     sourceParameter,
@@ -270,11 +270,11 @@ internal static class BasicMembersMappingPlanner
         IReadOnlyDictionary<string, ConventionWritableMember>
             writableMembersByName,
         IReadOnlyDictionary<string, TypeMapperMemberMappingModel>
-            conventionMapNewByName,
+            conventionCreateByName,
         IReadOnlyDictionary<string, TypeMapperMemberMappingModel>
-            conventionMapNewPostByName,
+            conventionCreatePostByName,
         IReadOnlyDictionary<string, TypeMapperMemberMappingModel>
-            conventionMapExistingByName,
+            conventionUpdateByName,
         SemanticModel semanticModel,
         INamedTypeSymbol mapperType,
         IParameterSymbol sourceParameter,
@@ -287,24 +287,24 @@ internal static class BasicMembersMappingPlanner
         out ConventionMemberMappingPlan plan,
         out string? unsupportedMessage)
     {
-        var mapNew =
+        var create =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
-        var mapNewPost =
+        var createPost =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var mapReplacement =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var mapReplacementPost =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
-        var mapExisting =
+        var update =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var occupiedNames = new HashSet<string>(StringComparer.Ordinal);
         var hasExplicitCreationOnlyMappings = false;
         var hasResultDependentCreationOnlyMappings = false;
-        var mapNewNestedMapUsages =
+        var createNestedMapUsages =
             new DeclarativeNestedMapUsageRegistry();
         var mapReplacementNestedMapUsages =
             new DeclarativeNestedMapUsageRegistry();
-        var mapExistingNestedMapUsages =
+        var updateNestedMapUsages =
             new DeclarativeNestedMapUsageRegistry();
 
         foreach (var assignment in assignments)
@@ -332,9 +332,9 @@ internal static class BasicMembersMappingPlanner
                     continue;
                 }
 
-                if (!conventionMapNewByName.TryGetValue(
+                if (!conventionCreateByName.TryGetValue(
                         destinationMember.Name,
-                        out var automaticMapNew))
+                        out var automaticCreate))
                 {
                     plan = default;
                     unsupportedMessage =
@@ -342,22 +342,22 @@ internal static class BasicMembersMappingPlanner
                     return false;
                 }
 
-                mapNew.Add(automaticMapNew);
-                mapReplacement.Add(automaticMapNew);
+                create.Add(automaticCreate);
+                mapReplacement.Add(automaticCreate);
 
-                if (conventionMapNewPostByName.TryGetValue(
+                if (conventionCreatePostByName.TryGetValue(
                         destinationMember.Name,
-                        out var automaticMapNewPost))
+                        out var automaticCreatePost))
                 {
-                    mapNewPost.Add(automaticMapNewPost);
-                    mapReplacementPost.Add(automaticMapNewPost);
+                    createPost.Add(automaticCreatePost);
+                    mapReplacementPost.Add(automaticCreatePost);
                 }
 
-                if (conventionMapExistingByName.TryGetValue(
+                if (conventionUpdateByName.TryGetValue(
                         destinationMember.Name,
-                        out var automaticMapExisting))
+                        out var automaticUpdate))
                 {
-                    mapExisting.Add(automaticMapExisting);
+                    update.Add(automaticUpdate);
                 }
 
                 hasExplicitCreationOnlyMappings |=
@@ -377,9 +377,9 @@ internal static class BasicMembersMappingPlanner
                     transferScope,
                     localSubstitutions,
                     localInitializers,
-                    mapNewNestedMapUsages,
+                    createNestedMapUsages,
                     mapReplacementNestedMapUsages,
-                    mapExistingNestedMapUsages,
+                    updateNestedMapUsages,
                     cancellationToken,
                     out var explicitPlan))
             {
@@ -388,14 +388,14 @@ internal static class BasicMembersMappingPlanner
                 return false;
             }
 
-            if (explicitPlan.MapNew is { } explicitMapNew)
+            if (explicitPlan.Create is { } explicitCreate)
             {
-                mapNew.Add(explicitMapNew);
+                create.Add(explicitCreate);
             }
 
-            if (explicitPlan.MapNewPost is { } createPost)
+            if (explicitPlan.CreatePost is { } explicitCreatePost)
             {
-                mapNewPost.Add(createPost);
+                createPost.Add(explicitCreatePost);
             }
 
             if (explicitPlan.MapReplacement is
@@ -410,9 +410,9 @@ internal static class BasicMembersMappingPlanner
                 mapReplacementPost.Add(replacementPost);
             }
 
-            if (explicitPlan.MapExisting is { } existing)
+            if (explicitPlan.Update is { } existing)
             {
-                mapExisting.Add(existing);
+                update.Add(existing);
             }
 
             hasExplicitCreationOnlyMappings |=
@@ -424,12 +424,12 @@ internal static class BasicMembersMappingPlanner
 
         if (memberSelection == MemberSelectionValue.Auto)
         {
-            mapNew.AddRange(
-                convention.MapNew.Where(candidate =>
+            create.AddRange(
+                convention.Create.Where(candidate =>
                     !occupiedNames.Contains(
                         candidate.DestinationMemberName)));
-            mapNewPost.AddRange(
-                convention.MapNewPost.Where(candidate =>
+            createPost.AddRange(
+                convention.CreatePost.Where(candidate =>
                     !occupiedNames.Contains(
                         candidate.DestinationMemberName)));
             mapReplacement.AddRange(
@@ -440,23 +440,23 @@ internal static class BasicMembersMappingPlanner
                 convention.MapReplacementPost.Where(candidate =>
                     !occupiedNames.Contains(
                         candidate.DestinationMemberName)));
-            mapExisting.AddRange(
-                convention.MapExisting.Where(candidate =>
+            update.AddRange(
+                convention.Update.Where(candidate =>
                     !occupiedNames.Contains(
                         candidate.DestinationMemberName)));
         }
 
-        var immutableMapNew = mapNew.ToImmutable();
+        var immutableCreate = create.ToImmutable();
 
         plan = new ConventionMemberMappingPlan(
-            immutableMapNew,
-            mapNewPost.ToImmutable(),
+            immutableCreate,
+            createPost.ToImmutable(),
             mapReplacement.ToImmutable(),
             mapReplacementPost.ToImmutable(),
-            mapExisting.ToImmutable(),
+            update.ToImmutable(),
             ConventionMemberMappingPlanner.HasUnmappedRequiredMembers(
                 destination,
-                immutableMapNew,
+                immutableCreate,
                 cancellationToken),
             hasExplicitCreationOnlyMappings,
             hasResultDependentCreationOnlyMappings,
@@ -516,21 +516,21 @@ internal static class BasicMembersMappingPlanner
             return result.ToImmutableArray();
         }
 
-        var mapNew = Merge(
-            static plan => plan.MapNew,
-            convention.MapNew);
-        var mapNewPost = Merge(
-            static plan => plan.MapNewPost,
-            convention.MapNewPost);
+        var create = Merge(
+            static plan => plan.Create,
+            convention.Create);
+        var createPost = Merge(
+            static plan => plan.CreatePost,
+            convention.CreatePost);
         var mapReplacement = Merge(
             static plan => plan.MapReplacement,
             convention.MapReplacement);
         var mapReplacementPost = Merge(
             static plan => plan.MapReplacementPost,
             convention.MapReplacementPost);
-        var mapExisting = Merge(
-            static plan => plan.MapExisting,
-            convention.MapExisting);
+        var update = Merge(
+            static plan => plan.Update,
+            convention.Update);
         var writableMembers =
             ConventionMemberMappingPlanner.BuildWritableMembers(
                 destination,
@@ -540,7 +540,7 @@ internal static class BasicMembersMappingPlanner
             .ToDictionary(
                 static member => member.Name,
                 StringComparer.Ordinal);
-        var creationOnlyMappings = mapNew
+        var creationOnlyMappings = create
             .Where(mapping =>
                 occupiedNames.Contains(mapping.DestinationMemberName) &&
                 writableMembers.TryGetValue(
@@ -550,14 +550,14 @@ internal static class BasicMembersMappingPlanner
             .ToArray();
 
         return new ConventionMemberMappingPlan(
-            mapNew,
-            mapNewPost,
+            create,
+            createPost,
             mapReplacement,
             mapReplacementPost,
-            mapExisting,
+            update,
             ConventionMemberMappingPlanner.HasUnmappedRequiredMembers(
                 destination,
-                mapNew,
+                create,
                 cancellationToken),
             creationOnlyMappings.Length > 0,
             creationOnlyMappings.Any(static mapping =>
@@ -577,9 +577,9 @@ internal static class BasicMembersMappingPlanner
         LambdaExpressionSyntax transferScope,
         IReadOnlyDictionary<ISymbol, string> localSubstitutions,
         IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
-        DeclarativeNestedMapUsageRegistry mapNewNestedMapUsages,
+        DeclarativeNestedMapUsageRegistry createNestedMapUsages,
         DeclarativeNestedMapUsageRegistry mapReplacementNestedMapUsages,
-        DeclarativeNestedMapUsageRegistry mapExistingNestedMapUsages,
+        DeclarativeNestedMapUsageRegistry updateNestedMapUsages,
         CancellationToken cancellationToken,
         out ExplicitMemberMappingPlan plan)
     {
@@ -601,10 +601,10 @@ internal static class BasicMembersMappingPlanner
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Create,
                     CurrentDestinationExpression: null),
-                mapNewNestedMapUsages,
+                createNestedMapUsages,
                 cancellationToken,
-                out var mapNewExpression,
-                out var mapNewDependency) ||
+                out var createExpression,
+                out var createDependency) ||
             !DeclarativeDependencyExpressionBuilder.TryRewrite(
                 expression,
                 semanticModel,
@@ -647,10 +647,10 @@ internal static class BasicMembersMappingPlanner
                     DeclarativeNestedMapOperation.Update,
                     "destination." +
                     Identifier(destinationMember.Name)),
-                mapExistingNestedMapUsages,
+                updateNestedMapUsages,
                 cancellationToken,
-                out var mapExistingExpression,
-                out var mapExistingDependency))
+                out var updateExpression,
+                out var updateDependency))
         {
             plan = default;
             return false;
@@ -682,9 +682,9 @@ internal static class BasicMembersMappingPlanner
                 IsResultDependent: resultDependent,
                 DependencyExpression: dependencyExpression);
 
-        var mapNew = BuildMapping(
-            mapNewExpression,
-            mapNewDependency,
+        var create = BuildMapping(
+            createExpression,
+            createDependency,
             isResultDependent);
         var replacementIsResultDependent =
             isResultDependent ||
@@ -695,15 +695,15 @@ internal static class BasicMembersMappingPlanner
             mapReplacementExpression,
             mapReplacementDependency,
             replacementIsResultDependent);
-        var mapExisting = BuildMapping(
-            mapExistingExpression,
-            mapExistingDependency,
+        var update = BuildMapping(
+            updateExpression,
+            updateDependency,
             isResultDependent);
 
         plan = new ExplicitMemberMappingPlan(
-            MapNew: isResultDependent ? null : mapNew,
-            MapNewPost: destinationMember.CanAssign
-                ? mapNew
+            Create: isResultDependent ? null : create,
+            CreatePost: destinationMember.CanAssign
+                ? create
                 : null,
             MapReplacement: replacementIsResultDependent
                 ? null
@@ -711,8 +711,8 @@ internal static class BasicMembersMappingPlanner
             MapReplacementPost: destinationMember.CanAssign
                 ? mapReplacement
                 : null,
-            MapExisting: destinationMember.CanAssign
-                ? mapExisting
+            Update: destinationMember.CanAssign
+                ? update
                 : null,
             IsCreationOnly: !destinationMember.CanAssign,
             IsResultDependent: isResultDependent);
@@ -1004,10 +1004,10 @@ internal sealed record MembersDeclarativeControlFlowPlan(
     IReadOnlyDictionary<ISymbol, ExpressionSyntax> LocalInitializers);
 
 internal readonly record struct ExplicitMemberMappingPlan(
-    TypeMapperMemberMappingModel? MapNew,
-    TypeMapperMemberMappingModel? MapNewPost,
+    TypeMapperMemberMappingModel? Create,
+    TypeMapperMemberMappingModel? CreatePost,
     TypeMapperMemberMappingModel? MapReplacement,
     TypeMapperMemberMappingModel? MapReplacementPost,
-    TypeMapperMemberMappingModel? MapExisting,
+    TypeMapperMemberMappingModel? Update,
     bool IsCreationOnly,
     bool IsResultDependent);

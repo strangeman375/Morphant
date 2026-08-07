@@ -6,8 +6,9 @@ polymorphism полностью отложен до периода после v0
 ограничения, сравнение с другими мапперами и наиболее сильное рабочее
 направление, чтобы после v0 не повторять исследование с нуля.
 
-Связанный пункт roadmap: этап 13 в
-[`MAPPING_API_DESIGN_REFINEMENT_PLAN.md`](MAPPING_API_DESIGN_REFINEMENT_PLAN.md).
+Связанное post-v0 направление зафиксировано в разделе «За границей текущего
+плана» документа
+[`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
 
 ## 1. Что именно исследовалось
 

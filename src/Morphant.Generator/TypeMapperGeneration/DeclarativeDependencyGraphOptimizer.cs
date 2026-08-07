@@ -13,32 +13,32 @@ internal static class DeclarativeDependencyGraphOptimizer
     {
         if (mapping.ControlFlow is { } controlFlow)
         {
-            var mapNew = OptimizeNode(
-                controlFlow.MapNewRoot,
-                mapNew: true,
+            var create = OptimizeNode(
+                controlFlow.CreateRoot,
+                create: true,
                 new Dictionary<string, string>(StringComparer.Ordinal),
                 BuildAllocator(
                     mapping,
-                    controlFlow.MapNewRoot,
-                    mapNew: true,
+                    controlFlow.CreateRoot,
+                    create: true,
                     mapperType));
-            var mapExisting = OptimizeNode(
-                controlFlow.MapExistingRoot,
-                mapNew: false,
+            var update = OptimizeNode(
+                controlFlow.UpdateRoot,
+                create: false,
                 new Dictionary<string, string>(StringComparer.Ordinal),
                 BuildAllocator(
                     mapping,
-                    controlFlow.MapExistingRoot,
-                    mapNew: false,
+                    controlFlow.UpdateRoot,
+                    create: false,
                     mapperType));
 
-            return !mapNew.Changed && !mapExisting.Changed
+            return !create.Changed && !update.Changed
                 ? mapping
                 : mapping with
                 {
                     ControlFlow = new TypeMapperControlFlowMappingModel(
-                        mapNew.Node,
-                        mapExisting.Node)
+                        create.Node,
+                        update.Node)
                 };
         }
 
@@ -46,29 +46,29 @@ internal static class DeclarativeDependencyGraphOptimizer
         var existingRoot = LeafNode(
             mapping with
             {
-                MapNewDirectExpression = null,
-                MapNewFactory = null,
-                MapNewConstructor = null,
-                MapNewMemberMappings = [],
-                MapNewPostMemberMappings = []
+                CreateDirectExpression = null,
+                CreateFactory = null,
+                CreateConstructor = null,
+                CreateMemberMappings = [],
+                CreatePostMemberMappings = []
             });
         var optimizedCreate = OptimizeNode(
             createRoot,
-            mapNew: true,
+            create: true,
             new Dictionary<string, string>(StringComparer.Ordinal),
             BuildAllocator(
                 mapping,
                 createRoot,
-                mapNew: true,
+                create: true,
                 mapperType));
         var optimizedExisting = OptimizeNode(
             existingRoot,
-            mapNew: false,
+            create: false,
             new Dictionary<string, string>(StringComparer.Ordinal),
             BuildAllocator(
                 mapping,
                 existingRoot,
-                mapNew: false,
+                create: false,
                 mapperType));
 
         return !optimizedCreate.Changed && !optimizedExisting.Changed
@@ -83,13 +83,13 @@ internal static class DeclarativeDependencyGraphOptimizer
 
     private static NodeOptimizationResult OptimizeNode(
         TypeMapperControlFlowNode node,
-        bool mapNew,
+        bool create,
         Dictionary<string, string> environment,
         DependencyLocalNameAllocator allocator)
     {
         var changed = false;
         var locals = ImmutableArray.CreateBuilder<TypeMapperLocalValueModel>();
-        var bodyKeys = CollectBodyKeys(node, mapNew);
+        var bodyKeys = CollectBodyKeys(node, create);
 
         for (var index = 0; index < node.Locals.Length; index++)
         {
@@ -146,7 +146,7 @@ internal static class DeclarativeDependencyGraphOptimizer
 
         if (node.EvaluationContinuation is { } evaluationContinuation)
         {
-            var later = CollectKeys(evaluationContinuation, mapNew);
+            var later = CollectKeys(evaluationContinuation, create);
             var expression = OptimizeExpressionSlot(
                 node.EvaluationExpression!,
                 node.EvaluationDependency,
@@ -155,7 +155,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 allocator);
             var continuation = OptimizeNode(
                 evaluationContinuation,
-                mapNew,
+                create,
                 environment,
                 allocator);
 
@@ -177,12 +177,12 @@ internal static class DeclarativeDependencyGraphOptimizer
 
             foreach (var section in node.SwitchSections)
             {
-                later.UnionWith(CollectKeys(section.Branch, mapNew));
+                later.UnionWith(CollectKeys(section.Branch, create));
             }
 
             if (node.SwitchContinuation is { } switchContinuation)
             {
-                later.UnionWith(CollectKeys(switchContinuation, mapNew));
+                later.UnionWith(CollectKeys(switchContinuation, create));
             }
 
             var expression = OptimizeExpressionSlot(
@@ -195,7 +195,7 @@ internal static class DeclarativeDependencyGraphOptimizer
             {
                 var branch = OptimizeNode(
                     section.Branch,
-                    mapNew,
+                    create,
                     Clone(environment),
                     allocator);
                 changed |= branch.Changed;
@@ -207,7 +207,7 @@ internal static class DeclarativeDependencyGraphOptimizer
             {
                 var optimized = OptimizeNode(
                     currentContinuation,
-                    mapNew,
+                    create,
                     Clone(environment),
                     allocator);
                 continuation = optimized.Node;
@@ -229,8 +229,8 @@ internal static class DeclarativeDependencyGraphOptimizer
 
         if (node.Condition is not null)
         {
-            var later = CollectKeys(node.WhenTrue!, mapNew);
-            later.UnionWith(CollectKeys(node.WhenFalse!, mapNew));
+            var later = CollectKeys(node.WhenTrue!, create);
+            later.UnionWith(CollectKeys(node.WhenFalse!, create));
             var expression = OptimizeExpressionSlot(
                 node.Condition,
                 node.ConditionDependency,
@@ -239,12 +239,12 @@ internal static class DeclarativeDependencyGraphOptimizer
                 allocator);
             var whenTrue = OptimizeNode(
                 node.WhenTrue!,
-                mapNew,
+                create,
                 Clone(environment),
                 allocator);
             var whenFalse = OptimizeNode(
                 node.WhenFalse!,
-                mapNew,
+                create,
                 Clone(environment),
                 allocator);
 
@@ -289,7 +289,7 @@ internal static class DeclarativeDependencyGraphOptimizer
 
         var leafResult = OptimizeLeaf(
             leaf,
-            mapNew,
+            create,
             environment,
             allocator);
 
@@ -300,33 +300,33 @@ internal static class DeclarativeDependencyGraphOptimizer
 
     private static LeafOptimizationResult OptimizeLeaf(
         TypeMapperMappingModel mapping,
-        bool mapNew,
+        bool create,
         Dictionary<string, string> environment,
         DependencyLocalNameAllocator allocator)
     {
         var changed = false;
-        var replacement = !mapNew &&
-            (mapping.MapNewConstructor is not null ||
-             mapping.MapNewFactory is not null ||
-             mapping.MapNewDirectExpression is not null);
+        var replacement = !create &&
+            (mapping.CreateConstructor is not null ||
+             mapping.CreateFactory is not null ||
+             mapping.CreateDirectExpression is not null);
 
-        if (mapNew || replacement)
+        if (create || replacement)
         {
-            if (mapping.MapNewConstructor is { } constructor)
+            if (mapping.CreateConstructor is { } constructor)
             {
                 var optimizedConstructor = OptimizeConstructor(
                     constructor,
-                    mapping.MapNewMemberMappings,
-                    mapping.MapNewPostMemberMappings,
+                    mapping.CreateMemberMappings,
+                    mapping.CreatePostMemberMappings,
                     mapping.PostMemberControlFlow,
                     environment,
                     allocator);
                 mapping = mapping with
                 {
-                    MapNewConstructor = optimizedConstructor.Constructor,
-                    MapNewMemberMappings =
+                    CreateConstructor = optimizedConstructor.Constructor,
+                    CreateMemberMappings =
                         optimizedConstructor.InitializerMappings,
-                    MapNewPostMemberMappings =
+                    CreatePostMemberMappings =
                         optimizedConstructor.PostMappings,
                     PostMemberControlFlow =
                         optimizedConstructor.PostControlFlow
@@ -336,13 +336,13 @@ internal static class DeclarativeDependencyGraphOptimizer
             else
             {
                 var post = OptimizePostMappings(
-                    mapping.MapNewPostMemberMappings,
+                    mapping.CreatePostMemberMappings,
                     mapping.PostMemberControlFlow,
                     environment,
                     allocator);
                 mapping = mapping with
                 {
-                    MapNewPostMemberMappings = post.Mappings,
+                    CreatePostMemberMappings = post.Mappings,
                     PostMemberControlFlow = post.ControlFlow
                 };
                 changed |= post.Changed;
@@ -351,13 +351,13 @@ internal static class DeclarativeDependencyGraphOptimizer
         else
         {
             var post = OptimizePostMappings(
-                mapping.MapExistingMemberMappings,
+                mapping.UpdateMemberMappings,
                 mapping.PostMemberControlFlow,
                 environment,
                 allocator);
             mapping = mapping with
             {
-                MapExistingMemberMappings = post.Mappings,
+                UpdateMemberMappings = post.Mappings,
                 PostMemberControlFlow = post.ControlFlow
             };
             changed |= post.Changed;
@@ -834,7 +834,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                     IsMaterialized: true);
             }
 
-            var rendered = node.Template;
+            var rendered = node.ExpressionTemplate;
             var childExpressions = new string[node.Children.Length];
             var childMaterialized = new bool[node.Children.Length];
 
@@ -951,7 +951,7 @@ internal static class DeclarativeDependencyGraphOptimizer
 
     private static HashSet<string> CollectBodyKeys(
         TypeMapperControlFlowNode node,
-        bool mapNew)
+        bool create)
     {
         var result = new HashSet<string>(StringComparer.Ordinal);
         AddExpressionKeys(node.EvaluationDependency, result);
@@ -961,28 +961,28 @@ internal static class DeclarativeDependencyGraphOptimizer
 
         if (node.EvaluationContinuation is { } evaluation)
         {
-            result.UnionWith(CollectKeys(evaluation, mapNew));
+            result.UnionWith(CollectKeys(evaluation, create));
         }
         else if (node.SwitchExpression is not null)
         {
             foreach (var section in node.SwitchSections)
             {
-                result.UnionWith(CollectKeys(section.Branch, mapNew));
+                result.UnionWith(CollectKeys(section.Branch, create));
             }
 
             if (node.SwitchContinuation is { } continuation)
             {
-                result.UnionWith(CollectKeys(continuation, mapNew));
+                result.UnionWith(CollectKeys(continuation, create));
             }
         }
         else if (node.Condition is not null)
         {
-            result.UnionWith(CollectKeys(node.WhenTrue!, mapNew));
-            result.UnionWith(CollectKeys(node.WhenFalse!, mapNew));
+            result.UnionWith(CollectKeys(node.WhenTrue!, create));
+            result.UnionWith(CollectKeys(node.WhenFalse!, create));
         }
         else if (node.Leaf is { } leaf)
         {
-            result.UnionWith(CollectLeafKeys(leaf, mapNew));
+            result.UnionWith(CollectLeafKeys(leaf, create));
         }
 
         return result;
@@ -990,9 +990,9 @@ internal static class DeclarativeDependencyGraphOptimizer
 
     private static HashSet<string> CollectKeys(
         TypeMapperControlFlowNode node,
-        bool mapNew)
+        bool create)
     {
-        var result = CollectBodyKeys(node, mapNew);
+        var result = CollectBodyKeys(node, create);
 
         foreach (var local in node.Locals)
         {
@@ -1055,16 +1055,16 @@ internal static class DeclarativeDependencyGraphOptimizer
 
     private static HashSet<string> CollectLeafKeys(
         TypeMapperMappingModel mapping,
-        bool mapNew)
+        bool create)
     {
         var result = new HashSet<string>(StringComparer.Ordinal);
-        var replacement = !mapNew &&
-            (mapping.MapNewConstructor is not null ||
-             mapping.MapNewFactory is not null ||
-             mapping.MapNewDirectExpression is not null);
+        var replacement = !create &&
+            (mapping.CreateConstructor is not null ||
+             mapping.CreateFactory is not null ||
+             mapping.CreateDirectExpression is not null);
 
-        if ((mapNew || replacement) &&
-            mapping.MapNewConstructor is { } constructor)
+        if ((create || replacement) &&
+            mapping.CreateConstructor is { } constructor)
         {
             foreach (var argument in constructor.Arguments)
             {
@@ -1072,19 +1072,19 @@ internal static class DeclarativeDependencyGraphOptimizer
             }
 
             result.UnionWith(
-                CollectMemberKeys(mapping.MapNewMemberMappings));
+                CollectMemberKeys(mapping.CreateMemberMappings));
             result.UnionWith(
-                CollectMemberKeys(mapping.MapNewPostMemberMappings));
+                CollectMemberKeys(mapping.CreatePostMemberMappings));
         }
-        else if (mapNew || replacement)
+        else if (create || replacement)
         {
             result.UnionWith(
-                CollectMemberKeys(mapping.MapNewPostMemberMappings));
+                CollectMemberKeys(mapping.CreatePostMemberMappings));
         }
         else
         {
             result.UnionWith(
-                CollectMemberKeys(mapping.MapExistingMemberMappings));
+                CollectMemberKeys(mapping.UpdateMemberMappings));
         }
 
         if (mapping.PostMemberControlFlow is { } controlFlow)
@@ -1252,7 +1252,7 @@ internal static class DeclarativeDependencyGraphOptimizer
     private static DependencyLocalNameAllocator BuildAllocator(
         TypeMapperMappingModel mapping,
         TypeMapperControlFlowNode root,
-        bool mapNew,
+        bool create,
         INamedTypeSymbol mapperType)
     {
         var names = UserResultMappingPlanner.BuildUsedLocalNames(
@@ -1260,13 +1260,13 @@ internal static class DeclarativeDependencyGraphOptimizer
         names.Add(mapping.NonNullSourceName);
         names.Add(mapping.ResultLocalName);
         names.Add("destination");
-        CollectDeclaredNames(root, mapNew, names);
+        CollectDeclaredNames(root, create, names);
         return new DependencyLocalNameAllocator(names);
     }
 
     private static void CollectDeclaredNames(
         TypeMapperControlFlowNode node,
-        bool mapNew,
+        bool create,
         HashSet<string> names)
     {
         AddIdentifiers(node.Condition, names);
@@ -1291,35 +1291,35 @@ internal static class DeclarativeDependencyGraphOptimizer
 
         if (node.Leaf is { } leaf)
         {
-            CollectLeafDeclaredNames(leaf, mapNew, names);
+            CollectLeafDeclaredNames(leaf, create, names);
             return;
         }
 
         if (node.EvaluationContinuation is { } evaluation)
         {
-            CollectDeclaredNames(evaluation, mapNew, names);
+            CollectDeclaredNames(evaluation, create, names);
         }
 
         foreach (var section in node.SwitchSections.IsDefault
                      ? []
                      : node.SwitchSections)
         {
-            CollectDeclaredNames(section.Branch, mapNew, names);
+            CollectDeclaredNames(section.Branch, create, names);
         }
 
         if (node.SwitchContinuation is { } continuation)
         {
-            CollectDeclaredNames(continuation, mapNew, names);
+            CollectDeclaredNames(continuation, create, names);
         }
 
         if (node.WhenTrue is { } whenTrue)
         {
-            CollectDeclaredNames(whenTrue, mapNew, names);
+            CollectDeclaredNames(whenTrue, create, names);
         }
 
         if (node.WhenFalse is { } whenFalse)
         {
-            CollectDeclaredNames(whenFalse, mapNew, names);
+            CollectDeclaredNames(whenFalse, create, names);
         }
     }
 
@@ -1382,16 +1382,16 @@ internal static class DeclarativeDependencyGraphOptimizer
 
     private static void CollectLeafDeclaredNames(
         TypeMapperMappingModel mapping,
-        bool mapNew,
+        bool create,
         HashSet<string> names)
     {
-        var replacement = !mapNew &&
-            (mapping.MapNewConstructor is not null ||
-             mapping.MapNewFactory is not null ||
-             mapping.MapNewDirectExpression is not null);
+        var replacement = !create &&
+            (mapping.CreateConstructor is not null ||
+             mapping.CreateFactory is not null ||
+             mapping.CreateDirectExpression is not null);
 
-        if ((mapNew || replacement) &&
-            mapping.MapNewFactory is { } factory)
+        if ((create || replacement) &&
+            mapping.CreateFactory is { } factory)
         {
             names.Add(factory.DestinationLocalName);
 
@@ -1401,8 +1401,8 @@ internal static class DeclarativeDependencyGraphOptimizer
             }
         }
 
-        if ((mapNew || replacement) &&
-            mapping.MapNewConstructor is { } constructor)
+        if ((create || replacement) &&
+            mapping.CreateConstructor is { } constructor)
         {
             AddLocalNames(constructor.ValueLocals, names);
 
@@ -1417,10 +1417,10 @@ internal static class DeclarativeDependencyGraphOptimizer
             }
         }
 
-        var members = mapNew || replacement
-            ? mapping.MapNewMemberMappings.AddRange(
-                mapping.MapNewPostMemberMappings)
-            : mapping.MapExistingMemberMappings;
+        var members = create || replacement
+            ? mapping.CreateMemberMappings.AddRange(
+                mapping.CreatePostMemberMappings)
+            : mapping.UpdateMemberMappings;
 
         foreach (var member in members)
         {

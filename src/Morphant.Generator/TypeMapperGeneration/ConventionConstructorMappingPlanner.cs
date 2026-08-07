@@ -16,7 +16,7 @@ internal static class ConventionConstructorMappingPlanner
     public static ConventionConstructorMappingPlan? Build(
         ITypeSymbol sourceType,
         ITypeSymbol? destination,
-        ConstructorMemberMappingPlan memberMappings,
+        ConstructorInitializationMappingPlan memberMappings,
         MappingPairCapabilities capabilities,
         ConstructorSelectionValue? constructorSelection,
         CSharpCompilation compilation,
@@ -80,7 +80,7 @@ internal static class ConventionConstructorMappingPlanner
         BuildPlanForConstructor(
             ITypeSymbol sourceType,
             INamedTypeSymbol namedDestination,
-            ConstructorMemberMappingPlan memberMappings,
+            ConstructorInitializationMappingPlan memberMappings,
             IMethodSymbol constructor,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
@@ -951,7 +951,7 @@ internal static class ConventionConstructorMappingPlanner
 
     internal static ConventionConstructorMappingPlan? BuildExplicitPlan(
         ITypeSymbol destination,
-        ConstructorMemberMappingPlan memberMappings,
+        ConstructorInitializationMappingPlan memberMappings,
         IMethodSymbol constructor,
         ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
         INamedTypeSymbol mapperType,
@@ -1000,7 +1000,7 @@ internal static class ConventionConstructorMappingPlanner
                 .Add(argumentIndex);
         }
 
-        var mapNew =
+        var create =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var sharedValues =
             new List<(int MemberIndex, int ArgumentIndex)>();
@@ -1031,11 +1031,11 @@ internal static class ConventionConstructorMappingPlanner
                             mapping.SourceMemberName))
                     {
                         sharedValues.Add(
-                            (mapNew.Count, argumentIndex));
+                            (create.Count, argumentIndex));
                     }
                 }
 
-                mapNew.Add(mapping);
+                create.Add(mapping);
             }
         }
 
@@ -1075,9 +1075,9 @@ internal static class ConventionConstructorMappingPlanner
 
             foreach (var sharedValue in sharedValues)
             {
-                var memberMapping = mapNew[sharedValue.MemberIndex];
+                var memberMapping = create[sharedValue.MemberIndex];
 
-                mapNew[sharedValue.MemberIndex] =
+                create[sharedValue.MemberIndex] =
                     memberMapping with
                     {
                         SourceValueLocalName =
@@ -1092,7 +1092,7 @@ internal static class ConventionConstructorMappingPlanner
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     destination),
                 argumentModels.ToImmutableArray()),
-            mapNew.ToImmutable(),
+            create.ToImmutable(),
             memberMappings.PostMappings);
     }
 
@@ -1215,5 +1215,5 @@ internal static class ConventionConstructorMappingPlanner
 
 internal readonly record struct ConventionConstructorMappingPlan(
     TypeMapperConstructorMappingModel Constructor,
-    ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
-    ImmutableArray<TypeMapperMemberMappingModel> MapNewPostMemberMappings);
+    ImmutableArray<TypeMapperMemberMappingModel> CreateMemberMappings,
+    ImmutableArray<TypeMapperMemberMappingModel> CreatePostMemberMappings);

@@ -5,8 +5,9 @@
 Он сохраняет уже выполненный анализ, чтобы при возвращении к feature не
 повторять его с нуля.
 
-Связанный пункт roadmap: этап 14 в
-[`MAPPING_API_DESIGN_REFINEMENT_PLAN.md`](MAPPING_API_DESIGN_REFINEMENT_PLAN.md).
+Связанное post-v0 направление зафиксировано в разделе «За границей текущего
+плана» документа
+[`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
 
 ## 1. Какие задачи решает reference handling
 

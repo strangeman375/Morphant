@@ -79,10 +79,10 @@ internal static class ConventionMemberMappingPlanner
                 static member => member.Name,
                 StringComparer.Ordinal);
 
-        var mapNew =
+        var create =
             ImmutableArray.CreateBuilder<
                 TypeMapperMemberMappingModel>();
-        var mapExisting =
+        var update =
             ImmutableArray.CreateBuilder<
                 TypeMapperMemberMappingModel>();
         var candidates =
@@ -160,24 +160,24 @@ internal static class ConventionMemberMappingPlanner
                 candidateRequiredMembers[index],
                 SourceValueLocalName: null);
 
-            mapNew.Add(mapping);
+            create.Add(mapping);
 
             if (candidate.CanAssign)
             {
-                mapExisting.Add(mapping);
+                update.Add(mapping);
             }
         }
 
-        var immutableMapExisting = mapExisting.ToImmutable();
+        var immutableUpdate = update.ToImmutable();
 
-        var immutableMapNew = mapNew.ToImmutable();
+        var immutableCreate = create.ToImmutable();
 
         return new ConventionMemberMappingPlan(
-            immutableMapNew,
-            immutableMapExisting,
-            immutableMapNew,
-            immutableMapExisting,
-            immutableMapExisting,
+            immutableCreate,
+            immutableUpdate,
+            immutableCreate,
+            immutableUpdate,
+            immutableUpdate,
             hasUnmappedRequiredMembers,
             HasExplicitCreationOnlyMappings: false,
             HasResultDependentCreationOnlyMappings: false);
@@ -880,29 +880,29 @@ internal static class ConventionMemberMappingPlanner
 }
 
 internal readonly record struct ConventionMemberMappingPlan(
-    ImmutableArray<TypeMapperMemberMappingModel> MapNew,
-    ImmutableArray<TypeMapperMemberMappingModel> MapNewPost,
+    ImmutableArray<TypeMapperMemberMappingModel> Create,
+    ImmutableArray<TypeMapperMemberMappingModel> CreatePost,
     ImmutableArray<TypeMapperMemberMappingModel> MapReplacement,
     ImmutableArray<TypeMapperMemberMappingModel> MapReplacementPost,
-    ImmutableArray<TypeMapperMemberMappingModel> MapExisting,
+    ImmutableArray<TypeMapperMemberMappingModel> Update,
     bool HasUnmappedRequiredMembers,
     bool HasExplicitCreationOnlyMappings,
     bool HasResultDependentCreationOnlyMappings,
     ImmutableArray<string> ConfiguredMemberNames = default)
 {
-    public ConstructorMemberMappingPlan BuildConstructorPlan(
+    public ConstructorInitializationMappingPlan BuildConstructorInitializationPlan(
         bool replacement)
     {
         var initializerMappings = replacement
             ? MapReplacement
-            : MapNew;
+            : Create;
         var postMappings = (replacement
                 ? MapReplacementPost
-                : MapNewPost)
+                : CreatePost)
             .Where(static mapping => mapping.IsResultDependent)
             .ToImmutableArray();
 
-        return new ConstructorMemberMappingPlan(
+        return new ConstructorInitializationMappingPlan(
             initializerMappings,
             postMappings,
             HasUnmappedRequiredMembers,
@@ -910,7 +910,7 @@ internal readonly record struct ConventionMemberMappingPlan(
     }
 }
 
-internal readonly record struct ConstructorMemberMappingPlan(
+internal readonly record struct ConstructorInitializationMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> InitializerMappings,
     ImmutableArray<TypeMapperMemberMappingModel> PostMappings,
     bool HasUnmappedRequiredMembers,

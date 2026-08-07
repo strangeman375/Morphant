@@ -25,16 +25,11 @@ observable behavior или границу поддержки, предварит
 актуализируется нормативный дизайн, а затем при необходимости roadmap, код и
 тесты.
 
-Прежний `Template()`-дизайн не является compatibility target. Его production-
-код не обязан компилироваться, а historical tests — проходить. Полный
-pre-cleanup срез потенциально полезных реализаций, тестовых сценариев и старых
-версий изменённых файлов сохранён вне solution в
-[`reference/legacy-template-design`](reference/legacy-template-design/README.md).
-[`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) восстановлен как
-исторический roadmap. Эти материалы не обслуживаются; удачные решения из них
-переносятся только осознанно и с новой спецификацией. Нельзя тратить работу на
-сохранение старого поведения как такового, но и удалять потенциально полезные
-наработки без отдельного reference-среза нельзя.
+Прежний `Template()`-дизайн не является compatibility target. Его obsolete
+production-код, tests, implementation plan и excluded reference snapshot
+удалены из активного дерева. Историческим источником остаётся Git; удачные
+решения из прежнего дизайна переносятся только осознанно и с новой
+спецификацией, без параллельного обслуживания старого surface.
 
 ## Правила работы по плану
 
@@ -1522,9 +1517,11 @@ Consumer assemblies не ссылаются друг на друга: тольк
 папке существующего `Morphant.Generator.UnitTests.TestAssets`: эта assembly уже
 создаёт необходимую границу, поэтому отдельный project для одного scenario не
 используется. Runtime registration выполняется настоящим
-`Microsoft.Extensions.DependencyInjection`; custom `IServiceProvider` stub
-удалён, а multiple-assembly slice создаёт реальные DI scopes и получает
-generated mapper-ы с их scoped constructor dependency из контейнера.
+`Microsoft.Extensions.DependencyInjection`, подключённым как точечный NuGet-
+пакет без framework reference на `Microsoft.AspNetCore.App`; custom
+`IServiceProvider` stub удалён, а multiple-assembly slice создаёт реальные DI
+scopes и получает generated mapper-ы с их scoped constructor dependency из
+контейнера.
 
 Честная project compilation выявила и закрыла production-дефект внутреннего
 nested-map conversion probe: при `TreatWarningsAsErrors=true` nullable warning,
@@ -1547,6 +1544,12 @@ Focused compile-time integration suite проходит `132/132`; три вын
 unit-спецификации production composition, inheritance composition и public API
 baseline проходят `3/3`. Остальная документационная и migration-часть этапа
 сохраняется без изменений.
+
+Финальная repository cleanup удалила архивный roadmap и excluded snapshot
+прежнего `Template()`-дизайна, завершённый refinement plan и stale внутренний
+словарь `MapNew` / `MapExisting`. Активный generator теперь последовательно
+использует `Create` / `Update`; исторические сравнения остаются только там, где
+они объясняют нормативные решения текущего API.
 
 ## Фаза 6. Поздние отдельные планы
 

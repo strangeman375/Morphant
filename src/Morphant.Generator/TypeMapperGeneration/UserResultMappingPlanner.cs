@@ -390,8 +390,8 @@ internal static class UserResultMappingPlanner
         AddIdentifiers(valueExpression, usedNames);
 
         var hasNullableValueResult =
-            mapping.MapExistingKind ==
-                TypeMapperMapExistingKind.NullableValue &&
+            mapping.UpdateKind ==
+                TypeMapperUpdateKind.NullableValue &&
             !memberMappings.IsEmpty;
         var destinationLocalName = hasNullableValueResult
             ? AllocateName("nullableResult", usedNames)

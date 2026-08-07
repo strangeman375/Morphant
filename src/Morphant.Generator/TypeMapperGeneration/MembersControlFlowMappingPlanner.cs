@@ -133,20 +133,20 @@ internal static class MembersControlFlowMappingPlanner
             };
         }
 
-        TypeMapperControlFlowNode? BuildMapNewLeaf(
+        TypeMapperControlFlowNode? BuildCreateLeaf(
             DeclarativeLeafSyntaxNode leaf)
         {
             return SelectRoot(
                 flatMappings[leaf],
-                mapNew: true);
+                create: true);
         }
 
-        TypeMapperControlFlowNode? BuildMapExistingLeaf(
+        TypeMapperControlFlowNode? BuildUpdateLeaf(
             DeclarativeLeafSyntaxNode leaf)
         {
             return SelectRoot(
                 flatMappings[leaf],
-                mapNew: false);
+                create: false);
         }
 
         if (!DeclarativeControlFlowLowerer.TryBuild(
@@ -161,9 +161,9 @@ internal static class MembersControlFlowMappingPlanner
                 members.ResultParameter,
                 mapping.ResultLocalName,
                 members.TransferScope,
-                BuildMapNewLeaf,
+                BuildCreateLeaf,
                 cancellationToken,
-                out var mapNewRoot) ||
+                out var createRoot) ||
             !DeclarativeControlFlowLowerer.TryBuild(
                 members.Program,
                 members.SemanticModel,
@@ -176,9 +176,9 @@ internal static class MembersControlFlowMappingPlanner
                 members.ResultParameter,
                 "destination",
                 members.TransferScope,
-                BuildMapExistingLeaf,
+                BuildUpdateLeaf,
                 cancellationToken,
-                out var mapExistingRoot))
+                out var updateRoot))
         {
             sharedFactoryHelpers?.Rollback();
             return mapping with
@@ -193,8 +193,8 @@ internal static class MembersControlFlowMappingPlanner
         return representative with
         {
             ControlFlow = new TypeMapperControlFlowMappingModel(
-                mapNewRoot,
-                mapExistingRoot),
+                createRoot,
+                updateRoot),
             HelperMethodDeclarations = helperDeclarations.ToImmutable(),
             UnsupportedExceptionMessage = null
         };
@@ -212,7 +212,7 @@ internal static class MembersControlFlowMappingPlanner
 
         TypeMapperControlFlowNode Apply(
             TypeMapperControlFlowNode node,
-            bool mapNew)
+            bool create)
         {
             if (node.EvaluationContinuation is
                     { } evaluationContinuation)
@@ -221,7 +221,7 @@ internal static class MembersControlFlowMappingPlanner
                 {
                     EvaluationContinuation = Apply(
                         evaluationContinuation,
-                        mapNew)
+                        create)
                 };
             }
 
@@ -234,12 +234,12 @@ internal static class MembersControlFlowMappingPlanner
                             {
                                 Branch = Apply(
                                     section.Branch,
-                                    mapNew)
+                                    create)
                             })
                         .ToImmutableArray(),
                     SwitchContinuation = node.SwitchContinuation is
                         { } continuation
-                        ? Apply(continuation, mapNew)
+                        ? Apply(continuation, create)
                         : null
                 };
             }
@@ -248,8 +248,8 @@ internal static class MembersControlFlowMappingPlanner
             {
                 return node with
                 {
-                    WhenTrue = Apply(node.WhenTrue!, mapNew),
-                    WhenFalse = Apply(node.WhenFalse!, mapNew)
+                    WhenTrue = Apply(node.WhenTrue!, create),
+                    WhenFalse = Apply(node.WhenFalse!, create)
                 };
             }
 
@@ -258,15 +258,15 @@ internal static class MembersControlFlowMappingPlanner
                 return node;
             }
 
-            var replacement = !mapNew &&
-                (leaf.MapNewFactory is not null ||
-                 leaf.MapNewConstructor is not null);
-            var postMappings = mapNew
-                ? memberPlan.MapNewPost
+            var replacement = !create &&
+                (leaf.CreateFactory is not null ||
+                 leaf.CreateConstructor is not null);
+            var postMappings = create
+                ? memberPlan.CreatePost
                 : replacement
                     ? memberPlan.MapReplacementPost
                     : [];
-            var factory = leaf.MapNewFactory;
+            var factory = leaf.CreateFactory;
 
             if (factory is { } factoryValue)
             {
@@ -281,12 +281,12 @@ internal static class MembersControlFlowMappingPlanner
             {
                 Leaf = leaf with
                 {
-                    MapNewFactory = factory,
-                    MapNewMemberMappings = [],
-                    MapNewPostMemberMappings = postMappings,
-                    MapExistingMemberMappings = mapNew || replacement
+                    CreateFactory = factory,
+                    CreateMemberMappings = [],
+                    CreatePostMemberMappings = postMappings,
+                    UpdateMemberMappings = create || replacement
                         ? []
-                        : memberPlan.MapExisting
+                        : memberPlan.Update
                 }
             };
         }
@@ -294,8 +294,8 @@ internal static class MembersControlFlowMappingPlanner
         return template with
         {
             ControlFlow = new TypeMapperControlFlowMappingModel(
-                Apply(controlFlow.MapNewRoot, mapNew: true),
-                Apply(controlFlow.MapExistingRoot, mapNew: false))
+                Apply(controlFlow.CreateRoot, create: true),
+                Apply(controlFlow.UpdateRoot, create: false))
         };
     }
 
@@ -319,7 +319,7 @@ internal static class MembersControlFlowMappingPlanner
                 mapperType,
                 BuildPreviousSubstitution(mapping, hasPrevious: false),
                 mapping.ResultLocalName,
-                static plan => plan.MapNewPost,
+                static plan => plan.CreatePost,
                 cancellationToken,
                 out var createPost) ||
             !TryBuildPostControlFlow(
@@ -339,7 +339,7 @@ internal static class MembersControlFlowMappingPlanner
                 mapperType,
                 BuildPreviousSubstitution(mapping, hasPrevious: true),
                 "destination",
-                static plan => plan.MapExisting,
+                static plan => plan.Update,
                 cancellationToken,
                 out var existingPost))
         {
@@ -349,7 +349,7 @@ internal static class MembersControlFlowMappingPlanner
 
         var createAssignableNames = new HashSet<string>(
             members.Leaves.Values
-                .SelectMany(static plan => plan.MapNewPost)
+                .SelectMany(static plan => plan.CreatePost)
                 .Select(static member =>
                     member.DestinationMemberName),
             StringComparer.Ordinal);
@@ -359,25 +359,25 @@ internal static class MembersControlFlowMappingPlanner
                 .Select(static member =>
                     member.DestinationMemberName),
             StringComparer.Ordinal);
-        TypeMapperControlFlowNode? selectedMapNew = null;
-        TypeMapperControlFlowNode? selectedMapExisting = null;
+        TypeMapperControlFlowNode? selectedCreate = null;
+        TypeMapperControlFlowNode? selectedUpdate = null;
 
         foreach (var flat in flatMappings.Values)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var preparedMapNew = PrepareConstructionRoot(
-                SelectRoot(flat, mapNew: true),
-                mapNew: true,
+            var preparedCreate = PrepareConstructionRoot(
+                SelectRoot(flat, create: true),
+                create: true,
                 createPost,
                 replacementPost,
                 existingPost,
                 createAssignableNames,
                 replacementAssignableNames,
                 mapperType);
-            var preparedMapExisting = PrepareConstructionRoot(
-                SelectRoot(flat, mapNew: false),
-                mapNew: false,
+            var preparedUpdate = PrepareConstructionRoot(
+                SelectRoot(flat, create: false),
+                create: false,
                 createPost,
                 replacementPost,
                 existingPost,
@@ -385,34 +385,34 @@ internal static class MembersControlFlowMappingPlanner
                 replacementAssignableNames,
                 mapperType);
 
-            if (selectedMapNew is null)
+            if (selectedCreate is null)
             {
-                selectedMapNew = preparedMapNew;
-                selectedMapExisting = preparedMapExisting;
+                selectedCreate = preparedCreate;
+                selectedUpdate = preparedUpdate;
                 continue;
             }
 
             if (!AreEquivalentConstruction(
-                    selectedMapNew,
-                    preparedMapNew) ||
+                    selectedCreate,
+                    preparedCreate) ||
                 !AreEquivalentConstruction(
-                    selectedMapExisting!,
-                    preparedMapExisting))
+                    selectedUpdate!,
+                    preparedUpdate))
             {
                 controlFlow = null!;
                 return false;
             }
         }
 
-        if (selectedMapNew is null || selectedMapExisting is null)
+        if (selectedCreate is null || selectedUpdate is null)
         {
             controlFlow = null!;
             return false;
         }
 
         controlFlow = new TypeMapperControlFlowMappingModel(
-            selectedMapNew,
-            selectedMapExisting);
+            selectedCreate,
+            selectedUpdate);
         return true;
 
         bool TryBuildPostControlFlow(
@@ -450,7 +450,7 @@ internal static class MembersControlFlowMappingPlanner
 
     private static TypeMapperControlFlowNode PrepareConstructionRoot(
         TypeMapperControlFlowNode node,
-        bool mapNew,
+        bool create,
         TypeMapperMemberControlFlowNode createPost,
         TypeMapperMemberControlFlowNode replacementPost,
         TypeMapperMemberControlFlowNode existingPost,
@@ -464,7 +464,7 @@ internal static class MembersControlFlowMappingPlanner
             {
                 EvaluationContinuation = PrepareConstructionRoot(
                     evaluationContinuation,
-                    mapNew,
+                    create,
                     createPost,
                     replacementPost,
                     existingPost,
@@ -483,7 +483,7 @@ internal static class MembersControlFlowMappingPlanner
                         {
                             Branch = PrepareConstructionRoot(
                                 section.Branch,
-                                mapNew,
+                                create,
                                 createPost,
                                 replacementPost,
                                 existingPost,
@@ -496,7 +496,7 @@ internal static class MembersControlFlowMappingPlanner
                     { } continuation
                     ? PrepareConstructionRoot(
                         continuation,
-                        mapNew,
+                        create,
                         createPost,
                         replacementPost,
                         existingPost,
@@ -513,7 +513,7 @@ internal static class MembersControlFlowMappingPlanner
             {
                 WhenTrue = PrepareConstructionRoot(
                     node.WhenTrue!,
-                    mapNew,
+                    create,
                     createPost,
                     replacementPost,
                     existingPost,
@@ -522,7 +522,7 @@ internal static class MembersControlFlowMappingPlanner
                     mapperType),
                 WhenFalse = PrepareConstructionRoot(
                     node.WhenFalse!,
-                    mapNew,
+                    create,
                     createPost,
                     replacementPost,
                     existingPost,
@@ -537,10 +537,10 @@ internal static class MembersControlFlowMappingPlanner
             return node;
         }
 
-        var replacement = !mapNew &&
-            (leaf.MapNewFactory is not null ||
-             leaf.MapNewConstructor is not null);
-        var post = mapNew
+        var replacement = !create &&
+            (leaf.CreateFactory is not null ||
+             leaf.CreateConstructor is not null);
+        var post = create
             ? createPost
             : replacement
                 ? replacementPost
@@ -548,7 +548,7 @@ internal static class MembersControlFlowMappingPlanner
         var assignableNames = replacement
             ? replacementAssignableNames
             : createAssignableNames;
-        var factory = leaf.MapNewFactory;
+        var factory = leaf.CreateFactory;
 
         if (factory is { } factoryValue)
         {
@@ -563,15 +563,15 @@ internal static class MembersControlFlowMappingPlanner
         {
             Leaf = leaf with
             {
-                MapNewFactory = factory,
-                MapNewMemberMappings = mapNew || replacement
-                    ? leaf.MapNewMemberMappings.Where(member =>
+                CreateFactory = factory,
+                CreateMemberMappings = create || replacement
+                    ? leaf.CreateMemberMappings.Where(member =>
                             !assignableNames.Contains(
                                 member.DestinationMemberName))
                         .ToImmutableArray()
                     : [],
-                MapNewPostMemberMappings = [],
-                MapExistingMemberMappings = [],
+                CreatePostMemberMappings = [],
+                UpdateMemberMappings = [],
                 PostMemberControlFlow = post
             }
         };
@@ -681,25 +681,25 @@ internal static class MembersControlFlowMappingPlanner
         TypeMapperMappingModel right)
     {
         return StringComparer.Ordinal.Equals(
-                   left.MapNewDirectExpression,
-                   right.MapNewDirectExpression) &&
+                   left.CreateDirectExpression,
+                   right.CreateDirectExpression) &&
                StringComparer.Ordinal.Equals(
-                   left.MapExistingDirectExpression,
-                   right.MapExistingDirectExpression) &&
+                   left.UpdateDirectExpression,
+                   right.UpdateDirectExpression) &&
                Nullable.Equals(
-                   left.MapNewFactory,
-                   right.MapNewFactory) &&
+                   left.CreateFactory,
+                   right.CreateFactory) &&
                AreEquivalentConstructor(
-                   left.MapNewConstructor,
-                   right.MapNewConstructor) &&
-               left.MapNewMemberMappings.SequenceEqual(
-                   right.MapNewMemberMappings) &&
+                   left.CreateConstructor,
+                   right.CreateConstructor) &&
+               left.CreateMemberMappings.SequenceEqual(
+                   right.CreateMemberMappings) &&
                StringComparer.Ordinal.Equals(
-                   left.MapNewUnsupportedExceptionMessage,
-                   right.MapNewUnsupportedExceptionMessage) &&
+                   left.CreateUnsupportedExceptionMessage,
+                   right.CreateUnsupportedExceptionMessage) &&
                StringComparer.Ordinal.Equals(
-                   left.MapExistingUnsupportedExceptionMessage,
-                   right.MapExistingUnsupportedExceptionMessage) &&
+                   left.UpdateUnsupportedExceptionMessage,
+                   right.UpdateUnsupportedExceptionMessage) &&
                StringComparer.Ordinal.Equals(
                    left.UnsupportedExceptionMessage,
                    right.UnsupportedExceptionMessage);
@@ -723,21 +723,21 @@ internal static class MembersControlFlowMappingPlanner
 
     private static TypeMapperControlFlowNode SelectRoot(
         TypeMapperMappingModel mapping,
-        bool mapNew)
+        bool create)
     {
         if (mapping.ControlFlow is { } controlFlow)
         {
-            return mapNew
-                ? controlFlow.MapNewRoot
-                : controlFlow.MapExistingRoot;
+            return create
+                ? controlFlow.CreateRoot
+                : controlFlow.UpdateRoot;
         }
 
-        var leaf = mapNew
+        var leaf = create
             ? mapping
             : mapping with
             {
-                MapNewFactory = null,
-                MapNewConstructor = null
+                CreateFactory = null,
+                CreateConstructor = null
             };
 
         return new TypeMapperControlFlowNode(

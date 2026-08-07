@@ -103,19 +103,19 @@ internal readonly record struct EffectiveMappingSettings(
     public bool IsUnmappedMemberValidationValid =>
         UnmappedMemberValidation.HasValue;
 
-    public bool SupportsMapNew =>
+    public bool SupportsCreate =>
         MappingMode is { } mappingMode &&
         (mappingMode & MappingModeValue.Create) != 0;
 
-    public bool SupportsMapExisting =>
+    public bool SupportsUpdate =>
         MappingMode is { } mappingMode &&
         (mappingMode & MappingModeValue.Update) != 0;
 
     public bool HasExecutableOperation =>
         IsMappingModeValid &&
         IsNullSourceHandlingValid &&
-        (SupportsMapNew ||
-         SupportsMapExisting &&
+        (SupportsCreate ||
+         SupportsUpdate &&
          IsNullDestinationHandlingValid);
 
     public static EffectiveMappingSettings Resolve(

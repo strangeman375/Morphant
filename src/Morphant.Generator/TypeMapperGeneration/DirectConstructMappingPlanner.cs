@@ -152,7 +152,7 @@ internal static class DirectConstructMappingPlanner
         {
             var postConstructionMembers = hasPrevious
                 ? memberMappings.MapReplacementPost
-                : memberMappings.MapNewPost;
+                : memberMappings.CreatePost;
             PreviousExpressionSubstitution? previousSubstitution =
                 previousParameter is null
                 ? null
@@ -231,25 +231,25 @@ internal static class DirectConstructMappingPlanner
                     valueExpression);
             var leaf = mapping with
             {
-                MapNewDirectExpression = null,
-                MapExistingDirectExpression = null,
-                MapNewFactory = factory,
-                MapNewConstructor = null,
-                MapNewMemberMappings = [],
-                MapNewPostMemberMappings = postConstructionMembers,
-                MapExistingMemberMappings = [],
+                CreateDirectExpression = null,
+                UpdateDirectExpression = null,
+                CreateFactory = factory,
+                CreateConstructor = null,
+                CreateMemberMappings = [],
+                CreatePostMemberMappings = postConstructionMembers,
+                UpdateMemberMappings = [],
                 ControlFlow = null,
-                MapNewUnsupportedExceptionMessage = null,
-                MapExistingUnsupportedExceptionMessage = null,
+                CreateUnsupportedExceptionMessage = null,
+                UpdateUnsupportedExceptionMessage = null,
                 UnsupportedExceptionMessage = null
             };
 
             return Leaf(leaf);
         }
 
-        var mapNewRoot = BuildUserResultLeaf(hasPrevious: false);
+        var createRoot = BuildUserResultLeaf(hasPrevious: false);
 
-        if (mapNewRoot is null)
+        if (createRoot is null)
         {
             if (allocatedHelperName is not null)
             {
@@ -260,14 +260,14 @@ internal static class DirectConstructMappingPlanner
                 UnsupportedConstructMessage);
         }
 
-        TypeMapperControlFlowNode? mapExistingRoot =
+        TypeMapperControlFlowNode? updateRoot =
             configuration.Form == ConstructConfigurationForm.Source
                 ? BuildPreviousLeaf(
                     mapping,
-                    memberMappings.MapExisting)
+                    memberMappings.Update)
                 : BuildUserResultLeaf(hasPrevious: true);
 
-        if (mapExistingRoot is null)
+        if (updateRoot is null)
         {
             if (allocatedHelperName is not null)
             {
@@ -280,8 +280,8 @@ internal static class DirectConstructMappingPlanner
 
         return new DirectConstructMappingResult(
             new TypeMapperControlFlowMappingModel(
-                mapNewRoot,
-                mapExistingRoot),
+                createRoot,
+                updateRoot),
             helperDeclarations,
             UnsupportedMessage: null);
     }
@@ -414,14 +414,14 @@ internal static class DirectConstructMappingPlanner
     {
         var leaf = mapping with
         {
-            MapNewFactory = null,
-            MapNewConstructor = null,
-            MapNewMemberMappings = [],
-            MapNewPostMemberMappings = [],
-            MapExistingMemberMappings = memberMappings,
+            CreateFactory = null,
+            CreateConstructor = null,
+            CreateMemberMappings = [],
+            CreatePostMemberMappings = [],
+            UpdateMemberMappings = memberMappings,
             ControlFlow = null,
-            MapNewUnsupportedExceptionMessage = null,
-            MapExistingUnsupportedExceptionMessage = null,
+            CreateUnsupportedExceptionMessage = null,
+            UpdateUnsupportedExceptionMessage = null,
             UnsupportedExceptionMessage = null
         };
 

@@ -1,9 +1,11 @@
 # Новый дизайн mapping API Morphant
 
-Статус документа: согласованный рабочий дизайн, зафиксированный перед началом
-переработки реализации. Документ описывает целевой API. Текущий код и
-`IMPLEMENTATION_PLAN.md` отражает прежний `Template()`-дизайн; переход
-реализации выполняется поэтапно по актуальному roadmap.
+Статус документа: согласованный нормативный дизайн текущего mapping API.
+Реализация core v0 следует этому контракту; актуальный прогресс и оставшиеся
+границы фиксирует
+[`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
+Прежний `Template()`-дизайн упоминается только в сравнительном аудите там, где
+он объясняет решения текущего API, и не является compatibility target.
 
 ## 1. Цель переработки
 
@@ -3072,61 +3074,16 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
 - immutable `Update` не реконструируется автоматически: статически пустая
   existing-ветка сохраняет identity и возвращает previous без изменений.
 
-## 17. Детали, которые ещё нужно закрепить перед реализацией
+## 17. Статус реализации и оставшиеся границы
 
-Этапы 1–8 и 11 согласованы. Pair eligibility, capability/settings matrix,
-application-wide deterministic lookup и граница immutable `Update`
-зафиксированы: статически пустой existing-path является допустимым no-op, а
-immutable replacement выполняется только через previous-aware `Construct`
-либо `Convert`. Автоматическая условная reconstruction оставлена отдельной
-post-v0 setting. Этапы 9, 9A и 10 —
-collections, `IncludeMembers`/convention flattening и patch/merge — также
-сознательно отложены за границу v0; исследование
-null-assignment policy сохранено отдельно и не меняет текущий default обычного
-member assignment. Root type parameters и специальные tuple,
-sequence/collection/buffer, delegate, expression-tree, deferred/async и
-push-sequence categories также остаются post-v0. Этап 12 также отложен:
-отдельного per-call contract в v0 нет, а будущий tuple-source должен покрыть
-multi-source mapping и явно передаваемый strongly typed state без изменения
-базовых mapper interfaces. Этап 13 также отложен: runtime lookup остаётся
-exact-pair, typed `IncludeBase` не включает dispatch, а исследование explicit
-derived links сохранено отдельно. Keyed mappings оставлены совместимым
-extension path. Этап 14 также отложен: `MappingScope` сохраняет место для
-будущего opt-in reference cache, но v0 не сохраняет shared identity и не
-обрабатывает cycles автоматически. Этап 15 — Projection — однозначно пропущен
-до после v0 без дополнительного исследования и без требований к внутренней
-plan model текущей реализации. Этап 16 ограничил v0-composition registrations
-текущего mapper-level и явной mapper-иерархией: root settings подключаются
-через `base.Configure(builder)`, а map-level settings и member rules конкретной
-base pair — отдельным typed `IncludeBase`; fragments и cross-assembly plan
-inheritance остаются post-v0.
-Этап 17 сохранил exact constructed generic pairs
-и generic mapper contracts, но application dispatch видит только явно
-зарегистрированные closed mappings; bare root type parameters, open-generic и
-runtime-type lookup, tuple/multi-source и неявный state propagation остаются
-post-v0. Этап 18 закрыл result-dependent member rules двумя всегда
-генерируемыми `Members`-перегрузками, из которых локально выбирается одна. Вторая
-предоставляет фактический non-null result без presence-wrapper, но обе формы
-остаются одним DSL и могут объединяться через typed `IncludeBase`. Фаза каждого
-rule определяется его фактическими dependencies; snapshot и порядок
-независимых rules не входят в контракт. Hooks и middleware гарантированно
-остаются в roadmap, но сознательно отложены до после v0.
-Межэтапный аудит прежнего дизайна дополнительно закрепил общий expression
-graph structured `Construct` / `Members`, member-plan `with`, typed markers и
-полный carry-forward generated/convention/settings contracts. `IncludeMembers`
-возвращён в обязательный post-v0 roadmap. Существенных функциональных
-преимуществ единого `Template()` кроме компактности смешанного call site после
-этого не осталось. Этап 19 закрепил итоговый naming: `Create` / `Update`,
-`MappingMode.CreateAndUpdate`, `Construct` / `Members` / `Convert`,
-`Option<T>`, `MemberSelection` и generated construction types. Рабочих public
-names после naming-аудита не осталось.
+Согласованный core v0 реализован. Текущее состояние migration audit,
+документации и compile-time integration slice фиксируется в
+[`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md), а
+независимая оценка полноты сценариев — в
+[`MAPPING_API_FINAL_AUDIT.md`](MAPPING_API_FINAL_AUDIT.md).
 
-До миграции production API отдельного решения либо реализационного
-планирования требуют:
-
-- порядок миграции текущего `Template()` implementation и тестов;
-- обновление `IMPLEMENTATION_PLAN.md`, XML-документации и user-facing docs;
-- diagnostic IDs, сообщения и точная фаза их добавления.
-
-До отдельного согласования оставшиеся детали не должны молча определяться
-удобством текущей реализации.
+Compile-time diagnostics и observable runtime failures остаются отдельными
+поздними планами. Collections, projection, polymorphism, reference handling и
+остальные перечисленные выше возможности остаются post-v0 направлениями и не
+расширяют текущий контракт неявно. До отдельного продуктового решения их API и
+поведение не должны определяться удобством существующей реализации.

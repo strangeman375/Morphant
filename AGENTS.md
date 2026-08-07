@@ -4,15 +4,11 @@
 
 - `MAPPING_API_IMPLEMENTATION_PLAN.md` is the current agreed roadmap and
   progress record. Read it before selecting the next work slice.
-- `IMPLEMENTATION_PLAN.md` is the archived roadmap for the superseded
-  `Template()` design. Keep it for history; do not use it to select work.
-- The superseded `Template()` design is not a compatibility target. Do not
-  keep its production code compiling, update its snapshots, or run its tests.
-  Its complete pre-cleanup reference slice lives under
-  `reference/legacy-template-design`; keep that slice outside all projects and
-  do not maintain it. Before deleting future obsolete code, preserve anything
-  with plausible algorithmic, testing, or historical value in a similarly
-  excluded reference location.
+- Superseded designs are not compatibility targets. Remove their obsolete
+  production code, tests, documents and excluded snapshots from the active
+  tree instead of maintaining parallel historical slices. Git history is the
+  historical reference; carry an old idea forward only by expressing it in
+  the current design, implementation or tests.
 - Use the next incomplete plan item by default, but treat the plan as a working
   document rather than an immutable specification. If new information suggests
   a better sequence or scope, explain the proposed change and agree it with the

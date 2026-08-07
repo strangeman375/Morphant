@@ -80,10 +80,10 @@ internal static class StructuredConstructMappingPlanner
                 new DeclarativeNestedMapUsageRegistry();
             var replacement = previousAvailable == true;
             var constructorMembers =
-                memberMappings.BuildConstructorPlan(replacement);
+                memberMappings.BuildConstructorInitializationPlan(replacement);
             var createdPostMembers = replacement
                 ? memberMappings.MapReplacementPost
-                : memberMappings.MapNewPost;
+                : memberMappings.CreatePost;
             PreviousExpressionSubstitution? previousSubstitution =
                 previousParameter is not null &&
                 previousAvailable is { } hasPrevious
@@ -350,7 +350,7 @@ internal static class StructuredConstructMappingPlanner
                     plannedLeaf,
                     mapping,
                     memberMappings,
-                    mapNew: previousAvailable != true);
+                    create: previousAvailable != true);
             }
 
             return DeclarativeControlFlowLowerer.TryBuild(
@@ -387,8 +387,8 @@ internal static class StructuredConstructMappingPlanner
                 : null;
         }
 
-        TypeMapperControlFlowNode mapNewRoot;
-        TypeMapperControlFlowNode mapExistingRoot;
+        TypeMapperControlFlowNode createRoot;
+        TypeMapperControlFlowNode updateRoot;
 
         if (configuration.Form == ConstructConfigurationForm.Source)
         {
@@ -404,18 +404,18 @@ internal static class StructuredConstructMappingPlanner
                     UnsupportedConstructMessage);
             }
 
-            mapNewRoot = plannedRoot;
-            mapExistingRoot = BuildPreviousLeaf(
+            createRoot = plannedRoot;
+            updateRoot = BuildPreviousLeaf(
                 mapping,
                 memberMappings,
-                mapNew: false);
+                create: false);
         }
         else
         {
-            var mapNewPlan = BuildPlan(previousAvailable: false);
-            var mapExistingPlan = BuildPlan(previousAvailable: true);
+            var createPlan = BuildPlan(previousAvailable: false);
+            var updatePlan = BuildPlan(previousAvailable: true);
 
-            if (mapNewPlan is null || mapExistingPlan is null)
+            if (createPlan is null || updatePlan is null)
             {
                 if (ownsFactoryHelperRegistry)
                 {
@@ -425,14 +425,14 @@ internal static class StructuredConstructMappingPlanner
                     UnsupportedConstructMessage);
             }
 
-            mapNewRoot = mapNewPlan;
-            mapExistingRoot = mapExistingPlan;
+            createRoot = createPlan;
+            updateRoot = updatePlan;
         }
 
         return new StructuredConstructMappingResult(
             new TypeMapperControlFlowMappingModel(
-                mapNewRoot,
-                mapExistingRoot),
+                createRoot,
+                updateRoot),
             ownsFactoryHelperRegistry
                 ? factoryHelperRegistry.HelperMethodDeclarations
                 : [],
@@ -754,7 +754,7 @@ internal static class StructuredConstructMappingPlanner
         ITypeSymbol sourceType,
         INamedTypeSymbol destination,
         MappingPairCapabilities capabilities,
-        ConstructorMemberMappingPlan memberMappings,
+        ConstructorInitializationMappingPlan memberMappings,
         ConstructorSelectionValue? constructorSelection,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -920,7 +920,7 @@ internal static class StructuredConstructMappingPlanner
             ITypeSymbol sourceType,
             INamedTypeSymbol destination,
             MappingPairCapabilities capabilities,
-            ConstructorMemberMappingPlan memberMappings,
+            ConstructorInitializationMappingPlan memberMappings,
             ConstructorSelectionValue? constructorSelection,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
@@ -1024,7 +1024,7 @@ internal static class StructuredConstructMappingPlanner
             ImmutableArray<StructuredConstructorParameterRule> rules,
             ImmutableArray<ConventionReadableMember> sourceMembers,
             INamedTypeSymbol destination,
-            ConstructorMemberMappingPlan memberMappings,
+            ConstructorInitializationMappingPlan memberMappings,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
             SemanticModel semanticModel,
@@ -1452,7 +1452,7 @@ internal static class StructuredConstructMappingPlanner
         StructuredConstructPlanNode node,
         TypeMapperMappingModel mapping,
         ConventionMemberMappingPlan memberMappings,
-        bool mapNew)
+        bool create)
     {
         var leaf = (StructuredConstructLeafNode)node;
 
@@ -1467,15 +1467,15 @@ internal static class StructuredConstructMappingPlanner
                     mapping,
                     memberMappings,
                     factory,
-                    mapNew),
+                    create),
             StructuredConstructLeafKind.Previous =>
                 BuildPreviousLeaf(
                     mapping,
                     memberMappings,
-                    mapNew),
+                    create),
             _ => BuildUnsupportedLeaf(
                 mapping,
-                mapNew,
+                create,
                 leaf.UnsupportedMessage ?? UnsupportedConstructMessage)
         };
     }
@@ -1484,20 +1484,20 @@ internal static class StructuredConstructMappingPlanner
         TypeMapperMappingModel mapping,
         ConventionMemberMappingPlan memberMappings,
         TypeMapperFactoryMappingModel factory,
-        bool mapNew)
+        bool create)
     {
         var leaf = mapping with
         {
-            MapNewFactory = factory,
-            MapNewConstructor = null,
-            MapNewMemberMappings = [],
-            MapNewPostMemberMappings = mapNew
-                ? memberMappings.MapNewPost
+            CreateFactory = factory,
+            CreateConstructor = null,
+            CreateMemberMappings = [],
+            CreatePostMemberMappings = create
+                ? memberMappings.CreatePost
                 : memberMappings.MapReplacementPost,
-            MapExistingMemberMappings = [],
+            UpdateMemberMappings = [],
             ControlFlow = null,
-            MapNewUnsupportedExceptionMessage = null,
-            MapExistingUnsupportedExceptionMessage = null,
+            CreateUnsupportedExceptionMessage = null,
+            UpdateUnsupportedExceptionMessage = null,
             UnsupportedExceptionMessage = null
         };
 
@@ -1516,15 +1516,15 @@ internal static class StructuredConstructMappingPlanner
     {
         var leaf = mapping with
         {
-            MapNewConstructor = constructor.Constructor,
-            MapNewMemberMappings =
-                constructor.MapNewMemberMappings,
-            MapNewPostMemberMappings =
-                constructor.MapNewPostMemberMappings,
-            MapExistingMemberMappings = [],
+            CreateConstructor = constructor.Constructor,
+            CreateMemberMappings =
+                constructor.CreateMemberMappings,
+            CreatePostMemberMappings =
+                constructor.CreatePostMemberMappings,
+            UpdateMemberMappings = [],
             ControlFlow = null,
-            MapNewUnsupportedExceptionMessage = null,
-            MapExistingUnsupportedExceptionMessage = null,
+            CreateUnsupportedExceptionMessage = null,
+            UpdateUnsupportedExceptionMessage = null,
             UnsupportedExceptionMessage = null
         };
 
@@ -1540,25 +1540,25 @@ internal static class StructuredConstructMappingPlanner
     private static TypeMapperControlFlowNode BuildPreviousLeaf(
         TypeMapperMappingModel mapping,
         ConventionMemberMappingPlan memberMappings,
-        bool mapNew)
+        bool create)
     {
-        if (mapNew)
+        if (create)
         {
             return BuildUnsupportedLeaf(
                 mapping,
-                mapNew: true,
+                create: true,
                 UnavailablePreviousMessage);
         }
 
         var leaf = mapping with
         {
-            MapNewConstructor = null,
-            MapNewMemberMappings = [],
-            MapNewPostMemberMappings = [],
-            MapExistingMemberMappings = memberMappings.MapExisting,
+            CreateConstructor = null,
+            CreateMemberMappings = [],
+            CreatePostMemberMappings = [],
+            UpdateMemberMappings = memberMappings.Update,
             ControlFlow = null,
-            MapNewUnsupportedExceptionMessage = null,
-            MapExistingUnsupportedExceptionMessage = null,
+            CreateUnsupportedExceptionMessage = null,
+            UpdateUnsupportedExceptionMessage = null,
             UnsupportedExceptionMessage = null
         };
 
@@ -1573,16 +1573,16 @@ internal static class StructuredConstructMappingPlanner
 
     private static TypeMapperControlFlowNode BuildUnsupportedLeaf(
         TypeMapperMappingModel mapping,
-        bool mapNew,
+        bool create,
         string message)
     {
         var leaf = mapping with
         {
             ControlFlow = null,
-            MapNewUnsupportedExceptionMessage =
-                mapNew ? message : null,
-            MapExistingUnsupportedExceptionMessage =
-                mapNew ? null : message,
+            CreateUnsupportedExceptionMessage =
+                create ? message : null,
+            UpdateUnsupportedExceptionMessage =
+                create ? null : message,
             UnsupportedExceptionMessage = null
         };
 

@@ -78,16 +78,16 @@ internal static class DeclarativeControlFlowLowerer
         {
             var leafMapping = mapping with
             {
-                MapNewDirectExpression = null,
-                MapExistingDirectExpression = null,
-                MapNewFactory = null,
-                MapNewConstructor = null,
-                MapNewMemberMappings = [],
-                MapNewPostMemberMappings = [],
-                MapExistingMemberMappings = buildLeaf(leaf),
+                CreateDirectExpression = null,
+                UpdateDirectExpression = null,
+                CreateFactory = null,
+                CreateConstructor = null,
+                CreateMemberMappings = [],
+                CreatePostMemberMappings = [],
+                UpdateMemberMappings = buildLeaf(leaf),
                 ControlFlow = null,
-                MapNewUnsupportedExceptionMessage = null,
-                MapExistingUnsupportedExceptionMessage = null,
+                CreateUnsupportedExceptionMessage = null,
+                UpdateUnsupportedExceptionMessage = null,
                 UnsupportedExceptionMessage = null,
                 PostMemberControlFlow = null
             };
@@ -710,7 +710,7 @@ internal static class DeclarativeControlFlowLowerer
             node.WhenFalse is { } whenFalse
                 ? ConvertMemberControlFlow(whenFalse)
                 : null,
-            node.Leaf?.MapExistingMemberMappings ?? [],
+            node.Leaf?.UpdateMemberMappings ?? [],
             node.ThrowExpression,
             node.Leaf?.UnsupportedExceptionMessage,
             node.SwitchExpression,
@@ -992,7 +992,7 @@ internal static class DeclarativeControlFlowLowerer
             names.Add(leaf.NonNullSourceName);
             names.Add(leaf.ResultLocalName);
 
-            if (leaf.MapNewFactory is { } factory)
+            if (leaf.CreateFactory is { } factory)
             {
                 names.Add(factory.DestinationLocalName);
 
@@ -1002,7 +1002,7 @@ internal static class DeclarativeControlFlowLowerer
                 }
             }
 
-            if (leaf.MapNewConstructor is { } constructor)
+            if (leaf.CreateConstructor is { } constructor)
             {
                 foreach (var argument in constructor.Arguments)
                 {
@@ -1013,9 +1013,9 @@ internal static class DeclarativeControlFlowLowerer
                 }
             }
 
-            foreach (var member in leaf.MapNewMemberMappings
-                         .AddRange(leaf.MapNewPostMemberMappings)
-                         .AddRange(leaf.MapExistingMemberMappings))
+            foreach (var member in leaf.CreateMemberMappings
+                         .AddRange(leaf.CreatePostMemberMappings)
+                         .AddRange(leaf.UpdateMemberMappings))
             {
                 if (member.SourceValueLocalName is { } sourceLocal)
                 {
@@ -1178,16 +1178,16 @@ internal static class DeclarativeControlFlowLowerer
 
         return mapping with
         {
-            MapNewDirectExpression = mapping.MapNewDirectExpression is
-                { } mapNewDirect
-                ? RenameTokens(mapNewDirect, names)
+            CreateDirectExpression = mapping.CreateDirectExpression is
+                { } createDirect
+                ? RenameTokens(createDirect, names)
                 : null,
-            MapExistingDirectExpression =
-                mapping.MapExistingDirectExpression is
-                    { } mapExistingDirect
-                    ? RenameTokens(mapExistingDirect, names)
+            UpdateDirectExpression =
+                mapping.UpdateDirectExpression is
+                    { } updateDirect
+                    ? RenameTokens(updateDirect, names)
                     : null,
-            MapNewFactory = mapping.MapNewFactory is { } factory
+            CreateFactory = mapping.CreateFactory is { } factory
                 ? factory with
                 {
                     ValueExpression = RenameTokens(
@@ -1195,7 +1195,7 @@ internal static class DeclarativeControlFlowLowerer
                         names)
                 }
                 : null,
-            MapNewConstructor = mapping.MapNewConstructor is
+            CreateConstructor = mapping.CreateConstructor is
                 { } constructor
                 ? constructor with
                 {
@@ -1221,13 +1221,13 @@ internal static class DeclarativeControlFlowLowerer
                         .ToImmutableArray()
                 }
                 : null,
-            MapNewMemberMappings = mapping.MapNewMemberMappings
+            CreateMemberMappings = mapping.CreateMemberMappings
                 .Select(RenameMember)
                 .ToImmutableArray(),
-            MapNewPostMemberMappings = mapping.MapNewPostMemberMappings
+            CreatePostMemberMappings = mapping.CreatePostMemberMappings
                 .Select(RenameMember)
                 .ToImmutableArray(),
-            MapExistingMemberMappings = mapping.MapExistingMemberMappings
+            UpdateMemberMappings = mapping.UpdateMemberMappings
                 .Select(RenameMember)
                 .ToImmutableArray()
         };
@@ -1247,7 +1247,7 @@ internal static class DeclarativeControlFlowLowerer
             TypeMapperDependencyExpressionNodeModel node) =>
             node with
             {
-                Template = RenameTokens(node.Template, names),
+                ExpressionTemplate = RenameTokens(node.ExpressionTemplate, names),
                 Children = node.Children.Select(child =>
                         child with
                         {
@@ -1350,22 +1350,22 @@ internal static class DeclarativeControlFlowLowerer
             yield break;
         }
 
-        if (leaf.MapNewDirectExpression is { } mapNewDirect)
+        if (leaf.CreateDirectExpression is { } createDirect)
         {
-            yield return mapNewDirect;
+            yield return createDirect;
         }
 
-        if (leaf.MapExistingDirectExpression is { } mapExistingDirect)
+        if (leaf.UpdateDirectExpression is { } updateDirect)
         {
-            yield return mapExistingDirect;
+            yield return updateDirect;
         }
 
-        if (leaf.MapNewFactory is { } factory)
+        if (leaf.CreateFactory is { } factory)
         {
             yield return factory.ValueExpression;
         }
 
-        if (leaf.MapNewConstructor is { } constructor)
+        if (leaf.CreateConstructor is { } constructor)
         {
             foreach (var argument in constructor.Arguments)
             {
@@ -1376,9 +1376,9 @@ internal static class DeclarativeControlFlowLowerer
             }
         }
 
-        foreach (var member in leaf.MapNewMemberMappings
-                     .AddRange(leaf.MapNewPostMemberMappings)
-                     .AddRange(leaf.MapExistingMemberMappings))
+        foreach (var member in leaf.CreateMemberMappings
+                     .AddRange(leaf.CreatePostMemberMappings)
+                     .AddRange(leaf.UpdateMemberMappings))
         {
             if (member.ExplicitValueExpression is { } expression)
             {

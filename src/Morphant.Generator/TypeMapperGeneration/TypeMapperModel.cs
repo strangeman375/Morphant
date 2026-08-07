@@ -33,23 +33,23 @@ internal readonly record struct TypeMapperMappingModel
     bool SourceCanBeNull,
     bool SourceIsNullableValue,
     bool DestinationCanBeNull,
-    string? MapNewDirectExpression,
-    string? MapExistingDirectExpression,
-    TypeMapperFactoryMappingModel? MapNewFactory,
-    TypeMapperConstructorMappingModel? MapNewConstructor,
-    TypeMapperMapExistingKind MapExistingKind,
-    ImmutableArray<TypeMapperMemberMappingModel> MapNewMemberMappings,
-    ImmutableArray<TypeMapperMemberMappingModel> MapNewPostMemberMappings,
-    ImmutableArray<TypeMapperMemberMappingModel> MapExistingMemberMappings,
+    string? CreateDirectExpression,
+    string? UpdateDirectExpression,
+    TypeMapperFactoryMappingModel? CreateFactory,
+    TypeMapperConstructorMappingModel? CreateConstructor,
+    TypeMapperUpdateKind UpdateKind,
+    ImmutableArray<TypeMapperMemberMappingModel> CreateMemberMappings,
+    ImmutableArray<TypeMapperMemberMappingModel> CreatePostMemberMappings,
+    ImmutableArray<TypeMapperMemberMappingModel> UpdateMemberMappings,
     TypeMapperControlFlowMappingModel? ControlFlow = null,
     TypeMapperManualMappingModel? ManualMapping = null,
-    string? MapNewUnsupportedExceptionMessage = null,
-    string? MapExistingUnsupportedExceptionMessage = null,
+    string? CreateUnsupportedExceptionMessage = null,
+    string? UpdateUnsupportedExceptionMessage = null,
     string? UnsupportedExceptionMessage = null,
     TypeMapperMemberControlFlowNode? PostMemberControlFlow = null,
     EffectiveMappingSettings EffectiveSettings = default,
-    string? MapNewImplMethodName = null,
-    string? MapExistingImplMethodName = null,
+    string? CreateImplMethodName = null,
+    string? UpdateImplMethodName = null,
     ImmutableArray<string> HelperMethodDeclarations = default
 )
 {
@@ -78,7 +78,7 @@ internal readonly record struct TypeMapperConstructorMappingModel
     ImmutableArray<TypeMapperLocalValueModel> ValueLocals = default
 );
 
-internal enum TypeMapperMapExistingKind
+internal enum TypeMapperUpdateKind
 {
     Unsupported,
     Reference,
@@ -115,8 +115,8 @@ internal readonly record struct TypeMapperMemberMappingModel
 
 internal sealed record TypeMapperControlFlowMappingModel
 (
-    TypeMapperControlFlowNode MapNewRoot,
-    TypeMapperControlFlowNode MapExistingRoot
+    TypeMapperControlFlowNode CreateRoot,
+    TypeMapperControlFlowNode UpdateRoot
 );
 
 internal readonly record struct TypeMapperLocalValueModel
@@ -200,13 +200,13 @@ internal sealed record TypeMapperDependencyExpressionNodeModel
     string Key,
     string ValueTypeName,
     bool CanMaterialize,
-    string Template,
+    string ExpressionTemplate,
     ImmutableArray<TypeMapperDependencyExpressionChildModel> Children
 )
 {
     public string Render()
     {
-        var result = Template;
+        var result = ExpressionTemplate;
 
         foreach (var child in Children)
         {
