@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Morphant.Generator.ConstructionSurface;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
 using Morphant.Generator.TypeMapperConfigure;
@@ -23,14 +24,13 @@ internal sealed class TestStructuredConstructTypeMapperGenerator
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var mappingPairs = pairConfigurations.SelectMany(
-            static (configuration, _) =>
-                configuration.SurfaceMappingPairs);
+        var canonicalPairs = CanonicalMappingPairPipeline.Build(
+            pairConfigurations);
 
         ConstructionSurfacePipeline.Register(
             context,
             compilationContext,
-            mappingPairs);
+            canonicalPairs);
         TypeMapperPipeline.Register(
             context,
             compilationContext,

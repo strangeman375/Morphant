@@ -128,13 +128,13 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 5, этап 20 — actualization нового generated surface и mapper-а.**
+**Фаза 5, этап 21 — incrementality и cache isolation.**
 
 Статус: ожидает ревью.
 
 Этап 17 принят. Этап 18 по решению от 6 августа 2026 года перенесён за границу
-core v0. Этап 19 принят. Этап 21 и все последующие этапы заблокированы до
-принятия этапа 20.
+core v0. Этапы 19 и 20 приняты. Этап 22 и все последующие этапы заблокированы
+до принятия этапа 21.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -1356,7 +1356,7 @@ inheritance актуализированы.
 
 ### Этап 20. Actualization нового generated surface и mapper-а
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — доказать корректное появление, обновление и исчезновение всех artifacts
 нового дизайна.
@@ -1402,7 +1402,7 @@ production-семантики не потребовалось.
 
 ### Этап 21. Incrementality и cache isolation
 
-Статус: не начат; заблокирован до принятия этапа 20.
+Статус: ожидает ревью.
 
 Цель — обеспечить точечную инвалидизацию без глобальной перестройки всех
 mappings и plans.
@@ -1430,9 +1430,31 @@ Production scope:
 Результат этапа: новый дизайн сохраняет incremental свойства source generator-а
 при реальном проектном масштабе.
 
+Реализовано: surface pipeline разделён на independently tracked semantic model
+и emission boundaries для construction plan, member plan, pair extensions и
+generated mapper. Canonical pairs остаются привязаны к стабильным
+per-mapper/per-pair кандидатам; destination plans выбирают стабильного
+владельца без позиционных сдвигов соседних outputs. Глобальная координация
+содержит только canonical/destination ownership и реальные case-insensitive
+hint-name collisions, а обычные readable hint names не попадают в global
+allocation state.
+
+Для destination models введены contract dependencies по исходным declarations
+и metadata references, включая containing/base types, semantic context,
+parse/compilation options и assembly identity. После semantic projection
+construction/member/extension models и mapper source сравниваются по чистому
+value-content; неизменившийся content не доходит до повторной emission.
+Test-owned harness сохраняет один tracked `GeneratorDriver` между edits и
+проверяет `New` / `Modified` / `Unchanged` / `Cached` / `Removed` для точных
+hint names. Самостоятельные категории покрывают caching, unrelated syntax,
+method bodies, using, docs, attributes, per-destination и per-mapper
+invalidation, add/remove и last-reason lifecycle, settings, reference
+replacement, multiple mappers/assemblies, collision coordination и возврат к
+эквивалентному состоянию.
+
 ### Этап 22. Финальный migration audit, документация и integration slice
 
-Статус: не начат.
+Статус: не начат; заблокирован до принятия этапа 21.
 
 Цель — завершить основную реализацию core v0 до отдельной работы над
 diagnostics и observable failures.

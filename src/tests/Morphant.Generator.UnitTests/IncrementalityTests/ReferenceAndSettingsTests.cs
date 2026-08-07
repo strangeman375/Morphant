@@ -1,0 +1,444 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Morphant.Generator.UnitTests.TestUtils;
+using static Morphant.Generator.UnitTests.TestUtils.GeneratorIncrementalityTest;
+
+namespace Morphant.Generator.UnitTests.IncrementalityTests;
+
+[TestFixture]
+internal sealed class ReferenceAndSettingsTests
+{
+    private const string ExternalConstruction =
+        "Morphant.Generated.Construction.ExternalModels_Destination.g.cs";
+
+    private const string StableConstruction =
+        "Morphant.Generated.Construction.TestCase_StableDestination.g.cs";
+
+    private const string ExternalMapping =
+        "Morphant.Generated.MappingExtension." +
+        "TestCase_ExternalSource__ExternalModels_Destination.g.cs";
+
+    private const string StableMapping =
+        "Morphant.Generated.MappingExtension." +
+        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+
+    private const string ExternalMember =
+        "Morphant.Generated.Member.ExternalModels_Destination.g.cs";
+
+    private const string StableMember =
+        "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
+
+    private const string ExternalMemberExtension =
+        "Morphant.Generated.MemberExtension." +
+        "TestCase_ExternalSource__ExternalModels_Destination.g.cs";
+
+    private const string StableMemberExtension =
+        "Morphant.Generated.MemberExtension." +
+        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+
+    private const string ExternalMapper =
+        "Morphant.Generated.TypeMapper.TestCase_ExternalMapper.g.cs";
+
+    private const string StableMapper =
+        "Morphant.Generated.TypeMapper.TestCase_StableMapper.g.cs";
+
+    private static readonly string[] GeneratedHints =
+    [
+        ExternalConstruction,
+        StableConstruction,
+        ExternalMapping,
+        StableMapping,
+        ExternalMember,
+        StableMember,
+        ExternalMemberExtension,
+        StableMemberExtension,
+        ExternalMapper,
+        StableMapper
+    ];
+
+    [Test]
+    public void Invalidates_only_consumers_of_a_changed_reference()
+    {
+        var referenceV1 = CreateReference(
+            "ExternalModels",
+            BuildExternalReference("int"));
+        var referenceV2 = CreateReference(
+            "ExternalModels",
+            BuildExternalReference("long"));
+        var unusedReference = CreateReference(
+            "UnusedModels",
+            UnusedReferenceSource);
+        var files = new[]
+        {
+            SourceFile("ExternalMapper.cs", ExternalMapperSource),
+            SourceFile("StableMapper.cs", StableMapperSource)
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            new MorphantGenerator(),
+            StepWithReferences(
+                "reference v1",
+                files,
+                [referenceV1],
+                GeneratedHints,
+                Stage(
+                    "BuildConstructionPlanRequests",
+                    Expected(
+                        ExternalConstruction,
+                        IncrementalStepRunReason.New),
+                    Expected(
+                        StableConstruction,
+                        IncrementalStepRunReason.New)),
+                Stage(
+                    "BuildTypeMapperRequests",
+                    Expected(ExternalMapper, IncrementalStepRunReason.New),
+                    Expected(StableMapper, IncrementalStepRunReason.New))),
+            StepWithReferences(
+                "unused reference added",
+                files,
+                [referenceV1, unusedReference],
+                GeneratedHints,
+                Stage(
+                    "BuildConstructionPlanRequests",
+                    Expected(
+                        ExternalConstruction,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        StableConstruction,
+                        IncrementalStepRunReason.Cached)),
+                Stage(
+                    "BuildMemberPlanRequests",
+                    Expected(
+                        ExternalMember,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        StableMember,
+                        IncrementalStepRunReason.Cached)),
+                Stage(
+                    "BuildTypeMapperRequests",
+                    Expected(
+                        ExternalMapper,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        StableMapper,
+                        IncrementalStepRunReason.Cached))),
+            StepWithReferences(
+                "referenced destination changed",
+                files,
+                [referenceV2, unusedReference],
+                GeneratedHints,
+                ChangedReferenceStages()),
+            StepWithReferences(
+                "equivalent reference restored",
+                files,
+                [referenceV1, unusedReference],
+                GeneratedHints,
+                ChangedReferenceStages()));
+    }
+
+    [Test]
+    public void Assembly_setting_rebuilds_only_mapper_artifacts()
+    {
+        var files = new[]
+        {
+            SourceFile("SettingsMappers.cs", SettingsMappersSource)
+        };
+        var generated = new[]
+        {
+            "Morphant.Generated.Construction.TestCase_DestinationA.g.cs",
+            "Morphant.Generated.Construction.TestCase_DestinationB.g.cs",
+            "Morphant.Generated.MappingExtension." +
+            "TestCase_SourceA__TestCase_DestinationA.g.cs",
+            "Morphant.Generated.MappingExtension." +
+            "TestCase_SourceB__TestCase_DestinationB.g.cs",
+            "Morphant.Generated.Member.TestCase_DestinationA.g.cs",
+            "Morphant.Generated.Member.TestCase_DestinationB.g.cs",
+            "Morphant.Generated.MemberExtension." +
+            "TestCase_SourceA__TestCase_DestinationA.g.cs",
+            "Morphant.Generated.MemberExtension." +
+            "TestCase_SourceB__TestCase_DestinationB.g.cs",
+            "Morphant.Generated.TypeMapper.TestCase_MapperA.g.cs",
+            "Morphant.Generated.TypeMapper.TestCase_MapperB.g.cs"
+        };
+        var mapperA =
+            "Morphant.Generated.TypeMapper.TestCase_MapperA.g.cs";
+        var mapperB =
+            "Morphant.Generated.TypeMapper.TestCase_MapperB.g.cs";
+        var create = new Dictionary<string, string>
+        {
+            ["build_property.MorphantMappingMode"] = "Create"
+        };
+        var update = new Dictionary<string, string>
+        {
+            ["build_property.MorphantMappingMode"] = "Update"
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            new MorphantGenerator(),
+            StepWithOptions(
+                "create mode",
+                files,
+                create,
+                generated,
+                Stage(
+                    "BuildTypeMapperRequests",
+                    Expected(mapperA, IncrementalStepRunReason.New),
+                    Expected(mapperB, IncrementalStepRunReason.New))),
+            StepWithOptions(
+                "update mode",
+                files,
+                update,
+                generated,
+                SettingChangeStages(mapperA, mapperB)),
+            StepWithOptions(
+                "equivalent create mode restored",
+                files,
+                create,
+                generated,
+                SettingChangeStages(mapperA, mapperB)));
+    }
+
+    private static ExpectedIncrementalStage[] ChangedReferenceStages()
+    {
+        return
+        [
+            Stage(
+                "BuildConstructionPlanModels",
+                Expected(
+                    ExternalConstruction,
+                    IncrementalStepRunReason.Modified),
+                Expected(
+                    StableConstruction,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildConstructionPlanRequests",
+                Expected(
+                    ExternalConstruction,
+                    IncrementalStepRunReason.Modified),
+                Expected(
+                    StableConstruction,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberPlanModels",
+                Expected(
+                    ExternalMember,
+                    IncrementalStepRunReason.Modified),
+                Expected(
+                    StableMember,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberPlanRequests",
+                Expected(
+                    ExternalMember,
+                    IncrementalStepRunReason.Modified),
+                Expected(
+                    StableMember,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMappingExtensionRequests",
+                Expected(
+                    ExternalMapping,
+                    IncrementalStepRunReason.Cached),
+                Expected(
+                    StableMapping,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberExtensionRequests",
+                Expected(
+                    ExternalMemberExtension,
+                    IncrementalStepRunReason.Cached),
+                Expected(
+                    StableMemberExtension,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildTypeMapperModels",
+                Expected(
+                    ExternalMapper,
+                    IncrementalStepRunReason.Modified),
+                Expected(
+                    StableMapper,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildTypeMapperRequests",
+                Expected(
+                    ExternalMapper,
+                    IncrementalStepRunReason.Modified),
+                Expected(
+                    StableMapper,
+                    IncrementalStepRunReason.Cached))
+        ];
+    }
+
+    private static ExpectedIncrementalStage[] SettingChangeStages(
+        string mapperA,
+        string mapperB)
+    {
+        return
+        [
+            Stage(
+                "BuildConstructionPlanRequests",
+                Expected(
+                    "Morphant.Generated.Construction." +
+                    "TestCase_DestinationA.g.cs",
+                    IncrementalStepRunReason.Cached),
+                Expected(
+                    "Morphant.Generated.Construction." +
+                    "TestCase_DestinationB.g.cs",
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberPlanRequests",
+                Expected(
+                    "Morphant.Generated.Member." +
+                    "TestCase_DestinationA.g.cs",
+                    IncrementalStepRunReason.Cached),
+                Expected(
+                    "Morphant.Generated.Member." +
+                    "TestCase_DestinationB.g.cs",
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildTypeMapperModels",
+                Expected(mapperA, IncrementalStepRunReason.Modified),
+                Expected(mapperB, IncrementalStepRunReason.Modified)),
+            Stage(
+                "BuildTypeMapperRequests",
+                Expected(mapperA, IncrementalStepRunReason.Modified),
+                Expected(mapperB, IncrementalStepRunReason.Modified))
+        ];
+    }
+
+    private static string BuildExternalReference(string valueType)
+    {
+        return ExternalReferenceSource.Replace("__VALUE_TYPE__", valueType);
+    }
+
+    // lang=c#
+    private const string ExternalReferenceSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+namespace ExternalModels
+{
+    public sealed class Destination
+    {
+        public Destination(__VALUE_TYPE__ value) => Value = value;
+
+        public __VALUE_TYPE__ Value { get; set; }
+    }
+}
+""";
+
+    // lang=c#
+    private const string UnusedReferenceSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+namespace UnusedModels
+{
+    public sealed class Value { }
+}
+""";
+
+    // lang=c#
+    private const string ExternalMapperSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using ExternalModels;
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class ExternalSource
+    {
+        public long Value { get; init; }
+    }
+
+    [MorphantMapper]
+    public partial class ExternalMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<ExternalSource, Destination>();
+    }
+}
+""";
+
+    // lang=c#
+    private const string StableMapperSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class StableSource
+    {
+        public string Name { get; init; } = string.Empty;
+    }
+
+    public sealed class StableDestination
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    [MorphantMapper]
+    public partial class StableMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<StableSource, StableDestination>();
+    }
+}
+""";
+
+    // lang=c#
+    private const string SettingsMappersSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class SourceA
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class DestinationA
+    {
+        public int Value { get; set; }
+    }
+
+    public sealed class SourceB
+    {
+        public string Name { get; init; } = string.Empty;
+    }
+
+    public sealed class DestinationB
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    [MorphantMapper]
+    public partial class MapperA : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<SourceA, DestinationA>();
+    }
+
+    [MorphantMapper]
+    public partial class MapperB : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<SourceB, DestinationB>();
+    }
+}
+""";
+}

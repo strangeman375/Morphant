@@ -20,13 +20,12 @@ internal sealed class TestConstructionSurfaceGenerator :
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var mappingPairs = pairConfigurations.SelectMany(
-            static (configuration, _) =>
-                configuration.SurfaceMappingPairs);
+        var canonicalPairs = CanonicalMappingPairPipeline.Build(
+            pairConfigurations);
 
         ConstructionSurfacePipeline.Register(
             context,
             compilationContext,
-            mappingPairs);
+            canonicalPairs);
     }
 }

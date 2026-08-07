@@ -37,7 +37,7 @@ internal static class CanonicalMappingPairSelector
             .ToImmutableArray();
     }
 
-    private static int CompareRepresentation(
+    internal static int CompareRepresentation(
         MappingPairModel left,
         MappingPairModel right)
     {

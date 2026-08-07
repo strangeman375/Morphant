@@ -19,13 +19,12 @@ internal sealed class TestMemberSurfaceGenerator : IIncrementalGenerator
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var mappingPairs = pairConfigurations.SelectMany(
-            static (configuration, _) =>
-                configuration.SurfaceMappingPairs);
+        var canonicalPairs = CanonicalMappingPairPipeline.Build(
+            pairConfigurations);
 
         MemberSurfacePipeline.Register(
             context,
             compilationContext,
-            mappingPairs);
+            canonicalPairs);
     }
 }

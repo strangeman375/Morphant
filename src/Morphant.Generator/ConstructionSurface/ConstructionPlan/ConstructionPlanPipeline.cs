@@ -1,0 +1,308 @@
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Morphant.Generator.Incrementality;
+using Morphant.Generator.MappingPair;
+
+namespace Morphant.Generator.ConstructionSurface.ConstructionPlan;
+
+internal static class ConstructionPlanPipeline
+{
+    public static IncrementalValuesProvider<ConstructionPlanModelResult>
+        BuildModels(
+            IncrementalValueProvider<CompilationContext> compilationContext,
+            IncrementalValuesProvider<CanonicalMappingPairCandidate>
+                canonicalPairs)
+    {
+        var candidates = canonicalPairs
+            .Where(static candidate =>
+                candidate.Pair.Capabilities.StructuredConstruction)
+            .Combine(compilationContext)
+            .Select(static (source, _) =>
+                BuildCandidate(
+                    source.Left,
+                    source.Right.Compilation));
+        var coordination = candidates
+            .Collect()
+            .Select(static (values, cancellationToken) =>
+                DestinationPlanCoordinationBuilder.Build(
+                    values,
+                    cancellationToken))
+            .WithComparer(DestinationPlanCoordinationComparer.Instance);
+        var generationInputs = candidates
+            .Combine(coordination)
+            .Select(static (source, _) =>
+                BuildGenerationInput(source.Left, source.Right))
+            .WhereHasValue();
+        var modelInputs = generationInputs
+            .Combine(compilationContext)
+            .Select(static (source, cancellationToken) =>
+                TryBuildModelInput(
+                    source.Left,
+                    source.Right,
+                    cancellationToken))
+            .WhereHasValue()
+            .WithComparer(ConstructionPlanModelInputComparer.Instance);
+
+        return modelInputs
+            .Select(static (input, cancellationToken) =>
+                BuildModel(input, cancellationToken))
+            .WithComparer(ConstructionPlanModelResultComparer.Instance)
+            .WithTrackingName(
+                MorphantGeneratorStageNames.BuildConstructionPlanModels);
+    }
+
+    private static DestinationPlanCandidate BuildCandidate(
+        CanonicalMappingPairCandidate candidate,
+        CSharpCompilation compilation)
+    {
+        var destination = DestinationCapabilityPolicy
+            .GetDestinationType(
+                candidate.Pair.DestinationType,
+                compilation)
+            .OriginalDefinition;
+        var assemblyIdentity =
+            destination.ContainingAssembly.Identity.ToString();
+        var metadataName = SymbolNameHelper.GetFullMetadataName(destination);
+
+        return new DestinationPlanCandidate(
+            candidate.CandidateIdentity,
+            assemblyIdentity + "|" + metadataName,
+            assemblyIdentity,
+            metadataName,
+            IncludeInitOnlyProperties: false);
+    }
+
+    private static ConstructionPlanGenerationInput? BuildGenerationInput(
+        DestinationPlanCandidate candidate,
+        DestinationPlanCoordination coordination)
+    {
+        return coordination.IsOwner(candidate)
+            ? new ConstructionPlanGenerationInput(
+                candidate.AssemblyIdentity,
+                candidate.MetadataName,
+                GeneratedSourceHintName.Create(
+                    "Construction",
+                    HintNameCollisions.Resolve(
+                        coordination.HintNameAllocations,
+                        candidate.MetadataName)))
+            : null;
+    }
+
+    private static ConstructionPlanModelInput? TryBuildModelInput(
+        ConstructionPlanGenerationInput generationInput,
+        CompilationContext context,
+        CancellationToken cancellationToken)
+    {
+        var destination = TypeContractDependencies.ResolveType(
+            context.Compilation,
+            generationInput.AssemblyIdentity,
+            generationInput.MetadataName);
+
+        if (destination is null)
+        {
+            return null;
+        }
+
+        return new ConstructionPlanModelInput(
+            generationInput,
+            destination,
+            context.Compilation,
+            TypeContractDependencies.Build(
+                destination,
+                context.Compilation,
+                cancellationToken),
+            context.LanguageVersion,
+            context.Compilation.Assembly.Identity.ToString(),
+            context.Compilation.Options.NullableContextOptions,
+            context.Compilation.Options.MetadataImportOptions);
+    }
+
+    private static ConstructionPlanModelResult BuildModel(
+        ConstructionPlanModelInput input,
+        CancellationToken cancellationToken)
+    {
+        var destination = input.Destination.OriginalDefinition;
+        var model = ConstructionPlanModelBuilder.Build(
+            destination,
+            GeneratedPlanNaming.BuildNamespace(destination),
+            GeneratedPlanNaming.BuildConstructionTypeName(destination),
+            input.Compilation,
+            cancellationToken);
+
+        return new ConstructionPlanModelResult(
+            input.GenerationInput.HintName,
+            model);
+    }
+
+    private readonly record struct ConstructionPlanGenerationInput(
+        string AssemblyIdentity,
+        string MetadataName,
+        string HintName);
+
+    private readonly record struct ConstructionPlanModelInput(
+        ConstructionPlanGenerationInput GenerationInput,
+        INamedTypeSymbol Destination,
+        CSharpCompilation Compilation,
+        ImmutableArray<TypeContractDependency> Dependencies,
+        LanguageVersion LanguageVersion,
+        string CompilationAssemblyIdentity,
+        NullableContextOptions NullableContextOptions,
+        MetadataImportOptions MetadataImportOptions);
+
+    private sealed class ConstructionPlanModelInputComparer :
+        IEqualityComparer<ConstructionPlanModelInput>
+    {
+        public static ConstructionPlanModelInputComparer Instance { get; } =
+            new();
+
+        public bool Equals(
+            ConstructionPlanModelInput left,
+            ConstructionPlanModelInput right)
+        {
+            return left.GenerationInput == right.GenerationInput &&
+                   left.LanguageVersion == right.LanguageVersion &&
+                   StringComparer.Ordinal.Equals(
+                       left.CompilationAssemblyIdentity,
+                       right.CompilationAssemblyIdentity) &&
+                   left.NullableContextOptions ==
+                       right.NullableContextOptions &&
+                   left.MetadataImportOptions ==
+                       right.MetadataImportOptions &&
+                   TypeContractDependencies.Equal(
+                       left.Dependencies,
+                       right.Dependencies);
+        }
+
+        public int GetHashCode(ConstructionPlanModelInput value)
+        {
+            var hash = value.GenerationInput.GetHashCode();
+
+            hash = TypeContractDependencies.AddHash(
+                hash,
+                value.LanguageVersion);
+            hash = TypeContractDependencies.AddHash(
+                hash,
+                value.CompilationAssemblyIdentity);
+            hash = TypeContractDependencies.AddHash(
+                hash,
+                value.NullableContextOptions);
+            hash = TypeContractDependencies.AddHash(
+                hash,
+                value.MetadataImportOptions);
+
+            return TypeContractDependencies.AddHash(
+                hash,
+                value.Dependencies);
+        }
+    }
+}
+
+internal readonly record struct ConstructionPlanModelResult(
+    string HintName,
+    ConstructionPlanModel Model);
+
+internal sealed class ConstructionPlanModelResultComparer :
+    IEqualityComparer<ConstructionPlanModelResult>
+{
+    public static ConstructionPlanModelResultComparer Instance { get; } =
+        new();
+
+    public bool Equals(
+        ConstructionPlanModelResult left,
+        ConstructionPlanModelResult right)
+    {
+        return StringComparer.Ordinal.Equals(
+                   left.HintName,
+                   right.HintName) &&
+               Equal(left.Model, right.Model);
+    }
+
+    public int GetHashCode(ConstructionPlanModelResult value)
+    {
+        return StringComparer.Ordinal.GetHashCode(value.HintName);
+    }
+
+    private static bool Equal(
+        ConstructionPlanModel left,
+        ConstructionPlanModel right)
+    {
+        return StringComparer.Ordinal.Equals(
+                   left.Namespace,
+                   right.Namespace) &&
+               StringComparer.Ordinal.Equals(
+                   left.TypeName,
+                   right.TypeName) &&
+               StringComparer.Ordinal.Equals(
+                   left.ConstructorParametersTypeName,
+                   right.ConstructorParametersTypeName) &&
+               StringComparer.Ordinal.Equals(
+                   left.DestinationTypeName,
+                   right.DestinationTypeName) &&
+               left.DestinationDocumentation ==
+                   right.DestinationDocumentation &&
+               StringComparer.Ordinal.Equals(
+                   left.ObsoleteAttributeSource,
+                   right.ObsoleteAttributeSource) &&
+               EqualTypeParameters(
+                   left.TypeParameters,
+                   right.TypeParameters) &&
+               EqualConstructors(
+                   left.Constructors,
+                   right.Constructors) &&
+               left.ConstructorParameterFields.SequenceEqual(
+                   right.ConstructorParameterFields);
+    }
+
+    private static bool EqualTypeParameters(
+        ImmutableArray<ConstructionTypeParameterModel> left,
+        ImmutableArray<ConstructionTypeParameterModel> right)
+    {
+        if (left.Length != right.Length)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < left.Length; index++)
+        {
+            if (!StringComparer.Ordinal.Equals(
+                    left[index].Name,
+                    right[index].Name) ||
+                left[index].RequiresNullableAnnotationsDisabled !=
+                    right[index].RequiresNullableAnnotationsDisabled ||
+                !left[index].Constraints.SequenceEqual(
+                    right[index].Constraints,
+                    StringComparer.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool EqualConstructors(
+        ImmutableArray<ConstructionConstructorModel> left,
+        ImmutableArray<ConstructionConstructorModel> right)
+    {
+        if (left.Length != right.Length)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < left.Length; index++)
+        {
+            if (left[index].Documentation != right[index].Documentation ||
+                !StringComparer.Ordinal.Equals(
+                    left[index].ObsoleteAttributeSource,
+                    right[index].ObsoleteAttributeSource) ||
+                !left[index].Parameters.SequenceEqual(
+                    right[index].Parameters))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}

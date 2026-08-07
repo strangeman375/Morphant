@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.Incrementality;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
@@ -36,24 +37,39 @@ internal static class TypeMapperPipeline
         IncrementalValuesProvider<MapperPairConfigurationModel>
             mapperConfigurations)
     {
-        var requests = mapperConfigurations
+        var models = mapperConfigurations
             .Combine(compilationContext)
             .Combine(assemblySettings)
             .Select(static (source, cancellationToken) =>
                 TryBuildGenerationInput(source, cancellationToken))
             .WhereHasValue()
-            .Collect()
-            .SelectMany(static (generationInputs, cancellationToken) =>
-                BuildRequests(generationInputs, cancellationToken))
             .WithTrackingName(
-                MorphantGeneratorStageNames.BuildTypeMappers);
+                MorphantGeneratorStageNames.BuildTypeMapperModels);
+        var hintNameAllocations = models
+            .Select(static (model, _) =>
+                new HintNameIdentity(
+                    model.StableIdentity,
+                    HintNameHelper.ToHintNamePart(
+                        model.StableIdentity)))
+            .Collect()
+            .Select(static (identities, cancellationToken) =>
+                HintNameCollisions.Build(
+                    identities,
+                    cancellationToken))
+            .WithComparer(HintNameAllocationsComparer.Instance);
+        var requests = models
+            .Combine(hintNameAllocations)
+            .Select(static (source, _) =>
+                BuildRequest(source.Left, source.Right))
+            .WithTrackingName(
+                MorphantGeneratorStageNames.BuildTypeMapperRequests);
 
         context.RegisterSourceOutput(
             requests,
             static (context, request) =>
                 context.AddSource(
                     request.HintName,
-                    TypeMapperEmitter.Emit(request.Model)));
+                    request.Source));
     }
 
     private static TypeMapperGenerationInput? TryBuildGenerationInput(
@@ -108,40 +124,20 @@ internal static class TypeMapperPipeline
 
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),
-            model);
+            TypeMapperEmitter.Emit(model).ToString());
     }
 
-    private static ImmutableArray<TypeMapperRequest> BuildRequests(
-        ImmutableArray<TypeMapperGenerationInput> generationInputs,
-        CancellationToken cancellationToken)
+    private static TypeMapperRequest BuildRequest(
+        TypeMapperGenerationInput input,
+        HintNameAllocations allocations)
     {
-        var orderedInputs = generationInputs.ToArray();
-
-        Array.Sort(
-            orderedInputs,
-            static (left, right) =>
-                StringComparer.Ordinal.Compare(
-                    left.StableIdentity,
-                    right.StableIdentity));
-
-        var hintNamePartAllocator = new HintNamePartAllocator();
-        var requests = ImmutableArray.CreateBuilder<TypeMapperRequest>(
-            orderedInputs.Length);
-
-        foreach (var generationInput in orderedInputs)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            requests.Add(
-                new TypeMapperRequest(
-                    GeneratedSourceHintName.Create(
-                        "TypeMapper",
-                        hintNamePartAllocator.Allocate(
-                            generationInput.StableIdentity)),
-                    generationInput.Model));
-        }
-
-        return requests.ToImmutable();
+        return new TypeMapperRequest(
+            GeneratedSourceHintName.Create(
+                "TypeMapper",
+                HintNameCollisions.Resolve(
+                    allocations,
+                    input.StableIdentity)),
+            input.Source);
     }
 
     private static ImmutableArray<TypeMapperMappingModel> BuildMappings(
@@ -817,7 +813,12 @@ internal static class TypeMapperPipeline
 
     private readonly record struct TypeMapperGenerationInput(
         string StableIdentity,
-        TypeMapperModel Model);
+        string Source)
+    {
+        public string HintName => GeneratedSourceHintName.Create(
+            "TypeMapper",
+            HintNameHelper.ToHintNamePart(StableIdentity));
+    }
 
     private readonly record struct DestinationPlan(
         ITypeSymbol MemberType,

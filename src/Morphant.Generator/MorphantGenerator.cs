@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Morphant.Generator.ConstructionSurface;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.MemberSurface;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
@@ -20,17 +21,16 @@ public sealed class MorphantGenerator : IIncrementalGenerator
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
-        var surfaceMappingPairs = pairConfigurations.SelectMany(
-            static (configuration, _) =>
-                configuration.SurfaceMappingPairs);
+        var canonicalSurfacePairs = CanonicalMappingPairPipeline.Build(
+            pairConfigurations);
         ConstructionSurfacePipeline.Register(
             context,
             compilationContext,
-            surfaceMappingPairs);
+            canonicalSurfacePairs);
         MemberSurfacePipeline.Register(
             context,
             compilationContext,
-            surfaceMappingPairs);
+            canonicalSurfacePairs);
 
         TypeMapperPipeline.Register(
             context,
