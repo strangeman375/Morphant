@@ -3,8 +3,8 @@
 #pragma warning disable CS1591
 
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
-using Morphant.Generator.IntegrationTests.CSharp9;
 using Morphant.Context;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Sharing_9c1bfd0d
@@ -74,12 +74,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Sharing_9c1bfd0d
         {
             var outer = new OuterMapper();
             var child = new ChildMapper();
-            var provider = new ManualServiceProvider();
-            provider.Add<ITypeMapper<OuterSource, OuterDestination>>(
-                outer);
-            provider.Add<ITypeMapper<ChildSource, ChildDestination>>(
-                child);
-            var mapper = new Mapper(provider);
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<
+                    OuterSource,
+                    OuterDestination>>(outer)
+                .AddSingleton<ITypeMapper<
+                    ChildSource,
+                    ChildDestination>>(child)
+                .AddSingleton<IMapper, Mapper>()
+                .BuildServiceProvider();
+            var mapper = provider.GetRequiredService<IMapper>();
 
             var result = mapper.Map<OuterSource, OuterDestination>(
                 new OuterSource(new ChildSource(5)));

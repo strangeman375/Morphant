@@ -4,8 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
-using Morphant.Generator.IntegrationTests.CSharp9;
 using Morphant.Context;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_4f7bdae8
@@ -136,13 +136,19 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_4f7bdae
         {
             var outer = new OuterMapper();
             var child = new ChildMapper();
-            var provider = new ManualServiceProvider();
-            provider.Add<ITypeMapper<OuterSource, ConstructorDestination>>(
-                outer);
-            provider.Add<ITypeMapper<OuterSource, MemberDestination>>(
-                outer);
-            provider.Add<ITypeMapper<ChildSource, ChildDestination>>(child);
-            var mapper = new Mapper(provider);
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<
+                    OuterSource,
+                    ConstructorDestination>>(outer)
+                .AddSingleton<ITypeMapper<
+                    OuterSource,
+                    MemberDestination>>(outer)
+                .AddSingleton<ITypeMapper<
+                    ChildSource,
+                    ChildDestination>>(child)
+                .AddSingleton<IMapper, Mapper>()
+                .BuildServiceProvider();
+            var mapper = provider.GetRequiredService<IMapper>();
             var source = new OuterSource(
                 new ChildSource(1),
                 new ChildSource(2),

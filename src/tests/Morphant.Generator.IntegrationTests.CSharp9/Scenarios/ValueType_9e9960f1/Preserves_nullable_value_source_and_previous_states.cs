@@ -4,8 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
-using Morphant.Generator.IntegrationTests.CSharp9;
 using Morphant.Context;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ValueType_9e9960f1
@@ -47,9 +47,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ValueType_9e9960
         public static void Verify()
         {
             var generated = new TestMapper();
-            var provider = new ManualServiceProvider();
-            provider.Add<ITypeMapper<int?, int?>>(generated);
-            var mapper = new Mapper(provider);
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<int?, int?>>(generated)
+                .AddSingleton<IMapper, Mapper>()
+                .BuildServiceProvider();
+            var mapper = provider.GetRequiredService<IMapper>();
             var createdNull = mapper.Map<int?, int?>(null);
             var updatedNull = mapper.Map<int?, int?>(null, null);
             var updatedValue = mapper.Map<int?, int?>(3, 5);

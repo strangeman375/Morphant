@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using CSharp9Consumer = Morphant.Generator.IntegrationTests.CSharp9;
 using LatestConsumer = Morphant.Generator.IntegrationTests.Latest;
 
@@ -9,13 +10,21 @@ internal sealed class CompiledConsumerTests
     [Test]
     public void CSharp9_quick_start_compiles_and_executes()
     {
-        var mapperImplementation = new CSharp9Consumer.CSharp9Mapper();
-        var provider = new CSharp9Consumer.ManualServiceProvider();
-        provider.Add<ITypeMapper<
-            CSharp9Consumer.Customer,
-            CSharp9Consumer.CustomerDto>>(
-            mapperImplementation);
-        var mapper = new Mapper(provider);
+        using var provider = new ServiceCollection()
+            .AddScoped<CSharp9Consumer.CSharp9Mapper>()
+            .AddScoped<ITypeMapper<
+                CSharp9Consumer.Customer,
+                CSharp9Consumer.CustomerDto>>(serviceProvider =>
+                serviceProvider.GetRequiredService<
+                    CSharp9Consumer.CSharp9Mapper>())
+            .AddScoped<IMapper, Mapper>()
+            .BuildServiceProvider(new ServiceProviderOptions
+            {
+                ValidateOnBuild = true,
+                ValidateScopes = true
+            });
+        using var scope = provider.CreateScope();
+        var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
 
         var result = mapper.Map<
             CSharp9Consumer.Customer,
@@ -26,10 +35,23 @@ internal sealed class CompiledConsumerTests
     }
 
     [Test]
-    public void Multiple_assemblies_use_manual_DI_and_scoped_dependencies()
+    public void Multiple_assemblies_use_standard_DI_and_scoped_dependencies()
     {
-        var first = CreateMapper("scope-a:");
-        var second = CreateMapper("scope-b:");
+        using var provider = CreateServiceProvider();
+        using var firstScope = provider.CreateScope();
+        using var secondScope = provider.CreateScope();
+        firstScope.ServiceProvider
+            .GetRequiredService<ScopeState>()
+            .Prefix = "scope-a:";
+        secondScope.ServiceProvider
+            .GetRequiredService<ScopeState>()
+            .Prefix = "scope-b:";
+        var firstFormatter = firstScope.ServiceProvider
+            .GetRequiredService<LatestConsumer.ILabelFormatter>();
+        var secondFormatter = secondScope.ServiceProvider
+            .GetRequiredService<LatestConsumer.ILabelFormatter>();
+        var first = firstScope.ServiceProvider.GetRequiredService<IMapper>();
+        var second = secondScope.ServiceProvider.GetRequiredService<IMapper>();
 
         var firstOrder = first.Map<
             LatestConsumer.Order,
@@ -72,46 +94,75 @@ internal sealed class CompiledConsumerTests
             Assert.That(generic.Value, Is.EqualTo("scope-a:9"));
             Assert.That(nullable, Is.EqualTo(11));
             Assert.That(csharp9Customer.Name, Is.EqualTo("Margaret"));
+            Assert.That(
+                firstScope.ServiceProvider.GetRequiredService<
+                    LatestConsumer.ILabelFormatter>(),
+                Is.SameAs(firstFormatter));
+            Assert.That(secondFormatter, Is.Not.SameAs(firstFormatter));
         });
     }
 
-    private static Mapper CreateMapper(string prefix)
+    private static ServiceProvider CreateServiceProvider()
     {
-        var csharp9Mapper = new CSharp9Consumer.CSharp9Mapper();
-        var latestMapper = new LatestConsumer.LatestMapper(
-            new PrefixFormatter(prefix));
-        var provider = new CSharp9Consumer.ManualServiceProvider();
-
-        provider.Add<ITypeMapper<
-            CSharp9Consumer.Customer,
-            CSharp9Consumer.CustomerDto>>(csharp9Mapper);
-        provider.Add<ITypeMapper<
-            LatestConsumer.Customer,
-            LatestConsumer.CustomerDto>>(latestMapper);
-        provider.Add<ITypeMapper<
-            LatestConsumer.Order,
-            LatestConsumer.OrderDto>>(latestMapper);
-        provider.Add<ITypeMapper<
-            LatestConsumer.Summary,
-            LatestConsumer.SummaryDto>>(latestMapper);
-        provider.Add<ITypeMapper<
-            LatestConsumer.GenericSource<int>,
-            LatestConsumer.GenericDestination<string>>>(latestMapper);
-        provider.Add<ITypeMapper<LatestConsumer.NullableNumber, int?>>(
-            latestMapper);
-
-        return new Mapper(provider);
+        return new ServiceCollection()
+            .AddScoped<ScopeState>()
+            .AddScoped<
+                LatestConsumer.ILabelFormatter,
+                PrefixFormatter>()
+            .AddScoped<CSharp9Consumer.CSharp9Mapper>()
+            .AddScoped<LatestConsumer.LatestMapper>()
+            .AddScoped<ITypeMapper<
+                CSharp9Consumer.Customer,
+                CSharp9Consumer.CustomerDto>>(serviceProvider =>
+                serviceProvider.GetRequiredService<
+                    CSharp9Consumer.CSharp9Mapper>())
+            .AddScoped<ITypeMapper<
+                LatestConsumer.Customer,
+                LatestConsumer.CustomerDto>>(serviceProvider =>
+                serviceProvider.GetRequiredService<
+                    LatestConsumer.LatestMapper>())
+            .AddScoped<ITypeMapper<
+                LatestConsumer.Order,
+                LatestConsumer.OrderDto>>(serviceProvider =>
+                serviceProvider.GetRequiredService<
+                    LatestConsumer.LatestMapper>())
+            .AddScoped<ITypeMapper<
+                LatestConsumer.Summary,
+                LatestConsumer.SummaryDto>>(serviceProvider =>
+                serviceProvider.GetRequiredService<
+                    LatestConsumer.LatestMapper>())
+            .AddScoped<ITypeMapper<
+                LatestConsumer.GenericSource<int>,
+                LatestConsumer.GenericDestination<string>>>(
+                serviceProvider => serviceProvider.GetRequiredService<
+                    LatestConsumer.LatestMapper>())
+            .AddScoped<ITypeMapper<
+                LatestConsumer.NullableNumber,
+                int?>>(serviceProvider =>
+                serviceProvider.GetRequiredService<
+                    LatestConsumer.LatestMapper>())
+            .AddScoped<IMapper, Mapper>()
+            .BuildServiceProvider(new ServiceProviderOptions
+            {
+                ValidateOnBuild = true,
+                ValidateScopes = true
+            });
     }
 
     private sealed class PrefixFormatter : LatestConsumer.ILabelFormatter
     {
-        private readonly string _prefix;
+        private readonly ScopeState _state;
 
-        public PrefixFormatter(string prefix)
+        public PrefixFormatter(ScopeState state)
         {
-            _prefix = prefix;
+            _state = state;
         }
 
-        public string Format(int value) => _prefix + value;
+        public string Format(int value) => _state.Prefix + value;
+    }
+
+    private sealed class ScopeState
+    {
+        public string Prefix { get; set; } = string.Empty;
     }
 }

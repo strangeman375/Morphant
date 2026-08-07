@@ -2,9 +2,9 @@
 #nullable enable
 #pragma warning disable CS1591
 
-using Morphant;
-using Morphant.Generator.IntegrationTests.CSharp9;
 using System;
+using Microsoft.Extensions.DependencyInjection;
+using Morphant;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccessibility_9abffc73
 {
@@ -66,14 +66,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
         public static void Verify()
         {
             var typeMapper = new ClosedMapper();
-            var provider = new ManualServiceProvider();
-            provider.Add<ITypeMapper<
-                ChildSource<int>,
-                ChildDestination<int>>>(typeMapper);
-            provider.Add<ITypeMapper<
-                DogSource,
-                DogDestination>>(typeMapper);
-            var mapper = new Mapper(provider);
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<
+                    ChildSource<int>,
+                    ChildDestination<int>>>(typeMapper)
+                .AddSingleton<ITypeMapper<
+                    DogSource,
+                    DogDestination>>(typeMapper)
+                .AddSingleton<IMapper, Mapper>()
+                .BuildServiceProvider();
+            var mapper = provider.GetRequiredService<IMapper>();
             var result = mapper.Map<
                 DogSource,
                 DogDestination>(

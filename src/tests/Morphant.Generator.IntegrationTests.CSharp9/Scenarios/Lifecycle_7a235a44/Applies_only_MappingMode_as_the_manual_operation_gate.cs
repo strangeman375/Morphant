@@ -3,8 +3,8 @@
 #pragma warning disable CS1591
 
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
-using Morphant.Generator.IntegrationTests.CSharp9;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_7a235a44
 {
@@ -46,10 +46,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_7a235a
         public static void Verify()
         {
             var generated = new TestMapper();
-            var provider = new ManualServiceProvider();
-            provider.Add<ITypeMapper<Source, CreateDestination>>(generated);
-            provider.Add<ITypeMapper<Source, UpdateDestination>>(generated);
-            var mapper = new Mapper(provider);
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<
+                    Source,
+                    CreateDestination>>(generated)
+                .AddSingleton<ITypeMapper<
+                    Source,
+                    UpdateDestination>>(generated)
+                .AddSingleton<IMapper, Mapper>()
+                .BuildServiceProvider();
+            var mapper = provider.GetRequiredService<IMapper>();
             var source = new Source(7);
 
             var created = mapper.Map<Source, CreateDestination>(source);

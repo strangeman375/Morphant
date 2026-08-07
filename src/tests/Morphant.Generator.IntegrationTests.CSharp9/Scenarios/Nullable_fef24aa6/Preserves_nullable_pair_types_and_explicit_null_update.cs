@@ -4,8 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
-using Morphant.Generator.IntegrationTests.CSharp9;
 using Morphant.Context;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Nullable_fef24aa6
@@ -97,12 +97,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Nullable_fef24aa
             var outer = new OuterMapper();
             var text = new TextMapper();
             var number = new NumberMapper();
-            var provider = new ManualServiceProvider();
-            provider.Add<ITypeMapper<OuterSource, OuterDestination>>(
-                outer);
-            provider.Add<ITypeMapper<string?, string?>>(text);
-            provider.Add<ITypeMapper<int?, int?>>(number);
-            var mapper = new Mapper(provider);
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<
+                    OuterSource,
+                    OuterDestination>>(outer)
+                .AddSingleton<ITypeMapper<string?, string?>>(text)
+                .AddSingleton<ITypeMapper<int?, int?>>(number)
+                .AddSingleton<IMapper, Mapper>()
+                .BuildServiceProvider();
+            var mapper = provider.GetRequiredService<IMapper>();
 
             var result = mapper.Map<OuterSource, OuterDestination>(
                 new OuterSource(null, null));

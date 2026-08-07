@@ -78,12 +78,14 @@
   assemblies must not reference one another; only the aggregating integration
   test host references all of them. Each scenario owns its DTOs, mappers and
   other domain fixtures and must not reference another scenario. Copy small
-  scenario fixtures instead of sharing them. Reusable test infrastructure may
-  be shared, but it belongs at the root of the owning consumer project rather
-  than inside an individual scenario. A dedicated fixture assembly is allowed
-  only when an assembly boundary is itself the behavior under test, and that
-  fixture must be owned by that one scenario rather than reused as a general
-  scenario dependency.
+  scenario fixtures instead of sharing them. Reusable test infrastructure and
+  cross-assembly fixture data belong in the existing
+  `Morphant.Generator.UnitTests.TestAssets` project, under a folder whose name
+  identifies the owning scenario. Do not create a dedicated project when this
+  existing assembly already provides the required boundary. Runtime DI tests
+  use `Microsoft.Extensions.DependencyInjection`, including real scopes where
+  scope behavior is part of the scenario; do not replace the container with a
+  custom `IServiceProvider` stub.
 
 ## Generated code
 

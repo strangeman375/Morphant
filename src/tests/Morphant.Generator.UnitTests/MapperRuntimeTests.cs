@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant.Context;
 
 namespace Morphant.Generator.UnitTests;
@@ -40,8 +41,9 @@ public sealed class MapperRuntimeTests
                 return destination ??
                     new Destination(source?.Value ?? -1);
             });
-        var provider = new ManualServiceProvider();
-        provider.Add<ITypeMapper<Source, Destination>>(() => typeMapper);
+        using var provider = new ServiceCollection()
+            .AddSingleton<ITypeMapper<Source, Destination>>(typeMapper)
+            .BuildServiceProvider();
         var mapper = new Mapper(provider);
         var source = new Source(42);
 
@@ -75,29 +77,30 @@ public sealed class MapperRuntimeTests
     [Test]
     public void Applies_the_zero_one_or_multiple_candidate_lookup_law()
     {
-        var missingMapper = new Mapper(new ManualServiceProvider());
-        var emptyProvider = new ManualServiceProvider();
-        emptyProvider.Add<ITypeMapper<Source, Destination>>();
+        using var emptyProvider = new ServiceCollection()
+            .BuildServiceProvider();
         var emptyMapper = new Mapper(emptyProvider);
         var invoked = 0;
-        var singleProvider = new ManualServiceProvider();
-        singleProvider.Add<ITypeMapper<Source, Destination>>(
-            () => CreateConstantMapper(1, () => invoked++));
+        using var singleProvider = new ServiceCollection()
+            .AddTransient<ITypeMapper<Source, Destination>>(_ =>
+                CreateConstantMapper(1, () => invoked++))
+            .BuildServiceProvider();
         var singleMapper = new Mapper(singleProvider);
-        var firstProvider = new ManualServiceProvider();
-        firstProvider.Add<ITypeMapper<Source, Destination>>(
-            () => CreateConstantMapper(1, () => invoked++),
-            () => CreateConstantMapper(2, () => invoked++));
-        var secondProvider = new ManualServiceProvider();
-        secondProvider.Add<ITypeMapper<Source, Destination>>(
-            () => CreateConstantMapper(2, () => invoked++),
-            () => CreateConstantMapper(1, () => invoked++));
+        using var firstProvider = new ServiceCollection()
+            .AddTransient<ITypeMapper<Source, Destination>>(_ =>
+                CreateConstantMapper(1, () => invoked++))
+            .AddTransient<ITypeMapper<Source, Destination>>(_ =>
+                CreateConstantMapper(2, () => invoked++))
+            .BuildServiceProvider();
+        using var secondProvider = new ServiceCollection()
+            .AddTransient<ITypeMapper<Source, Destination>>(_ =>
+                CreateConstantMapper(2, () => invoked++))
+            .AddTransient<ITypeMapper<Source, Destination>>(_ =>
+                CreateConstantMapper(1, () => invoked++))
+            .BuildServiceProvider();
 
         Assert.Multiple(() =>
         {
-            Assert.That(
-                () => missingMapper.Map<Source, Destination>(new Source(0)),
-                Throws.TypeOf<InvalidOperationException>());
             Assert.That(
                 () => emptyMapper.Map<Source, Destination>(new Source(0)),
                 Throws.TypeOf<InvalidOperationException>());
@@ -119,14 +122,17 @@ public sealed class MapperRuntimeTests
     [Test]
     public void Does_not_use_mapping_operation_as_part_of_the_lookup_key()
     {
-        var provider = new ManualServiceProvider();
-        provider.Add<ITypeMapper<Source, Destination>>(
-            () => new DelegateTypeMapper<Source, Destination>(
-                (_, _) => new Destination(1),
-                (_, _, _) => throw new NotSupportedException()),
-            () => new DelegateTypeMapper<Source, Destination>(
-                (_, _) => throw new NotSupportedException(),
-                (_, destination, _) => destination ?? new Destination(2)));
+        using var provider = new ServiceCollection()
+            .AddSingleton<ITypeMapper<Source, Destination>>(
+                new DelegateTypeMapper<Source, Destination>(
+                    (_, _) => new Destination(1),
+                    (_, _, _) => throw new NotSupportedException()))
+            .AddSingleton<ITypeMapper<Source, Destination>>(
+                new DelegateTypeMapper<Source, Destination>(
+                    (_, _) => throw new NotSupportedException(),
+                    (_, destination, _) =>
+                        destination ?? new Destination(2)))
+            .BuildServiceProvider();
         var mapper = new Mapper(provider);
 
         Assert.Multiple(() =>
@@ -187,10 +193,12 @@ public sealed class MapperRuntimeTests
                     created.Value + explicitNull.Value + updated.Value);
             },
             (_, destination, _) => destination ?? new Destination(-1));
-        var provider = new ManualServiceProvider();
-        provider.Add<ITypeMapper<Source, Destination>>(() => outerMapper);
-        provider.Add<ITypeMapper<ChildSource, ChildDestination>>(
-            () => childMapper);
+        using var provider = new ServiceCollection()
+            .AddSingleton<ITypeMapper<Source, Destination>>(outerMapper)
+            .AddSingleton<ITypeMapper<
+                ChildSource,
+                ChildDestination>>(childMapper)
+            .BuildServiceProvider();
         var result = new Mapper(provider)
             .Map<Source, Destination>(new Source(5));
 
@@ -227,41 +235,43 @@ public sealed class MapperRuntimeTests
     public void Supports_recursion_reentrancy_and_caught_nested_exceptions()
     {
         var scopedMappers = new HashSet<IMapper>();
-        var provider = new ManualServiceProvider();
-        provider.Add<ITypeMapper<int, int>>(
-            () => new DelegateTypeMapper<int, int>(
-                (source, context) =>
-                {
-                    scopedMappers.Add(context.Mapper);
-
-                    return source == 0
-                        ? 0
-                        : context.Mapper.Map<int, int>(source - 1) + 1;
-                },
-                (_, destination, _) => destination));
-        provider.Add<ITypeMapper<FailingSource, Destination>>(
-            () => new DelegateTypeMapper<FailingSource, Destination>(
-                (_, _) => throw new TestException(),
-                (_, _, _) => throw new TestException()));
-        provider.Add<ITypeMapper<RecoverySource, Destination>>(
-            () => new DelegateTypeMapper<RecoverySource, Destination>(
-                (_, context) =>
-                {
-                    try
+        using var provider = new ServiceCollection()
+            .AddSingleton<ITypeMapper<int, int>>(
+                new DelegateTypeMapper<int, int>(
+                    (source, context) =>
                     {
-                        context.Mapper.Map<FailingSource, Destination>(
-                            new FailingSource());
-                    }
-                    catch (TestException)
-                    {
-                        return new Destination(
-                            context.Mapper.Map<int, int>(3));
-                    }
+                        scopedMappers.Add(context.Mapper);
 
-                    throw new AssertionException(
-                        "The nested failure was not observed.");
-                },
-                (_, destination, _) => destination ?? new Destination(-1)));
+                        return source == 0
+                            ? 0
+                            : context.Mapper.Map<int, int>(source - 1) + 1;
+                    },
+                    (_, destination, _) => destination))
+            .AddSingleton<ITypeMapper<FailingSource, Destination>>(
+                new DelegateTypeMapper<FailingSource, Destination>(
+                    (_, _) => throw new TestException(),
+                    (_, _, _) => throw new TestException()))
+            .AddSingleton<ITypeMapper<RecoverySource, Destination>>(
+                new DelegateTypeMapper<RecoverySource, Destination>(
+                    (_, context) =>
+                    {
+                        try
+                        {
+                            context.Mapper.Map<FailingSource, Destination>(
+                                new FailingSource());
+                        }
+                        catch (TestException)
+                        {
+                            return new Destination(
+                                context.Mapper.Map<int, int>(3));
+                        }
+
+                        throw new AssertionException(
+                            "The nested failure was not observed.");
+                    },
+                    (_, destination, _) =>
+                        destination ?? new Destination(-1)))
+            .BuildServiceProvider();
         var mapper = new Mapper(provider);
 
         var recursiveResult = mapper.Map<int, int>(5);
@@ -280,15 +290,16 @@ public sealed class MapperRuntimeTests
     public void Completes_the_scope_when_the_root_mapping_throws()
     {
         IMapper? capturedScopedMapper = null;
-        var provider = new ManualServiceProvider();
-        provider.Add<ITypeMapper<FailingSource, Destination>>(
-            () => new DelegateTypeMapper<FailingSource, Destination>(
-                (_, context) =>
-                {
-                    capturedScopedMapper = context.Mapper;
-                    throw new TestException();
-                },
-                (_, _, _) => throw new TestException()));
+        using var provider = new ServiceCollection()
+            .AddSingleton<ITypeMapper<FailingSource, Destination>>(
+                new DelegateTypeMapper<FailingSource, Destination>(
+                    (_, context) =>
+                    {
+                        capturedScopedMapper = context.Mapper;
+                        throw new TestException();
+                    },
+                    (_, _, _) => throw new TestException()))
+            .BuildServiceProvider();
         var mapper = new Mapper(provider);
 
         Assert.That(
@@ -305,17 +316,19 @@ public sealed class MapperRuntimeTests
     {
         var scopedMappers = new ConcurrentBag<IMapper>();
         using var barrier = new Barrier(2);
-        var provider = new ManualServiceProvider();
-        provider.Add<ITypeMapper<Source, Destination>>(
-            () => new DelegateTypeMapper<Source, Destination>(
-                (source, context) =>
-                {
-                    scopedMappers.Add(context.Mapper);
-                    barrier.SignalAndWait();
+        using var provider = new ServiceCollection()
+            .AddSingleton<ITypeMapper<Source, Destination>>(
+                new DelegateTypeMapper<Source, Destination>(
+                    (source, context) =>
+                    {
+                        scopedMappers.Add(context.Mapper);
+                        barrier.SignalAndWait();
 
-                    return new Destination(source?.Value ?? -1);
-                },
-                (_, destination, _) => destination ?? new Destination(-1)));
+                        return new Destination(source?.Value ?? -1);
+                    },
+                    (_, destination, _) =>
+                        destination ?? new Destination(-1)))
+            .BuildServiceProvider();
         var mapper = new Mapper(provider);
 
         var results = await Task.WhenAll(
@@ -337,39 +350,47 @@ public sealed class MapperRuntimeTests
     [Test]
     public void Resolves_transient_mappers_from_the_same_application_provider()
     {
-        var dependency = new ScopedDependency();
+        var dependency = new SharedDependency();
         var activations = new List<Activation>();
-        var provider = new ManualServiceProvider();
-        provider.Add<ITypeMapper<Source, Destination>>(
-            () =>
-            {
-                var activation = new Activation(dependency);
-                activations.Add(activation);
+        using var provider = new ServiceCollection()
+            .AddSingleton(dependency)
+            .AddTransient<ITypeMapper<Source, Destination>>(
+                serviceProvider =>
+                {
+                    var activation = new Activation(
+                        serviceProvider
+                            .GetRequiredService<SharedDependency>());
+                    activations.Add(activation);
 
-                return new DelegateTypeMapper<Source, Destination>(
-                    (source, context) =>
-                    {
-                        var nested = context.Mapper
-                            .Map<ChildSource, ChildDestination>(
-                                new ChildSource(source?.Value ?? -1));
+                    return new DelegateTypeMapper<Source, Destination>(
+                        (source, context) =>
+                        {
+                            var nested = context.Mapper
+                                .Map<ChildSource, ChildDestination>(
+                                    new ChildSource(source?.Value ?? -1));
 
-                        return new Destination(nested.Value);
-                    },
-                    (_, destination, _) =>
-                        destination ?? new Destination(-1));
-            });
-        provider.Add<ITypeMapper<ChildSource, ChildDestination>>(
-            () =>
-            {
-                var activation = new Activation(dependency);
-                activations.Add(activation);
+                            return new Destination(nested.Value);
+                        },
+                        (_, destination, _) =>
+                            destination ?? new Destination(-1));
+                })
+            .AddTransient<ITypeMapper<ChildSource, ChildDestination>>(
+                serviceProvider =>
+                {
+                    var activation = new Activation(
+                        serviceProvider
+                            .GetRequiredService<SharedDependency>());
+                    activations.Add(activation);
 
-                return new DelegateTypeMapper<ChildSource, ChildDestination>(
-                    (source, _) =>
-                        new ChildDestination(source?.Value ?? -1),
-                    (_, destination, _) =>
-                        destination ?? new ChildDestination(-1));
-            });
+                    return new DelegateTypeMapper<
+                        ChildSource,
+                        ChildDestination>(
+                        (source, _) =>
+                            new ChildDestination(source?.Value ?? -1),
+                        (_, destination, _) =>
+                            destination ?? new ChildDestination(-1));
+                })
+            .BuildServiceProvider();
         var result = new Mapper(provider)
             .Map<Source, Destination>(new Source(8));
 
@@ -388,19 +409,23 @@ public sealed class MapperRuntimeTests
     [Test]
     public void Uses_closed_generic_and_nullable_types_in_the_exact_pair()
     {
-        var provider = new ManualServiceProvider();
-        provider.Add<ITypeMapper<int?, Box<int?>>>(
-            () => new DelegateTypeMapper<int?, Box<int?>>(
-                (source, _) => new Box<int?>(source),
-                (_, destination, _) => destination ?? new Box<int?>(null)));
-        provider.Add<ITypeMapper<GenericSource<string>, GenericDestination<int>>>(
-            () => new DelegateTypeMapper<
+        using var provider = new ServiceCollection()
+            .AddSingleton<ITypeMapper<int?, Box<int?>>>(
+                new DelegateTypeMapper<int?, Box<int?>>(
+                    (source, _) => new Box<int?>(source),
+                    (_, destination, _) =>
+                        destination ?? new Box<int?>(null)))
+            .AddSingleton<ITypeMapper<
                 GenericSource<string>,
-                GenericDestination<int>>(
-                (source, _) =>
-                    new GenericDestination<int>(source?.Value.Length ?? -1),
-                (_, destination, _) =>
-                    destination ?? new GenericDestination<int>(-1)));
+                GenericDestination<int>>>(
+                new DelegateTypeMapper<
+                    GenericSource<string>,
+                    GenericDestination<int>>(
+                    (source, _) => new GenericDestination<int>(
+                        source?.Value.Length ?? -1),
+                    (_, destination, _) =>
+                        destination ?? new GenericDestination<int>(-1)))
+            .BuildServiceProvider();
         var mapper = new Mapper(provider);
 
         var nullableResult = mapper.Map<int?, Box<int?>>(null);
@@ -429,23 +454,6 @@ public sealed class MapperRuntimeTests
                 return new Destination(value);
             },
             (_, destination, _) => destination ?? new Destination(value));
-
-    private sealed class ManualServiceProvider : IServiceProvider
-    {
-        private readonly Dictionary<Type, Func<object>> _services = new();
-
-        public object? GetService(Type serviceType) =>
-            _services.TryGetValue(serviceType, out var factory)
-                ? factory()
-                : null;
-
-        public void Add<TService>(params Func<TService>[] factories)
-            where TService : class
-        {
-            _services[typeof(IEnumerable<TService>)] = () =>
-                factories.Select(static factory => factory()).ToArray();
-        }
-    }
 
     private sealed class DelegateTypeMapper<TSource, TDestination> :
         ITypeMapper<TSource, TDestination>
@@ -500,9 +508,9 @@ public sealed class MapperRuntimeTests
 
     private sealed class RecoverySource;
 
-    private sealed class ScopedDependency;
+    private sealed class SharedDependency;
 
-    private sealed record Activation(ScopedDependency Dependency);
+    private sealed record Activation(SharedDependency Dependency);
 
     private sealed record MappingCall(
         MappingOperation Operation,

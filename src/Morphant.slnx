@@ -6,7 +6,6 @@
     <File Path="Directory.Build.props" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Morphant.Generator.IntegrationTests.CSharp9.ExternalLookupFixture/Morphant.Generator.IntegrationTests.CSharp9.ExternalLookupFixture.csproj" />
     <Project Path="tests/Morphant.Generator.IntegrationTests.CSharp9/Morphant.Generator.IntegrationTests.CSharp9.csproj" />
     <Project Path="tests/Morphant.Generator.IntegrationTests.CSharp11/Morphant.Generator.IntegrationTests.CSharp11.csproj" />
     <Project Path="tests/Morphant.Generator.IntegrationTests.Latest/Morphant.Generator.IntegrationTests.Latest.csproj" />

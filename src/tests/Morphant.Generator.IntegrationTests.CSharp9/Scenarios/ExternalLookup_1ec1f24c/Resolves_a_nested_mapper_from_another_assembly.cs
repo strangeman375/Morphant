@@ -3,9 +3,9 @@
 #pragma warning disable CS1591
 
 using System;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
-using Morphant.Generator.IntegrationTests.CSharp9;
-using Morphant.Generator.IntegrationTests.CSharp9.ExternalLookupFixture;
+using Morphant.Generator.UnitTests.TestAssets.ExternalLookupScenario;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExternalLookup_1ec1f24c
 {
@@ -34,13 +34,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExternalLookup_1
         {
             var outer = new OuterMapper();
             var child = new ExternalNestedMapper();
-            var provider = new ManualServiceProvider();
-            provider.Add<ITypeMapper<OuterSource, OuterDestination>>(
-                outer);
-            provider.Add<ITypeMapper<
-                IExternalNestedSource,
-                ExternalNestedDestination>>(child);
-            var mapper = new Mapper(provider);
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<
+                    OuterSource,
+                    OuterDestination>>(outer)
+                .AddSingleton<ITypeMapper<
+                    IExternalNestedSource,
+                    ExternalNestedDestination>>(child)
+                .AddSingleton<IMapper, Mapper>()
+                .BuildServiceProvider();
+            var mapper = provider.GetRequiredService<IMapper>();
 
             var result = mapper.Map<OuterSource, OuterDestination>(
                 new OuterSource(new ExternalNestedSource(5)));

@@ -4,8 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
-using Morphant.Generator.IntegrationTests.CSharp9;
 using Morphant.Context;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Nested_f0ea12c4
@@ -95,12 +95,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Nested_f0ea12c4
         public static void Verify()
         {
             var generated = new TestMapper();
-            var provider = new ManualServiceProvider();
-            provider.Add<ITypeMapper<OuterSource, OuterDestination>>(
-                generated);
-            provider.Add<ITypeMapper<ChildSource, ChildDestination>>(
-                generated);
-            var mapper = new Mapper(provider);
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<
+                    OuterSource,
+                    OuterDestination>>(generated)
+                .AddSingleton<ITypeMapper<
+                    ChildSource,
+                    ChildDestination>>(generated)
+                .AddSingleton<IMapper, Mapper>()
+                .BuildServiceProvider();
+            var mapper = provider.GetRequiredService<IMapper>();
             var created = mapper.Map<OuterSource, OuterDestination>(
                 new OuterSource(new ChildSource(2)));
             var previous = new OuterDestination(

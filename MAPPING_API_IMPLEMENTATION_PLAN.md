@@ -1475,7 +1475,8 @@ Production scope:
   values и `NullabilityMismatchValidation`;
 - проверить полный generated artifact naming и отсутствие лишних files;
 - собрать real consumer integration project из package-like references;
-- проверить manual DI registration, multiple assemblies, generated mapper
+- проверить явную регистрацию через стандартный DI container, multiple
+  assemblies, generated mapper
   activation, root/manual/declarative nested calls,
   nullable/generic destinations и mapper dependencies;
 - обновить README, quick start, conceptual docs для `Construct`, `Members`,
@@ -1517,11 +1518,13 @@ integration host напрямую вызывает их public `Scenario.Verify(
 Consumer assemblies не ссылаются друг на друга: только агрегирующий test host
 видит C# 9, C# 11 и latest projects одновременно. Каждый scenario владеет
 своими DTO, mapper-ами и domain fixtures; небольшие типы между scenarios не
-переиспользуются. Единственная дополнительная fixture assembly принадлежит
-cross-assembly nested-lookup scenario, потому что отдельная assembly является
-самим предметом этой проверки. Общая тестовая инфраструктура не дублируется:
-`ManualServiceProvider` находится в корне C# 9 consumer project и используется
-всеми его scenarios и агрегатором.
+переиспользуются. Cross-assembly nested-lookup data находится в явно названной
+папке существующего `Morphant.Generator.UnitTests.TestAssets`: эта assembly уже
+создаёт необходимую границу, поэтому отдельный project для одного scenario не
+используется. Runtime registration выполняется настоящим
+`Microsoft.Extensions.DependencyInjection`; custom `IServiceProvider` stub
+удалён, а multiple-assembly slice создаёт реальные DI scopes и получает
+generated mapper-ы с их scoped constructor dependency из контейнера.
 
 Честная project compilation выявила и закрыла production-дефект внутреннего
 nested-map conversion probe: при `TreatWarningsAsErrors=true` nullable warning,
