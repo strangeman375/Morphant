@@ -97,7 +97,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ReadOnlyInputs_a
                 throw new InvalidOperationException(
                     "A declarative input mutation was accepted.");
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
             }
         }

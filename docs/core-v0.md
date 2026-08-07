@@ -20,6 +20,7 @@ mapping is deliberately not included.
 - mapper-root and typed base-pair configuration inheritance;
 - deterministic generated artifacts, actualization, and incremental cache
   isolation;
+- typed observable runtime failures and complete generated exception stubs;
 - C# 9 and newer consumers.
 
 ## Scenario audit
@@ -68,7 +69,8 @@ different runtime mapping algorithm when a capability is unavailable. Use
 explicit code or `Convert` for a supported synchronous special case, or wait
 for the separately designed post-v0 capability.
 
-Compile-time diagnostics and stable observable runtime failure contracts are
-also intentionally separate follow-up plans. Until those plans are agreed,
-unsupported configuration follows the documented deterministic unsupported
-path without defining final diagnostic IDs or exception messages.
+Compile-time diagnostics remain a separate follow-up plan. In the meantime,
+every C#-legal mapping contract has deterministic executable behavior:
+unsupported or invalid paths throw a typed Morphant exception instead of
+leaving the mapper partial implementation incomplete. Only contracts that
+cannot be declared in C# are omitted. See [Observable failures](observable-failures.md).

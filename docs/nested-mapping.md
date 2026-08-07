@@ -81,10 +81,11 @@ Update, and the nested pair applies its own null-destination policy.
 
 For `Map<TDestination>`, an existing destination value must be null or
 runtime-compatible with `TDestination`. A non-null incompatible value throws
-`InvalidCastException`; it is not silently converted to null or replaced.
-A null value can flow into nested Update only when `TDestination` can represent
-null. A broad target containing null cannot be converted to a non-nullable
-value destination, so nested dispatch is not entered.
+`NestedDestinationTypeMismatchException`; it is not silently converted to
+null or replaced. A null value can flow into nested Update only when
+`TDestination` can represent null. A broad target containing null cannot be
+converted to a non-nullable value destination, so Morphant throws the same
+typed mismatch exception and nested dispatch is not entered.
 
 The nested result is authoritative for writable targets. A nested Update may
 reuse its destination or return a replacement, and the returned value is
@@ -144,11 +145,12 @@ expressions.
 Nested dispatch uses the scoped `IMapper` from the current mapping chain. It
 creates a new `MappingContext` frame with the nested operation while retaining
 the same application-wide service lookup and mapping scope. Exceptions from
-argument evaluation, runtime destination casts, or the nested mapper propagate
-normally.
+user argument evaluation and the nested mapper propagate unchanged. A runtime
+destination mismatch is the Morphant-authored exception described above.
 
 Each exact `ITypeMapper<TSource, TDestination>` pair must currently be
 registered manually with the application's service provider. See
 [Runtime dispatch and DI](runtime-dispatch.md) for the scoped mapper lifecycle
 and [Manual mapping](manual-mapping.md) for `context.Mapper` usage in
-`Convert`.
+`Convert`. See [Observable failures](observable-failures.md) for all typed
+failure paths.

@@ -102,17 +102,14 @@ namespace TestCase
                     "ReturnDestination did not preserve the destination.");
             }
 
-            ExpectArgumentNull(
-                "destination",
+            ExpectFailure<Morphant.Exceptions.NullDestinationException>(
                 () => returnNull.Update(
                     new Source(),
                     null,
                     context));
-            ExpectArgumentNull(
-                "source",
+            ExpectFailure<Morphant.Exceptions.NullSourceException>(
                 () => throwMapper.Create(null, context));
-            ExpectArgumentNull(
-                "source",
+            ExpectFailure<Morphant.Exceptions.NullSourceException>(
                 () => throwMapper.Update(null, null, context));
 
             var created = throwMapper.Update(
@@ -127,22 +124,20 @@ namespace TestCase
             }
         }
 
-        private static void ExpectArgumentNull(
-            string parameterName,
-            Action action)
+        private static void ExpectFailure<TException>(Action action)
+            where TException : Morphant.Exceptions.MorphantException
         {
             try
             {
                 action();
             }
-            catch (ArgumentNullException exception)
-                when (exception.ParamName == parameterName)
+            catch (TException)
             {
                 return;
             }
 
             throw new InvalidOperationException(
-                "The expected ArgumentNullException was not thrown.");
+                "The expected Morphant failure was not thrown.");
         }
     }
 }
@@ -187,7 +182,9 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.ArgumentNullException(nameof(destination));
+                throw new global::Morphant.Exceptions.NullDestinationException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.ReturnNullDestination));
             }
 
             return __Update(source, destination, context);
@@ -239,7 +236,9 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.ArgumentNullException(nameof(destination));
+                throw new global::Morphant.Exceptions.NullDestinationException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.ReturnDestinationDestination));
             }
 
             return __Update1(source, destination, context);
@@ -272,7 +271,9 @@ namespace TestCase
         {
             if (source is null)
             {
-                throw new global::System.ArgumentNullException(nameof(source));
+                throw new global::Morphant.Exceptions.NullSourceException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.ThrowDestination));
             }
 
             return __Create2(source, context);
@@ -286,7 +287,9 @@ namespace TestCase
         {
             if (source is null)
             {
-                throw new global::System.ArgumentNullException(nameof(source));
+                throw new global::Morphant.Exceptions.NullSourceException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.ThrowDestination));
             }
 
             if (destination is null)
@@ -739,7 +742,9 @@ namespace TestCase
         {
             if (source is null)
             {
-                throw new global::System.ArgumentNullException(nameof(source));
+                throw new global::Morphant.Exceptions.NullSourceException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.AssemblyDestination));
             }
 
             return __Create(source, context);
@@ -753,12 +758,16 @@ namespace TestCase
         {
             if (source is null)
             {
-                throw new global::System.ArgumentNullException(nameof(source));
+                throw new global::Morphant.Exceptions.NullSourceException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.AssemblyDestination));
             }
 
             if (destination is null)
             {
-                throw new global::System.ArgumentNullException(nameof(destination));
+                throw new global::Morphant.Exceptions.NullDestinationException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.AssemblyDestination));
             }
 
             return __Update(source, destination, context);
@@ -890,7 +899,9 @@ namespace TestCase
 
             if (destination is null)
             {
-                throw new global::System.ArgumentNullException(nameof(destination));
+                throw new global::Morphant.Exceptions.NullDestinationException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.PairDestination));
             }
 
             return __Update(source, destination, context);
@@ -1002,7 +1013,9 @@ namespace TestCase
         global::TestCase.InvalidDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InvalidDestination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => throw new global::System.NotSupportedException(
+            => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                typeof(global::TestCase.Source),
+                typeof(global::TestCase.InvalidDestination),
                 "The effective NullSourceHandling is invalid.");
 
         /// <inheritdoc/>
@@ -1010,7 +1023,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.InvalidDestination destination,
             global::Morphant.Context.MappingContext context)
-            => throw new global::System.NotSupportedException(
+            => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                typeof(global::TestCase.Source),
+                typeof(global::TestCase.InvalidDestination),
                 "The effective NullSourceHandling is invalid.");
 
         /// <inheritdoc/>
@@ -1024,7 +1039,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.SourceOverrideDestination destination,
             global::Morphant.Context.MappingContext context)
-            => throw new global::System.NotSupportedException(
+            => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                typeof(global::TestCase.Source),
+                typeof(global::TestCase.SourceOverrideDestination),
                 "The effective NullDestinationHandling is invalid.");
 
         private global::TestCase.SourceOverrideDestination __Create(

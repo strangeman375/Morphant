@@ -16,7 +16,8 @@ internal static class ByFactoryMappingPlanner
         "Morphant.TypeMapper";
 
     private const string UnsupportedFactoryMessage =
-        "The configured ByFactory construction is not supported yet.";
+        "The configured ByFactory callback cannot be transferred into " +
+        "generated code.";
 
     private const string CreationOnlyMembersMessage =
         "The configured Members plan contains a creation-only rule that " +

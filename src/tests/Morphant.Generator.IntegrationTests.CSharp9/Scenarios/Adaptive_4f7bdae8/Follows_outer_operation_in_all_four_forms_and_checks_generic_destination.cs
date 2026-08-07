@@ -202,7 +202,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_4f7bdae
                 throw new InvalidOperationException(
                     "An incompatible generic destination was accepted.");
             }
-            catch (InvalidCastException)
+            catch (global::Morphant.Exceptions.NestedDestinationTypeMismatchException)
             {
             }
         }

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Morphant.Context;
+using Morphant.Exceptions;
 
 namespace Morphant.Generator.UnitTests;
 
@@ -11,8 +12,7 @@ public sealed class MapperRuntimeTests
     {
         Assert.That(
             () => new Mapper(null!),
-            Throws.ArgumentNullException.With.Property("ParamName")
-                .EqualTo("serviceProvider"));
+            Throws.TypeOf<MappingServiceProviderMissingException>());
     }
 
     [Test]
@@ -103,18 +103,18 @@ public sealed class MapperRuntimeTests
         {
             Assert.That(
                 () => emptyMapper.Map<Source, Destination>(new Source(0)),
-                Throws.TypeOf<InvalidOperationException>());
+                Throws.TypeOf<MappingNotFoundException>());
             Assert.That(
                 singleMapper.Map<Source, Destination>(new Source(0)).Value,
                 Is.EqualTo(1));
             Assert.That(
                 () => new Mapper(firstProvider)
                     .Map<Source, Destination>(new Source(0)),
-                Throws.TypeOf<InvalidOperationException>());
+                Throws.TypeOf<AmbiguousMappingException>());
             Assert.That(
                 () => new Mapper(secondProvider)
                     .Map<Source, Destination>(new Source(0)),
-                Throws.TypeOf<InvalidOperationException>());
+                Throws.TypeOf<AmbiguousMappingException>());
             Assert.That(invoked, Is.EqualTo(1));
         });
     }
@@ -139,12 +139,12 @@ public sealed class MapperRuntimeTests
         {
             Assert.That(
                 () => mapper.Map<Source, Destination>(new Source(0)),
-                Throws.TypeOf<InvalidOperationException>());
+                Throws.TypeOf<AmbiguousMappingException>());
             Assert.That(
                 () => mapper.Map(
                     new Source(0),
                     new Destination(0)),
-                Throws.TypeOf<InvalidOperationException>());
+                Throws.TypeOf<AmbiguousMappingException>());
         });
     }
 
@@ -227,7 +227,7 @@ public sealed class MapperRuntimeTests
             Assert.That(
                 () => capturedScopedMapper!
                     .Map<ChildSource, ChildDestination>(new ChildSource(1)),
-                Throws.TypeOf<InvalidOperationException>());
+                Throws.TypeOf<MappingScopeCompletedException>());
         });
     }
 
@@ -308,7 +308,7 @@ public sealed class MapperRuntimeTests
         Assert.That(
             () => capturedScopedMapper!
                 .Map<FailingSource, Destination>(new FailingSource()),
-            Throws.TypeOf<InvalidOperationException>());
+            Throws.TypeOf<MappingScopeCompletedException>());
     }
 
     [Test]
@@ -441,7 +441,32 @@ public sealed class MapperRuntimeTests
                 () => mapper.Map<
                     GenericSource<int>,
                     GenericDestination<int>>(new GenericSource<int>(1)),
-                Throws.TypeOf<InvalidOperationException>());
+                Throws.TypeOf<MappingNotFoundException>());
+        });
+    }
+
+    [Test]
+    public void Rejects_a_registration_that_resolves_to_null()
+    {
+        using var provider = new ServiceCollection()
+            .AddTransient<ITypeMapper<Source, Destination>>(_ => null!)
+            .BuildServiceProvider();
+        using var ambiguousProvider = new ServiceCollection()
+            .AddTransient<ITypeMapper<Source, Destination>>(_ => null!)
+            .AddSingleton<ITypeMapper<Source, Destination>>(
+                CreateConstantMapper(1, static () => { }))
+            .BuildServiceProvider();
+        var mapper = new Mapper(provider);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                () => mapper.Map<Source, Destination>(new Source(0)),
+                Throws.TypeOf<InvalidMappingRegistrationException>());
+            Assert.That(
+                () => new Mapper(ambiguousProvider)
+                    .Map<Source, Destination>(new Source(0)),
+                Throws.TypeOf<AmbiguousMappingException>());
         });
     }
 

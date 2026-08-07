@@ -79,7 +79,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationCha
             {
                 mapper.Create(null, default);
             }
-            catch (ArgumentNullException)
+            catch (global::Morphant.Exceptions.NullSourceException)
             {
                 return;
             }

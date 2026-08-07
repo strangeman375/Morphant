@@ -87,8 +87,8 @@ and base pair values participate only after a typed `IncludeBase` call. See
 
 | Effective mode | `Create(source, context)` | `Update(source, destination, context)` |
 |---|---|---|
-| `Create` | Maps to a new destination | Throws `NotSupportedException` |
-| `Update` | Throws `NotSupportedException` | Maps to the supplied destination |
+| `Create` | Maps to a new destination | Throws `MappingOperationNotSupportedException` |
+| `Update` | Throws `MappingOperationNotSupportedException` | Maps to the supplied destination |
 | `CreateAndUpdate` | Maps to a new destination | Maps to the supplied destination |
 
 `Default` means inheritance; it is not an operation by itself.
@@ -111,8 +111,8 @@ of the named values listed above.
 If a C# mode is not a compile-time constant, contains undefined flags, or an
 inherited `MorphantMappingMode` value is not recognized, Morphant still
 generates the `ITypeMapper<TSource, TDestination>` implementation for the
-registered pair. Both mapping methods throw `NotSupportedException` when
-invoked.
+registered pair. Both mapping methods throw `MappingConfigurationException`
+when invoked.
 
 An explicit valid mapping-level mode still overrides an invalid mapper-level
 value. A mapping that uses `Default` inherits the invalid mapper-level value
@@ -124,4 +124,5 @@ mapping that inherits the invalid property has two throwing methods.
 
 See [Configuration inheritance](../configuration-inheritance.md) for the full
 settings chain and [Runtime dispatch and DI](../runtime-dispatch.md) for how a
-selected pair is resolved before the operation gate runs.
+selected pair is resolved before the operation gate runs. The exception types
+are summarized in [Observable failures](../observable-failures.md).

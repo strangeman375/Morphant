@@ -236,7 +236,7 @@ namespace TestCase
                     new Destination(),
                     default(MappingContext));
             }
-            catch (NotSupportedException)
+            catch (Morphant.Exceptions.MappingOperationNotSupportedException)
             {
                 return;
             }
@@ -447,8 +447,10 @@ namespace TestCase
             global::TestCase.Source source,
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
-            => throw new global::System.NotSupportedException(
-                "The effective MappingMode does not include Update.");
+            => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
+                global::Morphant.Context.MappingOperation.Update,
+                typeof(global::TestCase.Source),
+                typeof(global::TestCase.Destination));
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,

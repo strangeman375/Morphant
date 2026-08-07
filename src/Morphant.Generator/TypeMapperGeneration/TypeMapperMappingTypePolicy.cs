@@ -5,6 +5,18 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TypeMapperMappingTypePolicy
 {
+    private static readonly SymbolDisplayFormat FullyQualifiedRuntime = new(
+        globalNamespaceStyle:
+            SymbolDisplayGlobalNamespaceStyle.Included,
+        typeQualificationStyle:
+            SymbolDisplayTypeQualificationStyle
+                .NameAndContainingTypesAndNamespaces,
+        genericsOptions:
+            SymbolDisplayGenericsOptions.IncludeTypeParameters,
+        miscellaneousOptions:
+            SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers |
+            SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+
     public static string GetGeneratedTypeName(
         ITypeSymbol type)
     {
@@ -34,6 +46,23 @@ internal static class TypeMapperMappingTypePolicy
         }
 
         return GetGeneratedTypeName(type);
+    }
+
+    public static string GetGeneratedRuntimeTypeName(ITypeSymbol type)
+    {
+        var builder = new StringBuilder();
+
+        foreach (var part in type.ToDisplayParts(FullyQualifiedRuntime))
+        {
+            builder.Append(
+                part.Symbol is IDynamicTypeSymbol ||
+                part.Kind == SymbolDisplayPartKind.Keyword &&
+                part.ToString() == "dynamic"
+                    ? "object"
+                    : part.ToString());
+        }
+
+        return builder.ToString();
     }
 
     public static string GetGeneratedNonNullDestinationTypeName(

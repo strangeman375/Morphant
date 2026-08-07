@@ -108,8 +108,14 @@
   kind have an actual case-insensitive hint-name collision after sanitization.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes, or compatibility branches without a concrete user-facing need.
-- Diagnostics are a separate future scope. Unsupported cases currently skip
-  generation unless a test explicitly specifies otherwise.
+- Diagnostics are a separate future scope. When C# can declare an
+  `ITypeMapper<,>` contract, invalid or unsupported behavior must retain a
+  complete generated mapper and use typed Morphant exception stubs for
+  unavailable operations. Do not generate construction, member, or extension
+  surfaces for an unsupported root merely to make the stub possible. Omit a
+  contract only when its mapper shape cannot be completed or its generic
+  interfaces can unify; independent legal pairs in the same mapper must still
+  generate.
 
 ## Tests and verification
 

@@ -70,7 +70,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_d46efb
                     new Source { Reuse = true },
                     context);
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

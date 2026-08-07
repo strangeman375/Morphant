@@ -558,7 +558,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::System.NotSupportedException(
+            throw new global::Morphant.Exceptions.MappingConfigurationException(
+                typeof(global::TestCase.Source),
+                typeof(int),
                 "Convention construction is not available for this destination.");
         }
 
@@ -606,7 +608,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::System.NotSupportedException(
+            throw new global::Morphant.Exceptions.MappingConfigurationException(
+                typeof(global::TestCase.Source),
+                typeof(global::TestCase.IInterfaceDestination),
                 "Convention construction is not available for this destination.");
         }
 
@@ -656,7 +660,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::System.NotSupportedException(
+            throw new global::Morphant.Exceptions.MappingConfigurationException(
+                typeof(global::TestCase.Source),
+                typeof(global::TestCase.AbstractDestination),
                 "Convention construction is not available for this destination.");
         }
 

@@ -143,10 +143,22 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.Context.MappingContext context)");
 
+        if (mapping.UnsupportedExceptionMessage is
+            { } configurationFailure)
+        {
+            WriteMappingConfigurationFailure(
+                writer,
+                mapping,
+                configurationFailure);
+            writer.Unindent();
+            return;
+        }
+
         if (!mapping.EffectiveSettings.IsMappingModeValid)
         {
-            WriteUnsupportedMapping(
+            WriteMappingConfigurationFailure(
                 writer,
+                mapping,
                 InvalidMappingModeExceptionMessage);
             writer.Unindent();
             return;
@@ -154,9 +166,10 @@ internal static class TypeMapperEmitter
 
         if (!mapping.EffectiveSettings.SupportsCreate)
         {
-            WriteUnsupportedMapping(
+            WriteUnsupportedOperation(
                 writer,
-                "The effective MappingMode does not include Create.");
+                mapping,
+                "Create");
             writer.Unindent();
             return;
         }
@@ -174,8 +187,9 @@ internal static class TypeMapperEmitter
 
         if (!mapping.EffectiveSettings.IsNullSourceHandlingValid)
         {
-            WriteUnsupportedMapping(
+            WriteMappingConfigurationFailure(
                 writer,
+                mapping,
                 InvalidNullSourceHandlingExceptionMessage);
             writer.Unindent();
             return;
@@ -245,8 +259,9 @@ internal static class TypeMapperEmitter
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
-            WriteUnsupportedMappingStatement(
+            WriteMappingConfigurationFailureStatement(
                 writer,
+                mapping,
                 unsupportedExceptionMessage);
             return;
         }
@@ -360,8 +375,9 @@ internal static class TypeMapperEmitter
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedMappingMessage)
         {
-            WriteUnsupportedMappingStatement(
+            WriteMappingConfigurationFailureStatement(
                 writer,
+                mapping,
                 unsupportedMappingMessage);
             return;
         }
@@ -369,8 +385,9 @@ internal static class TypeMapperEmitter
         if (mapping.CreateUnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
-            WriteUnsupportedMappingStatement(
+            WriteMappingConfigurationFailureStatement(
                 writer,
+                mapping,
                 unsupportedExceptionMessage);
             return;
         }
@@ -401,8 +418,11 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        writer.Line(
-            "throw new global::System.NotImplementedException();");
+        WriteMappingConfigurationFailureStatement(
+            writer,
+            mapping,
+            "Morphant could not generate the Create operation from the " +
+            "configured mapping plan.");
     }
 
     private static void WriteConstructorCreateStatements(
@@ -668,10 +688,22 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.Context.MappingContext context)");
 
+        if (mapping.UnsupportedExceptionMessage is
+            { } configurationFailure)
+        {
+            WriteMappingConfigurationFailure(
+                writer,
+                mapping,
+                configurationFailure);
+            writer.Unindent();
+            return;
+        }
+
         if (!mapping.EffectiveSettings.IsMappingModeValid)
         {
-            WriteUnsupportedMapping(
+            WriteMappingConfigurationFailure(
                 writer,
+                mapping,
                 InvalidMappingModeExceptionMessage);
             writer.Unindent();
             return;
@@ -679,9 +711,10 @@ internal static class TypeMapperEmitter
 
         if (!mapping.EffectiveSettings.SupportsUpdate)
         {
-            WriteUnsupportedMapping(
+            WriteUnsupportedOperation(
                 writer,
-                "The effective MappingMode does not include Update.");
+                mapping,
+                "Update");
             writer.Unindent();
             return;
         }
@@ -699,8 +732,9 @@ internal static class TypeMapperEmitter
 
         if (!mapping.EffectiveSettings.IsNullSourceHandlingValid)
         {
-            WriteUnsupportedMapping(
+            WriteMappingConfigurationFailure(
                 writer,
+                mapping,
                 InvalidNullSourceHandlingExceptionMessage);
             writer.Unindent();
             return;
@@ -708,8 +742,9 @@ internal static class TypeMapperEmitter
 
         if (!mapping.EffectiveSettings.IsNullDestinationHandlingValid)
         {
-            WriteUnsupportedMapping(
+            WriteMappingConfigurationFailure(
                 writer,
+                mapping,
                 InvalidNullDestinationHandlingExceptionMessage);
             writer.Unindent();
             return;
@@ -743,8 +778,9 @@ internal static class TypeMapperEmitter
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
-            WriteUnsupportedMapping(
+            WriteMappingConfigurationFailure(
                 writer,
+                mapping,
                 unsupportedExceptionMessage);
             return;
         }
@@ -841,8 +877,9 @@ internal static class TypeMapperEmitter
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
-            WriteUnsupportedMappingStatement(
+            WriteMappingConfigurationFailureStatement(
                 writer,
+                mapping,
                 unsupportedExceptionMessage);
             return;
         }
@@ -886,9 +923,9 @@ internal static class TypeMapperEmitter
                 break;
 
             case NullSourceHandlingValue.Throw:
-                WriteArgumentNullException(
+                WriteNullSourceException(
                     writer,
-                    "source");
+                    mapping);
                 break;
 
             default:
@@ -931,9 +968,9 @@ internal static class TypeMapperEmitter
                 break;
 
             case NullDestinationHandlingValue.Throw:
-                WriteArgumentNullException(
+                WriteNullDestinationException(
                     writer,
-                    "destination");
+                    mapping);
                 break;
 
             default:
@@ -1028,13 +1065,28 @@ internal static class TypeMapperEmitter
         return $"{methodName}({arguments}, context)";
     }
 
-    private static void WriteArgumentNullException(
+    private static void WriteNullSourceException(
         CodeWriter writer,
-        string parameterName)
+        TypeMapperMappingModel mapping)
     {
         writer.Line(
-            "throw new global::System.ArgumentNullException(" +
-            $"nameof({parameterName}));");
+            "throw new global::Morphant.Exceptions.NullSourceException(");
+        writer.Indent();
+        writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
+        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}));");
+        writer.Unindent();
+    }
+
+    private static void WriteNullDestinationException(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        writer.Line(
+            "throw new global::Morphant.Exceptions.NullDestinationException(");
+        writer.Indent();
+        writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
+        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}));");
+        writer.Unindent();
     }
 
     private static void WriteControlFlowUpdateNode(
@@ -1135,8 +1187,9 @@ internal static class TypeMapperEmitter
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedMappingMessage)
         {
-            WriteUnsupportedMappingStatement(
+            WriteMappingConfigurationFailureStatement(
                 writer,
+                mapping,
                 unsupportedMappingMessage);
             return;
         }
@@ -1144,8 +1197,9 @@ internal static class TypeMapperEmitter
         if (mapping.UpdateUnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
         {
-            WriteUnsupportedMappingStatement(
+            WriteMappingConfigurationFailureStatement(
                 writer,
+                mapping,
                 unsupportedExceptionMessage);
             return;
         }
@@ -1180,8 +1234,11 @@ internal static class TypeMapperEmitter
         if (mapping.UpdateKind ==
             TypeMapperUpdateKind.Unsupported)
         {
-            writer.Line(
-                "throw new global::System.NotImplementedException();");
+            WriteMappingConfigurationFailureStatement(
+                writer,
+                mapping,
+                "Morphant could not generate the Update operation from the " +
+                "configured mapping plan.");
             return;
         }
 
@@ -1318,7 +1375,10 @@ internal static class TypeMapperEmitter
 
         if (node.UnsupportedExceptionMessage is { } unsupportedMessage)
         {
-            WriteUnsupportedMappingStatement(writer, unsupportedMessage);
+            WriteMappingConfigurationFailureStatement(
+                writer,
+                mapping,
+                unsupportedMessage);
             return;
         }
 
@@ -1341,37 +1401,61 @@ internal static class TypeMapperEmitter
         writer.Line($"return {returnExpression ?? assignmentTarget};");
     }
 
-    private static void WriteUnsupportedMapping(
+    private static void WriteMappingConfigurationFailure(
         CodeWriter writer,
-        string exceptionMessage)
+        TypeMapperMappingModel mapping,
+        string reason)
     {
-        var messageLiteral =
+        var reasonLiteral =
             SyntaxFactory.LiteralExpression(
                     SyntaxKind.StringLiteralExpression,
-                    SyntaxFactory.Literal(exceptionMessage))
+                    SyntaxFactory.Literal(reason))
                 .ToString();
 
         writer.Line(
-            "=> throw new global::System.NotSupportedException(");
+            "=> throw new global::Morphant.Exceptions." +
+            "MappingConfigurationException(");
         writer.Indent();
-        writer.Line($"{messageLiteral});");
+        writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
+        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
+        writer.Line($"{reasonLiteral});");
         writer.Unindent();
     }
 
-    private static void WriteUnsupportedMappingStatement(
+    private static void WriteMappingConfigurationFailureStatement(
         CodeWriter writer,
-        string exceptionMessage)
+        TypeMapperMappingModel mapping,
+        string reason)
     {
-        var messageLiteral =
+        var reasonLiteral =
             SyntaxFactory.LiteralExpression(
                     SyntaxKind.StringLiteralExpression,
-                    SyntaxFactory.Literal(exceptionMessage))
+                    SyntaxFactory.Literal(reason))
                 .ToString();
 
         writer.Line(
-            "throw new global::System.NotSupportedException(");
+            "throw new global::Morphant.Exceptions." +
+            "MappingConfigurationException(");
         writer.Indent();
-        writer.Line($"{messageLiteral});");
+        writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
+        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
+        writer.Line($"{reasonLiteral});");
+        writer.Unindent();
+    }
+
+    private static void WriteUnsupportedOperation(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        string operation)
+    {
+        writer.Line(
+            "=> throw new global::Morphant.Exceptions." +
+            "MappingOperationNotSupportedException(");
+        writer.Indent();
+        writer.Line(
+            $"global::Morphant.Context.MappingOperation.{operation},");
+        writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
+        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}));");
         writer.Unindent();
     }
 

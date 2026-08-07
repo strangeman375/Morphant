@@ -69,7 +69,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Constructor_dd34
                     new Source(),
                     default(MappingContext));
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

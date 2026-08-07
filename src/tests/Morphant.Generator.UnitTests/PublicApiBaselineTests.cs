@@ -43,7 +43,33 @@ T Morphant.Delegates.Members<TSource, TPrevious, TResult, TMembers>
   M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, TResult, System.AsyncCallback, System.Object)
   M TMembers EndInvoke(System.IAsyncResult)
   M TMembers Invoke(TSource, Morphant.Option<TPrevious>, TResult)
+T Morphant.Exceptions.AmbiguousMappingException
+  C .ctor(System.Type, System.Type)
+T Morphant.Exceptions.InvalidMappingRegistrationException
+  C .ctor(System.Type, System.Type)
+T Morphant.Exceptions.MappingConfigurationException
+  C .ctor(System.Type, System.Type, System.String)
+T Morphant.Exceptions.MappingNotFoundException
+  C .ctor(System.Type, System.Type)
+T Morphant.Exceptions.MappingOperationNotSupportedException
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
+T Morphant.Exceptions.MappingScopeCompletedException
+  C .ctor(System.Type, System.Type)
+T Morphant.Exceptions.MappingServiceProviderMissingException
+  C .ctor()
+T Morphant.Exceptions.MorphantException
+  C .ctor(System.String)
+T Morphant.Exceptions.NestedDestinationTypeMismatchException
+  C .ctor(System.Type, System.Type)
+T Morphant.Exceptions.NullDestinationException
+  C .ctor(System.Type, System.Type)
+T Morphant.Exceptions.NullSourceException
+  C .ctor(System.Type, System.Type)
+T Morphant.Exceptions.OptionValueMissingException
+  C .ctor()
 T Morphant.Exceptions.RuntimeInvocationNotSupportedException
+  C .ctor()
+T Morphant.Exceptions.UnmatchedMappingSwitchException
   C .ctor()
 T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource)

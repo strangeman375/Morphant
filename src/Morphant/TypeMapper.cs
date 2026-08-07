@@ -26,12 +26,15 @@ public interface ITypeMapper<in TSource, TDestination>
     /// </param>
     /// <param name="context">The context for the mapping operation.</param>
     /// <returns>The mapped destination.</returns>
-    /// <exception cref="NotSupportedException">
-    /// The effective <see cref="MappingMode"/> is invalid or does not include
-    /// <see cref="MappingMode.Create"/>, or a null-handling setting required
-    /// by the selected declarative mapping is invalid.
+    /// <exception cref="MappingConfigurationException">
+    /// The effective configuration is invalid or the selected mapping plan
+    /// cannot be represented in generated code.
     /// </exception>
-    /// <exception cref="ArgumentNullException">
+    /// <exception cref="MappingOperationNotSupportedException">
+    /// The effective <see cref="MappingMode"/> does not include
+    /// <see cref="MappingMode.Create"/>.
+    /// </exception>
+    /// <exception cref="NullSourceException">
     /// A declarative mapping is selected, <paramref name="source"/> is
     /// <see langword="null"/>, and the effective
     /// <see cref="NullSourceHandling"/> is
@@ -58,16 +61,22 @@ public interface ITypeMapper<in TSource, TDestination>
     /// The authoritative mapped destination. It may be a replacement for
     /// <paramref name="destination"/>.
     /// </returns>
-    /// <exception cref="NotSupportedException">
-    /// The effective <see cref="MappingMode"/> is invalid or does not include
-    /// <see cref="MappingMode.Update"/>, or a null-handling setting required
-    /// by the selected declarative mapping is invalid.
+    /// <exception cref="MappingConfigurationException">
+    /// The effective configuration is invalid or the selected mapping plan
+    /// cannot be represented in generated code.
     /// </exception>
-    /// <exception cref="ArgumentNullException">
+    /// <exception cref="MappingOperationNotSupportedException">
+    /// The effective <see cref="MappingMode"/> does not include
+    /// <see cref="MappingMode.Update"/>.
+    /// </exception>
+    /// <exception cref="NullSourceException">
     /// A declarative mapping is selected, <paramref name="source"/> is
     /// <see langword="null"/>, and the effective
     /// <see cref="NullSourceHandling"/> is
-    /// <see cref="Morphant.NullSourceHandling.Throw"/>, or
+    /// <see cref="Morphant.NullSourceHandling.Throw"/>.
+    /// </exception>
+    /// <exception cref="NullDestinationException">
+    /// A declarative mapping is selected,
     /// <paramref name="destination"/> is <see langword="null"/> and the
     /// effective <see cref="NullDestinationHandling"/> is
     /// <see cref="Morphant.NullDestinationHandling.Throw"/>.

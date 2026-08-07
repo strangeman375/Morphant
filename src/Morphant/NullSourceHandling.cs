@@ -1,3 +1,5 @@
+using Morphant.Exceptions;
+
 namespace Morphant;
 
 /// <summary>
@@ -29,7 +31,7 @@ public enum NullSourceHandling
     ReturnDestination,
 
     /// <summary>
-    /// Throws <see cref="ArgumentNullException"/>.
+    /// Throws <see cref="NullSourceException"/>.
     /// </summary>
     Throw
 }

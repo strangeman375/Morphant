@@ -6,7 +6,6 @@
 using Morphant;
 using Morphant.Context;
 using System;
-using System.Runtime.CompilerServices;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Throw_8f7cf658
 {
@@ -83,9 +82,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Throw_8f7cf658
             {
                 mapper.Create(new Source { Mode = 2 }, context);
             }
-            catch (SwitchExpressionException exception)
-                when ((int?)exception.UnmatchedValue == 2 &&
-                      TestMapper.SelectorCount == 3 &&
+            catch (global::Morphant.Exceptions.UnmatchedMappingSwitchException)
+                when (TestMapper.SelectorCount == 3 &&
                       TestMapper.ThrowCount == 1)
             {
                 return;

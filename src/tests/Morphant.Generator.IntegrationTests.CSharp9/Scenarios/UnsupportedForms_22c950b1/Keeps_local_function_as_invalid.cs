@@ -48,7 +48,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnsupportedForms
                     new Source { Value = 3 },
                     default(MappingContext));
             }
-            catch (NotSupportedException exception)
+            catch (global::Morphant.Exceptions.MappingConfigurationException exception)
                 when (exception.Message.Contains(
                     "Declarative plan",
                     StringComparison.Ordinal))

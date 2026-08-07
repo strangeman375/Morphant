@@ -391,12 +391,18 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                             destinationType,
                             nestedMap.DestinationType,
                             nestedMap.DestinationTypeName,
+                            nestedMap.RuntimeDestinationTypeName,
+                            nestedMap.CompatibleDestinationName!,
+                            nestedMap.IncompatibleDestinationName!,
                             allowNull: false)
                         : BuildDestinationConversion(
                             destinationExpression,
                             destinationType,
                             nestedMap.DestinationType,
                             nestedMap.DestinationTypeName,
+                            nestedMap.RuntimeDestinationTypeName,
+                            nestedMap.CompatibleDestinationName!,
+                            nestedMap.IncompatibleDestinationName!,
                             allowNull: true);
                 arguments = arguments.Add(
                     SyntaxFactory.Argument(generatedDestination)
@@ -514,11 +520,19 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         ITypeSymbol sourceType,
         ITypeSymbol destinationType,
         string destinationTypeName,
+        string runtimeDestinationTypeName,
+        string compatibleDestinationName,
+        string incompatibleDestinationName,
         bool allowNull)
     {
-        if (SymbolEqualityComparer.IncludeNullability.Equals(
+        if (SymbolEqualityComparer.Default.Equals(
                 sourceType,
-                destinationType))
+                destinationType) ||
+            string.Equals(
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    sourceType),
+                runtimeDestinationTypeName,
+                StringComparison.Ordinal))
         {
             return SyntaxFactory.ParseExpression(expression);
         }
@@ -529,23 +543,44 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 destinationTypeName)
             : destinationTypeName;
 
-        ExpressionSyntax value = SyntaxFactory.ParseExpression(expression);
+        var expectedType = $"typeof({runtimeDestinationTypeName})";
+        var actualTypeExpression = allowNull
+            ? Identifier(incompatibleDestinationName) + ".GetType()"
+            : expression + ".GetType()";
+        var mismatch =
+            "throw new global::Morphant.Exceptions." +
+            "NestedDestinationTypeMismatchException(" +
+            expectedType + ", " +
+            actualTypeExpression + ")";
 
-        if (destinationType.IsValueType &&
-            destinationType is not INamedTypeSymbol
-            {
-                OriginalDefinition.SpecialType:
-                    SpecialType.System_Nullable_T
-            })
+        if (!allowNull)
         {
-            value = SyntaxFactory.PostfixUnaryExpression(
-                SyntaxKind.SuppressNullableWarningExpression,
-                value);
+            return SyntaxFactory.ParseExpression(
+                expression + " is " + runtimeDestinationTypeName + " " +
+                Identifier(compatibleDestinationName) + " ? " +
+                Identifier(compatibleDestinationName) + " : " +
+                mismatch);
         }
 
-        return SyntaxFactory.CastExpression(
-            SyntaxFactory.ParseTypeName(castTypeName),
-            value);
+        var nullResult = destinationType.IsValueType &&
+                         destinationType is not INamedTypeSymbol
+                         {
+                             OriginalDefinition.SpecialType:
+                                 SpecialType.System_Nullable_T
+                         }
+            ? "throw new global::Morphant.Exceptions." +
+              "NestedDestinationTypeMismatchException(" +
+              expectedType + ", null)"
+            : $"default({castTypeName})";
+
+        return SyntaxFactory.ParseExpression(
+            expression + " switch { " +
+            "null => " + nullResult + ", " +
+            runtimeDestinationTypeName + " " +
+            Identifier(compatibleDestinationName) + " => " +
+            Identifier(compatibleDestinationName) + ", " +
+            "var " + Identifier(incompatibleDestinationName) + " => " +
+            mismatch + " }");
     }
 
     private static string BuildMaybeNullTypeName(

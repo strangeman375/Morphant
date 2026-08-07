@@ -102,7 +102,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
             {
                 mapper.Create(null, default);
             }
-            catch (ArgumentNullException)
+            catch (global::Morphant.Exceptions.NullSourceException)
             {
                 return;
             }

@@ -427,8 +427,10 @@ namespace TestCase
             global::TestCase.Dog? source,
             global::TestCase.DogDto? destination,
             global::Morphant.Context.MappingContext context)
-            => throw new global::System.NotSupportedException(
-                "The effective MappingMode does not include Update.");
+            => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
+                global::Morphant.Context.MappingOperation.Update,
+                typeof(global::TestCase.Dog),
+                typeof(global::TestCase.DogDto));
 
         private global::TestCase.DogDto __Create(
             global::TestCase.Dog source,

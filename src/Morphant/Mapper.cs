@@ -1,4 +1,5 @@
 using Morphant.Context;
+using Morphant.Exceptions;
 
 namespace Morphant;
 
@@ -44,13 +45,13 @@ public sealed class Mapper : IMapper
     /// <see cref="IEnumerable{T}"/> of
     /// <see cref="ITypeMapper{TSource, TDestination}"/> implementations.
     /// </param>
-    /// <exception cref="ArgumentNullException">
+    /// <exception cref="MappingServiceProviderMissingException">
     /// <paramref name="serviceProvider"/> is <see langword="null"/>.
     /// </exception>
     public Mapper(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider ??
-            throw new ArgumentNullException(nameof(serviceProvider));
+            throw new MappingServiceProviderMissingException();
     }
 
     /// <inheritdoc/>

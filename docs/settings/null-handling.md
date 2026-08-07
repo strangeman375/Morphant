@@ -99,7 +99,7 @@ The source is handled before any destination check or mapping expression.
 |---|---|---|
 | `ReturnNull` | Returns `default(TDestination)` | Returns `default(TDestination)` |
 | `ReturnDestination` | Returns `default(TDestination)` | Returns the original destination |
-| `Throw` | Throws `ArgumentNullException(nameof(source))` | Throws `ArgumentNullException(nameof(source))` |
+| `Throw` | Throws `NullSourceException` | Throws `NullSourceException` |
 
 Despite its name, `ReturnNull` returns `default(TDestination)`. This is `null`
 for reference and nullable value destinations, and the zero-initialized value
@@ -120,7 +120,7 @@ therefore do not repeat source null handling.
 | Effective value | Behavior |
 |---|---|
 | `Create` | Treats the explicit `null` as no previous destination and runs the no-previous construction branch |
-| `Throw` | Throws `ArgumentNullException(nameof(destination))` |
+| `Throw` | Throws `NullDestinationException` |
 
 `Create` does not change the public operation: the call remains
 `MappingOperation.Update`, and only `MappingMode.Update` must be enabled.
@@ -150,8 +150,8 @@ Both null-handling settings are bypassed by a mapping configured with
 
 Inherited null-handling settings remain useful to declarative mappings in the
 same mapper but have no effect on `Convert`. Setting either policy explicitly
-on a manual pair is an invalid configuration. Until configuration diagnostics
-are implemented, invoking that pair throws `NotSupportedException`.
+on a manual pair is an invalid configuration. Invoking that pair throws
+`MappingConfigurationException`.
 
 The value returned by `Convert`, including `null`, is final. Morphant does not
 apply a null guard, construction fallback, or member mapping afterward.
@@ -163,9 +163,9 @@ defined by the corresponding enum. MSBuild properties must use a named enum
 value.
 
 An invalid effective `NullSourceHandling` keeps the generated mapping
-contract, but both methods throw `NotSupportedException`. An invalid
+contract, but both methods throw `MappingConfigurationException`. An invalid
 effective `NullDestinationHandling` affects only `Update`; public `Create`
-remains available.
+remains available and `Update` throws `MappingConfigurationException`.
 
 Configuration validity is checked independently of runtime arguments and type
 nullability. A valid value at a more specific level can override an invalid
@@ -173,4 +173,6 @@ outer value for the same property.
 
 See [Declarative mapping](../declarative-mapping.md) for previous presence and
 the authoritative result, and [Manual mapping](../manual-mapping.md) for the
-model that bypasses these policies.
+model that bypasses these policies. See
+[Observable failures](../observable-failures.md) for the complete exception
+contract.

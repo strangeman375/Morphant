@@ -94,13 +94,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MappingMode_a9e3
             {
                 action();
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingOperationNotSupportedException)
             {
                 return;
             }
 
             throw new InvalidOperationException(
-                "A disabled operation did not throw NotSupportedException.");
+                "A disabled operation did not report its mapping failure.");
         }
     }
 }

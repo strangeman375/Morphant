@@ -11,37 +11,85 @@ internal static class MappingTypeEligibilityPolicy
         ITypeSymbol type,
         Compilation compilation)
     {
-        if (!CanBeUsedAsGenericArgument(
-                type,
-                compilation))
+        return CanBeUsedAsGenericArgument(type, compilation) &&
+               GetUnsupportedRootReason(type, "mapping", compilation) is null;
+    }
+
+    public static string? GetUnsupportedRootReason(
+        ITypeSymbol type,
+        string role,
+        Compilation compilation)
+    {
+        var typeName = type.ToDisplayString(
+            SymbolDisplayFormats.FullyQualifiedNullable);
+
+        if (!CanBeUsedAsGenericArgument(type, compilation))
         {
-            return false;
+            return $"The {role} type '{typeName}' cannot be named in a " +
+                   "generated ITypeMapper contract.";
         }
 
         var rootType = UnwrapNullableValueType(type);
 
-        if (rootType is ITypeParameterSymbol ||
-            rootType is IArrayTypeSymbol)
+        if (rootType is ITypeParameterSymbol)
         {
-            return false;
+            return $"The {role} type '{typeName}' is a root type " +
+                   "parameter, which Morphant does not support as a " +
+                   "mapping root.";
+        }
+
+        if (rootType is IArrayTypeSymbol)
+        {
+            return $"The {role} type '{typeName}' is an array root. Array " +
+                   "mapping requires collection support, which is not " +
+                   "available.";
         }
 
         if (rootType is IDynamicTypeSymbol)
         {
-            return true;
+            return null;
         }
 
         if (rootType is not INamedTypeSymbol namedRootType)
         {
-            return false;
+            return $"The {role} type '{typeName}' is not a supported named " +
+                   "mapping root.";
         }
 
-        return !IsTuple(namedRootType) &&
-               !IsCollectionOrBuffer(namedRootType) &&
-               !IsDelegate(namedRootType) &&
-               !IsExpressionTree(namedRootType) &&
-               !IsDeferredOrAsync(namedRootType) &&
-               !IsPushSequence(namedRootType);
+        if (IsTuple(namedRootType))
+        {
+            return $"The {role} type '{typeName}' is a tuple root, which " +
+                   "Morphant does not support.";
+        }
+
+        if (IsCollectionOrBuffer(namedRootType))
+        {
+            return $"The {role} type '{typeName}' is a collection or buffer " +
+                   "root. Collection mapping is not available.";
+        }
+
+        if (IsDelegate(namedRootType))
+        {
+            return $"The {role} type '{typeName}' is a delegate root, which " +
+                   "Morphant does not support.";
+        }
+
+        if (IsExpressionTree(namedRootType))
+        {
+            return $"The {role} type '{typeName}' is an expression-tree " +
+                   "root, which Morphant does not support.";
+        }
+
+        if (IsDeferredOrAsync(namedRootType))
+        {
+            return $"The {role} type '{typeName}' is a deferred or async " +
+                   "root, which Morphant does not support.";
+        }
+
+        return IsPushSequence(namedRootType)
+            ? $"The {role} type '{typeName}' is a push-sequence root, which " +
+              "Morphant does not support."
+            : null;
     }
 
     public static bool CanBeNamed(

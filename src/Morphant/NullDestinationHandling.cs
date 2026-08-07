@@ -1,4 +1,5 @@
 using Morphant.Context;
+using Morphant.Exceptions;
 
 namespace Morphant;
 
@@ -28,7 +29,7 @@ public enum NullDestinationHandling
     Create,
 
     /// <summary>
-    /// Throws <see cref="ArgumentNullException"/>.
+    /// Throws <see cref="NullDestinationException"/>.
     /// </summary>
     Throw
 }

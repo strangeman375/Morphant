@@ -1,3 +1,5 @@
+using Morphant.Exceptions;
+
 namespace Morphant.Generator.UnitTests;
 
 [TestFixture]
@@ -73,7 +75,7 @@ internal sealed class OptionTests
         Assert.That(value, Is.EqualTo(expectedDefault));
         Assert.That(
             () => option.Value,
-            Throws.TypeOf<InvalidOperationException>());
+            Throws.TypeOf<OptionValueMissingException>());
     }
 
     private static void AssertSome<T>(Option<T> option, T expected)

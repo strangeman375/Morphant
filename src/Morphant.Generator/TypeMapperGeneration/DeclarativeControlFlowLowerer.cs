@@ -630,7 +630,6 @@ internal static class DeclarativeControlFlowLowerer
             return switchNode.RequiresFallback
                 ? MaterializeSwitchFallback(
                     result,
-                    compilation,
                     mapperType)
                 : result;
         }
@@ -659,7 +658,6 @@ internal static class DeclarativeControlFlowLowerer
 
     private static TypeMapperControlFlowNode MaterializeSwitchFallback(
         TypeMapperControlFlowNode node,
-        CSharpCompilation compilation,
         INamedTypeSymbol mapperType)
     {
         var usedNames = UserResultMappingPlanner.BuildUsedLocalNames(
@@ -674,10 +672,7 @@ internal static class DeclarativeControlFlowLowerer
             WhenTrue: null,
             WhenFalse: null,
             Leaf: null,
-            ThrowExpression: BuildUnmatchedSwitchException(
-                switchValueName,
-                node.SwitchCanPassUnmatchedValue,
-                compilation));
+            ThrowExpression: BuildUnmatchedSwitchException());
 
         return node with
         {
@@ -737,36 +732,10 @@ internal static class DeclarativeControlFlowLowerer
             node.EvaluationDependency);
     }
 
-    private static string BuildUnmatchedSwitchException(
-        string valueExpression,
-        bool canPassUnmatchedValue,
-        CSharpCompilation compilation)
+    private static string BuildUnmatchedSwitchException()
     {
-        const string metadataName =
-            "System.Runtime.CompilerServices.SwitchExpressionException";
-        var exceptionType = compilation.GetTypeByMetadataName(metadataName);
-
-        if (exceptionType is not null &&
-            canPassUnmatchedValue &&
-            exceptionType.InstanceConstructors.Any(constructor =>
-                constructor.DeclaredAccessibility == Accessibility.Public &&
-                constructor.Parameters.Length == 1 &&
-                constructor.Parameters[0].Type.SpecialType ==
-                SpecialType.System_Object))
-        {
-            return "new global::" + metadataName +
-                   $"({valueExpression})";
-        }
-
-        if (exceptionType is not null &&
-            exceptionType.InstanceConstructors.Any(constructor =>
-                constructor.DeclaredAccessibility == Accessibility.Public &&
-                constructor.Parameters.IsEmpty))
-        {
-            return "new global::" + metadataName + "()";
-        }
-
-        return "new global::System.InvalidOperationException()";
+        return "new global::Morphant.Exceptions." +
+               "UnmatchedMappingSwitchException()";
     }
 
     private static HashSet<string> CollectRequiredLocals(

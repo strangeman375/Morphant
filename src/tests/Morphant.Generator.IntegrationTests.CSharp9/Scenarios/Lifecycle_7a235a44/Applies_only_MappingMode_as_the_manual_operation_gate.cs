@@ -86,7 +86,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_7a235a
             {
                 action();
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingOperationNotSupportedException)
             {
                 return;
             }

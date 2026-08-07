@@ -132,7 +132,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Unsupported_4217
                 throw new InvalidOperationException(
                     "An invalid declarative Map was accepted.");
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
             }
         }

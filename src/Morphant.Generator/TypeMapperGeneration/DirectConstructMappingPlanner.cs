@@ -9,7 +9,8 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class DirectConstructMappingPlanner
 {
     private const string UnsupportedConstructMessage =
-        "The configured direct Construct is not supported yet.";
+        "The configured direct Construct callback cannot be transferred " +
+        "into generated code.";
 
     public static DirectConstructMappingResult Build(
         ConstructConfigurationModel configuration,

@@ -106,7 +106,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.LifecycleBounda
             {
                 action();
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

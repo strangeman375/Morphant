@@ -124,7 +124,9 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            throw new global::System.NotSupportedException(
+            throw new global::Morphant.Exceptions.MappingConfigurationException(
+                typeof(global::TestCase.Source),
+                typeof(global::TestCase.Destination),
                 "Convention construction is not available for this destination.");
         }
 

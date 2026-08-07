@@ -52,7 +52,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.Member_0047f37c
                     new Source(),
                     default(MappingContext));
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

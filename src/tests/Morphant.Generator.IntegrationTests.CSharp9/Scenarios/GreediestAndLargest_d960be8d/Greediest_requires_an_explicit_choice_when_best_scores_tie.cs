@@ -50,7 +50,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GreediestAndLarg
                     new Source { Id = 17, Code = 31 },
                     default(MappingContext));
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

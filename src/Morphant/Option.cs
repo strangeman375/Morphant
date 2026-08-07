@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Morphant.Exceptions;
 
 namespace Morphant;
 
@@ -36,14 +37,13 @@ public readonly struct Option<T>
     /// <summary>
     /// Gets the contained value.
     /// </summary>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="OptionValueMissingException">
     /// The option contains no value.
     /// </exception>
     public T Value =>
         HasValue
             ? _value
-            : throw new InvalidOperationException(
-                "Option contains no value.");
+            : throw new OptionValueMissingException();
 
     /// <summary>
     /// Attempts to get the contained value.

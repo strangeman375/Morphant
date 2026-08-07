@@ -44,9 +44,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Marker_2232b36b
                 throw new InvalidOperationException(
                     "An unavailable Auto rule was silently ignored.");
             }
-            catch (NotSupportedException exception)
-                when (exception.Message ==
-                    "A configured Auto member cannot be mapped by convention.")
+            catch (global::Morphant.Exceptions.MappingConfigurationException exception)
+                when (exception.Message.EndsWith(
+                    "A configured Auto member cannot be mapped by convention."))
             {
             }
         }

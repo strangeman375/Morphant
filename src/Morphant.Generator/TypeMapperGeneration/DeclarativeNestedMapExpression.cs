@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -380,6 +381,8 @@ internal static class DeclarativeNestedMapExpression
         ITypeSymbol? generatedDestinationType = null;
         var guardNullDestination = false;
         string? guardVariableName = null;
+        string? compatibleDestinationName = null;
+        string? incompatibleDestinationName = null;
 
         if (readOnlyTarget is { } readOnly)
         {
@@ -427,6 +430,19 @@ internal static class DeclarativeNestedMapExpression
             generatedDestinationType = adaptiveTarget.Type;
         }
 
+        if (generatedDestinationType is { } currentDestinationType &&
+            !SymbolEqualityComparer.IncludeNullability.Equals(
+                currentDestinationType,
+                destinationType))
+        {
+            compatibleDestinationName = usageRegistry.AllocateGuardName(
+                "nestedDestination",
+                mapperType);
+            incompatibleDestinationName = usageRegistry.AllocateGuardName(
+                "incompatibleDestination",
+                mapperType);
+        }
+
         mapping = new TypeMapperNestedMapExpressionModel(
             sourceType,
             destinationType,
@@ -438,7 +454,13 @@ internal static class DeclarativeNestedMapExpression
             generatedDestinationExpression,
             generatedDestinationType,
             guardNullDestination,
-            guardVariableName);
+            guardVariableName,
+            TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                MappingTypeNormalization.NormalizePreviousDestination(
+                    destinationType,
+                    semanticModel.Compilation)),
+            compatibleDestinationName,
+            incompatibleDestinationName);
         return true;
     }
 
@@ -864,7 +886,10 @@ internal readonly record struct TypeMapperNestedMapExpressionModel
     string? GeneratedDestinationExpression,
     ITypeSymbol? GeneratedDestinationType,
     bool GuardNullDestination,
-    string? GuardVariableName
+    string? GuardVariableName,
+    string RuntimeDestinationTypeName,
+    string? CompatibleDestinationName,
+    string? IncompatibleDestinationName
 );
 
 internal enum DeclarativeNestedMapOperation

@@ -122,7 +122,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Strategy_5ce5bec
             {
                 action();
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

@@ -89,17 +89,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NullHandling_838
                     "ReturnDestination did not preserve the destination.");
             }
 
-            ExpectArgumentNull(
-                "destination",
+            ExpectFailure<global::Morphant.Exceptions.NullDestinationException>(
                 () => returnNull.Update(
                     new Source(),
                     null,
                     context));
-            ExpectArgumentNull(
-                "source",
+            ExpectFailure<global::Morphant.Exceptions.NullSourceException>(
                 () => throwMapper.Create(null, context));
-            ExpectArgumentNull(
-                "source",
+            ExpectFailure<global::Morphant.Exceptions.NullSourceException>(
                 () => throwMapper.Update(null, null, context));
 
             var created = throwMapper.Update(
@@ -114,22 +111,20 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NullHandling_838
             }
         }
 
-        private static void ExpectArgumentNull(
-            string parameterName,
-            Action action)
+        private static void ExpectFailure<TException>(Action action)
+            where TException : global::Morphant.Exceptions.MorphantException
         {
             try
             {
                 action();
             }
-            catch (ArgumentNullException exception)
-                when (exception.ParamName == parameterName)
+            catch (TException)
             {
                 return;
             }
 
             throw new InvalidOperationException(
-                "The expected ArgumentNullException was not thrown.");
+                "The expected Morphant failure was not thrown.");
         }
     }
 }

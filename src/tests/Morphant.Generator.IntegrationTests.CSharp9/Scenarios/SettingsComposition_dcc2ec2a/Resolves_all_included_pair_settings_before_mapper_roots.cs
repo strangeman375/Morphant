@@ -185,7 +185,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsComposit
             {
                 action();
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingOperationNotSupportedException)
             {
                 return;
             }
@@ -200,7 +200,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsComposit
             {
                 action();
             }
-            catch (ArgumentNullException)
+            catch (global::Morphant.Exceptions.NullDestinationException)
             {
                 return;
             }

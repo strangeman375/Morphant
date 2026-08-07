@@ -50,7 +50,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
                     new DerivedMapper())
                     .Create(new LocalSource(), default);
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

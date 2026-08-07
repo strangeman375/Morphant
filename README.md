@@ -88,6 +88,7 @@ expression evaluation order or side effects.
 - [Manual mapping with `Convert`](docs/manual-mapping.md)
 - [Nested mapping](docs/nested-mapping.md)
 - [Runtime dispatch and DI](docs/runtime-dispatch.md)
+- [Observable failures](docs/observable-failures.md)
 - [Configuration inheritance](docs/configuration-inheritance.md)
 - [Generated artifacts](docs/generated-code.md)
 - [Core v0 scope and non-goals](docs/core-v0.md)

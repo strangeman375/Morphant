@@ -94,7 +94,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByConvention_7ef
                 ((ITypeMapper<Source, ExplicitByConventionDestination>)mapper)
                     .Create(source, context);
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

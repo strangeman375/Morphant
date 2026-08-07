@@ -1,3 +1,5 @@
+using Morphant.Exceptions;
+
 namespace Morphant;
 
 /// <summary>
@@ -19,13 +21,14 @@ namespace Morphant;
 /// <para>
 /// A generated <see cref="ITypeMapper{TSource, TDestination}"/> always
 /// implements both mapping methods. A method excluded by the effective
-/// mode throws <see cref="NotSupportedException"/> when invoked.
+/// mode throws <see cref="MappingOperationNotSupportedException"/> when
+/// invoked.
 /// </para>
 /// <para>
 /// C# mapping mode expressions must be compile-time constants composed only
 /// from the defined flags. If the effective C# or MSBuild value is invalid,
 /// the generated mapper still implements both methods, but both throw
-/// <see cref="NotSupportedException"/> when invoked.
+/// <see cref="MappingConfigurationException"/> when invoked.
 /// </para>
 /// </remarks>
 [Flags]

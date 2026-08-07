@@ -1,3 +1,5 @@
+using Morphant.Exceptions;
+
 namespace Morphant.Context;
 
 internal sealed class MappingScope
@@ -15,7 +17,7 @@ internal sealed class MappingScope
 
     public TDestination Map<TSource, TDestination>(TSource? source)
     {
-        ThrowIfCompleted();
+        ThrowIfCompleted<TSource, TDestination>();
 
         return Resolve<TSource, TDestination>().Create(
             source,
@@ -26,7 +28,7 @@ internal sealed class MappingScope
         TSource? source,
         TDestination? destination)
     {
-        ThrowIfCompleted();
+        ThrowIfCompleted<TSource, TDestination>();
 
         return Resolve<TSource, TDestination>().Update(
             source,
@@ -46,42 +48,46 @@ internal sealed class MappingScope
         if (service is not
             IEnumerable<ITypeMapper<TSource, TDestination>> candidates)
         {
-            throw new InvalidOperationException(
-                "No mapping is registered for the requested type pair.");
+            throw new MappingNotFoundException(
+                typeof(TSource),
+                typeof(TDestination));
         }
 
         using var enumerator = candidates.GetEnumerator();
 
         if (!enumerator.MoveNext())
         {
-            throw new InvalidOperationException(
-                "No mapping is registered for the requested type pair.");
+            throw new MappingNotFoundException(
+                typeof(TSource),
+                typeof(TDestination));
         }
 
         var candidate = enumerator.Current;
 
-        if (candidate is null)
-        {
-            throw new InvalidOperationException(
-                "The registered mapping candidate is null.");
-        }
-
         if (enumerator.MoveNext())
         {
-            throw new InvalidOperationException(
-                "Multiple mappings are registered for the requested type " +
-                "pair.");
+            throw new AmbiguousMappingException(
+                typeof(TSource),
+                typeof(TDestination));
+        }
+
+        if (candidate is null)
+        {
+            throw new InvalidMappingRegistrationException(
+                typeof(TSource),
+                typeof(TDestination));
         }
 
         return candidate;
     }
 
-    private void ThrowIfCompleted()
+    private void ThrowIfCompleted<TSource, TDestination>()
     {
         if (_isCompleted)
         {
-            throw new InvalidOperationException(
-                "The mapping scope has already completed.");
+            throw new MappingScopeCompletedException(
+                typeof(TSource),
+                typeof(TDestination));
         }
     }
 

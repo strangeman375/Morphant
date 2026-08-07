@@ -105,7 +105,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GreediestAndLarg
             {
                 action();
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

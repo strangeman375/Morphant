@@ -148,7 +148,8 @@ runtime policy с выбранной nullability остаётся у конфи�
 
 Обе операции остаются в generated contract для любой зарегистрированной пары.
 Эффективный `MappingMode` определяет, какая из них поддерживается; вызов
-отключённой операции по-прежнему завершается `NotSupportedException`.
+отключённой операции завершается
+`Morphant.Exceptions.MappingOperationNotSupportedException`.
 
 Возвращаемое значение `Map` всегда авторитетно:
 
@@ -309,8 +310,8 @@ public readonly struct Option<T>
   конструктора и implicit conversion из `T` нет;
 - `None` отличается от `Some(default(T))`;
 - когда `T` допускает `null`, `None` отличается и от `Some(null)`;
-- `Value` возвращает сохранённый `T`, а обращение к нему при `None` ошибочно
-  так же, как у `Nullable<T>.Value`;
+- `Value` возвращает сохранённый `T`, а обращение к нему при `None` бросает
+  `Morphant.Exceptions.OptionValueMissingException`;
 - `TryGetValue` при `false` может записать `default`, что отражено
   `[MaybeNullWhen(false)]`.
 
@@ -1109,10 +1110,11 @@ source-member. Runtime-тип не меняет выбранную пару. В 
 возвращаемый `TDestination` должен warning-free неявно преобразовываться в тип
 целевого member или constructor parameter. В adaptive Update текущее значение
 должно быть `null` либо runtime-совместимо с `TDestination`; incompatible
-non-null value приводит к `InvalidCastException`, а не превращается в `null`
-или скрытый Create. `null` передаётся дальше только если выбранный
-`TDestination` способен его представить; для non-nullable value destination
-ошибка преобразования происходит до nested dispatch.
+non-null value приводит к
+`Morphant.Exceptions.NestedDestinationTypeMismatchException`, а не
+превращается в `null` или скрытый Create. `null` передаётся дальше только если
+выбранный `TDestination` способен его представить; для non-nullable value
+destination та же typed ошибка происходит до nested dispatch.
 
 Все формы могут храниться в declarative local. Local остаётся alias marker-а и
 получает target context от конечного member-а либо constructor parameter-а.
@@ -1590,9 +1592,8 @@ Exception из nested mapping не меняет outer frame. Его можно �
 
 Scope завершается в `finally` вместе с root `Map`. Сохранять
 `context.Mapper` и вызывать его после завершения root mapping нельзя;
-scoped mapper обязан проверить lifetime и немедленно отклонить такой вызов.
-Точный тип и сообщение этой ошибки относятся к общему аудиту observable
-failures.
+scoped mapper обязан проверить lifetime и немедленно бросить
+`Morphant.Exceptions.MappingScopeCompletedException`.
 
 Обычный root `IMapper` можно использовать параллельно: каждый root-вызов
 получает независимый scope. Последовательные nested-вызовы, recursion и
@@ -1665,7 +1666,7 @@ public enum NullDestinationHandling
 
 | Настройка | Поведение |
 |---|---|
-| `Throw` | Бросить исключение до `Construct` и `Members` |
+| `Throw` | Бросить `NullDestinationException` до `Construct` и `Members` |
 | `Create` | Считать explicit `null` отсутствующим previous и перейти в no-previous construction branch |
 
 `NullDestinationHandling.Create` не обещает новую identity: configured
@@ -1688,7 +1689,8 @@ Map(source, null)
 
 `NullSourceHandling` сохраняет текущие варианты и precedence. В частности,
 если effective policy возвращает результат или бросает исключение, ни
-`Construct`, ни `Members` не выполняются.
+`Construct`, ни `Members` не выполняются. Вариант `Throw` бросает
+`NullSourceException`.
 
 ### 9.2. `null` из пользовательского creation-кода
 
@@ -1878,9 +1880,12 @@ dictionaries, enumerators, async sequences, memory buffers и пользоват
 типы, реализующие соответствующие контракты. Для delegates, expression trees,
 deferred/async и push values сначала нужна отдельная семантика либо явное
 решение об их долгосрочной неподдерживаемости. Запреты симметричны для source и
-destination и действуют также для direct `Construct` и `Convert`: для такой
-пары v0 вообще не генерирует mapping contract. Забытая registration не
-превращается в runtime lookup или скрытый manual fallback.
+destination и действуют также для direct `Construct` и `Convert`. Если типы
+можно законно использовать в `ITypeMapper<TSource, TDestination>`, v0
+генерирует только executable contract, обе операции которого бросают
+`MappingConfigurationException`; construction, member и pair-extension
+surfaces не генерируются. Забытая registration не превращается в runtime
+lookup или скрытый manual fallback.
 
 Категория определяется после снятия верхнеуровневой `Nullable<T>`-обёртки:
 например, `ValueTask<int>?` также запрещён как root. Для разрешённого
@@ -2080,9 +2085,10 @@ policy должна диагностироваться. Для direct declarativ
 
 Частичная capability никогда не включает скрытый fallback. Недоступная
 operation, отсутствующий обязательный direct `Construct`, невозможный explicit
-rule или setting без требуемой capability дают diagnostic; до реализации
-соответствующей диагностики generated operation может быть unsupported, но не
-переключается на manual, другую creation-ветку или runtime discovery.
+rule или setting без требуемой capability дают diagnostic. До реализации
+соответствующей диагностики C#-legal generated operation бросает
+`Morphant.Exceptions.MappingConfigurationException`, но не переключается на
+manual, другую creation-ветку или runtime discovery.
 
 ### 11.4. Carry-forward contract generated surface
 
@@ -2208,9 +2214,9 @@ Lookup key обычного `Map<TSource, TDestination>` — canonical type pair
 
 | Кандидаты canonical pair | Поведение |
 |---:|---|
-| `0` | Mapping не найден; вызов завершается явной runtime-ошибкой |
+| `0` | `MappingNotFoundException` |
 | `1` | Единственный mapper выполняется |
-| `2+` | Mapping неоднозначен; вызов завершается явной runtime-ошибкой |
+| `2+` | `AmbiguousMappingException` |
 
 Несколько registrations одной canonical pair допустимы, в том числе в разных
 `TypeMapper` и assemblies. Само их наличие не является generator diagnostic
@@ -2224,9 +2230,10 @@ mapping-а, а не дополнительной частью lookup identity и
 candidate mapping method не вызывается; момент создания самих service
 instances определяется текущим `IServiceProvider`.
 
-Точные exception-типы и сообщения для missing/ambiguous lookup определяются на
-этапе observable failures. До этого отсутствие готового типа ошибки не даёт
-права вводить `last registration wins` или другой fallback.
+Если единственная registration разрешилась в `null`, вызов бросает
+`InvalidMappingRegistrationException`. Количество registrations проверяется
+раньше значения кандидата: две и более registrations остаются ambiguity, даже
+если одна из них разрешилась в `null`.
 
 ### 12.3. Root и nested dispatch
 
@@ -2332,7 +2339,8 @@ initializer cycle до появления result остаётся неразре
 `Convert`, custom handler, `MaxDepth` и projection не получают эту
 семантику автоматически.
 
-Реализация, точное имя setting и observable failures отложены до после v0.
+Реализация, точное имя setting и отдельные failures этой policy отложены до
+после v0.
 Полное исследование сохранено в
 [`REFERENCE_HANDLING_RESEARCH.md`](REFERENCE_HANDLING_RESEARCH.md).
 
@@ -2387,7 +2395,8 @@ source не нужны. Canonical identity учитывает типы и пор
 Отдельно от runtime dispatch generator проверяет pair shapes внутри одного
 generic mapper contract. Если две различающиеся registrations могут стать
 одинаковым `ITypeMapper<TSource, TDestination>` при подстановке type parameters,
-mapper не генерируется и требуется configuration diagnostic. Это правило
+обе конфликтующие pair не генерируются и требуют configuration diagnostic.
+Независимые legal pair того же mapper-а продолжают генерироваться. Это правило
 действует и для вложенных constructed roots (`Box<T>` против `Box<int>`);
 constraints не используются как неявное доказательство неравенства типов.
 Application-wide правило нескольких registrations здесь не помогает: конфликт
@@ -2634,6 +2643,8 @@ source, factory/derived behavior и точный evaluation order будут с�
 
 ## 14. Ошибочные и конфликтующие конфигурации
 
+### 14.1. Compile-time diagnostics
+
 В целевом дизайне diagnostics должны покрыть как минимум:
 
 - повторный `Construct` для одной pair, включая вызовы разных перегрузок;
@@ -2662,6 +2673,40 @@ source, factory/derived behavior и точный evaluation order будут с�
 
 Diagnostics остаются отдельной реализационной фазой, но отсутствие готового
 diagnostic не должно вводить скрытый fallback на другой mapping algorithm.
+
+### 14.2. Observable runtime failures
+
+Все ошибки, создаваемые самим Morphant, наследуются от публичного
+`Morphant.Exceptions.MorphantException`. Зафиксированы следующие типы:
+
+| Состояние | Exception |
+|---|---|
+| Invalid либо непереносимая mapping-конфигурация | `MappingConfigurationException` |
+| Операция отключена effective `MappingMode` | `MappingOperationNotSupportedException` |
+| Null source/destination отвергнут policy | `NullSourceException` / `NullDestinationException` |
+| Exact-pair lookup дал `0`, `2+` либо единственный `null` | `MappingNotFoundException` / `AmbiguousMappingException` / `InvalidMappingRegistrationException` |
+| Scoped mapper использован после завершения root call | `MappingScopeCompletedException` |
+| Root `Mapper` создан без provider-а | `MappingServiceProviderMissingException` |
+| Adaptive nested destination runtime-несовместим | `NestedDestinationTypeMismatchException` |
+| Declarative switch не выбрал ветку | `UnmatchedMappingSwitchException` |
+| `Option<T>.Value` прочитан у `None` | `OptionValueMissingException` |
+| Compile-time DSL API вызван как runtime API | `RuntimeInvocationNotSupportedException` |
+
+Если C# способен объявить `ITypeMapper<TSource, TDestination>`, invalid либо
+unsupported состояние не оставляет partial mapper незавершённым. Generated
+mapper сохраняет interface и обе операции; недоступная operation получает
+typed exception stub, а доступная остаётся исполнимой. Unsupported root не
+получает ложных construction/member/extension surfaces.
+
+Только структурно невозможные contracts не получают executable stub:
+неподходящая mapper declaration (например, non-partial/file-local либо
+вложенная в non-partial containing type), unnameable generic argument и
+конфликтующие generic interfaces, способные унифицироваться. Такая pair не
+подавляет независимые legal pairs того же mapper-а.
+
+Исключения из пользовательских `Construct`, `Members`, `Convert`, source
+expressions, mapper dependencies и application service provider не
+оборачиваются и сохраняют исходный тип, сообщение и stack.
 
 ## 15. Зафиксированные законы дизайна
 
@@ -3082,8 +3127,9 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
 независимая оценка полноты сценариев — в
 [`MAPPING_API_FINAL_AUDIT.md`](MAPPING_API_FINAL_AUDIT.md).
 
-Compile-time diagnostics и observable runtime failures остаются отдельными
-поздними планами. Collections, projection, polymorphism, reference handling и
+Observable runtime failures и generated exception-stub boundary реализованы и
+зафиксированы разделом 14.2. Compile-time diagnostics остаются отдельным
+поздним планом. Collections, projection, polymorphism, reference handling и
 остальные перечисленные выше возможности остаются post-v0 направлениями и не
-расширяют текущий контракт неявно. До отдельного продуктового решения их API и
-поведение не должны определяться удобством существующей реализации.
+расширяют текущий mapping semantics неявно. До отдельного продуктового решения
+их API не должен определяться удобством существующей реализации.

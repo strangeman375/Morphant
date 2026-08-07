@@ -77,7 +77,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Capture_744a52a8
                 ((ITypeMapper<Source, BadDestination>)mapper)
                     .Create(new Source { Value = 4 }, context);
             }
-            catch (NotSupportedException exception)
+            catch (global::Morphant.Exceptions.MappingConfigurationException exception)
                 when (exception.Message.Contains(
                     "capture",
                     StringComparison.OrdinalIgnoreCase))

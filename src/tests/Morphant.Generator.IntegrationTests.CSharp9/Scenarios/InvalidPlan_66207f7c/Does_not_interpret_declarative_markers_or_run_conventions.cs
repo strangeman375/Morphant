@@ -111,7 +111,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidPlan_6620
             {
                 action();
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

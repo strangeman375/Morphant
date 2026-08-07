@@ -163,9 +163,8 @@ mapping configured with `Convert`; the same mapper-level default can serve
 other structured mappings.
 
 Setting `ConstructorSelection` explicitly on an individual direct or manual
-mapping is an invalid configuration, including an explicit `Default`. Until
-configuration diagnostics are implemented, invoking that mapping throws
-`NotSupportedException`.
+mapping is an invalid configuration, including an explicit `Default`.
+Invoking that mapping throws `MappingConfigurationException`.
 
 ## Invalid values
 

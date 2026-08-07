@@ -36,9 +36,13 @@ For each call, `Mapper` requests exactly
 
 | Candidates | Result |
 |---:|---|
-| `0` | Mapping fails; no fallback or assignable-pair search runs |
+| `0` | `MappingNotFoundException`; no fallback or assignable-pair search runs |
 | `1` | The single candidate executes |
-| `2+` | Mapping fails as ambiguous; first/last registration never wins |
+| `2+` | `AmbiguousMappingException`; first/last registration never wins |
+
+If the only registration resolves to `null`, Morphant throws
+`InvalidMappingRegistrationException`. Candidate cardinality takes precedence:
+two or more registrations are ambiguous even if one resolves to `null`.
 
 The source-only facade calls `ITypeMapper.Create`. The overload with a
 destination calls `ITypeMapper.Update`, including an explicit null
@@ -61,7 +65,8 @@ Declarative nested markers and manual `context.Mapper.Map(...)` calls resolve
 through the same service provider and registration set. Each nested call gets
 its own immutable context frame but stays inside the root mapping scope.
 Sequential recursion, reentrancy, and caught nested exceptions are supported.
-The scoped facade cannot be retained and used after the root call completes.
+The scoped facade cannot be retained and used after the root call completes;
+doing so throws `MappingScopeCompletedException`.
 
 Independent root calls create independent scopes and may execute in parallel.
 Parallel use of one captured scoped facade inside a single mapping chain has
@@ -78,4 +83,6 @@ destination = mapper.Map(source, destination);
 ```
 
 See [Declarative mapping](declarative-mapping.md) for identity selection and
-[Manual mapping](manual-mapping.md) for manual nested dispatch.
+[Manual mapping](manual-mapping.md) for manual nested dispatch. See
+[Observable failures](observable-failures.md) for constructor, lookup, scope,
+and generated-mapping failure types.

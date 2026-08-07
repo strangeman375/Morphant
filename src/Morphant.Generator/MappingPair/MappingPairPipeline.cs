@@ -25,16 +25,18 @@ internal static class MappingPairPipeline
         }
 
         var pairs = ImmutableArray.CreateBuilder<MappingPairModel>();
+        var unsupportedPairs =
+            ImmutableArray.CreateBuilder<UnsupportedMappingPairModel>();
         var identities = new HashSet<MappingPairIdentityKey>();
 
         foreach (var registration in mappingInfo.Registrations)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!MappingTypeEligibilityPolicy.IsEligible(
+            if (!MappingTypeEligibilityPolicy.CanBeNamed(
                     registration.SourceType,
                     context.Compilation) ||
-                !MappingTypeEligibilityPolicy.IsEligible(
+                !MappingTypeEligibilityPolicy.CanBeNamed(
                     registration.DestinationType,
                     context.Compilation))
             {
@@ -55,43 +57,100 @@ internal static class MappingPairPipeline
                 continue;
             }
 
-            pairs.Add(
-                new MappingPairModel(
-                    registration,
-                    identity,
-                    DestinationCapabilityPolicy.Build(
-                        registration.DestinationType,
-                        context.Compilation,
-                        cancellationToken)));
+            var sourceReason =
+                MappingTypeEligibilityPolicy.GetUnsupportedRootReason(
+                    registration.SourceType,
+                    "source",
+                    context.Compilation);
+            var destinationReason =
+                MappingTypeEligibilityPolicy.GetUnsupportedRootReason(
+                    registration.DestinationType,
+                    "destination",
+                    context.Compilation);
+
+            if (sourceReason is not null || destinationReason is not null)
+            {
+                unsupportedPairs.Add(
+                    new UnsupportedMappingPairModel(
+                        registration,
+                        identity,
+                        string.Join(
+                            " ",
+                            new[] { sourceReason, destinationReason }
+                                .Where(static reason => reason is not null))));
+                continue;
+            }
+
+            pairs.Add(new MappingPairModel(
+                registration,
+                identity,
+                DestinationCapabilityPolicy.Build(
+                    registration.DestinationType,
+                    context.Compilation,
+                    cancellationToken)));
         }
 
         var immutablePairs = pairs.ToImmutable();
+        var immutableUnsupportedPairs = unsupportedPairs.ToImmutable();
+        var unifiable = FindUnifiableContracts(
+            immutablePairs,
+            immutableUnsupportedPairs,
+            cancellationToken);
+
+        immutablePairs = immutablePairs
+            .Select((pair, index) => pair with
+            {
+                HasUnifiableConflict = unifiable.Supported[index]
+            })
+            .ToImmutableArray();
+        immutableUnsupportedPairs = immutableUnsupportedPairs
+            .Select((pair, index) => pair with
+            {
+                HasUnifiableConflict = unifiable.Unsupported[index]
+            })
+            .ToImmutableArray();
 
         return new MapperMappingPairModel(
             mappingInfo.ConfigureSyntax,
             SymbolNameHelper.GetFullMetadataName(mapperType),
             immutablePairs,
-            HasUnifiablePairs(
-                immutablePairs,
-                cancellationToken));
+            immutableUnsupportedPairs,
+            unifiable.HasAny);
     }
 
-    private static bool HasUnifiablePairs(
+    private static UnifiableContracts FindUnifiableContracts(
         ImmutableArray<MappingPairModel> pairs,
+        ImmutableArray<UnsupportedMappingPairModel> unsupportedPairs,
         CancellationToken cancellationToken)
     {
+        var contracts = pairs
+            .Select((pair, index) => new Contract(
+                Supported: true,
+                index,
+                pair.SourceType,
+                pair.DestinationType))
+            .Concat(unsupportedPairs.Select((pair, index) => new Contract(
+                Supported: false,
+                index,
+                pair.SourceType,
+                pair.DestinationType)))
+            .ToArray();
+        var supported = new bool[pairs.Length];
+        var unsupported = new bool[unsupportedPairs.Length];
+        var hasAny = false;
+
         for (var leftIndex = 0;
-             leftIndex < pairs.Length;
+             leftIndex < contracts.Length;
              leftIndex++)
         {
             for (var rightIndex = leftIndex + 1;
-                 rightIndex < pairs.Length;
+                 rightIndex < contracts.Length;
                  rightIndex++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var left = pairs[leftIndex];
-                var right = pairs[rightIndex];
+                var left = contracts[leftIndex];
+                var right = contracts[rightIndex];
 
                 if (MappingTypeIdentityPolicy.CanPairsUnify(
                         left.SourceType,
@@ -99,15 +158,40 @@ internal static class MappingPairPipeline
                         right.SourceType,
                         right.DestinationType))
                 {
-                    return true;
+                    SetConflict(left);
+                    SetConflict(right);
+                    hasAny = true;
                 }
             }
         }
 
-        return false;
+        return new UnifiableContracts(supported, unsupported, hasAny);
+
+        void SetConflict(Contract contract)
+        {
+            if (contract.Supported)
+            {
+                supported[contract.Index] = true;
+            }
+            else
+            {
+                unsupported[contract.Index] = true;
+            }
+        }
     }
 
     private readonly record struct MappingPairIdentityKey(
         string Source,
         string Destination);
+
+    private readonly record struct Contract(
+        bool Supported,
+        int Index,
+        ITypeSymbol SourceType,
+        ITypeSymbol DestinationType);
+
+    private readonly record struct UnifiableContracts(
+        bool[] Supported,
+        bool[] Unsupported,
+        bool HasAny);
 }

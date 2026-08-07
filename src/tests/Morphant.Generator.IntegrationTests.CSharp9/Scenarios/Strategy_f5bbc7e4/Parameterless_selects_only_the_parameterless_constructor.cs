@@ -88,7 +88,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Strategy_f5bbc7e
             {
                 action();
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

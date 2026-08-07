@@ -11,11 +11,9 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TypeMapperPipeline
 {
-    private const string ConfiguredPlanConflictMessage =
-        "The configured mapping plan is conflicting.";
-
-    private const string ManualSettingConflictMessage =
-        "The configured map-level setting is not applicable to Convert.";
+    private const string InvalidBaseConfigurationMessage =
+        "The mapper inheritance chain contains a base mapper whose " +
+        "configuration cannot be composed.";
 
     private const string ConventionConstructionUnavailableMessage =
         "Convention construction is not available for this destination.";
@@ -147,19 +145,20 @@ internal static class TypeMapperPipeline
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
-        if (configuration.MappingPairs.HasUnifiablePairs)
-        {
-            return default;
-        }
-
         var usedGeneratedMethodNames = BuildUsedGeneratedMethodNames(
             mapperType);
-        var mappings = ImmutableArray.CreateBuilder<TypeMapperMappingModel>(
-            configuration.Pairs.Length);
+        var mappings = ImmutableArray.CreateBuilder<OrderedMapping>(
+            configuration.Pairs.Length +
+            configuration.MappingPairs.UnsupportedPairs.Length);
 
         foreach (var pairConfiguration in configuration.Pairs)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (pairConfiguration.Pair.HasUnifiableConflict)
+            {
+                continue;
+            }
 
             var effectiveSettings = EffectiveMappingSettings.Resolve(
                 assemblySettings,
@@ -188,7 +187,7 @@ internal static class TypeMapperPipeline
                 mapping = mapping with
                 {
                     UnsupportedExceptionMessage =
-                        ConfiguredPlanConflictMessage
+                        InvalidBaseConfigurationMessage
                 };
             }
             var createMethodName = RequiresCreateMethod(
@@ -202,16 +201,100 @@ internal static class TypeMapperPipeline
                 ? AllocateName("__Update", usedGeneratedMethodNames)
                 : null;
 
-            mappings.Add(
+            mappings.Add(new OrderedMapping(
+                pairConfiguration.Pair.Registration.Syntax.SpanStart,
                 mapping with
                 {
                     EffectiveSettings = effectiveSettings,
                     CreateImplMethodName = createMethodName,
                     UpdateImplMethodName = updateMethodName
-                });
+                }));
         }
 
-        return mappings.ToImmutable();
+        foreach (var unsupportedPair in
+                 configuration.MappingPairs.UnsupportedPairs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (unsupportedPair.HasUnifiableConflict)
+            {
+                continue;
+            }
+
+            mappings.Add(new OrderedMapping(
+                unsupportedPair.Registration.Syntax.SpanStart,
+                BuildUnsupportedMapping(
+                    unsupportedPair,
+                    compilation,
+                    mapperType)));
+        }
+
+        return mappings
+            .OrderBy(static mapping => mapping.Position)
+            .Select(static mapping => mapping.Mapping)
+            .ToImmutableArray();
+    }
+
+    private static TypeMapperMappingModel BuildUnsupportedMapping(
+        UnsupportedMappingPairModel pair,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType)
+    {
+        var declarativeSourceType =
+            MappingTypeNormalization.NormalizeDeclarativeSource(
+                pair.SourceType,
+                compilation);
+        var previousDestinationType =
+            MappingTypeNormalization.NormalizePreviousDestination(
+                pair.DestinationType,
+                compilation);
+        var nonNullSourceName = BuildNonNullSourceName(
+            pair.SourceType,
+            mapperType);
+        var usedLocalNames =
+            UserResultMappingPlanner.BuildUsedLocalNames(mapperType);
+        usedLocalNames.Add(nonNullSourceName);
+
+        return new TypeMapperMappingModel(
+            SourceTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    pair.SourceType),
+            SourceRuntimeTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    pair.SourceType),
+            MaybeNullSourceTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedMaybeNullTypeName(
+                    pair.SourceType),
+            NonNullSourceTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    declarativeSourceType),
+            NonNullSourceName: nonNullSourceName,
+            DestinationTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    pair.DestinationType),
+            DestinationRuntimeTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    pair.DestinationType),
+            MaybeNullDestinationTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedMaybeNullTypeName(
+                    pair.DestinationType),
+            NonNullDestinationTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    previousDestinationType),
+            ResultLocalName: AllocateName("result", usedLocalNames),
+            SourceCanBeNull: CanBeNull(pair.SourceType),
+            SourceIsNullableValue:
+                MappingTypeNormalization.IsNullableValue(pair.SourceType),
+            DestinationCanBeNull: CanBeNull(pair.DestinationType),
+            CreateDirectExpression: null,
+            UpdateDirectExpression: null,
+            CreateFactory: null,
+            CreateConstructor: null,
+            UpdateKind: TypeMapperUpdateKind.Unsupported,
+            CreateMemberMappings: [],
+            CreatePostMemberMappings: [],
+            UpdateMemberMappings: [],
+            UnsupportedExceptionMessage: pair.Reason);
     }
 
     private static TypeMapperMappingModel BuildMapping(
@@ -249,7 +332,8 @@ internal static class TypeMapperPipeline
                     ? null
                     : new TypeMapperManualMappingModel(null),
                 UnsupportedExceptionMessage =
-                    ConfiguredPlanConflictMessage
+                    BuildConfiguredPlanConflictMessage(
+                        configuration.Conflicts)
             };
         }
 
@@ -261,7 +345,8 @@ internal static class TypeMapperPipeline
                 {
                     ManualMapping = new TypeMapperManualMappingModel(null),
                     UnsupportedExceptionMessage =
-                        ManualSettingConflictMessage
+                        BuildManualSettingConflictMessage(
+                            configuration.Settings)
                 };
             }
 
@@ -367,7 +452,8 @@ internal static class TypeMapperPipeline
                     return mapping with
                     {
                         UnsupportedExceptionMessage =
-                            "Configured Construct plans are not executable yet."
+                            "The configured Construct callback requires a " +
+                            "structured destination type."
                     };
                 }
 
@@ -473,6 +559,9 @@ internal static class TypeMapperPipeline
             SourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     pair.SourceType),
+            SourceRuntimeTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    pair.SourceType),
             MaybeNullSourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedMaybeNullTypeName(
                     pair.SourceType),
@@ -482,6 +571,9 @@ internal static class TypeMapperPipeline
             NonNullSourceName: nonNullSourceName,
             DestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    pair.DestinationType),
+            DestinationRuntimeTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
                     pair.DestinationType),
             MaybeNullDestinationTypeName:
                 TypeMapperMappingTypePolicy
@@ -628,6 +720,120 @@ internal static class TypeMapperPipeline
                    PairConfigurationSettingOrigin.Explicit ||
                settings.UnmappedMemberValidation.Origin ==
                    PairConfigurationSettingOrigin.Explicit;
+    }
+
+    private static string BuildManualSettingConflictMessage(
+        PairConfigurationSettings settings)
+    {
+        var names = ImmutableArray.CreateBuilder<string>();
+
+        AddExplicitSetting(
+            names,
+            settings.NullSourceHandling,
+            nameof(settings.NullSourceHandling));
+        AddExplicitSetting(
+            names,
+            settings.NullDestinationHandling,
+            nameof(settings.NullDestinationHandling));
+        AddExplicitSetting(
+            names,
+            settings.ConstructorSelection,
+            nameof(settings.ConstructorSelection));
+        AddExplicitSetting(
+            names,
+            settings.MemberSelection,
+            nameof(settings.MemberSelection));
+        AddExplicitSetting(
+            names,
+            settings.UnmappedMemberValidation,
+            nameof(settings.UnmappedMemberValidation));
+
+        return "The following map-level settings are not applicable to " +
+               "Convert: " + string.Join(", ", names) + ".";
+    }
+
+    private static void AddExplicitSetting<TValue>(
+        ImmutableArray<string>.Builder names,
+        PairConfigurationSetting<TValue> setting,
+        string name)
+        where TValue : struct, Enum
+    {
+        if (setting.Origin == PairConfigurationSettingOrigin.Explicit)
+        {
+            names.Add(name);
+        }
+    }
+
+    private static string BuildConfiguredPlanConflictMessage(
+        PairConfigurationConflict conflicts)
+    {
+        var reasons = ImmutableArray.CreateBuilder<string>();
+
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.DuplicateConstruct,
+            "more than one Construct callback is configured");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.DuplicateMembers,
+            "more than one Members callback is configured");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.DuplicateConvert,
+            "more than one Convert callback is configured");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.MixedManualAndDeclarative,
+            "Convert is combined with Construct or Members");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.DuplicateIncludeBase,
+            "more than one IncludeBase call is configured");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.MissingBaseConfiguration,
+            "the selected base mapper configuration is unavailable");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.MissingBasePair,
+            "the selected base mapper does not configure the requested pair");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.IncompatibleBasePair,
+            "the IncludeBase pair is incompatible with the current pair");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.InaccessibleInheritedPlan,
+            "an inherited callback is inaccessible from the generated mapper");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.CyclicIncludeBase,
+            "IncludeBase contains a cycle");
+
+        return "The configured mapping plan is invalid: " +
+               string.Join("; ", reasons) + ".";
+    }
+
+    private static void AddConflictReason(
+        ImmutableArray<string>.Builder reasons,
+        PairConfigurationConflict conflicts,
+        PairConfigurationConflict conflict,
+        string reason)
+    {
+        if ((conflicts & conflict) != 0)
+        {
+            reasons.Add(reason);
+        }
     }
 
     private static bool CanBeNull(ITypeSymbol type)
@@ -823,4 +1029,8 @@ internal static class TypeMapperPipeline
     private readonly record struct DestinationPlan(
         ITypeSymbol MemberType,
         TypeMapperUpdateKind UpdateKind);
+
+    private readonly record struct OrderedMapping(
+        int Position,
+        TypeMapperMappingModel Mapping);
 }

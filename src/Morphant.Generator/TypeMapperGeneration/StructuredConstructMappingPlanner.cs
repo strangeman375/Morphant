@@ -12,7 +12,8 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class StructuredConstructMappingPlanner
 {
     private const string UnsupportedConstructMessage =
-        "The configured structured Construct is not supported yet.";
+        "The configured structured Construct callback cannot be represented " +
+        "by the supported declarative grammar.";
 
     private const string UnavailablePreviousMessage =
         "The configured Construct selected an unavailable previous destination.";
@@ -1676,7 +1677,8 @@ internal sealed record StructuredConstructLeafNode(
     private static class UnsupportedConstructMappingMessage
     {
         public const string Value =
-            "The configured structured Construct is not supported yet.";
+            "The configured structured Construct callback cannot be " +
+            "represented by the supported declarative grammar.";
     }
 }
 

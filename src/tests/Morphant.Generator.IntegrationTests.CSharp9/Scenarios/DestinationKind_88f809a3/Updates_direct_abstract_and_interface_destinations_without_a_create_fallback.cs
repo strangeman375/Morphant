@@ -86,7 +86,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DestinationKind_
                     source,
                     default(MappingContext));
             }
-            catch (NotSupportedException)
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
             {
                 return;
             }

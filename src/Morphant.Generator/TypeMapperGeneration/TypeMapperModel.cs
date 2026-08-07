@@ -23,10 +23,12 @@ internal readonly record struct TypeMapperContainingTypeModel
 internal readonly record struct TypeMapperMappingModel
 (
     string SourceTypeName,
+    string SourceRuntimeTypeName,
     string MaybeNullSourceTypeName,
     string NonNullSourceTypeName,
     string NonNullSourceName,
     string DestinationTypeName,
+    string DestinationRuntimeTypeName,
     string MaybeNullDestinationTypeName,
     string NonNullDestinationTypeName,
     string ResultLocalName,

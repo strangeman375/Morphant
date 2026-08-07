@@ -8,7 +8,8 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class MembersControlFlowMappingPlanner
 {
     private const string UnsupportedMembersMessage =
-        "The configured Members control flow is not supported yet.";
+        "The configured Members control flow cannot be represented by the " +
+        "supported declarative grammar.";
 
     public static TypeMapperMappingModel Build(
         MembersDeclarativeControlFlowPlan members,

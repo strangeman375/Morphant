@@ -65,9 +65,10 @@ production-код, tests, implementation plan и excluded reference snapshot
 принятые сценарии текущего дизайна — рабочими. Совместимость с отменённым
 дизайном не проверяется. Временный скрытый fallback на другой mapping
 algorithm недопустим.
-До позднего этапа diagnostics ошибочная конфигурация может получать
-детерминированный unsupported-path, но не должна молча менять выбранную
-семантику.
+До позднего этапа diagnostics ошибочная конфигурация сохраняет C#-legal
+generated contract и получает typed exception-stub, но не должна молча менять
+выбранную семантику. Структурно невозможный contract не генерируется и не
+подавляет независимые legal pairs того же mapper-а.
 
 Тесты проектируются как спецификация пользовательского поведения:
 
@@ -120,9 +121,9 @@ coverage.
 - settings и явная композиция через mapper inheritance;
 - generated surface, actualization, incrementality и интеграционный сценарий.
 
-Диагностики и observable failures намеренно оставлены отдельными поздними
-этапами без внутренней декомпозиции. После завершения основной реализации для
-каждого из них будет составлен отдельный согласованный план.
+Диагностики и observable failures вынесены в отдельные поздние этапы.
+Observable failures детализированы и реализованы этапом 24; diagnostics
+остаются следующим отдельным согласуемым планом.
 
 Collections, projection и остальные post-v0 возможности в текущую реализацию
 не входят. Они перечислены в конце документа только для сохранения границы и
@@ -130,13 +131,14 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 5, этап 22 — финальный migration audit, документация и integration
-slice.**
+**Фаза 6, этап 24 — observable failures.**
 
 Статус: ожидает ревью.
 
 Этап 17 принят. Этап 18 по решению от 6 августа 2026 года перенесён за границу
-core v0. Этапы 19–21 приняты. Этапы 23 и 24 заблокированы до принятия этапа 22.
+core v0. Этапы 19–22 приняты. По согласованной последовательности этап 24
+реализован раньше этапа 23; diagnostics заблокированы до принятия этапа 24 и
+отдельного согласования diagnostic plan.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -1035,8 +1037,9 @@ Production scope:
 - последовательная recursion/reentrancy и exception isolation;
 - независимые root scopes допускают parallel calls; parallel nested use одного
   scope не получает guarantee;
-- provisional internal failures допустимы до отдельного observable-failures
-  этапа, но lookup result не может меняться.
+- на момент этапа 14 внутренние failures оставались provisional до отдельного
+  observable-failures этапа; lookup result при этом не мог меняться. Этап 24
+  закрепил окончательные публичные типы без изменения lookup law.
 
 Тестовый scope:
 
@@ -1136,8 +1139,8 @@ Production scope:
   либо explicit generic argument; generic result обязан warning-free
   преобразовываться в target type;
 - adaptive generic Update проверяет runtime-совместимость текущего destination;
-  incompatible non-null value приводит к `InvalidCastException`, а не к
-  скрытому Create;
+  incompatible non-null value приводит к
+  `NestedDestinationTypeMismatchException`, а не к скрытому Create;
 - true get-only destination properties, properties с недоступным обычным
   setter-ом и доступные `readonly` fields входят в `DestinationMembers` как
   get-only markers и допускают standalone
@@ -1456,7 +1459,7 @@ replacement, multiple mappers/assemblies, collision coordination и возвра
 
 ### Этап 22. Финальный migration audit, документация и integration slice
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — завершить основную реализацию core v0 до отдельной работы над
 diagnostics и observable failures.
@@ -1555,7 +1558,8 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: не начат; заблокирован до принятия этапа 22.
+Статус: не начат; по согласованной последовательности отложен до принятия
+этапа 24.
 
 Не детализируется в этом roadmap. После принятия этапа 22 для compile-time
 diagnostics будет составлен отдельный план на основе нормативного раздела об
@@ -1564,14 +1568,86 @@ diagnostic IDs, сообщениями, locations, severity и recovery не н�
 
 ### Этап 24. Observable failures
 
-Статус: не начат; заблокирован до принятия этапа 22 и отдельного согласования
-последовательности поздних планов.
+Статус: ожидает ревью.
 
-Не детализируется в этом roadmap. После готовности основной реализации для
-runtime exception types, messages и остальных observable failure contracts
-будет составлен отдельный план. До этого provisional failures не считаются
-публично зафиксированным контрактом и не должны влиять на выбор mapping
-algorithm.
+Цель — зафиксировать единый публичный контракт ошибок Morphant до введения
+compile-time diagnostics и исключить пустые либо частично сгенерированные
+C#-legal mapping contracts.
+
+Согласованная граница:
+
+- все ошибки, создаваемые самим Morphant, имеют публичный typed exception в
+  namespace `Morphant.Exceptions` и общий base `MorphantException`;
+- пользовательские exceptions из `Construct`, `Members`, `Convert`, source
+  expressions, mapper dependencies и service provider не оборачиваются;
+- если C# может объявить `ITypeMapper<TSource, TDestination>`, invalid либо
+  unsupported mapping сохраняет interface и обе operations; недоступный path
+  получает executable exception-stub;
+- unsupported root не получает ложных construction/member/pair-extension
+  surfaces;
+- structurally impossible mapper shape, unnameable pair contract и generic
+  interfaces, способные унифицироваться, остаются без executable stub до
+  diagnostics; независимые legal pairs того же mapper-а генерируются.
+
+Production scope:
+
+- ввести `MappingConfigurationException`,
+  `MappingOperationNotSupportedException`, `NullSourceException`,
+  `NullDestinationException`, `MappingNotFoundException`,
+  `AmbiguousMappingException`, `InvalidMappingRegistrationException`,
+  `MappingScopeCompletedException`,
+  `MappingServiceProviderMissingException`,
+  `NestedDestinationTypeMismatchException`,
+  `OptionValueMissingException` и `UnmatchedMappingSwitchException`;
+- включить существующий `RuntimeInvocationNotSupportedException` в ту же
+  hierarchy;
+- заменить Morphant-authored standard exceptions в runtime и generated code,
+  сохранив исходные user-authored throw expressions;
+- выдавать полные mapping stubs для invalid settings/plans и C#-legal
+  unsupported roots;
+- исключать только конфликтующие generic pairs, а не весь mapper;
+- сохранить lookup law `0 / 1 / 2+`, отдельно зафиксировать единственную
+  registration, разрешившуюся в `null`, и завершённый mapping scope;
+- обновить public XML, normative design, README и conceptual/settings docs.
+
+Тестовый scope:
+
+- reflection baseline всего публичного exception API и exact messages;
+- exact generated source для invalid effective setting и unsupported root;
+- production-composition проверка отсутствия ложных DSL artifacts у
+  unsupported root;
+- generic-unification scenario с независимой pair в том же mapper-е;
+- real `Microsoft.Extensions.DependencyInjection` lookup tests для missing,
+  ambiguous, null registration и completed scope;
+- compiled C# 9 consumer для executable unsupported stub и independent generic
+  contract;
+- существующие compiled scenarios для operation gates, null policies,
+  invalid plans, nested destination mismatch, unmatched switch и неизменённых
+  user exceptions.
+
+Реализовано: добавлена публичная hierarchy из общего `MorphantException` и
+тринадцати конкретных типов. Runtime dispatch, scope, mapper construction и
+`Option<T>` больше не создают standard exceptions для Morphant-owned failures.
+Generated mapper использует отдельные типы для invalid configuration,
+отключённой operation, null policies, adaptive destination mismatch и
+non-exhaustive declarative switch; user throw expressions остаются без
+обёртки.
+
+Pair pipeline разделяет supported, unsupported-but-nameable и structurally
+unnameable contracts. C#-legal collection/tuple/array/delegate/deferred и
+прочие запрещённые roots получают полный `ITypeMapper<,>` с двумя throwing
+methods, но не получают construction/member/extensions. Generic unification
+удаляет только конфликтующие pairs; независимые pairs продолжают генерироваться.
+Invalid settings и plan conflicts сохраняют полный interface и сообщают
+конкретную причину вместо общего `not supported yet`.
+
+Добавлены самостоятельные exact-source/unit и compiled C# 9 integration
+сценарии. Обновлены существующие runtime scenarios и snapshots для typed
+failure contract. Focused verification проходит: 46 unit tests по exception,
+runtime, exact-emission, actualization и затронутым mapper categories; 119
+compiled integration tests по всем изменённым failure paths; отдельный C# 9 и
+C# 11 consumer build проходит без warnings и errors. Полная suite по правилам
+репозитория не запускалась.
 
 ## За границей текущего плана
 
@@ -1605,6 +1681,6 @@ implementation plans:
 - automatic reverse mapping, async/I/O mapping и остальные предложенные
   non-goals — только после отдельного продуктового решения.
 
-Ни один из этих пунктов не становится неявным продолжением этапа 24.
+Ни один из этих пунктов не становится неявным продолжением этапа 23.
 Следующий post-v0 roadmap выбирается и согласуется отдельно после завершения
 core v0.

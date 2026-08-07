@@ -629,7 +629,9 @@ namespace TestCase
         {
             if (source.Reuse)
             {
-                throw new global::System.NotSupportedException(
+                throw new global::Morphant.Exceptions.MappingConfigurationException(
+                    typeof(global::TestCase.Source),
+                    typeof(global::TestCase.Destination),
                     "The configured Construct selected an unavailable previous destination.");
             }
             else

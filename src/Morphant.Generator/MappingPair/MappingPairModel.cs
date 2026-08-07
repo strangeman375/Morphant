@@ -17,18 +17,31 @@ internal readonly record struct MapperMappingPairModel(
     MethodDeclarationSyntax ConfigureSyntax,
     string MapperIdentity,
     ImmutableArray<MappingPairModel> Pairs,
+    ImmutableArray<UnsupportedMappingPairModel> UnsupportedPairs,
     bool HasUnifiablePairs);
 
 internal readonly record struct MappingPairModel(
     MappingPairRegistrationModel Registration,
     MappingPairIdentity Identity,
-    MappingPairCapabilities Capabilities)
+    MappingPairCapabilities Capabilities,
+    bool HasUnifiableConflict = false)
 {
     public ITypeSymbol SourceType =>
         Registration.SourceType;
 
     public ITypeSymbol DestinationType =>
         Registration.DestinationType;
+}
+
+internal readonly record struct UnsupportedMappingPairModel(
+    MappingPairRegistrationModel Registration,
+    MappingPairIdentity Identity,
+    string Reason,
+    bool HasUnifiableConflict = false)
+{
+    public ITypeSymbol SourceType => Registration.SourceType;
+
+    public ITypeSymbol DestinationType => Registration.DestinationType;
 }
 
 internal readonly record struct MappingPairIdentity(
