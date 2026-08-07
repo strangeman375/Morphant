@@ -1514,6 +1514,15 @@ integration host напрямую вызывает их public `Scenario.Verify(
 `ProductionGeneratorIntegrationTest`, runtime Roslyn packages, dynamic emit,
 `Assembly.Load` и reflection invocation удалены из integration project.
 
+Consumer assemblies не ссылаются друг на друга: только агрегирующий test host
+видит C# 9, C# 11 и latest projects одновременно. Каждый scenario владеет
+своими DTO, mapper-ами и domain fixtures; небольшие типы между scenarios не
+переиспользуются. Единственная дополнительная fixture assembly принадлежит
+cross-assembly nested-lookup scenario, потому что отдельная assembly является
+самим предметом этой проверки. Общая тестовая инфраструктура не дублируется:
+`ManualServiceProvider` находится в корне C# 9 consumer project и используется
+всеми его scenarios и агрегатором.
+
 Честная project compilation выявила и закрыла production-дефект внутреннего
 nested-map conversion probe: при `TreatWarningsAsErrors=true` nullable warning,
 повышенный настройкой project-а, ошибочно считался настоящим compiler error и

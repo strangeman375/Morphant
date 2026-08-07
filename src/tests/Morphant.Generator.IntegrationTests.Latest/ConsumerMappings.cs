@@ -1,6 +1,14 @@
-using Morphant.Generator.IntegrationTests.CSharp9;
-
 namespace Morphant.Generator.IntegrationTests.Latest;
+
+public sealed class Customer
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+public sealed class CustomerDto
+{
+    public string Name { get; set; } = string.Empty;
+}
 
 public interface ILabelFormatter
 {
@@ -57,6 +65,8 @@ public sealed partial class LatestMapper : TypeMapper
 
     protected override void Configure(MapperBuilder builder)
     {
+        builder.Map<Customer, CustomerDto>();
+
         builder.Map<Order, OrderDto>()
             .Construct(source =>
                 new(source.Number, _formatter.Format(source.Number)))

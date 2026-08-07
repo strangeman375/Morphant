@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using Morphant;
+using Morphant.Generator.IntegrationTests.CSharp9;
 using Morphant.Context;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousAndResult_69ca3cc3
@@ -77,21 +78,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousAndResul
             return new ChildDestination(
                 source!.Value + (destination?.Value ?? 100));
         }
-    }
-
-    public sealed class ManualServiceProvider : IServiceProvider
-    {
-        private readonly Dictionary<Type, object> _services = new();
-
-        public object? GetService(Type serviceType) =>
-            _services.TryGetValue(serviceType, out var service)
-                ? service
-                : null;
-
-        public void Add<TService>(TService service)
-            where TService : class =>
-            _services[typeof(IEnumerable<TService>)] =
-                new TService[] { service };
     }
 
     public static class Scenario

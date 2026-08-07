@@ -6,7 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Morphant.Generator.IntegrationTests.CSharp9\Morphant.Generator.IntegrationTests.CSharp9.csproj" />
         <ProjectReference Include="..\..\Morphant\Morphant.csproj" />
         <ProjectReference Include="..\..\Morphant.Generator\Morphant.Generator.csproj"
                           OutputItemType="Analyzer"

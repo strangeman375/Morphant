@@ -3,17 +3,17 @@
 #pragma warning disable CS1591
 
 using System;
-using System.Collections.Generic;
 using Morphant;
-using Morphant.Generator.UnitTests.TestAssets;
+using Morphant.Generator.IntegrationTests.CSharp9;
+using Morphant.Generator.IntegrationTests.CSharp9.ExternalLookupFixture;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExternalLookup_1ec1f24c
 {
-    public sealed record OuterSource(IReferencedNestedSource Child);
+    public sealed record OuterSource(IExternalNestedSource Child);
 
     public sealed class OuterDestination
     {
-        public ReferencedNestedDestination Child { get; set; } =
+        public ExternalNestedDestination Child { get; set; } =
             new(-1);
     }
 
@@ -28,37 +28,22 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExternalLookup_1
                 });
     }
 
-    public sealed class ManualServiceProvider : IServiceProvider
-    {
-        private readonly Dictionary<Type, object> _services = new();
-
-        public object? GetService(Type serviceType) =>
-            _services.TryGetValue(serviceType, out var service)
-                ? service
-                : null;
-
-        public void Add<TService>(TService service)
-            where TService : class =>
-            _services[typeof(IEnumerable<TService>)] =
-                new TService[] { service };
-    }
-
     public static class Scenario
     {
         public static void Verify()
         {
             var outer = new OuterMapper();
-            var child = new ReferencedNestedMapper();
+            var child = new ExternalNestedMapper();
             var provider = new ManualServiceProvider();
             provider.Add<ITypeMapper<OuterSource, OuterDestination>>(
                 outer);
             provider.Add<ITypeMapper<
-                IReferencedNestedSource,
-                ReferencedNestedDestination>>(child);
+                IExternalNestedSource,
+                ExternalNestedDestination>>(child);
             var mapper = new Mapper(provider);
 
             var result = mapper.Map<OuterSource, OuterDestination>(
-                new OuterSource(new ReferencedNestedSource(5)));
+                new OuterSource(new ExternalNestedSource(5)));
 
             if (result.Child.Value != 15 || child.Calls != 1)
             {

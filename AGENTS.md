@@ -74,7 +74,16 @@
   assemblies under `Morphant.Generator.IntegrationTests.CSharp9`,
   `Morphant.Generator.IntegrationTests.CSharp11` and
   `Morphant.Generator.IntegrationTests.Latest` use analyzer-style project
-  references and define the package-consumer boundary.
+  references and define the package-consumer boundary. These consumer
+  assemblies must not reference one another; only the aggregating integration
+  test host references all of them. Each scenario owns its DTOs, mappers and
+  other domain fixtures and must not reference another scenario. Copy small
+  scenario fixtures instead of sharing them. Reusable test infrastructure may
+  be shared, but it belongs at the root of the owning consumer project rather
+  than inside an individual scenario. A dedicated fixture assembly is allowed
+  only when an assembly boundary is itself the behavior under test, and that
+  fixture must be owned by that one scenario rather than reused as a general
+  scenario dependency.
 
 ## Generated code
 

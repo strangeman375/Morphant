@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Morphant.Generator.UnitTests.TestAssets\Morphant.Generator.UnitTests.TestAssets.csproj" />
+        <ProjectReference Include="..\Morphant.Generator.IntegrationTests.CSharp9.ExternalLookupFixture\Morphant.Generator.IntegrationTests.CSharp9.ExternalLookupFixture.csproj" />
         <ProjectReference Include="..\..\Morphant\Morphant.csproj" />
         <ProjectReference Include="..\..\Morphant.Generator\Morphant.Generator.csproj"
                           OutputItemType="Analyzer"

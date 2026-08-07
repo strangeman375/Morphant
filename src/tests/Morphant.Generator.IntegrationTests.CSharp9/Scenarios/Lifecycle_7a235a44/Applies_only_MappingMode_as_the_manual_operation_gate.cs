@@ -3,8 +3,8 @@
 #pragma warning disable CS1591
 
 using System;
-using System.Collections.Generic;
 using Morphant;
+using Morphant.Generator.IntegrationTests.CSharp9;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_7a235a44
 {
@@ -39,21 +39,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_7a235a
                         : new UpdateDestination(source?.Value ?? -1);
                 });
         }
-    }
-
-    public sealed class ManualServiceProvider : IServiceProvider
-    {
-        private readonly Dictionary<Type, object> _services = new();
-
-        public object? GetService(Type serviceType) =>
-            _services.TryGetValue(serviceType, out var service)
-                ? service
-                : null;
-
-        public void Add<TService>(TService service)
-            where TService : class =>
-            _services[typeof(IEnumerable<TService>)] =
-                new TService[] { service };
     }
 
     public static class Scenario
