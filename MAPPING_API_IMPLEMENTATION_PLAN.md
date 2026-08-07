@@ -128,13 +128,13 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 4, этап 19 — mapper inheritance,
-`IncludeBase<TBaseSource, TBaseDestination>()` и settings composition.**
+**Фаза 5, этап 20 — actualization нового generated surface и mapper-а.**
 
-Статус: исправлен после ревью, ожидает повторного ревью.
+Статус: ожидает ревью.
 
 Этап 17 принят. Этап 18 по решению от 6 августа 2026 года перенесён за границу
-core v0. Этап 20 и все последующие этапы заблокированы до принятия этапа 19.
+core v0. Этап 19 принят. Этап 21 и все последующие этапы заблокированы до
+принятия этапа 20.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -1268,7 +1268,7 @@ automatic mapping, не меняя общую conversion model.
 
 ### Этап 19. Mapper inheritance, typed `IncludeBase` и settings composition
 
-Статус: исправлен после ревью, ожидает повторного ревью.
+Статус: принят.
 
 Цель — реализовать единственную v0-модель переиспользования configuration.
 
@@ -1356,7 +1356,7 @@ inheritance актуализированы.
 
 ### Этап 20. Actualization нового generated surface и mapper-а
 
-Статус: не начат; заблокирован до принятия этапа 19.
+Статус: ожидает ревью.
 
 Цель — доказать корректное появление, обновление и исчезновение всех artifacts
 нового дизайна.
@@ -1385,9 +1385,24 @@ Production scope:
 Результат этапа: generated output всегда соответствует текущей compilation, а
 не историческому состоянию incremental pipeline.
 
+Реализовано: test-owned actualization harness сохраняет один
+`GeneratorDriver` на протяжении последовательности edits, заменяет syntax
+trees и references и на каждом шаге проверяет полный набор hint names, точный
+CRLF-content, compiler warnings/errors и при необходимости исполняет generated
+mapper. Самостоятельные construction/member/type-mapper categories фиксируют
+add/change/remove/restore lifecycle, последнюю причину генерации, несколько
+pairs/mappers для одного destination, structured/direct и member-capability
+transitions, constructors, members, documentation, attributes, settings,
+generic constraints и стабильный output при нерелевантном source-file edit.
+Отдельные последовательности заменяют сборку с тем же identity и доказывают
+актуализацию construction plan, member plan и mapper implementation с
+последующим восстановлением исходной версии. Production pipelines уже имели
+достаточные semantic dependencies; изменений публичной или внутренней
+production-семантики не потребовалось.
+
 ### Этап 21. Incrementality и cache isolation
 
-Статус: не начат.
+Статус: не начат; заблокирован до принятия этапа 20.
 
 Цель — обеспечить точечную инвалидизацию без глобальной перестройки всех
 mappings и plans.
