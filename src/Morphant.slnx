@@ -7,6 +7,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Morphant.Generator.IntegrationTests.CSharp9/Morphant.Generator.IntegrationTests.CSharp9.csproj" />
+    <Project Path="tests/Morphant.Generator.IntegrationTests.CSharp11/Morphant.Generator.IntegrationTests.CSharp11.csproj" />
     <Project Path="tests/Morphant.Generator.IntegrationTests.Latest/Morphant.Generator.IntegrationTests.Latest.csproj" />
     <Project Path="tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj" />
     <Project Path="tests/Morphant.Generator.UnitTests.TestAssets/Morphant.Generator.UnitTests.TestAssets.csproj" />

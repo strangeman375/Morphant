@@ -7,8 +7,6 @@
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.4" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
         <PackageReference Include="NUnit" Version="4.3.2" />
         <PackageReference Include="NUnit.Analyzers" Version="4.7.0" />
@@ -21,9 +19,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Morphant.Generator.IntegrationTests.CSharp9\Morphant.Generator.IntegrationTests.CSharp9.csproj" />
+        <ProjectReference Include="..\Morphant.Generator.IntegrationTests.CSharp11\Morphant.Generator.IntegrationTests.CSharp11.csproj" />
         <ProjectReference Include="..\Morphant.Generator.IntegrationTests.Latest\Morphant.Generator.IntegrationTests.Latest.csproj" />
-        <ProjectReference Include="..\Morphant.Generator.UnitTests.TestAssets\Morphant.Generator.UnitTests.TestAssets.csproj" />
-        <ProjectReference Include="..\..\Morphant.Generator\Morphant.Generator.csproj" />
         <ProjectReference Include="..\..\Morphant\Morphant.csproj" />
     </ItemGroup>
 

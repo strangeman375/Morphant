@@ -88,17 +88,22 @@ algorithm недопустим.
 - C# 9, nullable-контракт, CRLF, deterministic output и правила hint names
   сохраняются на каждом этапе.
 
-Тесты, которые собирают generated assembly, выполняют mapper runtime либо
-проверяют композицию полного production-generator-а, являются
-интеграционными по своей природе. Они находятся в отдельном
-`Morphant.Generator.IntegrationTests` и выполняются через полный production
-generator. Unit-test helpers ограничены exact-source, compiler и focused
-model-проверками; general user-scenario runtime execution туда не возвращается.
-Test-owned actualization harness может выполнить конкретный step только для
-доказательства свежей semantics при сохранённом `GeneratorDriver`; это часть
-incremental concern, а не integration coverage. Реальные C# 9 и latest
-consumer assemblies подключают runtime и generator через package-like analyzer
-references.
+Runtime-сценарии generated mapper-а являются интеграционными по своей природе.
+Они определяются обычным C#-кодом в реальных C# 9, C# 11 и latest consumer
+assemblies, подключающих generator через package-like analyzer reference.
+MSBuild компилирует source вместе с generated mapper-ом, после чего test host
+напрямую вызывает уже скомпилированный scenario: mapper создаётся обычным
+конструктором, приводится к точному `ITypeMapper<,>` и получает прямой вызов
+`Create` / `Update`. Runtime `CSharpCompilation`, `GeneratorDriver`, emit/load и
+reflection invocation в integration slice не используются.
+
+Полный exact-source production-composition и reflection inventory публичного
+API остаются focused unit-спецификациями. Unit-test helpers ограничены
+exact-source, compiler и focused model-проверками; general user-scenario
+runtime execution туда не возвращается. Test-owned actualization harness может
+выполнить конкретный step только для доказательства свежей semantics при
+сохранённом `GeneratorDriver`; это часть incremental concern, а не integration
+coverage.
 
 Публичные XML comments и пользовательская документация обновляются вместе с
 тем этапом, который вводит или меняет соответствующий контракт. Актуальная
@@ -1497,17 +1502,28 @@ Production scope:
 obsolete adapters и возвращённых `Template()` tests; exact public API baseline
 фиксирует все exported/protected core-v0 members и enum values. Exact
 production composition проверяет полный набор и имена пяти generated artifacts
-без дополнительных compatibility files.
+без дополнительных compatibility files. Оба reflection/Roslyn-based exact
+контракта находятся в unit-test project и не смешиваются с runtime integration.
 
-Все 122 executable scenario механически вынесены из unit-test categories в
-`Morphant.Generator.IntegrationTests` и теперь выполняются через полный
-`MorphantGenerator`; production-composition test перенесён туда же. Unit-test
-helpers больше не содержат runtime compilation/execution. Отдельные C# 9 и
-latest consumer assemblies используют analyzer-style project references и
-проверяют documentation quick start, one/multiple assembly manual
-registrations, generated mapper activation, root, manual и declarative nested
-dispatch, closed generic и nullable destinations, а также mapper dependency из
-текущего service scope.
+122 исходные executable scenario groups развёрнуты в 130 обычных compile-time
+scenario files: 121 компилируется отдельным C# 9 consumer assembly, 9 — C# 11
+consumer assembly. Latest consumer сохраняет documentation/multiple-assembly
+slice. Все consumer projects используют analyzer-style project references;
+integration host напрямую вызывает их public `Scenario.Verify()`, внутри
+которых generated mapper создаётся и вызывается через точный `ITypeMapper<,>`.
+`ProductionGeneratorIntegrationTest`, runtime Roslyn packages, dynamic emit,
+`Assembly.Load` и reflection invocation удалены из integration project.
+
+Честная project compilation выявила и закрыла production-дефект внутреннего
+nested-map conversion probe: при `TreatWarningsAsErrors=true` nullable warning,
+повышенный настройкой project-а, ошибочно считался настоящим compiler error и
+заменял допустимый plan на unsupported path. Probe теперь различает исходную
+severity и по-прежнему отвергает реальные compiler errors.
+
+Consumer slice проверяет documentation quick start, one/multiple assembly
+manual registrations, generated mapper activation, root, manual и declarative
+nested dispatch, closed generic и nullable destinations, mapper dependency из
+текущего service scope и все перенесённые executable categories.
 
 README превращён в рабочую entry point документации. Добавлены quick start,
 declarative lifecycle/`Option`, runtime dispatch/DI, generated artifacts и
@@ -1515,9 +1531,10 @@ core-v0 boundary; обновлены manual/nested/inheritance guides и все 
 pages. Dependency graph, authoritative return, reuse/replacement, identity и
 non-goals описаны явно. Scenario matrix сопоставляет раздел 13 design document
 и fundamental core-v0 строки финального аудита с реализованными путями.
-Focused integration suite проходит `135/135`; затронутые unit exact-source
-категории проходят `25/25`. Production-код по результатам аудита менять не
-потребовалось.
+Focused compile-time integration suite проходит `132/132`; три вынесенные
+unit-спецификации production composition, inheritance composition и public API
+baseline проходят `3/3`. Остальная документационная и migration-часть этапа
+сохраняется без изменений.
 
 ## Фаза 6. Поздние отдельные планы
 

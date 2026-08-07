@@ -56,17 +56,23 @@
   already readable expected source.
 - Create a category subdirectory only when it contains more than one test
   file. Keep single-file categories directly in their parent test directory.
-- Keep focused model/emitter behavior in the unit-test project. End-to-end
-  scenarios that compile generated assemblies, execute generated mappers, or
-  validate the composed production generator belong in a dedicated
-  `Morphant.Generator.IntegrationTests` project. Keep unit-test helpers limited
-  to exact generated output and focused compiler/model verification; do not
-  reintroduce general user-scenario runtime execution there. The test-owned
-  actualization harness may emit and execute a step only to prove that one
-  preserved `GeneratorDriver` applies the newly generated semantics after an
-  edit; it remains a focused incremental test and is not a substitute for
-  integration scenario coverage. Real consumer assemblies under
-  `Morphant.Generator.IntegrationTests.CSharp9` and
+- Keep focused model/emitter behavior, exact composed-generator output and the
+  reflection-based public API inventory in the unit-test project. End-to-end
+  runtime scenarios belong in the dedicated integration slice, but their
+  source must be compiled by MSBuild as ordinary consumer code. Define the
+  mapper and scenario in an analyzer-backed consumer assembly, instantiate the
+  generated mapper normally, cast it to the exact `ITypeMapper<,>` contract and
+  call `Create` / `Update` directly. The integration test host may call the
+  already compiled scenario method; it must not create a `CSharpCompilation`,
+  run a `GeneratorDriver`, emit/load an assembly, or invoke the scenario through
+  reflection. Keep unit-test helpers limited to exact generated output and
+  focused compiler/model verification; do not reintroduce general user-scenario
+  runtime execution there. The test-owned actualization harness may emit and
+  execute a step only to prove that one preserved `GeneratorDriver` applies the
+  newly generated semantics after an edit; it remains a focused incremental
+  test and is not a substitute for integration scenario coverage. Real consumer
+  assemblies under `Morphant.Generator.IntegrationTests.CSharp9`,
+  `Morphant.Generator.IntegrationTests.CSharp11` and
   `Morphant.Generator.IntegrationTests.Latest` use analyzer-style project
   references and define the package-consumer boundary.
 

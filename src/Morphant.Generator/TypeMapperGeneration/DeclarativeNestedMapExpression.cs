@@ -676,7 +676,7 @@ internal static class DeclarativeNestedMapExpression
             .GetDiagnostics(cancellationToken: cancellationToken);
 
         return diagnostics.All(diagnostic =>
-            diagnostic.Severity != DiagnosticSeverity.Error);
+            diagnostic.DefaultSeverity != DiagnosticSeverity.Error);
     }
 
     private static string BuildMaybeNullTypeName(ITypeSymbol type)
