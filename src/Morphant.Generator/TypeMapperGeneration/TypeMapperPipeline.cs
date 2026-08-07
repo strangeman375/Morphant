@@ -681,7 +681,8 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel mapping,
         EffectiveMappingSettings settings)
     {
-        if (mapping.ManualMapping is not null ||
+        if (mapping.UnsupportedExceptionMessage is not null ||
+            mapping.ManualMapping is not null ||
             !settings.IsMappingModeValid ||
             !settings.IsNullSourceHandlingValid)
         {
@@ -700,7 +701,8 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel mapping,
         EffectiveMappingSettings settings)
     {
-        return mapping.ManualMapping is null &&
+        return mapping.UnsupportedExceptionMessage is null &&
+               mapping.ManualMapping is null &&
                settings.IsMappingModeValid &&
                settings.SupportsUpdate &&
                settings.IsNullSourceHandlingValid &&

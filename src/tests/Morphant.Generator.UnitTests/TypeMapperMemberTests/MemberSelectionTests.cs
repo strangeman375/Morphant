@@ -179,27 +179,6 @@ namespace TestCase
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
                 "The effective MemberSelection is invalid.");
-
-        private global::TestCase.Destination __Create(
-            global::TestCase.Source source,
-            global::Morphant.Context.MappingContext context)
-        {
-            throw new global::Morphant.Exceptions.MappingConfigurationException(
-                typeof(global::TestCase.Source),
-                typeof(global::TestCase.Destination),
-                "The effective MemberSelection is invalid.");
-        }
-
-        private global::TestCase.Destination __Update(
-            global::TestCase.Source source,
-            global::TestCase.Destination destination,
-            global::Morphant.Context.MappingContext context)
-        {
-            throw new global::Morphant.Exceptions.MappingConfigurationException(
-                typeof(global::TestCase.Source),
-                typeof(global::TestCase.Destination),
-                "The effective MemberSelection is invalid.");
-        }
     }
 }
 """;
