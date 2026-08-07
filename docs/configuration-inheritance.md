@@ -1,10 +1,10 @@
 # Configuration inheritance
 
-Morphant reuses configuration through the C# mapper hierarchy. The two opt-in
-operations have separate purposes:
+Morphant reuses configuration through explicit pair links and the C# mapper
+hierarchy. The two opt-in operations have separate purposes:
 
-- `base.Configure(builder)` connects base mapper registrations and root-level
-  settings.
+- `base.Configure(builder)` connects base mapper root-level settings and makes
+  its pair configurations available to `IncludeBase`.
 - `IncludeBase<TBaseSource, TBaseDestination>()` imports reusable
   configuration from one explicitly named base mapping pair into the current
   pair.
@@ -37,13 +37,16 @@ public partial class ApplicationMapper : CommonMapper
     protected override void Configure(MapperBuilder builder)
     {
         base.Configure(builder);
+        builder.Map<Invoice, InvoiceDto>();
     }
 }
 ```
 
 `CommonMapper` does not need `MorphantMapperAttribute` when its source is in the
-same compilation. `ApplicationMapper` receives the inherited-only
-`Order -> OrderDto` registration and the base root setting.
+same compilation. `ApplicationMapper` receives the base root setting, but does
+not register `Order -> OrderDto`. Only its local `Invoice -> InvoiceDto` pair is
+part of the generated mapper surface. The base `Order -> OrderDto`
+configuration remains available as an `IncludeBase` candidate.
 
 Without the direct `base.Configure(builder)` call, Morphant does not inspect or
 apply the base configuration. Calls hidden in arbitrary helper methods or
@@ -92,14 +95,33 @@ public partial class DogMapper : AnimalMapper
 
 `Dog` must be assignable to `Animal`, and `DogDto` must be assignable to
 `AnimalDto`. Class inheritance and interface implementation are both valid.
-Morphant searches only mapper levels connected through
-`base.Configure(builder)`; a base pair declared beside the derived pair in the
-same `Configure` method does not qualify. When several connected levels declare
-the exact requested base pair, the nearest declaration wins.
+The C# method signature cannot express these two relationships with `where`
+constraints while keeping the two-argument call above, because `TSource` and
+`TDestination` belong to the containing `MapperBuilder<,>` type. Morphant
+therefore validates both relationships during generation.
 
-The call is invalid when either type is not assignable, the base configuration
-is not connected, the exact base pair is absent, or `IncludeBase` is called
-more than once on the current pair.
+Morphant first searches the current mapper level, regardless of declaration
+order, and then mapper levels connected through `base.Configure(builder)` from
+nearest to farthest. This form is therefore valid without a mapper hierarchy:
+
+```csharp
+builder.Map<Dog, DogDto>()
+    .IncludeBase<Animal, AnimalDto>();
+
+builder.Map<Animal, AnimalDto>()
+    .Members((source, _) => new()
+    {
+        Name = source.Name
+    });
+```
+
+When the exact pair exists both on the current level and in the connected base
+chain, the current-level pair wins. `base.Configure(builder)` is required only
+when the requested pair comes from that chain.
+
+The call is invalid when either type is not assignable, the exact base pair is
+not available on the current or connected levels, the pair includes itself, or
+`IncludeBase` is called more than once on the current pair.
 
 A local mapping without `IncludeBase` starts with a clean pair plan. It still
 uses connected root settings, but it does not import another pair's map-level

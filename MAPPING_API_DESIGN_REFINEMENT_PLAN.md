@@ -829,21 +829,25 @@ expression-compatible подмножество и внутренняя represent
 ### Этап 16. Переиспользование и композиция конфигурации
 
 **Согласованная v0-граница:** отдельный configuration-fragment API не
-добавляется. Declarative configuration переиспользуется только через явно
-выраженную C#-иерархию mapper-ов:
+добавляется. Declarative configuration переиспользуется между registrations
+текущего mapper-level либо через явно выраженную C#-иерархию mapper-ов:
 
-- `base.Configure(builder)` подключает configuration chain базового mapper-а и
-  наследует его root-level settings;
+- `base.Configure(builder)` подключает configuration chain базового mapper-а,
+  наследует его root-level settings и делает его pair configurations
+  кандидатами для typed `IncludeBase`, но не добавляет base registrations в
+  generated surface derived mapper-а;
 - повторное объявление canonical pair в derived mapper-е само по себе не
   наследует её map-level plan;
 - `IncludeBase<TBaseSource, TBaseDestination>()` на текущей pair явно указывает
   точную base pair; текущие source и destination должны быть приводимы к
   соответствующим base types;
-- base pair ищется только среди mapper-level-ов подключённой base chain,
-  исключая текущий level; при нескольких точных совпадениях выбирается
+- base pair сначала ищется на текущем mapper-level независимо от порядка
+  объявлений, затем среди mapper-level-ов подключённой base chain; current
+  level имеет приоритет, а среди нескольких base-level совпадений выбирается
   ближайшее;
-- без `base.Configure(builder)`, без указанной base pair либо при несовместимых
-  типах typed `IncludeBase` является ошибочной конфигурацией;
+- без указанной pair на текущем или подключённых уровнях, при несовместимых
+  типах, self-reference либо cycle typed `IncludeBase` является ошибочной
+  конфигурацией;
 - pair без typed `IncludeBase` начинает с чистого map-level plan, но продолжает
   видеть root settings, унаследованные через `base.Configure(builder)`.
 
@@ -878,8 +882,8 @@ General-purpose fragments для unrelated pairs и cross-assembly typed
 application-wide registry и не импортируют configuration plan друг друга.
 Будущие keyed variants также не выводят composition из registry.
 
-**Результат этапа:** v0 использует только явную hierarchy-based composition;
-следующий активный этап — 17.
+**Результат этапа:** v0 использует только явно зарегистрированные same-level
+pairs и hierarchy-based composition; следующий активный этап — 17.
 
 ### Этап 17. Generic, runtime-type и multi-source mapping
 

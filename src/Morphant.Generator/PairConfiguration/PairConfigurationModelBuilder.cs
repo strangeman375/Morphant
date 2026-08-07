@@ -225,34 +225,31 @@ internal static class PairConfigurationModelBuilder
              levelIndex--)
         {
             var level = levels[levelIndex];
-            var basePairs = new Dictionary<MappingPairKey, PairConfigurationModel>(
-                effectivePairs);
+            var inheritedPairs =
+                new Dictionary<MappingPairKey, PairConfigurationModel>(
+                    effectivePairs);
+            var localPairs = level.Pairs.ToDictionary(
+                static pair => MappingPairKey.Create(pair.Pair));
+            var composedLocalPairs =
+                new Dictionary<MappingPairKey, PairConfigurationModel>();
+            var composingPairs = new HashSet<MappingPairKey>();
             var composedPairs =
                 ImmutableArray.CreateBuilder<PairConfigurationModel>(
                     level.Pairs.Length);
 
             foreach (var localPair in level.Pairs)
             {
-                var includeBase = localPair.Composition.IncludeBaseCalls
-                    .FirstOrDefault();
-                var includeBaseKey = includeBase == default
-                    ? default
-                    : MappingPairKey.Create(
-                        includeBase.SourceType,
-                        includeBase.DestinationType);
-                PairConfigurationModel basePair = default;
-                var hasBasePair = includeBase != default &&
-                    basePairs.TryGetValue(includeBaseKey, out basePair);
-                var composed = ComposePair(
+                composedPairs.Add(ComposeLevelPair(
                     localPair,
-                    hasBasePair ? basePair : null,
+                    localPairs,
+                    inheritedPairs,
+                    composedLocalPairs,
+                    composingPairs,
                     hasConnectedBaseConfiguration:
                         levelIndex + 1 < levels.Length,
                     hasUnavailableBaseConfiguration &&
                         levelIndex + 1 == levels.Length,
-                    sourceCompilation);
-
-                composedPairs.Add(composed);
+                    sourceCompilation));
             }
 
             foreach (var composedPair in composedPairs)
@@ -291,6 +288,85 @@ internal static class PairConfigurationModelBuilder
             hasUnavailableBaseConfiguration ||
             levels.Any(static level =>
                 level.BaseConfigureCalls.Length > 1));
+    }
+
+    private static PairConfigurationModel ComposeLevelPair(
+        PairConfigurationModel local,
+        IReadOnlyDictionary<MappingPairKey, PairConfigurationModel> localPairs,
+        IReadOnlyDictionary<MappingPairKey, PairConfigurationModel>
+            inheritedPairs,
+        IDictionary<MappingPairKey, PairConfigurationModel> composedLocalPairs,
+        ISet<MappingPairKey> composingPairs,
+        bool hasConnectedBaseConfiguration,
+        bool hasUnavailableBaseConfiguration,
+        CSharpCompilation compilation)
+    {
+        var localKey = MappingPairKey.Create(local.Pair);
+
+        if (composedLocalPairs.TryGetValue(localKey, out var cached))
+        {
+            return cached;
+        }
+
+        composingPairs.Add(localKey);
+
+        var includeBase = local.Composition.IncludeBaseCalls.FirstOrDefault();
+        PairConfigurationModel? basePair = null;
+        var isCyclic = false;
+
+        if (includeBase != default)
+        {
+            var includeBaseKey = MappingPairKey.Create(
+                includeBase.SourceType,
+                includeBase.DestinationType);
+
+            if (localPairs.TryGetValue(includeBaseKey, out var localBasePair))
+            {
+                if (composingPairs.Contains(includeBaseKey))
+                {
+                    isCyclic = true;
+                }
+                else
+                {
+                    basePair = ComposeLevelPair(
+                        localBasePair,
+                        localPairs,
+                        inheritedPairs,
+                        composedLocalPairs,
+                        composingPairs,
+                        hasConnectedBaseConfiguration,
+                        hasUnavailableBaseConfiguration,
+                        compilation);
+                }
+            }
+            else if (inheritedPairs.TryGetValue(
+                         includeBaseKey,
+                         out var inheritedBasePair))
+            {
+                basePair = inheritedBasePair;
+            }
+        }
+
+        var composed = isCyclic
+            ? local with
+            {
+                Composition = local.Composition with
+                {
+                    IncludedBaseSettings = []
+                },
+                Conflicts = local.Conflicts |
+                    PairConfigurationConflict.CyclicIncludeBase
+            }
+            : ComposePair(
+                local,
+                basePair,
+                hasConnectedBaseConfiguration,
+                hasUnavailableBaseConfiguration,
+                compilation);
+
+        composingPairs.Remove(localKey);
+        composedLocalPairs[localKey] = composed;
+        return composed;
     }
 
     private static PairConfigurationModel ComposePair(
@@ -398,7 +474,8 @@ internal static class PairConfigurationModelBuilder
         PairConfigurationConflict.DuplicateIncludeBase |
         PairConfigurationConflict.MissingBaseConfiguration |
         PairConfigurationConflict.MissingBasePair |
-        PairConfigurationConflict.IncompatibleBasePair;
+        PairConfigurationConflict.IncompatibleBasePair |
+        PairConfigurationConflict.CyclicIncludeBase;
 
     private const PairConfigurationConflict IncludedMembersConflictMask =
         CompositionConflictMask |

@@ -7,6 +7,206 @@ namespace Morphant.Generator.UnitTests.TypeMapperInheritanceTests;
 internal sealed class PlanCompositionTests
 {
     [Test]
+    public void Composes_same_level_pairs_transitively_regardless_of_order()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+using System;
+
+namespace TestCase
+{
+    public class Entity
+    {
+        public string Id { get; init; } = string.Empty;
+    }
+
+    public class Animal : Entity
+    {
+        public string Name { get; init; } = string.Empty;
+    }
+
+    public sealed class Dog : Animal
+    {
+        public string Breed { get; init; } = string.Empty;
+    }
+
+    public class EntityDto
+    {
+        public string Id { get; set; } = string.Empty;
+    }
+
+    public class AnimalDto : EntityDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+        public string Breed { get; set; } = string.Empty;
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>()
+                .Members((source, _) => new()
+                {
+                    Breed = "dog:" + source.Breed
+                });
+            builder.Map<Animal, AnimalDto>()
+                .IncludeBase<Entity, EntityDto>()
+                .Members((source, _) => new()
+                {
+                    Name = "animal:" + source.Name
+                });
+            builder.Map<Entity, EntityDto>()
+                .NullSourceHandling(NullSourceHandling.Throw)
+                .MemberSelection(MemberSelection.Explicit)
+                .Members((source, _) => new()
+                {
+                    Id = "entity:" + source.Id
+                });
+        }
+    }
+
+    public static class Scenario
+    {
+        public static void Verify()
+        {
+            var mapper = (ITypeMapper<Dog, DogDto>)new TestMapper();
+            var result = mapper.Create(
+                new Dog
+                {
+                    Id = "17",
+                    Name = "name",
+                    Breed = "breed"
+                },
+                default);
+
+            if (result.Id != "entity:17" ||
+                result.Name != "animal:name" ||
+                result.Breed != "dog:breed")
+            {
+                throw new InvalidOperationException(
+                    "Same-level IncludeBase composition was incorrect.");
+            }
+
+            try
+            {
+                mapper.Create(null, default);
+            }
+            catch (ArgumentNullException)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                "Same-level pair settings were not inherited.");
+        }
+    }
+}
+""";
+
+        BasicMembersTypeMapperGeneratorTest.RunAndExecute(
+            LanguageVersion.CSharp9,
+            source,
+            "TestCase.Scenario");
+    }
+
+    [Test]
+    public void Prefers_a_same_level_pair_to_a_connected_base_pair()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+using System;
+
+namespace TestCase
+{
+    public class Animal
+    {
+        public string Name { get; init; } = string.Empty;
+    }
+
+    public sealed class Dog : Animal
+    {
+    }
+
+    public class AnimalDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public sealed class DogDto : AnimalDto
+    {
+    }
+
+    public abstract class BaseMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Animal, AnimalDto>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Members((source, _) => new()
+                {
+                    Name = "base:" + source.Name
+                });
+    }
+
+    [MorphantMapper]
+    public partial class DogMapper : BaseMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            base.Configure(builder);
+            builder.Map<Dog, DogDto>()
+                .IncludeBase<Animal, AnimalDto>();
+            builder.Map<Animal, AnimalDto>()
+                .MemberSelection(MemberSelection.Explicit)
+                .Members((source, _) => new()
+                {
+                    Name = "current:" + source.Name
+                });
+        }
+    }
+
+    public static class Scenario
+    {
+        public static void Verify()
+        {
+            var result =
+                ((ITypeMapper<Dog, DogDto>)new DogMapper()).Create(
+                    new Dog { Name = "name" },
+                    default);
+
+            if (result.Name != "current:name")
+            {
+                throw new InvalidOperationException(
+                    "The connected base pair outranked the same-level pair.");
+            }
+        }
+    }
+}
+""";
+
+        BasicMembersTypeMapperGeneratorTest.RunAndExecute(
+            LanguageVersion.CSharp9,
+            source,
+            "TestCase.Scenario");
+    }
+
+    [Test]
     public void Merges_included_Members_by_destination_member_and_rebuilds_dependencies()
     {
         // lang=c#

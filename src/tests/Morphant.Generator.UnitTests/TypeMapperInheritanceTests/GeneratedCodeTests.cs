@@ -407,8 +407,7 @@ namespace Morphant
 namespace TestCase
 {
     public partial class DerivedMapper :
-        global::Morphant.ITypeMapper<global::TestCase.Dog, global::TestCase.DogDto>,
-        global::Morphant.ITypeMapper<global::TestCase.Animal, global::TestCase.AnimalDto>
+        global::Morphant.ITypeMapper<global::TestCase.Dog, global::TestCase.DogDto>
     {
         /// <inheritdoc/>
         global::TestCase.DogDto global::Morphant.ITypeMapper<global::TestCase.Dog, global::TestCase.DogDto>.Create(
@@ -439,37 +438,6 @@ namespace TestCase
             {
                 Value = source.Value,
                 Breed = source.Breed
-            };
-        }
-
-        /// <inheritdoc/>
-        global::TestCase.AnimalDto global::Morphant.ITypeMapper<global::TestCase.Animal, global::TestCase.AnimalDto>.Create(
-            global::TestCase.Animal? source,
-            global::Morphant.Context.MappingContext context)
-        {
-            if (source is null)
-            {
-                return default!;
-            }
-
-            return __Create1(source, context);
-        }
-
-        /// <inheritdoc/>
-        global::TestCase.AnimalDto global::Morphant.ITypeMapper<global::TestCase.Animal, global::TestCase.AnimalDto>.Update(
-            global::TestCase.Animal? source,
-            global::TestCase.AnimalDto? destination,
-            global::Morphant.Context.MappingContext context)
-            => throw new global::System.NotSupportedException(
-                "The effective MappingMode does not include Update.");
-
-        private global::TestCase.AnimalDto __Create1(
-            global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
-        {
-            return new global::TestCase.AnimalDto()
-            {
-                Value = source.Value
             };
         }
     }

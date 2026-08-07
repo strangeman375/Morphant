@@ -157,7 +157,8 @@ public abstract class MapperBuilder<TSource, TDestination> : MapperBuilderBase<M
 
     /// <summary>
     /// Includes configuration from the nearest mapping of the specified base
-    /// source and destination types in the base mapper configuration chain.
+    /// source and destination types on the current mapper level or in the
+    /// connected base mapper configuration chain.
     /// </summary>
     /// <typeparam name="TBaseSource">
     /// The base source type. <typeparamref name="TSource"/> must be assignable
@@ -168,9 +169,12 @@ public abstract class MapperBuilder<TSource, TDestination> : MapperBuilderBase<M
     /// assignable to this type.
     /// </typeparam>
     /// <remarks>
-    /// The mapper must connect that chain with an explicit
-    /// <c>base.Configure(builder)</c> call. The included mapping contributes
-    /// all of its map-level settings and its explicit <c>Members</c> rules.
+    /// A mapping on the current mapper level is preferred and may be declared
+    /// before or after this mapping. An inherited mapping is available only
+    /// when the mapper connects its configuration with an explicit
+    /// <c>base.Configure(builder)</c> call. Morphant validates both type
+    /// relationships during generation. The included mapping contributes all
+    /// of its map-level settings and its explicit <c>Members</c> rules.
     /// Conventions are evaluated again for the current source and destination
     /// types, and local rules override included rules for the same destination
     /// member. <c>Construct</c> and <c>Convert</c> plans are not included.

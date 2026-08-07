@@ -20,12 +20,12 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source<T>
+    public class Source<T>
     {
         public T Value { get; init; } = default!;
     }
 
-    public sealed class Destination<T>
+    public class Destination<T>
     {
         public T Value { get; set; } = default!;
     }
@@ -42,28 +42,46 @@ namespace TestCase
                 });
     }
 
+    public sealed class ClosedSource : Source<int>
+    {
+    }
+
+    public sealed class ClosedDestination : Destination<int>
+    {
+    }
+
     [MorphantMapper]
     public partial class ClosedMapper : GenericBaseMapper<int>
     {
-        protected override void Configure(MapperBuilder builder) =>
+        protected override void Configure(MapperBuilder builder)
+        {
             base.Configure(builder);
+            builder.Map<ClosedSource, ClosedDestination>()
+                .IncludeBase<Source<int>, Destination<int>>();
+        }
     }
 
     public static class Scenario
     {
         public static void Verify()
         {
-            var mapper =
-                (ITypeMapper<Source<int>, Destination<int>>)
+            if (typeof(ITypeMapper<Source<int>, Destination<int>>)
+                .IsAssignableFrom(typeof(ClosedMapper)))
+            {
+                throw new InvalidOperationException(
+                    "The open base surface became a derived registration.");
+            }
+
+            var mapper = (ITypeMapper<ClosedSource, ClosedDestination>)
                 new ClosedMapper();
             var result = mapper.Create(
-                new Source<int> { Value = 17 },
+                new ClosedSource { Value = 17 },
                 default);
 
             if (result.Value != 17)
             {
                 throw new InvalidOperationException(
-                    "The closed base mapping was not instantiated.");
+                    "The closed base configuration was not specialized.");
             }
         }
     }
@@ -138,6 +156,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
+            builder.Map<ChildSource<int>, ChildDestination<int>>();
             builder.Map<DogSource, DogDestination>()
                 .IncludeBase<OuterSource<int>, OuterDestination<int>>();
         }
@@ -190,143 +209,6 @@ namespace TestCase
 """;
 
         BasicMembersTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp9,
-            source,
-            "TestCase.Scenario");
-    }
-
-    [Test]
-    public void Substitutes_closed_type_arguments_in_an_inherited_Convert()
-    {
-        // lang=c#
-        const string source =
-"""
-#nullable enable
-#pragma warning disable CS1591
-
-using Morphant;
-using System;
-
-namespace TestCase
-{
-    public sealed class Source<T>
-    {
-        public T Value { get; init; } = default!;
-    }
-
-    public sealed class Destination<T>
-    {
-        public Destination(T value) => Value = value;
-
-        public T Value { get; }
-    }
-
-    public abstract class GenericBaseMapper<T> : TypeMapper
-    {
-        protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<T>, Destination<T>>()
-                .Convert((source, _, _) =>
-                    new Destination<T>((T)source!.Value));
-    }
-
-    [MorphantMapper]
-    public partial class ClosedMapper : GenericBaseMapper<int>
-    {
-        protected override void Configure(MapperBuilder builder) =>
-            base.Configure(builder);
-    }
-
-    public static class Scenario
-    {
-        public static void Verify()
-        {
-            var result =
-                ((ITypeMapper<Source<int>, Destination<int>>)
-                    new ClosedMapper()).Create(
-                        new Source<int> { Value = 17 },
-                        default);
-
-            if (result.Value != 17)
-            {
-                throw new InvalidOperationException(
-                    "Inherited Convert type arguments were not substituted.");
-            }
-        }
-    }
-}
-""";
-
-        StructuredConstructTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp9,
-            source,
-            "TestCase.Scenario");
-    }
-
-    [Test]
-    public void Substitutes_closed_type_arguments_in_an_inherited_factory_body()
-    {
-        // lang=c#
-        const string source =
-"""
-#nullable enable
-#pragma warning disable CS1591
-
-using Morphant;
-using System;
-
-namespace TestCase
-{
-    public sealed class Source<T>
-    {
-        public T Value { get; init; } = default!;
-    }
-
-    public sealed class Destination<T>
-    {
-        public Destination(T value) => Value = value;
-
-        public T Value { get; }
-    }
-
-    public abstract class GenericBaseMapper<T> : TypeMapper
-    {
-        protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source<T>, Destination<T>>()
-                .Construct(source => new(ByFactory(() =>
-                {
-                    T value = (T)source.Value;
-                    return new Destination<T>(value);
-                })));
-    }
-
-    [MorphantMapper]
-    public partial class ClosedMapper : GenericBaseMapper<int>
-    {
-        protected override void Configure(MapperBuilder builder) =>
-            base.Configure(builder);
-    }
-
-    public static class Scenario
-    {
-        public static void Verify()
-        {
-            var result =
-                ((ITypeMapper<Source<int>, Destination<int>>)
-                    new ClosedMapper()).Create(
-                        new Source<int> { Value = 17 },
-                        default);
-
-            if (result.Value != 17)
-            {
-                throw new InvalidOperationException(
-                    "Inherited factory type arguments were not substituted.");
-            }
-        }
-    }
-}
-""";
-
-        StructuredConstructTypeMapperGeneratorTest.RunAndExecute(
             LanguageVersion.CSharp9,
             source,
             "TestCase.Scenario");

@@ -185,7 +185,7 @@ namespace TestCase
 // Base roots: 2
 // Base root 0 settings: MappingMode=Unset; NullSourceHandling=Explicit(ReturnDestination); NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Explicit(Source)
 // Base root 1 settings: MappingMode=Unset; NullSourceHandling=Explicit(Throw); NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Explicit(Strict)
-// Pairs: 3
+// Pairs: 1
 // Pair 0: global::TestCase.Dog -> global::TestCase.DogDto
 // Map: builder.Map<Dog, DogDto>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Explicit(Strict)
@@ -198,26 +198,6 @@ namespace TestCase
 // Included settings: 2
 // Included 0 settings: MappingMode=Implicit(Default); NullSourceHandling=Explicit(Default); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Default); MemberSelection=Unset; UnmappedMemberValidation=Explicit(Default)
 // Included 1 settings: MappingMode=Explicit(Create); NullSourceHandling=Explicit(ReturnNull); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Largest); MemberSelection=Unset; UnmappedMemberValidation=Explicit(Destination)
-// Conflicts: None
-// Pair 1: global::TestCase.Animal -> global::TestCase.AnimalDto
-// Map: builder.Map<Animal, AnimalDto>()
-// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Explicit(Default); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Default); MemberSelection=Unset; UnmappedMemberValidation=Explicit(Default)
-// Declarative: Constructs=0; Members=2
-// Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Entity, global::Morphant.Option<global::TestCase.EntityDto>); Output=global::TestCase.Morphant.Generated.EntityDtoMembers; Operation=AnonymousFunction; Syntax=(source, _) => default!
-// Members 1: Form=SourcePreviousAndResult; Inputs=(global::TestCase.Animal, global::Morphant.Option<global::TestCase.AnimalDto>, global::TestCase.AnimalDto); Output=global::TestCase.Morphant.Generated.AnimalDtoMembers; Operation=AnonymousFunction; Syntax=(source, _, result) => default!
-// Manual: Converts=0
-// IncludeBase: 1
-// IncludeBase 0: global::TestCase.Entity -> global::TestCase.EntityDto
-// Included settings: 1
-// Included 0 settings: MappingMode=Explicit(Create); NullSourceHandling=Explicit(ReturnNull); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Largest); MemberSelection=Unset; UnmappedMemberValidation=Explicit(Destination)
-// Conflicts: None
-// Pair 2: global::TestCase.Entity -> global::TestCase.EntityDto
-// Map: builder.Map<Entity, EntityDto>(MappingMode.Create)
-// Map settings: MappingMode=Explicit(Create); NullSourceHandling=Explicit(ReturnNull); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Largest); MemberSelection=Unset; UnmappedMemberValidation=Explicit(Destination)
-// Declarative: Constructs=0; Members=1
-// Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Entity, global::Morphant.Option<global::TestCase.EntityDto>); Output=global::TestCase.Morphant.Generated.EntityDtoMembers; Operation=AnonymousFunction; Syntax=(source, _) => default!
-// Manual: Converts=0
-// IncludeBase: 0
 // Conflicts: None
 """;
 

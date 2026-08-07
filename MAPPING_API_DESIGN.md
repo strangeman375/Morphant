@@ -192,10 +192,12 @@ builder.Map<Source, Destination>()
 
 ### 4.1. Наследование и композиция конфигурации
 
-В v0 declarative configuration переиспользуется только через явную C#-
-иерархию mapper-ов. Вызов `base.Configure(builder)` подключает configuration
-chain базового mapper-а и наследует его root-level settings. Без этого вызова
-base configuration не участвует в текущем mapper-е.
+В v0 declarative configuration переиспользуется внутри одного mapper-level либо
+через явную C#-иерархию mapper-ов. Вызов `base.Configure(builder)` подключает
+configuration chain базового mapper-а, наследует его root-level settings и
+делает base pair configurations кандидатами для `IncludeBase`. Сами base
+registrations в generated surface derived mapper-а не добавляются. Без этого
+вызова base configuration не участвует в текущем mapper-е.
 
 Распознаётся только прямой вызов отдельным statement либо expression-bodied
 override; generator не выполняет helper methods и control flow вокруг
@@ -213,13 +215,19 @@ mapper-а generator сохраняет открытый fluent surface исхо�
 аргументы указывают конкретную base pair: текущий source type должен быть
 приводим к `TBaseSource`, а текущий destination type — к
 `TBaseDestination`. Проверка охватывает class- и interface-иерархии.
+Эти отношения проверяет generator: C# не позволяет method-level `where`
+ограничить `TSource` и `TDestination`, объявленные у содержащего
+`MapperBuilder<TSource, TDestination>`, а переход к четырём method type
+arguments ухудшил бы текущую форму вызова.
 
-Base pair ищется только среди mapper-level-ов, подключённых через
-`base.Configure(builder)`: объявление на текущем level не считается base pair.
-Если одна и та же pair встречается на нескольких подключённых уровнях,
-используется ближайшее точное совпадение. Отсутствие configuration chain,
-указанной pair или совместимости типов, а также повторный вызов `IncludeBase`
-для одной текущей pair являются ошибками конфигурации.
+Base pair сначала ищется на текущем mapper-level независимо от порядка
+объявлений, затем среди mapper-level-ов, подключённых через
+`base.Configure(builder)`, от ближайшего к дальнему. Если одна и та же pair
+встречается на текущем и подключённом уровнях, используется текущая; среди
+подключённых уровней используется ближайшее точное совпадение. Отсутствие
+указанной pair или совместимости типов, self-reference, cycle, а также
+повторный вызов `IncludeBase` для одной текущей pair являются ошибками
+конфигурации.
 
 Effective settings разрешаются от более конкретного уровня к менее
 конкретному:
@@ -2865,18 +2873,23 @@ diagnostic не должно вводить скрытый fallback на дру�
 60. `IQueryable` projection, public `Project(...)`, projectable capability и
     expression-tree roots полностью отсутствуют в v0 и рассматриваются после
     него отдельным дизайном.
-61. В v0 configuration reuse следует только явно подключённой C#-иерархии
-    mapper-ов. Generator не выполняет arbitrary builder helpers и не ищет
-    fragments или подходящие plans в application dispatch.
+61. В v0 configuration reuse следует только registrations текущего mapper-level
+    и явно подключённой C#-иерархии mapper-ов. Generator не выполняет arbitrary
+    builder helpers и не ищет fragments или подходящие plans в application
+    dispatch.
 62. `base.Configure(builder)` подключает base configuration chain и её root
-    settings. Без этой chain typed `IncludeBase` является ошибочной
-    конфигурацией.
+    settings, но не добавляет base registrations в generated surface derived
+    mapper-а. Pair configurations chain становятся кандидатами для typed
+    `IncludeBase`; без этого вызова они недоступны.
 63. Повторно объявленная pair без
     `IncludeBase<TBaseSource, TBaseDestination>()` начинает с чистого map-level
     plan, сохраняя унаследованные root settings. Generic-аргументы задают
     точную base pair; текущие source и destination должны быть приводимы к
-    соответствующим base types. Поиск идёт только по подключённым base levels,
-    исключая текущий level, и выбирает ближайшее точное совпадение.
+    соответствующим base types. Эти отношения проверяются generator-ом, потому
+    что C# не позволяет выразить их method-level constraints без изменения
+    двухаргументной формы API. Поиск сначала идёт по текущему level независимо
+    от порядка объявлений, затем по подключённым base levels и выбирает
+    ближайшее точное совпадение; self-reference и cycles ошибочны.
 64. Через typed `IncludeBase` наследуются все map-level settings, включая
     `MappingMode` и `ConstructorSelection`. Settings precedence — current pair,
     included base pair, current mapper root, connected base roots, assembly,
@@ -3082,10 +3095,11 @@ extension path. Этап 14 также отложен: `MappingScope` сохра
 будущего opt-in reference cache, но v0 не сохраняет shared identity и не
 обрабатывает cycles автоматически. Этап 15 — Projection — однозначно пропущен
 до после v0 без дополнительного исследования и без требований к внутренней
-plan model текущей реализации. Этап 16 ограничил v0-composition явной
-mapper-иерархией: root settings подключаются через `base.Configure(builder)`,
-а map-level settings и member rules конкретной base pair — отдельным typed
-`IncludeBase`; fragments и cross-assembly plan inheritance остаются post-v0.
+plan model текущей реализации. Этап 16 ограничил v0-composition registrations
+текущего mapper-level и явной mapper-иерархией: root settings подключаются
+через `base.Configure(builder)`, а map-level settings и member rules конкретной
+base pair — отдельным typed `IncludeBase`; fragments и cross-assembly plan
+inheritance остаются post-v0.
 Этап 17 сохранил exact constructed generic pairs
 и generic mapper contracts, но application dispatch видит только явно
 зарегистрированные closed mappings; bare root type parameters, open-generic и

@@ -42,8 +42,6 @@ internal static class PairConfigurationDiscoveryPipeline
 
         var levels =
             ImmutableArray.CreateBuilder<PairConfigurationDiscoveryLevel>();
-        var flattenedRegistrations =
-            ImmutableArray.CreateBuilder<MappingPairRegistrationModel>();
         var currentInfo = configureInfo;
         var currentConstructedType = configureInfo.MapperType;
         var hasUnavailableBaseConfiguration = false;
@@ -66,9 +64,6 @@ internal static class PairConfigurationDiscoveryPipeline
             }
 
             levels.Add(level);
-            flattenedRegistrations.AddRange(
-                level.InstantiatedRegistrations.Registrations);
-
             if (level.BaseConfigureCalls.IsEmpty)
             {
                 break;
@@ -96,9 +91,7 @@ internal static class PairConfigurationDiscoveryPipeline
 
         return new PairConfigurationDiscoveryModel(
             configureInfo,
-            new MapperMappingRegistrationModel(
-                configureInfo.Syntax,
-                flattenedRegistrations.ToImmutable()),
+            levels[0].InstantiatedRegistrations,
             levels.ToImmutable(),
             hasUnavailableBaseConfiguration);
     }

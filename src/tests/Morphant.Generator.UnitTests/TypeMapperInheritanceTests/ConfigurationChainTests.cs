@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperInheritanceTests;
 internal sealed class ConfigurationChainTests
 {
     [Test]
-    public void Connects_an_unannotated_base_mapper_only_through_base_Configure()
+    public void Does_not_add_base_pair_registrations_to_the_derived_mapper()
     {
         // lang=c#
         const string source =
@@ -20,34 +20,42 @@ using System;
 
 namespace TestCase
 {
-    public sealed class Source
+    public sealed class BaseSource
     {
         public int Value { get; init; }
     }
 
-    public sealed class Destination
+    public sealed class BaseDestination
+    {
+        public int Value { get; set; }
+    }
+
+    public sealed class LocalSource
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class LocalDestination
     {
         public int Value { get; set; }
     }
 
     public abstract class BaseMapper : TypeMapper
     {
-        protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>();
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.NullSourceHandling(NullSourceHandling.Throw);
+            builder.Map<BaseSource, BaseDestination>();
+        }
     }
 
     [MorphantMapper]
     public partial class ConnectedMapper : BaseMapper
     {
-        protected override void Configure(MapperBuilder builder) =>
-            base.Configure(builder);
-    }
-
-    [MorphantMapper]
-    public partial class DisconnectedMapper : BaseMapper
-    {
         protected override void Configure(MapperBuilder builder)
         {
+            base.Configure(builder);
+            builder.Map<LocalSource, LocalDestination>();
         }
     }
 
@@ -55,31 +63,42 @@ namespace TestCase
     {
         public static void Verify()
         {
-            var contract = typeof(ITypeMapper<Source, Destination>);
+            var baseContract =
+                typeof(ITypeMapper<BaseSource, BaseDestination>);
+            var localContract =
+                typeof(ITypeMapper<LocalSource, LocalDestination>);
 
-            var connected =
-                contract.IsAssignableFrom(typeof(ConnectedMapper));
-            var disconnected =
-                contract.IsAssignableFrom(typeof(DisconnectedMapper));
-
-            if (!connected || disconnected)
+            if (baseContract.IsAssignableFrom(typeof(ConnectedMapper)) ||
+                !localContract.IsAssignableFrom(typeof(ConnectedMapper)))
             {
                 throw new InvalidOperationException(
-                    "The explicit base Configure boundary was not preserved: " +
-                    connected + "/" + disconnected + ".");
+                    "base.Configure changed the derived mapper registrations.");
             }
 
             var mapper =
-                (ITypeMapper<Source, Destination>)new ConnectedMapper();
+                (ITypeMapper<LocalSource, LocalDestination>)
+                new ConnectedMapper();
             var result = mapper.Create(
-                new Source { Value = 17 },
+                new LocalSource { Value = 17 },
                 default);
 
             if (result.Value != 17)
             {
                 throw new InvalidOperationException(
-                    "The inherited-only mapping was not generated.");
+                    "The local mapping was not generated.");
             }
+
+            try
+            {
+                mapper.Create(null, default);
+            }
+            catch (ArgumentNullException)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                "The connected base root setting was not inherited.");
         }
     }
 }

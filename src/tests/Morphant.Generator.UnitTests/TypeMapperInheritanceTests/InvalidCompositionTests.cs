@@ -116,14 +116,11 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class SameLevelMapper : TypeMapper
+    public partial class SelfReferenceMapper : TypeMapper
     {
-        protected override void Configure(MapperBuilder builder)
-        {
-            builder.Map<Animal, AnimalDto>();
+        protected override void Configure(MapperBuilder builder) =>
             builder.Map<Dog, DogDto>()
-                .IncludeBase<Animal, AnimalDto>();
-        }
+                .IncludeBase<Dog, DogDto>();
     }
 
     public static class Scenario
@@ -148,7 +145,7 @@ namespace TestCase
                 ((ITypeMapper<Dog, DogDto>)new DuplicateIncludeMapper())
                     .Create(new Dog(), default));
             ExpectNotSupported(() =>
-                ((ITypeMapper<Dog, DogDto>)new SameLevelMapper())
+                ((ITypeMapper<Dog, DogDto>)new SelfReferenceMapper())
                     .Create(new Dog(), default));
         }
 
@@ -198,6 +195,14 @@ namespace TestCase
     {
     }
 
+    public sealed class LocalSource
+    {
+    }
+
+    public sealed class LocalDestination
+    {
+    }
+
     public abstract class BaseMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -211,6 +216,7 @@ namespace TestCase
         {
             base.Configure(builder);
             base.Configure(builder);
+            builder.Map<LocalSource, LocalDestination>();
         }
     }
 
@@ -220,8 +226,9 @@ namespace TestCase
         {
             try
             {
-                ((ITypeMapper<Source, Destination>)new DerivedMapper())
-                    .Create(new Source(), default);
+                ((ITypeMapper<LocalSource, LocalDestination>)
+                    new DerivedMapper())
+                    .Create(new LocalSource(), default);
             }
             catch (NotSupportedException)
             {

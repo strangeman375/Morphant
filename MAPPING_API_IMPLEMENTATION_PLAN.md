@@ -1279,9 +1279,12 @@ Production scope:
 - без этого вызова base configuration и roots не участвуют;
 - local pair без typed `IncludeBase` начинает с чистого pair plan, но наследует
   подключённые root settings;
+- `base.Configure(builder)` не переносит base registrations в generated
+  surface derived mapper-а, а только подключает root settings и делает base
+  pair configurations кандидатами для `IncludeBase`;
 - `IncludeBase<TBaseSource, TBaseDestination>()` выбирает явно названную exact
-  pair только в подключённой base chain; pair на том же mapper-level не
-  участвует;
+  pair сначала на текущем mapper-level независимо от порядка объявлений, затем
+  в подключённой base chain от ближайшего уровня к дальнему;
 - current source/destination должны быть assignable к указанным base
   source/destination; при нескольких registrations указанной pair выбирается
   ближайший base mapper level;
@@ -1304,8 +1307,9 @@ Production scope:
 
 Тестовый scope:
 
-- base chain presence/absence, same-level exclusion, exact nearest base pair и
-  source/destination assignability;
+- отсутствие inherited-only registrations, base chain presence/absence,
+  same-level order independence, current-level precedence, exact nearest base
+  pair, self-reference и source/destination assignability;
 - root settings без IncludeBase, все pair settings только с typed IncludeBase;
 - отсутствие импорта `Construct`/`Convert`, Members merge/override/Auto/Ignore
   и local Convert replacement;
@@ -1323,10 +1327,13 @@ application dispatch либо неявного поиска fragments.
 mapper-ы и nested mapper declarations. Base mapper не требует
 `MorphantMapperAttribute`; для закрытого generic наследника дополнительно
 эмитируется открытый fluent surface, необходимый исходному base DSL.
-Inherited-only pairs переносятся автоматически, повторная local pair начинает
-с чистого plan. Typed `IncludeBase` хранит exact base pair после generic
-substitution, ищет её только в connected base levels и проверяет assignability
-обоих типов.
+Inherited-only pairs не переносятся в generated mapper; повторная local pair
+начинает с чистого plan. Typed `IncludeBase` хранит exact base pair после
+generic substitution, сначала ищет её на текущем level независимо от порядка
+объявлений, затем в connected base levels и проверяет assignability обоих
+типов. Same-level self-reference сохраняется как unsupported state. Проверка
+остаётся generator-side: C# не позволяет ограничить содержащие `TSource` и
+`TDestination` в `where` метода без изменения двухаргументной формы API.
 
 Settings разрешаются в полном порядке current pair -> included base pairs ->
 current root -> connected base roots -> assembly -> library; last-call-wins и
