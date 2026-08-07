@@ -121,3 +121,7 @@ and therefore has two throwing methods.
 The same rule applies to the assembly level: a valid mapper-level or
 mapping-level value overrides an invalid `MorphantMappingMode`, while a
 mapping that inherits the invalid property has two throwing methods.
+
+See [Configuration inheritance](../configuration-inheritance.md) for the full
+settings chain and [Runtime dispatch and DI](../runtime-dispatch.md) for how a
+selected pair is resolved before the operation gate runs.

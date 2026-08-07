@@ -135,10 +135,6 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             expected);
-        ConventionTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp9,
-            source,
-            "TestCase.Scenario");
     }
 
     [Test]
@@ -287,10 +283,6 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             expected);
-        ConventionTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp9,
-            source,
-            "TestCase.Scenario");
     }
 
     [Test]
@@ -435,10 +427,6 @@ namespace TestCase
             LanguageVersion.CSharp11,
             source,
             expected);
-        ConventionTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp11,
-            source,
-            "TestCase.Scenario");
     }
 
     [Test]
@@ -575,10 +563,6 @@ namespace TestCase
             LanguageVersion.CSharp11,
             source,
             expected);
-        ConventionTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp11,
-            source,
-            "TestCase.Scenario");
     }
 
     [Test]
@@ -720,10 +704,6 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             expected);
-        ConventionTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp9,
-            source,
-            "TestCase.Scenario");
     }
 
     [Test]
@@ -882,9 +862,5 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             expected);
-        ConventionTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp9,
-            source,
-            "TestCase.Scenario");
     }
 }

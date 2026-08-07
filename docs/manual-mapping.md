@@ -58,3 +58,7 @@ and `Map` calls are not available as markers inside `Convert`.
 A pair may contain one `Convert` or a declarative `Construct`/`Members` plan,
 but not both. Pair-specific null, member, and constructor settings are invalid
 for `Convert`; inherited settings are simply inactive for that pair.
+
+See [Runtime dispatch and DI](runtime-dispatch.md) for service lookup and
+mapping-scope lifetime, and [Declarative mapping](declarative-mapping.md) for
+the lifecycle that `Convert` replaces.

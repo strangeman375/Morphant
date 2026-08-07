@@ -190,3 +190,5 @@ the derived mapper's type arguments.
 Cross-assembly `IncludeBase` is not part of v0 because the source generator
 cannot transfer a base `Configure` body that is unavailable in the current
 compilation. Register mappings from another assembly independently instead.
+See [Runtime dispatch and DI](runtime-dispatch.md) for cross-assembly runtime
+registration.

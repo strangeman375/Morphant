@@ -178,3 +178,6 @@ An invalid effective value makes convention-based creation and
 Update call with an existing destination may still execute without creating a
 replacement. A valid value at a more specific level overrides an invalid
 outer value.
+
+See [Declarative mapping](../declarative-mapping.md) for result selection,
+previous-aware construction, and Update identity.

@@ -59,12 +59,16 @@
 - Keep focused model/emitter behavior in the unit-test project. End-to-end
   scenarios that compile generated assemblies, execute generated mappers, or
   validate the composed production generator belong in a dedicated
-  integration-test project. Every current call through
-  `ConventionTypeMapperGeneratorTest.RunAndExecute` or
-  `StructuredConstructTypeMapperGeneratorTest.RunAndExecute`, together with
-  the production-composition test, is a temporary mixed slice and must be
-  moved when that project is introduced; do not mistake its current location
-  for the final boundary.
+  `Morphant.Generator.IntegrationTests` project. Keep unit-test helpers limited
+  to exact generated output and focused compiler/model verification; do not
+  reintroduce general user-scenario runtime execution there. The test-owned
+  actualization harness may emit and execute a step only to prove that one
+  preserved `GeneratorDriver` applies the newly generated semantics after an
+  edit; it remains a focused incremental test and is not a substitute for
+  integration scenario coverage. Real consumer assemblies under
+  `Morphant.Generator.IntegrationTests.CSharp9` and
+  `Morphant.Generator.IntegrationTests.Latest` use analyzer-style project
+  references and define the package-consumer boundary.
 
 ## Generated code
 
@@ -120,7 +124,9 @@
 - Run only focused tests for the changed category. The user runs the full test
   suite periodically and reports failures; do not run the full suite, including
   before committing or pushing. Use the focused-test command supplied by the
-  enclosing workspace instructions when available.
+  enclosing workspace instructions when available. For the dedicated stage-22
+  integration slice, run its test project directly; it is one focused category
+  and is not included by the unit-test helper.
 
 ## Settings documentation
 

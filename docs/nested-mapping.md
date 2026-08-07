@@ -149,4 +149,6 @@ normally.
 
 Each exact `ITypeMapper<TSource, TDestination>` pair must currently be
 registered manually with the application's service provider. See
-[Manual mapping](manual-mapping.md) for the scoped mapper lifecycle.
+[Runtime dispatch and DI](runtime-dispatch.md) for the scoped mapper lifecycle
+and [Manual mapping](manual-mapping.md) for `context.Mapper` usage in
+`Convert`.

@@ -170,3 +170,7 @@ remains available.
 Configuration validity is checked independently of runtime arguments and type
 nullability. A valid value at a more specific level can override an invalid
 outer value for the same property.
+
+See [Declarative mapping](../declarative-mapping.md) for previous presence and
+the authoritative result, and [Manual mapping](../manual-mapping.md) for the
+model that bypasses these policies.

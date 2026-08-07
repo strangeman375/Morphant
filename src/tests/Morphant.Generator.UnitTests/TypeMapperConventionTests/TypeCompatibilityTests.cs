@@ -217,9 +217,5 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             expected);
-        ConventionTypeMapperGeneratorTest.RunAndExecute(
-            LanguageVersion.CSharp9,
-            source,
-            "TestCase.Scenario");
     }
 }

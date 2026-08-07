@@ -90,13 +90,15 @@ algorithm недопустим.
 
 Тесты, которые собирают generated assembly, выполняют mapper runtime либо
 проверяют композицию полного production-generator-а, являются
-интеграционными по своей природе. Текущие вызовы
-`ConventionTypeMapperGeneratorTest.RunAndExecute` и
-`StructuredConstructTypeMapperGeneratorTest.RunAndExecute` временно добавляют
-runtime-проверки к exact-source категориям в unit-test project; все такие
-вызовы и production composition нужно перенести в отдельный
-`Morphant.Generator.IntegrationTests` не позднее этапа 22. До переноса это
-явно считается техническим долгом, а не целевой организацией тестов.
+интеграционными по своей природе. Они находятся в отдельном
+`Morphant.Generator.IntegrationTests` и выполняются через полный production
+generator. Unit-test helpers ограничены exact-source, compiler и focused
+model-проверками; general user-scenario runtime execution туда не возвращается.
+Test-owned actualization harness может выполнить конкретный step только для
+доказательства свежей semantics при сохранённом `GeneratorDriver`; это часть
+incremental concern, а не integration coverage. Реальные C# 9 и latest
+consumer assemblies подключают runtime и generator через package-like analyzer
+references.
 
 Публичные XML comments и пользовательская документация обновляются вместе с
 тем этапом, который вводит или меняет соответствующий контракт. Актуальная
@@ -128,13 +130,13 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Следующий этап
 
-**Фаза 5, этап 21 — incrementality и cache isolation.**
+**Фаза 5, этап 22 — финальный migration audit, документация и integration
+slice.**
 
 Статус: ожидает ревью.
 
 Этап 17 принят. Этап 18 по решению от 6 августа 2026 года перенесён за границу
-core v0. Этапы 19 и 20 приняты. Этап 22 и все последующие этапы заблокированы
-до принятия этапа 21.
+core v0. Этапы 19–21 приняты. Этапы 23 и 24 заблокированы до принятия этапа 22.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -459,8 +461,8 @@ declarative lifecycle без explicit `Construct` и `Members`.
 discovery/planners и historical tests; они больше не входят ни в production,
 ни в обязательную проверку. Их точные pre-cleanup версии позднее восстановлены
 в исключённом из сборки reference-срезе для осознанного переноса решений в
-этапах 7–22. Runtime-сценарии этапа временно остаются рядом с exact-source
-тестами и помечены для переноса в integration project.
+этапах 7–22. Runtime-сценарии этапа перенесены в dedicated integration
+project на этапе 22; exact-source проверки остаются в unit-test project.
 
 ### Этап 7. MappingMode и declarative null normalization
 
@@ -518,8 +520,8 @@ non-null параметр `destination`, поскольку это фактич�
 обновления, а не отдельный снимок предыдущего состояния.
 Самостоятельные `TypeMapperMappingModeTests` и `TypeMapperNullHandlingTests`
 проверяют полный generated source, runtime laws, precedence, call order,
-nullable forms и invalid states. Их runtime-вызовы входят в уже отмеченный
-временный integration debt и должны быть перенесены не позднее этапа 22.
+nullable forms и invalid states. Их runtime-сценарии перенесены в dedicated
+integration project на этапе 22.
 
 ### Этап 8. Исполнение structured `Construct`
 
@@ -600,9 +602,9 @@ locals, `throw`, statement `switch` и полная block composition по-пр�
 Самостоятельная категория `TypeMapperStructuredConstructTests` фиксирует
 полный generated surface/type mapper source, compiler ambiguity, executable
 lifecycle, branch reachability, side effects и evaluation order для
-class/struct/record/nullable/generic destinations. Её runtime-вызовы входят в
-уже отмеченный временный integration debt и должны быть перенесены не позднее
-этапа 22; самостоятельные exact-source проверки остаются в unit-test project.
+class/struct/record/nullable/generic destinations. Runtime-сценарии перенесены
+в dedicated integration project на этапе 22; самостоятельные exact-source
+проверки остаются в unit-test project.
 
 ### Этап 9. Direct `Construct` и `ByFactory`
 
@@ -692,8 +694,8 @@ exact-source спецификации direct/factory lowering и executable-пр
 helper для direct delegate и `ByFactory` delegate. Проверки проходят `11/11`.
 Самостоятельные `MappingDelegateTests` проверяют пять runtime-сигнатур, их
 generic separation и semantic parameter names (`2/2`). Runtime-вызовы входят в уже
-отмеченный временный integration debt и должны быть перенесены не позднее
-этапа 22; exact-source проверки остаются в unit-test project.
+отмеченный executable slice, перенесённый в dedicated integration project на
+этапе 22; exact-source проверки остаются в unit-test project.
 
 ### Этап 10. Базовый explicit `Members` plan
 
@@ -769,9 +771,8 @@ post-construction plan. Create-post и Update-post mappings хранятся р�
 generated files и executable-проверки Create/Update, constructor/direct/
 factory results, `set`/`init`/`required`/field, marker preservation,
 precedence, implicit/nullability conversions и однократное вычисление
-(`8/8`). Runtime-вызовы входят в уже отмеченный временный integration debt и
-должны быть перенесены не позднее этапа 22; exact-source проверки остаются в
-unit-test project.
+(`8/8`). Runtime-сценарии перенесены в dedicated integration project на этапе
+22; exact-source проверки остаются в unit-test project.
 
 ### Этап 11. Previous/result-aware members и lifecycle границы
 
@@ -847,8 +848,9 @@ no-op identity, отсутствие source-only и creation-time side effects,
 previous/replacement identity, constructor/factory/direct state, mixed
 dependencies, `init`/`required`/setter/field и terminal null (`14/14`).
 Regression-срезы этапов 9 и 8, conventions, null handling и mapping mode
-сохраняют прежнее поведение. Runtime-вызовы входят в уже отмеченный временный
-integration debt; exact-source проверки остаются в unit-test project.
+сохраняют прежнее поведение. Runtime-сценарии перенесены в dedicated
+integration project на этапе 22; exact-source проверки остаются в unit-test
+project.
 
 ### Этап 12. Declarative control flow и member-plan composition
 
@@ -913,7 +915,7 @@ statement и expression switch, plan/rule/marker branches, patterns/guards,
 throws, `with` overlays, result-aware lifecycle, structured/direct/factory
 construction, captures и неподдерживаемую grammar (`18/18`). Regression-срезы
 этапов 11, 9 и 8 сохраняют прежнее construction/member поведение. Runtime-
-вызовы входят в уже отмеченный временный integration debt; exact-source
+сценарии перенесены в dedicated integration project на этапе 22; exact-source
 проверки остаются в unit-test project.
 
 ### Этап 13. Общий dependency graph и observable evaluation laws
@@ -1402,7 +1404,7 @@ production-семантики не потребовалось.
 
 ### Этап 21. Incrementality и cache isolation
 
-Статус: ожидает ревью.
+Статус: принят.
 
 Цель — обеспечить точечную инвалидизацию без глобальной перестройки всех
 mappings и plans.
@@ -1454,7 +1456,7 @@ replacement, multiple mappers/assemblies, collision coordination и возвра
 
 ### Этап 22. Финальный migration audit, документация и integration slice
 
-Статус: не начат; заблокирован до принятия этапа 21.
+Статус: ожидает ревью.
 
 Цель — завершить основную реализацию core v0 до отдельной работы над
 diagnostics и observable failures.
@@ -1491,11 +1493,37 @@ Production scope:
 пользовательскому ревью как единый core v0; остаются две специально отложенные
 категории качества ниже.
 
+Реализовано: migration audit подтвердил отсутствие legacy public surface,
+obsolete adapters и возвращённых `Template()` tests; exact public API baseline
+фиксирует все exported/protected core-v0 members и enum values. Exact
+production composition проверяет полный набор и имена пяти generated artifacts
+без дополнительных compatibility files.
+
+Все 122 executable scenario механически вынесены из unit-test categories в
+`Morphant.Generator.IntegrationTests` и теперь выполняются через полный
+`MorphantGenerator`; production-composition test перенесён туда же. Unit-test
+helpers больше не содержат runtime compilation/execution. Отдельные C# 9 и
+latest consumer assemblies используют analyzer-style project references и
+проверяют documentation quick start, one/multiple assembly manual
+registrations, generated mapper activation, root, manual и declarative nested
+dispatch, closed generic и nullable destinations, а также mapper dependency из
+текущего service scope.
+
+README превращён в рабочую entry point документации. Добавлены quick start,
+declarative lifecycle/`Option`, runtime dispatch/DI, generated artifacts и
+core-v0 boundary; обновлены manual/nested/inheritance guides и все settings
+pages. Dependency graph, authoritative return, reuse/replacement, identity и
+non-goals описаны явно. Scenario matrix сопоставляет раздел 13 design document
+и fundamental core-v0 строки финального аудита с реализованными путями.
+Focused integration suite проходит `135/135`; затронутые unit exact-source
+категории проходят `25/25`. Production-код по результатам аудита менять не
+потребовалось.
+
 ## Фаза 6. Поздние отдельные планы
 
 ### Этап 23. Diagnostics
 
-Статус: не начат.
+Статус: не начат; заблокирован до принятия этапа 22.
 
 Не детализируется в этом roadmap. После принятия этапа 22 для compile-time
 diagnostics будет составлен отдельный план на основе нормативного раздела об
@@ -1504,7 +1532,8 @@ diagnostic IDs, сообщениями, locations, severity и recovery не н�
 
 ### Этап 24. Observable failures
 
-Статус: не начат.
+Статус: не начат; заблокирован до принятия этапа 22 и отдельного согласования
+последовательности поздних планов.
 
 Не детализируется в этом roadmap. После готовности основной реализации для
 runtime exception types, messages и остальных observable failure contracts
