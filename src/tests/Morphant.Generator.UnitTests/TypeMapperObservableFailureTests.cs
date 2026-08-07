@@ -67,11 +67,6 @@ internal sealed class TypeMapperObservableFailureTests
                 "'System.String' to 'System.Int32' cannot start."
             ),
             (
-                new MappingServiceProviderMissingException(),
-                "A service provider is required to create a Morphant " +
-                "mapper."
-            ),
-            (
                 new NestedDestinationTypeMismatchException(
                     typeof(string),
                     typeof(int)),

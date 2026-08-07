@@ -2676,7 +2676,8 @@ diagnostic не должно вводить скрытый fallback на дру�
 
 ### 14.2. Observable runtime failures
 
-Все ошибки, создаваемые самим Morphant, наследуются от публичного
+Все продуктовые ошибки маппинга, создаваемые самим Morphant, и все исключения
+из generated code наследуются от публичного
 `Morphant.Exceptions.MorphantException`. Зафиксированы следующие типы:
 
 | Состояние | Exception |
@@ -2686,11 +2687,15 @@ diagnostic не должно вводить скрытый fallback на дру�
 | Null source/destination отвергнут policy | `NullSourceException` / `NullDestinationException` |
 | Exact-pair lookup дал `0`, `2+` либо единственный `null` | `MappingNotFoundException` / `AmbiguousMappingException` / `InvalidMappingRegistrationException` |
 | Scoped mapper использован после завершения root call | `MappingScopeCompletedException` |
-| Root `Mapper` создан без provider-а | `MappingServiceProviderMissingException` |
 | Adaptive nested destination runtime-несовместим | `NestedDestinationTypeMismatchException` |
 | Declarative switch не выбрал ветку | `UnmatchedMappingSwitchException` |
 | `Option<T>.Value` прочитан у `None` | `OptionValueMissingException` |
 | Compile-time DSL API вызван как runtime API | `RuntimeInvocationNotSupportedException` |
+
+Обычная проверка предусловий рукописного public API следует соглашениям .NET.
+В частности, `new Mapper(null)` бросает `ArgumentNullException` с
+`ParamName == "serviceProvider"`; это не отдельная продуктовая ошибка
+маппинга и не часть иерархии `MorphantException`.
 
 Если C# способен объявить `ITypeMapper<TSource, TDestination>`, invalid либо
 unsupported состояние не оставляет partial mapper незавершённым. Generated

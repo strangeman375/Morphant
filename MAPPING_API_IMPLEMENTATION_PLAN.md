@@ -1576,8 +1576,11 @@ C#-legal mapping contracts.
 
 Согласованная граница:
 
-- все ошибки, создаваемые самим Morphant, имеют публичный typed exception в
-  namespace `Morphant.Exceptions` и общий base `MorphantException`;
+- все продуктовые mapping failures, создаваемые самим Morphant, и все
+  исключения из generated code имеют публичный typed exception в namespace
+  `Morphant.Exceptions` и общий base `MorphantException`;
+- обычная argument validation рукописного public API использует стандартные
+  .NET exceptions;
 - пользовательские exceptions из `Construct`, `Members`, `Convert`, source
   expressions, mapper dependencies и service provider не оборачиваются;
 - если C# может объявить `ITypeMapper<TSource, TDestination>`, invalid либо
@@ -1596,7 +1599,6 @@ Production scope:
   `NullDestinationException`, `MappingNotFoundException`,
   `AmbiguousMappingException`, `InvalidMappingRegistrationException`,
   `MappingScopeCompletedException`,
-  `MappingServiceProviderMissingException`,
   `NestedDestinationTypeMismatchException`,
   `OptionValueMissingException` и `UnmatchedMappingSwitchException`;
 - включить существующий `RuntimeInvocationNotSupportedException` в ту же
@@ -1626,12 +1628,14 @@ Production scope:
   user exceptions.
 
 Реализовано: добавлена публичная hierarchy из общего `MorphantException` и
-тринадцати конкретных типов. Runtime dispatch, scope, mapper construction и
-`Option<T>` больше не создают standard exceptions для Morphant-owned failures.
-Generated mapper использует отдельные типы для invalid configuration,
-отключённой operation, null policies, adaptive destination mismatch и
-non-exhaustive declarative switch; user throw expressions остаются без
-обёртки.
+двенадцати конкретных типов. Generated code и продуктовые failure paths
+runtime dispatch, scope и `Option<T>` не создают standard exceptions.
+Обычная проверка аргументов рукописного API следует .NET conventions:
+`Mapper` использует `ArgumentNullException` для отсутствующего service
+provider. Generated mapper использует отдельные типы для invalid
+configuration, отключённой operation, null policies, adaptive destination
+mismatch и non-exhaustive declarative switch; user throw expressions остаются
+без обёртки.
 
 Pair pipeline разделяет supported, unsupported-but-nameable и structurally
 unnameable contracts. C#-legal collection/tuple/array/delegate/deferred и

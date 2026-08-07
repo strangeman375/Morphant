@@ -55,8 +55,6 @@ T Morphant.Exceptions.MappingOperationNotSupportedException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
 T Morphant.Exceptions.MappingScopeCompletedException
   C .ctor(System.Type, System.Type)
-T Morphant.Exceptions.MappingServiceProviderMissingException
-  C .ctor()
 T Morphant.Exceptions.MorphantException
   C .ctor(System.String)
 T Morphant.Exceptions.NestedDestinationTypeMismatchException

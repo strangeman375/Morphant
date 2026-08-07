@@ -8,11 +8,12 @@ namespace Morphant.Generator.UnitTests;
 public sealed class MapperRuntimeTests
 {
     [Test]
-    public void Requires_a_service_provider()
+    public void Rejects_a_null_service_provider_as_an_argument_error()
     {
-        Assert.That(
-            () => new Mapper(null!),
-            Throws.TypeOf<MappingServiceProviderMissingException>());
+        var exception = Assert.Throws<ArgumentNullException>(
+            () => new Mapper(null!));
+
+        Assert.That(exception!.ParamName, Is.EqualTo("serviceProvider"));
     }
 
     [Test]

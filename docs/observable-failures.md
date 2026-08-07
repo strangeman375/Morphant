@@ -1,10 +1,16 @@
 # Observable failures
 
-Failures produced by Morphant derive from `MorphantException` in the
+Mapping failures produced by Morphant derive from `MorphantException` in the
 `Morphant.Exceptions` namespace. Catch a specific exception when recovery is
 meaningful, or catch `MorphantException` at an application boundary. Messages
 are deterministic and explain the pair or policy involved, but application
 control flow should use the exception type instead of parsing message text.
+
+Ordinary argument validation in handwritten public APIs follows .NET
+conventions. For example, constructing `Mapper` with a null service provider
+throws `ArgumentNullException` with `ParamName` set to `serviceProvider`.
+Such API precondition failures are not part of the Morphant exception
+hierarchy.
 
 ## Failure types
 
@@ -18,7 +24,6 @@ control flow should use the exception type instead of parsing message text.
 | More than one exact runtime registration | `AmbiguousMappingException` |
 | The only runtime registration resolves to null | `InvalidMappingRegistrationException` |
 | Reuse of a completed scoped mapper | `MappingScopeCompletedException` |
-| Construction of `Mapper` without a service provider | `MappingServiceProviderMissingException` |
 | Incompatible current value for an explicit nested destination | `NestedDestinationTypeMismatchException` |
 | No branch matches a declarative switch | `UnmatchedMappingSwitchException` |
 | Reading `Option<T>.Value` when `HasValue` is false | `OptionValueMissingException` |
@@ -70,5 +75,6 @@ code that can still compile and execute.
 Morphant does not wrap exceptions thrown by user `Construct`, `Members`, or
 `Convert` code, by source expressions, by mapper dependencies, or by the
 application service provider. Those exceptions retain their original type,
-message, stack, and catch behavior. The types above are reserved for failures
-authored by Morphant itself.
+message, stack, and catch behavior. The types above are reserved for mapping
+failures authored by Morphant itself and for failures emitted by generated
+code.
