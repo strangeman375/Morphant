@@ -2,7 +2,7 @@
 
 Дата составления: 7 августа 2026 года.
 
-Статус: этап 1, таксономия diagnostics, ожидает ревью.
+Статус: этап 2, категория 1, ожидает ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -35,8 +35,8 @@ ambiguous и invalid registrations сохраняют утверждённые r
 
 | Этап | Результат | Статус |
 |---:|---|---|
-| 1 | Полная таксономия категорий и общие границы diagnostics | Ожидает ревью |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Заблокирован этапом 1 |
+| 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категория 1 ожидает ревью; категории 2–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -131,7 +131,7 @@ Morphant и остаётся диагностикой хоста. Non-C# compila
 отдельной пользовательской границей пакета, поскольку generator публикуется в
 `analyzers/dotnet/cs`.
 
-## 6. Контракт каталога diagnostics
+## 6. Контракт и каталог diagnostics
 
 На этапе 2 для каждой отдельной diagnostic фиксируются:
 
@@ -152,6 +152,226 @@ Morphant и остаётся диагностикой хоста. Non-C# compila
 Diagnostic считается специфицированной только когда все поля контракта имеют
 однозначное значение; рабочее имя без location и recovery policy не завершает
 этап 2.
+
+### 6.1. Политика ID
+
+Diagnostic IDs имеют форму `MORPHdddd`, назначаются последовательно с
+`MORPH0001`, не кодируют номер категории и после публикации никогда не
+переиспользуются. Изменение опубликованного ID является breaking change:
+существующие suppressions и `dotnet_diagnostic.<ID>.severity` перестанут
+действовать.
+
+Пятисимвольный project-specific prefix `MORPH` соответствует рекомендациям
+Roslyn: ID является C# identifier, имеет форму `<PREFIX><number>`, содержит
+меньше 15 символов, а prefix длиннее двух символов снижает риск коллизии.
+Нормативная рекомендация:
+[Choosing diagnostic IDs](https://learn.microsoft.com/dotnet/csharp/roslyn-sdk/choosing-diagnostic-ids).
+
+Перед первым назначением 7 августа 2026 года выполнен exact-search
+`MORPH0001`–`MORPH0004` и analyzer-context использования prefix `MORPH` в
+публичном GitHub code, web index и индексируемых NuGet/analyzer pages. Внешних
+.NET diagnostics с этими ID не найдено. Посторонние строки `Morph0001` вне
+Roslyn diagnostics коллизией не считаются. Единого глобального реестра и
+механизма резервирования analyzer IDs нет, поэтому проверка фиксирует
+отсутствие известной публичной коллизии на дату выбора, а не вечную
+эксклюзивность prefix-а.
+
+Перед назначением каждого следующего ID выполняется повторный публичный
+collision check. При найденной внешней коллизии ещё не опубликованный ID можно
+изменить; уже опубликованный ID сохраняется.
+
+### 6.2. Категория 1: общий contract
+
+Категория «Окружение компиляции и обязательный contract Morphant» содержит
+ровно четыре diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0001` | `Unsupported C# language version` | `Morphant requires C# 9.0 or later, but this compilation uses C# {0}.` |
+| `MORPH0002` | `Morphant runtime contract not found` | `Morphant generator requires a reference to a compatible Morphant runtime library.` |
+| `MORPH0003` | `Ambiguous Morphant runtime contract` | `Multiple Morphant runtime contracts were found. Reference exactly one compatible Morphant runtime library.` |
+| `MORPH0004` | `Incompatible Morphant runtime contract` | `The referenced Morphant runtime contract is incompatible with this generator: {0}.` |
+
+Для всех четырёх diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Compatibility`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- primary location — `Location.None`, additional locations отсутствуют;
+- один ID публикуется не более одного раза на compilation независимо от числа
+  syntax trees, mapper declarations и обнаруженных повреждённых symbols;
+- проверка выполняется при каждом запуске загруженного generator-а, даже если
+  compilation не объявляет mapper-ов;
+- при любой опубликованной либо подавленной prerequisite diagnostic generator
+  не создаёт ни одного source file и не запускает mapper-level analysis;
+- recovery-stubs не создаются: C# language либо runtime API недостаточно
+  надёжны даже для корректного объявления общего generated contract;
+- изменение severity или suppression через `.editorconfig`/MSBuild меняет
+  только представление diagnostic compiler-ом, но не снимает generation gate.
+
+`MORPH0001` независима от runtime contract и может публиковаться одновременно
+с одной из `MORPH0002`–`MORPH0004`. Runtime diagnostics взаимоисключающие:
+ambiguity имеет приоритет над incompatibility, частично найденный contract
+считается incompatible, а missing публикуется только при полном отсутствии
+contract candidate.
+
+### 6.3. `MORPH0001`: unsupported language version
+
+Diagnostic публикуется, когда effective `CSharpParseOptions.LanguageVersion`
+ниже `LanguageVersion.CSharp9`. В message parameter `{0}` передаётся
+стандартное display name effective version, например `8.0`, а не raw enum name
+или указанное пользователем alias-значение `default` / `latest`.
+
+Diagnostic отсутствует для C# 9 и любой более новой effective version,
+включая `latest`, `latestMajor` и `preview`, когда они разрешаются в версию не
+ниже C# 9. Наличие mapper-ов, runtime contract и их корректность на условие не
+влияют.
+
+Diagnostic блокирует всю генерацию. Если runtime contract одновременно
+missing, ambiguous либо incompatible, соответствующая независимая runtime
+diagnostic также публикуется; mapper-level diagnostics подавляются.
+
+### 6.4. Runtime contract candidate и revision
+
+Runtime contract candidate — compilation assembly либо referenced assembly,
+который содержит assembly metadata
+`Morphant.GeneratorContractVersion` или объявляет хотя бы один bootstrap
+symbol Morphant. Bootstrap manifest revision 1 включает:
+
+- `Morphant.MorphantMapperAttribute`;
+- `Morphant.TypeMapper` и его единственный применимый instance method
+  `void Configure(Morphant.MapperBuilder)`;
+- `Morphant.MapperBuilder`, `Morphant.MapperBuilderBase<T>` и
+  `Morphant.MapperBuilder<TSource, TDestination>`;
+- instance registration method
+  `MapperBuilder<TSource, TDestination> Map<TSource, TDestination>(MappingMode)`;
+- runtime type families, непосредственно связываемые либо называемые
+  generated code: `ITypeMapper<,>`, `Option<>`, `Context.MappingContext`,
+  `Context.MappingOperation`, `Delegates.Construct`, `Delegates.Members`,
+  `Delegates.Convert`, constructor/member wrappers, declarative markers и
+  Morphant exception types, используемые generated branches.
+
+Manifest проверяет metadata name, kind, generic arity, accessibility и
+обязательную member signature. Он не требует byte-for-byte совпадения всего
+публичного API: поддерживаемая revision является обещанием полного
+generator/runtime contract, а structural manifest защищает bootstrap и
+обнаруживает повреждённую либо подменённую dependency.
+
+Runtime assembly публикует ровно одно значение assembly metadata
+`Morphant.GeneratorContractVersion=1`. Это package-coordination metadata, а не
+новый C# mapping API. Совместимые runtime и generator releases используют одну
+revision; несовместимое изменение contract повышает revision. NuGet package
+version для этой проверки не используется.
+
+### 6.5. `MORPH0002`: runtime contract not found
+
+Diagnostic публикуется, когда compilation не содержит ни одного runtime
+contract candidate: отсутствуют и metadata revision, и все bootstrap symbols.
+Типичный случай — analyzer загружен отдельно, а compile assets библиотеки
+Morphant не подключены.
+
+Частично присутствующий bootstrap, assembly с revision metadata либо любое
+конфликтующее определение не считается missing: оно переходит в
+`MORPH0003` или `MORPH0004`. Diagnostic не публикуется для единственного
+однозначного compatible candidate.
+
+### 6.6. `MORPH0003`: ambiguous runtime contract
+
+Diagnostic публикуется, когда найдено несколько runtime contract candidates
+либо один из обязательных metadata names имеет несколько конкурирующих
+определений, из-за которых нельзя выбрать единственный согласованный symbol
+set. Это включает одновременные runtime references и shadow-определения
+contract types в consumer compilation.
+
+Совместимость отдельных candidates не анализируется дальше: ambiguity является
+первичной причиной и подавляет `MORPH0002`/`MORPH0004`. Message намеренно не
+перечисляет assembly paths, чтобы результат не зависел от машины; конкретные
+candidate identities сохраняются только как детерминированные test/debug data,
+не как часть публичного message contract.
+
+### 6.7. `MORPH0004`: incompatible runtime contract
+
+Diagnostic публикуется для единственного runtime contract candidate, если его
+нельзя безопасно использовать с текущим generator-ом. Проверка идёт в
+детерминированном порядке и останавливается на первой причине:
+
+1. metadata `Morphant.GeneratorContractVersion` отсутствует, повторена либо не
+   является одним canonical decimal integer;
+2. revision не входит в exact set revisions, поддерживаемых generator-ом;
+3. bootstrap symbol отсутствует;
+4. bootstrap symbol имеет неверный kind, generic arity, accessibility либо
+   обязательную member signature.
+
+Внутри шагов 3–4 manifest проверяется в порядке групп из раздела 6.4, а
+symbols одной группы — по полному metadata name в ordinal order. Поэтому при
+нескольких shape failures reason не зависит от порядка metadata references.
+
+В `{0}` передаётся одна из стабильных reason forms без завершающей точки:
+
+- `contract revision metadata 'Morphant.GeneratorContractVersion' is missing`;
+- `contract revision metadata 'Morphant.GeneratorContractVersion' is duplicated`;
+- `contract revision metadata 'Morphant.GeneratorContractVersion' is invalid`;
+- `contract revision '{actual}' is not supported; expected '{expected}'`;
+- `required symbol '{metadataName}' is missing`;
+- `required symbol '{metadataName}' has an incompatible shape`.
+
+Для revision 1 generator поддерживает exact set `{ 1 }`, поэтому
+`{expected}` равно `1`. Если будущий generator на переходный период
+поддерживает несколько revisions, reason перечисляет их по возрастанию через
+`, `; это перечисление становится частью exact message tests.
+
+### 6.8. Дедупликация, порядок и suppression
+
+Publication order категории фиксирован: `MORPH0001`, затем одна выбранная
+runtime diagnostic. Среди runtime failures precedence равно
+`MORPH0003` > `MORPH0004` > `MORPH0002`; это приоритет причин, а не сортировка
+одновременно публикуемых сообщений.
+
+Повторные observations внутри одной compilation сводятся к одной причине до
+создания `Diagnostic`. Incremental reevaluation с тем же effective language и
+runtime contract не меняет ID, message или order. Замена parse options либо
+runtime reference пересчитывает global gate и либо снимает его целиком, либо
+публикует новый точный набор без сохранения прежнего состояния.
+
+Поскольку diagnostics configurable, пользователь может понизить либо
+подавить их стандартным `dotnet_diagnostic.MORPHdddd.severity`. Это не является
+opt-out из compatibility policy: source generation остаётся отключённой, пока
+prerequisite фактически не исправлена.
+
+### 6.9. Самостоятельная тестовая матрица категории 1
+
+Unit-категория окружения независимо фиксирует:
+
+- exact descriptors всех четырёх diagnostics: ID, title, category, default
+  severity, enabled/configurable flags, message format и отсутствие locations;
+- C# 8 против C# 9, explicit/default/latest/preview aliases и exact display
+  parameter `MORPH0001`;
+- отсутствие runtime contract, единственный compatible contract, частичный
+  bootstrap, missing/duplicated/malformed/unsupported revision и каждую
+  bootstrap shape failure;
+- две runtime assemblies, runtime плюс consumer shadow types и несколько
+  ambiguous metadata names с единственной `MORPH0003`;
+- совместную публикацию `MORPH0001` и ровно одной runtime diagnostic, exact
+  order и runtime precedence;
+- множество syntax trees и mapper declarations без дублирования global
+  diagnostics;
+- полный empty generated result и отсутствие всех mapper-level diagnostics
+  при каждом gate failure;
+- suppression и изменение severity без возобновления generation;
+- add/change/remove/restore parse-options и reference actualization при одном
+  сохранённом incremental driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- normal Morphant runtime + bundled generator в C# 9 consumer без diagnostics;
+- analyzer-only consumer без compile assets с `MORPH0002` и без generated
+  files;
+- mismatched runtime/generator revisions с exact `MORPH0004`;
+- duplicate runtime contracts с exact `MORPH0003`;
+- C# 8 consumer с exact `MORPH0001`;
+- suppress/override severity в реальном project: build presentation меняется,
+  но generated Morphant contract по-прежнему отсутствует.
 
 ## 7. Реализация и тесты
 
