@@ -2647,6 +2647,11 @@ source, factory/derived behavior и точный evaluation order будут с�
 
 В целевом дизайне diagnostics должны покрыть как минимум:
 
+- несовместимое compilation environment или отсутствие однозначного
+  совместимого обязательного contract Morphant;
+- использование Morphant builder-а вне поддерживаемого прямого линейного
+  `Configure` flow;
+- повторную регистрацию одной canonical pair внутри одного mapper-а;
 - повторный `Construct` для одной pair, включая вызовы разных перегрузок;
 - любой второй локальный `Members`; форма перегрузки значения не имеет;
 - повторный `Convert`;
@@ -2663,13 +2668,13 @@ source, factory/derived behavior и точный evaluation order будут с�
 - невозможный explicit constructor/member marker;
 - две registrations одного generic mapper-а, чьи pair shapes могут
   унифицироваться при подстановке type parameters и породить одинаковый
-  generated `ITypeMapper` contract;
-- отсутствие кандидата при runtime lookup canonical pair;
-- неоднозначный безымянный runtime lookup при двух и более кандидатах pair.
+  generated `ITypeMapper` contract.
 
-Несколько registrations одной canonical pair сами по себе не являются
-ошибочной конфигурацией. Ошибка возникает только тогда, когда конкретный вызов
-не может выбрать ровно одного кандидата.
+Одинаковая canonical pair в разных mapper types и assemblies разрешена.
+Отсутствие кандидата, несколько registrations, registration, разрешившаяся в
+`null`, и завершённый mapping scope наблюдаются только при runtime dispatch и
+не являются compile-time diagnostics: generator не видит application-wide
+`IServiceProvider`.
 
 Diagnostics остаются отдельной реализационной фазой, но отсутствие готового
 diagnostic не должно вводить скрытый fallback на другой mapping algorithm.
