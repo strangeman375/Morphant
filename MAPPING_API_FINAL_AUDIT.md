@@ -4,10 +4,11 @@
 
 Статус документа: независимая продуктовая оценка целевого mapping API,
 выполненная перед naming-аудитом. После завершения этапа 19 и согласования
-callback result-policy revision терминология актуализирована, но оценки и
-рекомендации не менялись. Нормативным источником
-семантики остаётся `MAPPING_API_DESIGN.md`; этот документ фиксирует полноту
-сценариев, сравнение с конкурентами, найденные риски и рекомендации.
+callback result-policy и read-only proxy revisions терминология и затронутые
+выводы актуализированы; числовые оценки сохранены от исходного аудита.
+Нормативным источником семантики остаётся `MAPPING_API_DESIGN.md`; этот документ
+фиксирует полноту сценариев, сравнение с конкурентами, найденные риски и
+рекомендации.
 
 ## 1. Объём и методика аудита
 
@@ -118,7 +119,7 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 | Нужен не только ignore-null, но и ignore-default в [Mapster #982][mapster-982] | Patch-этап следует расширить до общей presence/default policy |
 | Projection приходится объявлять и конфигурировать повторно в [Mapperly #2252][mapperly-2252] | Есть риск повторить проблему: projection обещана, но её связь с основным pair-plan пока не зафиксирована |
 | Нужен collection-path flattening для EF join entities в [Mapperly #2253][mapperly-2253] | Не включён явно в текущий collection/`IncludeMembers` roadmap |
-| Нужен nested update существующего member-объекта в [Mapperly #1700][mapperly-1700] | Get-only complex child сейчас требует `Convert`; отдельного declarative сценария нет |
+| Нужен nested update существующего member-объекта в [Mapperly #1700][mapperly-1700] | Закрыто standalone `Update(source, members.Member)` для eligible read-only reference proxy |
 | Нужны несколько sources для required/init destination в [Mapperly #1978][mapperly-1978] | Поддерживается будущими tuple roots и multi-source mapping |
 | Нужны настраиваемые правила сопоставления имён в [Mapperly #2039][mapperly-2039] | Сейчас доступны exact matching и explicit rules, но нет масштабируемого opt-in affordance |
 
@@ -138,7 +139,7 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 | Immutable existing destination | Закрыт явным replacement или ручным `with`; скрытой mutation нет |
 | Custom expressions, injected services и специальный synchronous algorithm | Закрыт |
 | Nested Create/Update | Закрыт, но требует явного `Map(...)` |
-| Get-only mutable child object | Только `Convert`; отдельного declarative сценария нет |
+| Get-only mutable child object | Закрыт standalone nested `Update` через generated read-only proxy; replacement-result намеренно отбрасывается |
 | Collections, dictionaries и getter-only collections | Обязательная post-v0 capability; точная lifecycle-матрица ещё проектируется |
 | Collection reconciliation по ключу | Поддерживается после v0, без скрытого default; API не выбран |
 | Explicit flattening | Закрыт |
@@ -162,9 +163,9 @@ constructors, `init`, `required`, null, factories, nested pairs, reuse,
 replacement и identity — покрыты убедительно. Наименее зрелые области —
 collections, patch, projection, keyed variants и conventions поверх имён.
 
-## 6. Обнаруженные пробелы и необходимые дополнения
+## 6. Обнаруженные пробелы и принятые дополнения
 
-### 6.1. Existing get-only complex child
+### 6.1. Existing get-only complex child — закрыто в core v0 target
 
 Это отдельный массовый сценарий, который не следует смешивать только с
 getter-only collections:
@@ -173,22 +174,25 @@ getter-only collections:
 public Address Address { get; } = new();
 ```
 
-Декларативный mapping должен уметь обновить `result.Address` без присваивания
-нового `Address` и без перевода всего outer mapping в `Convert`.
+Принятый контракт обновляет `result.Address` без присваивания нового `Address`
+и без перевода всего outer mapping в `Convert`:
 
-Безопасная будущая семантика:
+- readable non-writable property либо доступный `readonly` field получает
+  generated get-only proxy только для допустимого non-opaque reference-type
+  nested destination;
+- read-only value types, opaque и остальные неподдерживаемые nested-root формы
+  proxy не получают;
+- единственная допустимая запись — standalone
+  `Update(source.Address, members.Address)`;
+- Morphant читает child один раз; при `null` пропускает nested call и не
+  вычисляет source-expression;
+- при non-null выполняется nested `Update`, а его replacement-result
+  отбрасывается, потому что outer member не допускает assignment;
+- proxy не участвует в conventions, `Auto()` и unmapped-member validation.
 
-- member обязан быть readable и non-null;
-- применяется nested `Update` к уже доступному child;
-- nested pair должна статически гарантировать сохранение identity;
-- если nested mapping может вернуть replacement, configuration diagnostic;
-- отсутствующий child или необходимость replacement требуют mutator/factory
-  либо `Convert`.
-
-Обычный two-argument `Map(source, destination)` с последующим assignment не
-решает get-only member: авторитетный nested replacement некуда присвоить.
-Поэтому identity-preserving nested update должен стать отдельной declarative
-capability.
+Тем самым in-place mutation существующего reference-объекта поддержана явно.
+Если алгоритму необходимо сохранить возможный nested replacement, он требует
+writable outer member, mutator/factory либо `Convert`.
 
 ### 6.2. Projection compatibility contract
 
@@ -214,8 +218,9 @@ capability.
 
 ### 6.3. First-class enum mapping
 
-Ручной `Construct` функционально достаточен для единичной пары, но плохо
-масштабируется и не даёт exhaustiveness diagnostics. В roadmap следует добавить:
+Явный `ConstructUsing` либо `Convert` функционально достаточен для единичной
+пары, но плохо масштабируется и не даёт exhaustiveness diagnostics. В roadmap
+следует добавить:
 
 - mapping by value, checked value и name;
 - optional case-insensitive matching;
@@ -226,7 +231,7 @@ capability.
 - enum ↔ string naming strategy.
 
 Широкое автоматическое обнаружение `Parse`, `ToString` и произвольных factory
-methods не требуется. Для них explicit `Construct` безопаснее и понятнее.
+methods не требуется. Для них explicit `ConstructUsing` безопаснее и понятнее.
 
 ### 6.4. Масштабируемое name matching
 
@@ -354,22 +359,20 @@ v0 корректно выпускать как architectural preview, foundatio
 текущие result policies, `Members`, `Convert`, authoritative result и explicit
 nested dispatch оставляют для них совместимые точки расширения.
 
-## 10. Рекомендации, отложенные при переходе к naming-аудиту
+## 10. Текущий статус рекомендаций
 
-Перед naming-аудитом были рекомендованы следующие дополнительные продуктовые
-решения:
+Первоначальная рекомендация добавить declarative update get-only complex child
+уже вошла в core v0 target через read-only proxy из раздела 6.1. Остаются
+следующие дополнительные продуктовые решения:
 
-1. добавить existing get-only complex-child update как отдельное post-v0
-   обязательство;
-2. закрепить минимальные projection invariants;
-3. добавить first-class enum mapping и opt-in name matching в roadmap;
-4. расширить collection и patch stages найденными массовыми сценариями;
-5. уточнить законы keyed variants;
-6. разделить future commitments и явные non-goals.
+1. закрепить минимальные projection invariants;
+2. добавить first-class enum mapping и opt-in name matching в roadmap;
+3. расширить collection и patch stages найденными массовыми сценариями;
+4. уточнить законы keyed variants;
+5. разделить future commitments и явные non-goals.
 
-Из-за дедлайна v0 принято продолжить с уже согласованным core design, не
-расширяя его этими возможностями сейчас. Рекомендации остаются post-v0
-направлениями и не являются незакрытой частью naming-этапа.
+Оставшиеся рекомендации являются post-v0 направлениями и не входят в
+незакрытую часть core v0 либо naming-этапа.
 
 ## 11. Финальный вердикт
 

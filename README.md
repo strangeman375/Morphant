@@ -5,6 +5,11 @@ explicit `TypeMapper` configuration into strongly typed
 `ITypeMapper<TSource, TDestination>` implementations; runtime dispatch does no
 reflection-based mapping discovery.
 
+The documentation describes the agreed core v0 target. The callback
+result-policy and read-only proxy revisions are not yet implemented in the
+generated API; current production progress is tracked in the
+[mapping API roadmap](MAPPING_API_IMPLEMENTATION_PLAN.md).
+
 Core v0 is an architectural preview focused on object lifecycle, nullability,
 constructor/member plans, manual algorithms, nested mapping, and predictable
 Update identity. Collections, projection, automatic DI registration, and the
@@ -69,15 +74,11 @@ manual registration, and Create/Update behavior.
 
 ## Configuration model
 
-The result-policy revision below is the agreed target design and is not yet
-implemented in the generated API. Its implementation status is tracked in the
-[mapping API roadmap](MAPPING_API_IMPLEMENTATION_PLAN.md).
-
 - `Construct` creates a structured result only when no previous destination
   exists; `Resolve` selects a structured result for every operation.
-- `ConstructUsing` and `ResolveUsing` are the always-available runtime result
-  policies; each has a short overload and a context-aware overload whose final
-  parameter is the real `MappingContext`.
+- `ConstructUsing` and `ResolveUsing` are pair-specific generated runtime result
+  policies emitted for every eligible pair; each has a short overload and a
+  context-aware overload whose final parameter is the real `MappingContext`.
 - `Members` describes destination member values around that selected result.
 - `Convert` replaces the declarative pipeline with an ordinary synchronous C#
   algorithm.

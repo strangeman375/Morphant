@@ -1,7 +1,8 @@
 # Declarative mapping
 
-This page documents the agreed callback result-policy target. The generated
-API has not yet been revised; current progress is recorded in the
+This page documents the agreed core v0 target. The callback result-policy and
+read-only proxy revisions are not yet implemented in the generated API;
+current production progress is tracked in the
 [mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
 
 A declarative pair has one optional result-policy slot and one cooperating
@@ -18,8 +19,8 @@ A declarative pair has one optional result-policy slot and one cooperating
 one supported constructor. A sole parameterless constructor still gets both
 methods so explicit construction, structured replacement, and creation-time
 `init`/`required` members remain available. `ConstructUsing` and
-`ResolveUsing` are ordinary pair-builder methods available for every eligible
-pair.
+`ResolveUsing` are pair-specific generated extension methods available for
+every eligible pair through its `MappingExtension` artifact.
 
 `Members` describes values around the selected result. If no result policy is
 configured, Morphant constructs a structured destination by convention on a
@@ -63,8 +64,8 @@ Structured construction can select an explicit destination constructor or
 
 ## Runtime result policies
 
-Use the always-available runtime policies for a factory, cache, scalar, opaque
-value, interface, abstract destination, or any other ready-made result:
+Use the generated runtime policies for a factory, cache, scalar, opaque value,
+interface, abstract destination, or any other ready-made result:
 
 ```csharp
 builder.Map<OrderDto, IOrder>()
@@ -88,6 +89,15 @@ dispatch. They receive normalized inputs after declarative null handling, and
 the common `Members` plan runs after a non-null result. Declarative markers are
 unavailable inside them.
 
+The generated receiver preserves the source and destination types of the
+registered pair. Callback inputs are typed separately: `source` is the
+root-normalized non-null source, and `previous` is an `Option` of the
+root-normalized destination. The return type is exactly the destination type
+carried by the pair builder, including root nullability. For example, a
+`Source? -> Destination?` callback receives `Source` and returns
+`Destination?`. This split is why the methods cannot be ordinary generic
+members of `MapperBuilder<TSource, TDestination>`.
+
 ## Members
 
 `Members` returns a generated destination-specific record whose assignments
@@ -110,6 +120,10 @@ builder.Map<OrderDto, Order>()
 - `Auto()` requests the exact-name convention for that member;
 - `Ignore()` occupies the member without assigning it;
 - `Map(...)`, `Create(...)`, and `Update(...)` perform explicit nested mapping.
+
+An eligible readable non-writable reference member may appear only as a
+get-only proxy for standalone nested `Update`; it is not an ordinary member
+rule or convention candidate. See [Nested mapping](nested-mapping.md).
 
 The result-aware overload can read the actual selected result:
 

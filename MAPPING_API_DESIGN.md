@@ -1,8 +1,8 @@
 # Новый дизайн mapping API Morphant
 
 Статус документа: согласованный нормативный целевой дизайн mapping API.
-Callback result-policy revision ещё не перенесена в production-код; актуальный
-прогресс и оставшиеся границы фиксирует
+Callback result-policy и read-only proxy revisions ещё не перенесены в
+production-код; актуальный прогресс и оставшиеся границы фиксирует
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
 Прежний `Template()`-дизайн упоминается только в сравнительном аудите там, где
 он объясняет решения текущего API, и не является compatibility target.
@@ -409,10 +409,12 @@ declarative surface для свойств и полей. `Convert` по-преж
 declarative pipeline и не комбинируется ни с одной result policy либо
 `Members`.
 
-### 6.2. Обычный и generated builder surface
+### 6.2. Pair-specific generated builder surface
 
-`ConstructUsing` и `ResolveUsing` являются обычными методами
-`MapperBuilder<TSource, TDestination>` и существуют для каждой eligible pair:
+`ConstructUsing` и `ResolveUsing` являются pair-specific generated extension
+methods и существуют для каждой eligible pair. Они входят в существующий
+artifact `MappingExtension` и расширяют точный
+`MapperBuilder<TSource, TDestination>` зарегистрированной pair:
 
 ```csharp
 .ConstructUsing(source => CreateDestination(source))
@@ -433,6 +435,17 @@ delegate. Он исполняется ровно один раз на выбра
 
 Zero-argument callback не вводится. Минимальная `ConstructUsing` overload
 всегда получает `source`; если он не нужен, пользователь пишет `_`.
+
+Pair-specific generation нужна из-за различия типов receiver-а и callback-а.
+Receiver сохраняет source/destination-типы зарегистрированной pair. Callback
+получает root-normalized non-null source после `NullSourceHandling`, а
+`ResolveUsing` — ещё и `Option` от root-normalized destination после
+`NullDestinationHandling`. Возвращаемый тип при этом не нормализуется: это
+ровно destination-тип pair-builder-а, включая его корневую nullability.
+Например, callback pair `Source? -> Destination?` получает `Source`, но
+возвращает `Destination?`. Обычный generic-метод самого
+`MapperBuilder<TSource, TDestination>` не может выразить этот раздельный
+контракт для всех nullable reference/value forms.
 
 `Construct` и `Resolve` являются generated extension methods и появляются
 только при наличии structured creation capability: destination имеет хотя бы
@@ -490,7 +503,7 @@ Construct((source, context) => DestinationConstruction);
 Resolve((source, previous) => DestinationConstruction);
 Resolve((source, previous, context) => DestinationConstruction);
 
-// Обычный pair-builder, для любой eligible pair.
+// Pair-specific generated extensions, для любой eligible pair.
 ConstructUsing(source => TDestination);
 ConstructUsing((source, context) => TDestination);
 ResolveUsing((source, previous) => TDestination);
@@ -547,7 +560,9 @@ Structured `Resolve` может вернуть previous благодаря impli
 
 `ConstructUsing` и `ResolveUsing` являются runtime-частями declarative
 pipeline, а не manual mapping. Их короткие и context-aware overload-ы получают
-normalized non-null source и previous после declarative null handling. В
+normalized non-null source и, для `ResolveUsing`, root-normalized previous
+после declarative null handling, но возвращают точный destination-тип
+pair-builder-а без root-normalization. В
 полной форме `context.Operation` сохраняет исходную public operation, а
 `context.Mapper` использует текущий `MappingScope`. После non-null result
 выполняется effective `Members` plan. В отличие от них `Convert` получает
@@ -928,7 +943,7 @@ Destination без constructor surface вообще не получает `init`
 | `Map(source)` / `Map<TDestination>(source)` | Выполнить adaptive nested mapping явного source |
 | `Create(source)` / `Create<TDestination>(source)` | Принудительно выполнить nested `Create` и присвоить результат |
 | `Update(source, destination)` / `Update<TDestination>(source, destination)` | Принудительно выполнить nested `Update` и присвоить результат |
-| Standalone `Update(source, members.GetOnly)` | Обновить non-null get-only member in-place и отбросить nested result |
+| Standalone `Update(source, members.GetOnly)` | Обновить eligible non-null read-only reference member in-place и отбросить nested result |
 | Member не указан | Применить эффективный `MemberSelection` |
 
 У `Auto` и `Ignore` сохраняются обе формы: `Auto()` / `Auto<T>()` и
@@ -1061,10 +1076,14 @@ Update: такой plan неоднозначен и unsupported.
 
 Для writable target nested result авторитетен и присваивается фактическому
 outer result; nested Update может сохранить аргумент либо вернуть replacement.
-True get-only destination property и property с недоступным обычным setter-ом
-появляются в generated `DestinationMembers` как get-only markers.
-`init`-only property остаётся creation-only и такого proxy не получает. Для
-get-only marker разрешена только standalone форма:
+Readable non-writable properties и доступные `readonly` fields появляются в
+generated `DestinationMembers` как get-only markers только тогда, когда их тип
+после снятия корневой nullability является допустимым non-opaque reference-type
+nested destination в v0. Такой proxy способен обозначить in-place nested
+Update существующего объекта. Read-only value types, opaque и остальные
+неподдерживаемые nested-root формы proxy не получают. `init`-only property
+остаётся creation-only и такого proxy не получает. Для get-only marker
+разрешена только standalone форма:
 
 ```csharp
 .Members((source, _) =>
@@ -1082,8 +1101,8 @@ get-only marker разрешена только standalone форма:
 Generator читает `result.Address` один раз. При `null` nested mapper не
 вызывается и source-expression не вычисляется. При non-null выполняется обычный
 nested Update, но returned replacement отбрасывается, потому что присвоить его
-некуда. Get-only value-type target unsupported. Такие markers не участвуют в
-conventions, `Auto()` и unmapped-member validation.
+некуда. Такие markers не участвуют в conventions, `Auto()` и unmapped-member
+validation.
 
 Параметры `previous` и `result` в declarative `Resolve`/`Members` являются
 read-only источниками информации. Assignment, increment/decrement и передача
@@ -1860,10 +1879,10 @@ declarative методы. Для каждой eligible pair capabilities выв�
 | Capability | Условие | Generated surface |
 |---|---|---|
 | Runtime contract | Любая eligible pair | Обе `Map`-операции; effective `MappingMode` остаётся единственным operation gate |
-| Runtime result policy | Любая eligible pair | `ConstructUsing` и `ResolveUsing` на обычном pair-builder |
+| Runtime result policy | Любая eligible pair | Pair-specific generated `ConstructUsing` и `ResolveUsing` в `MappingExtension` |
 | Manual | Любая eligible pair | Три pair-specific generated `Convert` overload-а |
 | Structured construction | Есть хотя бы один поддерживаемый доступный destination constructor, включая parameterless | Generated `Construct` и `Resolve`, возвращающие `DestinationConstruction` |
-| Members | Для destination с constructor surface есть поддерживаемый body-member; без него есть post-construction assignable member; destination не opaque | Generated `DestinationMembers` и четыре `Members` overload-а |
+| Members | Есть поддерживаемый writable/creation-time body-member либо eligible read-only nested-update proxy; destination не opaque | Generated `DestinationMembers` и четыре `Members` overload-а |
 | Collection / projection | Не входят в v0 capability model | Никакого generated surface; рассматриваются после v0 на отдельных этапах |
 
 Structured и runtime result methods имеют разные имена и могут одновременно
@@ -1874,16 +1893,21 @@ Structured и runtime result methods имеют разные имена и мо�
 surface.
 
 Отсутствие members не убирает declarative surface. Pair с поддерживаемым
-constructor получает structured `Construct` / `Resolve`; pair без него
-использует builder-level `ConstructUsing` / `ResolveUsing`. `Update` всё равно
-может вернуть previous без изменений. No-previous ветка такой pair требует
-configured runtime policy. Единственным общим
-gate для публичной операции остаётся эффективный `MappingMode`.
+constructor получает structured `Construct` / `Resolve`; для любой eligible
+pair независимо генерируются `ConstructUsing` / `ResolveUsing`. `Update` всё
+равно может вернуть previous без изменений. No-previous ветка pair без
+constructor surface требует configured runtime policy. Единственным общим gate
+для публичной операции остаётся эффективный `MappingMode`.
 
 Под «есть member» понимается member, реально включаемый в generated
-`DestinationMembers`, а не любой symbol типа. Static members, indexers,
-get-only properties, readonly fields и другие неподдерживаемые формы не
-считаются.
+`DestinationMembers`, а не любой symbol типа. Помимо обычных writable members,
+учитывается read-only proxy, если readable non-writable property либо доступный
+`readonly` field имеет ссылочный тип, который является допустимым non-opaque
+nested destination root в v0. Такой proxy существует исключительно для
+standalone nested `Update`. Read-only value types, opaque и остальные
+неподдерживаемые nested-root формы, static members, indexers и прочие
+непригодные symbols не считаются. `init`-only property без constructor surface
+остаётся creation-only и не превращается в proxy.
 
 Под «есть constructor» понимается instance-constructor любой arity, который
 generator может использовать для создания данного destination. Недоступные и
@@ -1917,7 +1941,7 @@ structured type. Opaque означает атомарный destination: он н
 становится opaque только из-за value semantics и получает capabilities по
 обычным правилам своих constructors и members.
 
-`ConstructUsing` / `ResolveUsing` получает уже созданный instance, к которому
+`ConstructUsing` / `ResolveUsing` получают уже созданный instance, к которому
 Morphant может применить обычные setter-rules и mutable-field rules.
 `required` не исключает такие members, если они остаются post-construction
 assignable. `init`-only properties без structured constructor surface в member
@@ -2045,8 +2069,8 @@ IntelliSense и source output имеют стабильный смысловой
   появления parameter-а в constructors;
 - body-members следуют base-first declaration order с уже описанными hiding-
   rules;
-- overload-ы `Construct` / `Resolve` / `Members` / `Convert`, а также обычные
-  `ConstructUsing` / `ResolveUsing` и их XML documentation
+- overload-ы `Construct` / `Resolve` / `ConstructUsing` / `ResolveUsing` /
+  `Members` / `Convert` и их XML documentation
   сохраняют один детерминированный порядок между regeneration-ами.
 
 Для generic destination generator создаёт один generic plan на original
@@ -2077,10 +2101,9 @@ sanitization, а не ко всем artifacts по умолчанию.
 
 Physical artifacts разделены по ответственности: construction plan использует
 kind `Construction`, member plan — `Member`, generated `Construct` / `Resolve`
-/ `Convert` methods — `MappingExtension`, а `Members` methods —
-`MemberExtension`. `ConstructUsing` и `ResolveUsing` находятся на обычном
-pair-builder и generated extension artifact не требуют. Оба extension-
-artifact-а дополняют одну internal partial class
+/ `ConstructUsing` / `ResolveUsing` / `Convert` methods — `MappingExtension`, а
+`Members` methods — `MemberExtension`. Оба extension-artifact-а дополняют одну
+internal partial class
 `MorphantGeneratedMappingExtensions`; разделение файлов не создаёт второй
 пользовательский fluent surface.
 
@@ -2666,9 +2689,12 @@ expressions, mapper dependencies и application service provider не
 8. `Members` является единственным declarative API для body-members. Structured
    surface включает `init` и `required`; surface без constructor capability
    включает обычные setters и mutable fields, в том числе `required`, но не
-   `init`-only properties. True get-only properties и properties с недоступным обычным
-   setter-ом дополнительно входят в обе поверхности только как get-only proxy
-   для явного nested Update и не участвуют в обычных member rules.
+   `init`-only properties. Readable non-writable properties и доступные
+   `readonly` fields дополнительно входят в обе поверхности только как get-only
+   proxy для standalone nested Update, если имеют допустимый non-opaque
+   reference-type nested destination; read-only value-type и прочие
+   неприменимые nested targets proxy не получают. Эти proxy не участвуют в
+   обычных member rules.
 9. Для member-capable pair всегда генерируются четыре prefix-
    `Members`-перегрузки: `source`; `source`/`previous`;
    `source`/`previous`/`result`; `source`/`previous`/`result`/`context`.
@@ -2713,11 +2739,10 @@ expressions, mapper dependencies и application service provider не
 19. `MappingContext.Operation` сообщает текущую публичную операцию, а
     `Option<TDestination>` независимо сообщает наличие фактического
     destination instance.
-20. Короткие и context-aware `ConstructUsing` / `ResolveUsing` доступны на
-    обычном pair-builder для каждой eligible mapping-пары; три pair-specific
-    `Convert` overload-а генерируются для неё отдельно. Четыре `Members`
-    overload-а генерируются независимо при наличии применимых body-members у
-    non-opaque destination.
+20. Короткие и context-aware `ConstructUsing` / `ResolveUsing` генерируются в
+    pair-specific `MappingExtension` для каждой eligible mapping-пары вместе с
+    тремя `Convert` overload-ами. Четыре `Members` overload-а генерируются
+    независимо при наличии применимых body-members у non-opaque destination.
 21. Наличие хотя бы одного поддерживаемого constructor, включая parameterless,
     генерирует structured `Construct` и `Resolve`. Единственный parameterless
     constructor является полноценным surface. При отсутствии constructor
@@ -2760,7 +2785,10 @@ expressions, mapper dependencies и application service provider не
     корневой nullability и в роли previous никогда не содержит `Some(null)`;
     общий `Option<T>` при nullable `T` такого ограничения не имеет.
 33. Result policies и `Members` получают source после declarative null handling
-    как non-null underlying type; `Convert` получает исходное runtime-значение.
+    как non-null underlying type; previous также root-normalized. Возвращаемый
+    тип `ConstructUsing` / `ResolveUsing` совпадает с destination-типом
+    pair-builder-а и не нормализуется. `Convert` получает исходное runtime-
+    значение source.
 34. `null` из `ConstructUsing` или `ResolveUsing` является авторитетным
     терминальным result: `Members` не выполняется, exception и fallback не
     генерируются, null-handling policies повторно не применяются.
@@ -2808,10 +2836,11 @@ expressions, mapper dependencies и application service provider не
 43. До post-v0 tuple, sequence/collection/buffer, delegate, expression-tree,
     deferred/async и push-sequence roots полностью исключаются в обеих
     mapping-позициях даже для runtime/manual mapping.
-44. Для любой другой eligible pair доступны runtime contract,
-    `ConstructUsing`, `ResolveUsing` и `Convert`; destination с constructor
-    capability дополнительно получает generated `Construct` / `Resolve`, а
-    non-opaque destination — `Members` при наличии применимых body-members.
+44. Для любой другой eligible pair доступны runtime contract и pair-specific
+    generated `ConstructUsing`, `ResolveUsing` и `Convert`; destination с
+    constructor capability дополнительно получает generated `Construct` /
+    `Resolve`, а non-opaque destination — `Members` при наличии применимых
+    body-members.
     Значение отложенной категории внутри разрешённого root
     остаётся обычным единым C#-значением. `dynamic`
     канонически совпадает с `object`; root nullable reference annotation не
@@ -3083,9 +3112,10 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
 ## 17. Статус реализации и оставшиеся границы
 
 Основная semantics core v0 реализована, но согласованная ревизия callback
-surface из разделов 6–8 ещё не перенесена в production-код, generated API,
-tests и пользовательскую документацию. Текущее состояние и следующий
-cross-cutting implementation slice фиксируются в
+surface из разделов 6–8 и уточнённая граница read-only proxy из разделов 7 и
+11 ещё не перенесены в production-код, generated API и tests. Пользовательская
+документация уже описывает целевой контракт и явно помечена как target.
+Текущее состояние и следующий cross-cutting implementation slice фиксируются в
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md), а
 независимая оценка полноты сценариев — в
 [`MAPPING_API_FINAL_AUDIT.md`](MAPPING_API_FINAL_AUDIT.md).

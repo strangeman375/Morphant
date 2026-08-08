@@ -17,7 +17,9 @@ runtime failures и recovery-stubs — раздел 14.2 того же доку�
 `Construct` / `Resolve` / `Members`, runtime `ConstructUsing` /
 `ResolveUsing` / `Convert` и compile-time `MappingContextMarker`. Вложенный
 `ByFactory` и direct-формы `Construct` / `Resolve` удаляются. Нормативный
-контракт зафиксирован в `MAPPING_API_DESIGN.md` и отдельном разделе
+контракт также ограничивает read-only member proxy только применимыми
+non-opaque reference-type nested destinations. Оба уточнения зафиксированы в
+`MAPPING_API_DESIGN.md` и отдельном разделе
 `MAPPING_API_IMPLEMENTATION_PLAN.md`.
 
 Категории 1, 4, 5, 7 и черновик категории 8 ниже были составлены до финальной

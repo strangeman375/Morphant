@@ -1,5 +1,10 @@
 # Nested mapping
 
+This page describes the agreed core v0 target. The callback result-policy and
+narrowed read-only proxy revisions are not yet implemented in the generated
+API; current production progress is tracked in the
+[mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
+
 Structured `Construct` / `Resolve` and `Members` plans can dispatch another
 registered mapping. Morphant never turns a convention rule or `Auto()` into a
 nested mapping automatically.
@@ -93,12 +98,14 @@ assigned to the outer target.
 
 ## Read-only members
 
-A generated `DestinationMembers` surface exposes readable non-writable
-destination members as get-only marker properties. This includes true get-only
-properties, properties whose ordinary setter is inaccessible to generated
-code, and accessible `readonly` fields. For a destination without constructor
-surface, `init`-only properties remain creation-only and are not converted
-into read-only proxies. A proxy can select
+A generated `DestinationMembers` surface exposes a readable non-writable
+destination member as a get-only marker only when its type is an eligible
+non-opaque reference-type nested destination in core v0. This can include true
+get-only properties, properties whose ordinary setter is inaccessible to
+generated code, and accessible `readonly` fields. Read-only value types,
+opaque types, and other unsupported nested roots do not produce a proxy. For a
+destination without constructor surface, `init`-only properties remain
+creation-only and are not converted into read-only proxies. A proxy can select
 an in-place nested Update without exposing the actual outer result for
 mutation:
 
@@ -120,8 +127,7 @@ The standalone form is accepted only for `Update(..., members.Member)` when
 member from the actual selected result exactly once. If it is null, the nested
 call is skipped and the source expression is not evaluated. Otherwise Morphant
 performs an ordinary nested Update and discards its return value because the
-outer member cannot accept a replacement. Read-only value-type targets are
-unsupported.
+outer member cannot accept a replacement.
 
 Read-only markers do not participate in conventions, `Auto()`, or unmapped
 member validation, and they do not make the corresponding destination member

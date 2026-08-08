@@ -1,5 +1,10 @@
 # Configuration inheritance
 
+This page describes the agreed core v0 target. The callback result-policy and
+read-only proxy revisions are not yet implemented in the generated API;
+current production progress is tracked in the
+[mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
+
 Morphant reuses configuration through explicit pair links and the C# mapper
 hierarchy. The two opt-in operations have separate purposes:
 

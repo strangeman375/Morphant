@@ -1,5 +1,10 @@
 # Runtime dispatch and DI
 
+This page describes the agreed core v0 target. The callback result-policy and
+read-only proxy revisions are not yet implemented in the generated API;
+current production progress is tracked in the
+[mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
+
 `IMapper` is the application-wide facade. It dispatches an exact closed
 `TSource -> TDestination` pair to manually registered
 `ITypeMapper<TSource, TDestination>` services from the current

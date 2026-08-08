@@ -132,11 +132,11 @@ Collections, projection и остальные post-v0 возможности в 
 не входят. Они перечислены в конце документа только для сохранения границы и
 не являются следующими этапами этого roadmap.
 
-## Согласованная ревизия callback overload surface
+## Согласованные ревизии callback surface и read-only proxy
 
-Статус: согласована 8 августа 2026 года; нормативный дизайн и roadmap
-актуализированы, production-код, generated API, XML documentation и тесты ещё
-не изменены.
+Статус: согласована 8 августа 2026 года; нормативный дизайн, roadmap и
+пользовательская документация актуализированы, production-код, generated API,
+XML documentation и тесты ещё не изменены.
 
 Ревизия устраняет скрытую зависимость semantics от arity прежнего
 `Construct`. Overload одного fluent method выбирает только доступные callback-у
@@ -163,17 +163,17 @@ consumer scenarios обновляются одним coherent срезом.
 - declarative callbacks получают source и previous после declarative null
   handling; `Convert` во всех arities получает исходный source и destination
   до `NullSourceHandling` / `NullDestinationHandling`;
-- prefix-overload-ы structured callbacks, `Members` и `Convert` не меняют
-  applicability полной формы, а только не предоставляют ненужные данные;
-  `ConstructUsing` / `ResolveUsing` исключены из этого правила и всегда
-  получают context;
+- prefix-overload-ы structured callbacks, `ConstructUsing`, `ResolveUsing`,
+  `Members` и `Convert` не меняют applicability полной формы, а только не
+  предоставляют ненужные данные;
 - natural method groups и materialized delegates допустимы для runtime
   callbacks; structured `Construct` / `Resolve` и `Members` требуют inline
   lambda, поскольку generator анализирует их как DSL;
 - каждая callback-форма использует именованный delegate из
   `Morphant.Delegates`, чтобы IntelliSense сохранял semantic parameter names;
-  `TPrevious` остаётся root-normalized destination, а callback result — точным
-  nullable contract.
+  runtime result policies получают root-normalized source и, где применимо,
+  previous, а возвращают точный destination-тип pair-builder-а, включая его
+  корневую nullability.
 
 Context-aware delegate всегда имеет отдельный generic parameter `TContext`.
 Он закрывается `MappingContextMarker` для declarative callback-а и
@@ -210,8 +210,8 @@ declarative local либо передаваться helper-методу.
 |---|---|---|---|
 | `Construct` | Structured DSL | Только при отсутствии previous | Генерируется при constructor surface |
 | `Resolve` | Structured DSL | Все достижимые операции после null handling | Генерируется при constructor surface |
-| `ConstructUsing` | Runtime callback | Только при отсутствии previous | Всегда есть на pair-builder |
-| `ResolveUsing` | Runtime callback | Все достижимые операции после null handling | Всегда есть на pair-builder |
+| `ConstructUsing` | Runtime callback | Только при отсутствии previous | Генерируется для каждой eligible pair в `MappingExtension` |
+| `ResolveUsing` | Runtime callback | Все достижимые операции после null handling | Генерируется для каждой eligible pair в `MappingExtension` |
 
 `Construct` и `Resolve` генерируются вместе, если destination имеет хотя бы
 один поддерживаемый constructor, включая единственный parameterless. Даже
@@ -248,8 +248,9 @@ handling и получает `Option.None` либо `Option.Some`. Structured ф
 либо normalized previous являются единственными structured result variants:
 factory marker в creation plan больше не существует.
 
-Runtime-аналоги существуют на обычном pair-builder для каждой eligible pair и
-имеют короткую и context-aware overload:
+Runtime-аналоги генерируются как pair-specific extension methods в существующем
+artifact `MappingExtension` для каждой eligible pair и имеют короткую и
+context-aware overload:
 
 ```csharp
 .ConstructUsing(source => ...)
@@ -259,13 +260,21 @@ Runtime-аналоги существуют на обычном pair-builder д�
 .ResolveUsing((source, previous, context) => ...)
 ```
 
-Методы возвращают настоящий `TDestination`, получают данные после declarative
-null handling и затем допускают общий `Members` plan. Короткая overload только
-не предоставляет ненужный context и не меняет lifecycle. Zero-argument
-callback не вводится; если доступный input не нужен, пользователь пишет `_`.
-`ConstructUsing` и `ResolveUsing` заменяют прежние direct `Construct` /
-`Resolve` и вложенный `ByFactory`; `IByFactoryMarker<TDestination>` и
-`new(ByFactory(...))` удаляются без compatibility layer. Смешанная branch,
+Receiver сохраняет точные source/destination-типы зарегистрированной pair.
+Callbacks получают root-normalized non-null source после
+`NullSourceHandling`; `ResolveUsing` дополнительно получает `Option` от
+root-normalized destination после `NullDestinationHandling`. Результат не
+нормализуется и имеет ровно destination-тип pair-builder-а, включая корневую
+nullability. Поэтому этот surface невозможно корректно выразить обычными
+generic-методами `MapperBuilder<TSource, TDestination>`.
+
+Методы затем допускают общий `Members` plan. Короткая overload только не
+предоставляет ненужный context и не меняет lifecycle. Zero-argument callback не
+вводится; если доступный input не нужен, пользователь пишет `_`.
+`ConstructUsing` и `ResolveUsing` заменяют соответственно source-only и
+previous-aware direct-формы прежнего `Construct`, а также вложенный
+`ByFactory`; `IByFactoryMarker<TDestination>` и `new(ByFactory(...))` удаляются
+без compatibility layer. Смешанная branch,
 где structured callback иногда выбирает constructor, а иногда runtime factory,
 намеренно отсутствует: вся result policy выбирается как structured либо
 runtime.
@@ -297,8 +306,10 @@ rules в post-construction phase.
 ```
 
 Все три являются pair-specific generated extensions на обычном fluent
-pair-builder: так source, root-normalized previous и callback result сохраняют
-точные nullable-типы конкретной mapping-пары.
+pair-builder. Они входят в тот же `MappingExtension`, что `Construct`,
+`Resolve`, `ConstructUsing` и `ResolveUsing`, но сохраняют собственный manual
+input contract: исходный source до null handling, root-normalized previous и
+точный result конкретной mapping-пары.
 
 Каждая форма полностью заменяет declarative pipeline для всех разрешённых
 `MappingMode` operations. Source-only callback намеренно не различает Create,
@@ -308,12 +319,26 @@ Update и наличие destination. Previous-aware форма различае
 Отдельная `(source, context)` overload не добавляется: для доступа к context
 используется полная форма с проигнорированным `previous`.
 
+Одновременно уточняется read-only member capability. Generated get-only proxy
+создаётся только для readable non-writable property либо доступного `readonly`
+field, чей тип после снятия корневой nullability является допустимым non-opaque
+reference-type nested destination в v0. Только такой target имеет смысл для
+standalone in-place `Update(source, members.Member)`. Read-only value types,
+opaque и остальные неподдерживаемые nested roots proxy не получают. Null guard,
+однократное чтение target-а, discard nested replacement и исключение proxy из
+conventions / `Auto()` / unmapped validation сохраняются.
+
 Implementation-срез должен заменить surface и semantics целиком:
 
 - добавить `MappingContextMarker` и новые named delegate arities;
 - добавить generated `Resolve` и context-aware structured overload-ы;
-- добавить builder-level `ConstructUsing` / `ResolveUsing`;
+- добавить pair-specific generated `ConstructUsing` / `ResolveUsing` в
+  существующий `MappingExtension`;
 - добавить короткие `Members` и pair-specific `Convert` overload-ы;
+- сузить read-only member surface до proxy, действительно применимых для
+  standalone nested `Update`: readable non-writable members с допустимым
+  non-opaque reference-type nested destination; read-only value types и другие
+  неподдерживаемые nested roots proxy не получают;
 - удалить previous-aware `Construct`, direct `Construct`, вложенный
   `ByFactory` и весь обслуживающий их production/test surface;
 - актуализировать discovery, semantic model, inheritance/composition,
@@ -327,7 +352,7 @@ callback families, общего result-policy slot-а и `MappingContextMarker`;
 
 ## Следующий этап
 
-**Ревизия callback overload surface и result policies.**
+**Ревизия callback overload surface, result policies и read-only proxy.**
 
 Статус: соглашения внесены в документы, ожидают пользовательского ревью;
 production-реализация не начата.
@@ -340,10 +365,11 @@ production-реализация не начата.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
-`ByFactory`, прежних `Members` / `Convert` arities и соответствующих tests не
-являются целевым контрактом или compatibility requirement. Они удаляются либо
-переписываются вместе с production-срезом; нормативный target до этого задают
-раздел выше и `MAPPING_API_DESIGN.md`.
+`ByFactory`, прежних `Members` / `Convert` arities, более широкого read-only
+member surface и соответствующих tests не являются целевым контрактом или
+compatibility requirement. Они удаляются либо переписываются вместе с
+production-срезом; нормативный target до этого задают раздел выше и
+`MAPPING_API_DESIGN.md`.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -1887,7 +1913,6 @@ implementation plans:
 - open-generic и runtime-type lookup;
 - cross-assembly configuration composition и reusable fragments;
 - hooks/middleware и result post-processing;
-- identity-preserving declarative update get-only complex child;
 - first-class enum mapping;
 - opt-in scalable name matching;
 - opt-in policy, запрещающая automatic boxing в constructor/member

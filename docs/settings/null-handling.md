@@ -1,5 +1,10 @@
 # Null handling
 
+This page describes the agreed core v0 target. The callback result-policy and
+read-only proxy revisions are not yet implemented in the generated API;
+current production progress is tracked in the
+[mapping API roadmap](../../MAPPING_API_IMPLEMENTATION_PLAN.md).
+
 `NullSourceHandling` controls what a generated mapping does when its source is
 `null`. `NullDestinationHandling` controls what the `Update` overload
 does when its destination is `null`.
