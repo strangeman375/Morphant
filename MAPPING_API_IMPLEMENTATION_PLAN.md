@@ -130,21 +130,168 @@ Collections, projection и остальные post-v0 возможности в 
 не входят. Они перечислены в конце документа только для сохранения границы и
 не являются следующими этапами этого roadmap.
 
+## Согласованная ревизия callback overload surface
+
+Статус: согласована 8 августа 2026 года; production-код, generated API, тесты
+и нормативный `MAPPING_API_DESIGN.md` ещё не актуализированы.
+
+Ревизия устраняет скрытую зависимость semantics от arity прежнего
+`Construct`. Overload одного fluent method выбирает только доступные callback-у
+данные, но не mapping operation, lifecycle либо область применимости
+конфигурации. Superseded overload-ы и прежнее arity-dependent поведение не
+сохраняются compatibility-слоем: до реализации весь generated surface,
+semantic model, lowering, XML documentation, exact-source snapshots и
+consumer scenarios обновляются одним coherent срезом.
+
+Общие законы overload surface:
+
+- `MappingContext`, если он доступен callback-у, всегда является последним
+  параметром;
+- structured `Construct`, structured `Resolve` и все формы `Members` остаются
+  declarative DSL и не получают `MappingContext`;
+- direct `Construct`, direct `Resolve`, тело `ByFactory` и `Convert` являются
+  обычными runtime callbacks и получают отдельную context-aware форму;
+- `context.Mapper` выполняет nested mapping в текущем `MappingScope`;
+  сохранять его после завершения root mapping нельзя;
+- declarative callbacks получают source и previous после declarative null
+  handling; `Convert` во всех arities получает исходный source и destination
+  до `NullSourceHandling` / `NullDestinationHandling`;
+- короткая overload не меняет applicability полной формы, а только не
+  предоставляет ненужные данные; пропущенный параметр нельзя восстановить
+  неявно;
+- natural method groups и materialized delegates допустимы для runtime
+  callbacks; structured `Construct` / `Resolve` и `Members` требуют inline
+  lambda, поскольку generator анализирует их как DSL;
+- каждая callback-форма использует именованный delegate из
+  `Morphant.Delegates`, чтобы IntelliSense сохранял semantic parameter names;
+  `TPrevious` остаётся root-normalized destination, а callback result — точным
+  nullable contract.
+
+Точные public names новых named delegates намеренно не выбираются неявно в
+этой ревизии. Ранее согласованные рабочие имена `DirectConstruct<...>` и
+`Factory<TResult>` сохраняются кандидатами. Новые формы дополнительно создают
+коллизию: previous-aware и context-aware `Convert` требуют одинаковых
+`TSource` / `TPrevious` / `TResult`, но имеют разное число runtime parameters.
+Перед реализацией нужно отдельно согласовать единый delegate naming/arity law;
+нельзя молча перейти на `Func`, добавить фиктивный generic argument либо
+переименовать только одну форму ради удобства emitter-а.
+
+`Construct` становится исключительно no-previous policy:
+
+```csharp
+.Construct(source => ...)
+
+// Только direct Construct.
+.Construct((source, context) => ...)
+```
+
+Callback вызывается, когда после declarative null handling фактический
+previous отсутствует. Это включает обычный `Create` и тот `Update(null)`, для
+которого effective `NullDestinationHandling` выбрал создание; при существующем
+previous callback не вызывается, а instance переиспользуется. Поэтому обе
+overloads имеют одинаковую lifecycle-семантику, а context-aware direct форма
+лишь открывает исходный `MappingContext` и scoped mapper.
+
+Полный выбор result отделяется методом `Resolve`:
+
+```csharp
+.Resolve((source, previous) => ...)
+
+// Только direct Resolve.
+.Resolve((source, previous, context) => ...)
+```
+
+`Resolve` вызывается во всех достижимых declarative operations после null
+handling и получает `Option.None` либо `Option.Some`. Structured форма
+возвращает `DestinationConstruction`, direct форма — настоящий
+`TDestination`; direct context-aware overload дополнительно видит исходные
+`context.Operation` и `context.Mapper`. `Construct` и `Resolve` являются двумя
+взаимоисключающими result policies одной pair, а не последовательными stages.
+Локальный fragment каждого семейства перекрывает inherited fragment по общим
+законам effective-plan composition.
+
+`Members` получает три префиксные declarative overloads:
+
+```csharp
+.Members(source => ...)
+.Members((source, previous) => ...)
+.Members((source, previous, result) => ...)
+```
+
+Все три описывают один member plan. Выбор overload-а не меняет operation,
+creation/post-creation phase либо применимость rules: они по-прежнему
+определяются фактическими dependencies каждого expression. Отдельные формы
+`(source, result)` и context-aware `Members` не добавляются; если нужен
+`result`, callback использует полную форму и может проигнорировать `previous`.
+
+`Convert` получает три префиксные runtime overloads:
+
+```csharp
+.Convert(source => ...)
+.Convert((source, previous) => ...)
+.Convert((source, previous, context) => ...)
+```
+
+Каждая форма полностью заменяет declarative pipeline для всех разрешённых
+`MappingMode` operations. Source-only callback намеренно не различает Create,
+Update и наличие destination. Previous-aware форма различает фактические
+`Option.None` / `Option.Some`, но не отличает `Create` от `Update(null)`.
+Полная форма дополнительно получает исходную operation и scoped mapper.
+Отдельная `(source, context)` overload не добавляется: для доступа к context
+используется полная форма с проигнорированным `previous`.
+
+`ByFactory` сохраняет zero-argument форму и получает context-aware runtime
+форму:
+
+```csharp
+ByFactory(() => ...)
+ByFactory(context => ...)
+```
+
+Обе формы исполняются только на фактически выбранной factory branch и
+возвращают настоящий destination ровно один раз. Context-aware callback может
+выполнить nested mapping через `context.Mapper`; внешний `ByFactory(...)`
+остаётся declarative marker-ом structured construction, а его callback body —
+обычным runtime C#.
+
+Эта ревизия является входом для категории 8 diagnostics. До начала её
+production-реализации нужно синхронизировать `MAPPING_API_DESIGN.md` и заменить
+старые термины `previous-aware Construct` / «единственная Convert overload» во
+всех активных документах, production-коде и тестах.
+
+Ревизия также требует отдельной согласованной актуализации уже принятых частей
+diagnostic catalog до начала этапа 3:
+
+- категория 1 должна проверять новые обязательные `Delegates.Resolve` /
+  `Delegates.Factory` families и новые arities остальных delegates;
+- категория 4 должна распознавать `Resolve` как pair-builder method;
+- категория 5 должна считать `Construct` и `Resolve` взаимоисключающими
+  вариантами одного result-policy slot-а и включить `Resolve` в
+  manual/declarative conflict; точные message parameter и locations для
+  смешанной пары имён согласуются при этой ревизии, а не выбираются неявно;
+- категория 7 должна переносить, перекрывать и проверять accessibility
+  effective `Resolve` по тем же exact/cross-pair законам, что остальные
+  result-plan fragments.
+
+Текущая запись намеренно не переписывает принятые IDs, messages и test
+matrices категорий 1/4/5/7: это будет отдельный coherent catalog revision,
+который пользователь выберет после ревью вместе с порядком обновления
+нормативного design и production surface.
+
 ## Следующий этап
 
-**Фаза 6, этап 23 — diagnostics, этап 2: каталог, категория 2.**
+**Фаза 6, этап 23 — diagnostics, этап 2: каталог, категория 8.**
 
 Статус: ожидает ревью.
 
 Этап 17 принят. Этап 18 по решению от 6 августа 2026 года перенесён за границу
 core v0. Этапы 19–22 и 24 приняты. Для этапа 23 составлен отдельный
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Его этап 1 с 12 категориями и
-общими границами принят. В этапе 2 категория 1 с `MORPH0001`–`MORPH0004`,
-compatibility revision и global generation gate принята. Полностью
-специфицирована категория 2: `MORPH0005`–`MORPH0010`, mapper declaration,
-ownership generated contract, direct interface conflicts, recovery,
-precedence, suppression и самостоятельная тестовая матрица. Категория 2
-ожидает ревью; категории 3–12 заблокированы её принятием.
+общими границами принят. В этапе 2 категории 1–7 с `MORPH0001`–`MORPH0028`
+приняты. Полностью специфицирована категория 8: `MORPH0029`–`MORPH0033`,
+callback form/captures, declarative grammar, read-only inputs, runtime marker
+boundary, recovery, precedence, suppression и самостоятельная тестовая
+матрица. Категория 8 ожидает ревью; категории 9–12 заблокированы её принятием.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -1564,16 +1711,16 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: не начат; подготовительный этап 2, категория 2, ожидает ревью.
+Статус: подготовительный этап 2, категория 8, ожидает ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
 таксономия v0, затем по одной категории составляется полный каталог с IDs,
 сообщениями, locations, severity, suppression и recovery. Реализация и тесты
 начинаются только после согласования каталога; завершает этап двусторонний
-аудит плана и production-кода. Таксономия и категория окружения приняты;
-категория объявления mapper-а и формируемости generated contract полностью
-специфицирована и ожидает ревью.
+аудит плана и production-кода. Таксономия и категории 1–7 с
+`MORPH0001`–`MORPH0028` приняты; категория 8 с `MORPH0029`–`MORPH0033`
+полностью специфицирована и ожидает ревью.
 
 ### Этап 24. Observable failures
 

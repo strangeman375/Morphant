@@ -4,7 +4,7 @@
 
 Последнее обновление: 8 августа 2026 года.
 
-Статус: этап 2, категория 7, ожидает ревью.
+Статус: этап 2, категория 8, ожидает ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -12,6 +12,13 @@
 [`MAPPING_API_DESIGN.md`](MAPPING_API_DESIGN.md), а уже реализованную границу
 runtime failures и recovery-stubs — раздел 14.2 того же документа и
 [`docs/observable-failures.md`](docs/observable-failures.md).
+
+Категория 8 уже использует согласованную целевую callback overload revision из
+отдельного раздела `MAPPING_API_IMPLEMENTATION_PLAN.md`: `Construct` /
+`Resolve`, context-aware runtime callbacks и короткие `Members` / `Convert`.
+Нормативный design, предыдущие diagnostic categories и production surface
+синхронизируются отдельным coherent change после ревью этой записи; этап 3 до
+этого заблокирован.
 
 План можно уточнять по мере детализации diagnostics. Изменение публичной
 семантики, severity, diagnostic ownership, recovery либо границы v0 сначала
@@ -38,7 +45,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–6 приняты; категория 7 ожидает ревью; категории 8–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–7 приняты; категория 8 ожидает ревью; категории 9–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -231,6 +238,10 @@ category и каталогом, а не номером.
 не найдено. Найденные case-insensitive web-совпадения `Morph0026`–`Morph0028`
 являются specimen identifiers из биологических каталогов, а не analyzer
 diagnostics, поэтому коллизией не считаются.
+
+Перед назначением восьмой группы 8 августа 2026 года тем же способом проверены
+`MORPH0029`–`MORPH0033`. Внешних публичных .NET/Roslyn diagnostics с этими ID
+не найдено.
 
 ### 6.2. Категория 1: общий contract
 
@@ -2317,6 +2328,433 @@ Package-like integration-категория независимо проверя�
   analyzer-backed consumer build;
 - inaccessible base helpers не исполняются, полностью перекрытые callbacks
   не блокируют mapping, а origin diagnostics imported errors не размножаются;
+- реальное `.editorconfig`/MSBuild suppression или severity override для всех
+  пяти IDs без изменения generated artifact set и effective recovery.
+
+### 6.63. Категория 8: общий contract
+
+Категория «Переносимость callbacks и declarative grammar» содержит ровно пять
+diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0029` | `Declarative callback must be a lambda` | `Declarative {0} callback for contract '{1}' must be an inline lambda.` |
+| `MORPH0030` | `Callback capture cannot be transferred` | `{0} callback for contract '{1}' captures '{2}', which cannot be transferred to generated mapper '{3}'.` |
+| `MORPH0031` | `Unsupported declarative syntax` | `Declarative {0} callback for contract '{1}' contains unsupported syntax '{2}'.` |
+| `MORPH0032` | `Declarative destination input is read-only` | `Declarative destination input '{0}' for contract '{1}' is read-only and cannot be mutated.` |
+| `MORPH0033` | `Declarative marker is unavailable in runtime callback` | `Declarative marker '{0}' is unavailable in runtime {1} callback for contract '{2}'.` |
+
+Для всех пяти diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Callbacks`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- анализируется только оставшийся effective callback plan после категорий
+  4–7 и согласованной overload-ревизии из
+  [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md);
+- `MappingMode`, declarative null handling и статическая достижимость влияют
+  на анализ отдельных execution paths; хотя бы один достижимый invalid path
+  сохраняет diagnostic;
+- `UnmappedMemberValidation` не скрывает callback error и не превращает его в
+  warning;
+- suppression либо изменение severity меняет только compiler presentation и
+  не разрешает непереносимый код, не расширяет declarative grammar и не
+  превращает marker в runtime API.
+
+Mapping contracts форматируются по canonical identity категории 3. Mapper
+types используют fully-qualified nullable-aware display категории 2.
+Callback names в parameters — точные family names `Construct`, `Resolve`,
+`Members`, `ByFactory` либо `Convert`; marker names — `Auto`, `Ignore`, `Map`,
+`Create`, `Update`, `ByConvention` либо `ByFactory` без generic arity.
+Unsupported syntax получает стабильное англоязычное имя пользовательской
+конструкции, например `for statement`, `assignment` либо `local function`, а
+не внутреннее имя Roslyn operation/syntax kind.
+
+Категория 8 не выполняет configuration code и не интерпретирует arbitrary C#
+как declarative plan. Она использует bound generated overload и symbol
+identity: одноимённые delegates, methods и marker-подобные вызовы стороннего
+API не принадлежат Morphant callback grammar.
+
+### 6.64. Declarative и runtime callback classes
+
+После согласованной overload-ревизии callbacks делятся на два класса:
+
+| Callback | Class | Анализ |
+|---|---|---|
+| Structured `Construct(source)` | Declarative | Inline lambda и конечная construction-plan grammar |
+| Structured `Resolve(source, previous)` | Declarative | Inline lambda и конечная construction-plan grammar |
+| Все три `Members` overloads | Declarative | Inline lambda и конечная member-plan grammar |
+| Direct `Construct`, обе overloads | Runtime | Обычный синхронный C# callable, переносимый целиком |
+| Direct `Resolve`, обе overloads | Runtime | Обычный синхронный C# callable, переносимый целиком |
+| Тело `ByFactory`, обе overloads | Runtime | Обычный синхронный C# callable выбранной factory branch |
+| Все три `Convert` overloads | Runtime | Обычный синхронный C# callable, полностью заменяющий declarative pipeline |
+
+Для declarative lambda поддерживаются expression-body и конечная block
+grammar:
+
+- initialized locals, `const`, pattern variables и nested blocks;
+- полные `if` / `else if` / `else`, statement `switch`, несколько `return` и
+  явный `throw`;
+- conditional- и switch-expressions для whole plan, strategy, rule и marker;
+- object initializer construction plan и `DestinationMembers` `with` overlay;
+- обычные expressions, доступные mapper/static members, compile-time
+  Configure constants и точный `nameof(...)`;
+- declarative `Auto`, `Ignore`, `Map`, `Create`, `Update`, `ByConvention` и
+  внешний `ByFactory` в тех plan positions, где их семантику проверяют
+  категории 9–11.
+
+За declarative boundary остаются locals без initializer-а, последующая
+mutation locals, deconstruction/compound assignment, `++` / `--`, loops,
+`break` / `continue`, side-effect-only statements, внешние local functions,
+`try` / `catch` / `finally`, `using`, `lock`, labels / `goto`, `ref` / `using`
+locals, `unsafe` / `fixed`, `async` / `await` и `yield`. Точная C# binding
+ошибка по-прежнему принадлежит compiler-у; `MORPH0031` появляется только для
+успешно связанного Morphant declarative callback-а, который generator не может
+понизить по своей DSL grammar.
+
+Runtime callback принимает expression lambda, синхронную block lambda,
+natural method group либо materialized delegate-expression. Внутри допустимы
+обычные C# locals, assignments, mutation, loops, `try` / `finally`, nested
+local functions, constructors, factories и record `with`. Ограничением
+является не statement grammar, а возможность перенести callable в lifetime
+generated mapper-а и отсутствие compile-time Morphant markers в исполняемом
+body.
+
+Mapper instance/static members, static API, type references, method groups и
+compile-time constants переносимы. Source, previous, result и context текущего
+callback-а, declarative locals и pattern variables, а также captures тела
+`ByFactory` из его enclosing declarative plan передаются generator-ом явно и
+не являются configuration-time captures. Configure-local runtime values,
+параметр `builder` и local functions, объявленные во внешнем `Configure`, не
+существуют в lifetime mapping execution и не переносятся. Delegate, хранимый в
+доступном mapper field/property, допустим; delegate в Configure-local — нет.
+
+Transparent parentheses, null-forgiving expression и явный cast к ожидаемому
+delegate type не меняют callback class, origin либо inline-lambda identity.
+Полностью перекрытый, отброшенный model precedence либо доказанно
+недостижимый callback slice не анализируется. Один source callback, импортированный
+несколькими consumers, сохраняет один origin diagnostic; recovery независимо
+распространяется только на consumers, чей effective plan оставил invalid
+slice.
+
+### 6.65. `MORPH0029`: declarative callback должен быть inline lambda
+
+`MORPH0029` публикуется, когда bound structured `Construct`, structured
+`Resolve` либо `Members` получает не inline lambda, а method group,
+materialized delegate, Configure-local callback, mapper member с delegate либо
+другое delegate-valued expression. Morphant не исполняет такой callable во
+время configuration и не пытается декомпилировать method body в declarative
+plan.
+
+Primary location — core callback expression после исключения transparent
+outer wrappers. Diagnostic identity — callback origin; один и тот
+же origin получает одну diagnostic независимо от generic substitutions,
+числа reachable operations и inherited consumers. Additional locations нет.
+
+Direct `Construct`, direct `Resolve`, `ByFactory` body и `Convert` той же
+формы `MORPH0029` не получают: они являются runtime callbacks и могут быть
+method group/materialized delegate. Inline declarative lambda с cast,
+parentheses либо null-forgiving wrapper остаётся inline.
+
+Поскольку внутренний plan non-lambda callback-а недоступен, `MORPH0029`
+подавляет `MORPH0030`–`MORPH0032` того же callback origin. Весь effective
+declarative fragment становится invalid; generator не вызывает callback во
+время `Configure` и не подставляет conventions вместо него.
+
+### 6.66. `MORPH0030`: callback capture нельзя перенести
+
+`MORPH0030` публикуется для каждого symbol, на который ссылается effective
+declarative либо runtime callback, когда значение symbol существует только во
+время выполнения `Configure` и не может быть воспроизведено в generated
+mapper. Это включает:
+
+- non-const Configure-local либо parameter enclosing local function;
+- сам параметр `builder` и alias на него;
+- local delegate либо local function, объявленные во внешнем `Configure`;
+- значение, транзитивно полученное из такого symbol и захваченное nested
+  runtime callback-ом.
+
+Compile-time `const`, значение `nameof`, доступный instance/static mapper
+member и delegate из mapper field/property допустимы. Local function,
+объявленная внутри direct/factory/manual runtime block, переносится вместе с
+этим block и также допустима. Capture source/previous/result/context текущего
+callback-а либо enclosing declarative local из `ByFactory` body является
+mapping-time dependency, а не `MORPH0030`.
+
+Primary location — первая по source order effective reference захваченного
+symbol внутри callback-а. Declaration symbol-а, если она source-visible, и
+остальные effective references внутри того же callback-а становятся
+additional locations в source order. Diagnostic identity —
+`(callback origin, captured symbol)`;
+несколько references дают одну diagnostic, разные symbols и callback origins
+— независимые diagnostics.
+
+Для declarative callback invalid становится только достижимый slice,
+зависящий от capture. Для runtime callback callable переносится целиком,
+поэтому capture делает invalid весь callback и все paths, фактически его
+вызывающие. Generator не замораживает configuration-time runtime value, не
+вызывает local function во время generation и не заменяет capture `default`.
+
+### 6.67. `MORPH0031`: неподдерживаемая declarative syntax
+
+`MORPH0031` публикуется для каждого внешнего независимого syntax node, который
+находится внутри effective declarative lambda, успешно связан C# compiler-ом,
+но не входит в grammar раздела 6.64. В частности, diagnostic получают:
+
+- local без initializer-а, последующая/deconstruction/compound assignment
+  declarative local-а и `++` / `--`;
+- `for`, `foreach`, `while`, `do`, `break` и `continue`;
+- invocation, assignment либо другая statement-expression только ради side
+  effect;
+- local function во внешнем declarative block;
+- `try` / `catch` / `finally`, `using`, `lock`, label и `goto`;
+- `ref` / `using` local, `unsafe`, `fixed`, `await` и `yield`.
+
+Primary location — наиболее конкретный keyword/operator либо полный node,
+если у конструкции нет отдельного устойчивого token-а. `{2}` в message
+называет именно этот внешний node. Additional locations нет. Diagnostic
+identity — syntax origin; несколько независимых outer nodes дают отдельные
+diagnostics.
+
+После diagnostic generator не обходит вложенное содержимое уже
+неподдерживаемого `for`, `try`, local function и аналогичного outer node ради
+каскада дополнительных grammar diagnostics. Mutation previous/result на том
+же site принадлежит более точной `MORPH0032`; обычная mutation declarative
+local/source остаётся `MORPH0031`.
+
+Поддерживаемые expressions внутри возвращаемого plan-а сохраняют обычную C#
+семантику и side effects при фактическом вычислении. `MORPH0031` не является
+общим purity analyzer-ом и не пытается классифицировать вызываемый method как
+mutating; она ограничивает только явно наблюдаемую declarative statement и
+mutation grammar.
+
+### 6.68. `MORPH0032`: destination inputs declarative callback-а read-only
+
+`MORPH0032` публикуется на каждую явную попытку изменить normalized
+destination input `previous` либо фактический `result` внутри declarative
+callback-а. Mutation включает simple/compound/deconstruction assignment,
+`++` / `--`, передачу storage как `ref` / `out` и запись в property, field
+либо indexer через сам input или явно прослеживаемый alias.
+
+Alias прослеживается через transparent wrappers, identity/implicit reference
+conversion, initialized local, pattern variable и успешно извлечённое
+destination value из `previous`. Trace не проходит через arbitrary method
+return, user-defined conversion либо неизвестный delegate. Вызов method-а на
+destination сам по себе не объявляется mutation: standalone side-effect call
+получает `MORPH0031`, а вызов внутри допустимого value expression сохраняет
+обычную C# semantics.
+
+Primary location — assignment/inc-dec operator либо `ref` / `out` keyword
+конкретного mutation site. `{0}` равно исходному input `previous` либо
+`result`, даже если запись выполнена через alias. Additional locations нет;
+каждый mutation site получает отдельную diagnostic.
+
+Object initializer возвращаемого `DestinationConstruction`, assignment в
+возвращаемом `DestinationMembers` plan и record `with`, создающий новый plan,
+не мутируют фактический destination input и разрешены. Новый независимый local
+destination также не становится read-only только из-за совпадения типа.
+
+`MORPH0032` имеет приоритет над общей `MORPH0031` на том же mutation site.
+Invalid становится только достижимый declarative slice, зависящий от записи;
+generator не выполняет mutation как скрытый imperative update и не считает её
+эквивалентом возвращённого member rule.
+
+### 6.69. `MORPH0033`: declarative marker недоступен в runtime callback
+
+`MORPH0033` публикуется на каждый bound Morphant marker invocation внутри
+direct `Construct`, direct `Resolve`, тела `ByFactory` либо `Convert`:
+
+- `Auto` и `Ignore`;
+- adaptive `Map` и explicit nested `Create` / `Update`;
+- `ByConvention` и `ByFactory`.
+
+Primary location — invoked marker name; generic type arguments и argument list
+в location не входят. Diagnostic identity — invocation origin, поэтому каждый
+marker call получает собственную diagnostic. `{1}` в message равно runtime
+callback family `Construct`, `Resolve`, `ByFactory` либо `Convert`.
+
+Внешний `ByFactory(...)`, формирующий structured construction plan, остаётся
+допустимым declarative marker-ом; запрещены marker calls внутри переданного
+factory callback-а. `context.Mapper.Map(...)` является обычным runtime API и
+разрешён. Одноимённый method стороннего типа либо пользовательского mapper-а,
+который не связывается с точным Morphant marker symbol, игнорируется.
+
+Runtime callback переносится целиком, поэтому хотя бы один `MORPH0033` делает
+invalid весь callable и все paths, фактически его вызывающие. Generator не
+lower-ит marker внутри arbitrary runtime control flow, не выполняет его как
+заглушечный method и не заменяет runtime callback declarative conventions.
+
+### 6.70. Recovery, precedence, порядок и suppression
+
+Все пять diagnostics сохраняют полный C#-legal mapping contract и независимо
+допустимые generated surfaces. Invalid execution path использует typed stub,
+бросающий `MappingConfigurationException`; независимые paths, operations,
+pairs и mapper-ы остаются исполнимыми.
+
+Recovery максимально path-sensitive для declarative plan:
+
+- invalid structured `Construct` затрагивает только reachable no-previous
+  creation paths; existing Update reuse сохраняется;
+- invalid structured `Resolve` затрагивает только его достижимые selection
+  branches;
+- invalid `Members` expression бросает только на path, где rule/dependency
+  действительно требуется; невыбранные rules и остальные operations
+  сохраняются;
+- полностью overridden member/creation expression, discarded inherited slice
+  и статически недостижимая branch не получают diagnostic и stub.
+
+Runtime callable является атомарным:
+
+- invalid direct `Construct` затрагивает все no-previous paths, которые его
+  вызывают, но не existing Update reuse;
+- invalid direct `Resolve` затрагивает все operations, вызывающие effective
+  selector;
+- invalid `ByFactory` body затрагивает только paths, выбравшие эту factory
+  branch; альтернативный constructor/previous path сохраняется;
+- invalid `Convert` затрагивает все разрешённые `MappingMode` operations pair,
+  поскольку каждая выбранная overload полностью реализует manual mapping.
+
+Origin diagnostic не размножается по inherited consumers. Consumer получает
+throwing recovery только если его effective plan сохранил invalid slice;
+local override либо model precedence может полностью удалить зависимость.
+Несколько diagnostics одного callback-а сходятся в один deterministic recovery
+plan без попытки выбрать «первую» допустимую часть runtime callable.
+
+Precedence действует так:
+
+- compilation/mapper/pair gates категорий 1–3 и недостоверный builder flow
+  категории 4 подавляют category-8 анализ в своей области;
+- duplicate/mixed local fragments категории 5, invalid effective settings
+  категории 6 и invalid inheritance edge категории 7 разрешаются до анализа
+  callback contents; discarded callback diagnostic не получает;
+- `MORPH0028` владеет переносом доступности между mapper-level-ами;
+  `MORPH0030` — lifetime capture уже доступного effective callback-а;
+- `MORPH0029` подавляет `MORPH0030`–`MORPH0032` того же declarative origin;
+  `MORPH0032` заменяет `MORPH0031` на том же mutation site;
+- независимые capture, grammar и marker origins публикуются совместно, даже
+  если их recovery сходится;
+- точная C# binding/type error остаётся compiler diagnostic; Morphant не
+  публикует content diagnostic для callback/marker, symbol identity которого
+  невозможно установить;
+- construction/member/nested diagnostics категорий 9–11 анализируют только
+  оставшийся valid slice и не каскадируют поверх category-8 stub;
+- category-12 warning-анализ не выполняется для invalid affected slice, но
+  сохраняется для независимого effective plan.
+
+Publication order — по ID. Внутри ID diagnostics упорядочиваются по ordinal
+stable mapper identity, canonical pair, callback origin, primary source
+location и captured symbol/syntax/marker name. Additional locations
+`MORPH0030` сохраняют source order. Generic construction, inheritance fan-out,
+discovery order и incremental invalidation не меняют cardinality или порядок.
+
+Suppression либо понижение severity не меняет callback classification,
+effective plan, recovery и generated artifact set. Замена overload-а,
+destination capability, callback form/body, captured symbol, local override,
+`MappingMode`, constant branch либо marker binding полностью actualizes
+diagnostics и affected stubs при одном сохранённом incremental driver-е.
+
+### 6.71. Самостоятельная тестовая матрица категории 8
+
+Unit-категория callback diagnostics независимо фиксирует:
+
+- exact descriptors `MORPH0029`–`MORPH0033`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и все parameters;
+- классификацию structured/direct destination и всех согласованных
+  `Construct`, `Resolve`, `Members`, `ByFactory`, `Convert` overloads без
+  зависимости от тестов generated-surface категорий;
+- `MORPH0029` для structured `Construct`, structured `Resolve` и каждой
+  `Members` arity через natural method group, mapper delegate,
+  Configure-local delegate и произвольное delegate-expression;
+- отсутствие `MORPH0029` у inline expression/block lambda с parentheses,
+  null-forgiving и explicit delegate cast, а также у runtime
+  method-group/materialized callbacks;
+- одну `MORPH0029` на callback origin при generic substitutions и inherited
+  fan-out, exact callback-argument location и подавление content diagnostics
+  недоступного body;
+- `MORPH0030` отдельно для runtime Configure-local, `builder`, builder alias,
+  external local delegate/function и транзитивного nested capture во всех
+  пяти callback families;
+- capture cardinality `(callback, symbol)`, first-reference primary,
+  declaration/remaining-reference additional locations, несколько symbols и
+  одинаковый symbol в нескольких callbacks;
+- positive transfer mapper instance/static members, static API, compile-time
+  constants, `nameof`, mapper delegate field/property, callback parameters,
+  declarative locals/patterns, `ByFactory` enclosing dependencies и runtime
+  local function внутри переносимого block-а;
+- полный positive declarative grammar: expression/block lambdas, initialized
+  locals, nested blocks, complete if/switch, multiple return/throw,
+  conditional/switch expressions, object initializer, member `with`, patterns
+  и допустимые marker positions;
+- `MORPH0031` для каждого класса неподдерживаемой grammar: uninitialized/
+  mutated/deconstructed locals, compound assignment/inc-dec, every loop,
+  break/continue, side-effect statement, external local function, try/catch/
+  finally, using/lock, label/goto, ref/using local, unsafe/fixed, await/yield;
+- outer-node cardinality и exact keyword/operator locations, отсутствие
+  nested cascade внутри уже unsupported node и совместную публикацию
+  независимых grammar breaks;
+- отсутствие `MORPH0031` для arbitrary synchronous statements внутри direct
+  `Construct`, direct `Resolve`, `ByFactory` и каждой `Convert` overload;
+- `MORPH0032` для simple/compound/deconstruction assignment, inc-dec,
+  ref/out и member/indexer writes через `previous`, `result`, initialized
+  alias, pattern alias и извлечённое previous value;
+- per-site `MORPH0032`, root-input message parameter, exact operator/ref-out
+  location и precedence над `MORPH0031`;
+- positive object/member plan initializer, `with` copy, independent same-type
+  local и method-call boundary без попытки purity inference;
+- каждую marker family `MORPH0033` внутри direct `Construct`, direct
+  `Resolve`, nested runtime local function, обе `ByFactory` forms и все
+  `Convert` forms, включая несколько invocations одного callback-а;
+- отсутствие `MORPH0033` у внешнего structured `ByFactory`,
+  `context.Mapper.Map`, одноимённого foreign/user method и compiler-unbound
+  invocation;
+- overload-invariant applicability: обе `Construct` forms только на
+  no-previous paths, обе `Resolve` forms на полном result-selection surface,
+  три `Members` forms с dependency-driven lifecycle и три `Convert` forms во
+  всех enabled operations;
+- reachability через `MappingMode`, null handling, constant conditions,
+  Create/Update specialization, member override, local model precedence и
+  exact/cross-pair inheritance;
+- path-sensitive declarative recovery отдельно для construction branches,
+  member rules/dependencies, previous reuse, replacement, terminal null и
+  statically unreachable expressions;
+- atomic runtime recovery отдельно для direct no-previous `Construct`, full
+  direct `Resolve`, selected factory branch и all-enabled-operations
+  `Convert`;
+- полный generated result при каждой diagnostic: legal mapper contracts и
+  surfaces, typed throwing stubs, сохранённые independent operations/pairs/
+  mapper-ы и отсутствие downstream category-9–12 cascade;
+- precedence и совместную cardinality с `MORPH0001`–`MORPH0028`, C# compiler
+  diagnostics, deterministic publication order и origin-only inherited
+  diagnostics;
+- реальное suppression/изменение severity без изменения callback plan,
+  recovery либо artifacts;
+- actualization callback overload/class/body, destination capability,
+  captured symbol/declaration, mapper member conversion, marker binding,
+  reachability, override и inheritance при одном сохранённом incremental
+  driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- suppressed `MORPH0029` для каждой declarative family: affected path бросает,
+  existing Update либо независимая branch исполняется, independent pair
+  сохраняется;
+- suppressed `MORPH0030` для inline declarative, direct `Construct` /
+  `Resolve`, `ByFactory`, всех `Convert` forms и materialized local delegate с
+  соответствующим path-sensitive либо atomic recovery;
+- suppressed representative `MORPH0031` / `MORPH0032`: invalid member/
+  construction path бросает без выполнения side effect, valid branches и
+  operations реально возвращают результат;
+- suppressed `MORPH0033` для каждого runtime callback family, отсутствие
+  исполнения marker body и сохранение альтернативной factory/reuse branch;
+- natural method groups и delegates из mapper members реально исполняются во
+  всех runtime overloads, а context-aware callbacks используют
+  `context.Mapper` в том же scope;
+- source-only/previous-aware/context-aware `Convert` реально имеют одинаковую
+  operation applicability и различаются только доступными inputs;
+- local override и exact/cross-pair inheritance удаляют только discarded
+  invalid slice без origin fan-out, а retained transitive consumer получает
+  recovery;
 - реальное `.editorconfig`/MSBuild suppression или severity override для всех
   пяти IDs без изменения generated artifact set и effective recovery.
 
