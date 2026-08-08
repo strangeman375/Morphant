@@ -2,7 +2,7 @@
 
 `ConstructorSelection` controls constructor choice for structured
 convention-based creation, including a `ByConvention()` branch inside an
-explicit `Construct` plan.
+explicit `Construct` or `Resolve` plan.
 
 The library default is:
 
@@ -84,6 +84,9 @@ accessible from generated assembly-level code and has ordinary by-value,
 nameable, non-ref-like parameters. Inaccessible constructors and constructors
 with `ref`, `in`, or `out` parameters are ignored.
 
+Any supported constructor surface generates both structured `Construct` and
+`Resolve`, including when the only constructor is parameterless.
+
 | Effective value | Selection |
 |---|---|
 | `Explicit` | No constructor is selected automatically |
@@ -122,7 +125,7 @@ plan unless the selected constructor has `SetsRequiredMembers`. This check is
 part of constructor applicability and therefore also participates in
 `Greediest` selection.
 
-## `ByConvention` and explicit `Construct`
+## `ByConvention` and explicit structured policies
 
 `ByConvention()` uses the effective `ConstructorSelection`:
 
@@ -143,7 +146,7 @@ score. Explicit expressions and successful `Auto()` rules count as passed
 arguments. `Ignore()` is valid only for an optional or `params` parameter and
 does not count.
 
-An explicit constructor or factory branch is not changed by the setting:
+An explicit constructor is not changed by the setting:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -151,19 +154,20 @@ builder.Map<OrderDto, Order>()
     .Construct(source => new(source.Id));
 ```
 
-With `Explicit`, a conventional mapping without `Construct`, or a
-`ByConvention()` branch, has no available creation plan. Updating an existing
-destination can still succeed because constructor selection applies only to
-no-previous creation.
+With `Explicit`, a conventional mapping without explicit `Construct` /
+`Resolve`, or a `ByConvention()` branch, has no available creation plan.
+Updating an existing destination can still succeed because constructor
+selection applies only when structured creation is actually needed.
 
-## Direct and manual mappings
+## Runtime result policies and manual mappings
 
-Inherited constructor settings have no effect on a direct destination or a
+Inherited constructor settings have no effect on `ConstructUsing`,
+`ResolveUsing`, a destination without structured constructor surface, or a
 mapping configured with `Convert`; the same mapper-level default can serve
 other structured mappings.
 
-Setting `ConstructorSelection` explicitly on an individual direct or manual
-mapping is an invalid configuration, including an explicit `Default`.
+Setting `ConstructorSelection` explicitly on an individual runtime-policy or
+manual mapping is an invalid configuration, including an explicit `Default`.
 Invoking that mapping throws `MappingConfigurationException`.
 
 ## Invalid values
@@ -179,4 +183,4 @@ replacement. A valid value at a more specific level overrides an invalid
 outer value.
 
 See [Declarative mapping](../declarative-mapping.md) for result selection,
-previous-aware construction, and Update identity.
+structured `Resolve`, runtime result policies, and Update identity.

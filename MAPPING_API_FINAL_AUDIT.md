@@ -3,8 +3,9 @@
 Дата аудита: 2 августа 2026 года.
 
 Статус документа: независимая продуктовая оценка целевого mapping API,
-выполненная перед naming-аудитом. После завершения этапа 19 терминология
-актуализирована, но оценки и рекомендации не менялись. Нормативным источником
+выполненная перед naming-аудитом. После завершения этапа 19 и согласования
+callback result-policy revision терминология актуализирована, но оценки и
+рекомендации не менялись. Нормативным источником
 семантики остаётся `MAPPING_API_DESIGN.md`; этот документ фиксирует полноту
 сценариев, сравнение с конкурентами, найденные риски и рекомендации.
 
@@ -13,7 +14,7 @@
 Аудит рассматривает Morphant как будущий пользовательский продукт, а не только
 как внутренне непротиворечивый source generator. Проверялись:
 
-- целевой дизайн `Construct`, `Members` и `Convert`;
+- целевой дизайн result policies, `Members` и `Convert`;
 - контракты `Create` и `Update`, включая identity результата;
 - constructors, `init`, `required`, nullability, factories и immutable types;
 - nested mapping, generics, variants, settings, inheritance и composition;
@@ -65,9 +66,10 @@ existing-target semantics и поведению в сложных графах �
 - отсутствие скрытого runtime polymorphism;
 - observable failures и будущие diagnostics.
 
-Разделение `Construct`, `Members` и `Convert` является удачной основой. Оно
-немного многословнее прежнего `Template`, но каждый API отвечает на один вопрос,
-а общая модель объясняется без специальных режимов и исключений.
+Разделение result-policy slot-а, `Members` и `Convert` является удачной
+основой. Оно немного многословнее прежнего `Template`, но каждый API отвечает
+на один вопрос, а общая модель объясняется без специальных режимов и
+исключений.
 
 ## 3. Сравнение с другими mapper-ами
 
@@ -131,7 +133,7 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 |---|---|
 | Mutable POCO, records, constructors, optional/`params` | Контракт закрыт хорошо |
 | `init`, `required`, defaults и factories | Контракт закрыт; conditional null-preservation входит в будущий patch |
-| Scalar и opaque value object | Закрыт через direct `Construct` |
+| Scalar и opaque value object | Закрыт через runtime `ConstructUsing` / `ResolveUsing` |
 | Existing destination: reuse, mutation и replacement | Закрыт лучше, чем у сравниваемых mapper-ов |
 | Immutable existing destination | Закрыт явным replacement или ручным `with`; скрытой mutation нет |
 | Custom expressions, injected services и специальный synchronous algorithm | Закрыт |
@@ -199,7 +201,7 @@ capability.
 - projection переиспользует тот же declarative pair-plan, а не отдельную
   configuration model;
 - поддерживается только статически translatable подмножество `Create`;
-- direct/manual logic, previous/result-dependent behavior, hooks и reference
+- runtime/manual logic, previous/result-dependent behavior, hooks и reference
   tracking не получают ложной projectability;
 - вся цепочка nested mappings должна быть projectable;
 - client-side fallback отсутствует;
@@ -324,8 +326,8 @@ records, existing aggregate roots и конфигураций с inheritance.
 
 - nested pair не применяется автоматически;
 - `Option<T>` нужно изучить;
-- `Construct` и `Members` иногда повторяют одно expression, хотя generator обязан
-  вычислить его один раз;
+- structured result policy и `Members` иногда повторяют одно expression, хотя
+  generator обязан вычислить его один раз;
 - declarative `with` и expression sharing образуют graph DSL, а не обычное
   последовательное выполнение C#;
 - до появления collections, enum policies и name normalization часть частых
@@ -349,7 +351,7 @@ v0 корректно выпускать как architectural preview, foundatio
 
 Полная спецификация пока оценивается ниже самой архитектуры, потому что часть
 важных future-capabilities только названа. Это не требует нового redesign:
-текущие `Construct`, `Members`, `Convert`, authoritative result и explicit
+текущие result policies, `Members`, `Convert`, authoritative result и explicit
 nested dispatch оставляют для них совместимые точки расширения.
 
 ## 10. Рекомендации, отложенные при переходе к naming-аудиту

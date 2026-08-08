@@ -154,8 +154,8 @@ manual pair remains an invalid configuration.
 
 ## Plan composition
 
-`IncludeBase` imports explicit `Members` rules and evaluates them against the
-current pair:
+For a cross-pair include, `IncludeBase` imports explicit `Members` rules and
+evaluates them against the current pair:
 
 - inherited and local rules merge by destination member;
 - a local expression, `Auto()`, or `Ignore()` replaces the inherited rule for
@@ -166,16 +166,22 @@ current pair:
 - dependencies are rebuilt from the effective rules, so an overridden
   inherited expression is not evaluated.
 
-`Construct` and `Convert` are tied to the concrete types of their declaring
-pair and are never imported. Construction is selected again for the current
-destination, unless the current pair supplies its own `Construct`. A local
-`Convert` owns the complete current mapping and therefore discards included
-member rules.
+Cross-pair composition never imports `Construct`, `Resolve`, `ConstructUsing`,
+`ResolveUsing`, or `Convert`; construction is selected again for the current
+destination.
+
+An exact same-pair include from a connected base mapper imports its complete
+applicable plan. A local result policy of any of the four families replaces
+the inherited result policy, while local and inherited `Members` still merge
+by destination member. A local `Convert` owns the complete pair and discards
+the inherited declarative plan; any local declarative fragment discards an
+inherited `Convert`.
 
 ## Accessibility and generics
 
-Effective inherited member expressions are emitted inside the derived mapper.
-Referenced base members must therefore be accessible there. `protected`,
+Effective inherited result-policy, member, and converter expressions are
+emitted inside the derived mapper. Referenced base members must therefore be
+accessible there. `protected`,
 `internal`, and public helpers can be reused when ordinary C# accessibility
 permits it. A non-overridden rule that refers to a private helper or contains an
 explicit `base.` access is unsupported. An inaccessible rule that is fully

@@ -69,7 +69,15 @@ manual registration, and Create/Update behavior.
 
 ## Configuration model
 
-- `Construct` selects or creates the destination.
+The result-policy revision below is the agreed target design and is not yet
+implemented in the generated API. Its implementation status is tracked in the
+[mapping API roadmap](MAPPING_API_IMPLEMENTATION_PLAN.md).
+
+- `Construct` creates a structured result only when no previous destination
+  exists; `Resolve` selects a structured result for every operation.
+- `ConstructUsing` and `ResolveUsing` are the always-available runtime result
+  policies; each has a short overload and a context-aware overload whose final
+  parameter is the real `MappingContext`.
 - `Members` describes destination member values around that selected result.
 - `Convert` replaces the declarative pipeline with an ordinary synchronous C#
   algorithm.

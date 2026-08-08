@@ -61,9 +61,10 @@ Every root `IMapper.Map` creates a mapping scope and completes it in a
 - `Operation`, the immutable Create or Update frame for the current call;
 - `Mapper`, the scoped facade used for nested calls.
 
-Declarative nested markers and manual `context.Mapper.Map(...)` calls resolve
-through the same service provider and registration set. Each nested call gets
-its own immutable context frame but stays inside the root mapping scope.
+Declarative nested markers and runtime callback `context.Mapper.Map(...)`
+calls resolve through the same service provider and registration set. Each
+nested call gets its own immutable context frame but stays inside the root
+mapping scope.
 Sequential recursion, reentrancy, and caught nested exceptions are supported.
 The scoped facade cannot be retained and used after the root call completes;
 doing so throws `MappingScopeCompletedException`.

@@ -95,8 +95,8 @@ Morphant:
 - overridden, unreachable, or unsupported rules do not become hidden uses;
 - read-only proxy members used only for in-place nested Update do not
   participate in ordinary member validation;
-- a direct `Construct` body is not analyzed as an implicit set of member
-  mappings.
+- a `ConstructUsing` or `ResolveUsing` body is ordinary runtime C# and is not
+  analyzed as an implicit set of member mappings.
 
 `Convert` owns a manual algorithm, so this validation does not apply. An
 inherited mapper/root setting is inactive for a manual pair and may still

@@ -1,8 +1,8 @@
 # Nested mapping
 
-Declarative `Construct` and `Members` plans can dispatch another registered
-mapping. Morphant never turns a convention rule or `Auto()` into a nested
-mapping automatically.
+Structured `Construct` / `Resolve` and `Members` plans can dispatch another
+registered mapping. Morphant never turns a convention rule or `Auto()` into a
+nested mapping automatically.
 
 ## Forms
 
@@ -23,7 +23,7 @@ the outer mapping.
 
 ```csharp
 builder.Map<OrderDto, Order>()
-    .Construct((source, _) => new(
+    .Construct(source => new(
         source.Id,
         Map<Address>(source.Address)))
     .Members((source, _) => new()
@@ -69,7 +69,7 @@ destination. In an existing outer Update branch it uses nested Update:
 | Constructor parameter | Nested Create; pass the result | Nested Update with the corresponding readable member of `previous`; pass the result |
 
 The actual selected result is used for a writable member, including a
-replacement selected by `Construct`. A constructor parameter must use
+replacement selected by `Resolve`. A constructor parameter must use
 `previous` because the new result does not exist yet. If no readable
 destination member corresponds to that parameter, adaptive Update is
 unsupported; use explicit `Create` or `Update` instead.
@@ -96,8 +96,9 @@ assigned to the outer target.
 A generated `DestinationMembers` surface exposes readable non-writable
 destination members as get-only marker properties. This includes true get-only
 properties, properties whose ordinary setter is inaccessible to generated
-code, and accessible `readonly` fields. Direct `init`-only properties remain
-creation-only and are not converted into read-only proxies. A proxy can select
+code, and accessible `readonly` fields. For a destination without constructor
+surface, `init`-only properties remain creation-only and are not converted
+into read-only proxies. A proxy can select
 an in-place nested Update without exposing the actual outer result for
 mutation:
 
@@ -128,18 +129,24 @@ writable.
 
 ## Declarative inputs
 
-`previous` and `result` are read-only information sources in `Construct` and
+`previous` and `result` are read-only information sources in `Resolve` and
 `Members`. Assignments, increments, decrements, and passing either input or a
 member rooted in it through `ref` or `out` make the declarative plan
 unsupported. Nested in-place updates of read-only members are expressed
 through the generated `members.Member` marker shown above.
+
+The maximum structured callbacks also receive `MappingContextMarker`. Only
+its `Operation` may be read as a declarative value; the marker itself cannot
+be stored, passed, captured, compared, or returned. It intentionally has no
+`Mapper`, so declarative nested dispatch still has exactly the marker forms
+listed above.
 
 ## Execution
 
 Arguments are evaluated once, left to right in source order, including
 reordered named arguments. A null guard for a read-only member runs before its
 source expression. Equivalent declarative calls participate in the same
-path-sensitive dependency graph as other `Construct` and `Members`
+path-sensitive dependency graph as other `Construct`, `Resolve`, and `Members`
 expressions.
 
 Nested dispatch uses the scoped `IMapper` from the current mapping chain. It
@@ -152,5 +159,5 @@ Each exact `ITypeMapper<TSource, TDestination>` pair must currently be
 registered manually with the application's service provider. See
 [Runtime dispatch and DI](runtime-dispatch.md) for the scoped mapper lifecycle
 and [Manual mapping](manual-mapping.md) for `context.Mapper` usage in
-`Convert`. See [Observable failures](observable-failures.md) for all typed
-failure paths.
+context-aware runtime result policies and `Convert`. See
+[Observable failures](observable-failures.md) for all typed failure paths.

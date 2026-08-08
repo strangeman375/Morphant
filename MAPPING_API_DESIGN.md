@@ -1,8 +1,8 @@
 # Новый дизайн mapping API Morphant
 
-Статус документа: согласованный нормативный дизайн текущего mapping API.
-Реализация core v0 следует этому контракту; актуальный прогресс и оставшиеся
-границы фиксирует
+Статус документа: согласованный нормативный целевой дизайн mapping API.
+Callback result-policy revision ещё не перенесена в production-код; актуальный
+прогресс и оставшиеся границы фиксирует
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
 Прежний `Template()`-дизайн упоминается только в сравнительном аудите там, где
 он объясняет решения текущего API, и не является compatibility target.
@@ -19,9 +19,12 @@
 
 | API | Единственный вопрос |
 |---|---|
-| `Construct` | Как получить result и настроить его constructor parameters? |
-| `Members` | Как маппить body-members destination? |
-| `Convert` | Как целиком выполнить mapping без декларативного pipeline? |
+| `Construct` | Как declarative constructor plan создаёт result при отсутствии previous? |
+| `Resolve` | Как declarative constructor plan выбирает result для любой operation? |
+| `ConstructUsing` | Как runtime callback создаёт result при отсутствии previous? |
+| `ResolveUsing` | Как runtime callback выбирает result для любой operation? |
+| `Members` | Как маппить body-members выбранного result? |
+| `Convert` | Как целиком выполнить mapping без declarative pipeline? |
 
 Из целевого дизайна удаляются:
 
@@ -37,10 +40,11 @@
 композицию только body-member rules и не возвращает прежний единый
 `Template()`-контракт.
 
-`Construct`, `Members` и `Convert` не являются тремя последовательными
-стадиями одного обязательного pipeline. `Construct` и `Members` образуют
-декларативный mapping, а `Convert` является полностью отдельной
-альтернативой ему.
+Один из `Construct` / `Resolve` / `ConstructUsing` / `ResolveUsing` задаёт
+result policy declarative pipeline, а `Members` описывает body-members уже
+выбранного result. Четыре result-policy methods занимают один
+взаимоисключающий slot и не являются последовательными стадиями. `Convert`
+является полностью отдельной альтернативой всему declarative pipeline.
 
 ## 2. Термины
 
@@ -54,15 +58,16 @@
 - `result` — объект или значение, которое выбрано для применения member rules
   и в итоге возвращается из `Map`;
 - `structured creation plan` — сгенерированное описание вызова поддерживаемого
-  destination-конструктора либо выбора factory/previous, а не готовый
-  `TDestination`; direct `Construct` возвращает готовый destination без такого
-  промежуточного plan;
+  destination-конструктора либо выбора normalized previous, а не готовый
+  `TDestination`; runtime `ConstructUsing` / `ResolveUsing` возвращают готовый
+  destination без такого промежуточного plan;
 - `member plan` — сгенерированное описание body-member mappings, а не готовый
   `TDestination`.
 
-`previous` и `result` намеренно различаются. `Construct` может выбрать previous,
-создать replacement, получить объект из factory или cache. Поэтому identity
-`result` не обязана совпадать с identity переданного destination.
+`previous` и `result` намеренно различаются. `Resolve` / `ResolveUsing` могут
+выбрать previous либо replacement, а no-previous policies создают result.
+Поэтому identity `result` не обязана совпадать с identity переданного
+destination.
 
 Названия `Create` и `Update` описывают форму публичного вызова, а не
 гарантию новой или сохранённой identity результата.
@@ -190,8 +195,10 @@ builder.Map<Source, Destination>()
         MapCore(source, previous, context));
 ```
 
-Для одной canonical mapping-пары разрешён либо декларативный набор
-`Construct` / `Members`, либо один `Convert`. Смешивать эти модели нельзя.
+Для одной canonical mapping-пары разрешён один result-policy fragment
+`Construct` / `Resolve` / `ConstructUsing` / `ResolveUsing` и один `Members`,
+либо один `Convert`. Четыре result-policy methods взаимоисключаемы; смешивать
+declarative pipeline с `Convert` нельзя.
 
 ### 4.1. Наследование и композиция конфигурации
 
@@ -271,13 +278,13 @@ Effective settings разрешаются от более конкретного
 Импорт mapping plan зависит от отношения узлов:
 
 - cross-pair `IncludeBase`, например `Dog -> DogDto` из
-  `Animal -> AnimalDto`, импортирует только правила `Members`; `Construct` и
+  `Animal -> AnimalDto`, импортирует только правила `Members`; result policy и
   `Convert` не переносятся, а conventions и constructor selection вычисляются
   заново для текущей pair;
 - exact same-pair из connected base mapper-а импортирует весь applicable
-  effective plan, включая `Construct` либо `Convert`, без runtime casts,
-  адаптеров delegate signatures или попыток перенести factory/converter между
-  разными destination types.
+  effective plan, включая одну из четырёх result policies либо `Convert`, без
+  runtime casts, адаптеров delegate signatures или попыток перенести result
+  callback/converter между разными destination types.
 
 Правила `Members` в обоих случаях объединяются по destination member
 независимо от формы перегрузки. Локальный expression, `Auto()` или `Ignore()`
@@ -289,13 +296,13 @@ rule анализируются отдельно.
 - при отсутствии локальных fragments exact same-pair полностью сохраняет
   inherited plan;
 - локальный `Convert` заменяет весь inherited plan и владеет текущей pair;
-- локальный declarative plan с `Construct` либо `Members` отбрасывает
+- локальный declarative plan с любой result policy либо `Members` отбрасывает
   inherited `Convert`;
-- для declarative plan inherited `Construct` служит fallback, локальный
-  `Construct` его перекрывает, а `Members` объединяются по обычному правилу
-  локального приоритета.
+- для declarative plan inherited result policy служит fallback, локальная
+  result policy любого из четырёх имён её перекрывает, а `Members` объединяются
+  по обычному правилу локального приоритета.
 
-Переносимые effective `Construct`, `Members` и `Convert` callbacks испускаются
+Переносимые effective result-policy, `Members` и `Convert` callbacks испускаются
 внутри derived mapper-а, поэтому все mapper-members в них должны быть доступны
 из derived type. Обычные public, internal и protected helpers поддерживаются
 согласно C# accessibility; private members и явный `base.` в оставшемся
@@ -305,7 +312,7 @@ inherited expression делают effective plan ошибочным. Полно�
 Source generator не выполняет configuration code и не следует за
 произвольными helper calls, которые изменяют builder. Переиспользуемые
 вычисления остаются обычными instance/static методами mapper-а, вызываемыми
-внутри `Construct`, `Members` или `Convert`.
+внутри result policy, `Members` или `Convert`.
 
 Отдельные fragments для unrelated pairs и cross-assembly
 `IncludeBase<TBaseSource, TBaseDestination>()` не входят в v0. Generic и nested
@@ -375,229 +382,186 @@ destination без null-предобработки. Поэтому explicit `nul
 `Option.None`, а отличие `Map(source, null)` от `Map(source)` сообщает
 `MappingContext.Operation`.
 
-## 6. `Construct`
+## 6. Выбор result
 
-### 6.1. Ответственность
+### 6.1. Четыре result-policy метода
 
-`Construct` отвечает только за:
+Declarative pipeline разделяет выбор result и настройку его members. Для
+выбора result существуют четыре взаимоисключающих метода:
 
-- выбор способа получить `result`;
-- выбор destination-конструктора;
-- mapping constructor parameters;
-- convention construction;
-- factory construction;
-- прямое получение готового destination, когда constructor-plan отсутствует;
-- выбор existing destination как `result`, когда previous существует.
+| Метод | Applicability | Callback class | Результат callback-а |
+|---|---|---|---|
+| `Construct` | Только no-previous branch | Declarative structured DSL | `DestinationConstruction` |
+| `Resolve` | Все достижимые операции после null handling | Declarative structured DSL | `DestinationConstruction` |
+| `ConstructUsing` | Только no-previous branch | Обычный runtime C# | Настоящий `TDestination` |
+| `ResolveUsing` | Все достижимые операции после null handling | Обычный runtime C# | Настоящий `TDestination` |
 
-Declarative rules body-members в `Construct` не настраиваются. В частности,
-`Members` остаётся единственным declarative surface для свойств и полей.
+`Construct` и `ConstructUsing` отвечают только за получение result, когда
+нормализованный previous отсутствует. При существующем previous callback не
+вызывается, а переданный instance становится result. `Resolve` и
+`ResolveUsing` являются полными selector-ами: вызываются и с `Option.None`, и
+с `Option.Some` и сами выбирают construction/reuse/replacement.
 
-Direct `Construct` при этом является обычным C#-кодом, возвращающим готовый
-instance, поэтому object initializer и любые допустимые C# assignments внутри
-него разрешены:
+Для одной canonical pair может быть настроен не более чем один из этих
+четырёх методов. Это один result-policy slot, а не последовательные stages и
+не четыре независимых правила. `Members` после него остаётся единственным
+declarative surface для свойств и полей. `Convert` по-прежнему заменяет весь
+declarative pipeline и не комбинируется ни с одной result policy либо
+`Members`.
 
-```csharp
-.Construct(source => new Destination
-{
-    Id = source.Id
-})
-```
+### 6.2. Обычный и generated builder surface
 
-Это не создаёт declarative member rule. `Construct` и `Members` остаются двумя
-частями одного описания создания и инициализации destination, а generator
-lower-ит их совместно. Поэтому для structured destination `init` и `required`
-могут задаваться в `Members` и попадать в итоговый object initializer.
-
-Direct lambda возвращает уже созданный instance. Для такой pair generated
-`Members` содержит только post-construction assignable members: обычные
-setters и mutable fields, включая помеченные `required`. `init`-only properties
-в direct member surface не входят. Сам direct-код при этом свободен
-использовать object initializer.
-
-### 6.2. Выбор generated surface
-
-После применения общей destination-type policy форма `Construct` определяется
-только наличием constructor surface, который Morphant действительно умеет
-вызвать:
-
-| Constructor capability | Generated `Construct` | Что возвращает lambda |
-|---|---|---|
-| Есть хотя бы один поддерживаемый constructor, включая parameterless | Structured | `DestinationConstruction` |
-| Поддерживаемого constructor surface нет либо destination opaque | Direct | Настоящий `TDestination` |
-
-Structured `Construct` описывает не отдельный constructor-вызов, а единый plan
-создания и инициализации destination. Поэтому доступный parameterless
-constructor тоже выбирает structured surface: Morphant может выполнить его по
-convention и включить `init`, `required` и остальные creation-time member rules
-в тот же итоговый initializer.
-
-Наличие body-members не влияет на выбор формы `Construct`. Оно независимо
-определяет наличие `Members`. Поэтому interface или factory-only class с
-post-construction writable members получает direct `Construct` вместе с
-`Members`, а scalar без members — только direct `Construct`.
-
-Одна mapping-пара никогда не получает обе формы. Пользовательский mode для
-переключения между structured и direct surface не вводится.
-
-### 6.3. Две перегрузки и общая семантика arity
-
-Generated callback-параметры используют именованные delegate-типы из
-`Morphant.Delegates`, а не `Func<...>`. Это сохраняет в IntelliSense
-смысловые имена lambda-параметров независимо от конкретной generated pair:
+`ConstructUsing` и `ResolveUsing` являются обычными методами
+`MapperBuilder<TSource, TDestination>` и существуют для каждой eligible pair:
 
 ```csharp
-public delegate TResult Construct<in TSource, out TResult>(
-    TSource source);
+.ConstructUsing(source => CreateDestination(source))
+.ConstructUsing((source, context) => CreateDestination(source, context))
 
-public delegate TResult Construct<in TSource, TPrevious, out TResult>(
-    TSource source,
-    Option<TPrevious> previous);
-
-public delegate TMembers Members<in TSource, TPrevious, out TMembers>(
-    TSource source,
-    Option<TPrevious> previous);
-
-public delegate TMembers Members<
-    in TSource,
-    TPrevious,
-    in TResult,
-    out TMembers>(
-    TSource source,
-    Option<TPrevious> previous,
-    TResult result);
-
-public delegate TResult Convert<in TSource, TPrevious, out TResult>(
-    TSource source,
-    Option<TPrevious> previous,
-    MappingContext context);
+.ResolveUsing((source, previous) =>
+    ResolveDestination(source, previous))
+.ResolveUsing((source, previous, context) =>
+    ResolveDestination(source, previous, context))
 ```
 
-`Construct` и `Members` намеренно используют одно имя для обеих arity.
-`TPrevious` является root-normalized destination из раздела 5, а `TResult`
-сохраняет точный result contract; поэтому для nullable destination эти два
-generic argument-а могут различаться. Lambda и method group получают обычный
-target typing; заранее материализованный callback имеет соответствующий
-`Morphant.Delegates`-тип, поскольку разные concrete delegate-типы не имеют
-implicit conversion друг в друга.
+Каждый метод имеет короткую и context-aware overload. `MappingContext` в
+полной форме всегда является последним параметром; короткая форма только не
+предоставляет ненужный context и не меняет lifecycle. Runtime callback может
+быть expression- или block-lambda, natural method group либо materialized
+delegate. Он исполняется ровно один раз на выбранном path; context-aware форма
+может выполнять nested mapping через `context.Mapper`.
 
-Для structured surface генерируются:
+Zero-argument callback не вводится. Минимальная `ConstructUsing` overload
+всегда получает `source`; если он не нужен, пользователь пишет `_`.
 
-```csharp
-Construct(
-    Delegates.Construct<TSource, DestinationConstruction> construct);
-
-Construct(
-    Delegates.Construct<
-        TSource,
-        TDestination,
-        DestinationConstruction> construct);
-```
-
-`DestinationConstruction` — сгенерированный creation-plan для конкретного
-destination. Это не настоящий `TDestination`.
-
-Для direct surface генерируются:
-
-```csharp
-Construct(
-    Delegates.Construct<TSource, TDestination> construct);
-
-Construct(
-    Delegates.Construct<
-        TSource,
-        TDestination,
-        TDestination> construct);
-```
-
-Обе формы используют один закон выбора result:
-
-| Настройка | `previous` отсутствует | `previous` существует |
-|---|---|---|
-| `Construct(source)` | Lambda определяет result | Lambda не вызывается; previous становится result |
-| `Construct(source, previous)` | Lambda вызывается с `Option.None` | Lambda вызывается с `Option.Some` |
-
-Source-only structured `Construct` концептуально эквивалентен:
-
-```csharp
-Construct((source, previous) =>
-{
-    if (previous.HasValue)
-    {
-        return previous;
-    }
-
-    return ConstructFromSource(source);
-});
-```
-
-Source-only direct `Construct` имеет ту же семантику, но возвращает настоящий
-destination:
-
-```csharp
-Construct((source, previous) =>
-    previous.HasValue
-        ? previous.Value
-        : ConstructFromSource(source));
-```
-
-Эта небольшая синтаксическая асимметрия намеренна. Structured lambda выбирает
-ветку creation-plan, поэтому отдельный `return previous` неявно преобразует
-`Option<TDestination>` в `DestinationConstruction`. Block-форма также сохраняет
-target typing `new(...)` в C# 9; conditional expression с `previous` и
-target-typed `new(...)` вместо этого пытается типизировать `new(...)` как
-`Option<TDestination>` и не компилируется. Direct lambda уже обязана вернуть
-`TDestination`, поэтому после проверки `HasValue` явно извлекается
-`previous.Value`. Отдельный
-`DirectConstruction<T>`, implicit conversion `Option<T> -> T`, `AsResult()` и
-`UsePrevious()` не вводятся.
-
-Настоящий return type direct source-only перегрузки также сохраняет естественные
-method groups:
-
-```csharp
-builder.Map<string, Guid>()
-    .Construct(Guid.Parse);
-```
-
-Для одной пары можно настроить только один `Construct`, независимо от выбранной
-перегрузки. Повторный вызов является diagnostic; две перегрузки не образуют
-отдельные `Create`- и `Update`-правила.
-
-### 6.4. Почему две перегрузки нужны только здесь
-
-У `Construct` arity действительно меняет политику:
+`Construct` и `Resolve` являются generated extension methods и появляются
+только при наличии structured creation capability: destination имеет хотя бы
+один поддерживаемый доступный constructor. Оба возвращают один и тот же
+generated `DestinationConstruction`:
 
 ```csharp
 .Construct(source => new(source.Id))
+.Construct((source, context) =>
+    context.Operation == MappingOperation.Create
+        ? new(source.Id)
+        : new(source.Id, source.Revision))
+
+.Resolve((source, previous) =>
+{
+    if (previous.HasValue && previous.Value.Id == source.Id)
+        return previous;
+
+    return new(source.Id);
+})
+
+.Resolve((source, previous, context) =>
+    ResolvePlan(source, previous, context.Operation))
 ```
 
-не заменяет existing destination, а:
+Structured callbacks требуют inline lambda и никогда не получают настоящий
+`MappingContext`: generator анализирует их как конечный declarative DSL.
+Короткий `Construct` получает normalized source, короткий `Resolve` — source и
+`Option<TDestination> previous`. Максимальные overload-ы дополнительно получают
+`MappingContextMarker` последним параметром.
+
+Единственный поддерживаемый parameterless constructor не является
+исключением: generator всё равно создаёт и `Construct`, и `Resolve`. Единый
+критерий «есть callable constructor surface» остаётся предсказуемым, а такой
+surface нужен для явного construction при `ConstructorSelection.Explicit`,
+для structured replacement в `Resolve` и для включения `init`/`required`
+member rules в общий object initializer. Добавление parameterized overload-а
+не должно внезапно менять сам набор result-policy методов.
+
+Если constructor surface отсутствует либо destination opaque, generated
+`Construct` и `Resolve` отсутствуют. Создание на reachable no-previous path
+тогда выражается `ConstructUsing`, `ResolveUsing` либо полностью ручным
+`Convert`; Morphant не создаёт искусственный direct plan type и не выбирает
+`default`.
+
+### 6.3. Семантика callbacks и context
+
+Концептуальный call-site surface:
 
 ```csharp
-.Construct((source, _) => new(source.Id))
+// Generated, только structured destination.
+Construct(source => DestinationConstruction);
+Construct((source, context) => DestinationConstruction);
+
+Resolve((source, previous) => DestinationConstruction);
+Resolve((source, previous, context) => DestinationConstruction);
+
+// Обычный pair-builder, для любой eligible pair.
+ConstructUsing(source => TDestination);
+ConstructUsing((source, context) => TDestination);
+ResolveUsing((source, previous) => TDestination);
+ResolveUsing((source, previous, context) => TDestination);
 ```
 
-создаёт result и при `Create`, и при `Update`.
+Все callback-параметры используют именованные delegate-типы из
+`Morphant.Delegates`, а не безымянные `Func<...>`, чтобы IntelliSense сохранял
+semantic parameter names. Имена delegate families совпадают с fluent methods:
+`Construct`, `Resolve`, `Members`, `ConstructUsing`, `ResolveUsing` и
+`Convert`. Context-aware delegate получает отдельный generic parameter
+`TContext`, закрываемый `MappingContextMarker` либо `MappingContext`; это даёт
+каждой family уникальную generic arity без перехода на `Func` и без фиктивных
+parameters.
 
-Это намеренное различие, а не сокращённая запись одной и той же операции.
-
-Тот же закон действует для direct surface:
+`MappingContextMarker` является публичным типом только ради target typing
+declarative lambda:
 
 ```csharp
-.Construct(Parse)
+public abstract class MappingContextMarker
+{
+    private protected MappingContextMarker()
+    {
+    }
+
+    public abstract MappingOperation Operation { get; }
+}
 ```
 
-сохраняет existing destination, а:
+Runtime instance marker-а не создаётся. Generator lower-ит чтение
+`context.Operation` к operation настоящего call frame. Сам marker нельзя
+превращать в runtime value: запрещены alias, передача в helper, capture runtime
+callback-а, comparison/pattern/null check, cast, `ToString` / `GetType` и
+return. Извлечённый `MappingOperation` является обычным declarative значением и
+может сохраняться в local либо передаваться helper-методу.
+
+Structured `Resolve` может вернуть previous благодаря implicit conversion
+`Option<TDestination> -> DestinationConstruction`. В block-lambda это
+сохраняет target-typed `new(...)` в C# 9:
 
 ```csharp
-.Construct((source, _) => Parse(source))
+.Resolve((source, previous) =>
+{
+    if (CanReuse(source, previous))
+        return previous;
+
+    return new(source.Id);
+})
 ```
 
-получает replacement и для `Create`, и для `Update`.
+`ResolveUsing` возвращает настоящий destination, поэтому извлекает
+`previous.Value` явно. Отдельный `DirectConstruction<T>`, implicit conversion
+`Option<T> -> T`, `AsResult()` и `UsePrevious()` не вводятся.
 
-### 6.5. Generated structured creation-plan
+`ConstructUsing` и `ResolveUsing` являются runtime-частями declarative
+pipeline, а не manual mapping. Их короткие и context-aware overload-ы получают
+normalized non-null source и previous после declarative null handling. В
+полной форме `context.Operation` сохраняет исходную public operation, а
+`context.Mapper` использует текущий `MappingScope`. После non-null result
+выполняется effective `Members` plan. В отличие от них `Convert` получает
+исходные inputs до null handling и не запускает никакую declarative stage.
 
-Creation-plan зеркалит поддерживаемые destination-конструкторы и использует
+Declarative markers внутри `ConstructUsing` и `ResolveUsing` недоступны.
+Constructor, object initializer, cache, factory, mutation, conditions, loops,
+exceptions и local functions являются обычным C#. `ByFactory` полностью
+удалён: ни marker-а внутри `DestinationConstruction`, ни top-level alias, ни
+compatibility overload в целевом API нет.
+
+### 6.4. Generated structured creation-plan
+
+Creation-plan зеркалит поддерживаемые destination constructors и использует
 `ConstructorParameter<T>` для их параметров. Концептуально:
 
 ```csharp
@@ -611,41 +575,21 @@ internal sealed class DestinationConstruction
         ByConventionMarker marker,
         DestinationConstructorParameters? parameters = null);
 
-    public DestinationConstruction(
-        IByFactoryMarker<Destination> marker);
-
     public static implicit operator DestinationConstruction(
         Option<Destination> previous);
 }
 ```
 
-Это сохраняет полноценный DSL для constructor parameters:
-
-```csharp
-.Construct(source => new(
-    source.Id,
-    Auto(),
-    Map(source.Address)))
-```
-
 Поддерживаемые формы creation-plan:
 
-- явный destination-конструктор;
+- явный destination constructor, включая parameterless `new()`;
 - `ByConvention()`;
 - `ByConvention()` с явными constructor-parameter rules;
-- factory через `new(ByFactory(...))`;
-- existing previous как result в previous-aware перегрузке.
+- existing previous как result в `Resolve`.
 
-Произвольный готовый `TDestination` не преобразуется в structured
-creation-plan. Готовый или cached instance выражается явно как factory-ветка:
-
-```csharp
-.Construct(source => new(ByFactory(() => cache.Get(source.Id))))
-```
-
-Форма `new(ByFactory(...))` обязательна: marker передаётся generated
-constructor-у creation-plan, а implicit conversion от marker-interface не
-генерируется.
+Произвольный готовый `TDestination` не преобразуется в structured plan. Для
+этого используется отдельный top-level `ConstructUsing` либо `ResolveUsing`,
+что сохраняет единственную runtime boundary без вложенного factory callback-а.
 
 Constructor-parameter rules сохраняют текущую модель:
 
@@ -660,184 +604,141 @@ Constructor-parameter rules сохраняют текущую модель:
 | `Update(source, destination)` / `Update<TDestination>(source, destination)` | Принудительно выполнить nested `Update` |
 
 Typed-формы `Auto<T>()` и `Ignore<T>()` сохраняются вместе с generic-формами
-nested markers. Они нужны там, где обычного target typing
-недостаточно, например внутри declarative local, conditional- либо
-switch-expression. Generic argument типизирует marker; окончательную
-совместимость с constructor parameter по-прежнему проверяют обычные правила
-C# и Morphant DSL.
+nested markers. Они нужны там, где обычного target typing недостаточно,
+например внутри declarative local, conditional- либо switch-expression.
 
 Generated overload-ы creation-plan являются compiler probe для настоящих
-destination constructors. Positional, named и mixed arguments, optional-
-параметры, omission и overload ambiguity разрешает C# compiler, а не ручной
+destination constructors. Positional, named и mixed arguments, optional
+parameters, omission и overload ambiguity разрешает C# compiler, а не ручной
 алгоритм generator-а. `params` допускает omission либо передачу массива
 целиком, но не expanded-форму. Явный cast к `ConstructorParameter<T>` остаётся
 способом выбрать нужную generated overload; при lowering он превращается в
-cast к фактическому типу соответствующего destination-параметра.
+cast к фактическому типу destination parameter-а.
 
-`Construct` не гарантирует новую identity. В частности, `ByFactory()` может
-вернуть cached instance. Название означает получение базового `result`, а не
-обязательное выделение нового объекта.
+### 6.5. Поведение по умолчанию
 
-### 6.6. Поведение по умолчанию
+Если previous отсутствует и result policy не настроена, structured destination
+создаётся по convention с эффективным `ConstructorSelection`. Текущим default
+остаётся `Unambiguous`. При существующем previous и отсутствии `Resolve` либо
+`ResolveUsing` instance переиспользуется; `Construct` и `ConstructUsing` не
+вызываются.
 
-Для structured surface, если previous отсутствует и `Construct` не настроен,
-Morphant выполняет обычное convention construction с эффективным
-`ConstructorSelection`. Текущим default остаётся `Unambiguous`.
-
-`Unambiguous` выбирает единственный поддерживаемый доступный parameterized-
-constructor, даже если одновременно существует parameterless-constructor.
-Если parameterized-конструкторов нет, выбирается поддерживаемый доступный
-parameterless-constructor. Если parameterized-конструкторов несколько,
-требуется явный выбор даже при наличии parameterless-constructor. После выбора
-Morphant не делает fallback к parameterless либо другому constructor-у из-за
+`Unambiguous` выбирает единственный поддерживаемый доступный parameterized
+constructor, даже если одновременно существует parameterless constructor.
+Если parameterized constructors отсутствуют, выбирается поддерживаемый
+доступный parameterless constructor. Если parameterized constructors
+несколько, требуется явный выбор даже при наличии parameterless constructor.
+После выбора Morphant не делает fallback к другому constructor-у из-за
 отсутствующего или несовместимого обязательного argument-а.
 
 Остальные стратегии следуют той же stable supported-constructor surface:
 
-- `Explicit` запрещает автоматический выбор, включая `ByConvention()`;
-- `Parameterless` выбирает только поддерживаемый parameterless-constructor;
-- `Single` требует ровно один поддерживаемый constructor независимо от его
-  параметров;
-- `Greediest` строит все применимые warning-free convention plans и выбирает
+- `Explicit` запрещает automatic selection, включая `ByConvention()`;
+- `Parameterless` выбирает только supported parameterless constructor;
+- `Single` требует ровно один supported constructor независимо от arity;
+- `Greediest` строит применимые warning-free convention plans и выбирает
   уникальный plan с наибольшим числом фактически переданных arguments;
 - `Largest` сначала выбирает уникальный supported constructor с наибольшим
-  числом объявленных parameters и только затем проверяет его применимость.
+  числом объявленных parameters и только затем проверяет применимость.
 
 Опущенные optional/`params` parameters не увеличивают score `Greediest`, а
 переданный `params` array считается одним argument. Равенство лучших scores у
 `Greediest` либо максимального declared size у `Largest` не разрешается
-порядком объявления и требует explicit `Construct`. `Largest`, `Single`,
-`Unambiguous` и `Parameterless` не откатываются к другому constructor-у, если
-уже выбранный кандидат неприменим. Required initializer plan и
-`SetsRequiredMembers` участвуют в применимости constructor-а.
+порядком объявления и требует explicit structured result policy. `Largest`,
+`Single`, `Unambiguous` и `Parameterless` не откатываются к другому constructor,
+если выбранный кандидат неприменим. Required initializer plan и
+`SetsRequiredMembers` участвуют в применимости.
 
-В `ByConvention()` written parameter rules участвуют в применимости и score:
-явное expression и успешный `Auto()` считаются переданными arguments,
-`Ignore()` — нет. Explicit constructor и `ByFactory()` внутри `Construct` не
-зависят от `ConstructorSelection`.
+Written rules `ByConvention()` участвуют в применимости и score: explicit
+expression и успешный `Auto()` считаются переданными arguments, `Ignore()` —
+нет. Explicit constructor внутри `Construct`/`Resolve` не зависит от
+`ConstructorSelection`. `ConstructUsing`/`ResolveUsing` также не используют
+constructor selection, поскольку их body является обычным C#.
 
-Direct destination не имеет поддерживаемого constructor surface, поэтому
-reachable no-previous ветка требует configured direct `Construct`. То же
-правило действует для opaque destination: даже если C# технически позволяет
-`new()` или `default`, Morphant не выбирает за пользователя атомарное значение.
-Отсутствие обязательной настройки является ошибочной конфигурацией, а не
-поводом для fallback на `Convert`, runtime conversion или `default`.
+Destination без structured capability требует configured `ConstructUsing` или
+`ResolveUsing` на каждой reachable no-previous ветке. То же относится к opaque
+destination: даже если C# технически позволяет `new()` или `default`, Morphant
+не выбирает атомарное значение. Отсутствие настройки является ошибочной
+configuration, а не fallback на `Convert`, runtime conversion либо `default`.
 
-Если previous существует и configured `Construct` — source-only, lambda не
-вычисляется вообще. Constructor arguments, factory и любые используемые только
-в этой lambda выражения также не вычисляются.
+### 6.6. Порядок вычислений
 
-Если previous-aware structured `Construct` выбирает previous, он становится
-`result`. Constructor, convention или factory дают replacement-result. В
-direct surface lambda возвращает либо `previous.Value`, либо готовый
-replacement непосредственно.
+В runtime выполняется только выбранная result-policy branch. `Construct` и
+`ConstructUsing` вообще не вычисляются при существующем previous. Невыбранные
+ветки `Resolve`, неприменимые operations и их dependencies также не
+вычисляются.
 
-Structured plan специализируется отдельно для заведомо отсутствующего
-previous в `Create` и существующего previous в обычном `Update`. Проверки
-`previous.HasValue` и защищённые ими обращения к `previous.Value` сворачиваются
-по известной operation, но только когда выбранная ветка доказуемо
-недостижима. Short-circuit-порядок и side effects остальных частей условия
-сохраняются. Незащищённый `return previous`, достижимый в `Create`, остаётся
-ошибочной веткой и не заменяется скрытым construction fallback.
-Если после специализации обе стороны оставшегося условия ведут в один plan,
-условие всё равно вычисляется ради observable effects, а общий plan испускается
-один раз. В generated code такое вычисление выражается явным discard
-`_ = condition;`; части short-circuit expression, до которых выполнение не
-доходит, не вычисляются.
+Structured plan специализируется по заведомому `Option.None` / `Option.Some`.
+Удаляются только доказанно недостижимые ветки с сохранением short-circuit и
+side effects. Незащищённый `return previous`, достижимый при `Option.None`,
+остаётся ошибочной branch и не получает hidden construction fallback. Если
+после специализации обе стороны условия ведут в один plan, условие всё равно
+вычисляется ради observable effects, а общий plan испускается один раз.
 
-Никакого скрытого fallback между различными ветками `Construct` нет.
+Явные constructor arguments вычисляются ровно один раз слева направо в порядке
+записи, включая переставленные named arguments. Для `ByConvention()` сначала
+в пользовательском порядке вычисляются written constructor-parameter rules,
+после них — остальные automatic arguments в порядке parameters выбранного
+constructor-а. `Ignore()` не вычисляет значение.
 
-### 6.7. Порядок вычислений creation-plan
+Фактически переданный constructor argument занимает одноимённый body-member
+только относительно implicit member convention. Опущенный optional/`params`
+parameter и `Ignore()` member не занимают. Explicit `Members` rule остаётся
+авторитетным; `required` member остаётся в initializer, если выбранный
+constructor не помечен `[SetsRequiredMembers]`. Общее automatic значение
+вычисляется один раз и переиспользуется.
 
-В runtime выполняется только выбранный путь `Construct`. Невыбранная ветка,
-source-only lambda при существующем previous и выражения, нужные только
-неприменимой operation, не вычисляются.
+Structured `Construct`/`Resolve` и `Members` имеют общий path-sensitive
+dependency graph. `ConstructUsing` и `ResolveUsing` являются атомарными runtime
+callables и не участвуют в cross-plan sharing. Expression-body переносится как
+выражение, block-body — целиком; обычный C# определяет внутренний порядок,
+mutation и control flow. Получение настоящего result выполняется ровно один
+раз. Если result non-null, после него действует общая member-фаза.
 
-В structured plan явные constructor arguments вычисляются ровно один раз
-слева направо в порядке записи, включая переставленные named arguments. Затем
-вызывается выбранный destination-constructor. Для `ByConvention()` сначала в
-пользовательском порядке вычисляются явно записанные constructor-parameter rules,
-после них — оставшиеся automatic arguments в порядке параметров выбранного
-конструктора. `Ignore()` не вычисляет значение, а `Auto()` и `Map(...)`
-занимают позицию соответствующего rule.
-
-Фактически сформированный constructor argument занимает одноимённый
-body-member только относительно неявной member-convention. Для этого
-используется exact name, затем unique `OrdinalIgnoreCase`, как и при обычном
-constructor mapping. Опущенный optional/`params` parameter и `Ignore()` не
-занимают member, поскольку argument в constructor не передаётся. Explicit
-`Members` rule остаётся авторитетным и применяется даже при соответствующем
-constructor argument. `required` member также остаётся в initializer, если
-выбранный constructor не помечен `[SetsRequiredMembers]`; общее automatic
-значение при этом вычисляется один раз и переиспользуется.
-
-Plan-shaping locals, условия и selector-ы выполняются в своей позиции и только
-на выбранном execution path. Если значение уже вычислено в declarative local,
-оно переиспользуется, а не вычисляется повторно ради constructor или member
-rule.
-
-Direct `Construct` и тело `ByFactory` являются обычным синхронным C#-кодом, а не
-разбираемым statement-by-statement creation DSL. Expression-body переносится
-как выражение, block-body — целиком; обычный C# определяет внутренний порядок,
-ветвление, mutation, циклы, exceptions и local functions. Получение настоящего
-result выполняется ровно один раз. После него действует общая member-фаза,
-если result не равен `null`.
-
-Переносимый block либо materialized method-group/delegate испускается одним
-collision-safe private helper-ом mapper-а. Если один callable достижим и в
-`__Create`, и в `__Update`, обе operations вызывают этот общий helper;
-helper body и типизированный delegate local не дублируются в leaf-ветвях.
-Operation-specific source/previous передаются параметрами только при
-фактическом capture, поэтому reuse не меняет reachability и evaluation laws.
+Переносимый runtime block либо materialized method group/delegate испускается
+одним collision-safe private helper-ом mapper-а. Если callable достижим из
+нескольких operations, они используют общий helper; его body и типизированный
+delegate local не дублируются в leaf branches.
 
 ## 7. `Members`
 
-### 7.1. Две альтернативные перегрузки
+### 7.1. Четыре префиксные перегрузки
 
-Для каждой pair с member-capability generator всегда создаёт обе
-концептуальные перегрузки:
-
-```csharp
-Members(
-    Delegates.Members<
-        TSource,
-        TDestination,
-        DestinationMembers> members);
-
-Members(
-    Delegates.Members<
-        TSource,
-        TDestination,
-        TDestination,
-        DestinationMembers> members);
-```
-
-Это две формы одного declarative DSL. Первая не предоставляет параметр
-`result`, вторая делает фактически выбранный non-null result доступным для
-выражений, которым он нужен. Выбор перегрузки сам по себе не задаёт runtime-
-фазу и не меняет семантику rules, не использующих `result`. Обе формы
-генерируются для любой pair с member-capability. Сам набор members учитывает
-форму construction: structured surface включает creation-time members, а
-direct surface — только post-construction assignable members.
-
-В локальной конфигурации pair можно вызвать ровно один `Members`.
-Любой второй локальный вызов является ошибкой.
-`IncludeBase<TBaseSource, TBaseDestination>()` объединяет унаследованный и
-локальный member plans независимо от формы перегрузки:
-rules с двумя и тремя lambda-параметрами являются одинаковыми элементами
-effective plan. Source-only перегрузки нет. Если previous или result не нужны,
-пользователь пишет `_`:
+Для каждой pair с member capability generator создаёт четыре conceptual
+overload-ы одного declarative DSL:
 
 ```csharp
-.Members((source, _) => new()
-{
-    Name = source.Name,
-    Age = source.Age
-});
+.Members(source => ...)
+
+.Members((source, previous) => ...)
+
+.Members((source, previous, result) => ...)
+
+.Members((source, previous, result, context) => ...)
 ```
 
-Это явно показывает, что member plan применяется в обеих операциях, а
-previous может существовать, хотя данному правилу он не нужен.
+Параметры образуют стабильный префикс
+`source -> previous -> result -> context`. Короткая overload только не
+предоставляет ненужные данные: она не меняет operation,
+creation/post-creation phase, applicability rules либо effective
+`MemberSelection`.
+
+Отдельные формы `(source, context)`, `(source, previous, context)` и
+`(source, result)` не добавляются: они столкнулись бы по arity с prefix-формами.
+Для доступа к `MappingContextMarker.Operation` используется полная overload с
+проигнорированными `previous` и `result`. Само наличие неиспользуемых
+parameters не создаёт dependencies и не переводит rules в post-construction
+phase.
+
+Generated callbacks используют именованные delegate-типы `Members` из
+`Morphant.Delegates`; максимальная arity закрывает `TContext` типом
+`MappingContextMarker`. Все четыре формы требуют inline lambda, поскольку
+generator анализирует их как declarative member plan.
+
+В local configuration pair можно вызвать ровно один `Members`; любой второй
+вызов является ошибкой. `IncludeBase<TBaseSource, TBaseDestination>()`
+объединяет inherited и local rules независимо от callback arity: четыре формы
+являются одним fragment family и одним effective member plan.
 
 ### 7.2. Ответственность
 
@@ -850,11 +751,12 @@ previous может существовать, хотя данному прави
 - writable fields;
 - поддерживаемые унаследованные body-members.
 
-У direct destination из этого списка остаются только обычные setters и mutable
-fields. Модификатор `required` их не исключает; `init`-only property исключается.
+Для destination без constructor surface из этого списка остаются только
+обычные setters и mutable fields. Модификатор `required` их не исключает;
+`init`-only property исключается.
 
 Constructor parameters не входят в `Members`, потому что они не являются
-body-members. Обычный C# внутри direct `Construct`, factory или `Convert`
+body-members. Обычный C# внутри `ConstructUsing`, `ResolveUsing` или `Convert`
 может самостоятельно инициализировать либо изменять members; такие действия
 не превращаются в declarative rules и не анализируются как `Members` plan.
 
@@ -903,8 +805,7 @@ internal sealed record DestinationMembers
 expression и его ставшие ненужными dependencies не вычисляются; dependency-
 анализ выполняется над effective plan после выбора ветвей и разрешения
 overlay-ев. `with` не задаёт runtime-порядок assignments и не распространяется
-на `DestinationConstruction`: creation composition уже выражается отдельным
-`Construct`.
+на `DestinationConstruction`: выбор result выражается отдельной result policy.
 
 Собственные `set`-сеттеры служебного record нужны только для object initializer
 и `with` и не связаны с `set`/`init`-семантикой destination. Последующая
@@ -915,11 +816,12 @@ grammar; она остаётся лишь совместимой точкой в
 
 `Members` всегда применяется к выбранному `result`, а не к `previous`.
 Параметр `previous` внутри lambda всегда означает исходный destination-вход
-после null-предобработки, даже если `Construct` выбрал replacement.
+после null-предобработки, даже если `Resolve` либо `ResolveUsing` выбрал
+replacement.
 
-В трёхпараметрической перегрузке `result` означает именно фактически
-выбранный instance: previous, constructor/convention result, factory/cache
-или direct result, включая его derived runtime-тип. Это позволяет
+В трёх- и четырёхпараметрической перегрузках `result` означает именно
+фактически выбранный instance: previous, constructor/convention result либо
+runtime result, включая cached instance и его derived runtime-тип. Это позволяет
 использовать состояние, которого нет ни в source, ни в previous:
 
 ```csharp
@@ -933,13 +835,14 @@ builder.Map<OrderDto, Order>()
 ```
 
 Здесь `Details` мог быть создан самим constructor-ом. Та же перегрузка
-покрывает cached/factory result без специальной привязки API к factory.
+покрывает result из `ConstructUsing` / `ResolveUsing` без специальной привязки
+member API к factory.
 
 Параметр `result` не использует presence-wrapper и генерируется без
 корневой nullability destination: `Customer?` даёт `Customer result`,
 `Point?` — `Point result`, а вложенные nullable annotations сохраняются.
 Любое выражение, которое фактически использует `result`, выполняется только
-после появления non-null instance. Если direct `Construct` или `ByFactory()`
+после появления non-null instance. Если `ConstructUsing` или `ResolveUsing`
 вернул `null`, mapping завершается до применения member rules; недостижимое
 состояние «result отсутствует» не несёт полезной информации и ложно намекало
 бы на возможность заменить терминальный `null`.
@@ -948,7 +851,7 @@ Generator анализирует каждый structured member rule отдел�
 транзитивная ссылка на `result` в value, declarative local или условии делает
 зависимые от неё rules post-creation. Само наличие третьего lambda-параметра
 ничего не меняет. Поэтому result-independent `init` и creation-time `required`
-rules допустимы и в трёхпараметрической перегрузке; diagnostic нужен только
+rules допустимы и в result-aware перегрузках; diagnostic нужен только
 тогда, когда конкретный creation-time rule либо условие его применимости
 зависит от ещё не созданного result.
 
@@ -956,7 +859,7 @@ rules допустимы и в трёхпараметрической перег
 
 ```csharp
 builder.Map<CustomerDto, Customer>()
-    .Construct((source, previous) =>
+    .Resolve((source, previous) =>
     {
         if (previous.HasValue &&
             previous.Value.TenantId == source.TenantId &&
@@ -977,7 +880,7 @@ builder.Map<CustomerDto, Customer>()
     });
 ```
 
-Если `Construct` вернул replacement, `Name` и `Revision` применяются к
+Если `Resolve` вернул replacement, `Name` и `Revision` применяются к
 replacement, но `previous.Value.Revision` читается из исходного объекта.
 
 Generator самостоятельно раскладывает единый member plan по допустимым фазам:
@@ -994,10 +897,11 @@ Generator самостоятельно раскладывает единый mem
 - replacement, созданный constructor/convention plan, получает те же
   creation-time member rules, что и обычный `Create`.
 
-Если `ByFactory()` возвращает уже созданный объект, применить к нему
-`init`-only rule невозможно. Явная попытка совместить такую creation-ветку с
-соответствующим `Members` rule должна давать diagnostic. Direct surface вообще
-не включает `init`-only member, поэтому такую конфигурацию нельзя записать.
+Если `ConstructUsing` / `ResolveUsing` возвращает уже созданный объект,
+применить к нему `init`-only rule невозможно. Явная попытка совместить runtime
+result policy с соответствующим `Members` rule должна давать diagnostic.
+Destination без constructor surface вообще не получает `init`-only member,
+поэтому для него такую конфигурацию нельзя записать.
 
 ### 7.4. Explicit rules и conventions
 
@@ -1050,8 +954,8 @@ public enum MemberSelection
 rules. При `MemberSelection.Explicit` неуказанные members не маппятся.
 
 `Ignore()` для нового result оставляет значение, полученное конструктором,
-factory или default initialization. Для previous он сохраняет текущее значение
-выбранного result.
+runtime callback-ом или default initialization. Для previous он сохраняет
+текущее значение выбранного result.
 
 Обычные conventions и явный `Auto()` никогда не предполагают nested mapping.
 Они находят source-member по своим правилам имени и доступности и используют
@@ -1158,7 +1062,7 @@ Update: такой plan неоднозначен и unsupported.
 Для writable target nested result авторитетен и присваивается фактическому
 outer result; nested Update может сохранить аргумент либо вернуть replacement.
 True get-only destination property и property с недоступным обычным setter-ом
-появляются в generated `DestinationMembers` как get-only markers. Direct
+появляются в generated `DestinationMembers` как get-only markers.
 `init`-only property остаётся creation-only и такого proxy не получает. Для
 get-only marker разрешена только standalone форма:
 
@@ -1181,7 +1085,7 @@ nested Update, но returned replacement отбрасывается, потом�
 некуда. Get-only value-type target unsupported. Такие markers не участвуют в
 conventions, `Auto()` и unmapped-member validation.
 
-Параметры `previous` и `result` в declarative `Construct`/`Members` являются
+Параметры `previous` и `result` в declarative `Resolve`/`Members` являются
 read-only источниками информации. Assignment, increment/decrement и передача
 через `ref`/`out` самого параметра либо rooted member-а делают plan unsupported.
 Контролируемый in-place update get-only graph выражается через
@@ -1221,9 +1125,9 @@ Rule считается result-dependent, если его value либо усл�
 объекта. Result-dependent setter/field rules выполняются после появления
 non-null result. Если `init`, creation-time `required` либо управляющее таким
 rule условие зависит от ещё не созданного result, конфигурация ошибочна.
-Previous-result, factory и direct result уже созданы независимо от
-перегрузки, поэтому к ним применимы только доступные post-construction
-assignments.
+Previous-result и result из `ConstructUsing` / `ResolveUsing` уже созданы
+независимо от перегрузки, поэтому к ним применимы только доступные
+post-construction assignments.
 
 Каждое выражение вычисляется не более одного раза. Если выбранный execution
 path требует его значение, оно вычисляется ровно один раз; невыбранные ветки,
@@ -1232,7 +1136,8 @@ local создаёт явную dependency: его initializer выполняе�
 его выражений. Внутри отдельного выражения сохраняется обычная C#-семантика, а
 explicit constructor arguments вычисляются слева направо в порядке записи.
 
-Dependency graph является общим для structured `Construct` и `Members`. Если на
+Dependency graph является общим для structured `Construct` / `Resolve` и
+`Members`. Если на
 одном выбранном execution path двум plan-частям требуется одно и то же bound
 пользовательское subexpression, это один computation node, а не два
 независимых вызова:
@@ -1265,9 +1170,9 @@ Sharing остаётся path-sensitive: expression не выносится из
 Если creation-use требует значение до constructor-а, это и задаёт момент
 единственного вычисления; отдельные неповторяющиеся reads не образуют
 глобальный snapshot. Обязательный общий граф охватывает анализируемые
-structured `Construct` и `Members`; direct `Construct`, factory body и
-`Convert` остаются обычными C# blocks, из которых generator не извлекает
-cross-plan subexpressions.
+structured `Construct` / `Resolve` и `Members`; `ConstructUsing`,
+`ResolveUsing` и `Convert` остаются обычными C# blocks, из которых generator
+не извлекает cross-plan subexpressions.
 
 Конкретный lowering member plan-а не является контрактом. Generator вправе
 использовать object initializer, временные locals, немедленные assignments,
@@ -1288,8 +1193,8 @@ independent rules, setter/nested mapping side effects либо конкретн�
 
 ### 7.6. Declarative control flow и captures
 
-Structured `Construct` и `Members` являются конечным анализируемым DSL. В них
-поддерживаются:
+Structured `Construct`, `Resolve` и `Members` являются конечным анализируемым
+DSL. В них поддерживаются:
 
 - expression-lambda;
 - locals с initializer-ом, `const` и вложенные blocks;
@@ -1308,7 +1213,8 @@ selector, local и value не выполняются, если от них не 
 effects не задаётся. Declarative locals задают dependency для использующих их
 выражений; последующая mutation такого local не поддерживается.
 
-Во внешнем structured `Construct` или `Members` block не поддерживаются:
+Во внешнем structured `Construct`, `Resolve` или `Members` block не
+поддерживаются:
 
 - locals без initializer-а, последующие/deconstruction/compound assignments и
   `++` / `--`;
@@ -1318,8 +1224,8 @@ effects не задаётся. Declarative locals задают dependency для
 - `ref` / `using` locals, `unsafe` / `fixed`, `async` / `await` и `yield`.
 
 Сложное вычисление выносится в обычный instance/static member mapper-а, сложное
-получение result — в direct `Construct` либо `ByFactory`, а полностью специальный
-алгоритм — в `Convert`. Direct `Construct`, factory body и `Convert`
+получение result — в `ConstructUsing` либо `ResolveUsing`, а полностью
+специальный алгоритм — в `Convert`. Runtime result callbacks и `Convert`
 переносятся как обычный синхронный C# block; внутри них доступны mutation,
 loops, `try` / `finally`, nested local functions и остальные допустимые для их
 сигнатуры синхронные конструкции.
@@ -1330,7 +1236,7 @@ Configure-local compile-time constant подставляется как constant
 Обычные Configure-locals, параметр `builder` и local functions, объявленные во
 внешнем `Configure`, не захватываются: их runtime lifetime не совпадает с
 lifetime generated mapper-а. Переиспользуемая логика должна быть обычным
-member-ом mapper-а. Local functions внутри direct/factory/manual block
+member-ом mapper-а. Local functions внутри runtime/manual block
 переносятся вместе с этим block.
 
 Generated record `DestinationMembers` имеет properties с обычным `set`.
@@ -1355,7 +1261,7 @@ effects, mutation между assignments, замена result после member-
 итоговая imperative validation или другой полностью ручной lifecycle, он
 выражается через `Convert`. Обычные синхронные instance/static методы
 mapper-а, включая методы с injected services, можно по-прежнему вызывать
-внутри `Construct` и `Members`.
+внутри structured result policy и `Members`.
 
 `BeforeMap`, `AfterMap`, middleware либо эквивалентные lifecycle hooks
 обязательно будут поддержаны после v0; их точная форма ещё не выбрана.
@@ -1374,7 +1280,7 @@ builder.Map<Source, Destination>()
 ```
 
 Если `Members` отсутствует, ни один body-member не маппится. При существующем
-previous и отсутствии previous-aware `Construct` он останется result без
+previous и отсутствии `Resolve` / `ResolveUsing` он останется result без
 изменений.
 
 Для динамического алгоритма, который в runtime иногда должен выполнить полный
@@ -1385,10 +1291,10 @@ first-class whole-plan no-op и общая patch/merge policy полностью
 
 ## 8. Полностью ручной mapping
 
-### 8.1. `MappingContext`, call frame и единственная перегрузка
+### 8.1. `MappingContext`, call frame и три overloads
 
-Тип текущей mapping-операции является частью `MappingContext` текущего вызова,
-а не destination-specific previous-объекта:
+Тип текущей mapping operation является частью `MappingContext` текущего
+вызова, а не destination-specific previous-object:
 
 ```csharp
 public enum MappingOperation
@@ -1405,90 +1311,62 @@ public readonly struct MappingContext
 }
 ```
 
-Оба типа находятся в namespace `Morphant.Context`, соответствующем папке
-`Context` runtime-проекта. Поэтому consumer, использующий их по короткому
-имени, подключает `using Morphant.Context;`.
+Оба типа находятся в namespace `Morphant.Context`. `MappingOperation`
+описывает ровно одну выполняемую operation и поэтому не переиспользует
+flags-enum `MappingMode`. `Operation` доступен только для чтения; значение `0`
+не является operation.
 
-`MappingOperation` описывает ровно одну выполняемую операцию и поэтому не
-переиспользует flags-enum `MappingMode`. `Operation` доступен пользователю
-только для чтения; его значение устанавливает mapper. Значение `0` намеренно
-не является операцией, поэтому default-initialized enum отличается от
-`Create` и `Update`.
-
-`MappingContext` является immutable call frame текущего outer или nested
+`MappingContext` является immutable call frame текущего outer либо nested
 вызова. Morphant создаёт новый frame для каждого `Map`, передаёт его по
-значению и не меняет после создания. Собственной reference identity у frame
-нет; `default(MappingContext)` не является допустимым рабочим context.
-
-Общее состояние всей mapping chain хранится отдельно во внутреннем
-reference-type `MappingScope`:
+значению и не мутирует. Общее состояние всей chain хранится отдельно во
+внутреннем reference-type `MappingScope`:
 
 | Call frame (`MappingContext`) | Общий `MappingScope` |
 |---|---|
 | Текущая `Operation` | Scoped mapper |
-| Immutable и передаётся по значению | Будущий reference cache и внутренний chain state |
+| Immutable value | Будущий reference cache и внутренний chain state |
 | Новый для каждого nested `Map` | Одна reference identity на всю chain |
-| Описывает ровно текущий вызов | Завершается вместе с root `Map` |
+| Описывает текущий вызов | Завершается вместе с root `Map` |
 
-Пользовательский per-call state не хранится ни во frame, ни в scope. После
-post-v0 включения tuple roots он передаётся как обычная часть source и при
-необходимости явно включается пользователем в source следующего nested
-mapping-а.
+Root mapper и `context.Mapper` реализуют один `IMapper`, но имеют разный
+lifetime. Root-вызов создаёт новый scope. `context.Mapper` привязан к уже
+существующему scope и создаёт новый frame для каждой nested operation.
+Отдельный `IContextualMapper` не вводится.
 
-Публичный root mapper и `context.Mapper` реализуют один контракт `IMapper`, но
-являются разными экземплярами с разным lifetime. Root mapper начинает новую
-mapping chain и создаёт новый scope для каждого публичного вызова.
-`context.Mapper` является scoped-экземпляром, привязанным к уже существующему
-scope. Отдельный `IContextualMapper`, полностью повторяющий `IMapper`, не
-вводится.
-
-Оба экземпляра видят один application-wide набор manual registrations и
-используют `IServiceProvider` текущего DI-scope. `MappingScope` сохраняет
-состояние одной mapping chain, но никогда не ограничивает набор доступных пар
-конкретным `TypeMapper`, mapper-графом или assembly.
-
-Source-only перегрузка scoped mapper создаёт nested frame с
-`MappingOperation.Create`, а two-parameter перегрузка — с
-`MappingOperation.Update`, даже когда переданный destination равен
-`null`. Оба frame разделяют тот же scope, но `Operation` outer frame при этом
-никогда не мутируется.
-
-`Convert` находится на обычном pair-builder и имеет одну универсальную
-перегрузку:
+`Convert` является pair-specific generated extension на fluent pair-builder и
+получает три префиксные runtime overloads:
 
 ```csharp
-Convert(
-    Delegates.Convert<
-        TSource?,
-        TDestination,
-        TDestination> mapping);
+.Convert(source => ...)
+
+.Convert((source, previous) => ...)
+
+.Convert((source, previous, context) => ...)
 ```
 
-`TSource?` здесь означает исходное runtime-значение source, включая `null`,
-когда конкретный source type его допускает. Для reference type параметр
-nullable, для nullable value type сохраняется `Nullable<T>`, а non-nullable
-value type не поднимается искусственно. В отличие от declarative lambda,
-manual lambda всегда видит значение до `NullSourceHandling`.
+Каждая overload полностью реализует все разрешённые `MappingMode` operations
+pair. Source-only форма намеренно не различает Create, Update и наличие
+destination. Previous-aware форма различает `Option.None` / `Option.Some`, но
+не отличает `Create` от `Update(null)`. Полная форма дополнительно видит
+`context.Operation` и scoped mapper. Отдельная форма `(source, context)` не
+добавляется: используется полная overload с проигнорированным previous.
 
-`Option<TDestination>` использует non-null underlying destination по правилу
-раздела 5. Поэтому explicit `null` никогда не превращается в `Some(null)` даже
-в raw manual mapping: он представлен `Option.None`, а исходную операцию
-дополнительно сообщает `MappingContext.Operation`.
+`TSource?` во всех формах означает исходное runtime-значение до
+`NullSourceHandling`. `Option<TDestination>` формируется из исходного
+destination без `NullDestinationHandling`: explicit null даёт `Option.None`,
+а исходную public operation при необходимости сообщает context.
 
-Source-only перегрузки нет. Если сведения о вызове и mapping context не нужны,
-пользователь намеренно игнорирует оба дополнительных параметра:
+Pair-specific generation нужна для точной root-normalization. Обычный generic
+`MapperBuilder<TSource, TDestination>` не может выразить одновременно исходный
+nullable source, `Option` без корневой nullability destination и точный result
+для всех nullable value/reference forms.
 
-```csharp
-.Convert((source, _, _) =>
-    new Destination(source!.Id, source.Name));
-```
-
-`Option<TDestination>` и `MappingContext` передаются раздельно, поскольку
-отвечают на разные вопросы. `Option` описывает наличие фактического
-destination instance, а `MappingContext` — текущий call frame, включая его
-операцию и scoped mapper для ручных nested mappings.
-`MappingContext` является последним параметром, как и в generated
-`ITypeMapper.Create(...)` / `ITypeMapper.Update(...)` contract.
+Выбор arity не меняет applicability либо manual lifecycle, а только доступные
+inputs. Все формы являются обычными synchronous C# callbacks и допускают
+natural method groups/materialized delegates. `MappingContext`, когда
+присутствует, всегда последний parameter. Named delegates используют family
+`Convert`; context-aware форма получает отдельный `TContext` и тем самым не
+сталкивается по generic arity с previous-aware формой.
 
 ### 8.2. Почему одного `Option<T>` недостаточно
 
@@ -1603,21 +1481,22 @@ Exception из nested mapping не меняет outer frame. Его можно �
 - `NullDestinationHandling` не применяется;
 - convention construction не применяется;
 - convention member mapping не применяется;
-- `Construct` и `Members` не выполняются;
+- result policy и `Members` не выполняются;
 - `Auto()`, `Ignore()`, `Map(...)`, `Create(...)`, `Update(...)`,
-  `ByConvention()` и `ByFactory()` не являются DSL-маркерами и недоступны;
+  `ByConvention()` не являются DSL-маркерами и недоступны;
 - ручные nested mappings доступны через `context.Mapper.Map(...)`;
 - scoped mapper автоматически создаёт для вложенного вызова новый
   `MappingContext` и сохраняет общий scope;
 - lambda возвращает настоящий `TDestination`;
 - `MappingMode` по-прежнему определяет, какую публичную операцию можно вызвать.
 
-Для одной пары разрешён ровно один `Convert`. Его смешивание с `Construct`,
-`Members` или declarative constructor/member-specific configuration является
-ошибкой конфигурации и должно диагностироваться. Унаследованные общие settings,
-не имеющие эффекта в manual mapping, не запускают скрытый declarative pipeline.
+Для одной пары разрешён ровно один `Convert`. Его смешивание с любой result
+policy, `Members` или declarative constructor/member-specific configuration
+является ошибкой конфигурации и должно диагностироваться. Унаследованные общие
+settings, не имеющие эффекта в manual mapping, не запускают скрытый
+declarative pipeline.
 
-### 8.4. Использование context за пределами `Convert`
+### 8.4. Runtime и declarative context за пределами `Convert`
 
 `MappingContext` участвует не только в manual mapping. Declarative pipeline
 использует его внутренне для каждого nested `Map` / `Create` / `Update`:
@@ -1636,14 +1515,16 @@ reentrancy внутри одного scope поддерживаются. Пар�
 получает thread-safety guarantee; это оставляет корректную основу для будущего
 mutable reference cache без неявной синхронизации.
 
-Однако пользовательским параметром `MappingContext` пока остаётся только в
-`Convert`. Добавлять его в `Construct` или `Members` не нужно:
+Настоящий `MappingContext` передаётся context-aware overload-ам
+`ConstructUsing` и `ResolveUsing`. Это один расширяемый runtime call frame: при
+появлении новой runtime capability она будет доступна максимальным runtime
+callbacks, а не только `Convert`.
 
-- declarative lambdas намеренно получают уже нормализованные source и
-  previous после null handling;
-- доступ к `context.Operation` позволил бы снова различать `Map(source)` и
-  нормализованный `Map(source, null)`, обходя эту модель;
-- declarative nested mapping уже выражается явным `Map(...)` marker.
+Максимальные overload-ы structured `Construct`, `Resolve` и `Members` получают
+вместо него `MappingContextMarker`. Marker раскрывает `Operation`, но намеренно не
+`Mapper`; поэтому operation-aware declarative rules не требуют перехода на
+runtime model, а nested mapping остаётся выражен только DSL markers. Два типа
+не связаны наследованием и не взаимозаменяемы.
 
 В v0 отдельные per-call arguments и пользовательский context не добавляются.
 После включения tuple roots strongly typed state передаётся обычным source:
@@ -1668,7 +1549,8 @@ Tuple здесь не получает особой state-семантики: т
 
 ### 9.1. Declarative mapping
 
-Для `Construct` и `Members` null handling выполняется до mapping DSL.
+Для result policy и `Members` null handling выполняется до declarative
+pipeline.
 
 Порядок остаётся таким:
 
@@ -1676,8 +1558,8 @@ Tuple здесь не получает особой state-семантики: т
 2. Для `Update` проверить destination и применить эффективный
    `NullDestinationHandling`.
 3. Сформировать нормализованный `Option<TDestination>`.
-4. Выбрать `result` через configured/default `Construct` policy.
-5. Если пользовательский direct/factory-код вернул `null`, немедленно вернуть
+4. Выбрать `result` через configured/default result policy.
+5. Если пользовательский runtime result callback вернул `null`, немедленно вернуть
    его как авторитетный result.
 6. Иначе применить `Members` и effective member conventions.
 
@@ -1700,38 +1582,35 @@ public enum NullDestinationHandling
 
 | Настройка | Поведение |
 |---|---|
-| `Throw` | Бросить `NullDestinationException` до `Construct` и `Members` |
+| `Throw` | Бросить `NullDestinationException` до result policy и `Members` |
 | `Create` | Считать explicit `null` отсутствующим previous и перейти в no-previous construction branch |
 
 `NullDestinationHandling.Create` не обещает новую identity: configured
-`Construct` может использовать constructor, factory или cache. Публичная
+no-previous policy может использовать constructor, factory или cache. Публичная
 операция при этом остаётся `Update`, поэтому дополнительно включать
 `MappingMode.Create` не требуется; достаточно доступного `MappingMode.Update`.
 
-После `NullDestinationHandling.Create` следующие вызовы намеренно
-неразличимы внутри
-declarative DSL:
+После `NullDestinationHandling.Create` следующие вызовы имеют одинаковый
+`previous`, но намеренно различимы через `MappingContextMarker.Operation`:
 
 ```csharp
 Map(source)
 Map(source, null)
 ```
 
-В обоих случаях `Construct` / `Members` получают `Option.None`. Именно поэтому
-для `Members` достаточно `Option<TDestination>` без доступа к
-`MappingContext.Operation`.
+В обоих случаях `Resolve` / `Members` получают `Option.None`. При этом marker
+сообщает `Create` для первого вызова и `Update` для второго; это независимая
+информация, которую presence-wrapper восстановить не может.
 
 `NullSourceHandling` сохраняет текущие варианты и precedence. В частности,
-если effective policy возвращает результат или бросает исключение, ни
-`Construct`, ни `Members` не выполняются. Вариант `Throw` бросает
+если effective policy возвращает результат или бросает исключение, ни result
+policy, ни `Members` не выполняются. Вариант `Throw` бросает
 `NullSourceException`.
 
 ### 9.2. `null` из пользовательского creation-кода
 
-Фактический destination могут вернуть две declarative ветки:
-
-- direct `Construct`;
-- `ByFactory` внутри structured `Construct`.
+Фактический destination могут вернуть runtime result policies
+`ConstructUsing` и `ResolveUsing`.
 
 Если такая ветка возвращает `null`, он считается намеренным терминальным
 результатом независимо от nullable-аннотации destination:
@@ -1749,8 +1628,8 @@ return result;
 Проверка нужна только для short-circuit member stage. Morphant не генерирует
 специальное исключение, не заменяет `null` на previous, не выбирает другой
 constructor/factory и не применяет повторно `NullDestinationHandling`.
-`Construct` с параметром `previous`, вернувший `null`, тем самым намеренно заменяет
-существующий destination на `null`.
+`ResolveUsing`, вернувший `null`, тем самым намеренно заменяет существующий
+destination на `null`.
 
 Для non-nullable destination обычный C# nullability analysis по возможности
 предупреждает в конфигурации. Пользователь может сознательно подавить это
@@ -1784,7 +1663,7 @@ ApplyNullSourceHandling(source);
 
 var previous = Option<Destination>.None;
 
-var result = RunNoPreviousConstruction(source, previous);
+var result = RunResultPolicy(source, previous, context);
 
 if (result is null)
     return null!;
@@ -1794,11 +1673,12 @@ ApplyMembers(source, previous, result);
 return result;
 ```
 
-`RunNoPreviousConstruction` вызывает любую configured `Construct`-перегрузку,
-поскольку previous отсутствует. Если `Construct` не настроен, structured
-surface выполняет convention construction. Direct pair, включая opaque
-destination, является ошибочной конфигурацией для reachable no-previous ветки
-без configured `Construct`.
+`RunResultPolicy` вызывает effective `Resolve` / `ResolveUsing`, если настроена
+полная policy; иначе — `Construct` / `ConstructUsing`, поскольку previous
+отсутствует. Если result policy не настроена, destination с constructor surface
+выполняет convention construction. Pair без constructor surface, включая
+opaque destination, является ошибочной конфигурацией для reachable
+no-previous ветки без `ConstructUsing` / `ResolveUsing`.
 
 `Map(source, destination)` после null-предобработки работает так:
 
@@ -1808,13 +1688,13 @@ var previous = ApplyNullDestinationHandling(destination);
 
 Destination result;
 
-if (!previous.HasValue)
+if (fullResultPolicyConfigured)
 {
-    result = RunNoPreviousConstruction(source, previous);
+    result = RunFullResultPolicy(source, previous, context);
 }
-else if (previousAwareConstructionConfigured)
+else if (!previous.HasValue)
 {
-    result = RunConstruction(source, previous);
+    result = RunNoPreviousPolicyOrConvention(source, context);
 }
 else
 {
@@ -1830,17 +1710,17 @@ return result;
 ```
 
 Проверка `result` концептуально показана единообразно. Generated code обязан
-эмитить её только для direct/factory-веток, где `null` действительно возможен;
+эмитить её только для runtime result callbacks, где `null` действительно возможен;
 constructor, convention и previous дополнительных проверок не требуют.
 
-`RunConstruction` никогда не подменяется другой configured lambda. Structured plan
-lowering и direct lambda в итоге дают один настоящий `Destination result`. Для
-пары существует не более одного `Construct`.
+Configured result policy никогда не подменяется другой lambda. Structured plan
+lowering и runtime callback в итоге дают один настоящий `Destination result`.
+Для пары существует не более одной из четырёх result policies.
 
 Если `Members` не настроен, `ApplyMembers` применяет только effective
 `MemberSelection` conventions. Если generated member surface отсутствует, эта
 стадия не содержит применимых members.
-В форме `Members` с третьим параметром generator связывает фактически
+В формах `Members` с `result` generator связывает фактически
 выбранный non-null `result` непосредственно, без presence-wrapper, только с
 выражениями, которые его используют. Lambda не является единым runtime-
 callback и не образует отдельную member-фазу.
@@ -1851,9 +1731,9 @@ callback и не образует отдельную member-фазу.
 1. Generator объединяет inherited и local member rules независимо от формы
    перегрузки, выбирает declarative ветви и разрешает member-plan `with`-
    overlays. Заменённые rules удаляются вместе с ненужными dependencies.
-2. Для structured `Construct` и effective `Members` строится общий path-sensitive
-   dependency graph. Одинаковые bound subexpressions становятся одной
-   computation node; direct/factory/manual C# blocks остаются непрозрачными.
+2. Для structured `Construct` / `Resolve` и effective `Members` строится общий
+   path-sensitive dependency graph. Одинаковые bound subexpressions становятся
+   одной computation node; runtime/manual C# blocks остаются непрозрачными.
 3. Для structured constructor/convention branch result-independent значения,
    необходимые `init` и creation-time `required` rules, могут быть вычислены
    при создании объекта. Explicit constructor arguments сохраняют обычный
@@ -1861,10 +1741,10 @@ callback и не образует отдельную member-фазу.
 4. Выражение, зависящее от `result`, вычисляется только после появления
    non-null instance. Setter/field rule тогда применяется post-construction;
    result-dependent creation-time rule является ошибочной конфигурацией.
-5. Previous, factory и direct branches уже имеют result; доступные им
+5. Previous и runtime result branches уже имеют result; доступные им
    post-construction rules применяются независимо от формы `Members`.
    Неприменимые `init` rules не вычисляются.
-6. `null` factory/direct result завершает mapping до применения любых member
+6. `null` runtime result завершает mapping до применения любых member
    rules. Rule, условие или ветка другого operation/result path также не
    вычисляются.
 
@@ -1914,7 +1794,7 @@ dictionaries, enumerators, async sequences, memory buffers и пользоват
 типы, реализующие соответствующие контракты. Для delegates, expression trees,
 deferred/async и push values сначала нужна отдельная семантика либо явное
 решение об их долгосрочной неподдерживаемости. Запреты симметричны для source и
-destination и действуют также для direct `Construct` и `Convert`. Если типы
+destination и действуют также для runtime result policies и `Convert`. Если типы
 можно законно использовать в `ITypeMapper<TSource, TDestination>`, v0
 генерирует только executable contract, обе операции которого бросают
 `MappingConfigurationException`; construction, member и pair-extension
@@ -1980,22 +1860,24 @@ declarative методы. Для каждой eligible pair capabilities выв�
 | Capability | Условие | Generated surface |
 |---|---|---|
 | Runtime contract | Любая eligible pair | Обе `Map`-операции; effective `MappingMode` остаётся единственным operation gate |
-| Manual | Любая eligible pair | Один `Convert` на обычном pair-builder |
-| Structured creation | Есть хотя бы один поддерживаемый доступный destination constructor, включая parameterless | `Construct`, возвращающий generated `DestinationConstruction` |
-| Direct creation | Поддерживаемый constructor surface отсутствует либо destination намеренно opaque | `Construct`, возвращающий настоящий `TDestination` |
-| Members | Для structured destination есть поддерживаемый body-member; для direct destination есть post-construction assignable member; destination не opaque | Generated `DestinationMembers` и обе альтернативные `Members`-перегрузки |
+| Runtime result policy | Любая eligible pair | `ConstructUsing` и `ResolveUsing` на обычном pair-builder |
+| Manual | Любая eligible pair | Три pair-specific generated `Convert` overload-а |
+| Structured construction | Есть хотя бы один поддерживаемый доступный destination constructor, включая parameterless | Generated `Construct` и `Resolve`, возвращающие `DestinationConstruction` |
+| Members | Для destination с constructor surface есть поддерживаемый body-member; без него есть post-construction assignable member; destination не opaque | Generated `DestinationMembers` и четыре `Members` overload-а |
 | Collection / projection | Не входят в v0 capability model | Никакого generated surface; рассматриваются после v0 на отдельных этапах |
 
-Structured и direct creation взаимоисключающие: eligible pair получает ровно
-одну форму `Construct`. `Convert` доступен для той же пары, но является
-альтернативой всему declarative pipeline, а не fallback отдельной
+Structured и runtime result methods имеют разные имена и могут одновременно
+существовать в IntelliSense, но в конфигурации занимают один
+взаимоисключающий result-policy slot. `Convert` доступен для той же пары, но
+является альтернативой всему declarative pipeline, а не fallback отдельной
 неподдерживаемой ветки. Source shape сама по себе не меняет destination
 surface.
 
 Отсутствие members не убирает declarative surface. Pair с поддерживаемым
-constructor получает structured `Construct`, а pair без него — direct
-`Construct`; `Update` всё равно может вернуть previous без изменений.
-No-previous ветка direct pair требует configured lambda. Единственным общим
+constructor получает structured `Construct` / `Resolve`; pair без него
+использует builder-level `ConstructUsing` / `ResolveUsing`. `Update` всё равно
+может вернуть previous без изменений. No-previous ветка такой pair требует
+configured runtime policy. Единственным общим
 gate для публичной операции остаётся эффективный `MappingMode`.
 
 Под «есть member» понимается member, реально включаемый в generated
@@ -2007,7 +1889,7 @@ get-only properties, readonly fields и другие неподдерживае�
 generator может использовать для создания данного destination. Недоступные и
 неподдерживаемые constructors не считаются; constructor abstract-типа сам по
 себе не делает тип создаваемым. Built-in, enum и отдельно определённые общей
-type policy scalar-категории получают direct surface, даже если metadata типа
+type policy scalar-категории не получают structured surface, даже если metadata типа
 технически содержит public constructors: Morphant намеренно не моделирует их
 как structural constructor DSL.
 
@@ -2019,7 +1901,7 @@ surface, тогда как private/protected symbols не появляются �
 destination definition тем самым всегда получает одну форму construction и
 один member surface независимо от набора зарегистрировавших её mapper-ов.
 
-В v0 opaque/direct scalar policy сохраняет полную проверенную границу прежнего
+В v0 opaque scalar policy сохраняет полную проверенную границу прежнего
 surface:
 
 - C# built-in scalar types, включая `object`, `string`, numeric types, `char`,
@@ -2035,12 +1917,12 @@ structured type. Opaque означает атомарный destination: он н
 становится opaque только из-за value semantics и получает capabilities по
 обычным правилам своих constructors и members.
 
-Direct `Construct` non-opaque destination семантически соответствует
-structured-ветке `new(ByFactory(...))`: он получает уже созданный instance, к
-которому Morphant может применить обычные setter-rules и mutable-field rules.
+`ConstructUsing` / `ResolveUsing` получает уже созданный instance, к которому
+Morphant может применить обычные setter-rules и mutable-field rules.
 `required` не исключает такие members, если они остаются post-construction
-assignable. `init`-only properties в direct member surface не входят. Direct
-result не является окончательным результатом в смысле `Convert`. Opaque
+assignable. `init`-only properties без structured constructor surface в member
+plan не входят. Runtime result не является окончательным результатом в смысле
+`Convert`. Opaque
 destination member surface не получает.
 
 Например, interface не имеет constructor surface, но может независимо иметь
@@ -2048,21 +1930,21 @@ writable body-members:
 
 ```csharp
 builder.Map<Source, IDestination>()
-    .Construct(source => factory.Create(source.Id))
-    .Members((source, _) => new()
+    .ConstructUsing((source, _) => factory.Create(source.Id))
+    .Members(source => new()
     {
         Name = source.Name
     });
 ```
 
-Здесь direct lambda получает экземпляр, а declarative member plan продолжает
+Здесь runtime lambda получает экземпляр, а declarative member plan продолжает
 иметь самостоятельную ценность. Обычный `set` либо mutable field доступен в
 `Members`, в том числе при `required`; `init`-only property в этом surface не
 генерируется.
 
 Отдельного служебного creation type для scalar, opaque value object,
-factory-only class, interface или abstract destination не создаётся. Их direct
-surface сохраняет standard null handling. Declarative member plan дополнительно
+factory-only class, interface или abstract destination не создаётся. Их runtime
+result policy сохраняет standard null handling. Declarative member plan дополнительно
 доступен только non-opaque destination с поддерживаемыми post-construction
 members, поэтому `Convert` нужен лишь для действительно ручного алгоритма.
 
@@ -2090,12 +1972,12 @@ Assembly-level defaults задаются только compiler-visible MSBuild p
 | Setting | Declarative mapping | `Convert` |
 |---|---|---|
 | `MappingMode` | Включает `Create`, `Update` либо обе операции | Применяется так же и остаётся единственным effective setting manual mapping-а |
-| `NullSourceHandling` | Выполняется до `Construct` / `Members` | Не применяется |
+| `NullSourceHandling` | Выполняется до result policy / `Members` | Не применяется |
 | `NullDestinationHandling` | Выполняется перед previous normalization только в `Update` | Не применяется |
-| `MemberSelection` | Управляет неуказанными supported body-members; работает и после direct `Construct` | Не применяется |
+| `MemberSelection` | Управляет неуказанными supported body-members; работает и после runtime result policy | Не применяется |
 | `ConstructorSelection` | Применяется только к structured convention / `ByConvention` creation | Не применяется |
 | Boxing policy | Ограничивает только automatic constructor/member conversions; explicit expressions остаются обычным C# | Не применяется |
-| `UnmappedMemberValidation` | Проверяет только mapping plan, который строит Morphant; direct creation body не анализируется как набор member mappings | Не применяется |
+| `UnmappedMemberValidation` | Проверяет только mapping plan, который строит Morphant; runtime result callback не анализируется как набор member mappings | Не применяется |
 
 Library defaults сохраняются: `MappingMode.CreateAndUpdate`,
 `NullSourceHandling.ReturnNull`, `NullDestinationHandling.Create`, `MemberSelection.Auto`,
@@ -2112,13 +1994,13 @@ Inherited setting, неприменимая к конкретной pair, про
 уровень может обслуживать другие mappings. Явная map-level setting, которую
 выбранная model принципиально обходит, является ошибкой конфигурации. Поэтому
 у manual pair разрешён только `MappingMode`, а explicit null/member/constructor
-policy должна диагностироваться. Для direct declarative pair явно заданный
+policy должна диагностироваться. Для pair без structured constructor surface явно заданный
 `ConstructorSelection` также ошибочен; остальные declarative settings работают
 на своих стадиях, даже если на конкретной pair не найдено ни одного кандидата
 для warning или conversion.
 
 Частичная capability никогда не включает скрытый fallback. Недоступная
-operation, отсутствующий обязательный direct `Construct`, невозможный explicit
+operation, отсутствующая обязательная runtime result policy, невозможный explicit
 rule или setting без требуемой capability дают diagnostic. До реализации
 соответствующей диагностики C#-legal generated operation бросает
 `Morphant.Exceptions.MappingConfigurationException`, но не переключается на
@@ -2163,8 +2045,9 @@ IntelliSense и source output имеют стабильный смысловой
   появления parameter-а в constructors;
 - body-members следуют base-first declaration order с уже описанными hiding-
   rules;
-- overload-ы `Construct` / `Members` и их XML documentation сохраняют один
-  детерминированный порядок между regeneration-ами.
+- overload-ы `Construct` / `Resolve` / `Members` / `Convert`, а также обычные
+  `ConstructUsing` / `ResolveUsing` и их XML documentation
+  сохраняют один детерминированный порядок между regeneration-ами.
 
 Для generic destination generator создаёт один generic plan на original
 destination definition, а не отдельный plan для каждой closed pair. Он
@@ -2193,8 +2076,10 @@ definition.
 sanitization, а не ко всем artifacts по умолчанию.
 
 Physical artifacts разделены по ответственности: construction plan использует
-kind `Construction`, member plan — `Member`, `Construct` / `Convert` methods —
-`MappingExtension`, а `Members` methods — `MemberExtension`. Оба extension-
+kind `Construction`, member plan — `Member`, generated `Construct` / `Resolve`
+/ `Convert` methods — `MappingExtension`, а `Members` methods —
+`MemberExtension`. `ConstructUsing` и `ResolveUsing` находятся на обычном
+pair-builder и generated extension artifact не требуют. Оба extension-
 artifact-а дополняют одну internal partial class
 `MorphantGeneratedMappingExtensions`; разделение файлов не создаёт второй
 пользовательский fluent surface.
@@ -2363,9 +2248,10 @@ observable errors согласуются после v0. Полное иссле�
 Будущая built-in policy рассматривается как opt-in. Её рабочий default — не
 выполнять tracking. Cache идентифицирует entry по reference identity source и
 identity уже разрешённого mapping descriptor-а, а не только по destination
-type. Выбранный result регистрируется после `Construct`, но до `Members`:
-setter/field cycle тогда может замкнуться, а constructor, `init` и required
-initializer cycle до появления result остаётся неразрешимым.
+type. Выбранный result регистрируется после effective structured либо runtime
+result policy, но до `Members`: setter/field cycle тогда может замкнуться, а
+constructor, `init` и required initializer cycle до появления result остаётся
+неразрешимым.
 
 Повторный source должен вернуть тот же result без повторного выполнения rules.
 Для `Update` другой non-null previous при уже существующей cache entry
@@ -2496,7 +2382,7 @@ builder.Map<UserDto, User>()
 
 ```csharp
 builder.Map<CustomerDto, Customer>()
-    .Construct((source, previous) =>
+    .Resolve((source, previous) =>
     {
         if (previous.HasValue &&
             previous.Value.TenantId == source.TenantId &&
@@ -2518,43 +2404,42 @@ builder.Map<CustomerDto, Customer>()
     });
 ```
 
-`Construct` с параметром `previous` является полным выбором result для обоих публичных
+`Resolve` является полным выбором result для обоих публичных
 вызовов. `Members` применяется уже к выбранному result.
 
 ### 13.4. Всегда создавать replacement
 
 ```csharp
 builder.Map<Source, Destination>()
-    .Construct((source, _) => new(source.Id))
+    .Resolve((source, _) => new(source.Id))
     .Members((source, _) => new()
     {
         Name = source.Name
     });
 ```
 
-Двухпараметрический `Construct` намеренно игнорирует previous и получает result в
-обеих операциях.
+`Resolve` намеренно игнорирует previous и получает replacement в обеих
+операциях.
 
 ### 13.5. Factory плюс members
 
 ```csharp
 builder.Map<OrderDto, Order>()
-    .Construct(source =>
-        new(ByFactory(() => orderFactory.Create(source.Id))))
+    .ConstructUsing((source, _) => orderFactory.Create(source.Id))
     .Members((source, _) => new()
     {
         Number = source.Number
     });
 ```
 
-Factory выполняется только в no-previous ветке source-only `Construct`. При
+Factory выполняется только в no-previous ветке `ConstructUsing`. При
 обычном `Update` используется previous и применяется `Number`.
 
-### 13.6. Direct factory-only destination плюс members
+### 13.6. Runtime factory-only destination плюс members
 
 ```csharp
 builder.Map<OrderDto, IOrder>()
-    .Construct((source, previous) =>
+    .ResolveUsing((source, previous, _) =>
         previous.HasValue && CanReuse(previous.Value, source)
             ? previous.Value
             : orderFactory.Create(source.Id))
@@ -2564,8 +2449,9 @@ builder.Map<OrderDto, IOrder>()
     });
 ```
 
-У interface нет constructor surface, поэтому `Construct` возвращает настоящий
-`IOrder`. Возврат `previous.Value` сохраняет existing instance; factory даёт
+У interface нет constructor surface, поэтому `ResolveUsing` возвращает
+настоящий `IOrder`. Возврат `previous.Value` сохраняет existing instance;
+factory даёт
 replacement. В обеих ветках применимый member plan выполняется после выбора
 result.
 
@@ -2573,20 +2459,20 @@ result.
 
 ```csharp
 builder.Map<Order, decimal>()
-    .Construct(source =>
+    .ConstructUsing((source, _) =>
         source.Items.Sum(x => x.Price * x.Count));
 
 builder.Map<string, OrderNumber>()
-    .Construct(OrderNumber.Parse);
+    .ConstructUsing((source, _) => OrderNumber.Parse(source));
 
 builder.Map<string, Guid?>()
-    .Construct(source =>
+    .ConstructUsing((source, _) =>
         Guid.TryParse(source, out var value)
             ? value
             : null);
 ```
 
-Для destination без structural constructor surface direct `Construct` сохраняет
+Для destination без structural constructor surface `ConstructUsing` сохраняет
 обычный declarative pipeline без искусственного creation-plan и без перехода к
 `Convert`. В последнем примере `null` является авторитетным терминальным
 результатом; member stage после него не выполняется.
@@ -2622,11 +2508,11 @@ builder.Map<SnapshotDto, Snapshot>()
 ### 13.9. Immutable `Update` в v0
 
 Declarative mapping уже может условно сохранить previous либо явно построить
-replacement через previous-aware `Construct`:
+replacement через `Resolve`:
 
 ```csharp
 builder.Map<SnapshotDto, Snapshot>()
-    .Construct((source, previous) =>
+    .Resolve((source, previous) =>
     {
         if (previous.HasValue &&
             previous.Value.Id == source.Id &&
@@ -2660,7 +2546,7 @@ copy-constructor semantics и derived runtime type.
 `Update` возвращает тот же destination, если не выбирает replacement и не
 содержит применимых post-construction assignments. Source-only `Construct`
 при этом не выполняется, а неприменимые creation-time expressions не
-вычисляются. Previous-aware `Construct` нужен только для реального выбора
+вычисляются. `Resolve` нужен только для реального выбора
 reuse/replacement, а не как обязательное подтверждение сохранения identity.
 Доступность `Update` означает наличие операции, но не гарантирует mutation;
 полнота mapping-а контролируется `UnmappedMemberValidation`, а неприменимые
@@ -2686,17 +2572,19 @@ source, factory/derived behavior и точный evaluation order будут с�
 - использование Morphant builder-а вне поддерживаемого прямого линейного
   `Configure` flow;
 - повторную регистрацию одной canonical pair внутри одного mapper-а;
-- повторный `Construct` для одной pair, включая вызовы разных перегрузок;
+- любую вторую result policy `Construct` / `Resolve` / `ConstructUsing` /
+  `ResolveUsing`, включая повтор одной family и смешение разных имён;
 - любой второй локальный `Members`; форма перегрузки значения не имеет;
 - повторный `Convert`;
-- смешивание `Convert` с `Construct` или `Members`;
+- смешивание `Convert` с любой result policy или `Members`;
 - pair-specific constructor/member settings, несовместимые с manual mapping;
 - достижимый explicit `init`-rule либо creation-time `required`-rule structured
   surface, который невозможно применить в конкретной creation branch: result
-  уже создан factory code либо value/условие rule транзитивно зависит от ещё
+  уже создан runtime callback-ом либо value/условие rule транзитивно зависит от ещё
   не созданного result; previous-result сохраняет такой member без вычисления
   неприменимого expression;
-- reachable no-previous branch direct surface без configured `Construct`;
+- reachable no-previous branch destination без convention construction и без
+  configured `ConstructUsing` / `ResolveUsing`;
 - `null` вместо generated `DestinationConstruction` или `DestinationMembers`
   plan;
 - невозможный explicit constructor/member marker;
@@ -2748,7 +2636,7 @@ typed exception stub, а доступная остаётся исполнимо�
 конфликтующие generic interfaces, способные унифицироваться. Такая pair не
 подавляет независимые legal pairs того же mapper-а.
 
-Исключения из пользовательских `Construct`, `Members`, `Convert`, source
+Исключения из пользовательских result policies, `Members`, `Convert`, source
 expressions, mapper dependencies и application service provider не
 оборачиваются и сохраняют исходный тип, сообщение и stack.
 
@@ -2756,40 +2644,49 @@ expressions, mapper dependencies и application service provider не
 
 1. `Map(source)` и `Map(source, destination)` остаются двумя публичными
    mapping-операциями; effective `MappingMode` управляет их доступностью.
-2. Declarative `Construct` и `Members` выполняются только после null handling.
-3. Source-only `Construct` выполняется только при отсутствии previous.
-4. `Construct` с параметром `previous` выполняется и с `Option.None`, и с
-   `Option.Some`.
-5. Если `Construct` отсутствует, structured surface создаёт no-previous result
-   по convention, а direct pair является ошибочной для reachable no-previous
-   ветки. Существующий previous в обеих формах сам становится result.
-6. Для одной pair разрешён не более чем один `Construct` любой перегрузки.
-7. `Construct` настраивает result selection и constructor parameters, но не
-   declarative body-member rules. Обычный C# direct lambda может вернуть object
-   initializer либо иначе инициализированный instance.
+2. Result policy и `Members` выполняются только после declarative null handling.
+3. `Construct` и `ConstructUsing` выполняются только при отсутствии previous.
+   Две structured arities `Construct` различаются только наличием marker
+   context; короткая и context-aware `ConstructUsing` различаются только
+   наличием настоящего `MappingContext`.
+4. `Resolve` и `ResolveUsing` выполняются с `Option.None` и `Option.Some`.
+   Две structured arities `Resolve` различаются только наличием marker context;
+   короткая и context-aware `ResolveUsing` различаются только наличием
+   настоящего `MappingContext`.
+5. Если result policy отсутствует, destination с constructor surface создаёт
+   no-previous result по convention. Pair без constructor surface ошибочна для
+   reachable no-previous ветки без `ConstructUsing` / `ResolveUsing`.
+   Существующий previous при отсутствии full resolver сам становится result.
+6. `Construct`, `Resolve`, `ConstructUsing` и `ResolveUsing` занимают один
+   взаимоисключающий result-policy slot; для pair допустим не более чем один
+   такой fragment любой overload.
+7. Structured result policy настраивает constructor plan, но не declarative
+   body-member rules. Runtime result policy может вернуть object initializer
+   либо иначе инициализированный instance, не создавая member rules.
 8. `Members` является единственным declarative API для body-members. Structured
-   surface включает `init` и `required`; direct surface включает обычные
-   setters и mutable fields, в том числе `required`, но не `init`-only
-   properties. True get-only properties и properties с недоступным обычным
+   surface включает `init` и `required`; surface без constructor capability
+   включает обычные setters и mutable fields, в том числе `required`, но не
+   `init`-only properties. True get-only properties и properties с недоступным обычным
    setter-ом дополнительно входят в обе поверхности только как get-only proxy
    для явного nested Update и не участвуют в обычных member rules.
-9. Для member-capable pair всегда генерируются две альтернативные
-   `Members`-перегрузки: с `source`/`previous` и с
-   `source`/`previous`/`result`. В локальной pair можно вызвать
+9. Для member-capable pair всегда генерируются четыре prefix-
+   `Members`-перегрузки: `source`; `source`/`previous`;
+   `source`/`previous`/`result`; `source`/`previous`/`result`/`context`.
+   В локальной pair можно вызвать
    ровно один `Members`; любой второй вызов ошибочен.
    `IncludeBase<TBaseSource, TBaseDestination>()` объединяет унаследованный и
    локальный plans независимо от формы перегрузки.
-10. Обе формы `Members` являются одним declarative DSL и применяются к
+10. Все формы `Members` являются одним declarative DSL и применяются к
     выбранному result; выбор overload сам по себе не задаёт evaluation phase.
     Набор доступных members определяется construction capability.
 11. `previous` в `Members` всегда означает исходный нормализованный input, а не
-    выбранный result. В трёхпараметрической форме `result` — это
+    выбранный result. В формах с `result` это
     фактически выбранный non-null destination без presence-wrapper и без
     корневой nullability. Оба параметра являются read-only источниками:
     assignment, increment/decrement и `ref`/`out` mutation запрещены.
 12. Неприменимое `init`-выражение в already-created-result ветке не
     вычисляется. В structured creation result-independent `init` и
-    creation-time `required` rules допустимы в обеих формах `Members`;
+    creation-time `required` rules допустимы во всех формах `Members`;
     ошибочен только конкретный creation-time rule либо условие его
     применимости, которое зависит от ещё не созданного result.
 13. Member, не указанный в `Members`, следует effective `MemberSelection`.
@@ -2806,35 +2703,38 @@ expressions, mapper dependencies и application service provider не
     предполагают наличие mapping-пары. Get-only member обновляется только
     standalone `Update(..., members.Member)` с generated null guard и discard
     returned result.
-16. `Convert` является методом обычного pair-builder, а не отдельным
-    builder-типом.
-17. У `Convert` есть только одна перегрузка с
-    `Option<TDestination>` и `MappingContext`.
+16. `Convert` является pair-specific generated extension на обычном fluent
+    pair-builder, а не отдельным builder-типом.
+17. У `Convert` есть три prefix-overload-а: с `source`; с `source` /
+    `Option<TDestination>`; с `source` / `Option<TDestination>` /
+    `MappingContext`. Arity меняет только доступные данные.
 18. `Convert` полностью заменяет declarative pipeline и не запускает
     null-handling settings.
 19. `MappingContext.Operation` сообщает текущую публичную операцию, а
     `Option<TDestination>` независимо сообщает наличие фактического
     destination instance.
-20. `Convert` и ровно одна форма `Construct` доступны для каждой поддерживаемой
-    mapping-пары; обе `Members`-перегрузки генерируются независимо при наличии
-    применимых к construction capability body-members у non-opaque destination.
+20. Короткие и context-aware `ConstructUsing` / `ResolveUsing` доступны на
+    обычном pair-builder для каждой eligible mapping-пары; три pair-specific
+    `Convert` overload-а генерируются для неё отдельно. Четыре `Members`
+    overload-а генерируются независимо при наличии применимых body-members у
+    non-opaque destination.
 21. Наличие хотя бы одного поддерживаемого constructor, включая parameterless,
-    выбирает structured `Construct`, его отсутствие — direct `Construct`;
-    opaque destination всегда direct. Пользовательского mode и пары с обеими
-    формами нет.
-22. Direct `Construct` допускает обычный C# object initializer и семантически
-    соответствует уже созданному factory-result: к нему применимы обычные
-    setter/mutable-field rules и conventions, но не `init`-only rules. Opaque
-    destination атомарен и member surface не получает.
+    генерирует structured `Construct` и `Resolve`. Единственный parameterless
+    constructor является полноценным surface. При отсутствии constructor
+    surface либо для opaque destination эти generated methods отсутствуют.
+22. `ConstructUsing` / `ResolveUsing` допускают обычный C# object initializer и
+    возвращают уже созданный runtime result: к нему применимы обычные
+    setter/mutable-field rules и conventions, но не creation-time `init` rules.
+    Opaque destination атомарен и member surface не получает.
 23. Возвращённый `Map` result всегда авторитетен.
 24. Никаких скрытых fallback между manual и declarative mapping либо между
     разными configured lambdas нет.
 25. В structured surface `Option<TDestination>` неявно преобразуется в
     `DestinationConstruction`, поэтому возврат самого `previous` выбирает existing
-    result. Direct surface возвращает настоящий `TDestination` и использует
-    `previous.Value`; отдельный direct plan или implicit unwrap не вводится.
-    Произвольный готовый `TDestination` в structured surface выражается только
-    явной factory-веткой.
+    result. `ResolveUsing` возвращает настоящий `TDestination` и использует
+    `previous.Value`; отдельный runtime plan или implicit unwrap не вводится.
+    Произвольный готовый `TDestination` не является structured plan и требует
+    полной runtime result policy.
 26. Для `ByConventionMarker` генерируется один creation-plan constructor с
     необязательным `DestinationConstructorParameters`.
 27. Generated `DestinationMembers` является record с обычными `set`-
@@ -2842,22 +2742,26 @@ expressions, mapper dependencies и application service provider не
     body-member rules; более поздний rule заменяет ранний без его вычисления.
     Creation-plan не получает `with`, а mutation уже созданного member-plan
     по-прежнему не поддерживается.
-28. `Convert` получает текущий `MappingContext` отдельным последним
-    параметром и использует его для ручных nested mappings.
+28. Максимальные overload-ы `ConstructUsing`, `ResolveUsing` и `Convert`
+    получают текущий `MappingContext` последним параметром и используют его
+    для runtime nested mappings. Короткие Using-overload-ы опускают только
+    context и сохраняют ту же lifecycle applicability.
 29. `MappingContext` является immutable value-type frame текущего outer или
     nested вызова; scoped `IMapper` создаёт новый frame с собственной
     `Operation`, разделяя общий mapping scope без mutation и восстановления.
-30. Declarative pipeline использует `MappingContext` внутренне, но `Construct` и
-    `Members` не получают его пользовательским lambda-параметром.
+30. Максимальные `Construct`, `Resolve` и `Members` получают
+    `MappingContextMarker`, который предоставляет только `Operation` и не имеет
+    runtime instance. Сам marker нельзя использовать как значение; declarative
+    nested mapping выражается только `Map` / `Create` / `Update` markers.
 31. Public `Map` принимает nullable source/destination inputs, но возвращает
     ровно выбранный пользователем `TDestination`, а не безусловный
     `TDestination?`.
 32. Mapping-produced `Option<TDestination>` использует destination без
     корневой nullability и в роли previous никогда не содержит `Some(null)`;
     общий `Option<T>` при nullable `T` такого ограничения не имеет.
-33. Declarative `Construct` и `Members` получают source после null handling как
-    non-null underlying type; `Convert` получает исходное runtime-значение.
-34. `null` из direct `Construct` или `ByFactory` является авторитетным
+33. Result policies и `Members` получают source после declarative null handling
+    как non-null underlying type; `Convert` получает исходное runtime-значение.
+34. `null` из `ConstructUsing` или `ResolveUsing` является авторитетным
     терминальным result: `Members` не выполняется, exception и fallback не
     генерируются, null-handling policies повторно не применяются.
 35. `Convert` возвращает пользовательский result без generated null guard;
@@ -2867,12 +2771,12 @@ expressions, mapper dependencies и application service provider не
     scoped mapper действует только до завершения root `Map`, а параллельные
     nested-вызовы внутри одного scope не поддерживаются.
 37. Каждое declarative expression вычисляется не более одного раза. Structured
-    `Construct` и `Members` имеют общий path-sensitive dependency graph: одинаковое
+    `Construct` / `Resolve` и `Members` имеют общий path-sensitive dependency graph: одинаковое
     bound subexpression, нужное обеим частям на выбранном пути, вычисляется
     один раз и разделяется между ними. Невыбранные ветки, неприменимые rules и
-    operation-specific значения другого пути не вычисляются; ordinary direct,
-    factory и manual blocks остаются вне cross-plan sharing. Previous-aware
-    structured plan специализируется по известному наличию previous для
+    operation-specific значения другого пути не вычисляются; runtime и manual
+    blocks остаются вне cross-plan sharing. Structured `Resolve`
+    специализируется по известному наличию previous для
     `Create` и `Update`; удаляются только доказанно недостижимые ветки с
     сохранением short-circuit и side effects.
 38. Explicit constructor arguments вычисляются в порядке записи до вызова
@@ -2890,9 +2794,9 @@ expressions, mapper dependencies и application service provider не
     generated assignments являются деталями lowering. Нельзя полагаться на
     видимость setter либо nested mapping side effects между независимыми
     rules; требующий такого контроля алгоритм использует `Convert`.
-41. Structured `Construct` и `Members` поддерживают только конечный анализируемый
-    control flow без изменяемого состояния. Direct `Construct`, factory body и
-    `Convert` являются обычными синхронными C# blocks. Ни одна форма не
+41. Structured `Construct`, `Resolve` и `Members` поддерживают только конечный
+    анализируемый control flow без изменяемого состояния. `ConstructUsing`,
+    `ResolveUsing` и `Convert` являются обычными синхронными C# blocks. Ни одна форма не
     захватывает обычные Configure-locals, `builder` или внешние Configure-local
     functions.
 42. Eligible pair определяется отдельно от её capabilities. Оба root-типа
@@ -2903,11 +2807,12 @@ expressions, mapper dependencies и application service provider не
     nullable value pair.
 43. До post-v0 tuple, sequence/collection/buffer, delegate, expression-tree,
     deferred/async и push-sequence roots полностью исключаются в обеих
-    mapping-позициях даже для direct/manual mapping.
-44. Для любой другой eligible pair доступны runtime contract и `Convert`;
-    destination получает ровно одну форму `Construct` и, если он не opaque,
-    `Members` при наличии применимых к этой construction capability
-    body-members. Значение отложенной категории внутри разрешённого root
+    mapping-позициях даже для runtime/manual mapping.
+44. Для любой другой eligible pair доступны runtime contract,
+    `ConstructUsing`, `ResolveUsing` и `Convert`; destination с constructor
+    capability дополнительно получает generated `Construct` / `Resolve`, а
+    non-opaque destination — `Members` при наличии применимых body-members.
+    Значение отложенной категории внутри разрешённого root
     остаётся обычным единым C#-значением. `dynamic`
     канонически совпадает с `object`; root nullable reference annotation не
     создаёт отдельную runtime pair.
@@ -2932,15 +2837,16 @@ expressions, mapper dependencies и application service provider не
     наследование ключа согласуются отдельно.
 52. В v0 `Update` не создаёт replacement автоматически из-за отличия
     `init`-only, get-only или readonly state. Декларативный replacement задаётся
-    previous-aware `Construct`, а record-copy и иная специальная reconstruction —
+    `Resolve`, а record-copy и иная специальная reconstruction —
     `Convert`.
-53. Source-only `Construct` при существующем previous не является immutable
+53. `Construct` / `ConstructUsing` при существующем previous не является immutable
     replacement-path. `ByCopy`, generated destination-copy `with` и implicit
     record cloning в v0 отсутствуют; member-plan overlay из закона 27 не
     создаёт replacement.
-54. Declarative existing-ветка, которая статически не может ни заменить result,
+54. Declarative existing-ветка без `Resolve` / `ResolveUsing`, которая
+    статически не может ни заменить result,
     ни выполнить post-construction assignment, возвращает исходный destination
-    без изменений. Для такого no-op не требуется previous-aware `Construct`;
+    без изменений. Для такого no-op не требуется resolver;
     доступность `Update` не гарантирует mutation.
 55. Отдельная post-v0 opt-in setting может условно реконструировать result при
     отличии хотя бы одного creation-only member candidate от previous. Эта
@@ -2959,7 +2865,8 @@ expressions, mapper dependencies и application service provider не
     а cyclic graph не получает built-in завершение.
 59. Будущий reference cache является opt-in и использует source reference
     identity вместе с resolved mapping descriptor identity. Result может быть
-    зарегистрирован только после `Construct`; поэтому built-in preservation не
+    зарегистрирован только после получения result policy; поэтому built-in
+    preservation не
     делает constructor/initializer cycles разрешимыми.
 60. `IQueryable` projection, public `Project(...)`, projectable capability и
     expression-tree roots полностью отсутствуют в v0 и рассматриваются после
@@ -2992,12 +2899,12 @@ expressions, mapper dependencies и application service provider не
     от формы перегрузки объединяются по destination member с локальным
     приоритетом, включая expression, `Auto()` и `Ignore()`. Conventions и
     constructor selection вычисляются заново для текущей pair, а dependencies
-    effective rules анализируются отдельно. `Construct` и `Convert` между
+    effective rules анализируются отдельно. Result policies и `Convert` между
     разными pairs не импортируются.
 66. Exact same-pair из connected base mapper-а импортирует весь applicable
-    effective plan, включая `Construct` либо `Convert`. Локальный `Convert`
+    effective plan, включая result policy либо `Convert`. Локальный `Convert`
     заменяет inherited plan; локальный declarative plan отбрасывает inherited
-    `Convert`; локальный `Construct` перекрывает inherited `Construct`, а
+    `Convert`; локальная result policy перекрывает inherited result policy, а
     `Members` объединяются по закону 65. Runtime casts и адаптация callbacks
     между разными destination types не выполняются.
 67. Base mapper не требует `MorphantMapperAttribute`, если его `Configure`
@@ -3006,7 +2913,7 @@ expressions, mapper dependencies и application service provider не
     формой; повторный вызов ошибочен. Generic base DSL сохраняет открытый
     generated surface, а effective derived plan использует constructed type
     arguments, включая nested mapper declarations. Проверка accessibility
-    выполняется только для оставшихся effective inherited `Construct`,
+    выполняется только для оставшихся effective inherited result-policy,
     `Members` и `Convert` expressions, поэтому полное локальное перекрытие либо
     отбрасывание удаляет недоступный callback до emission.
 68. General-purpose fragments и cross-assembly typed `IncludeBase` отсутствуют
@@ -3059,7 +2966,7 @@ expressions, mapper dependencies и application service provider не
     settings передаются только compiler-visible MSBuild properties.
 82. Built-in scalars, enums, `Guid`, `DateTime`, `DateTimeOffset`, `DateOnly`,
     `TimeOnly`, `TimeSpan`, `Half`, `Int128`, `UInt128`, `Uri`, `Version`,
-    `BigInteger`, `Complex`, `Rune`, `Index` и `Range` являются opaque/direct
+    `BigInteger`, `Complex`, `Rune`, `Index` и `Range` являются opaque
     destinations без `Members` и automatic convention construction; custom
     value type следует обычной capability model.
 83. Потенциально унифицирующиеся pair shapes одного generic mapper-а являются
@@ -3069,8 +2976,9 @@ expressions, mapper dependencies и application service provider не
     заменяют.
 85. Непубличные generated execution helpers, которые становятся членами
     пользовательского mapper-а, используют зарезервированный префикс `__`:
-    `__Create`, `__Update`, `__ConstructDestination`, `__CreateByFactory` и
-    `__ConvertDestination`. При конфликте добавляется числовой суффикс;
+    `__Create`, `__Update`, `__ConstructDestination`, `__ResolveDestination`,
+    `__ConstructUsing`, `__ResolveUsing` и `__ConvertDestination`. При конфликте
+    добавляется числовой суффикс;
     explicit implementations `ITypeMapper.Create` / `Update` сохраняют имена
     публичного контракта.
 
@@ -3097,7 +3005,7 @@ return new(value)
 ```
 
 В split API пользователю иногда приходится дважды записать expression, но
-общий dependency graph structured `Construct` / `Members` автоматически делит
+общий dependency graph structured result policy / `Members` автоматически делит
 одинаковое bound subexpression. Поэтому runtime-значение и число side effects
 не расходятся; остаётся только небольшая синтаксическая избыточность. Для
 длинного неповторяющегося вычисления обычный mapper method остаётся естественным
@@ -3122,11 +3030,11 @@ generic pair unification не проектируются заново: они з
 
 | Прежний механизм | Целевой эквивалент |
 |---|---|
-| Единый DSL `Template` | Structured `Construct` + `Members` |
-| `TemplateMode.Raw` | Явный `Convert`; для получения instance с последующими conventions — direct/factory `Construct` |
-| Direct template для scalar | Direct `Construct` |
-| Source/destination-aware template | `Option<T>`, previous-aware `Construct` и result-aware `Members` |
-| Factory/cached destination | `ByFactory` либо direct `Construct`, затем общий member plan |
+| Единый DSL `Template` | Structured `Construct` / `Resolve` + `Members` |
+| `TemplateMode.Raw` | Явный `Convert`; для получения instance с последующими conventions — `ConstructUsing` / `ResolveUsing` |
+| Direct template для scalar | `ConstructUsing` / `ResolveUsing` |
+| Source/destination-aware template | `Option<T>`, `Resolve` / `ResolveUsing` и result-aware `Members` |
+| Factory/cached destination | `ConstructUsing` / `ResolveUsing`, затем общий member plan |
 | Constructor/member markers | Сохранены на соответствующей plan-части |
 | `IContextualMapper`-подобный nested dispatch | Scoped `context.Mapper : IMapper` |
 | Record `with` настоящего destination | Обычный C# внутри `Convert` |
@@ -3139,7 +3047,7 @@ generic pair unification не проектируются заново: они з
 | Критерий | Прежний `Template` | Новый дизайн |
 |---|---|---|
 | Constructor + members call site | Компактнее в одной lambda | Иногда требует два fluent-вызова и повтор записи expression |
-| Разделение ответственности | Одна форма одновременно описывает creation, members, existing и raw mode | `Construct`, `Members`, `Convert` отвечают каждый на один вопрос |
+| Разделение ответственности | Одна форма одновременно описывает creation, members, existing и raw mode | Result policy, `Members` и `Convert` отвечают каждый на один вопрос |
 | `Update` | Интерпретация template меняется по operation и mode | `previous` / reuse / replacement выражены явно |
 | Factory/cached/derived result | Фактическое состояние result трудно использовать декларативно | Result-aware `Members` видит выбранный instance |
 | Manual mapping | Семантика `Template` переключается setting-ом | Отдельный очевидный escape hatch |
@@ -3174,15 +3082,18 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
 
 ## 17. Статус реализации и оставшиеся границы
 
-Согласованный core v0 реализован. Текущее состояние migration audit,
-документации и compile-time integration slice фиксируется в
+Основная semantics core v0 реализована, но согласованная ревизия callback
+surface из разделов 6–8 ещё не перенесена в production-код, generated API,
+tests и пользовательскую документацию. Текущее состояние и следующий
+cross-cutting implementation slice фиксируются в
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md), а
 независимая оценка полноты сценариев — в
 [`MAPPING_API_FINAL_AUDIT.md`](MAPPING_API_FINAL_AUDIT.md).
 
 Observable runtime failures и generated exception-stub boundary реализованы и
 зафиксированы разделом 14.2. Compile-time diagnostics остаются отдельным
-поздним планом. Collections, projection, polymorphism, reference handling и
+поздним планом и приостановлены до завершения callback API. Collections,
+projection, polymorphism, reference handling и
 остальные перечисленные выше возможности остаются post-v0 направлениями и не
 расширяют текущий mapping semantics неявно. До отдельного продуктового решения
 их API не должен определяться удобством существующей реализации.

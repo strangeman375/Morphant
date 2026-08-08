@@ -110,8 +110,8 @@ because the source check runs first.
 
 When mapping continues, the declarative pipeline receives the normalized
 non-null underlying source. A reference source has a non-null annotation, and
-a nullable value source `T?` is unwrapped to `T`. `Construct` and `Members`
-therefore do not repeat source null handling.
+a nullable value source `T?` is unwrapped to `T`. Result policies and
+`Members` therefore do not repeat source null handling.
 
 ## Null destination behavior
 
@@ -126,12 +126,18 @@ therefore do not repeat source null handling.
 `MappingOperation.Update`, and only `MappingMode.Update` must be enabled.
 Inside the declarative pipeline, the normalized previous value is
 `Option<TDestination>.None`, exactly as it is for public `Create`. A configured
-no-previous `Construct` branch may obtain the result through a constructor,
-factory, or another explicit strategy; the setting does not promise a new
-object identity.
+no-previous `Construct` or `ConstructUsing` policy may obtain the result
+through a structured constructor plan or ordinary runtime C#; the setting
+does not promise a new object identity.
 
-`Throw` runs before `Construct` or `Members`. Source handling also runs before
-the destination check, so declarative mapping sees a non-null source.
+`Throw` runs before the result policy or `Members`. Source handling also runs
+before the destination check, so declarative mapping sees a non-null source.
+
+Public Create and `Update(source, null)` both provide `Option.None`, but their
+operations remain distinguishable. Maximum structured callbacks read it from
+`MappingContextMarker.Operation`; the context-aware `ConstructUsing` and
+`ResolveUsing` overloads receive the real `MappingContext` as their final
+parameter.
 
 No source or destination runtime null check is generated for a definitely
 non-nullable value type.

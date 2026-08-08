@@ -4,7 +4,7 @@
 
 Последнее обновление: 8 августа 2026 года.
 
-Статус: этап 2, категория 8, ожидает ревью.
+Статус: работа приостановлена до завершения пользовательского callback API.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -13,12 +13,19 @@
 runtime failures и recovery-stubs — раздел 14.2 того же документа и
 [`docs/observable-failures.md`](docs/observable-failures.md).
 
-Категория 8 уже использует согласованную целевую callback overload revision из
-отдельного раздела `MAPPING_API_IMPLEMENTATION_PLAN.md`: `Construct` /
-`Resolve`, context-aware runtime callbacks и короткие `Members` / `Convert`.
-Нормативный design, предыдущие diagnostic categories и production surface
-синхронизируются отдельным coherent change после ревью этой записи; этап 3 до
-этого заблокирован.
+После согласованной API-ревизии callback surface состоит из structured
+`Construct` / `Resolve` / `Members`, runtime `ConstructUsing` /
+`ResolveUsing` / `Convert` и compile-time `MappingContextMarker`. Вложенный
+`ByFactory` и direct-формы `Construct` / `Resolve` удаляются. Нормативный
+контракт зафиксирован в `MAPPING_API_DESIGN.md` и отдельном разделе
+`MAPPING_API_IMPLEMENTATION_PLAN.md`.
+
+Категории 1, 4, 5, 7 и черновик категории 8 ниже были составлены до финальной
+формы этого surface. Их callback-зависимые части больше не являются готовым
+контрактом: после реализации пользовательского API они пересматриваются одним
+coherent catalog revision. Принятые IDs и общие диагностические законы
+категорий 1–7 сохраняются до такого пересмотра, но категория 8 снята со статуса
+`ожидает ревью`, а этап 3 заблокирован.
 
 План можно уточнять по мере детализации diagnostics. Изменение публичной
 семантики, severity, diagnostic ownership, recovery либо границы v0 сначала
@@ -45,8 +52,8 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–7 приняты; категория 8 ожидает ревью; категории 9–12 не начаты |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Приостановлен: категории 1–7 требуют callback-синхронизации; категория 8 возвращена в черновик; категории 9–12 не начаты |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован завершением пользовательского API и этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -2320,9 +2327,9 @@ Package-like integration-категория независимо проверя�
 - suppressed `MORPH0025`, `MORPH0026`, source/destination/double
   `MORPH0027` и каждый callback family `MORPH0028`: affected pair и
   transitive consumer бросают без fallback, independent pair исполняется;
-- exact same-pair inheritance реально исполняет base `Construct`, `Members`
-  и `Convert`, local model precedence заменяет их по таблице раздела 6.55, а
-  cross-pair никогда не переносит `Construct`/`Convert`;
+- exact same-pair inheritance реально исполняет base result policy, `Members`
+  либо `Convert`, local model precedence заменяет их по таблице раздела 6.55,
+  а cross-pair переносит только `Members`;
 - same-level/nearest-level/transitive lookup, generic/nested mapper
   substitution и class/interface/boxing compatibility на обычном
   analyzer-backed consumer build;
@@ -2331,7 +2338,14 @@ Package-like integration-категория независимо проверя�
 - реальное `.editorconfig`/MSBuild suppression или severity override для всех
   пяти IDs без изменения generated artifact set и effective recovery.
 
-### 6.63. Категория 8: общий contract
+### 6.63. Категория 8: замороженный pre-revision draft
+
+Разделы 6.63–6.71 ниже сохраняют последний полный черновик diagnostic
+contract только как материал для будущей согласованной переработки. Они не
+описывают финальный callback API, не ожидают ревью и не являются входом для
+реализации. В частности, все ссылки на direct `Construct` / `Resolve`,
+`ByFactory`, три вместо четырёх `Members` overload-ов и прежнюю классификацию
+context должны быть заменены после завершения API-среза.
 
 Категория «Переносимость callbacks и declarative grammar» содержит ровно пять
 diagnostics:
@@ -2376,9 +2390,9 @@ Unsupported syntax получает стабильное англоязычно�
 identity: одноимённые delegates, methods и marker-подобные вызовы стороннего
 API не принадлежат Morphant callback grammar.
 
-### 6.64. Declarative и runtime callback classes
+### 6.64. Pre-revision declarative и runtime callback classes
 
-После согласованной overload-ревизии callbacks делятся на два класса:
+В сохранённом pre-revision draft callbacks делились на два класса:
 
 | Callback | Class | Анализ |
 |---|---|---|

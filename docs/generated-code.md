@@ -7,8 +7,8 @@ pairs, and attributed mapper classes.
 |---|---|---|
 | `Construction` | Destination | Generated structured construction surface |
 | `Member` | Destination | Generated member-plan surface |
-| `MappingExtension` | Source/destination pair | `Construct` and `Convert` fluent extensions |
-| `MemberExtension` | Source/destination pair | `Members` fluent extensions |
+| `MappingExtension` | Source/destination pair | Generated structured `Construct` / `Resolve` and manual `Convert` fluent extensions |
+| `MemberExtension` | Source/destination pair | Four generated `Members` fluent extensions |
 | `TypeMapper` | Concrete attributed mapper | Executable `ITypeMapper<,>` implementations |
 
 Hint names use:
@@ -24,7 +24,10 @@ renumber neighboring files.
 
 Destination-owned construction and member surfaces are deduplicated across
 all mappings that use the same canonical destination. Pair extensions and
-mapper implementations remain pair/mapper owned. An unsupported but C#-legal
+mapper implementations remain pair/mapper owned. `ConstructUsing` and
+`ResolveUsing` live on the ordinary pair builder. `Convert` remains generated
+per pair so its original source, root-normalized previous, and exact result
+types stay precise. An unsupported but C#-legal
 root produces only the executable `TypeMapper` contract with typed exception
 stubs; it does not produce placeholder construction, member, or extension
 surfaces.

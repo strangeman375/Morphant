@@ -65,7 +65,7 @@ public enum NullAssignmentHandling
 | Сценарий | Ожидание от `null` | Естественный baseline |
 |---|---|---|
 | Полное создание нового объекта | Member результата становится `null` | Созданный объект не считается значимым состоянием для merge |
-| Создание поверх destination defaults | Не затирать constructor/property/factory defaults | Новый объект после `Construct` |
+| Создание поверх destination defaults | Не затирать constructor/property/factory defaults | Новый объект после result policy |
 | Полное обновление существующего объекта | Очистить member | Выбранный existing result |
 | Patch/merge существующего объекта | Сохранить старое значение | Выбранный existing result |
 | Строгий `Create` / `Update` | Считать неожиданный `null` ошибкой | Неважно: assignment не выполняется |
@@ -232,9 +232,9 @@ lowering должны быть согласованы вместе с diagnostic
 
 | Путь | Сохраняемое значение |
 |---|---|
-| `Create` | Значение после constructor, convention creation, factory или property initializer |
+| `Create` | Значение после structured/runtime result policy либо convention creation |
 | `Update`, result = previous | Старое значение previous |
-| `Update`, `Construct` выбрал replacement | Значение replacement-result |
+| `Update`, `Resolve` / `ResolveUsing` выбрал replacement | Значение replacement-result |
 | No-previous ветка после нормализации `null` destination | Значение нового baseline |
 
 Последний случай требует отдельного решения. Ранее рабочим законом было:
@@ -256,13 +256,13 @@ DSL: оба передают `Option.None`. Поэтому наиболее со
 - только generated member assignments declarative pipeline-а;
 - convention, `Auto()`, explicit expression и `Map(...)` подчиняются одному
   effective rule;
-- constructor parameters и сам `Construct` не являются member assignments и не
-  подчиняются policy;
+- constructor parameters и сами structured `Construct` / `Resolve` не являются
+  member assignments и не подчиняются policy;
 - `Ignore()` остаётся безусловным отсутствием конкретного assignment;
 - `Convert` полностью обходит setting, как и остальные declarative
   settings;
-- direct `Construct` сам по себе policy не обходит: она всё ещё может применяться
-  к последующему `Members`/convention stage;
+- runtime `ConstructUsing` / `ResolveUsing` сами по себе policy не обходят: она
+  всё ещё может применяться к последующему `Members`/convention stage;
 - в старом production API эквивалентный raw/manual template не должен получать
   скрытое generated поведение.
 
@@ -480,7 +480,8 @@ if (name is not null)
 ```
 
 При `null` сохраняется настоящий constructor/property default. То же относится
-к уже созданному factory/direct result с доступным setter-ом.
+к уже созданному runtime result из `ConstructUsing` / `ResolveUsing` с
+доступным setter-ом.
 
 ### 10.2. Обязательный constructor parameter нельзя пропустить
 
@@ -496,7 +497,7 @@ public Destination(string name)
 
 - optional parameter с настоящим объявленным default можно опустить;
 - required parameter требует explicit fallback, другого constructor-а,
-  factory/direct `Construct` либо `Convert`;
+  `ConstructUsing` / `ResolveUsing` либо `Convert`;
 - невозможный declarative plan должен давать diagnostic.
 
 Mapster issue #707 показывает, насколько легко смешать три разных смысла для

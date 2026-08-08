@@ -120,10 +120,11 @@ warning-free implicit C# conversion. They never start a nested mapping merely
 because two member names match. Nested mapping uses an explicit `Map(...)`,
 `Create(...)`, or `Update(...)` rule.
 
-The policy applies after constructor, direct `Construct`, and `ByFactory`
-result selection. A direct or factory result only exposes post-construction
-setters and mutable fields; structured construction can additionally expose
-applicable `init` and creation-time `required` members.
+The policy applies after structured or runtime result selection. A result from
+`ConstructUsing` / `ResolveUsing` is already created and therefore accepts
+only post-construction setters and mutable fields on that branch. Structured
+construction can additionally apply `init` and creation-time `required`
+members in its initializer.
 
 ## Invalid values
 

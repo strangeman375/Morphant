@@ -1,7 +1,7 @@
 # Manual mapping
 
 Use `Convert` when the whole mapping is easier to express as ordinary
-synchronous C# than as a `Construct` and `Members` plan:
+synchronous C# than as a result policy and `Members` plan:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -20,7 +20,9 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-The lambda receives:
+`Convert` has three prefix overloads: `source`; `source, previous`; and
+`source, previous, context`. They implement the same lifecycle and differ only
+in available inputs. The full lambda receives:
 
 - the original source, before `NullSourceHandling`;
 - the actual existing destination as `Option<TDestination>`;
@@ -52,12 +54,14 @@ var address = previous.TryGetValue(out var destination)
 ```
 
 The nested overload selects its own Create or Update frame while preserving
-the mapping scope. Declarative `Auto`, `Ignore`, `ByConvention`, `ByFactory`,
-and `Map` calls are not available as markers inside `Convert`.
+the mapping scope. Declarative `Auto`, `Ignore`, `ByConvention`, and nested
+`Map` / `Create` / `Update` calls are not available as markers inside
+`Convert`.
 
-A pair may contain one `Convert` or a declarative `Construct`/`Members` plan,
-but not both. Pair-specific null, member, and constructor settings are invalid
-for `Convert`; inherited settings are simply inactive for that pair.
+A pair may contain one `Convert` or a declarative plan made from one of
+`Construct`, `Resolve`, `ConstructUsing`, `ResolveUsing` plus `Members`, but
+not both. Pair-specific null, member, and constructor settings are invalid for
+`Convert`; inherited settings are simply inactive for that pair.
 
 See [Runtime dispatch and DI](runtime-dispatch.md) for service lookup and
 mapping-scope lifetime, and [Declarative mapping](declarative-mapping.md) for

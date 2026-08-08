@@ -1,20 +1,35 @@
 # Declarative mapping
 
-A declarative pair has two cooperating plans:
+This page documents the agreed callback result-policy target. The generated
+API has not yet been revised; current progress is recorded in the
+[mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
 
-- `Construct` selects the result for a no-previous branch and may explicitly
-  choose between the previous destination and a replacement.
-- `Members` describes values for destination members around the selected
-  result.
+A declarative pair has one optional result-policy slot and one cooperating
+`Members` plan. Exactly one of these result policies may be configured:
 
-If either plan is omitted, Morphant uses the applicable constructor and member
-conventions. `Convert` is a separate manual model and cannot be combined with
-these plans.
+| Policy | Runs | Callback model |
+|---|---|---|
+| `Construct` | Only when normalized previous is absent | Structured constructor DSL |
+| `Resolve` | For every reachable operation | Structured constructor DSL |
+| `ConstructUsing` | Only when normalized previous is absent | Ordinary runtime C# |
+| `ResolveUsing` | For every reachable operation | Ordinary runtime C# |
 
-## Construction
+`Construct` and `Resolve` are generated only when the destination has at least
+one supported constructor. A sole parameterless constructor still gets both
+methods so explicit construction, structured replacement, and creation-time
+`init`/`required` members remain available. `ConstructUsing` and
+`ResolveUsing` are ordinary pair-builder methods available for every eligible
+pair.
 
-A source-only `Construct` describes creation when no previous destination is
-used:
+`Members` describes values around the selected result. If no result policy is
+configured, Morphant constructs a structured destination by convention on a
+no-previous branch and reuses an existing previous destination. `Convert` is a
+separate manual model and cannot be combined with a result policy or
+`Members`.
+
+## Structured result policies
+
+`Construct` describes only no-previous creation:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -22,16 +37,13 @@ builder.Map<OrderDto, Order>()
 ```
 
 It runs for public Create and for an Update normalized to a no-previous branch.
-It does not run merely because an existing destination has immutable members.
-Without a previous-aware plan, an existing Update starts from the supplied
-destination.
+It is not invoked when an existing destination is available.
 
-Use the previous-aware overload when runtime data chooses identity or a
-replacement:
+Use `Resolve` when runtime data chooses reuse or replacement:
 
 ```csharp
 builder.Map<SnapshotDto, Snapshot>()
-    .Construct((source, previous) =>
+    .Resolve((source, previous) =>
     {
         if (previous.HasValue && previous.Value.Id == source.Id)
             return previous;
@@ -40,19 +52,49 @@ builder.Map<SnapshotDto, Snapshot>()
     });
 ```
 
-The returned construction result is authoritative. A selected previous value
-preserves its identity; a constructed or factory value replaces it. A terminal
-null/default result is not silently repaired by a hidden convention fallback.
+Both methods also have a maximum overload whose final parameter is
+`MappingContextMarker`. The marker exposes only `Operation`; it has no runtime
+instance or `Mapper` and cannot be stored, passed, compared, captured, or
+returned. Its `Operation` value may be used as an ordinary declarative value.
 
-Structured construction can select a destination constructor,
-`ByConvention()`, or `ByFactory(...)`. A direct destination such as a scalar,
-interface, abstract type, or opaque value object needs an explicit direct or
-factory result whenever creation is reachable.
+Structured construction can select an explicit destination constructor or
+`ByConvention()`. It cannot return an arbitrary ready-made destination.
+`ByFactory` is not part of the target API.
+
+## Runtime result policies
+
+Use the always-available runtime policies for a factory, cache, scalar, opaque
+value, interface, abstract destination, or any other ready-made result:
+
+```csharp
+builder.Map<OrderDto, IOrder>()
+    .ConstructUsing(source =>
+        orderFactory.Create(source.Id));
+
+builder.Map<OrderDto, IOrder>()
+    .ResolveUsing((source, previous, context) =>
+        previous.HasValue && CanReuse(previous.Value, source)
+            ? previous.Value
+            : orderFactory.Create(source.Id, context.Operation));
+```
+
+Each method has a short and a context-aware overload. `ConstructUsing`
+receives `source` or `(source, context)`; `ResolveUsing` receives
+`(source, previous)` or `(source, previous, context)`. Arity changes only the
+available inputs, never lifecycle or applicability. There is no zero-argument
+factory callback; write `_` when `source` is unused. These callbacks are
+ordinary synchronous C# and may use `context.Mapper` for nested runtime
+dispatch. They receive normalized inputs after declarative null handling, and
+the common `Members` plan runs after a non-null result. Declarative markers are
+unavailable inside them.
 
 ## Members
 
 `Members` returns a generated destination-specific record whose assignments
-are mapping rules:
+are mapping rules. It has four prefix overloads: `source`; `source, previous`;
+`source, previous, result`; and `source, previous, result, context`. The final
+context is `MappingContextMarker`. Shorter forms only omit unused information
+and do not change lifecycle or evaluation phase.
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -134,7 +176,7 @@ An existing declarative Update normally starts with the supplied destination.
 It may then:
 
 1. keep that instance and apply writable member rules;
-2. select a replacement in previous-aware `Construct` and apply rules to the
+2. select a replacement in `Resolve` or `ResolveUsing` and apply rules to the
    replacement;
 3. return the unchanged instance when no applicable rule mutates it.
 

@@ -28,7 +28,7 @@ Reference preservation не является обычной member convention. �
 жизнь вместе с root `Map` и завершается после него.
 
 Поэтому feature можно добавить после v0 без изменения `IMapper`,
-`ITypeMapper`, `MappingContext`, `Construct` или `Members`.
+`ITypeMapper`, `MappingContext`, result-policy surface или `Members`.
 
 ## 2. Рабочая настройка
 
@@ -92,16 +92,17 @@ descriptor-у стабильную identity, это нужно решить вн
 ```text
 cache lookup
 -> mark entry as building
--> Construct/select result
+-> select result
 -> register result
 -> Members
 -> mark entry as complete
 ```
 
-Состояние `building` создаётся до `Construct`, чтобы recursion можно было
-обнаружить даже тогда, когда result ещё не существует. Если recursive lookup
-находит такую entry без зарегистрированного result, Morphant должен завершить
-вызов понятной runtime error, а не продолжать recursion до stack overflow.
+Состояние `building` создаётся до effective result policy, чтобы recursion
+можно было обнаружить даже тогда, когда result ещё не существует. Если
+recursive lookup находит такую entry без зарегистрированного result, Morphant
+должен завершить вызов понятной runtime error, а не продолжать recursion до
+stack overflow.
 
 После появления reference-type result он сразу регистрируется, и только затем
 начинается post-creation member mapping. Recursive setter/field member может
@@ -122,7 +123,7 @@ scope всё равно завершается вместе с root call; час
 | Цикл проходит через writable property или field | Поддерживается: result уже зарегистрирован до `Members` |
 | Цикл нужен constructor argument-у | Не поддерживается: result ещё не существует |
 | Цикл нужен `init`/required initializer member-у | Не поддерживается по той же причине |
-| Factory/direct `Construct` | Result можно зарегистрировать только после возврата пользовательского кода |
+| `ConstructUsing` / `ResolveUsing` | Result можно зарегистрировать только после возврата пользовательского кода |
 | Factory сама рекурсивно вызывает mapping до возврата | Обнаруживается building-entry без result и завершается ошибкой |
 | Source или destination является value type | Built-in entry не создаётся |
 | Пользовательский creation-код вернул `null` | `null` немедленно возвращается и не кэшируется |
@@ -145,8 +146,7 @@ descriptor. Morphant возвращает уже зарегистрирован�
 повторно:
 
 - null handling pair-а;
-- `Construct`;
-- factory/direct creation code;
+- effective structured либо runtime result policy;
 - `Members`;
 - nested mappings из этих rules.
 
@@ -163,7 +163,7 @@ cyclic graph: обратная ссылка появляется до завер
 
 Первый вызов `Update` связывает source/descriptor entry с конкретным
 выбранным result. Это может быть переданный previous либо replacement из
-`Construct`.
+`Resolve` / `ResolveUsing`.
 
 При повторном вызове с тем же source и descriptor:
 
@@ -181,11 +181,11 @@ cyclic graph: обратная ссылка появляется до завер
 но конфликт должен быть отличим от missing mapping, ambiguity и
 constructor-cycle.
 
-## 8. Factory, direct creation и manual mapping
+## 8. Runtime result policies и manual mapping
 
-Structured constructor, factory и direct `Construct` различаются способом
-получения result, но имеют одну cache boundary: регистрация возможна только
-после фактического возврата reference-type instance.
+Structured constructor и runtime `ConstructUsing` / `ResolveUsing` различаются
+способом получения result, но имеют одну cache boundary: регистрация возможна
+только после фактического получения reference-type instance.
 
 Если factory возвращает shared singleton или cached instance, Morphant может
 связать его с текущим source entry после возврата. Если два разных source
@@ -258,8 +258,8 @@ cycle.
 [Mapperly — Reference handling](https://mapperly.riok.app/docs/configuration/reference-handling/).
 
 Сравнение не утверждает, что Morphant должен копировать их public API. Для
-Morphant важны собственные уже принятые `Construct`/`Members`, descriptor registry
-и explicit manual boundary.
+Morphant важны собственные уже принятые result policies / `Members`,
+descriptor registry и explicit manual boundary.
 
 ## 11. Принятая v0-граница
 

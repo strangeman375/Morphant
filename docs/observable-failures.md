@@ -72,7 +72,7 @@ code that can still compile and execute.
 
 ## User and dependency exceptions
 
-Morphant does not wrap exceptions thrown by user `Construct`, `Members`, or
+Morphant does not wrap exceptions thrown by user result-policy, `Members`, or
 `Convert` code, by source expressions, by mapper dependencies, or by the
 application service provider. Those exceptions retain their original type,
 message, stack, and catch behavior. The types above are reserved for mapping
