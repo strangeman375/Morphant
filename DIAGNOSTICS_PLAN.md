@@ -4,7 +4,7 @@
 
 Последнее обновление: 8 августа 2026 года.
 
-Статус: этап 2, категория 5, ожидает ревью.
+Статус: этап 2, категория 6, ожидает ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -38,7 +38,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–4 приняты; категория 5 ожидает ревью; категории 6–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–5 приняты; категория 6 ожидает ревью; категории 7–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -220,6 +220,10 @@ category и каталогом, а не номером.
 
 Перед назначением пятой группы 8 августа 2026 года тем же способом проверены
 `MORPH0019`–`MORPH0020`. Внешних публичных .NET/Roslyn diagnostics с этими ID
+не найдено.
+
+Перед назначением шестой группы 8 августа 2026 года тем же способом проверены
+`MORPH0021`–`MORPH0023`. Внешних публичных .NET/Roslyn diagnostics с этими ID
 не найдено.
 
 ### 6.2. Категория 1: общий contract
@@ -1485,6 +1489,363 @@ Package-like integration-категория независимо проверя�
   diagnostic;
 - реальное `.editorconfig`/MSBuild suppression или severity override для
   duplicate и mixed recovery без изменения generated artifact set.
+
+### 6.45. Категория 6: общий contract
+
+Категория «Значения и применимость settings» содержит ровно три diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0021` | `Invalid mapping setting value` | `Mapping setting '{0}' must be a supported compile-time constant.` |
+| `MORPH0022` | `Invalid MSBuild mapping setting value` | `MSBuild property '{0}' must name a supported mapping setting value.` |
+| `MORPH0023` | `Mapping setting is not applicable` | `Mapping setting '{0}' is not applicable to {1} for contract '{2}' in mapper '{3}'.` |
+
+Для всех трёх diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Settings`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- анализируются шесть settings core v0: `MappingMode`,
+  `NullSourceHandling`, `NullDestinationHandling`, `ConstructorSelection`,
+  `MemberSelection` и `UnmappedMemberValidation`;
+- suppression либо изменение severity меняет только compiler presentation и
+  не превращает invalid value в наследуемый `Default`, не делает
+  неприменимую policy активной и не меняет recovery.
+
+В `{0}` передаётся точное публичное имя setting. Для `MORPH0022` это имя
+compiler-visible MSBuild property с префиксом `Morphant`. Mapping contract в
+`MORPH0023` форматируется по canonical identity категории 3 как
+`global::Morphant.ITypeMapper<{canonicalSource}, {canonicalDestination}>`, а
+mapper type — по fully-qualified nullable-aware display категории 2.
+
+### 6.46. Effective value, precedence и допустимая grammar
+
+Effective value каждой setting разрешается независимо в точном порядке:
+
+1. текущая pair;
+2. pair, подключённые через typed `IncludeBase`, в порядке effective
+   composition;
+3. root текущего mapper-а;
+4. roots подключённых base mapper-ов от ближайшего к дальнему;
+5. compiler-visible MSBuild property assembly-level;
+6. library default.
+
+На каждом C#-уровне учитывается только последний успешно связанный вызов
+конкретной setting, включая последний `Default`. Для `MappingMode` map-level
+origin является argument authoritative `Map<TSource, TDestination>`; omitted
+optional argument создаёт корректный implicit `Default`, но не explicit
+origin. Root-level повторные calls следуют тому же last-call-wins закону.
+
+Корректный `Default` продолжает поиск на следующем менее конкретном уровне.
+Invalid final value текущего уровня, напротив, останавливает поиск: Morphant не
+подменяет ошибку outer value или library default. Более конкретное корректное
+non-`Default` значение полностью перекрывает invalid outer origin. Более
+конкретный `Default` снова делает outer origin достижимым. Если invalid origin
+перекрыт на всех применимых pair/path, diagnostic на него не публикуется.
+
+C# setting argument корректен только после успешного C# binding и при
+выполнении следующей grammar:
+
+- expression является compile-time constant соответствующего enum type;
+- `MappingMode` не содержит битов, не принадлежащих объявленным атомарным
+  флагам. Атомарным считается объявленное nonzero значение с одним битом;
+  `Default = 0` и любая комбинация таких флагов допустимы независимо от
+  наличия отдельного именованного composite member;
+- остальные enum-ы допускают только значения явно объявленных members,
+  включая `Default`;
+- non-constant local/property/method result, отрицательное либо иное
+  неподдерживаемое numeric value и неизвестный `MappingMode` bit являются
+  invalid values.
+
+Таким образом, текущие `MappingMode.Create`, `Update`, `CreateAndUpdate` и
+эквивалентные constant expressions допустимы. Формулировка намеренно не
+фиксирует numeric range `0–3`: после появления нового атомарного flag, например
+`Project`, его комбинации с уже объявленными flags должны стать допустимыми
+без обязательного именованного composite member.
+
+Invocation с неразрешившейся или неоднозначной overload, несовместимым
+argument type либо иной ошибкой binding/conversion, которую точно и достаточно
+объясняет C# compiler, не получает дублирующий `MORPH0021`. Вызов, успешно
+связанный с Morphant API, но получивший C#-legal non-constant либо unsupported
+enum constant, принадлежит Morphant.
+
+Assembly-level участвует ровно через следующие compiler-visible properties:
+
+| Setting | MSBuild property |
+|---|---|
+| `MappingMode` | `MorphantMappingMode` |
+| `NullSourceHandling` | `MorphantNullSourceHandling` |
+| `NullDestinationHandling` | `MorphantNullDestinationHandling` |
+| `ConstructorSelection` | `MorphantConstructorSelection` |
+| `MemberSelection` | `MorphantMemberSelection` |
+| `UnmappedMemberValidation` | `MorphantUnmappedMemberValidation` |
+
+Значение property обрезается по краям и сопоставляется
+case-insensitively с точным именем объявленного enum member. Missing, empty и
+`Default` продолжают precedence chain. Numeric forms, comma-separated flags,
+qualified enum names и иные строки не принимаются; для текущего composite
+mode используется имя `CreateAndUpdate`. Итоговый property value уже разрешён
+MSBuild imports до запуска generator-а, поэтому повторные определения в
+`.props`/`.targets` не являются отдельными origins Morphant.
+
+Library defaults остаются `MappingMode.CreateAndUpdate`,
+`NullSourceHandling.ReturnNull`, `NullDestinationHandling.Create`,
+`ConstructorSelection.Unambiguous`, `MemberSelection.Auto` и
+`UnmappedMemberValidation.None`.
+
+### 6.47. Статическая применимость settings
+
+Invalid value получает `MORPH0021` либо `MORPH0022` только когда его origin
+становится effective хотя бы для одной применимой authoritative pair/path.
+Применимость определяется статической mapping model и operation capability, а
+не конкретным runtime argument:
+
+| Setting | Declarative mapping | Manual `Convert` |
+|---|---|---|
+| `MappingMode` | Применяется ко всему contract и задаёт enabled operations | Единственная применимая effective setting |
+| `NullSourceHandling` | Применяется ко всем enabled operations до mapping plan | Не применяется |
+| `NullDestinationHandling` | Применяется только к enabled `Update` | Не применяется |
+| `MemberSelection` | Применяется ко всем enabled operations | Не применяется |
+| `ConstructorSelection` | Применяется только к reachable convention либо explicit `ByConvention` creation path | Не применяется |
+| `UnmappedMemberValidation` | Применяется только к category-12 warning-анализу effective declarative plan | Не применяется |
+
+Nullability source/destination и фактическое отсутствие `null` во время
+исполнения не скрывают invalid null policy: наличие соответствующей enabled
+declarative operation является достаточной статической применимостью.
+Аналогично отсутствие convention member candidates не делает
+`MemberSelection` либо `UnmappedMemberValidation` неприменимыми. Для
+`ConstructorSelection` необходим именно reachable convention/`ByConvention`
+creation path; полностью explicit branches и Update существующего destination
+от этой setting не зависят.
+
+Invalid `MappingMode` не позволяет доказать enabled declarative operations,
+поэтому зависимые invalid values той же pair не получают diagnostics только
+через этот недостоверный path. Если тот же origin достигает другой pair с
+валидным effective `MappingMode`, он публикуется один раз по обычным правилам.
+Model-level неприменимость explicit setting по `MORPH0023` от валидности
+`MappingMode` не зависит.
+
+Несколько независимо effective invalid settings при доказанной применимости
+публикуются совместно. Execution order null handling, construction и members
+не превращает одну invalid policy в объяснение другой. Полностью перекрытые,
+manual no-effect, operation-disabled и explicit-only creation origins
+diagnostics значений не получают.
+
+### 6.48. `MORPH0021`: invalid C# setting argument
+
+Diagnostic публикуется на final C# setting invocation, чьё успешно связанное
+argument expression не удовлетворяет grammar раздела 6.46 и становится
+effective хотя бы на одном применимом path.
+
+Primary location — полное argument expression, а не identifier метода или
+всего invocation. Additional locations отсутствуют: affected pairs не
+размножаются ни как diagnostics, ни как additional spans. В `{0}` передаётся
+имя соответствующей setting, например `MappingMode` или
+`ConstructorSelection`.
+
+Diagnostic identity — setting и source origin, заданный syntax tree и span
+final argument expression. Один root либо included-base origin, достигший
+нескольких pairs, generic substitutions или derived mapper-ов, даёт одну
+diagnostic. Одинаковые invalid expressions в разных invocations являются
+разными origins и диагностируются независимо.
+
+Ранее перекрытый вызов того же setting на одном C#-уровне не является final
+origin и не диагностируется, даже если его argument invalid. Chain поздней
+registration, отброшенный `MORPH0013`, недостоверный builder flow и
+неприменимый effective path также не создают `MORPH0021`.
+
+Если тот же final explicit map-level invocation принципиально неприменим к
+выбранной model, публикуется только `MORPH0023`: удаление вызова полностью
+исправляет причину, поэтому дополнительный invalid-value diagnostic был бы
+каскадом.
+
+### 6.49. `MORPH0022`: invalid MSBuild setting value
+
+Diagnostic публикуется один раз на compiler-visible MSBuild property, чьё
+final normalized value не удовлетворяет grammar раздела 6.46 и достигает хотя
+бы одной применимой pair/path после всех более конкретных C# levels.
+
+Primary location — `Location.None`, additional locations отсутствуют:
+`AnalyzerConfigOptionsProvider` сообщает generator-у final property name и
+value, но не source span исходного `.csproj`, `.props` либо `.targets`. В `{0}`
+передаётся точное имя property без `build_property.`, например
+`MorphantMappingMode`.
+
+Diagnostic identity — имя property в compilation. Один invalid property,
+затронувший любое количество mapper-ов и pairs, даёт одну diagnostic. Если все
+применимые paths имеют более конкретный корректный override либо setting
+везде неприменима, `MORPH0022` отсутствует. Несколько invalid properties
+диагностируются независимо в ordinal property-name order внутри одного ID.
+
+Отсутствующее, empty и `Default` значение не являются invalid; они продолжают
+поиск library default. Morphant не пытается восстановить исходный MSBuild
+import или публиковать отдельную diagnostic на каждое промежуточное
+переопределение property.
+
+### 6.50. `MORPH0023`: explicit setting не применяется к model
+
+Diagnostic публикуется для final explicit current-pair setting, которую
+выбранная mapping model принципиально не исполняет:
+
+- у pair с локальным `Convert` неприменимы `NullSourceHandling`,
+  `NullDestinationHandling`, `ConstructorSelection`, `MemberSelection` и
+  `UnmappedMemberValidation`;
+- у direct-construction destination неприменима explicit
+  `ConstructorSelection`;
+- `MappingMode` применим к обеим models и `MORPH0023` не получает;
+- explicit `Default` тоже является неприменимой setting: само наличие
+  pair-level policy противоречит выбранной model, даже если значение
+  продолжило бы inheritance.
+
+Root, connected-base-root, assembly и inherited pair settings в этих случаях
+остаются безвредными no-op: один уровень может обслуживать другие declarative
+pairs. `MORPH0023` относится только к final explicit setting текущей pair.
+Перекрытый более поздним вызовом local invocation не диагностируется.
+
+Diagnostic публикуется один раз на каждую неприменимую final setting, а не
+один раз на pair. Поэтому пять explicit non-`MappingMode` settings рядом с
+`Convert` дают пять `MORPH0023`. Invalid value того же invocation не добавляет
+`MORPH0021`.
+
+Primary location — identifier setting-вызова. Единственная additional
+location для manual model — identifier authoritative local `Convert`; для
+direct-construction model — соответствующий destination type argument
+authoritative `Map<TSource, TDestination>`. В `{1}` передаётся соответственно
+`manual Convert` либо `direct construction`; `{2}` и `{3}` содержат canonical
+contract и mapper type.
+
+Diagnostic identity включает mapper, authoritative canonical pair, setting и
+final invocation. Одинаковая setting в разных pairs независима. Imported
+setting, local `Convert` вместе с imported `Members` и иные вопросы effective
+composition остаются категорией 7; callback содержимое категория 6 не
+анализирует.
+
+### 6.51. Recovery, precedence, порядок и suppression
+
+`MORPH0021` и `MORPH0022` используют одинаковый policy-specific recovery для
+каждого affected path:
+
+| Invalid effective setting | Recovery |
+|---|---|
+| `MappingMode` | Обе operations полного `ITypeMapper<,>` contract бросают `MappingConfigurationException` |
+| `NullSourceHandling` | Все enabled declarative operations бросают `MappingConfigurationException`; disabled operation сохраняет обычный `MappingOperationNotSupportedException` |
+| `NullDestinationHandling` | Enabled declarative `Update` бросает `MappingConfigurationException`; `Create` сохраняется, а disabled `Update` остаётся operation-not-supported |
+| `MemberSelection` | Все enabled declarative operations бросают `MappingConfigurationException` |
+| `ConstructorSelection` | Только reachable convention/`ByConvention` creation paths бросают `MappingConfigurationException`; explicit creation branches и Update существующего destination сохраняются |
+| `UnmappedMemberValidation` | Runtime mapping не меняется; category-12 warning-анализ affected plan не выполняется |
+
+Path-sensitive `ConstructorSelection` recovery распространяется и на
+no-previous branch `Update`, открытый `NullDestinationHandling.Create`, но не
+требует включённого public `Create`. Если операция содержит как explicit, так
+и convention creation branches, корректные branches остаются исполнимыми, а
+throw возникает только при фактическом входе в invalid convention path.
+
+Несколько invalid settings могут публиковать несколько diagnostics, даже если
+их recovery сходится в одну throwing operation. Morphant не исполняет
+недоступный callback и не выбирает outer value как fallback; одна operation
+всё равно бросает один детерминированный `MappingConfigurationException`.
+Независимые operations и pairs сохраняют исполнимые plans.
+
+Любая `MORPH0023` делает всю затронутую pair неисполнимой. Pair сохраняет
+полный `ITypeMapper<TSource, TDestination>` contract и independently legal DSL
+surfaces, но обе operations бросают `MappingConfigurationException`
+независимо от effective `MappingMode`. Неприменимая setting не удаляется
+молча и не переключает manual/direct mapping на declarative либо convention
+fallback.
+
+Compilation-wide gate категории 1, mapper-wide structural gates категории 2,
+pair exclusion/unsupported-root recovery категории 3, mapper-/pair-wide
+builder-flow gates категории 4 подавляют недостоверный category-6 анализ в
+своей области. Неисполнимый local plan категории 5 подавляет только
+applicability, для которой необходимо выбрать единую manual/declarative model;
+независимо доказуемый invalid setting origin сохраняет category-6 ownership.
+Category-7 failure configuration chain либо `IncludeBase` подавляет только
+анализ settings, который зависит от этой недостоверной composition;
+независимо доказуемый local origin сохраняется.
+
+`MORPH0023` имеет precedence над `MORPH0021` для одного invocation. Invalid
+`MappingMode` подавляет зависимый reachability-анализ остальных effective
+values по правилам раздела 6.47, но не скрывает независимо доказуемую
+model-level `MORPH0023`. Ошибки callbacks, construction, members и nested
+mapping не переопределяются категорией 6 и сохраняют ownership категорий
+8–11. `UnmappedMemberValidation` управляет только категорией 12.
+
+Publication order — по ID. Внутри `MORPH0021` origins упорядочиваются по
+source location, затем setting name; `MORPH0022` — по ordinal property name;
+`MORPH0023` — по ordinal stable mapper identity, canonical pair, setting name
+и source location. Origin-based deduplication не зависит от traversal order.
+
+Suppression либо понижение severity не меняет effective-value resolution,
+recovery, generated artifact set или анализ независимых pairs. Добавление,
+удаление, перестановка, замена argument, изменение MSBuild property,
+`MappingMode`, mapping model либо capability полностью actualizes diagnostics
+и recovery без сохранения прежнего invalid state.
+
+### 6.52. Самостоятельная тестовая матрица категории 6
+
+Unit-категория settings diagnostics независимо фиксирует:
+
+- exact descriptors `MORPH0021`–`MORPH0023`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и параметры;
+- полную C# grammar всех шести settings: каждый declared enum member,
+  `Default`, constant aliases/expressions, non-constant values, negative и
+  unknown numeric values;
+- `MappingMode` atomic/composite law без numeric-range assumption: zero,
+  каждый объявленный atomic flag, их выраженная комбинация и unknown bits;
+- successful Morphant binding против compiler-owned unresolved/ambiguous
+  overload, argument conversion и одноимённого стороннего API;
+- last-call-wins на map/root levels, включая invalid earlier call, final
+  `Default`, invalid final value без outer fallback и более конкретный
+  корректный override invalid root/assembly value;
+- полную precedence matrix current pair -> included base pair -> current root
+  -> connected roots -> assembly -> library default для каждого setting;
+- exact argument-expression location `MORPH0021`, отсутствие additional
+  pair locations и одну diagnostic на root/included origin при нескольких
+  pairs, generic substitutions и derived mapper-ах;
+- все шесть MSBuild properties: trimmed case-insensitive declared names,
+  missing/empty/`Default`, numeric/qualified/comma/unknown forms,
+  `Location.None`, одна diagnostic на property и отсутствие fan-out;
+- статическую applicability matrix declarative/manual, enabled/disabled
+  operations, nullability-independent null policies, convention/explicit/
+  `ByConvention` construction paths и category-12-only
+  `UnmappedMemberValidation`;
+- полностью перекрытые и inactive origins без diagnostic, один origin с
+  несколькими affected paths и совместную публикацию нескольких независимо
+  invalid effective settings;
+- все пять запрещённых explicit settings у `Convert`, explicit
+  `ConstructorSelection` у direct destination, `Default`, last-call-wins,
+  одну `MORPH0023` на setting и отсутствие её у inherited/root policies;
+- exact primary/additional locations и model/contract/mapper parameters
+  `MORPH0023`, а также только `MORPH0023` для invalid неприменимого
+  invocation;
+- полный generated recovery каждой policy: обе invalid-mode stubs,
+  operation-specific null/member stubs, path-sensitive constructor failure,
+  сохранённый runtime plan без category-12 warnings и полный pair recovery
+  `MORPH0023`;
+- precedence с `MORPH0001`–`MORPH0020`, category-7 composition boundary,
+  сохранение независимо доказуемых причин и отсутствие downstream cascade;
+- deterministic order, suppression/изменение severity без изменения recovery
+  и generated artifact set;
+- actualization каждого C# origin, MSBuild property, override, operation gate,
+  mapping model и destination capability при одном сохранённом incremental
+  driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- suppressed invalid C# value каждой recovery-family: complete mapper и legal
+  DSL surfaces компилируются, недоступные paths бросают
+  `MappingConfigurationException`, а сохранённые operations реально
+  исполняются;
+- invalid compiler-visible MSBuild property с `Location.None`, реальным
+  override на одной pair и origin-based deduplication на другой;
+- manual `Convert` с каждой suppressed неприменимой setting и direct
+  destination с `ConstructorSelection`: обе operations бросают, callbacks не
+  выполняются, независимая pair остаётся исполнимой;
+- invalid `UnmappedMemberValidation`: runtime mapping исполняется, а
+  category-12 warning-анализ affected plan отсутствует;
+- реальное `.editorconfig`/MSBuild suppression или severity override для всех
+  трёх IDs без изменения generated artifact set и effective recovery.
 
 ## 7. Реализация и тесты
 
