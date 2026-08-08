@@ -217,20 +217,38 @@ mapper-а generator сохраняет открытый fluent surface исхо�
 `IncludeBase<TBaseSource, TBaseDestination>()` на pair-builder-е. Generic-
 аргументы указывают конкретную base pair: текущий source type должен быть
 приводим к `TBaseSource`, а текущий destination type — к
-`TBaseDestination`. Проверка охватывает class- и interface-иерархии.
-Эти отношения проверяет generator: C# не позволяет method-level `where`
+`TBaseDestination`. Допускаются identity, implicit reference и boxing
+conversions; numeric и user-defined conversions не образуют base-type
+relation. Поэтому проверка охватывает class- и interface-иерархии, а также
+обычную boxing assignability value type-а. Эти отношения проверяет generator:
+C# не позволяет method-level `where`
 ограничить `TSource` и `TDestination`, объявленные у содержащего
 `MapperBuilder<TSource, TDestination>`, а переход к четырём method type
 arguments ухудшил бы текущую форму вызова.
 
-Base pair сначала ищется на текущем mapper-level независимо от порядка
-объявлений, затем среди mapper-level-ов, подключённых через
-`base.Configure(builder)`, от ближайшего к дальнему. Если одна и та же pair
-встречается на текущем и подключённом уровнях, используется текущая; среди
-подключённых уровней используется ближайшее точное совпадение. Отсутствие
-указанной pair или совместимости типов, self-reference, cycle, а также
-повторный вызов `IncludeBase` для одной текущей pair являются ошибками
-конфигурации.
+Узел composition идентифицируется не только canonical pair, а tuple
+`(constructed mapper-level, canonical pair)`. Requested pair сначала ищется
+среди остальных authoritative registrations текущего mapper-level независимо
+от порядка объявлений, затем среди mapper-level-ов, подключённых через
+`base.Configure(builder)`, от ближайшего к дальнему. Текущий узел исключается
+из собственного lookup, но одноимённая pair подключённого base level остаётся
+отдельным кандидатом. Если совпадение существует и на текущем, и на
+подключённом уровне, используется текущий кандидат; среди подключённых уровней
+используется ближайшее точное совпадение.
+
+Поэтому повторно объявленная pair derived mapper-а может явно импортировать
+plan одноимённой pair base mapper-а. Same-pair `IncludeBase` без подходящего
+connected ancestor получает обычную ошибку отсутствующей pair, а не
+self-reference. Отсутствие requested pair, несовместимость типов и повторный
+вызов `IncludeBase` для одной текущей pair являются ошибками конфигурации.
+
+Отдельного cycle state в v0 нет. Совместимое same-level ребро направлено к
+равным либо базовым source/destination types и при исключённом текущем узле
+хотя бы по одной координате является строгим; межуровневое ребро всегда идёт
+вверх по ациклической C# base-chain. Exact same-pair между mapper-level-ами
+также уменьшает уровень. Поэтому legal composition graph ацикличен по
+построению. Обратное несовместимое ребро диагностируется как type
+incompatibility, а циклическую C#-иерархию полностью диагностирует compiler.
 
 Effective settings разрешаются от более конкретного уровня к менее
 конкретному:
@@ -250,23 +268,39 @@ Effective settings разрешаются от более конкретного
 локальное значение перекрывает унаследованное, а `Default` продолжает поиск по
 таблице приоритетов.
 
-Из mapping plan импортируются только правила `Members`:
+Импорт mapping plan зависит от отношения узлов:
 
-- правила объединяются по destination member независимо от формы перегрузки;
-- локальный expression, `Auto()` или `Ignore()` перекрывает унаследованное
-  правило, после чего зависимости каждого effective rule анализируются
-  отдельно;
-- conventions и constructor selection вычисляются заново для текущей pair;
-- `Construct` и `Convert` base pair не импортируются;
-- локальный `Convert` владеет всей текущей pair и отбрасывает импортированные
-  member rules.
+- cross-pair `IncludeBase`, например `Dog -> DogDto` из
+  `Animal -> AnimalDto`, импортирует только правила `Members`; `Construct` и
+  `Convert` не переносятся, а conventions и constructor selection вычисляются
+  заново для текущей pair;
+- exact same-pair из connected base mapper-а импортирует весь applicable
+  effective plan, включая `Construct` либо `Convert`, без runtime casts,
+  адаптеров delegate signatures или попыток перенести factory/converter между
+  разными destination types.
 
-Переносимые effective member rules испускаются внутри derived mapper-а, поэтому
-все mapper-members в них должны быть доступны из derived type. Обычные public,
-internal и protected helpers поддерживаются согласно C# accessibility;
-private members и явный `base.` в оставшемся inherited expression делают
-effective plan ошибочным. Полное локальное перекрытие destination member
-удаляет заменённое inaccessible правило до проверки accessibility.
+Правила `Members` в обоих случаях объединяются по destination member
+независимо от формы перегрузки. Локальный expression, `Auto()` или `Ignore()`
+перекрывает унаследованное правило, после чего зависимости каждого effective
+rule анализируются отдельно.
+
+Локальный plan разрешается предсказуемо:
+
+- при отсутствии локальных fragments exact same-pair полностью сохраняет
+  inherited plan;
+- локальный `Convert` заменяет весь inherited plan и владеет текущей pair;
+- локальный declarative plan с `Construct` либо `Members` отбрасывает
+  inherited `Convert`;
+- для declarative plan inherited `Construct` служит fallback, локальный
+  `Construct` его перекрывает, а `Members` объединяются по обычному правилу
+  локального приоритета.
+
+Переносимые effective `Construct`, `Members` и `Convert` callbacks испускаются
+внутри derived mapper-а, поэтому все mapper-members в них должны быть доступны
+из derived type. Обычные public, internal и protected helpers поддерживаются
+согласно C# accessibility; private members и явный `base.` в оставшемся
+inherited expression делают effective plan ошибочным. Полное локальное
+перекрытие либо отбрасывание expression удаляет его до проверки accessibility.
 
 Source generator не выполняет configuration code и не следует за
 произвольными helper calls, которые изменяют builder. Переиспользуемые
@@ -2944,28 +2978,37 @@ expressions, mapper dependencies и application service provider не
     точную base pair; текущие source и destination должны быть приводимы к
     соответствующим base types. Эти отношения проверяются generator-ом, потому
     что C# не позволяет выразить их method-level constraints без изменения
-    двухаргументной формы API. Поиск сначала идёт по текущему level независимо
-    от порядка объявлений, затем по подключённым base levels и выбирает
-    ближайшее точное совпадение; self-reference и cycles ошибочны.
+    двухаргументной формы API. Узел composition — `(constructed mapper-level,
+    canonical pair)`: поиск сначала идёт среди остальных pairs текущего level
+    независимо от порядка объявлений, затем по подключённым base levels и
+    выбирает ближайшее точное совпадение. Текущий узел исключён, но exact
+    same-pair connected base level является валидным кандидатом. Совместимый
+    graph v0 ацикличен по построению; отдельного cycle state нет.
 64. Через typed `IncludeBase` наследуются все map-level settings, включая
     `MappingMode` и `ConstructorSelection`. Settings precedence — current pair,
     included base pair, current mapper root, connected base roots, assembly,
     library default; `Default` продолжает поиск на следующем уровне.
-65. Из base plan импортируются только `Members`. Правила независимо от формы
-    перегрузки объединяются по destination member с локальным приоритетом,
-    включая expression, `Auto()` и `Ignore()`. Conventions и constructor
-    selection вычисляются заново для текущей pair, а dependencies effective
-    rules анализируются отдельно.
-66. `Construct` и `Convert` base pair не импортируются. Локальный `Convert`
-    владеет всей текущей pair и отбрасывает импортированные member rules.
+65. Cross-pair `IncludeBase` импортирует только `Members`. Правила независимо
+    от формы перегрузки объединяются по destination member с локальным
+    приоритетом, включая expression, `Auto()` и `Ignore()`. Conventions и
+    constructor selection вычисляются заново для текущей pair, а dependencies
+    effective rules анализируются отдельно. `Construct` и `Convert` между
+    разными pairs не импортируются.
+66. Exact same-pair из connected base mapper-а импортирует весь applicable
+    effective plan, включая `Construct` либо `Convert`. Локальный `Convert`
+    заменяет inherited plan; локальный declarative plan отбрасывает inherited
+    `Convert`; локальный `Construct` перекрывает inherited `Construct`, а
+    `Members` объединяются по закону 65. Runtime casts и адаптация callbacks
+    между разными destination types не выполняются.
 67. Base mapper не требует `MorphantMapperAttribute`, если его `Configure`
     доступен как source в текущей compilation. Прямой
     `base.Configure(builder)` поддерживается statement- и expression-bodied
     формой; повторный вызов ошибочен. Generic base DSL сохраняет открытый
     generated surface, а effective derived plan использует constructed type
     arguments, включая nested mapper declarations. Проверка accessibility
-    выполняется только для оставшихся effective member rules, поэтому полное
-    локальное перекрытие удаляет недоступное base rule до emission.
+    выполняется только для оставшихся effective inherited `Construct`,
+    `Members` и `Convert` expressions, поэтому полное локальное перекрытие либо
+    отбрасывание удаляет недоступный callback до emission.
 68. General-purpose fragments и cross-assembly typed `IncludeBase` отсутствуют
     в v0. Generic и nested mapper-ы поддерживаются внутри одной compilation;
     внешние mappings регистрируются независимо и не импортируют configuration
@@ -3087,7 +3130,7 @@ generic pair unification не проектируются заново: они з
 | Constructor/member markers | Сохранены на соответствующей plan-части |
 | `IContextualMapper`-подобный nested dispatch | Scoped `context.Mapper : IMapper` |
 | Record `with` настоящего destination | Обычный C# внутри `Convert` |
-| `base.Configure` и typed `IncludeBase` | Явно разделённое наследование root settings и member rules конкретной base pair |
+| `base.Configure` и typed `IncludeBase` | Явно разделённое наследование root settings и effective plan конкретной base pair |
 
 Крупной потерянной feature в core v0 после этих поправок нет.
 

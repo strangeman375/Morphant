@@ -4,7 +4,7 @@
 
 Последнее обновление: 8 августа 2026 года.
 
-Статус: этап 2, категория 6, ожидает ревью.
+Статус: этап 2, категория 7, ожидает ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -38,7 +38,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–5 приняты; категория 6 ожидает ревью; категории 7–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–6 приняты; категория 7 ожидает ревью; категории 8–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -88,7 +88,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | 4 | Обнаружение конфигурации и builder flow | Возможность однозначно восстановить поддерживаемый прямой линейный flow `Configure`. Вынос Morphant builder-а в alias, helper, delegate либо неподдерживаемый control flow не игнорируется молча. |
 | 5 | Локальная композиция mapping plan | Состав и взаимная совместимость локальных `Construct`, `Members`, `Convert` и остальных pair-level configuration fragments до анализа их содержимого. |
 | 6 | Значения и применимость settings | Валидность effective settings, precedence и применимость policy к mapping model, destination capability и доступным операциям. |
-| 7 | Наследование конфигурации и `IncludeBase` | `base.Configure(builder)`, configuration chain, typed `IncludeBase`, поиск base pair, совместимость, циклы, повторное включение и переносимость effective inherited rules. |
+| 7 | Наследование конфигурации и `IncludeBase` | `base.Configure(builder)`, configuration chain, typed `IncludeBase`, level-aware поиск base pair, совместимость, повторное включение и переносимость effective inherited rules. |
 | 8 | Переносимость callbacks и declarative grammar | Возможность статически перенести пользовательские lambdas, expressions, locals, captures и control flow в generated implementation без исполнения configuration code. |
 | 9 | Корректность construction plan | Выбор и применимость construction strategy, constructor binding и достижимые creation branches после успешной локальной композиции. |
 | 10 | Корректность member plan | Выбор destination members, explicit и convention rules, mutability, initialization phase, dependencies и достижимая применимость assignments. |
@@ -225,6 +225,12 @@ category и каталогом, а не номером.
 Перед назначением шестой группы 8 августа 2026 года тем же способом проверены
 `MORPH0021`–`MORPH0023`. Внешних публичных .NET/Roslyn diagnostics с этими ID
 не найдено.
+
+Перед назначением седьмой группы 8 августа 2026 года тем же способом проверены
+`MORPH0024`–`MORPH0028`. Внешних публичных .NET/Roslyn diagnostics с этими ID
+не найдено. Найденные case-insensitive web-совпадения `Morph0026`–`Morph0028`
+являются specimen identifiers из биологических каталогов, а не analyzer
+diagnostics, поэтому коллизией не считаются.
 
 ### 6.2. Категория 1: общий contract
 
@@ -1185,8 +1191,8 @@ Chain поздней duplicate registration, уже полностью отбр�
 двух builder values. После успешного восстановления linear chain она не
 проверяет:
 
-- количество и порядок `base.Configure(builder)`, configuration cycles и
-  перенос настроек между connected levels — категория 7;
+- количество `base.Configure(builder)` и перенос настроек между connected
+  levels — категория 7;
 - `IncludeBase`, поиск и совместимость base pair — категория 7;
 - состав `Construct` / `Members` / `Convert` одной pair и допустимость их
   сочетания — категория 5;
@@ -1346,7 +1352,7 @@ callback conversion, ошибочность которой уже полност
 
 Pair-level settings не являются plan fragments; корректность их значений и
 применимость к manual/declarative plan относится к категории 6. `IncludeBase`
-и перенесённые им `Members` также не считаются local fragments; их
+и любые перенесённые им plan fragments также не считаются local fragments; их
 взаимодействие с локальным plan относится к категории 7. Содержимое успешно
 связанных callbacks категория 5 не анализирует: переносимость и семантика
 `Construct`, `Members`, `Convert` принадлежат категориям 8–11.
@@ -1398,8 +1404,8 @@ location, также сохраняется в additional locations, чтобы 
 
 В `{0}` передаётся canonical mapping contract, в `{1}` — mapper type.
 Diagnostic identity — mapper и authoritative canonical pair. Local `Convert`
-не конфликтует в категории 5 только с imported `Members` или иным plan за
-`IncludeBase` boundary: такой effective-plan вопрос остаётся категорией 7.
+не конфликтует в категории 5 с любым imported plan за `IncludeBase` boundary:
+model precedence такого effective plan остаётся категорией 7.
 
 ### 6.43. Recovery, precedence, порядок и suppression
 
@@ -1463,8 +1469,8 @@ Unit-категория composition независимо фиксирует:
   unresolved/ambiguous overloads и invalid callback conversions;
 - анализ только первой authoritative registration, отсутствие diagnostics в
   отброшенных `MORPH0013` chains и независимую pair с собственным plan;
-- exclusion `IncludeBase` и imported `Members` из local fragment set,
-  ownership pair settings и отсутствие обхода callback contents;
+- exclusion `IncludeBase` и всех imported plan fragments из local fragment
+  set, ownership pair settings и отсутствие обхода callback contents;
 - полный generated result recovery: complete mapper contract и legal DSL
   surfaces, обе throwing operations независимо от `MappingMode`, отсутствие
   выбранного first/last/manual/declarative fallback и сохранение независимой
@@ -1717,9 +1723,9 @@ contract и mapper type.
 
 Diagnostic identity включает mapper, authoritative canonical pair, setting и
 final invocation. Одинаковая setting в разных pairs независима. Imported
-setting, local `Convert` вместе с imported `Members` и иные вопросы effective
-composition остаются категорией 7; callback содержимое категория 6 не
-анализирует.
+setting, взаимодействие local и inherited plan models и иные вопросы
+effective composition остаются категорией 7; callback содержимое категория 6
+не анализирует.
 
 ### 6.51. Recovery, precedence, порядок и suppression
 
@@ -1846,6 +1852,473 @@ Package-like integration-категория независимо проверя�
   category-12 warning-анализ affected plan отсутствует;
 - реальное `.editorconfig`/MSBuild suppression или severity override для всех
   трёх IDs без изменения generated artifact set и effective recovery.
+
+### 6.53. Категория 7: общий contract
+
+Категория «Наследование конфигурации и `IncludeBase`» содержит ровно пять
+diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0024` | `Duplicate base configuration call` | `Base configuration is included more than once in Configure of mapper '{0}'.` |
+| `MORPH0025` | `Duplicate IncludeBase call` | `IncludeBase is configured more than once for contract '{0}' in mapper '{1}'.` |
+| `MORPH0026` | `Included mapping pair not found` | `Included mapping contract '{0}' was not found for contract '{1}' in mapper '{2}'.` |
+| `MORPH0027` | `Included mapping type is incompatible` | `Current {0} type '{1}' is not assignable to included {0} type '{2}' for contract '{3}' in mapper '{4}'.` |
+| `MORPH0028` | `Inherited mapping expression is inaccessible` | `Inherited {0} expression for contract '{1}' cannot be accessed from mapper '{2}'.` |
+
+Для всех пяти diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Inheritance`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- анализируется только source-visible configuration текущей compilation;
+  cross-assembly typed `IncludeBase` остаётся post-v0, а недоступный body
+  connected base mapper-а принадлежит `MORPH0016`;
+- effective settings, `MappingMode`, `UnmappedMemberValidation` и
+  достижимость отдельной operation не скрывают structural composition error;
+- suppression либо изменение severity меняет только compiler presentation и
+  не выбирает первый edge, не игнорирует ошибочный edge и не делает
+  недоступное inherited expression исполнимым.
+
+Mapping contracts в messages форматируются по canonical identity категории 3
+как `global::Morphant.ITypeMapper<{canonicalSource},
+{canonicalDestination}>`, mapper types — по fully-qualified nullable-aware
+display категории 2. `{0}` в `MORPH0027` равно `source` либо `destination`, а
+типы `{1}` и `{2}` используют соответствующий fully-qualified display.
+Fragment name `{0}` в `MORPH0028` — точное имя семейства `Construct`,
+`Members` либо `Convert`.
+
+Категория 7 связывает уже распознанные configuration levels и authoritative
+pairs. Она не исполняет configuration code, не ищет application-wide runtime
+registrations и не превращает одноимённые methods стороннего API в Morphant
+edges.
+
+### 6.54. Configuration levels, composition nodes и lookup
+
+Configuration level — source-bodied `Configure` конкретного mapper type,
+доступный по законам категории 4. Один поддерживаемый прямой
+`base.Configure(builder)` соединяет level с семантически выбранным base
+override. Вызовы на разных levels образуют нормальную connected chain и не
+считаются повторами; второй и каждый следующий прямой base-call внутри одного
+level создаёт `MORPH0024`.
+
+Composition node имеет identity
+`(constructed mapper level, authoritative canonical pair)`. Constructed level
+учитывает подстановку generic type arguments, поэтому, например,
+`BaseMapper<int>` и `BaseMapper<string>` являются разными узлами effective
+graph, хотя используют один source `Configure` definition.
+
+Единственный успешно связанный
+`IncludeBase<TBaseSource, TBaseDestination>()` задаёт requested canonical pair
+и effective edge. Lookup выполняется в точном порядке:
+
+1. исключить только текущий composition node;
+2. найти requested exact pair среди остальных authoritative registrations
+   текущего constructed level независимо от declaration order;
+3. при отсутствии совпадения пройти connected base levels от ближайшего к
+   дальнему и выбрать первое exact совпадение;
+4. не учитывать chains поздних duplicate registrations, уже отброшенные
+   `MORPH0013`.
+
+Исключается узел, а не canonical pair как таковая. Поэтому локальная
+`Map<Order, OrderDto>()` не находит саму себя, но может найти
+`Order -> OrderDto` на connected base level. Если другой current-level
+кандидат и connected candidate существуют одновременно, current-level
+кандидат имеет приоритет; exact same-pair inheritance всегда идёт к другому
+mapper-level.
+
+Если candidate не найден, публикуется `MORPH0026` и compatibility не
+проверяется. Отдельной diagnostic для «неподдерживаемого type argument
+`IncludeBase`» нет:
+
+- зарегистрированная requested pair считается найденной, даже если её
+  registration сама получает `MORPH0011` либо `MORPH0012`; category-3 origin
+  остаётся единственной первичной причиной, а `MORPH0026` и `MORPH0027` не
+  добавляются;
+- если requested pair вообще не зарегистрирована, публикуется `MORPH0026`
+  независимо от того, являлись бы указанные roots поддерживаемыми в отдельном
+  `Map<,>`;
+- type argument, который уже отвергнут C# binding/conversion, остаётся только
+  compiler diagnostic и не образует успешно связанный IncludeBase edge.
+
+Для найденной structurally legal pair отдельно проверяются source и
+destination relations. Current type должен допускать существующую v0
+base-type conversion к соответствующему included type. Нарушение каждой
+relation получает собственную `MORPH0027`; отсутствие нарушения обеих
+relations открывает composition.
+
+Отдельной cycle diagnostic нет. Внутри одного level совместимый edge идёт от
+current types к равным либо базовым included types; после исключения текущего
+узла хотя бы одна координата strict. Между levels edge всегда идёт вверх по
+ациклической C# base-chain, включая exact same-pair. Поэтому совместимый v0
+graph ацикличен по построению. Same-pair без подходящего ancestor получает
+`MORPH0026`, обратное несовместимое ребро — `MORPH0027`, а циклическая
+C#-иерархия полностью принадлежит compiler-у.
+
+### 6.55. Effective inherited plan и model precedence
+
+Успешный IncludeBase edge всегда импортирует все map-level settings candidate
+pair и структуру её дальнейшей effective IncludeBase chain. Settings
+разрешаются по полному порядку категории 6:
+
+`current pair -> included pairs -> current root -> connected roots ->
+assembly -> library default`.
+
+Импорт mapping plan зависит от отношения current и candidate nodes:
+
+| Relation | Импортируемый plan |
+|---|---|
+| Cross-pair, например `Dog -> DogDto` из `Animal -> AnimalDto` | Effective `Members`; `Construct` и `Convert` не импортируются, conventions и constructor selection вычисляются заново для current pair |
+| Exact same-pair на connected base level | Весь applicable effective plan, включая `Construct` либо `Convert` и `Members`, без casts и callback adapters |
+
+Exact same-pair не переносит выбранный runtime result через type boundary:
+source и destination types совпадают, поэтому inherited callbacks сохраняют
+исходные delegate contracts. Cross-pair никогда не пытается привести result
+base `Construct`/`Convert` к более конкретному destination и не меняет
+поведение в зависимости от формы structured/direct/factory callback-а.
+
+Локальные fragments разрешают model после импорта так:
+
+| Local plan | Effective behavior |
+|---|---|
+| Нет локальных `Construct`, `Members`, `Convert` | Exact same-pair полностью сохраняет inherited plan; cross-pair использует imported `Members` и заново построенные current conventions/construction |
+| Локальный `Convert` | Полностью заменяет inherited mapping plan; imported settings остаются в precedence chain, но неприменимые manual policies следуют категории 6 |
+| Локальный `Construct` и/или `Members` | Выбирает declarative model и отбрасывает inherited `Convert` |
+| Declarative plan с обеих сторон | Inherited `Construct` является fallback, local `Construct` его перекрывает; `Members` объединяются по destination member с локальным приоритетом |
+
+Imported и local `Members` объединяются независимо от формы overload-а.
+Local expression, `Auto()` либо `Ignore()` перекрывает inherited rule того же
+destination member; conventions заполняют только остаток. Dependencies
+строятся заново для оставшихся effective rules. Imported fragments не
+становятся local fragments категории 5: inherited `Construct` рядом с local
+`Construct` не является duplicate, а намеренно отброшенный inherited
+`Convert` рядом с local declarative plan не создаёт mixed-model diagnostic.
+
+Composition транзитивна, но каждый edge переносит только свой effective
+slice. Поэтому ошибка base plan влияет на consumer только если consumer
+действительно сохраняет соответствующий slice:
+
+- cross-pair consumer не зависит от base `Construct`/`Convert` и их ошибок;
+- local `Convert` отбрасывает imported declarative plan;
+- local declarative plan отбрасывает inherited `Convert`, а локально
+  перекрытый `Construct` или member rule удаляет заменённый slice;
+- invalid included settings сохраняют ownership и policy-specific recovery
+  категории 6;
+- ambiguity либо invalid composition оставшегося imported slice делает
+  transitive consumer неисполнимым, но origin diagnostic не размножается по
+  каждому consumer-у.
+
+Только после model precedence проверяется доступность оставшихся inherited
+callbacks из конечного mapper-а. Effective `Construct`, `Members` и `Convert`
+испускаются в его generated partial type. Private base mapper members, явный
+`base.` и иные references, недоступные по обычным C# rules из target mapper-а,
+создают `MORPH0028`. Полностью перекрытый или отброшенный callback и его
+dependencies не проверяются и diagnostic не получают. Остальная
+переносимость callback syntax, captures и declarative grammar принадлежит
+категории 8.
+
+### 6.56. `MORPH0024`: повторный `base.Configure`
+
+Diagnostic публикуется на втором и каждом следующем успешно распознанном
+прямом `base.Configure(builder)` одного source configuration level. Primary
+location — identifier `Configure` текущего лишнего call; единственная
+additional location — identifier первого прямого base-call этого level.
+
+Три прямых вызова дают две diagnostics на втором и третьем, обе со ссылкой на
+первый. Один base-call в каждом из нескольких successive overrides является
+валидной chain и diagnostics не создаёт. Parentheses, null-forgiving и
+statement-/expression-bodied формы сохраняют identity вызова по grammar
+категории 4.
+
+Diagnostic identity — declaring source configuration level и location
+конкретного лишнего invocation. Generic level, достигнутый несколькими
+constructed mapper-ами и substitutions, даёт одну origin diagnostic, а не
+fan-out. В `{0}` передаётся declaring mapper definition этого source level.
+
+Неподдерживаемый indirect/conditional builder flow остаётся `MORPH0017` и не
+считается прямым base-call. Если единственный target body недоступен,
+публикуется `MORPH0016`; повтор того же source edge независимо добавляет
+`MORPH0024`, но не размножает `MORPH0016`.
+
+Первый call служит только location anchor. Recovery не исполняет его один раз
+как fallback и не игнорирует последующие calls.
+
+### 6.57. `MORPH0025`: повторный `IncludeBase`
+
+Diagnostic публикуется на втором и каждом следующем успешно связанном
+Morphant `IncludeBase` authoritative pair независимо от generic arguments
+вызовов. Primary location — identifier текущего лишнего `IncludeBase`;
+единственная additional location — identifier первого вызова pair.
+
+Три вызова дают две diagnostics. Вызовы на разных authoritative pairs либо на
+разных mapper-level-ах независимы. Одноимённый сторонний method и invocation,
+который уже полностью отвергнут C# binding, не участвуют в cardinality.
+
+Diagnostic identity — source mapper, authoritative registration и location
+лишнего invocation. Generic source pair, достигнутая несколькими constructed
+consumers, даёт одну origin diagnostic. Mapping contract `{0}` отражает
+source-declared authoritative pair, mapper `{1}` — её declaring mapper.
+
+При нескольких calls Morphant не выбирает первый, последний или совпадающий
+по type arguments edge. Поэтому lookup, compatibility и inherited-expression
+анализ этой pair недостоверны и зависимые `MORPH0026`–`MORPH0028` не
+публикуются. Независимые local composition/settings diagnostics категорий 5–6
+сохраняются по их собственным правилам.
+
+### 6.58. `MORPH0026`: requested pair не найдена
+
+Diagnostic публикуется ровно один раз на единственный effective IncludeBase
+edge, для которого lookup раздела 6.54 не нашёл authoritative exact pair.
+Primary location — identifier `IncludeBase`; additional locations
+отсутствуют.
+
+В `{0}` передаётся requested mapping contract после generic substitution, в
+`{1}` — current constructed contract, в `{2}` — конечный mapper type.
+Diagnostic identity — constructed current node и effective edge. Один source
+IncludeBase в generic configuration может поэтому дать несколько diagnostics
+для разных constructed substitutions, если они являются разными
+пользовательскими contracts.
+
+Отсутствие прямого `base.Configure(builder)` не имеет отдельной diagnostic:
+pair, существующая только в неподключённом base mapper-е, просто не входит в
+lookup и получает `MORPH0026`. Точно так же same-pair current node без другого
+same-level candidate или connected ancestor считается отсутствующей pair.
+
+Регистрация, уже получившая `MORPH0011` либо `MORPH0012`, остаётся найденным,
+но ошибочным origin: `MORPH0026` поверх неё не публикуется. Напротив,
+unsupported-looking type arguments без какой-либо registration не получают
+новую eligibility diagnostic и завершаются именно `MORPH0026`. Если часть
+base chain неизвестна из-за `MORPH0016`, отсутствие candidate за этим edge
+нельзя доказать и `MORPH0026` подавляется как каскад.
+
+### 6.59. `MORPH0027`: несовместимый included type
+
+Diagnostic публикуется после успешного lookup structurally legal candidate
+отдельно для каждой нарушенной base-type relation:
+
+- current source не assignable к included source;
+- current destination не assignable к included destination.
+
+Если нарушены обе relation, одна pair получает две diagnostics одного ID.
+Если candidate не найден, публикуется только `MORPH0026`; если current либо
+candidate registration уже structurally отвергнута категорией 3,
+compatibility diagnostic не добавляется.
+
+Primary location — соответствующий source либо destination type argument
+`IncludeBase`. Единственная additional location — соответствующий current type
+argument authoritative `Map<TSource, TDestination>`. `{0}` равно `source` или
+`destination`, `{1}` содержит current type, `{2}` — included type, `{3}` —
+current contract, `{4}` — конечный mapper.
+
+Diagnostic identity — constructed current node, effective edge и relation
+role. Reference nullable annotations не создают отдельную canonical pair;
+identity, class/interface base conversions и поддерживаемая v0 boxing
+assignability проверяются той же semantic conversion policy, что effective
+IncludeBase composition. Numeric и user-defined conversions не подменяют
+base-type relation.
+
+`MORPH0027` не пытается выбрать другой candidate после неудачной
+compatibility: exact lookup уже завершён. В частности, несовместимый
+current-level candidate не заставляет продолжить поиск одноимённой pair на
+дальнем base level.
+
+### 6.60. `MORPH0028`: inaccessible inherited expression
+
+Diagnostic публикуется для каждого originating inherited `Construct`,
+`Members` либо `Convert` invocation, чей callback остался effective в
+конечной pair и содержит хотя бы одну reference, недоступную из generated
+partial конечного mapper-а.
+
+Primary location — identifier effective `IncludeBase` конечной pair.
+Additional locations имеют детерминированный порядок:
+
+1. identifier originating `Construct`, `Members` либо `Convert` invocation;
+2. все недоступные reference expressions этого callback-а в source order.
+
+Несколько inaccessible references одного callback-а дают одну diagnostic с
+несколькими additional locations. Разные originating invocations дают
+отдельные diagnostics. Один origin, достигший двух конечных constructed pairs,
+может получить две `MORPH0028`, поскольку target accessibility и recovery
+являются context-dependent; transitive промежуточный consumer без generated
+contract сам по себе fan-out не создаёт.
+
+В `{0}` передаётся fragment family, `{1}` — конечный contract, `{2}` —
+конечный mapper. Diagnostic identity включает конечный constructed node и
+origin invocation. Primary intentionally указывает на composition boundary,
+а additional locations показывают конфигурацию и точные inaccessible
+references, которые нужно сделать доступными либо перекрыть.
+
+Локальный `Convert`, declarative/manual precedence, локальный `Construct` и
+member-level override применяются до этой проверки. Поэтому discarded base
+`Convert`, заменённый `Construct`, полностью перекрытые member expressions и
+их более не нужные dependencies diagnostic не получают. Та же reference в
+локальном callback-е не является inheritance failure и анализируется обычной
+callback/grammar категорией 8 либо C# compiler-ом.
+
+### 6.61. Recovery, propagation, precedence, порядок и suppression
+
+`MORPH0024` имеет mapper-wide recovery. Все непосредственно известные legal
+pairs каждого generated mapper-а, чья connected configuration chain содержит
+повторный base-call, сохраняют полный `ITypeMapper<,>` contract и independently
+legal DSL surfaces, но обе operations бросают
+`MappingConfigurationException` независимо от `MappingMode`. Registrations за
+недоступным source edge не угадываются; независимые mapper-ы и не подключённые
+sibling chains не затрагиваются.
+
+`MORPH0025`–`MORPH0028` имеют pair-level recovery. Затронутая pair сохраняет
+полный C#-legal contract и independently legal surfaces, но `Create` и
+`Update` бросают `MappingConfigurationException` независимо от
+`MappingMode`. Тот же recovery распространяется на transitive consumers,
+которые импортируют ошибочный effective slice. Consumer, полностью
+отбросивший этот slice по разделу 6.55, сохраняет собственный plan.
+
+Origin diagnostics already-invalid base configuration не размножаются по
+каждому transitive consumer-у: duplicate fragment, invalid setting либо другая
+первичная причина сохраняет ownership своей категории и source location.
+Recovery consumer-а всё равно становится throwing, если его effective slice
+зависит от причины. `MORPH0028` является исключением не по fan-out, а по
+природе: недоступность возникает заново относительно конкретного конечного
+mapper-а и поэтому диагностируется на его IncludeBase edge.
+
+Morphant не выбирает первый duplicate edge, не пропускает unresolved либо
+incompatible edge, не вставляет runtime cast, не заменяет inaccessible
+callback conventions и не использует outer setting как fallback. Несколько
+independent diagnostics одной pair сходятся в один детерминированный throwing
+plan; независимые pairs сохраняются.
+
+Precedence действует так:
+
+- compilation-wide gate категории 1, mapper-wide structural gates категории
+  2 и exclusion/unsupported-root recovery категории 3 подавляют недостоверный
+  category-7 анализ в своей области;
+- `MORPH0015`, `MORPH0017` и mapper-/pair-wide builder-flow gates категории 4
+  подавляют edges, которые невозможно достоверно восстановить;
+  `MORPH0016` не скрывает независимо видимый duplicate base-call, но скрывает
+  lookup conclusions о недоступной части chain;
+- `MORPH0025` подавляет `MORPH0026`–`MORPH0028` той же pair, поскольку
+  authoritative edge отсутствует;
+- `MORPH0026` подавляет compatibility и plan analysis, а `MORPH0027` —
+  inherited-plan/accessibility analysis соответствующего edge;
+- independently provable local fragment conflicts категории 5 и local setting
+  origins категории 6 сохраняются; invalid local model подавляет только ту
+  часть inherited-expression анализа, которой нужен однозначный effective
+  plan;
+- general callback portability категории 8 и construction/member/nested
+  semantics категорий 9–11 анализируются только для оставшегося effective
+  inherited plan; `MORPH0028` владеет исключительно accessibility, утраченной
+  при переносе expression между mapper-level-ами;
+- `UnmappedMemberValidation` управляет только категорией 12 и не скрывает
+  inheritance errors.
+
+Независимые `MORPH0024` и `MORPH0025` могут публиковаться совместно. Две
+relations `MORPH0027`, несколько inaccessible callbacks `MORPH0028` и
+независимые pairs сохраняют собственную cardinality даже при общем throwing
+recovery.
+
+Publication order — по ID. Внутри ID diagnostics упорядочиваются по ordinal
+stable final mapper identity, configuration-level order от derived к base,
+canonical pair, source location primary и relation/fragment name. Origin-only
+`MORPH0024`/`MORPH0025` не размножаются constructed traversal-ом;
+context-dependent `MORPH0026`–`MORPH0028` дедуплицируются по identities своих
+разделов. Discovery и incremental invalidation не меняют порядок.
+
+Suppression либо понижение severity не меняет lookup, composition, recovery
+или generated artifact set. Добавление/удаление/перестановка base-call,
+`IncludeBase`, pair registration, mapper level, generic substitution, local
+override либо referenced-member accessibility полностью actualizes
+diagnostics и effective recovery при одном сохранённом incremental driver-е.
+
+### 6.62. Самостоятельная тестовая матрица категории 7
+
+Unit-категория inheritance diagnostics независимо фиксирует:
+
+- exact descriptors `MORPH0024`–`MORPH0028`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и все parameters;
+- zero/one direct `base.Configure`, по одному call на successive levels,
+  statement-/expression-bodied формы, parentheses/null-forgiving, два и три
+  calls одного level с exact primary/first-call additional locations и
+  origin-based generic deduplication `MORPH0024`;
+- совместную публикацию одного `MORPH0016` и duplicate base-call, а также
+  mapper-wide throwing recovery всех известных pairs connected consumers;
+- zero/one/two/three `IncludeBase`, разные generic arguments, сторонние и
+  compiler-rejected invocations, exact locations, две diagnostics для трёх
+  calls и отсутствие dependent lookup diagnostics при `MORPH0025`;
+- composition-node identity, exclusion только current node, valid exact
+  same-pair из nearest connected base level, same-pair без ancestor как
+  `MORPH0026`, current-level order independence и precedence над connected
+  candidate;
+- lookup по multi-level chain nearest-first, отсутствие неявного доступа без
+  `base.Configure`, transitive composition, generic substitutions и nested
+  mapper levels;
+- одну `MORPH0026` на unresolved constructed edge, exact requested/current/
+  mapper parameters, отсутствие separate missing-chain diagnostic и
+  suppression при неизвестной chain за `MORPH0016`;
+- registered unavailable/unsupported candidate с origin-only
+  `MORPH0011`/`MORPH0012` против полностью отсутствующей unsupported-looking
+  requested pair с `MORPH0026`;
+- source-only, destination-only и double incompatibility, exact type-argument
+  primary/current-`Map` additional locations и две `MORPH0027` при нарушении
+  обеих relations;
+- positive compatibility identity/class/interface/boxing matrix,
+  reference-nullability canonicalization и rejection numeric/user-defined
+  conversions без поиска более дальнего fallback candidate;
+- отсутствие cycle descriptor/state: valid same-pair chain через несколько
+  mapper-level-ов, compatible same-level partial order, reverse incompatible
+  edge с `MORPH0027` и compiler-owned cyclic type hierarchy;
+- inheritance всех шести map-level settings и полную precedence matrix через
+  transitive included pairs и connected roots;
+- cross-pair import только `Members`, повторное применение current
+  conventions/construction и отсутствие переноса structured/direct/factory
+  `Construct` и `Convert`;
+- exact same-pair full-plan inheritance отдельно для structured/direct
+  `Construct`, declarative `Members` и manual `Convert`, без casts/adapters;
+- полную local-model matrix: no fragments, local `Convert`, local
+  `Construct`, local `Members`, `Construct` + `Members`, inherited
+  declarative/manual plans, Construct fallback/override и member-level
+  expression/`Auto`/`Ignore` precedence;
+- slice-sensitive propagation: ignored cross-pair `Construct`/`Convert`
+  errors, local `Convert` dropping declarative errors, local declarative plan
+  dropping inherited `Convert`, overridden expressions and transitive error
+  recovery without origin diagnostic fan-out;
+- `MORPH0028` для effective inherited `Construct`, `Members` и `Convert`:
+  private member, explicit `base.`, public/internal/protected positives,
+  multiple inaccessible references in one diagnostic, multiple callback
+  origins and context-dependent constructed consumers;
+- отсутствие `MORPH0028` у discarded `Convert`, overridden `Construct`,
+  полностью overridden member rules/dependencies и local callback, а также
+  правильный boundary с category-8 grammar/captures;
+- полный generated recovery: mapper-wide `MORPH0024`, pair-level
+  `MORPH0025`–`MORPH0028`, transitive consumers, обе throwing operations
+  независимо от `MappingMode`, complete legal surfaces и сохранение
+  independent mapper/pair;
+- precedence с `MORPH0001`–`MORPH0023`, самостоятельную cardinality
+  duplicates/двух relations/нескольких callbacks, deterministic order и
+  отсутствие downstream cascade;
+- suppression/изменение severity без изменения lookup, plan, recovery и
+  artifacts;
+- actualization каждого base edge, IncludeBase edge, candidate registration,
+  generic substitution, type relation, local override и accessibility change
+  при одном сохранённом incremental driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- suppressed `MORPH0024`: mapper contracts и legal surfaces компилируются,
+  обе operations всех affected known pairs бросают, independent mapper
+  реально исполняется;
+- suppressed `MORPH0025`, `MORPH0026`, source/destination/double
+  `MORPH0027` и каждый callback family `MORPH0028`: affected pair и
+  transitive consumer бросают без fallback, independent pair исполняется;
+- exact same-pair inheritance реально исполняет base `Construct`, `Members`
+  и `Convert`, local model precedence заменяет их по таблице раздела 6.55, а
+  cross-pair никогда не переносит `Construct`/`Convert`;
+- same-level/nearest-level/transitive lookup, generic/nested mapper
+  substitution и class/interface/boxing compatibility на обычном
+  analyzer-backed consumer build;
+- inaccessible base helpers не исполняются, полностью перекрытые callbacks
+  не блокируют mapping, а origin diagnostics imported errors не размножаются;
+- реальное `.editorconfig`/MSBuild suppression или severity override для всех
+  пяти IDs без изменения generated artifact set и effective recovery.
 
 ## 7. Реализация и тесты
 
