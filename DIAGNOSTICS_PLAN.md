@@ -2,7 +2,9 @@
 
 Дата составления: 7 августа 2026 года.
 
-Статус: этап 2, категория 1, ожидает ревью.
+Последнее обновление: 8 августа 2026 года.
+
+Статус: этап 2, категория 2, ожидает ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -36,7 +38,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категория 1 ожидает ревью; категории 2–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категория 1 принята; категория 2 ожидает ревью; категории 3–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -131,6 +133,28 @@ Morphant и остаётся диагностикой хоста. Non-C# compila
 отдельной пользовательской границей пакета, поскольку generator публикуется в
 `analyzers/dotnet/cs`.
 
+### 5.5. Ownership generated mapping contract
+
+Каждая зарегистрированная через `Map<TSource, TDestination>` canonical pair
+передаёт generator-у полное владение соответствующим
+`ITypeMapper<TSource, TDestination>` contract-ом mapper-а. Mapper не объявляет
+этот interface заранее и не подменяет generated explicit implementations
+ручными методами. Полностью ручное поведение pair выражается через `Convert`,
+при этом interface и его `Create` / `Update` по-прежнему генерирует Morphant.
+
+Exact contract, унаследованный mapper-ом через base class, конфликтом не
+считается. Derived mapper может повторно зарегистрировать ту же canonical pair
+и получить собственную generated implementation; по законам inheritance такая
+регистрация начинает с чистого map-level plan и подключает base plan только
+через явный `IncludeBase`.
+
+`abstract`, generic, nested, private/protected и non-sealed mapper types сами
+по себе разрешены, если их partial contract допустим в C#. Отсутствующий либо
+недоступный source-bodied `Configure` относится к категории 4. Morphant не
+дублирует точные ошибки C# для атрибута на неподходящем kind type-а, уже
+противоречивых пользовательских partial declarations и других malformed
+declarations, которые compiler полностью диагностирует без generated code.
+
 ## 6. Контракт и каталог diagnostics
 
 На этапе 2 для каждой отдельной diagnostic фиксируются:
@@ -179,6 +203,12 @@ Roslyn diagnostics коллизией не считаются. Единого г
 Перед назначением каждого следующего ID выполняется повторный публичный
 collision check. При найденной внешней коллизии ещё не опубликованный ID можно
 изменить; уже опубликованный ID сохраняется.
+
+Перед назначением второй группы 8 августа 2026 года тем же способом проверены
+`MORPH0005`–`MORPH0010`. Внешних публичных .NET/Roslyn diagnostics с этими ID
+не найдено. Диапазоны между категориями не резервируются: IDs назначаются в
+общей последовательности, а ownership категории выражается descriptor
+category и каталогом, а не номером.
 
 ### 6.2. Категория 1: общий contract
 
@@ -372,6 +402,248 @@ Package-like integration-категория независимо проверя�
 - C# 8 consumer с exact `MORPH0001`;
 - suppress/override severity в реальном project: build presentation меняется,
   но generated Morphant contract по-прежнему отсутствует.
+
+### 6.10. Категория 2: общий contract
+
+Категория «Объявление mapper-а и формируемость generated contract» содержит
+ровно шесть diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0005` | `Mapper must derive from TypeMapper` | `Mapper '{0}' must derive from 'Morphant.TypeMapper'.` |
+| `MORPH0006` | `Mapper must be partial` | `Mapper '{0}' must be declared partial so Morphant can generate its mapping contract.` |
+| `MORPH0007` | `Containing type must be partial` | `Containing type '{0}' must be declared partial so Morphant can generate nested mapper contracts.` |
+| `MORPH0008` | `File-local mapper declaration is not supported` | `File-local type '{0}' cannot declare or contain a generated Morphant mapper contract.` |
+| `MORPH0009` | `Mapping contract is already declared` | `Mapping contract '{0}' is already declared by mapper '{1}'. Remove the interface declaration or the Map registration.` |
+| `MORPH0010` | `Mapping contract conflicts with a declared interface` | `Mapping contract '{0}' can unify with an interface contract declared by mapper '{1}'.` |
+
+Для всех шести diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Declaration`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- изменение severity либо suppression меняет только compiler presentation и
+  не делает структурно невозможную generation допустимой;
+- проверка начинается только после успешного compilation-wide gate категории
+  1; prerequisite diagnostic подавляет всю категорию 2;
+- effective settings, mapper inheritance settings,
+  `UnmappedMemberValidation` и достижимость `Create` / `Update` не влияют на
+  условия категории: речь идёт о форме самого declaration contract до
+  построения mapping plan.
+
+Параметры type names используют один fully-qualified nullable-aware display с
+`global::`, special type keywords и escaped identifiers. Mapping contract
+форматируется как
+`global::Morphant.ITypeMapper<{canonicalSource}, {canonicalDestination}>` по
+canonical pair identity: reference nullability, `dynamic`/`object` и tuple
+element names не создают разные сообщения для одной pair.
+
+`MORPH0005` и `MORPH0006` дедуплицируются по mapper symbol. `MORPH0007` и
+`MORPH0008` дедуплицируются по конкретному containing/file-local type symbol,
+поэтому одна проблема общего container-а не повторяется для каждого nested
+mapper-а. `MORPH0009` и `MORPH0010` дедуплицируются по mapper и canonical pair
+и всегда привязываются к первой регистрации этой pair. Одинаковые mapper либо
+pair names в разных symbol identities остаются независимыми.
+
+### 6.11. `MORPH0005`: mapper base type
+
+Diagnostic публикуется для class declaration с `MorphantMapperAttribute`,
+если его base-type chain не содержит exact `Morphant.TypeMapper` symbol из
+проверенного runtime contract. В `{0}` передаётся fully-qualified mapper type.
+Primary location — name syntax применённого `MorphantMapperAttribute`;
+additional locations отсутствуют.
+
+Diagnostic отсутствует при прямом и косвенном наследовании `TypeMapper`.
+Malformed base declaration, для которого compiler уже выдаёт точную и
+достаточную type-resolution либо inheritance error, не получает дублирующую
+Morphant diagnostic.
+
+`MORPH0005` является mapper-wide первичной причиной: остальные diagnostics
+категории 2 и категории 3–12 для этого type-а подавляются, generated artifacts
+этого mapper-а отсутствуют полностью. Другие корректные mapper-ы compilation
+продолжают анализироваться и генерироваться.
+
+### 6.12. `MORPH0006`: partial mapper
+
+Diagnostic публикуется, когда корректно объявленный mapper, который Morphant
+должен дополнить generated declaration-ом, сам не имеет модификатора
+`partial`. В `{0}` передаётся fully-qualified mapper type. Primary location —
+identifier mapper declaration; additional locations отсутствуют.
+
+Все пользовательские declarations одного уже partial type-а должны быть
+C#-согласованными. Если несколько пользовательских declarations сами нарушают
+законы partial types, Morphant не повторяет существующую compiler diagnostic.
+Несколько согласованных partial declarations и модификаторы `abstract`,
+`sealed` либо обычный non-sealed class diagnostic не создают.
+
+Diagnostic запрещает только executable `TypeMapper` artifact mapper-а.
+Construction/member/extension surfaces, которые независимо C#-legal и
+однозначно выводятся из поддерживаемых registrations, сохраняются, чтобы
+configuration DSL не создавал каскад `CS1061`. Категории 3–12 для mapper-а при
+этом подавляются.
+
+### 6.13. `MORPH0007`: partial containing type
+
+Diagnostic публикуется для каждого type declaration в lexical containing
+chain mapper-а, который Morphant должен повторно открыть в generated file, но
+который не объявлен `partial`. В `{0}` передаётся fully-qualified containing
+type. Primary location — identifier соответствующего declaration; additional
+locations отсутствуют.
+
+Несколько non-partial ancestors дают по одной diagnostic на каждый type. Один
+общий container нескольких mapper-ов даёт одну diagnostic и блокирует
+executable artifact каждого вложенного mapper-а. Уже malformed partial type
+остаётся compiler-у. Legal partial class, record, struct и interface
+containers сами по себе разрешены.
+
+Recovery совпадает с `MORPH0006`: executable mapper artifact отсутствует, но
+независимо legal construction/member/extension surfaces сохраняются;
+категории 3–12 затронутых mapper-ов подавляются.
+
+### 6.14. `MORPH0008`: file-local declaration
+
+Diagnostic публикуется, когда mapper либо любой type в его lexical containing
+chain имеет `INamedTypeSymbol.IsFileLocal`: generated syntax tree не может
+законно продолжить file-local partial type. В `{0}` передаётся fully-qualified
+file-local type. Primary location — token `file`; additional locations
+отсутствуют.
+
+Один file-local container нескольких mapper-ов даёт одну diagnostic. Она может
+публиковаться вместе с независимыми `MORPH0006`/`MORPH0007`, если declarations
+одновременно требуют `partial`; `MORPH0005` остаётся более ранней mapper-wide
+причиной.
+
+Executable artifacts всех затронутых mapper-ов отсутствуют. Независимо legal
+construction/member/extension surfaces сохраняются, а категории 3–12
+затронутых mapper-ов подавляются.
+
+### 6.15. Declared interface graph и unification
+
+Declared interface graph mapper-а состоит из interfaces, непосредственно
+указанных в base lists любых его partial declarations, и их транзитивных base
+interfaces. Interfaces, полученные только через base class mapper-а, в этот
+graph не входят: exact inherited mapping contract разрешён разделом 5.5.
+
+Mapping contract candidate — constructed interface, чья
+`OriginalDefinition` равна runtime symbol `Morphant.ITypeMapper<,>`. Candidate
+совпадает с зарегистрированной pair, когда обе canonical type identities
+равны. Два неравных contracts могут унифицироваться, если одна согласованная
+подстановка type parameters делает равными обе позиции `TSource` и
+`TDestination`. Generic constraints не используются как доказательство
+неравенства, как и для конфликтов между двумя generated pair категории 3.
+
+Для `MORPH0009`/`MORPH0010` additional locations являются locations всех
+непосредственно объявленных interface type syntaxes mapper-а, чьи interface
+graphs вводят конфликтующий candidate. Они сортируются в стабильном source
+order и не включают metadata-only declarations транзитивных interfaces.
+
+### 6.16. `MORPH0009`: exact contract already declared
+
+Diagnostic публикуется, когда первая регистрация canonical pair требует
+generated `ITypeMapper<,>`, уже присутствующий как exact candidate в declared
+interface graph mapper-а. В `{0}` передаётся canonical mapping contract, в
+`{1}` — fully-qualified mapper type. Primary location — identifier `Map`
+первой регистрации pair; additional locations задаёт раздел 6.15.
+
+Diagnostic публикуется независимо от наличия implicit либо explicit user
+implementations interface-а: contract зарегистрированной pair принадлежит
+generator-у. Несколько paths к тому же exact candidate и повторные
+registrations pair не дублируют diagnostic. Exact contract через base class
+diagnostic не создаёт.
+
+Конфликтующая pair не входит только в executable mapper artifact; её legal
+construction/member/extension surfaces сохраняются. Независимые pairs того же
+mapper-а продолжают генерацию. `MORPH0009` имеет приоритет над `MORPH0010` и
+подавляет только diagnostics, которым для этой canonical pair уже требуется
+формируемый executable mapping plan. Независимо устанавливаемые registration
+и builder-flow errors по-прежнему публикуются.
+
+### 6.17. `MORPH0010`: unifiable declared contract
+
+Diagnostic публикуется, когда exact candidate отсутствует, но generated
+contract первой регистрации canonical pair способен унифицироваться хотя бы с
+одним отличающимся candidate из declared interface graph mapper-а. В `{0}`
+передаётся canonical mapping contract, в `{1}` — fully-qualified mapper type.
+Primary location — identifier `Map` первой регистрации pair; additional
+locations задаёт раздел 6.15.
+
+Diagnostic отсутствует для contracts, которые не могут стать равными при
+единой подстановке, и для interfaces, полученных только через base class.
+Несколько unifiable candidates дают одну diagnostic canonical pair со всеми
+соответствующими direct-interface locations.
+
+Recovery pair-local: конфликтующий executable contract отсутствует, legal
+construction/member/extension surfaces сохраняются, а независимые pairs того
+же mapper-а продолжают генерацию. Diagnostics, которым для этой pair уже
+требуется формируемый executable mapping plan, подавляются; независимо
+устанавливаемые registration и builder-flow errors сохраняются.
+
+### 6.18. Precedence, порядок и suppression
+
+`MORPH0005` подавляет остальные mapper diagnostics. Без него независимые
+`MORPH0006`, `MORPH0007` и `MORPH0008` могут публиковаться вместе; наличие хотя
+бы одной из них подавляет pair-local `MORPH0009`/`MORPH0010` и категории 3–12
+затронутого mapper-а. Для одной canonical pair exact `MORPH0009` имеет
+приоритет над unifiable `MORPH0010`. Pair-local contract conflict не скрывает
+independent duplicate/eligibility либо builder-flow reason, но останавливает
+анализ содержимого mapping plan, который generator всё равно не сможет
+испустить.
+
+Publication order — по ID, затем ordinal stable identity mapper-а,
+containing type-а либо canonical pair. Порядок syntax discovery и
+incremental invalidation не влияет на diagnostic set, messages, primary или
+additional locations.
+
+Suppression либо понижение severity не возобновляет запрещённый executable
+artifact. Structural state пересчитывается при actualization declaration-а,
+base type либо interface graph: после исправления diagnostic исчезает и
+generation восстанавливается без сохранения прежнего gate.
+
+### 6.19. Самостоятельная тестовая матрица категории 2
+
+Unit-категория declaration независимо фиксирует:
+
+- exact descriptors `MORPH0005`–`MORPH0010`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и parameters;
+- direct/indirect `TypeMapper` inheritance, unrelated base class, exact
+  attribute location и отсутствие mapper-level cascades у `MORPH0005`;
+- single non-partial mapper, несколько согласованных partial declarations,
+  already-malformed partial declarations и exact mapper identifier location;
+- каждый legal containing kind, несколько non-partial ancestors, общий
+  container нескольких mapper-ов, deduplication и exact containing identifier
+  locations `MORPH0007`;
+- file-local mapper и file-local container, exact `file` location,
+  deduplication общего container-а и совместную публикацию с partial errors;
+- direct exact `ITypeMapper<,>`, exact candidate через derived interface,
+  несколько direct paths, user implementations и разрешённый exact contract
+  только через base class для `MORPH0009`;
+- direct и transitive generic interface unification, nested constructed
+  roots, ignored constraints, non-unifiable contracts, base-class exclusion и
+  precedence `MORPH0009` над `MORPH0010`;
+- exact primary/additional locations, canonical message normalization,
+  deduplication первой `Map` registration и стабильный порядок diagnostics;
+- полный generated result каждого recovery: отсутствие executable artifact
+  при mapper-wide failure, сохранение independently legal DSL surfaces,
+  исключение только конфликтующей pair и сохранение независимых pairs;
+- suppression/изменение severity без возобновления запрещённого artifact и
+  отсутствие diagnostics категорий 3–12, которые стали недостоверными;
+- add/change/remove/restore `TypeMapper` base, `partial`, containing/file-local
+  modifiers и direct interface graph при одном сохранённом incremental
+  driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- compilable generated contracts для abstract, closed generic, nested,
+  private/protected и non-sealed mapper forms;
+- non-partial mapper, non-partial container и file-local chain с exact
+  diagnostics без каскадных C# errors в сохранённых DSL surfaces;
+- direct exact и unifiable user-declared interfaces с отсутствующим только
+  конфликтующим executable contract и исполнимой независимой pair;
+- derived mapper, который наследует exact contract, повторно регистрирует pair
+  и получает собственную исполнимую generated implementation;
+- реальное `.editorconfig`/MSBuild suppression или severity override:
+  presentation меняется, но structurally impossible artifact не появляется.
 
 ## 7. Реализация и тесты
 
