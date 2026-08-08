@@ -4,7 +4,7 @@
 
 Последнее обновление: 8 августа 2026 года.
 
-Статус: этап 2, категория 3, ожидает ревью.
+Статус: этап 2, категория 4, ожидает ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -38,7 +38,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–2 приняты; категория 3 ожидает ревью; категории 4–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–3 приняты; категория 4 ожидает ревью; категории 5–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -213,6 +213,10 @@ category и каталогом, а не номером.
 Перед назначением третьей группы 8 августа 2026 года тем же способом проверены
 `MORPH0011`–`MORPH0014`. Внешних публичных .NET/Roslyn diagnostics с этими ID
 не найдено.
+
+Перед назначением четвёртой группы 8 августа 2026 года тем же способом
+проверены `MORPH0015`–`MORPH0018`. Внешних публичных .NET/Roslyn diagnostics с
+этими ID не найдено.
 
 ### 6.2. Категория 1: общий contract
 
@@ -932,6 +936,348 @@ Package-like integration-категория независимо проверя�
 - suppressed unification diagnostics: конфликтующие executable contracts
   отсутствуют, legal configuration surfaces и независимая исполнимая pair
   сохраняются;
+- реальное `.editorconfig`/MSBuild suppression или severity override для
+  каждой recovery-family без изменения generated artifact set.
+
+### 6.30. Категория 4: общий contract
+
+Категория «Обнаружение конфигурации и builder flow» содержит ровно четыре
+diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0015` | `Mapper must declare Configure` | `Mapper '{0}' must declare a source-bodied override of 'Configure(Morphant.MapperBuilder)'.` |
+| `MORPH0016` | `Base mapper configuration is unavailable` | `The Configure body for base mapper '{0}' is unavailable while analyzing mapper '{1}'.` |
+| `MORPH0017` | `Unsupported mapper builder flow` | `Mapper builder flow in Configure of mapper '{0}' cannot be analyzed by Morphant.` |
+| `MORPH0018` | `Unsupported mapping builder flow` | `Mapping builder flow for contract '{0}' in mapper '{1}' cannot be analyzed by Morphant.` |
+
+Для всех четырёх diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Configuration`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- проверка начинается только после успешного compilation-wide gate категории
+  1 и mapper-wide structural gate категории 2;
+- effective settings, `MappingMode`, `UnmappedMemberValidation` и
+  достижимость `Create` / `Update` не влияют на сам факт восстановимости
+  configuration flow;
+- suppression либо изменение severity меняет только compiler presentation и
+  не превращает недоступную или неоднозначную конфигурацию в исполнимый plan.
+
+Mapper и base mapper types в message parameters используют fully-qualified
+nullable-aware display категории 2. Mapping contract в `MORPH0018`
+форматируется по canonical identity категории 3 как
+`global::Morphant.ITypeMapper<{canonicalSource}, {canonicalDestination}>`.
+Aliases, reference nullable annotations, `dynamic`/`object`, tuple element
+names и native-integer syntax поэтому не меняют сообщение одной pair.
+
+Категория распознаёт symbols, а не только имена. Одноимённые `Configure`,
+`MapperBuilder`, `Map` и fluent methods стороннего API не принадлежат Morphant
+и сами по себе diagnostics не создают.
+
+### 6.31. Поддерживаемая грамматика `Configure`
+
+Configuration level — собственный source-bodied override mapper-а либо
+source-bodied override base mapper-а, связанный с ним прямым
+`base.Configure(builder)`. Для каждого level Morphant анализирует exact
+parameter symbol типа `global::Morphant.MapperBuilder`; совпадение имени
+параметра не требуется.
+
+Поддерживаемый flow является декларативной линейной последовательностью:
+
+- block-bodied `Configure` содержит ноль или больше безусловных top-level
+  expression statements; expression-bodied `Configure` содержит одну такую
+  expression;
+- Morphant expression является прямой fluent chain, корнем которой служит
+  parameter текущего level-а; root methods могут настраивать mapper и один раз
+  перейти через `Map<TSource, TDestination>` к pair builder-у, после чего
+  chain содержит только применимые Morphant pair methods;
+- отдельный прямой top-level `base.Configure(builder)` соединяет текущий
+  level с source-доступным base level; receiver должен быть exact `base`, а
+  единственный argument — exact builder parameter;
+- круглые скобки и postfix null-forgiving `!` вокруг builder, receiver,
+  chain либо argument `base.Configure` прозрачны и не разрывают flow;
+- statements и expressions, которые не ссылаются на Morphant builder и не
+  управляют достижимостью его chains, категория 4 игнорирует;
+- preprocessor `#if` допустим: анализируется уже выбранное compiler-ом syntax
+  tree, поэтому отсутствующая ветка не является runtime control flow.
+
+Каждое настоящее использование root либо pair builder-а должно целиком
+укладываться в эту грамматику. Builder нельзя сохранять в local, field,
+property или tuple, возвращать, передавать helper-у либо delegate-у,
+захватывать, разносить его chain по нескольким statements или проводить через
+сторонний fluent method. Morphant chain не может выполняться условно,
+повторяться либо откладываться через `if`, conditional/switch expression,
+loop, `switch`, `try`, local function, lambda, delegate или аналогичный
+control flow.
+
+Проверка достижимости не ограничивается родительским syntax node. Например,
+в `if (condition) return; builder.Map<A, B>();` registration может быть
+пропущена и поэтому нарушает линейный flow. `return` после последней Morphant
+chain либо независимый control flow, не влияющий на builder statements,
+diagnostic не создаёт.
+
+Arguments и bodies уже распознанных `Construct`, `Members` и `Convert`
+callbacks не обходятся категорией 4. Они являются декларативным содержимым
+категории 8, даже если ссылаются на внешний builder. Nested `Map` / `Create` /
+`Update` markers внутри этих callbacks принадлежат категории 11.
+
+### 6.32. `MORPH0015`: собственный source-bodied `Configure`
+
+Diagnostic публикуется, когда mapper не объявляет собственный exact override
+`void Configure(global::Morphant.MapperBuilder)`, доступный Morphant как
+block- либо expression-bodied source declaration текущей input compilation.
+Унаследованный concrete override не заменяет собственный: configuration
+наследуется только через явный `base.Configure(builder)` из нового override.
+
+Legal bodyless `abstract override` также получает diagnostic. Body,
+сгенерированный другим source generator-ом, для Morphant недоступен: Roslyn
+generators не анализируют outputs друг друга как input syntax, поэтому такая
+форма не считается source-bodied override-ом.
+
+Если exact bodyless declaration существует, primary location — identifier
+`Configure`. Если собственного exact override нет, primary location —
+identifier mapper declaration; additional locations отсутствуют. В `{0}`
+передаётся mapper type. Diagnostic дедуплицируется по mapper symbol независимо
+от количества его partial declarations.
+
+Полностью malformed попытка объявить override — неверный return/parameter
+type, type parameters, `static`, неразрешившийся type либо override unrelated
+member — остаётся точной compiler diagnostic и не получает дублирующую
+`MORPH0015`. Простое отсутствие override получает `MORPH0015`, даже если
+non-abstract mapper одновременно получает `CS0534`.
+
+Без собственного source body Morphant не предполагает registrations и не
+генерирует для mapper-а executable contract, construction/member/extension
+surfaces либо recovery-stubs. Независимые mapper-ы compilation продолжают
+анализироваться.
+
+### 6.33. `MORPH0016`: недоступный body base-конфигурации
+
+Diagnostic публикуется на поддерживаемом прямом
+`base.Configure(builder)`, если target override семантически разрешён, но его
+block либо expression body отсутствует среди input syntax trees текущей
+compilation. В частности, недоступны metadata-only body из referenced assembly
+и declaration, ожидающая реализацию от другого source generator-а. Source body
+в этой compilation доступен независимо от файла и partial declaration.
+
+Primary location — identifier `Configure` прямого base-call; additional
+locations отсутствуют. В `{0}` передаётся declaring base mapper type, в `{1}`
+— анализируемый mapper type. Identity diagnostic — анализируемый mapper и
+конкретное ребро configuration chain; повторный вызов того же edge не
+дублирует `MORPH0016`, а нарушение повторного включения относится к категории
+7.
+
+Вызов с alias вместо exact parameter, indirect helper call либо вызов под
+неподдерживаемым control flow не образует поддерживаемого base edge и
+диагностируется `MORPH0017`, а не каскадным `MORPH0016`. Цикл, несколько
+прямых вызовов, несогласованная configuration chain и `IncludeBase` также
+остаются категорией 7, если target bodies доступны.
+
+Недоступный body делает effective root settings и полный inherited plan
+неизвестными. Все непосредственно известные после категорий 2–3 legal pairs
+из доступной части configuration chain сохраняют полный
+`ITypeMapper<TSource, TDestination>` contract и свои independently legal DSL
+surfaces, но обе операции каждой pair бросают
+`MappingConfigurationException`. Это применяется независимо от
+`MappingMode`: недоступный base level не позволяет доказать даже отключённую
+operation.
+
+Registrations за недоступным edge не угадываются и artifacts не получают.
+Структурно исключённые pairs категорий 2–3 не восстанавливаются этим recovery.
+
+### 6.34. `MORPH0017`: unsupported root-builder flow
+
+Diagnostic публикуется для каждого независимого места, где exact root
+`MapperBuilder` текущего configuration level-а выходит за границы раздела
+6.31. К таким причинам относятся:
+
+- присваивание alias-у, сохранение, возврат, передача helper-у/delegate-у либо
+  capture root builder-а;
+- вызов Morphant root method не как часть прямой top-level chain;
+- сторонний method или extension method внутри chain до перехода через
+  `Map<TSource, TDestination>`;
+- conditional, repeated, deferred либо иным образом нелинейное выполнение
+  root setting, `Map` или прямого `base.Configure`;
+- несколько ссылок на root builder внутри одной chain, включая передачу его
+  через argument.
+
+Использование результата распознанного `Map` вне pair chain не является
+root-escape и относится к `MORPH0018`. Одноимённый сторонний builder либо
+метод игнорируется, пока через него фактически не проходит exact Morphant
+builder value.
+
+Primary location выбирается в следующем порядке:
+
+1. конкретный identifier root builder-а, который сохраняется, передаётся или
+   захватывается;
+2. name первого стороннего fluent method на root chain;
+3. name первой Morphant invocation, включая `Map`, чья достижимость стала
+   условной либо повторяемой;
+4. identifier `Configure`, если более узкого builder-related span нет.
+
+Additional locations отсутствуют. Flow-break identity включает mapper,
+configuration level и первое syntax location, в котором один root value
+покинул поддерживаемый flow. Все дальнейшие обращения через уже
+диагностированный alias/helper/delegate являются каскадом и новых diagnostics
+не создают. Два независимых escape-а исходного parameter-а получают две
+diagnostics.
+
+Root-escape блокирует executable plan всего mapper-а: helper либо deferred
+code мог изменить root settings или зарегистрировать неизвестные pairs. Все
+exact `MapperBuilder.Map<TSource, TDestination>` invocations, непосредственно
+видимые вне helper/local-function/delegate bodies в доступных `Configure`
+levels и structurally legal после категорий 2–3, получают полный throwing
+contract и independently legal DSL surfaces. Обе операции бросают
+`MappingConfigurationException` независимо от `MappingMode`.
+
+Registrations, скрытые внутри helper, local function, lambda или delegate, не
+угадываются и artifacts не получают. Независимый mapper compilation не
+затрагивается.
+
+### 6.35. `MORPH0018`: unsupported pair-builder flow
+
+Diagnostic публикуется, когда прямой root flow однозначно достигает
+authoritative `Map<TSource, TDestination>`, но возвращённый exact
+`MapperBuilder<TSource, TDestination>` не остаётся внутри одной поддерживаемой
+top-level fluent chain. В частности, ошибочны:
+
+- сохранение результата `Map`, его передача, возврат либо capture;
+- продолжение pair configuration через alias в другом statement;
+- helper, delegate либо сторонний fluent method между `Map` и Morphant pair
+  methods;
+- conditional, repeated или deferred pair-chain fragment вне callback bodies.
+
+Primary location — identifier `Map`, если его result покидает текущую fluent
+chain; name первого стороннего method, если break происходит внутри chain;
+либо конкретная pair-builder reference в остальных формах. Additional
+locations отсутствуют.
+
+Identity включает mapper, canonical pair и независимое место flow break.
+Дальнейшие uses уже диагностированного alias/helper/delegate не создают
+каскад. Несколько независимых breaks одной authoritative pair дают несколько
+`MORPH0018`; один break, наблюдаемый несколькими последующими uses, даёт одну.
+
+Recovery pair-local. Затронутая structurally legal pair сохраняет полный
+`ITypeMapper<TSource, TDestination>` contract и independently legal DSL
+surfaces, но `Create` и `Update` бросают `MappingConfigurationException`
+независимо от effective `MappingMode`. Остальные pairs mapper-а сохраняют
+собственный исполнимый plan, если их не блокирует другая причина.
+
+Chain поздней duplicate registration, уже полностью отброшенный
+`MORPH0013`, не получает `MORPH0018`: первая registration владеет pair plan,
+а содержимое последующих chains не анализируется. Root-escape, способный
+затронуть неизвестные root settings либо registrations, остаётся независимым
+`MORPH0017` даже рядом с duplicate registration.
+
+### 6.36. Ownership соседних категорий
+
+Категория 4 отвечает только за обнаружимость source configuration и движение
+двух builder values. После успешного восстановления linear chain она не
+проверяет:
+
+- количество и порядок `base.Configure(builder)`, configuration cycles и
+  перенос настроек между connected levels — категория 7;
+- `IncludeBase`, поиск и совместимость base pair — категория 7;
+- состав `Construct` / `Members` / `Convert` одной pair и допустимость их
+  сочетания — категория 5;
+- значения arguments Morphant settings и их применимость — категория 6;
+- переносимость callback bodies, locals, captures и control flow внутри них —
+  категория 8;
+- construction, members и nested mapping semantics — категории 9–11.
+
+Сторонний fluent method, через который проходит builder value, остаётся
+категорией 4, даже если он в итоге возвращает тот же builder type: Morphant не
+исполняет configuration code и не может доказать его декларативную
+эквивалентность.
+
+### 6.37. Precedence, порядок и suppression
+
+Compilation-wide gate категории 1 и mapper-wide structural errors
+`MORPH0005`–`MORPH0008` подавляют категорию 4. `MORPH0015` подавляет
+`MORPH0016`–`MORPH0018` того же mapper-а, поскольку анализируемого body нет.
+
+Pair-local structural diagnostics `MORPH0009`–`MORPH0014` не скрывают
+независимо доказуемый builder-flow break. Их structural recovery имеет
+приоритет: `MORPH0016`–`MORPH0018` не возвращают исключённый executable
+contract и не создают DSL surfaces для unsupported root. `MORPH0013`
+дополнительно подавляет анализ только отброшенных duplicate chains по разделу
+6.35.
+
+Независимые `MORPH0016` и `MORPH0017` могут публиковаться вместе. Mapper-wide
+recovery любой из них уже делает все известные operations throwing, но не
+скрывает самостоятельный `MORPH0018`: после исправления одной причины вторая
+не должна появляться впервые. Diagnostics категорий 5–12, которым нужен
+достоверный effective mapping plan, подавляются для соответствующего mapper-а
+либо pair; соседние независимо доказуемые structural причины сохраняются.
+
+Publication order — по ID, затем ordinal stable mapper identity,
+configuration-level order от derived к base, canonical pair и source
+location flow break. Discovery, traversal connected base levels и incremental
+invalidation не меняют diagnostic set, messages или locations.
+
+Suppression либо понижение severity не меняет recovery и не разрешает
+исполнять непроверенный configuration code. Добавление/удаление source body,
+подключение/разрыв base edge и перенос builder use в поддерживаемый либо
+неподдерживаемый flow полностью пересчитываются при actualization без
+сохранения прежнего gate.
+
+### 6.38. Самостоятельная тестовая матрица категории 4
+
+Unit-категория configuration независимо фиксирует:
+
+- exact descriptors `MORPH0015`–`MORPH0018`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и type/contract
+  parameters;
+- block-bodied, expression-bodied и empty own override; унаследованный
+  concrete override, legal bodyless abstract override, missing override,
+  body другого generator-а и malformed override attempts с exact
+  `MORPH0015`/compiler ownership и locations;
+- доступный source base body в том же и другом syntax tree, metadata-only и
+  generator-produced body, generic base substitution, exact base-call
+  location, edge deduplication и throwing recovery `MORPH0016`;
+- несколько безусловных top-level root/pair chains, отдельные root settings,
+  direct `base.Configure`, parentheses, null-forgiving `!`, inert unrelated
+  statements и compiler-selected `#if` branches как positive grammar matrix;
+- semantic exclusion одноимённых сторонних builders и methods;
+- root alias, assignment/storage, helper argument, local function, delegate,
+  capture, repeated builder argument, third-party fluent method и split root
+  flow с exact `MORPH0017` locations и cascade deduplication;
+- `if`, conditional/switch expression, loops, `switch`, `try` и early control
+  transfer, включая `if (condition) return; Map(...)`, с semantic reachability
+  diagnostics;
+- напрямую видимые и скрытые registrations при root-escape, complete throwing
+  contracts только известных legal pairs, отсутствие guessed artifacts и
+  сохранение независимого mapper-а;
+- assignment, storage, helper/delegate, alias continuation, сторонний fluent
+  method и conditional pair fragment после `Map` с exact pair identity,
+  locations и one-diagnostic-per-independent-break cardinality `MORPH0018`;
+- pair-local throwing recovery `MORPH0018`, сохранение независимой исполнимой
+  pair и обе operation stubs независимо от `MappingMode`;
+- отсутствие category-4 обхода callback bodies и правильное сохранение
+  ownership категорий 5–11;
+- precedence с `MORPH0005`–`MORPH0014`, отсутствие `MORPH0018` в отброшенном
+  duplicate chain и совместную публикацию независимых mapper-wide/pair-local
+  flow breaks;
+- deterministic order, suppression/изменение severity без изменения recovery
+  и отсутствие недостоверных downstream diagnostics;
+- add/remove/replace own/base body, root escape и pair escape при одном
+  сохранённом incremental driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- mapper без собственного source-bodied override и mapper только с inherited
+  override: exact `MORPH0015` и полное отсутствие generated artifacts;
+- source-connected и metadata-only base `Configure`: для недоступного body
+  сохраняются только известные contracts/surfaces, а реальные вызовы обеих
+  operations бросают `MappingConfigurationException`;
+- suppressed `MORPH0017`: напрямую видимые pairs имеют throwing contracts,
+  hidden helper/delegate registrations не получают artifacts;
+- suppressed `MORPH0018`: затронутая pair бросает на обеих operations, а
+  независимая pair остаётся исполнимой;
+- callbacks с declarative contents не создают category-4 diagnostic, а
+  одноимённый сторонний API не влияет на Morphant generation;
 - реальное `.editorconfig`/MSBuild suppression или severity override для
   каждой recovery-family без изменения generated artifact set.
 
