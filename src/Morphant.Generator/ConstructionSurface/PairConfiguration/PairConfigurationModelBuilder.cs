@@ -57,6 +57,7 @@ internal static class PairConfigurationModelBuilder
             GeneratedTypeNameBuilder.Build(
                 previousDestinationType,
                 typeParameterNames),
+            pair.Capabilities.StructuredConstruction,
             pair.Capabilities.StructuredConstruction
                 ? BuildPlanTypeName(
                     (INamedTypeSymbol)previousDestinationType,

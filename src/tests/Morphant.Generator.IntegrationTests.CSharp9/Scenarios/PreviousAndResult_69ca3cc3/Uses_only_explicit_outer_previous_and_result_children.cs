@@ -35,7 +35,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PreviousAndResul
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<OuterSource, OuterDestination>()
-                .Construct((source, previous) =>
+                .Resolve((source, previous) =>
                     previous.HasValue
                         ? new(new ChildDestination(30))
                         : new(new ChildDestination(10)))

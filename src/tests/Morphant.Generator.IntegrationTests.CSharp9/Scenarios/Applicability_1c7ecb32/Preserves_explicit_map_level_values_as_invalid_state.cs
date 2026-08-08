@@ -27,7 +27,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Applicability_1c
         {
             builder.Map<Source, string>()
                 .ConstructorSelection(ConstructorSelection.Default)
-                .Construct(source => source.Value.ToString());
+                .ConstructUsing(source => source.Value.ToString());
             builder.Map<Source, ManualDestination>()
                 .ConstructorSelection(ConstructorSelection.Default)
                 .Convert((source, _, _) =>

@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperMemberTests/ResultAwareTests::Uses_the_selected_factory_and_direct_results_and_stops_on_null
+// Compiled integration scenario: TypeMapperMemberTests/ResultAwareTests::Uses_selected_runtime_callback_results_and_stops_on_null
 #nullable enable
 #pragma warning disable CS1591
 
@@ -60,17 +60,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResultAware_f6b0
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, FactoryDestination>()
-                .Construct((source, previous) =>
+                .ResolveUsing((source, previous) =>
                 {
                     if (previous.HasValue && source.Reuse)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
-                    return new(ByFactory<FactoryDestination>(() =>
-                        source.ReturnNull
-                            ? null!
-                            : new FactoryDestination(source.Seed)));
+                    return source.ReturnNull
+                        ? null!
+                        : new FactoryDestination(source.Seed);
                 })
                 .Members((source, _, result) => new()
                 {
@@ -78,7 +77,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResultAware_f6b0
                 });
 
             builder.Map<Source, IDirectDestination>()
-                .Construct((source, previous) =>
+                .ResolveUsing((source, previous) =>
                     source.ReturnNull
                         ? null!
                         : previous.HasValue && source.Reuse

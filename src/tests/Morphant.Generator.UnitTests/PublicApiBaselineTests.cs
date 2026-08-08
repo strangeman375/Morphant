@@ -16,23 +16,50 @@ T Morphant.ConstructorSelection
 T Morphant.Context.MappingContext
   P Morphant.Context.MappingOperation Operation { get; }
   P Morphant.IMapper Mapper { get; }
+T Morphant.Context.MappingContextMarker
+  P Morphant.Context.MappingOperation Operation { get; }
 T Morphant.Context.MappingOperation
   V Create, Update
+T Morphant.Delegates.ConstructUsing<TSource, TResult>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, System.AsyncCallback, System.Object)
+  M TResult EndInvoke(System.IAsyncResult)
+  M TResult Invoke(TSource)
+T Morphant.Delegates.ConstructUsing<TSource, TContext, TResult>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, TContext, System.AsyncCallback, System.Object)
+  M TResult EndInvoke(System.IAsyncResult)
+  M TResult Invoke(TSource, TContext)
 T Morphant.Delegates.Construct<TSource, TResult>
   C .ctor(System.Object, System.IntPtr)
   M System.IAsyncResult BeginInvoke(TSource, System.AsyncCallback, System.Object)
   M TResult EndInvoke(System.IAsyncResult)
   M TResult Invoke(TSource)
-T Morphant.Delegates.Construct<TSource, TPrevious, TResult>
+T Morphant.Delegates.Construct<TSource, TContext, TResult>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, TContext, System.AsyncCallback, System.Object)
+  M TResult EndInvoke(System.IAsyncResult)
+  M TResult Invoke(TSource, TContext)
+T Morphant.Delegates.Convert<TSource, TResult>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, System.AsyncCallback, System.Object)
+  M TResult EndInvoke(System.IAsyncResult)
+  M TResult Invoke(TSource)
+T Morphant.Delegates.Convert<TSource, TPrevious, TResult>
   C .ctor(System.Object, System.IntPtr)
   M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, System.AsyncCallback, System.Object)
   M TResult EndInvoke(System.IAsyncResult)
   M TResult Invoke(TSource, Morphant.Option<TPrevious>)
-T Morphant.Delegates.Convert<TSource, TPrevious, TResult>
+T Morphant.Delegates.Convert<TSource, TPrevious, TContext, TResult>
   C .ctor(System.Object, System.IntPtr)
-  M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, Morphant.Context.MappingContext, System.AsyncCallback, System.Object)
+  M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, TContext, System.AsyncCallback, System.Object)
   M TResult EndInvoke(System.IAsyncResult)
-  M TResult Invoke(TSource, Morphant.Option<TPrevious>, Morphant.Context.MappingContext)
+  M TResult Invoke(TSource, Morphant.Option<TPrevious>, TContext)
+T Morphant.Delegates.Members<TSource, TMembers>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, System.AsyncCallback, System.Object)
+  M TMembers EndInvoke(System.IAsyncResult)
+  M TMembers Invoke(TSource)
 T Morphant.Delegates.Members<TSource, TPrevious, TMembers>
   C .ctor(System.Object, System.IntPtr)
   M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, System.AsyncCallback, System.Object)
@@ -43,6 +70,31 @@ T Morphant.Delegates.Members<TSource, TPrevious, TResult, TMembers>
   M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, TResult, System.AsyncCallback, System.Object)
   M TMembers EndInvoke(System.IAsyncResult)
   M TMembers Invoke(TSource, Morphant.Option<TPrevious>, TResult)
+T Morphant.Delegates.Members<TSource, TPrevious, TResult, TContext, TMembers>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, TResult, TContext, System.AsyncCallback, System.Object)
+  M TMembers EndInvoke(System.IAsyncResult)
+  M TMembers Invoke(TSource, Morphant.Option<TPrevious>, TResult, TContext)
+T Morphant.Delegates.ResolveUsing<TSource, TPrevious, TResult>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, System.AsyncCallback, System.Object)
+  M TResult EndInvoke(System.IAsyncResult)
+  M TResult Invoke(TSource, Morphant.Option<TPrevious>)
+T Morphant.Delegates.ResolveUsing<TSource, TPrevious, TContext, TResult>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, TContext, System.AsyncCallback, System.Object)
+  M TResult EndInvoke(System.IAsyncResult)
+  M TResult Invoke(TSource, Morphant.Option<TPrevious>, TContext)
+T Morphant.Delegates.Resolve<TSource, TPrevious, TResult>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, System.AsyncCallback, System.Object)
+  M TResult EndInvoke(System.IAsyncResult)
+  M TResult Invoke(TSource, Morphant.Option<TPrevious>)
+T Morphant.Delegates.Resolve<TSource, TPrevious, TContext, TResult>
+  C .ctor(System.Object, System.IntPtr)
+  M System.IAsyncResult BeginInvoke(TSource, Morphant.Option<TPrevious>, TContext, System.AsyncCallback, System.Object)
+  M TResult EndInvoke(System.IAsyncResult)
+  M TResult Invoke(TSource, Morphant.Option<TPrevious>, TContext)
 T Morphant.Exceptions.AmbiguousMappingException
   C .ctor(System.Type, System.Type)
 T Morphant.Exceptions.InvalidMappingRegistrationException
@@ -96,7 +148,6 @@ T Morphant.Markers.AutoMarker
 T Morphant.Markers.AutoMarker<T>
 T Morphant.Markers.ByConventionMarker
 T Morphant.Markers.ConstructorMarker
-T Morphant.Markers.IByFactoryMarker<TDestination>
 T Morphant.Markers.IgnoreMarker
 T Morphant.Markers.IgnoreMarker<T>
 T Morphant.Markers.MapMarker
@@ -123,7 +174,6 @@ T Morphant.TypeMapper
   M Morphant.Markers.AutoMarker Auto()
   M Morphant.Markers.AutoMarker<T> Auto<T>()
   M Morphant.Markers.ByConventionMarker ByConvention()
-  M Morphant.Markers.IByFactoryMarker<TDestination> ByFactory<TDestination>(System.Func<TDestination>)
   M Morphant.Markers.IgnoreMarker Ignore()
   M Morphant.Markers.IgnoreMarker<T> Ignore<T>()
   M Morphant.Markers.MapMarker Create(System.Object)

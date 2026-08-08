@@ -277,6 +277,8 @@ namespace TestCase
 
         public __VALUE_TYPE__ Value { get; }
 
+        public __VALUE_TYPE__ MutableValue { get; set; }
+
         public int UnmappedMethod() => __METHOD_VERSION__;
     }
 
@@ -285,6 +287,8 @@ namespace TestCase
         public DestinationB(string name) => Name = name;
 
         public string Name { get; }
+
+        public string MutableName { get; set; } = string.Empty;
     }
 
     internal static class Unrelated

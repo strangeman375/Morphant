@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/OpaquePlanTests::Keeps_factory_and_direct_bodies_outside_cross_plan_sharing
+// Compiled integration scenario: TypeMapperDependencyGraphTests/OpaquePlanTests::Keeps_runtime_callback_bodies_outside_cross_plan_sharing
 #nullable enable
 #pragma warning disable CS1591
 
@@ -48,15 +48,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.OpaquePlan_11696
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .Construct(source => new(ByFactory<Destination>(
-                    () => new Destination(FactoryValue(source.Value)))))
+                .ConstructUsing(source =>
+                    new Destination(FactoryValue(source.Value)))
                 .Members((source, _) => new()
                 {
                     Value = FactoryValue(source.Value)
                 });
 
             builder.Map<Source, IDirectDestination>()
-                .Construct(source =>
+                .ConstructUsing(source =>
                     new DirectDestination(DirectValue(source.Value)))
                 .Members((source, _) => new()
                 {

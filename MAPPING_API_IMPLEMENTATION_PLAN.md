@@ -134,9 +134,9 @@ Collections, projection и остальные post-v0 возможности в 
 
 ## Согласованные ревизии callback surface и read-only proxy
 
-Статус: согласована 8 августа 2026 года; нормативный дизайн, roadmap и
-пользовательская документация актуализированы, production-код, generated API,
-XML documentation и тесты ещё не изменены.
+Статус: ожидает пользовательского ревью с 8 августа 2026 года. Нормативный
+дизайн, production-код, generated API, XML documentation, exact-source,
+actualization и package-like integration tests актуализированы одним срезом.
 
 Ревизия устраняет скрытую зависимость semantics от arity прежнего
 `Construct`. Overload одного fluent method выбирает только доступные callback-у
@@ -328,7 +328,7 @@ opaque и остальные неподдерживаемые nested roots proxy
 однократное чтение target-а, discard nested replacement и исключение proxy из
 conventions / `Auto()` / unmapped validation сохраняются.
 
-Implementation-срез должен заменить surface и semantics целиком:
+Реализованный срез заменяет surface и semantics целиком:
 
 - добавить `MappingContextMarker` и новые named delegate arities;
 - добавить generated `Resolve` и context-aware structured overload-ы;
@@ -345,20 +345,21 @@ Implementation-срез должен заменить surface и semantics це�
   lowering, XML documentation, exact-source snapshots, integration scenarios,
   actualization и public API inventory одним coherent change.
 
-Diagnostics до завершения этого среза не продолжаются. Перед возвращением к
-их каталогу категории 1, 4, 5, 7 и 8 согласованно пересматриваются для шести
-callback families, общего result-policy slot-а и `MappingContextMarker`;
-прежняя категория 8 больше не считается готовой к ревью или реализации.
+Diagnostics до пользовательского принятия этого среза не продолжаются. Перед
+возвращением к их каталогу категории 1, 4, 5, 7 и 8 согласованно
+пересматриваются для шести callback families, общего result-policy slot-а и
+`MappingContextMarker`; прежняя категория 8 больше не считается готовой к
+ревью или реализации.
 
 ## Следующий этап
 
 **Ревизия callback overload surface, result policies и read-only proxy.**
 
-Статус: соглашения внесены в документы, ожидают пользовательского ревью;
-production-реализация не начата.
+Статус: production-реализация и тесты завершены, ожидают пользовательского
+ревью.
 
 После ревью пользователь отдельно определит следующий шаг. Diagnostics этапа
-23 остаются приостановлены до завершения пользовательского API. Принятые ранее
+23 остаются приостановлены до принятия пользовательского API. Принятые ранее
 категории 1–7 сохраняют свои IDs и общие diagnostic contracts, но их callback-
 зависимые части потребуют согласованной актуализации; черновик категории 8
 снят со статуса `ожидает ревью`.

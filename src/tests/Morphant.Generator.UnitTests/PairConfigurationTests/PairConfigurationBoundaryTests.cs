@@ -105,28 +105,28 @@ namespace TestCase
 // Pair 0: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
 // Pair 1: global::TestCase.MembersSource -> global::TestCase.MembersDestination
 // Map: builder.Map<MembersSource, MembersDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
 // Pair 2: global::TestCase.ConvertSource -> global::TestCase.ConvertDestination
 // Map: builder.Map<ConvertSource, ConvertDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
 // Pair 3: global::TestCase.VisibleSource -> global::TestCase.VisibleDestination
 // Map: builder.Map<VisibleSource, VisibleDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
@@ -195,7 +195,7 @@ namespace TestCase
 // Pair 0: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
@@ -206,14 +206,14 @@ namespace TestCase
 // Pair 0: global::TestCase.Envelope<T> -> global::TestCase.Destination
 // Map: builder.Map<Envelope<T>, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
 // Pair 1: global::TestCase.Envelope<global::System.Int32> -> global::TestCase.Destination
 // Map: builder.Map<Envelope<int>, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
@@ -224,7 +224,7 @@ namespace TestCase
 // Pair 0: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None

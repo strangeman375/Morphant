@@ -59,9 +59,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ReadOnlyMember_c
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<OuterSource, OuterDestination>()
-                .Construct((_, _) => new(
-                    ByFactory<OuterDestination>(
-                        () => new OuterDestination())))
+                .ResolveUsing((_, _) => new OuterDestination())
                 .Members((source, _) =>
                 {
                     var members = new OuterDestinationMembers

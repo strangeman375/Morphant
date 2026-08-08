@@ -1,8 +1,9 @@
 # Новый дизайн mapping API Morphant
 
-Статус документа: согласованный нормативный целевой дизайн mapping API.
-Callback result-policy и read-only proxy revisions ещё не перенесены в
-production-код; актуальный прогресс и оставшиеся границы фиксирует
+Статус документа: согласованный нормативный дизайн реализованного mapping API.
+Callback result-policy и read-only proxy revisions перенесены в
+production-код и тесты и ожидают пользовательского ревью; актуальный прогресс
+и оставшиеся границы фиксирует
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
 Прежний `Template()`-дизайн упоминается только в сравнительном аудите там, где
 он объясняет решения текущего API, и не является compatibility target.
@@ -3111,11 +3112,10 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
 
 ## 17. Статус реализации и оставшиеся границы
 
-Основная semantics core v0 реализована, но согласованная ревизия callback
-surface из разделов 6–8 и уточнённая граница read-only proxy из разделов 7 и
-11 ещё не перенесены в production-код, generated API и tests. Пользовательская
-документация уже описывает целевой контракт и явно помечена как target.
-Текущее состояние и следующий cross-cutting implementation slice фиксируются в
+Основная semantics core v0, ревизия callback surface из разделов 6–8 и
+уточнённая граница read-only proxy из разделов 7 и 11 реализованы в
+production-коде, generated API и tests и ожидают пользовательского ревью.
+Текущее состояние и следующий этап фиксируются в
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md), а
 независимая оценка полноты сценариев — в
 [`MAPPING_API_FINAL_AUDIT.md`](MAPPING_API_FINAL_AUDIT.md).

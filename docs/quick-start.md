@@ -1,8 +1,7 @@
 # Quick start
 
-This page describes the agreed core v0 target. The callback result-policy and
-read-only proxy revisions are not yet implemented in the generated API;
-current production progress is tracked in the
+This page documents the implemented core v0 API. Current review status and
+remaining boundaries are tracked in the
 [mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
 
 Morphant generates mapping code in the consumer compilation. The runtime and

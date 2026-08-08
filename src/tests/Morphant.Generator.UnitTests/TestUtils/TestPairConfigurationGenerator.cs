@@ -150,21 +150,21 @@ internal sealed class TestPairConfigurationGenerator :
             .Append(NormalizeSyntax(model.Pair.Registration.Syntax))
             .Append(newLine);
         WriteSettings(builder, "Map", model.Settings, newLine);
-        builder.Append("// Declarative: Constructs=")
-            .Append(model.Declarative.Constructs.Length)
+        builder.Append("// Declarative: ResultPolicies=")
+            .Append(model.Declarative.ResultPolicies.Length)
             .Append("; Members=")
             .Append(model.Declarative.Members.Length)
             .Append(newLine);
 
         for (var callIndex = 0;
-             callIndex < model.Declarative.Constructs.Length;
+             callIndex < model.Declarative.ResultPolicies.Length;
              callIndex++)
         {
-            var call = model.Declarative.Constructs[callIndex];
+            var call = model.Declarative.ResultPolicies[callIndex];
 
             WriteExpression(
                 builder,
-                "Construct",
+                call.Kind.ToString(),
                 callIndex,
                 call.Form.ToString(),
                 call.Expression,
@@ -198,7 +198,7 @@ internal sealed class TestPairConfigurationGenerator :
                 builder,
                 "Convert",
                 callIndex,
-                "SourcePreviousAndContext",
+                model.Manual.Conversions[callIndex].Form.ToString(),
                 model.Manual.Conversions[callIndex].Expression,
                 newLine);
         }

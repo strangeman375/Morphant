@@ -34,7 +34,39 @@ namespace Morphant
 
         public static MapperBuilder<TSource, TDestination> Construct<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,
-            Construct<TSource, TDestination, object> construct) => builder;
+            Construct<TSource, MappingContextMarker, object> construct) => builder;
+
+        public static MapperBuilder<TSource, TDestination> Resolve<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            Resolve<TSource, TDestination, object> resolve) => builder;
+
+        public static MapperBuilder<TSource, TDestination> Resolve<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            Resolve<TSource, TDestination, MappingContextMarker, object> resolve) => builder;
+
+        public static MapperBuilder<TSource, TDestination> ConstructUsing<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            ConstructUsing<TSource, TDestination> construct,
+            bool compilerFallback = false) => builder;
+
+        public static MapperBuilder<TSource, TDestination> ConstructUsing<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            ConstructUsing<TSource, MappingContext, TDestination> construct,
+            bool compilerFallback = false) => builder;
+
+        public static MapperBuilder<TSource, TDestination> ResolveUsing<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            ResolveUsing<TSource, TDestination, TDestination> resolve,
+            bool compilerFallback = false) => builder;
+
+        public static MapperBuilder<TSource, TDestination> ResolveUsing<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            ResolveUsing<TSource, TDestination, MappingContext, TDestination> resolve,
+            bool compilerFallback = false) => builder;
+
+        public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            Members<TSource, object> members) => builder;
 
         public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,
@@ -44,9 +76,24 @@ namespace Morphant
             this MapperBuilder<TSource, TDestination> builder,
             Members<TSource, TDestination, TDestination, object> members) => builder;
 
+        public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            Members<TSource, TDestination, TDestination, MappingContextMarker, object> members) => builder;
+
         public static MapperBuilder<TSource, TDestination> Convert<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,
-            Convert<TSource, TDestination, TDestination> convert) => builder;
+            Convert<TSource, TDestination> convert,
+            bool compilerFallback = false) => builder;
+
+        public static MapperBuilder<TSource, TDestination> Convert<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            Convert<TSource, TDestination, TDestination> convert,
+            bool compilerFallback = false) => builder;
+
+        public static MapperBuilder<TSource, TDestination> Convert<TSource, TDestination>(
+            this MapperBuilder<TSource, TDestination> builder,
+            Convert<TSource, TDestination, MappingContext, TDestination> convert,
+            bool compilerFallback = false) => builder;
     }
 }
 """;

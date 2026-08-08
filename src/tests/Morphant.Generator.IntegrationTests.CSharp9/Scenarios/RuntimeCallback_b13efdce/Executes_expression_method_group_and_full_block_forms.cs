@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/DirectConstructTests::Executes_expression_method_group_and_full_block_forms
+// Compiled integration scenario: TypeMapperCreationResultTests/RuntimeCallbackLifecycleTests::Executes_expression_method_group_and_full_block_forms
 #nullable enable
 #pragma warning disable CS1591
 
@@ -6,7 +6,7 @@ using Morphant;
 using Morphant.Context;
 using System;
 
-namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_b13efdce
+namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimeCallback_b13efdce
 {
     public sealed class Source
     {
@@ -88,7 +88,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, IDestination>()
-                .Construct((source, previous) =>
+                .ResolveUsing((source, previous) =>
                 {
                     BlockCount++;
 
@@ -121,19 +121,19 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_
                 });
 
             builder.Map<string, Guid>()
-                .Construct(ParseGuid);
+                .ConstructUsing(ParseGuid);
 
             builder.Map<Source, Level>()
-                .Construct(source => (Level)source.Value);
+                .ConstructUsing(source => (Level)source.Value);
 
             builder.Map<Source, AbstractDestination>()
-                .Construct(source => new ConcreteDestination
+                .ConstructUsing(source => new ConcreteDestination
                 {
                     Value = source.Value + 1
                 });
 
             builder.Map<Source, FactoryOnly>()
-                .Construct(source => FactoryOnly.Create(source.Value));
+                .ConstructUsing(source => FactoryOnly.Create(source.Value));
         }
 
         private static Guid ParseGuid(string source)
@@ -142,7 +142,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_
             return Guid.Parse(source);
         }
 
-        private static IDestination __ConstructDestination() =>
+        private static IDestination __ResolveUsing() =>
             new Destination(-1);
     }
 
@@ -179,14 +179,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_
                 TestMapper.BlockCount != 5)
             {
                 throw new InvalidOperationException(
-                    "Direct block lifecycle was not preserved.");
+                    "Runtime resolution lifecycle was not preserved.");
             }
 
             try
             {
                 typed.Create(new Source { Fail = true }, context);
                 throw new InvalidOperationException(
-                    "Direct block exception was swallowed.");
+                    "Runtime callback exception was swallowed.");
             }
             catch (InvalidOperationException exception)
                 when (exception.Message == "failed")
@@ -209,7 +209,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_
                 TestMapper.ParseCount != 1)
             {
                 throw new InvalidOperationException(
-                    "Direct method group lifecycle was not preserved.");
+                    "Runtime method group lifecycle was not preserved.");
             }
 
             var level = ((ITypeMapper<Source, Level>)mapper)
@@ -227,7 +227,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_
                 factoryOnly.Value != 9)
             {
                 throw new InvalidOperationException(
-                    "A direct destination kind used the wrong result.");
+                    "A runtime destination kind used the wrong result.");
             }
         }
     }

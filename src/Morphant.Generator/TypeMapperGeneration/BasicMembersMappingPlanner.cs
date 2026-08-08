@@ -136,7 +136,13 @@ internal static class BasicMembersMappingPlanner
                 cancellationToken,
                 out var sourceParameter,
                 out var previousParameter,
-                out var resultParameter))
+                out var resultParameter,
+                out var contextParameter) ||
+            !DeclarativeContextUsagePolicy.IsSupported(
+                lambda,
+                contextParameter,
+                configured.Expression.SemanticModel,
+                cancellationToken))
         {
             return BasicMembersMappingResult.Unsupported(
                 UnsupportedMembersMessage);
@@ -215,6 +221,7 @@ internal static class BasicMembersMappingPlanner
                     sourceParameter,
                     previousParameter,
                     resultParameter,
+                    contextParameter,
                     lambda,
                     controlFlow.RuntimeLocalPlaceholders,
                     runtimeLocalInitializers,
@@ -256,6 +263,7 @@ internal static class BasicMembersMappingPlanner
                     sourceParameter,
                     previousParameter,
                     resultParameter,
+                    contextParameter,
                     lambda,
                     runtimeLocalInitializers)
                 : null,
@@ -279,8 +287,9 @@ internal static class BasicMembersMappingPlanner
         SemanticModel semanticModel,
         INamedTypeSymbol mapperType,
         IParameterSymbol sourceParameter,
-        IParameterSymbol previousParameter,
+        IParameterSymbol? previousParameter,
         IParameterSymbol? resultParameter,
+        IParameterSymbol? contextParameter,
         LambdaExpressionSyntax transferScope,
         IReadOnlyDictionary<ISymbol, string> localSubstitutions,
         IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
@@ -375,6 +384,7 @@ internal static class BasicMembersMappingPlanner
                     sourceParameter,
                     previousParameter,
                     resultParameter,
+                    contextParameter,
                     transferScope,
                     localSubstitutions,
                     localInitializers,
@@ -573,8 +583,9 @@ internal static class BasicMembersMappingPlanner
         SemanticModel semanticModel,
         INamedTypeSymbol mapperType,
         IParameterSymbol sourceParameter,
-        IParameterSymbol previousParameter,
+        IParameterSymbol? previousParameter,
         IParameterSymbol? resultParameter,
+        IParameterSymbol? contextParameter,
         LambdaExpressionSyntax transferScope,
         IReadOnlyDictionary<ISymbol, string> localSubstitutions,
         IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
@@ -584,7 +595,8 @@ internal static class BasicMembersMappingPlanner
         CancellationToken cancellationToken,
         out ExplicitMemberMappingPlan plan)
     {
-        if (!DeclarativeDependencyExpressionBuilder.TryRewrite(
+        if (!DeclarativeDependencyExpressionBuilder
+                .TryRewriteWithContext(
                 expression,
                 semanticModel,
                 mapperType,
@@ -594,6 +606,8 @@ internal static class BasicMembersMappingPlanner
                 BuildPreviousSubstitution(mapping, hasPrevious: false),
                 resultParameter,
                 mapping.ResultLocalName,
+                contextParameter,
+                contextName: "context",
                 transferScope,
                 localSubstitutions,
                 destinationMember.Type,
@@ -606,7 +620,8 @@ internal static class BasicMembersMappingPlanner
                 cancellationToken,
                 out var createExpression,
                 out var createDependency) ||
-            !DeclarativeDependencyExpressionBuilder.TryRewrite(
+            !DeclarativeDependencyExpressionBuilder
+                .TryRewriteWithContext(
                 expression,
                 semanticModel,
                 mapperType,
@@ -616,6 +631,8 @@ internal static class BasicMembersMappingPlanner
                 BuildPreviousSubstitution(mapping, hasPrevious: true),
                 resultParameter,
                 mapping.ResultLocalName,
+                contextParameter,
+                contextName: "context",
                 transferScope,
                 localSubstitutions,
                 destinationMember.Type,
@@ -629,7 +646,8 @@ internal static class BasicMembersMappingPlanner
                 cancellationToken,
                 out var mapReplacementExpression,
                 out var mapReplacementDependency) ||
-            !DeclarativeDependencyExpressionBuilder.TryRewrite(
+            !DeclarativeDependencyExpressionBuilder
+                .TryRewriteWithContext(
                 expression,
                 semanticModel,
                 mapperType,
@@ -639,6 +657,8 @@ internal static class BasicMembersMappingPlanner
                 BuildPreviousSubstitution(mapping, hasPrevious: true),
                 resultParameter,
                 "destination",
+                contextParameter,
+                contextName: "context",
                 transferScope,
                 localSubstitutions,
                 destinationMember.Type,
@@ -897,39 +917,61 @@ internal static class BasicMembersMappingPlanner
         MembersConfigurationForm form,
         CancellationToken cancellationToken,
         out IParameterSymbol sourceParameter,
-        out IParameterSymbol previousParameter,
-        out IParameterSymbol? resultParameter)
+        out IParameterSymbol? previousParameter,
+        out IParameterSymbol? resultParameter,
+        out IParameterSymbol? contextParameter)
     {
-        var expectedCount = form ==
-            MembersConfigurationForm.SourceAndPrevious
-                ? 2
-                : 3;
+        var parameters = lambda switch
+        {
+            SimpleLambdaExpressionSyntax simple =>
+                new[] { simple.Parameter },
+            ParenthesizedLambdaExpressionSyntax parenthesized =>
+                parenthesized.ParameterList.Parameters.ToArray(),
+            _ => []
+        };
+        var hasPrevious = form is not MembersConfigurationForm.Source;
+        var hasResult = form is
+            MembersConfigurationForm.SourcePreviousAndResult or
+            MembersConfigurationForm.SourcePreviousResultAndContext;
+        var hasContext = form is
+            MembersConfigurationForm.SourcePreviousResultAndContext;
+        var expectedCount = 1 +
+            (hasPrevious ? 1 : 0) +
+            (hasResult ? 1 : 0) +
+            (hasContext ? 1 : 0);
 
-        if (lambda is not ParenthesizedLambdaExpressionSyntax parenthesized ||
-            parenthesized.ParameterList.Parameters.Count != expectedCount ||
+        if (parameters.Length != expectedCount ||
             semanticModel.GetDeclaredSymbol(
-                    parenthesized.ParameterList.Parameters[0],
-                    cancellationToken) is not
-                    IParameterSymbol resolvedSource ||
-            semanticModel.GetDeclaredSymbol(
-                    parenthesized.ParameterList.Parameters[1],
-                    cancellationToken) is not
-                    IParameterSymbol resolvedPrevious)
+                    parameters[0],
+                    cancellationToken) is not IParameterSymbol resolvedSource)
         {
             sourceParameter = null!;
-            previousParameter = null!;
+            previousParameter = null;
             resultParameter = null;
+            contextParameter = null;
             return false;
         }
 
         sourceParameter = resolvedSource;
-        previousParameter = resolvedPrevious;
-        resultParameter = expectedCount == 3
+        var index = 1;
+        previousParameter = hasPrevious
             ? semanticModel.GetDeclaredSymbol(
-                    parenthesized.ParameterList.Parameters[2],
+                    parameters[index++],
                     cancellationToken) as IParameterSymbol
             : null;
-        return expectedCount == 2 || resultParameter is not null;
+        resultParameter = hasResult
+            ? semanticModel.GetDeclaredSymbol(
+                    parameters[index++],
+                    cancellationToken) as IParameterSymbol
+            : null;
+        contextParameter = hasContext
+            ? semanticModel.GetDeclaredSymbol(
+                    parameters[index],
+                    cancellationToken) as IParameterSymbol
+            : null;
+        return (!hasPrevious || previousParameter is not null) &&
+               (!hasResult || resultParameter is not null) &&
+               (!hasContext || contextParameter is not null);
     }
 
     private static bool TryGetAssignments(
@@ -999,8 +1041,9 @@ internal sealed record MembersDeclarativeControlFlowPlan(
     SemanticModel SemanticModel,
     INamedTypeSymbol MapperType,
     IParameterSymbol SourceParameter,
-    IParameterSymbol PreviousParameter,
+    IParameterSymbol? PreviousParameter,
     IParameterSymbol? ResultParameter,
+    IParameterSymbol? ContextParameter,
     LambdaExpressionSyntax TransferScope,
     IReadOnlyDictionary<ISymbol, ExpressionSyntax> LocalInitializers);
 

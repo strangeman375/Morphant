@@ -12,17 +12,18 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class StructuredConstructMappingPlanner
 {
     private const string UnsupportedConstructMessage =
-        "The configured structured Construct callback cannot be represented " +
+        "The configured structured result callback cannot be represented " +
         "by the supported declarative grammar.";
 
     private const string UnavailablePreviousMessage =
-        "The configured Construct selected an unavailable previous destination.";
+        "The configured structured result callback selected an unavailable " +
+        "previous destination.";
 
     private const string ByConventionMarkerMetadataName =
         "Morphant.Markers.ByConventionMarker";
 
     public static StructuredConstructMappingResult Build(
-        ConstructConfigurationModel configuration,
+        ResultPolicyConfigurationModel configuration,
         TypeMapperMappingModel mapping,
         ITypeSymbol sourceType,
         INamedTypeSymbol destination,
@@ -32,8 +33,7 @@ internal static class StructuredConstructMappingPlanner
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
-        CancellationToken cancellationToken,
-        ByFactoryHelperRegistry? sharedFactoryHelperRegistry = null)
+        CancellationToken cancellationToken)
     {
         if (configuration.Expression.Syntax is not
                 LambdaExpressionSyntax lambda ||
@@ -43,17 +43,17 @@ internal static class StructuredConstructMappingPlanner
                 configuration.Form,
                 cancellationToken,
                 out var sourceParameter,
-                out var previousParameter) is false)
+                out var previousParameter,
+                out var contextParameter) is false ||
+            !DeclarativeContextUsagePolicy.IsSupported(
+                lambda,
+                contextParameter,
+                configuration.Expression.SemanticModel,
+                cancellationToken))
         {
             return StructuredConstructMappingResult.Unsupported(
                 UnsupportedConstructMessage);
         }
-
-        var ownsFactoryHelperRegistry =
-            sharedFactoryHelperRegistry is null;
-        var factoryHelperRegistry =
-            sharedFactoryHelperRegistry ??
-            new ByFactoryHelperRegistry(usedGeneratedMethodNames);
 
         var transferScope = (SyntaxNode?)lambda.ExpressionBody ??
                             lambda.Block;
@@ -82,9 +82,6 @@ internal static class StructuredConstructMappingPlanner
             var replacement = previousAvailable == true;
             var constructorMembers =
                 memberMappings.BuildConstructorInitializationPlan(replacement);
-            var createdPostMembers = replacement
-                ? memberMappings.MapReplacementPost
-                : memberMappings.CreatePost;
             PreviousExpressionSubstitution? previousSubstitution =
                 previousParameter is not null &&
                 previousAvailable is { } hasPrevious
@@ -95,7 +92,7 @@ internal static class StructuredConstructMappingPlanner
 
             string? Rewrite(ExpressionSyntax expression)
             {
-                return ConstructExpressionRewriter.TryRewrite(
+                return ConstructExpressionRewriter.TryRewriteWithContext(
                         expression,
                         configuration.Expression.SemanticModel,
                         mapperType,
@@ -105,6 +102,8 @@ internal static class StructuredConstructMappingPlanner
                         previousSubstitution,
                         resultParameter: null,
                         resultName: null,
+                        contextParameter,
+                        contextName: "context",
                         transferScope,
                         controlFlowProgram.RuntimeLocalPlaceholders,
                         cancellationToken,
@@ -119,7 +118,8 @@ internal static class StructuredConstructMappingPlanner
                     ITypeSymbol? fallbackType,
                     DeclarativeNestedMapTargetContext? nestedMapTarget = null)
             {
-                return DeclarativeDependencyExpressionBuilder.TryRewrite(
+                return DeclarativeDependencyExpressionBuilder
+                    .TryRewriteWithContext(
                         expression,
                         configuration.Expression.SemanticModel,
                         mapperType,
@@ -129,6 +129,8 @@ internal static class StructuredConstructMappingPlanner
                         previousSubstitution,
                         resultParameter: null,
                         resultName: null,
+                        contextParameter,
+                        contextName: "context",
                         transferScope,
                         controlFlowProgram.RuntimeLocalPlaceholders,
                         fallbackType,
@@ -182,42 +184,6 @@ internal static class StructuredConstructMappingPlanner
                         currentDestination));
             }
 
-            StructuredConstructLeafNode? BuildFactory(
-                ImmutableArray<StructuredObjectArgument> arguments)
-            {
-                if (!ByFactoryMappingPlanner.TryBuild(
-                        arguments,
-                        mapping,
-                        createdPostMembers,
-                        memberMappings.HasExplicitCreationOnlyMappings,
-                        configuration.Expression.SemanticModel,
-                        mapperType,
-                        sourceParameter,
-                        previousParameter,
-                        previousSubstitution,
-                        transferScope,
-                        factoryHelperRegistry,
-                        cancellationToken,
-                        out var factory,
-                        out var unsupportedMessage))
-                {
-                    return null;
-                }
-
-                return factory is { } factoryValue
-                    ? new StructuredConstructLeafNode(
-                        StructuredConstructLeafKind.Factory,
-                        Constructor: null,
-                        Factory: factoryValue,
-                        UnsupportedMessage: null)
-                    : new StructuredConstructLeafNode(
-                        StructuredConstructLeafKind.Unsupported,
-                        Constructor: null,
-                        Factory: null,
-                        unsupportedMessage ??
-                        UnsupportedConstructMessage);
-            }
-
             StructuredConstructPlanNode? BuildExpression(
                 ExpressionSyntax expression) =>
                 BuildPlanNode(
@@ -237,7 +203,6 @@ internal static class StructuredConstructMappingPlanner
                         Equals(whenTrue, whenFalse)
                             ? whenTrue
                             : null,
-                    BuildFactory,
                     previousParameter,
                     cancellationToken);
 
@@ -290,19 +255,12 @@ internal static class StructuredConstructMappingPlanner
                             ? new StructuredConstructLeafNode(
                                 StructuredConstructLeafKind.Unsupported,
                                 Constructor: null,
-                                Factory: null,
                                 UnsupportedMessage:
                                     UnsupportedConstructMessage)
                             : new StructuredConstructLeafNode(
                                 StructuredConstructLeafKind.Constructor,
                                 convention,
-                                Factory: null,
                                 UnsupportedMessage: null);
-                    }
-                    else if (BuildFactory(arguments) is
-                             { } factory)
-                    {
-                        plannedLeaf = factory;
                     }
                     else
                     {
@@ -332,7 +290,6 @@ internal static class StructuredConstructMappingPlanner
                                 ? new StructuredConstructLeafNode(
                                     StructuredConstructLeafKind.Constructor,
                                     constructor,
-                                    Factory: null,
                                     UnsupportedMessage: null)
                                 : StructuredConstructLeafNode.Unsupported;
                     }
@@ -365,6 +322,8 @@ internal static class StructuredConstructMappingPlanner
                     previousSubstitution,
                     resultParameter: null,
                     resultName: null,
+                    contextParameter,
+                    contextName: "context",
                     transferScope,
                     BuildLeaf,
                     (condition, whenTrue, whenFalse) =>
@@ -391,16 +350,12 @@ internal static class StructuredConstructMappingPlanner
         TypeMapperControlFlowNode createRoot;
         TypeMapperControlFlowNode updateRoot;
 
-        if (configuration.Form == ConstructConfigurationForm.Source)
+        if (configuration.Kind == ResultPolicyKind.Construct)
         {
             var plannedRoot = BuildPlan(previousAvailable: null);
 
             if (plannedRoot is null)
             {
-                if (ownsFactoryHelperRegistry)
-                {
-                    factoryHelperRegistry.Rollback();
-                }
                 return StructuredConstructMappingResult.Unsupported(
                     UnsupportedConstructMessage);
             }
@@ -418,10 +373,6 @@ internal static class StructuredConstructMappingPlanner
 
             if (createPlan is null || updatePlan is null)
             {
-                if (ownsFactoryHelperRegistry)
-                {
-                    factoryHelperRegistry.Rollback();
-                }
                 return StructuredConstructMappingResult.Unsupported(
                     UnsupportedConstructMessage);
             }
@@ -434,9 +385,7 @@ internal static class StructuredConstructMappingPlanner
             new TypeMapperControlFlowMappingModel(
                 createRoot,
                 updateRoot),
-            ownsFactoryHelperRegistry
-                ? factoryHelperRegistry.HelperMethodDeclarations
-                : [],
+            HelperMethodDeclarations: [],
             UnsupportedMessage: null);
     }
 
@@ -770,9 +719,6 @@ internal static class StructuredConstructMappingPlanner
             StructuredConstructPlanNode,
             StructuredConstructPlanNode,
             StructuredConstructPlanNode?> buildCondition,
-        Func<
-            ImmutableArray<StructuredObjectArgument>,
-            StructuredConstructLeafNode?> buildFactory,
         IParameterSymbol? previousParameter,
         CancellationToken cancellationToken)
     {
@@ -794,7 +740,6 @@ internal static class StructuredConstructMappingPlanner
                 rewriteExpression,
                 rewriteDependencyExpression,
                 buildCondition,
-                buildFactory,
                 previousParameter,
                 cancellationToken);
             var whenFalse = BuildPlanNode(
@@ -811,7 +756,6 @@ internal static class StructuredConstructMappingPlanner
                 rewriteExpression,
                 rewriteDependencyExpression,
                 buildCondition,
-                buildFactory,
                 previousParameter,
                 cancellationToken);
 
@@ -866,18 +810,11 @@ internal static class StructuredConstructMappingPlanner
                 ? new StructuredConstructLeafNode(
                     StructuredConstructLeafKind.Unsupported,
                     Constructor: null,
-                    Factory: null,
                     UnsupportedMessage: UnsupportedConstructMessage)
                 : new StructuredConstructLeafNode(
                     StructuredConstructLeafKind.Constructor,
                     convention,
-                    Factory: null,
                     UnsupportedMessage: null);
-        }
-
-        if (buildFactory(arguments) is { } factory)
-        {
-            return factory;
         }
 
         var explicitPlan =
@@ -911,7 +848,6 @@ internal static class StructuredConstructMappingPlanner
             : new StructuredConstructLeafNode(
                 StructuredConstructLeafKind.Constructor,
                 constructor,
-                Factory: null,
                 UnsupportedMessage: null);
     }
 
@@ -1382,10 +1318,11 @@ internal static class StructuredConstructMappingPlanner
     private static bool TryGetLambdaParameters(
         LambdaExpressionSyntax lambda,
         SemanticModel semanticModel,
-        ConstructConfigurationForm form,
+        ResultPolicyForm form,
         CancellationToken cancellationToken,
         out IParameterSymbol sourceParameter,
-        out IParameterSymbol? previousParameter)
+        out IParameterSymbol? previousParameter,
+        out IParameterSymbol? contextParameter)
     {
         var parameters = lambda switch
         {
@@ -1395,9 +1332,15 @@ internal static class StructuredConstructMappingPlanner
                 parenthesized.ParameterList.Parameters.ToArray(),
             _ => []
         };
-        var expectedCount = form == ConstructConfigurationForm.Source
-            ? 1
-            : 2;
+        var hasPrevious = form is
+            ResultPolicyForm.SourceAndPrevious or
+            ResultPolicyForm.SourcePreviousAndContext;
+        var hasContext = form is
+            ResultPolicyForm.SourceAndContext or
+            ResultPolicyForm.SourcePreviousAndContext;
+        var expectedCount = 1 +
+            (hasPrevious ? 1 : 0) +
+            (hasContext ? 1 : 0);
 
         if (parameters.Length != expectedCount ||
             semanticModel.GetDeclaredSymbol(
@@ -1407,21 +1350,25 @@ internal static class StructuredConstructMappingPlanner
         {
             sourceParameter = null!;
             previousParameter = null;
+            contextParameter = null;
             return false;
         }
 
         sourceParameter = resolvedSource;
+        var index = 1;
+        previousParameter = hasPrevious
+            ? semanticModel.GetDeclaredSymbol(
+                parameters[index++],
+                cancellationToken) as IParameterSymbol
+            : null;
+        contextParameter = hasContext
+            ? semanticModel.GetDeclaredSymbol(
+                parameters[index],
+                cancellationToken) as IParameterSymbol
+            : null;
 
-        if (expectedCount == 1)
-        {
-            previousParameter = null;
-            return true;
-        }
-
-        previousParameter = semanticModel.GetDeclaredSymbol(
-                parameters[1],
-                cancellationToken) as IParameterSymbol;
-        return previousParameter is not null;
+        return (!hasPrevious || previousParameter is not null) &&
+               (!hasContext || contextParameter is not null);
     }
 
     private static bool IsParameterReference(
@@ -1462,13 +1409,6 @@ internal static class StructuredConstructMappingPlanner
             StructuredConstructLeafKind.Constructor
                 when leaf.Constructor is { } constructor =>
                 BuildConstructorLeaf(mapping, constructor),
-            StructuredConstructLeafKind.Factory
-                when leaf.Factory is { } factory =>
-                BuildFactoryLeaf(
-                    mapping,
-                    memberMappings,
-                    factory,
-                    create),
             StructuredConstructLeafKind.Previous =>
                 BuildPreviousLeaf(
                     mapping,
@@ -1479,36 +1419,6 @@ internal static class StructuredConstructMappingPlanner
                 create,
                 leaf.UnsupportedMessage ?? UnsupportedConstructMessage)
         };
-    }
-
-    private static TypeMapperControlFlowNode BuildFactoryLeaf(
-        TypeMapperMappingModel mapping,
-        ConventionMemberMappingPlan memberMappings,
-        TypeMapperFactoryMappingModel factory,
-        bool create)
-    {
-        var leaf = mapping with
-        {
-            CreateFactory = factory,
-            CreateConstructor = null,
-            CreateMemberMappings = [],
-            CreatePostMemberMappings = create
-                ? memberMappings.CreatePost
-                : memberMappings.MapReplacementPost,
-            UpdateMemberMappings = [],
-            ControlFlow = null,
-            CreateUnsupportedExceptionMessage = null,
-            UpdateUnsupportedExceptionMessage = null,
-            UnsupportedExceptionMessage = null
-        };
-
-        return new TypeMapperControlFlowNode(
-            Locals: [],
-            Condition: null,
-            WhenTrue: null,
-            WhenFalse: null,
-            Leaf: leaf,
-            ThrowExpression: null);
     }
 
     private static TypeMapperControlFlowNode BuildConstructorLeaf(
@@ -1656,7 +1566,6 @@ internal abstract record StructuredConstructPlanNode;
 internal sealed record StructuredConstructLeafNode(
     StructuredConstructLeafKind Kind,
     ConventionConstructorMappingPlan? Constructor,
-    TypeMapperFactoryMappingModel? Factory,
     string? UnsupportedMessage)
     : StructuredConstructPlanNode
 {
@@ -1664,14 +1573,12 @@ internal sealed record StructuredConstructLeafNode(
         new(
             StructuredConstructLeafKind.Previous,
             Constructor: null,
-            Factory: null,
             UnsupportedMessage: null);
 
     public static StructuredConstructLeafNode Unsupported { get; } =
         new(
             StructuredConstructLeafKind.Unsupported,
             Constructor: null,
-            Factory: null,
             UnsupportedConstructMappingMessage.Value);
 
     private static class UnsupportedConstructMappingMessage
@@ -1685,7 +1592,6 @@ internal sealed record StructuredConstructLeafNode(
 internal enum StructuredConstructLeafKind
 {
     Constructor,
-    Factory,
     Previous,
     Unsupported
 }

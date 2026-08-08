@@ -14,7 +14,39 @@ internal sealed class MappingDelegateTests
         AssertParameterNames<
             global::Morphant.Delegates.Construct<object, object, object>>(
             "source",
+            "context");
+        AssertParameterNames<
+            global::Morphant.Delegates.Resolve<object, object, object>>(
+            "source",
             "previous");
+        AssertParameterNames<
+            global::Morphant.Delegates.Resolve<object, object, object, object>>(
+            "source",
+            "previous",
+            "context");
+        AssertParameterNames<
+            global::Morphant.Delegates.ConstructUsing<object, object>>(
+            "source");
+        AssertParameterNames<
+            global::Morphant.Delegates.ConstructUsing<object, object, object>>(
+            "source",
+            "context");
+        AssertParameterNames<
+            global::Morphant.Delegates.ResolveUsing<object, object, object>>(
+            "source",
+            "previous");
+        AssertParameterNames<
+            global::Morphant.Delegates.ResolveUsing<
+                object,
+                object,
+                object,
+                object>>(
+            "source",
+            "previous",
+            "context");
+        AssertParameterNames<
+            global::Morphant.Delegates.Members<object, object>>(
+            "source");
         AssertParameterNames<
             global::Morphant.Delegates.Members<object, object, object>>(
             "source",
@@ -29,7 +61,29 @@ internal sealed class MappingDelegateTests
             "previous",
             "result");
         AssertParameterNames<
+            global::Morphant.Delegates.Members<
+                object,
+                object,
+                object,
+                object,
+                object>>(
+            "source",
+            "previous",
+            "result",
+            "context");
+        AssertParameterNames<
+            global::Morphant.Delegates.Convert<object, object>>(
+            "source");
+        AssertParameterNames<
             global::Morphant.Delegates.Convert<object, object, object>>(
+            "source",
+            "previous");
+        AssertParameterNames<
+            global::Morphant.Delegates.Convert<
+                object,
+                object,
+                object,
+                object>>(
             "source",
             "previous",
             "context");
@@ -45,11 +99,63 @@ internal sealed class MappingDelegateTests
         AssertSignature<
             global::Morphant.Delegates.Construct<
                 Source,
+                MappingContextMarker,
+                Result>>(
+            typeof(Result),
+            typeof(Source),
+            typeof(MappingContextMarker));
+        AssertSignature<
+            global::Morphant.Delegates.Resolve<
+                Source,
                 Previous,
                 Result>>(
             typeof(Result),
             typeof(Source),
             typeof(Option<Previous>));
+        AssertSignature<
+            global::Morphant.Delegates.Resolve<
+                Source,
+                Previous,
+                MappingContextMarker,
+                Result>>(
+            typeof(Result),
+            typeof(Source),
+            typeof(Option<Previous>),
+            typeof(MappingContextMarker));
+        AssertSignature<
+            global::Morphant.Delegates.ConstructUsing<Source, Result>>(
+            typeof(Result),
+            typeof(Source));
+        AssertSignature<
+            global::Morphant.Delegates.ConstructUsing<
+                Source,
+                MappingContext,
+                Result>>(
+            typeof(Result),
+            typeof(Source),
+            typeof(MappingContext));
+        AssertSignature<
+            global::Morphant.Delegates.ResolveUsing<
+                Source,
+                Previous,
+                Result>>(
+            typeof(Result),
+            typeof(Source),
+            typeof(Option<Previous>));
+        AssertSignature<
+            global::Morphant.Delegates.ResolveUsing<
+                Source,
+                Previous,
+                MappingContext,
+                Result>>(
+            typeof(Result),
+            typeof(Source),
+            typeof(Option<Previous>),
+            typeof(MappingContext));
+        AssertSignature<
+            global::Morphant.Delegates.Members<Source, MemberPlan>>(
+            typeof(MemberPlan),
+            typeof(Source));
         AssertSignature<
             global::Morphant.Delegates.Members<
                 Source,
@@ -69,9 +175,34 @@ internal sealed class MappingDelegateTests
             typeof(Option<Previous>),
             typeof(Result));
         AssertSignature<
+            global::Morphant.Delegates.Members<
+                Source,
+                Previous,
+                Result,
+                MappingContextMarker,
+                MemberPlan>>(
+            typeof(MemberPlan),
+            typeof(Source),
+            typeof(Option<Previous>),
+            typeof(Result),
+            typeof(MappingContextMarker));
+        AssertSignature<
+            global::Morphant.Delegates.Convert<Source, Result>>(
+            typeof(Result),
+            typeof(Source));
+        AssertSignature<
             global::Morphant.Delegates.Convert<
                 Source,
                 Previous,
+                Result>>(
+            typeof(Result),
+            typeof(Source),
+            typeof(Option<Previous>));
+        AssertSignature<
+            global::Morphant.Delegates.Convert<
+                Source,
+                Previous,
+                MappingContext,
                 Result>>(
             typeof(Result),
             typeof(Source),

@@ -68,7 +68,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_4f7bdae
         {
             builder.Map<OuterSource, ConstructorDestination>()
                 .MemberSelection(MemberSelection.Explicit)
-                .Construct((source, _) =>
+                .Resolve((source, _) =>
                 {
                     var first = Map();
                     var second = Map<ChildDestination>();

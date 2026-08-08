@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
@@ -61,7 +62,8 @@ internal readonly record struct TypeMapperMappingModel
 
 internal readonly record struct TypeMapperManualMappingModel
 (
-    string? HelperMethodName
+    string? HelperMethodName,
+    ConvertConfigurationForm Form
 );
 
 internal readonly record struct TypeMapperFactoryMappingModel

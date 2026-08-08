@@ -323,7 +323,9 @@ internal static class DestinationMemberPolicy
                     getter,
                     compilation.Assembly);
 
-            return canWrite || canRead;
+            return canWrite ||
+                   canRead &&
+                   IsEligibleReadOnlyProxy(property.Type, compilation);
         }
 
         return member is IFieldSymbol field &&
@@ -335,7 +337,32 @@ internal static class DestinationMemberPolicy
                    compilation.Assembly) &&
                MappingTypeEligibilityPolicy.CanBeNamed(
                    field.Type,
-                   compilation);
+                   compilation) &&
+               (!field.IsReadOnly ||
+                IsEligibleReadOnlyProxy(field.Type, compilation));
+    }
+
+    private static bool IsEligibleReadOnlyProxy(
+        ITypeSymbol type,
+        Compilation compilation)
+    {
+        var normalized = MappingTypeNormalization.NormalizeDynamic(
+            type,
+            compilation);
+
+        if (!normalized.IsReferenceType ||
+            !MappingTypeEligibilityPolicy.IsEligible(
+                normalized,
+                compilation))
+        {
+            return false;
+        }
+
+        var destination = DestinationCapabilityPolicy.GetDestinationType(
+            normalized,
+            compilation);
+
+        return !DestinationCapabilityPolicy.IsOpaque(destination);
     }
 
     private static bool IsGeneratedRecordMemberName(

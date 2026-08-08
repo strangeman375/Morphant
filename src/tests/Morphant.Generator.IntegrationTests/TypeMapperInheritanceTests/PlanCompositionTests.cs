@@ -28,7 +28,7 @@ internal sealed class PlanCompositionTests
     }
 
     [Test]
-    public void Does_not_include_Construct_and_recomputes_derived_construction()
+    public void Does_not_include_result_policy_and_recomputes_derived_construction()
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_07647072.Scenario.Verify();
     }

@@ -76,7 +76,7 @@ namespace TestCase
 // Pair 0: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>(MappingMode.Update)
 // Map settings: MappingMode=Explicit(Update); NullSourceHandling=Explicit(ReturnDestination); NullDestinationHandling=Explicit(Throw); ConstructorSelection=Explicit(Greediest); MemberSelection=Explicit(Explicit); UnmappedMemberValidation=Explicit(Strict)
-// Declarative: Constructs=1; Members=1
+// Declarative: ResultPolicies=1; Members=1
 // Construct 0: Form=Source; Inputs=(global::TestCase.Source); Output=global::TestCase.Morphant.Generated.DestinationConstruction; Operation=AnonymousFunction; Syntax=source => default!
 // Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>); Output=global::TestCase.Morphant.Generated.DestinationMembers; Operation=AnonymousFunction; Syntax=(source, previous) => default!
 // Manual: Converts=0
@@ -85,7 +85,7 @@ namespace TestCase
 // Pair 1: global::TestCase.OtherSource -> global::TestCase.OtherDestination
 // Map: builder.Map<OtherSource, OtherDestination>((MappingMode)8)
 // Map settings: MappingMode=Explicit(Invalid); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None

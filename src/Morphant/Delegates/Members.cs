@@ -1,6 +1,15 @@
 namespace Morphant.Delegates;
 
 /// <summary>
+/// Describes destination member mappings from a non-null source.
+/// </summary>
+/// <typeparam name="TSource">The non-null source type.</typeparam>
+/// <typeparam name="TMembers">The member plan type.</typeparam>
+/// <param name="source">The non-null source.</param>
+/// <returns>The destination member plan.</returns>
+public delegate TMembers Members<in TSource, out TMembers>(TSource source);
+
+/// <summary>
 /// Describes destination member mappings from a non-null source and an
 /// optional existing destination.
 /// </summary>
@@ -34,3 +43,28 @@ public delegate TMembers Members<
     TSource source,
     Option<TPrevious> previous,
     TResult result);
+
+/// <summary>
+/// Describes destination member mappings with access to the selected result
+/// and declarative mapping context.
+/// </summary>
+/// <typeparam name="TSource">The non-null source type.</typeparam>
+/// <typeparam name="TPrevious">The existing destination value type.</typeparam>
+/// <typeparam name="TResult">The selected mapping result type.</typeparam>
+/// <typeparam name="TContext">The declarative context marker type.</typeparam>
+/// <typeparam name="TMembers">The member plan type.</typeparam>
+/// <param name="source">The non-null source.</param>
+/// <param name="previous">The optional existing destination.</param>
+/// <param name="result">The non-null selected mapping result.</param>
+/// <param name="context">The declarative mapping context.</param>
+/// <returns>The destination member plan.</returns>
+public delegate TMembers Members<
+    in TSource,
+    TPrevious,
+    in TResult,
+    in TContext,
+    out TMembers>(
+    TSource source,
+    Option<TPrevious> previous,
+    TResult result,
+    TContext context);

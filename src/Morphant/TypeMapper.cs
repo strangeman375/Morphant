@@ -94,9 +94,6 @@ public abstract class TypeMapper
     protected static ByConventionMarker ByConvention() =>
         throw new RuntimeInvocationNotSupportedException();
 
-    protected static IByFactoryMarker<TDestination> ByFactory<TDestination>(Func<TDestination> factory) =>
-        throw new RuntimeInvocationNotSupportedException();
-
     protected static AutoMarker Auto() =>
         throw new RuntimeInvocationNotSupportedException();
 

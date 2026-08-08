@@ -330,7 +330,9 @@ internal static class TypeMapperPipeline
             {
                 ManualMapping = configuration.Manual.Conversions.IsEmpty
                     ? null
-                    : new TypeMapperManualMappingModel(null),
+                    : new TypeMapperManualMappingModel(
+                        null,
+                        configuration.Manual.Conversions[0].Form),
                 UnsupportedExceptionMessage =
                     BuildConfiguredPlanConflictMessage(
                         configuration.Conflicts)
@@ -343,7 +345,9 @@ internal static class TypeMapperPipeline
             {
                 return mapping with
                 {
-                    ManualMapping = new TypeMapperManualMappingModel(null),
+                    ManualMapping = new TypeMapperManualMappingModel(
+                        null,
+                        configuration.Manual.Conversions[0].Form),
                     UnsupportedExceptionMessage =
                         BuildManualSettingConflictMessage(
                             configuration.Settings)
@@ -352,7 +356,6 @@ internal static class TypeMapperPipeline
 
             var manual = ManualConvertMappingPlanner.Build(
                 configuration.Manual.Conversions[0],
-                mapping,
                 mapperType,
                 usedGeneratedMethodNames,
                 cancellationToken);
@@ -360,7 +363,8 @@ internal static class TypeMapperPipeline
             return mapping with
             {
                 ManualMapping = new TypeMapperManualMappingModel(
-                    manual.HelperMethodName),
+                    manual.HelperMethodName,
+                    manual.Form),
                 HelperMethodDeclarations = manual.HelperMethodDeclaration is
                     { } helperMethodDeclaration
                     ? [helperMethodDeclaration]
@@ -418,18 +422,21 @@ internal static class TypeMapperPipeline
 
         var constructorSelection =
             effectiveSettings.ConstructorSelection;
+        var resultPolicy = configuration.Declarative.ResultPolicies.IsEmpty
+            ? (ResultPolicyConfigurationModel?)null
+            : configuration.Declarative.ResultPolicies[0];
 
         TypeMapperMappingModel BuildFlatMapping(
-            ConventionMemberMappingPlan memberMappings,
-            ByFactoryHelperRegistry? sharedFactoryHelpers = null)
+            ConventionMemberMappingPlan memberMappings)
         {
-            if (!configuration.Declarative.Constructs.IsEmpty)
+            if (resultPolicy is { } configuredResultPolicy)
             {
-                if (pair.Capabilities.DirectConstruction)
+                if (configuredResultPolicy.Kind is
+                    ResultPolicyKind.ConstructUsing or
+                    ResultPolicyKind.ResolveUsing)
                 {
-                    var directConstruct =
-                        DirectConstructMappingPlanner.Build(
-                            configuration.Declarative.Constructs[0],
+                    var runtimeResult = RuntimeResultMappingPlanner.Build(
+                            configuredResultPolicy,
                             mapping,
                             memberMappings,
                             mapperType,
@@ -438,28 +445,30 @@ internal static class TypeMapperPipeline
 
                     return mapping with
                     {
-                        ControlFlow = directConstruct.ControlFlow,
+                        ControlFlow = runtimeResult.ControlFlow,
                         HelperMethodDeclarations =
-                            directConstruct.HelperMethodDeclarations,
+                            runtimeResult.HelperMethodDeclarations,
                         UnsupportedExceptionMessage =
-                            directConstruct.UnsupportedMessage
+                            runtimeResult.UnsupportedMessage
                     };
                 }
 
-                if (destinationPlan.MemberType is not
+                if (!pair.Capabilities.StructuredConstruction ||
+                    destinationPlan.MemberType is not
                     INamedTypeSymbol structuredDestination)
                 {
                     return mapping with
                     {
                         UnsupportedExceptionMessage =
-                            "The configured Construct callback requires a " +
+                            "The configured structured result callback " +
+                            "requires a " +
                             "structured destination type."
                     };
                 }
 
                 var structuredConstruct =
                     StructuredConstructMappingPlanner.Build(
-                        configuration.Declarative.Constructs[0],
+                        configuredResultPolicy,
                         mapping,
                         declarativeSourceType,
                         structuredDestination,
@@ -469,8 +478,7 @@ internal static class TypeMapperPipeline
                         compilation,
                         mapperType,
                         usedGeneratedMethodNames,
-                        cancellationToken,
-                        sharedFactoryHelpers);
+                        cancellationToken);
 
                 return mapping with
                 {
@@ -533,8 +541,9 @@ internal static class TypeMapperPipeline
                 mapping,
                 compilation,
                 mapperType,
-                usedGeneratedMethodNames,
-                pair.Capabilities.DirectConstruction,
+                resultPolicy?.Kind is
+                    ResultPolicyKind.ConstructUsing or
+                    ResultPolicyKind.ResolveUsing,
                 BuildFlatMapping,
                 cancellationToken),
             mapperType);
@@ -774,8 +783,8 @@ internal static class TypeMapperPipeline
         AddConflictReason(
             reasons,
             conflicts,
-            PairConfigurationConflict.DuplicateConstruct,
-            "more than one Construct callback is configured");
+            PairConfigurationConflict.DuplicateResultPolicy,
+            "more than one result callback is configured");
         AddConflictReason(
             reasons,
             conflicts,
@@ -790,7 +799,7 @@ internal static class TypeMapperPipeline
             reasons,
             conflicts,
             PairConfigurationConflict.MixedManualAndDeclarative,
-            "Convert is combined with Construct or Members");
+            "Convert is combined with a result callback or Members");
         AddConflictReason(
             reasons,
             conflicts,

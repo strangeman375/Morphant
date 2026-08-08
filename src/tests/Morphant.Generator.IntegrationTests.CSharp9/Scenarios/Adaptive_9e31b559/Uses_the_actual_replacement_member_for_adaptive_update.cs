@@ -30,7 +30,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_9e31b55
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<OuterSource, OuterDestination>()
-                .Construct((_, previous) => new(
+                .Resolve((_, previous) => new(
                     previous.HasValue
                         ? new ChildDestination(40)
                         : new ChildDestination(0)))

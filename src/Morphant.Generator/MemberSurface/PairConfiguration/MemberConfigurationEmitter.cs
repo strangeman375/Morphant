@@ -18,9 +18,58 @@ internal static class MemberConfigurationEmitter
             "internal static partial class " +
             "MorphantGeneratedMappingExtensions");
 
-        WritePreviousAwareMembers(writer, model);
+        WriteMethod(
+            writer,
+            model,
+            "Configures destination member mappings from the source.",
+            "A lambda expression that receives the non-null source and " +
+            "describes destination member mappings.",
+            "global::Morphant.Delegates.Members<" +
+            model.DeclarativeSourceTypeName + ", " +
+            model.MembersPlanTypeName + ">");
         writer.Line();
-        WriteResultAwareMembers(writer, model);
+        WriteMethod(
+            writer,
+            model,
+            "Configures destination member mappings from the source and an " +
+            "optional existing destination.",
+            "A lambda expression that receives the non-null source and the " +
+            "optional existing destination and describes destination member " +
+            "mappings.",
+            "global::Morphant.Delegates.Members<" +
+            model.DeclarativeSourceTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            model.MembersPlanTypeName + ">");
+        writer.Line();
+        WriteMethod(
+            writer,
+            model,
+            "Configures destination member mappings with access to the " +
+            "selected mapping result.",
+            "A lambda expression that receives the non-null source, the " +
+            "optional existing destination, and the non-null selected result " +
+            "and describes destination member mappings.",
+            "global::Morphant.Delegates.Members<" +
+            model.DeclarativeSourceTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            model.MembersPlanTypeName + ">");
+        writer.Line();
+        WriteMethod(
+            writer,
+            model,
+            "Configures destination member mappings with access to the " +
+            "selected result and declarative operation context.",
+            "A lambda expression that receives the non-null source, the " +
+            "optional existing destination, the non-null selected result, " +
+            "and declarative mapping context and describes destination " +
+            "member mappings.",
+            "global::Morphant.Delegates.Members<" +
+            model.DeclarativeSourceTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            "global::Morphant.Context.MappingContextMarker, " +
+            model.MembersPlanTypeName + ">");
 
         writer.CloseBlock();
         writer.CloseBlock();
@@ -28,14 +77,14 @@ internal static class MemberConfigurationEmitter
         return writer.ToString();
     }
 
-    private static void WritePreviousAwareMembers(
+    private static void WriteMethod(
         CodeWriter writer,
-        PairConfigurationModel model)
+        PairConfigurationModel model,
+        string summary,
+        string callbackDescription,
+        string delegateTypeName)
     {
-        WriteSummary(
-            writer,
-            "Configures mappings for destination members from the source " +
-            "and an optional existing destination.");
+        WriteSummary(writer, summary);
         WriteTypeParameterDocumentation(writer, model.TypeParameters);
         WriteParameterDocumentation(
             writer,
@@ -44,70 +93,19 @@ internal static class MemberConfigurationEmitter
         WriteParameterDocumentation(
             writer,
             "members",
-            "A lambda expression that receives the non-null source and " +
-            "the optional existing destination and describes destination " +
-            "member mappings.");
-        WriteReturnsDocumentation(writer);
-
-        WriteMethodStart(writer, model);
-        writer.Line($"    this {model.BuilderTypeName} builder,");
+            callbackDescription);
         writer.Line(
-            "    global::Morphant.Delegates.Members<" +
-            model.DeclarativeSourceTypeName +
-            ", " +
-            model.PreviousDestinationTypeName +
-            ", " +
-            model.MembersPlanTypeName +
-            "> members)");
-        WriteMethodEnd(writer, model.TypeParameters);
-    }
+            "/// <returns>The <paramref name=\"builder\"/> instance.</returns>");
 
-    private static void WriteResultAwareMembers(
-        CodeWriter writer,
-        PairConfigurationModel model)
-    {
-        WriteSummary(
-            writer,
-            "Configures mappings for destination members with access to " +
-            "the selected mapping result.");
-        WriteTypeParameterDocumentation(writer, model.TypeParameters);
-        WriteParameterDocumentation(
-            writer,
-            "builder",
-            "The mapping builder to configure.");
-        WriteParameterDocumentation(
-            writer,
-            "members",
-            "A lambda expression that receives the non-null source, the " +
-            "optional existing destination, and the non-null selected " +
-            "result and describes destination member mappings.");
-        WriteReturnsDocumentation(writer);
-
-        WriteMethodStart(writer, model);
-        writer.Line($"    this {model.BuilderTypeName} builder,");
-        writer.Line(
-            "    global::Morphant.Delegates.Members<" +
-            model.DeclarativeSourceTypeName +
-            ", " +
-            model.PreviousDestinationTypeName +
-            ", " +
-            model.PreviousDestinationTypeName +
-            ", " +
-            model.MembersPlanTypeName +
-            "> members)");
-        WriteMethodEnd(writer, model.TypeParameters);
-    }
-
-    private static void WriteMethodStart(
-        CodeWriter writer,
-        PairConfigurationModel model)
-    {
         writer.Line(
             "public static " +
             model.BuilderTypeName +
             " Members" +
             BuildTypeParameterList(model.TypeParameters) +
             "(");
+        writer.Line($"    this {model.BuilderTypeName} builder,");
+        writer.Line($"    {delegateTypeName} members)");
+        WriteMethodEnd(writer, model.TypeParameters);
     }
 
     private static void WriteMethodEnd(
@@ -177,12 +175,6 @@ internal static class MemberConfigurationEmitter
                 XmlAttribute(typeParameter.Name) +
                 "\">A type used by the mapping pair.</typeparam>");
         }
-    }
-
-    private static void WriteReturnsDocumentation(CodeWriter writer)
-    {
-        writer.Line(
-            "/// <returns>The <paramref name=\"builder\"/> instance.</returns>");
     }
 
     private static void WriteSummary(CodeWriter writer, string summary)

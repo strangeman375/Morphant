@@ -32,7 +32,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source?, IDestination>()
                 .Members((source, previous, result) => default!)
-                .Construct((source, previous) => default!);
+                .ResolveUsing((source, previous) => default!);
     }
 }
 """;
@@ -51,8 +51,8 @@ namespace TestCase
 // Pair 0: global::System.Nullable<global::TestCase.Source> -> global::TestCase.IDestination
 // Map: builder.Map<Source?, IDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=1; Members=1
-// Construct 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.IDestination>); Output=global::TestCase.IDestination; Operation=AnonymousFunction; Syntax=(source, previous) => default!
+// Declarative: ResultPolicies=1; Members=1
+// ResolveUsing 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.IDestination>); Output=global::TestCase.IDestination; Operation=AnonymousFunction; Syntax=(source, previous) => default!
 // Members 0: Form=SourcePreviousAndResult; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.IDestination>, global::TestCase.IDestination); Output=global::TestCase.Morphant.Generated.IDestinationMembers; Operation=AnonymousFunction; Syntax=(source, previous, result) => default!
 // Manual: Converts=0
 // IncludeBase: 0
@@ -100,7 +100,7 @@ namespace TestCase
                 .Convert((source, previous, context) => default!)
                 .Construct(source => default!)
                 .Members((source, previous, result) => default!)
-                .Construct((source, previous) => default!)
+                .Resolve((source, previous) => default!)
                 .Convert((source, previous, context) => default!);
 
             builder.Map<ManualSource, ManualDestination>()
@@ -129,20 +129,20 @@ namespace TestCase
 // Pair 0: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=2; Members=2
+// Declarative: ResultPolicies=2; Members=2
 // Construct 0: Form=Source; Inputs=(global::TestCase.Source); Output=global::TestCase.Morphant.Generated.DestinationConstruction; Operation=AnonymousFunction; Syntax=source => default!
-// Construct 1: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>); Output=global::TestCase.Morphant.Generated.DestinationConstruction; Operation=AnonymousFunction; Syntax=(source, previous) => default!
+// Resolve 1: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>); Output=global::TestCase.Morphant.Generated.DestinationConstruction; Operation=AnonymousFunction; Syntax=(source, previous) => default!
 // Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>); Output=global::TestCase.Morphant.Generated.DestinationMembers; Operation=AnonymousFunction; Syntax=(source, previous) => default!
 // Members 1: Form=SourcePreviousAndResult; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>, global::TestCase.Destination); Output=global::TestCase.Morphant.Generated.DestinationMembers; Operation=AnonymousFunction; Syntax=(source, previous, result) => default!
 // Manual: Converts=2
 // Convert 0: Form=SourcePreviousAndContext; Inputs=(global::TestCase.Source?, global::Morphant.Option<global::TestCase.Destination>, global::Morphant.Context.MappingContext); Output=global::TestCase.Destination; Operation=AnonymousFunction; Syntax=(source, previous, context) => default!
 // Convert 1: Form=SourcePreviousAndContext; Inputs=(global::TestCase.Source?, global::Morphant.Option<global::TestCase.Destination>, global::Morphant.Context.MappingContext); Output=global::TestCase.Destination; Operation=AnonymousFunction; Syntax=(source, previous, context) => default!
 // IncludeBase: 0
-// Conflicts: DuplicateConstruct, DuplicateMembers, DuplicateConvert, MixedManualAndDeclarative
+// Conflicts: DuplicateResultPolicy, DuplicateMembers, DuplicateConvert, MixedManualAndDeclarative
 // Pair 1: global::TestCase.ManualSource -> global::TestCase.ManualDestination
 // Map: builder.Map<ManualSource, ManualDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=1
 // Convert 0: Form=SourcePreviousAndContext; Inputs=(global::TestCase.ManualSource?, global::Morphant.Option<global::TestCase.ManualDestination>, global::Morphant.Context.MappingContext); Output=global::TestCase.ManualDestination; Operation=MethodReference; Syntax=ConvertCore
 // IncludeBase: 0

@@ -21,6 +21,8 @@ internal static class PairConfigurationModelEquality
                StringComparer.Ordinal.Equals(
                    left.PreviousDestinationTypeName,
                    right.PreviousDestinationTypeName) &&
+               left.HasStructuredConstruction ==
+                   right.HasStructuredConstruction &&
                StringComparer.Ordinal.Equals(
                    left.ConstructionResultTypeName,
                    right.ConstructionResultTypeName) &&

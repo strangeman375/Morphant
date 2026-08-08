@@ -63,7 +63,7 @@ namespace TestCase
 // Pair 0: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=0; Members=0
+// Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
@@ -189,7 +189,7 @@ namespace TestCase
 // Pair 0: global::TestCase.Dog -> global::TestCase.DogDto
 // Map: builder.Map<Dog, DogDto>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Explicit(Strict)
-// Declarative: Constructs=0; Members=2
+// Declarative: ResultPolicies=0; Members=2
 // Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Entity, global::Morphant.Option<global::TestCase.EntityDto>); Output=global::TestCase.Morphant.Generated.EntityDtoMembers; Operation=AnonymousFunction; Syntax=(source, _) => default!
 // Members 1: Form=SourcePreviousAndResult; Inputs=(global::TestCase.Animal, global::Morphant.Option<global::TestCase.AnimalDto>, global::TestCase.AnimalDto); Output=global::TestCase.Morphant.Generated.AnimalDtoMembers; Operation=AnonymousFunction; Syntax=(source, _, result) => default!
 // Manual: Converts=0

@@ -87,6 +87,6 @@ public sealed partial class LatestMapper : TypeMapper
                 new(_formatter.Format(source.Value)));
 
         builder.Map<NullableNumber, int?>()
-            .Construct(source => source.Value);
+            .ConstructUsing(source => source.Value);
     }
 }

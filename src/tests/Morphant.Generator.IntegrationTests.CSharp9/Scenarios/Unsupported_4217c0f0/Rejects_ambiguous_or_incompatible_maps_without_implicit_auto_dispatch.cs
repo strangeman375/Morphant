@@ -6,7 +6,6 @@
 using System;
 using Morphant;
 using Morphant.Context;
-using Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Unsupported_4217c0f0.Morphant.Generated;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Unsupported_4217c0f0
 {
@@ -41,11 +40,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Unsupported_4217
     public sealed class SpoofedSelectorDestination
     {
         public ChildDestination Child { get; set; } = new(-1);
-    }
-
-    public sealed class ReadOnlyValueDestination
-    {
-        public readonly int Value;
     }
 
     public sealed class SpoofedMembers
@@ -95,13 +89,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Unsupported_4217
                     return new();
                 });
 
-            builder.Map<Source, ReadOnlyValueDestination>()
-                .Members((source, _) =>
-                {
-                    var members = new ReadOnlyValueDestinationMembers();
-                    Update(source.Child.Value, members.Value);
-                    return members;
-                });
         }
     }
 
@@ -117,7 +104,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Unsupported_4217
             AssertUnsupported<NullableResultDestination>(mapper, source);
             AssertUnsupported<AutomaticDestination>(mapper, source);
             AssertUnsupported<SpoofedSelectorDestination>(mapper, source);
-            AssertUnsupported<ReadOnlyValueDestination>(mapper, source);
         }
 
         private static void AssertUnsupported<TDestination>(

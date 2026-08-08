@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/CaptureTests::Rejects_runtime_Configure_locals_for_direct_and_factory_code
+// Compiled integration scenario: TypeMapperCreationResultTests/CaptureTests::Rejects_runtime_Configure_locals_for_runtime_callbacks
 #nullable enable
 #pragma warning disable CS1591
 
@@ -31,11 +31,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Capture_0ca4831f
             var offset = Environment.TickCount;
 
             builder.Map<Source, int>()
-                .Construct(source => source.Value + offset);
+                .ConstructUsing(source => source.Value + offset);
 
             builder.Map<Source, Destination>()
-                .Construct(source => new(ByFactory(() =>
-                    new Destination(source.Value + offset))));
+                .ConstructUsing(source =>
+                    new Destination(source.Value + offset));
         }
     }
 

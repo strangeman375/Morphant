@@ -30,7 +30,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_d46efb
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct((source, previous) =>
+                .Resolve((source, previous) =>
                 {
                     if (source.Reuse)
                     {

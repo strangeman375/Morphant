@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/ByFactoryTests::Supports_previous_aware_replacement_and_terminal_null
+// Compiled integration scenario: TypeMapperCreationResultTests/RuntimeCallbackFormsTests::Supports_previous_aware_replacement_and_terminal_null
 #nullable enable
 #pragma warning disable CS1591
 
@@ -6,7 +6,7 @@ using Morphant;
 using Morphant.Context;
 using System;
 
-namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_aac81ef9
+namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimeCallback_aac81ef9
 {
     public sealed class Source
     {
@@ -53,18 +53,17 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_aac81e
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct((source, previous) =>
+                .ResolveUsing((source, previous) =>
                 {
                     if (previous.HasValue && source.Reuse)
                     {
-                        return previous;
+                        return previous.Value;
                     }
 
-                    return new(ByFactory<Destination>(() =>
-                        Create(
-                            source.Id,
-                            previous.HasValue,
-                            source.ReturnNull)));
+                    return Create(
+                        source.Id,
+                        previous.HasValue,
+                        source.ReturnNull);
                 });
 
         private static Destination Create(
@@ -125,7 +124,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_aac81e
                 Destination.AssignmentCount != 3)
             {
                 throw new InvalidOperationException(
-                    "Factory replacement or terminal null semantics changed.");
+                    "Runtime resolution or terminal null semantics changed.");
             }
         }
     }

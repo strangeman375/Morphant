@@ -70,7 +70,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
     {
         public static int SourceOnlyConstructCount { get; private set; }
 
-        public static int DirectConstructCount { get; private set; }
+        public static int RuntimeConstructCount { get; private set; }
 
         public static int InitMemberCount { get; private set; }
 
@@ -83,7 +83,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
                     new(value: TrackSourceOnlyConstruct(source.Value)));
 
             builder.Map<Source, Guid>()
-                .Construct(source => TrackDirectConstruct(source.Text));
+                .ConstructUsing(source => TrackRuntimeConstruct(source.Text));
 
             builder.Map<Source, InitDestination>()
                 .Members((source, previous) => new()
@@ -98,7 +98,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
                 });
 
             builder.Map<Source, ReusedDestination>()
-                .Construct((source, previous) =>
+                .Resolve((source, previous) =>
                 {
                     if (previous.HasValue)
                     {
@@ -109,7 +109,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
                 });
 
             builder.Map<Source, ReplacementDestination>()
-                .Construct((source, _) =>
+                .Resolve((source, _) =>
                     new(value: source.Value));
 
             builder.Map<Source, int>();
@@ -121,9 +121,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
             return value;
         }
 
-        private static Guid TrackDirectConstruct(string value)
+        private static Guid TrackRuntimeConstruct(string value)
         {
-            DirectConstructCount++;
+            RuntimeConstructCount++;
             return Guid.Parse(value);
         }
 
@@ -172,7 +172,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
                 directCreated != Guid.Parse(source.Text) ||
                 initCreated.Value != 9 ||
                 TestMapper.SourceOnlyConstructCount != 1 ||
-                TestMapper.DirectConstructCount != 1 ||
+                TestMapper.RuntimeConstructCount != 1 ||
                 TestMapper.InitMemberCount != 1)
             {
                 throw new InvalidOperationException(
@@ -219,7 +219,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
                 ignoredResult.Value != 4 ||
                 scalarResult != 5 ||
                 TestMapper.SourceOnlyConstructCount != 1 ||
-                TestMapper.DirectConstructCount != 1 ||
+                TestMapper.RuntimeConstructCount != 1 ||
                 TestMapper.InitMemberCount != 1)
             {
                 throw new InvalidOperationException(

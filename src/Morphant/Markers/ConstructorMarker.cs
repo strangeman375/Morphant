@@ -13,7 +13,3 @@ public abstract class ByConventionMarker : ConstructorMarker
     {
     }
 }
-
-public interface IByFactoryMarker<out TDestination>
-{
-}

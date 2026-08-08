@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperMemberTests/ConventionMemberTests::Completes_explicit_plans_after_constructor_direct_and_factory_results
+// Compiled integration scenario: TypeMapperMemberTests/ConventionMemberTests::Completes_explicit_plans_after_structured_and_runtime_results
 #nullable enable
 #pragma warning disable CS1591
 
@@ -97,7 +97,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConventionMember
                 });
 
             builder.Map<Source, IDirectDestination>()
-                .Construct(source => new DirectDestination(source.Seed))
+                .ConstructUsing(source =>
+                    new DirectDestination(source.Seed))
                 .Members((source, previous) => new()
                 {
                     Explicit = previous.HasValue
@@ -106,8 +107,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConventionMember
                 });
 
             builder.Map<Source, FactoryDestination>()
-                .Construct(source => new(
-                    ByFactory(() => FactoryDestination.Create(source.Seed))))
+                .ConstructUsing(source =>
+                    FactoryDestination.Create(source.Seed))
                 .Members((source, previous) => new()
                 {
                     Explicit = previous.HasValue

@@ -4,13 +4,13 @@ namespace Morphant.Generator.IntegrationTests.TypeMapperCreationResultTests;
 internal sealed class CaptureTests
 {
     [Test]
-    public void Rejects_runtime_Configure_locals_for_direct_and_factory_code()
+    public void Rejects_runtime_Configure_locals_for_runtime_callbacks()
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Capture_0ca4831f.Scenario.Verify();
     }
 
     [Test]
-    public void Requires_direct_Construct_only_for_reachable_creation()
+    public void Requires_an_explicit_result_policy_only_for_reachable_creation()
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Capture_d45adfd5.Scenario.Verify();
     }

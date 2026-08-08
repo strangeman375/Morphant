@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperInheritanceTests/PlanCompositionTests::Does_not_include_Construct_and_recomputes_derived_construction
+// Compiled integration scenario: TypeMapperInheritanceTests/PlanCompositionTests::Does_not_include_result_policy_and_recomputes_derived_construction
 #nullable enable
 #pragma warning disable CS1591
 
@@ -43,8 +43,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Animal, AnimalDto>()
-                .Construct(source => new(ByFactory(() =>
-                    CreateBase(source.Seed))))
+                .ConstructUsing(source => CreateBase(source.Seed))
                 .Members((source, _) => new()
                 {
                     Name = "base:" + source.Name

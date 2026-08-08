@@ -47,7 +47,7 @@ namespace TestCase
         {
             builder.Map<Source, Destination>()
                 .Members((source, previous) => default!)
-                .Construct((source, previous) => default!);
+                .Resolve((source, previous) => default!);
 
             builder.Map<OtherSource, OtherDestination>()
                 .Construct(source => default!);
@@ -79,8 +79,8 @@ namespace TestCase
 // Pair 0: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=1; Members=1
-// Construct 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>); Output=global::TestCase.Morphant.Generated.DestinationConstruction; Operation=AnonymousFunction; Syntax=(source, previous) => default!
+// Declarative: ResultPolicies=1; Members=1
+// Resolve 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>); Output=global::TestCase.Morphant.Generated.DestinationConstruction; Operation=AnonymousFunction; Syntax=(source, previous) => default!
 // Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Source, global::Morphant.Option<global::TestCase.Destination>); Output=global::TestCase.Morphant.Generated.DestinationMembers; Operation=AnonymousFunction; Syntax=(source, previous) => default!
 // Manual: Converts=0
 // IncludeBase: 0
@@ -88,7 +88,7 @@ namespace TestCase
 // Pair 1: global::TestCase.OtherSource -> global::TestCase.OtherDestination
 // Map: builder.Map<OtherSource, OtherDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=1; Members=0
+// Declarative: ResultPolicies=1; Members=0
 // Construct 0: Form=Source; Inputs=(global::TestCase.OtherSource); Output=global::TestCase.Morphant.Generated.OtherDestinationConstruction; Operation=AnonymousFunction; Syntax=source => default!
 // Manual: Converts=0
 // IncludeBase: 0
@@ -100,7 +100,7 @@ namespace TestCase
 // Pair 0: global::TestCase.ExpressionSource -> global::TestCase.ExpressionDestination
 // Map: builder.Map<ExpressionSource, ExpressionDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Declarative: Constructs=1; Members=1
+// Declarative: ResultPolicies=1; Members=1
 // Construct 0: Form=Source; Inputs=(global::TestCase.ExpressionSource); Output=global::TestCase.Morphant.Generated.ExpressionDestinationConstruction; Operation=AnonymousFunction; Syntax=source => default!
 // Members 0: Form=SourcePreviousAndResult; Inputs=(global::TestCase.ExpressionSource, global::Morphant.Option<global::TestCase.ExpressionDestination>, global::TestCase.ExpressionDestination); Output=global::TestCase.Morphant.Generated.ExpressionDestinationMembers; Operation=AnonymousFunction; Syntax=(source, previous, result) => default!
 // Manual: Converts=0

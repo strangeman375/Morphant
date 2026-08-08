@@ -446,7 +446,7 @@ internal static class PairConfigurationModelBuilder
         else
         {
             declarative = new DeclarativePairConfigurationModel(
-                local.Declarative.Constructs,
+                local.Declarative.ResultPolicies,
                 inherited.Declarative.Members.AddRange(
                     local.Declarative.Members));
             conflicts |= inherited.Conflicts &
@@ -509,8 +509,9 @@ internal static class PairConfigurationModelBuilder
         INamedTypeSymbol targetMapperType,
         CancellationToken cancellationToken)
     {
-        var accessible = model.Declarative.Constructs.All(static construct =>
-                construct.Expression.IsAccessibleFromTargetMapper) &&
+        var accessible = model.Declarative.ResultPolicies.All(
+                static policy =>
+                    policy.Expression.IsAccessibleFromTargetMapper) &&
             AreEffectiveMembersAccessible(
                 model.Declarative.Members,
                 compilation,
@@ -713,8 +714,8 @@ internal static class PairConfigurationModelBuilder
             pair.Registration.Syntax,
             semanticModel,
             cancellationToken);
-        var constructs =
-            ImmutableArray.CreateBuilder<ConstructConfigurationModel>();
+        var resultPolicies =
+            ImmutableArray.CreateBuilder<ResultPolicyConfigurationModel>();
         var members =
             ImmutableArray.CreateBuilder<MembersConfigurationModel>();
         var conversions =
@@ -791,12 +792,46 @@ internal static class PairConfigurationModelBuilder
             switch (method.Name)
             {
                 case "Construct":
-                    constructs.Add(
-                        new ConstructConfigurationModel(
+                    resultPolicies.Add(
+                        new ResultPolicyConfigurationModel(
                             invocation,
+                            ResultPolicyKind.Construct,
                             expression.DelegateInvokeMethod.Parameters.Length == 1
-                                ? ConstructConfigurationForm.Source
-                                : ConstructConfigurationForm.SourceAndPrevious,
+                                ? ResultPolicyForm.Source
+                                : ResultPolicyForm.SourceAndContext,
+                            expression));
+                    break;
+
+                case "Resolve":
+                    resultPolicies.Add(
+                        new ResultPolicyConfigurationModel(
+                            invocation,
+                            ResultPolicyKind.Resolve,
+                            expression.DelegateInvokeMethod.Parameters.Length == 2
+                                ? ResultPolicyForm.SourceAndPrevious
+                                : ResultPolicyForm.SourcePreviousAndContext,
+                            expression));
+                    break;
+
+                case "ConstructUsing":
+                    resultPolicies.Add(
+                        new ResultPolicyConfigurationModel(
+                            invocation,
+                            ResultPolicyKind.ConstructUsing,
+                            expression.DelegateInvokeMethod.Parameters.Length == 1
+                                ? ResultPolicyForm.Source
+                                : ResultPolicyForm.SourceAndContext,
+                            expression));
+                    break;
+
+                case "ResolveUsing":
+                    resultPolicies.Add(
+                        new ResultPolicyConfigurationModel(
+                            invocation,
+                            ResultPolicyKind.ResolveUsing,
+                            expression.DelegateInvokeMethod.Parameters.Length == 2
+                                ? ResultPolicyForm.SourceAndPrevious
+                                : ResultPolicyForm.SourcePreviousAndContext,
                             expression));
                     break;
 
@@ -804,10 +839,15 @@ internal static class PairConfigurationModelBuilder
                     members.Add(
                         new MembersConfigurationModel(
                             invocation,
-                            expression.DelegateInvokeMethod.Parameters.Length == 2
-                                ? MembersConfigurationForm.SourceAndPrevious
-                                : MembersConfigurationForm
+                            expression.DelegateInvokeMethod.Parameters.Length switch
+                            {
+                                1 => MembersConfigurationForm.Source,
+                                2 => MembersConfigurationForm.SourceAndPrevious,
+                                3 => MembersConfigurationForm
                                     .SourcePreviousAndResult,
+                                _ => MembersConfigurationForm
+                                    .SourcePreviousResultAndContext
+                            },
                             expression));
                     break;
 
@@ -815,19 +855,26 @@ internal static class PairConfigurationModelBuilder
                     conversions.Add(
                         new ConvertConfigurationModel(
                             invocation,
+                            expression.DelegateInvokeMethod.Parameters.Length switch
+                            {
+                                1 => ConvertConfigurationForm.Source,
+                                2 => ConvertConfigurationForm.SourceAndPrevious,
+                                _ => ConvertConfigurationForm
+                                    .SourcePreviousAndContext
+                            },
                             expression));
                     break;
             }
         }
 
-        var immutableConstructs = constructs.ToImmutable();
+        var immutableResultPolicies = resultPolicies.ToImmutable();
         var immutableMembers = members.ToImmutable();
         var immutableConversions = conversions.ToImmutable();
         var conflicts = PairConfigurationConflict.None;
 
-        if (immutableConstructs.Length > 1)
+        if (immutableResultPolicies.Length > 1)
         {
-            conflicts |= PairConfigurationConflict.DuplicateConstruct;
+            conflicts |= PairConfigurationConflict.DuplicateResultPolicy;
         }
 
         if (immutableMembers.Length > 1)
@@ -841,7 +888,8 @@ internal static class PairConfigurationModelBuilder
         }
 
         if (immutableConversions.Length > 0 &&
-            (immutableConstructs.Length > 0 || immutableMembers.Length > 0))
+            (immutableResultPolicies.Length > 0 ||
+             immutableMembers.Length > 0))
         {
             conflicts |= PairConfigurationConflict.MixedManualAndDeclarative;
         }
@@ -850,7 +898,7 @@ internal static class PairConfigurationModelBuilder
             pair,
             settings,
             new DeclarativePairConfigurationModel(
-                immutableConstructs,
+                immutableResultPolicies,
                 immutableMembers),
             new ManualPairConfigurationModel(immutableConversions),
             new PairConfigurationCompositionModel(
@@ -1185,7 +1233,13 @@ internal static class PairConfigurationModelBuilder
     {
         var definition = method.ReducedFrom ?? method;
 
-        return method.Name is "Construct" or "Members" or "Convert" &&
+        return method.Name is
+                   "Construct" or
+                   "Resolve" or
+                   "ConstructUsing" or
+                   "ResolveUsing" or
+                   "Members" or
+                   "Convert" &&
                StringComparer.Ordinal.Equals(
                    SymbolNameHelper.GetFullMetadataName(
                        definition.ContainingType),

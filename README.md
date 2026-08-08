@@ -5,9 +5,8 @@ explicit `TypeMapper` configuration into strongly typed
 `ITypeMapper<TSource, TDestination>` implementations; runtime dispatch does no
 reflection-based mapping discovery.
 
-The documentation describes the agreed core v0 target. The callback
-result-policy and read-only proxy revisions are not yet implemented in the
-generated API; current production progress is tracked in the
+The documentation describes the implemented core v0 API. Current review
+status and remaining boundaries are tracked in the
 [mapping API roadmap](MAPPING_API_IMPLEMENTATION_PLAN.md).
 
 Core v0 is an architectural preview focused on object lifecycle, nullability,

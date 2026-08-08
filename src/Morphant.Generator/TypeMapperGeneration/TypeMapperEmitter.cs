@@ -789,19 +789,34 @@ internal static class TypeMapperEmitter
             throw new InvalidOperationException(
                 "A Convert helper method name is required.");
 
+        if (manualMapping.Form ==
+            PairConfiguration.ConvertConfigurationForm.Source)
+        {
+            writer.Line($"=> {helperMethodName}(source);");
+            return;
+        }
+
         writer.Line($"=> {helperMethodName}(");
         writer.Indent();
         writer.Line("source,");
+        var hasContext = manualMapping.Form ==
+            PairConfiguration.ConvertConfigurationForm
+                .SourcePreviousAndContext;
+        var previousSuffix = hasContext ? "," : ");";
 
         if (!update)
         {
-            writer.Line(BuildOptionTypeName(mapping) + ".None,");
+            writer.Line(
+                BuildOptionTypeName(mapping) +
+                ".None" +
+                previousSuffix);
         }
         else if (!mapping.DestinationCanBeNull)
         {
             writer.Line(
                 BuildOptionTypeName(mapping) +
-                ".Some(destination),");
+                ".Some(destination)" +
+                previousSuffix);
         }
         else
         {
@@ -816,11 +831,21 @@ internal static class TypeMapperEmitter
                     TypeMapperUpdateKind.NullableValue
                     ? "destination.Value"
                     : "destination") +
-                "),");
+                ")" +
+                previousSuffix);
             writer.Unindent();
         }
 
-        writer.Line("context);");
+        if (hasContext)
+        {
+            writer.Line("context);");
+        }
+        else
+        {
+            writer.Unindent();
+            return;
+        }
+
         writer.Unindent();
     }
 

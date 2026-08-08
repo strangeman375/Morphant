@@ -114,8 +114,6 @@ internal static class ConstructionPlanEmitter
 
         WriteByConventionConstructor(writer, model, typeName);
         writer.Line();
-        WriteByFactoryConstructor(writer, model, typeName);
-        writer.Line();
 
         foreach (var constructor in model.Constructors)
         {
@@ -185,29 +183,6 @@ internal static class ConstructionPlanEmitter
                     Identifier(model.ConstructorParametersTypeName),
                     model.TypeParameters) +
                 "? parameters = null"
-            });
-    }
-
-    private static void WriteByFactoryConstructor(
-        CodeWriter writer,
-        ConstructionPlanModel model,
-        string typeName)
-    {
-        WriteSummary(
-            writer,
-            "Creates a destination instance using factory-based construction.");
-        WriteParameterDocumentation(
-            writer,
-            "marker",
-            "Selects factory-based construction.");
-        WriteConstructor(
-            writer,
-            typeName,
-            new[]
-            {
-                "global::Morphant.Markers.IByFactoryMarker<" +
-                model.DestinationTypeName +
-                "> marker"
             });
     }
 

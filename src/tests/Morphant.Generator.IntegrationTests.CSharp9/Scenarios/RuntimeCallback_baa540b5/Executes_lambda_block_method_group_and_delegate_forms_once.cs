@@ -1,12 +1,13 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/ByFactoryTests::Executes_lambda_block_method_group_and_delegate_forms_once
+// Compiled integration scenario: TypeMapperCreationResultTests/RuntimeCallbackFormsTests::Executes_lambda_block_method_group_and_delegate_forms_once
 #nullable enable
 #pragma warning disable CS1591
 
 using Morphant;
 using Morphant.Context;
+using Morphant.Delegates;
 using System;
 
-namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_baa540b5
+namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimeCallback_baa540b5
 {
     public sealed class Source
     {
@@ -41,24 +42,24 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_baa540
     {
         public int MethodGroupCount { get; private set; }
 
-        public MethodGroupDestination Create()
+        public MethodGroupDestination Create(Source source)
         {
             MethodGroupCount++;
-            return new MethodGroupDestination();
+            return new MethodGroupDestination { Value = source.Value };
         }
     }
 
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
-        private readonly Func<DelegateDestination> _factory;
+        private readonly ConstructUsing<Source, DelegateDestination> _factory;
 
         public TestMapper()
         {
-            _factory = () =>
+            _factory = source =>
             {
                 DelegateCount++;
-                return new DelegateDestination();
+                return new DelegateDestination { Value = source.Value };
             };
         }
 
@@ -73,7 +74,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_baa540
             const int Offset = 10;
 
             builder.Map<Source, BlockDestination>()
-                .Construct(source => new(ByFactory(() =>
+                .ConstructUsing(source =>
                 {
                     static int Normalize(int value) =>
                         value < 0 ? -value : value;
@@ -87,16 +88,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_baa540
                     }
 
                     return new BlockDestination(seed);
-                })));
+                });
 
             builder.Map<Source, MethodGroupDestination>()
-                .Construct(_ => new(ByFactory(Provider.Create)));
+                .ConstructUsing(Provider.Create);
 
             builder.Map<Source, DelegateDestination>()
-                .Construct(_ => new(ByFactory(_factory)));
+                .ConstructUsing(_factory);
         }
 
-        private static BlockDestination __CreateByFactory() =>
+        private static BlockDestination __ConstructUsing() =>
             new(-1);
     }
 
@@ -126,7 +127,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_baa540
                 TestMapper.BlockCount != 2)
             {
                 throw new InvalidOperationException(
-                    "Block factory did not preserve its lifecycle.");
+                    "Runtime construction did not preserve its lifecycle.");
             }
 
             var methodGroup =
@@ -142,7 +143,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByFactory_baa540
                 TestMapper.DelegateCount != 1)
             {
                 throw new InvalidOperationException(
-                    "Factory delegate form was not invoked exactly once.");
+                    "Runtime callback form was not invoked exactly once.");
             }
         }
     }

@@ -34,7 +34,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_ee1a31
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct((source, previous) =>
+                .Resolve((source, previous) =>
                 {
                     if (previous.HasValue &&
                         previous.Value.Id == source.Id)

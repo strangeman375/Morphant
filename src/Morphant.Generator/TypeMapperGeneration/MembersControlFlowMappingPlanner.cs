@@ -16,12 +16,9 @@ internal static class MembersControlFlowMappingPlanner
         TypeMapperMappingModel mapping,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
-        HashSet<string> usedGeneratedMethodNames,
-        bool directConstruction,
-        Func<
-            ConventionMemberMappingPlan,
-            ByFactoryHelperRegistry?,
-            TypeMapperMappingModel> buildFlatMapping,
+        bool reuseFlatMapping,
+        Func<ConventionMemberMappingPlan, TypeMapperMappingModel>
+            buildFlatMapping,
         CancellationToken cancellationToken)
     {
         var hasResultDependentControlFlow =
@@ -38,9 +35,6 @@ internal static class MembersControlFlowMappingPlanner
                 members.Program.RuntimeLocalPlaceholders,
                 cancellationToken);
 
-        var sharedFactoryHelpers = directConstruction
-            ? null
-            : new ByFactoryHelperRegistry(usedGeneratedMethodNames);
         var flatMappings =
             new Dictionary<
                 DeclarativeLeafSyntaxNode,
@@ -48,24 +42,21 @@ internal static class MembersControlFlowMappingPlanner
         var helperDeclarations =
             ImmutableArray.CreateBuilder<string>();
         var seenHelpers = new HashSet<string>(StringComparer.Ordinal);
-        TypeMapperMappingModel? sharedDirectMapping = null;
+        TypeMapperMappingModel? sharedMapping = null;
 
         foreach (var leaf in members.Leaves)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var flat = sharedDirectMapping is { } directMapping
+            var flat = sharedMapping is { } reusableMapping
                 ? ApplyMemberPlan(
-                    directMapping,
+                    reusableMapping,
                     leaf.Value,
                     mapperType)
-                : buildFlatMapping(
-                    leaf.Value,
-                    sharedFactoryHelpers);
+                : buildFlatMapping(leaf.Value);
 
             if (flat.UnsupportedExceptionMessage is { } unsupported)
             {
-                sharedFactoryHelpers?.Rollback();
                 return mapping with
                 {
                     UnsupportedExceptionMessage = unsupported
@@ -74,29 +65,17 @@ internal static class MembersControlFlowMappingPlanner
 
             flatMappings.Add(leaf.Key, flat);
 
-            if (directConstruction &&
-                sharedDirectMapping is null &&
+            if (reuseFlatMapping &&
+                sharedMapping is null &&
                 flat.ControlFlow is not null)
             {
-                sharedDirectMapping = flat;
+                sharedMapping = flat;
             }
 
             foreach (var declaration in
                      flat.HelperMethodDeclarations.IsDefault
                          ? []
                          : flat.HelperMethodDeclarations)
-            {
-                if (seenHelpers.Add(declaration))
-                {
-                    helperDeclarations.Add(declaration);
-                }
-            }
-        }
-
-        if (sharedFactoryHelpers is not null)
-        {
-            foreach (var declaration in
-                     sharedFactoryHelpers.HelperMethodDeclarations)
             {
                 if (seenHelpers.Add(declaration))
                 {
@@ -116,7 +95,6 @@ internal static class MembersControlFlowMappingPlanner
                     cancellationToken,
                     out var resultDependentControlFlow))
             {
-                sharedFactoryHelpers?.Rollback();
                 return mapping with
                 {
                     UnsupportedExceptionMessage =
@@ -161,6 +139,8 @@ internal static class MembersControlFlowMappingPlanner
                 BuildPreviousSubstitution(mapping, hasPrevious: false),
                 members.ResultParameter,
                 mapping.ResultLocalName,
+                members.ContextParameter,
+                contextName: "context",
                 members.TransferScope,
                 BuildCreateLeaf,
                 cancellationToken,
@@ -176,12 +156,13 @@ internal static class MembersControlFlowMappingPlanner
                 BuildPreviousSubstitution(mapping, hasPrevious: true),
                 members.ResultParameter,
                 "destination",
+                members.ContextParameter,
+                contextName: "context",
                 members.TransferScope,
                 BuildUpdateLeaf,
                 cancellationToken,
                 out var updateRoot))
         {
-            sharedFactoryHelpers?.Rollback();
             return mapping with
             {
                 UnsupportedExceptionMessage =
@@ -440,6 +421,8 @@ internal static class MembersControlFlowMappingPlanner
                     previousSubstitution,
                     resultParameter,
                     resultName,
+                    configuredMembers.ContextParameter,
+                    contextName: "context",
                     configuredMembers.TransferScope,
                     baseMapping,
                     leaf => selectMembers(

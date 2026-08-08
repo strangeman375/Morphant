@@ -10,7 +10,7 @@ internal sealed class ResultAwareTests
     }
 
     [Test]
-    public void Uses_the_selected_factory_and_direct_results_and_stops_on_null()
+    public void Uses_selected_runtime_callback_results_and_stops_on_null()
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResultAware_f6b07787.Scenario.Verify();
     }

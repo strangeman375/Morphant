@@ -62,9 +62,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.LifecycleBounda
                 });
 
             builder.Map<Source, FactoryInitDestination>()
-                .Construct(source =>
-                    new(ByFactory<FactoryInitDestination>(() =>
-                        new FactoryInitDestination(source.Value))))
+                .ConstructUsing(source =>
+                    new FactoryInitDestination(source.Value))
                 .Members((source, _, _) => new()
                 {
                     Initial = source.Value

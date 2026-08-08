@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/DirectConstructTests::Keeps_source_only_Construct_inactive_for_existing_destination
+// Compiled integration scenario: TypeMapperCreationResultTests/CaptureTests::Requires_an_explicit_result_policy_only_for_reachable_creation
 #nullable enable
 #pragma warning disable CS1591
 
@@ -6,7 +6,7 @@ using Morphant;
 using Morphant.Context;
 using System;
 
-namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_f6bde8db
+namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Capture_d45adfd5
 {
     public sealed class Source
     {
@@ -26,17 +26,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
-        public static int ConstructionCount { get; private set; }
-
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, IDestination>()
-                .Construct(source => Create(source.Value));
-
-        private static IDestination Create(int value)
-        {
-            ConstructionCount++;
-            return new Destination { Value = value + 10 };
-        }
+            builder.Map<Source, IDestination>();
     }
 
     public static class Scenario
@@ -45,20 +36,29 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DirectConstruct_
         {
             var mapper =
                 (ITypeMapper<Source, IDestination>)new TestMapper();
-            var context = default(MappingContext);
             var source = new Source { Value = 7 };
-            var created = mapper.Create(source, context);
+            var context = default(MappingContext);
             var previous = new Destination();
             var updated = mapper.Update(source, previous, context);
 
-            if (created.Value != 7 ||
-                !ReferenceEquals(previous, updated) ||
-                updated.Value != 7 ||
-                TestMapper.ConstructionCount != 1)
+            if (!ReferenceEquals(previous, updated) ||
+                updated.Value != 7)
             {
                 throw new InvalidOperationException(
-                    "Source-only direct Construct ran for existing destination.");
+                    "Existing direct destination was not mapped.");
             }
+
+            try
+            {
+                mapper.Create(source, context);
+            }
+            catch (global::Morphant.Exceptions.MappingConfigurationException)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                "Direct creation silently used automatic construction.");
         }
     }
 }

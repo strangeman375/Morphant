@@ -1,8 +1,7 @@
 # Declarative mapping
 
-This page documents the agreed core v0 target. The callback result-policy and
-read-only proxy revisions are not yet implemented in the generated API;
-current production progress is tracked in the
+This page documents the implemented core v0 API. Current review status and
+remaining boundaries are tracked in the
 [mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
 
 A declarative pair has one optional result-policy slot and one cooperating
@@ -60,7 +59,7 @@ returned. Its `Operation` value may be used as an ordinary declarative value.
 
 Structured construction can select an explicit destination constructor or
 `ByConvention()`. It cannot return an arbitrary ready-made destination.
-`ByFactory` is not part of the target API.
+`ByFactory` is not part of the API.
 
 ## Runtime result policies
 

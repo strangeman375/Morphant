@@ -66,6 +66,8 @@ internal static class DeclarativeControlFlowLowerer
         PreviousExpressionSubstitution? previousSubstitution,
         IParameterSymbol? resultParameter,
         string? resultName,
+        IParameterSymbol? contextParameter,
+        string? contextName,
         SyntaxNode transferScope,
         TypeMapperMappingModel mapping,
         Func<DeclarativeLeafSyntaxNode,
@@ -112,6 +114,8 @@ internal static class DeclarativeControlFlowLowerer
                 previousSubstitution,
                 resultParameter,
                 resultName,
+                contextParameter,
+                contextName,
                 transferScope,
                 BuildLeaf,
                 cancellationToken,
@@ -136,6 +140,8 @@ internal static class DeclarativeControlFlowLowerer
         PreviousExpressionSubstitution? previousSubstitution,
         IParameterSymbol? resultParameter,
         string? resultName,
+        IParameterSymbol? contextParameter,
+        string? contextName,
         SyntaxNode transferScope,
         Func<DeclarativeLeafSyntaxNode, TypeMapperControlFlowNode?>
             buildLeaf,
@@ -153,6 +159,8 @@ internal static class DeclarativeControlFlowLowerer
             previousSubstitution,
             resultParameter,
             resultName,
+            contextParameter,
+            contextName,
             transferScope,
             buildLeaf,
             buildCondition: null,
@@ -171,6 +179,8 @@ internal static class DeclarativeControlFlowLowerer
         PreviousExpressionSubstitution? previousSubstitution,
         IParameterSymbol? resultParameter,
         string? resultName,
+        IParameterSymbol? contextParameter,
+        string? contextName,
         SyntaxNode transferScope,
         Func<DeclarativeLeafSyntaxNode, TypeMapperControlFlowNode?>
             buildLeaf,
@@ -236,7 +246,8 @@ internal static class DeclarativeControlFlowLowerer
                                 [])));
             }
 
-            return DeclarativeDependencyExpressionBuilder.TryRewrite(
+            return DeclarativeDependencyExpressionBuilder
+                .TryRewriteWithContext(
                     expression,
                     semanticModel,
                     mapperType,
@@ -246,6 +257,8 @@ internal static class DeclarativeControlFlowLowerer
                     previousSubstitution,
                     resultParameter,
                     resultName,
+                    contextParameter,
+                    contextName,
                     transferScope,
                     program.RuntimeLocalPlaceholders,
                     fallbackType: null,
@@ -265,7 +278,8 @@ internal static class DeclarativeControlFlowLowerer
 
         string? RewritePattern(PatternSyntax pattern)
         {
-            if (!ConstructExpressionRewriter.TryRewriteSyntax(
+            if (!ConstructExpressionRewriter
+                .TryRewriteSyntaxWithContext(
                     pattern,
                     semanticModel,
                     mapperType,
@@ -275,6 +289,8 @@ internal static class DeclarativeControlFlowLowerer
                     previousSubstitution,
                     resultParameter,
                     resultName,
+                    contextParameter,
+                    contextName,
                     transferScope,
                     program.RuntimeLocalPlaceholders,
                     cancellationToken,

@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/DestinationKindTests::Maps_nullable_value_and_constructed_generic_factory_results
+// Compiled integration scenario: TypeMapperCreationResultTests/DestinationKindTests::Maps_nullable_value_and_constructed_generic_runtime_results
 #nullable enable
 #pragma warning disable CS1591
 
@@ -46,15 +46,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DestinationKind_
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, ValueDestination?>()
-                .Construct(source => new(ByFactory(() =>
+                .ConstructUsing(source =>
                 {
                     ValueFactoryCount++;
                     return new ValueDestination(source.Value + 1);
-                })));
+                });
 
             builder.Map<Source, GenericDestination<int>>()
-                .Construct(source => new(ByFactory(() =>
-                    new GenericDestination<int>(source.Value + 2))));
+                .ConstructUsing(source =>
+                    new GenericDestination<int>(source.Value + 2));
         }
     }
 

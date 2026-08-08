@@ -41,7 +41,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ReadOnlyInputs_a
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, ConstructDestination>()
-                .Construct((source, previous) => new(
+                .Resolve((source, previous) => new(
                     previous.HasValue
                         ? previous.Value.Value = source.Value
                         : source.Value));

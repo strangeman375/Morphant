@@ -54,7 +54,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.ResultAware_3aa
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct((source, previous) =>
+                .Resolve((source, previous) =>
                 {
                     if (previous.HasValue && source.Reuse)
                     {

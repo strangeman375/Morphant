@@ -16,6 +16,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     private readonly PreviousExpressionSubstitution? _previousSubstitution;
     private readonly IParameterSymbol? _resultParameter;
     private readonly string? _resultName;
+    private readonly IParameterSymbol? _contextParameter;
+    private readonly string? _contextName;
     private readonly SyntaxNode _transferScope;
     private readonly IReadOnlyDictionary<ISymbol, string>?
         _localSubstitutions;
@@ -36,6 +38,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         PreviousExpressionSubstitution? previousSubstitution,
         IParameterSymbol? resultParameter,
         string? resultName,
+        IParameterSymbol? contextParameter,
+        string? contextName,
         SyntaxNode transferScope,
         IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
         IReadOnlyDictionary<SyntaxNode, SyntaxAnnotation>?
@@ -56,6 +60,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _previousSubstitution = previousSubstitution;
         _resultParameter = resultParameter;
         _resultName = resultName;
+        _contextParameter = contextParameter;
+        _contextName = contextName;
         _transferScope = transferScope;
         _localSubstitutions = localSubstitutions;
         _dependencyAnnotations = dependencyAnnotations;
@@ -164,6 +170,51 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         return true;
     }
 
+    public static bool TryRewriteWithContext(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        IParameterSymbol? contextParameter,
+        string? contextName,
+        SyntaxNode transferScope,
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
+        CancellationToken cancellationToken,
+        out string rewrittenExpression)
+    {
+        if (!TryRewriteSyntaxWithContext(
+                expression,
+                semanticModel,
+                mapperType,
+                sourceParameter,
+                sourceName,
+                previousParameter,
+                previousSubstitution,
+                resultParameter,
+                resultName,
+                contextParameter,
+                contextName,
+                transferScope,
+                localSubstitutions,
+                cancellationToken,
+                out var rewritten))
+        {
+            rewrittenExpression = string.Empty;
+            return false;
+        }
+
+        rewrittenExpression = rewritten
+            .WithoutTrivia()
+            .NormalizeWhitespace()
+            .ToFullString();
+        return true;
+    }
+
     public static bool TryRewriteSyntax<TNode>(
         TNode syntax,
         SemanticModel semanticModel,
@@ -247,6 +298,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 sourceParameter,
                 previousParameter,
                 resultParameter,
+                contextParameter: null,
                 nestedMapMappings: null,
                 cancellationToken))
         {
@@ -264,11 +316,123 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     previousSubstitution,
                     resultParameter,
                     resultName,
+                    contextParameter: null,
+                    contextName: null,
                     transferScope,
                     localSubstitutions,
                     dependencyAnnotations: null,
                     nestedMapMappings: null)
                 .Visit(syntax)!;
+        return true;
+    }
+
+    public static bool TryRewriteSyntaxWithContext<TNode>(
+        TNode syntax,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        IParameterSymbol? contextParameter,
+        string? contextName,
+        SyntaxNode transferScope,
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
+        CancellationToken cancellationToken,
+        out TNode rewrittenSyntax)
+        where TNode : CSharpSyntaxNode
+    {
+        if (!HasOnlyTransferableCaptures(
+                syntax,
+                transferScope,
+                semanticModel,
+                sourceParameter,
+                previousParameter,
+                resultParameter,
+                contextParameter,
+                nestedMapMappings: null,
+                cancellationToken))
+        {
+            rewrittenSyntax = null!;
+            return false;
+        }
+
+        rewrittenSyntax =
+            (TNode)new ConstructExpressionRewriter(
+                    semanticModel,
+                    mapperType,
+                    sourceParameter,
+                    sourceName,
+                    previousParameter,
+                    previousSubstitution,
+                    resultParameter,
+                    resultName,
+                    contextParameter,
+                    contextName,
+                    transferScope,
+                    localSubstitutions,
+                    dependencyAnnotations: null,
+                    nestedMapMappings: null)
+                .Visit(syntax)!;
+        return true;
+    }
+
+    internal static bool TryRewriteSyntaxWithAnnotationsAndContext(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        IParameterSymbol? contextParameter,
+        string? contextName,
+        SyntaxNode transferScope,
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
+        IReadOnlyDictionary<SyntaxNode, SyntaxAnnotation>
+            dependencyAnnotations,
+        IReadOnlyDictionary<
+            InvocationExpressionSyntax,
+            TypeMapperNestedMapExpressionModel> nestedMapMappings,
+        CancellationToken cancellationToken,
+        out ExpressionSyntax rewrittenExpression)
+    {
+        if (!HasOnlyTransferableCaptures(
+                expression,
+                transferScope,
+                semanticModel,
+                sourceParameter,
+                previousParameter,
+                resultParameter,
+                contextParameter,
+                nestedMapMappings,
+                cancellationToken))
+        {
+            rewrittenExpression = null!;
+            return false;
+        }
+
+        rewrittenExpression =
+            (ExpressionSyntax)new ConstructExpressionRewriter(
+                    semanticModel,
+                    mapperType,
+                    sourceParameter,
+                    sourceName,
+                    previousParameter,
+                    previousSubstitution,
+                    resultParameter,
+                    resultName,
+                    contextParameter,
+                    contextName,
+                    transferScope,
+                    localSubstitutions,
+                    dependencyAnnotations,
+                    nestedMapMappings)
+                .Visit(expression)!;
         return true;
     }
 
@@ -299,6 +463,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 sourceParameter,
                 previousParameter,
                 resultParameter,
+                contextParameter: null,
                 nestedMapMappings,
                 cancellationToken))
         {
@@ -316,6 +481,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     previousSubstitution,
                     resultParameter,
                     resultName,
+                    contextParameter: null,
+                    contextName: null,
                     transferScope,
                     localSubstitutions,
                     dependencyAnnotations,
@@ -864,6 +1031,16 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 .WithTriviaFrom(node);
         }
 
+        if (_contextParameter is not null &&
+            SymbolEqualityComparer.Default.Equals(
+                symbol,
+                _contextParameter))
+        {
+            return SyntaxFactory.IdentifierName(
+                    _contextName ?? node.Identifier.Text)
+                .WithTriviaFrom(node);
+        }
+
         if (symbol is ILocalSymbol
             {
                 IsConst: true,
@@ -1226,6 +1403,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
         IParameterSymbol? resultParameter,
+        IParameterSymbol? contextParameter,
         IReadOnlyDictionary<
             InvocationExpressionSyntax,
             TypeMapperNestedMapExpressionModel>? nestedMapMappings,
@@ -1276,7 +1454,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 resultParameter is not null &&
                 SymbolEqualityComparer.Default.Equals(
                     symbol,
-                    resultParameter))
+                    resultParameter) ||
+                contextParameter is not null &&
+                SymbolEqualityComparer.Default.Equals(
+                    symbol,
+                    contextParameter))
             {
                 continue;
             }

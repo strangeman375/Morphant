@@ -41,10 +41,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DestinationKind_
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source<int>, StructDestination>()
-                .Construct((source, _) => new(source.Value));
+                .Resolve((source, _) => new(source.Value));
 
             builder.Map<Source<int>, StructDestination?>()
-                .Construct((source, _) => new(source.Value));
+                .Resolve((source, _) => new(source.Value));
 
             builder.Map<Source<string>, RecordDestination>()
                 .Construct(source => new(source.Value));

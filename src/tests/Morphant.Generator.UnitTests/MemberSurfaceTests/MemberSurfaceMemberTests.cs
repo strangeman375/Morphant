@@ -16,6 +16,7 @@ internal sealed class MemberSurfaceMemberTests
 #pragma warning disable CS1591
 
 using Morphant;
+using System.Collections.Generic;
 
 namespace TestCase
 {
@@ -24,6 +25,11 @@ namespace TestCase
     public interface IExplicitMember
     {
         int Explicit { get; set; }
+    }
+
+    public sealed class NestedDestination
+    {
+        public int Value { get; set; }
     }
 
     public class Destination : IExplicitMember
@@ -54,6 +60,14 @@ namespace TestCase
         public const int ConstantField = 0;
 
         public readonly int ReadOnlyField;
+
+        public NestedDestination ReadOnlyProxy { get; } = new();
+
+        public readonly NestedDestination ReadOnlyProxyField = new();
+
+        public string ReadOnlyOpaque { get; } = string.Empty;
+
+        public IReadOnlyList<int> ReadOnlyCollection { get; } = [];
 
         public int this[int index]
         {
@@ -141,35 +155,21 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.ReadOnlyProperty"/>.
+        /// Configures mapping for <see cref="global::TestCase.Destination.ReadOnlyProxy"/>.
         /// </summary>
-        public global::Morphant.Members.Member<int> ReadOnlyProperty
+        public global::Morphant.Members.Member<global::TestCase.NestedDestination> ReadOnlyProxy
         {
             get => null!;
+            set { }
         }
 
         /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.PrivateSetter"/>.
+        /// Configures mapping for <see cref="global::TestCase.Destination.ReadOnlyProxyField"/>.
         /// </summary>
-        public global::Morphant.Members.Member<int> PrivateSetter
+        public global::Morphant.Members.Member<global::TestCase.NestedDestination> ReadOnlyProxyField
         {
             get => null!;
-        }
-
-        /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.ProtectedSetter"/>.
-        /// </summary>
-        public global::Morphant.Members.Member<int> ProtectedSetter
-        {
-            get => null!;
-        }
-
-        /// <summary>
-        /// Selects <see cref="global::TestCase.Destination.ReadOnlyField"/>.
-        /// </summary>
-        public global::Morphant.Members.Member<int> ReadOnlyField
-        {
-            get => null!;
+            set { }
         }
 
         public bool Equals(DestinationMembers? other) => false;
@@ -194,7 +194,18 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures mappings for destination members from the source and an optional existing destination.
+        /// Configures destination member mappings from the source.
+        /// </summary>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="members">A lambda expression that receives the non-null source and describes destination member mappings.</param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
+        public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
+            global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationMembers> members)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Configures destination member mappings from the source and an optional existing destination.
         /// </summary>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="members">A lambda expression that receives the non-null source and the optional existing destination and describes destination member mappings.</param>
@@ -205,7 +216,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures mappings for destination members with access to the selected mapping result.
+        /// Configures destination member mappings with access to the selected mapping result.
         /// </summary>
         /// <param name="builder">The mapping builder to configure.</param>
         /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, and the non-null selected result and describes destination member mappings.</param>
@@ -213,6 +224,17 @@ namespace Morphant
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationMembers> members)
+            => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Configures destination member mappings with access to the selected result and declarative operation context.
+        /// </summary>
+        /// <param name="builder">The mapping builder to configure.</param>
+        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, the non-null selected result, and declarative mapping context and describes destination member mappings.</param>
+        /// <returns>The <paramref name="builder"/> instance.</returns>
+        public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Members(
+            this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
+            global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }

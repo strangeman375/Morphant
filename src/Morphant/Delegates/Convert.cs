@@ -1,12 +1,41 @@
-using Morphant.Context;
-
 namespace Morphant.Delegates;
 
 /// <summary>
-/// Describes a fully manual mapping algorithm.
+/// Describes a fully manual mapping algorithm from the original source.
+/// </summary>
+/// <typeparam name="TSource">The original source type.</typeparam>
+/// <typeparam name="TResult">The mapping result type.</typeparam>
+/// <param name="source">The original source.</param>
+/// <returns>The mapping result.</returns>
+public delegate TResult Convert<in TSource, out TResult>(TSource source);
+
+/// <summary>
+/// Describes a fully manual mapping algorithm with access to an optional
+/// existing destination.
 /// </summary>
 /// <typeparam name="TSource">The original source type.</typeparam>
 /// <typeparam name="TPrevious">The existing destination value type.</typeparam>
+/// <typeparam name="TResult">The mapping result type.</typeparam>
+/// <param name="source">The original source.</param>
+/// <param name="previous">The optional existing destination.</param>
+/// <returns>The mapping result.</returns>
+/// <remarks>
+/// A manual mapping receives the original source before null handling. An
+/// absent destination is represented by
+/// <see cref="Option{TPrevious}.None"/>. The returned value is authoritative
+/// and is not processed by the declarative pipeline.
+/// </remarks>
+public delegate TResult Convert<in TSource, TPrevious, out TResult>(
+    TSource source,
+    Option<TPrevious> previous);
+
+/// <summary>
+/// Describes a fully manual mapping algorithm with access to an optional
+/// existing destination and the current mapping context.
+/// </summary>
+/// <typeparam name="TSource">The original source type.</typeparam>
+/// <typeparam name="TPrevious">The existing destination value type.</typeparam>
+/// <typeparam name="TContext">The mapping context type.</typeparam>
 /// <typeparam name="TResult">The mapping result type.</typeparam>
 /// <param name="source">The original source.</param>
 /// <param name="previous">The optional existing destination.</param>
@@ -19,7 +48,11 @@ namespace Morphant.Delegates;
 /// <paramref name="context"/> distinguishes Create from Update. The returned
 /// value is authoritative and is not processed by the declarative pipeline.
 /// </remarks>
-public delegate TResult Convert<in TSource, TPrevious, out TResult>(
+public delegate TResult Convert<
+    in TSource,
+    TPrevious,
+    in TContext,
+    out TResult>(
     TSource source,
     Option<TPrevious> previous,
-    MappingContext context);
+    TContext context);

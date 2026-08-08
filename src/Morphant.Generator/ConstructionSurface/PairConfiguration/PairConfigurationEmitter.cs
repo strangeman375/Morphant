@@ -17,11 +17,180 @@ internal static class PairConfigurationEmitter
             "internal static partial class " +
             "MorphantGeneratedMappingExtensions");
 
-        WriteSourceOnlyConstruct(writer, model);
-        writer.Line();
-        WritePreviousAwareConstruct(writer, model);
-        writer.Line();
-        WriteConvert(writer, model);
+        var hasPreviousMethod = false;
+
+        void Separate()
+        {
+            if (hasPreviousMethod)
+            {
+                writer.Line();
+            }
+
+            hasPreviousMethod = true;
+        }
+
+        if (model.HasStructuredConstruction)
+        {
+            Separate();
+            WriteMethod(
+                writer,
+                model,
+                "Construct",
+                "construct",
+                "Configures structured destination construction when no " +
+                "existing destination is used.",
+                "A lambda expression that receives the non-null source and " +
+                "describes destination construction.",
+                "global::Morphant.Delegates.Construct<" +
+                model.DeclarativeSourceTypeName + ", " +
+                model.ConstructionResultTypeName + ">");
+            Separate();
+            WriteMethod(
+                writer,
+                model,
+                "Construct",
+                "construct",
+                "Configures structured destination construction with " +
+                "declarative operation context.",
+                "A lambda expression that receives the non-null source and " +
+                "declarative mapping context and describes destination " +
+                "construction.",
+                "global::Morphant.Delegates.Construct<" +
+                model.DeclarativeSourceTypeName + ", " +
+                "global::Morphant.Context.MappingContextMarker, " +
+                model.ConstructionResultTypeName + ">");
+            Separate();
+            WriteMethod(
+                writer,
+                model,
+                "Resolve",
+                "resolve",
+                "Configures structured destination resolution from the " +
+                "source and an optional existing destination.",
+                "A lambda expression that receives the non-null source and " +
+                "the optional existing destination and describes destination " +
+                "resolution.",
+                "global::Morphant.Delegates.Resolve<" +
+                model.DeclarativeSourceTypeName + ", " +
+                model.PreviousDestinationTypeName + ", " +
+                model.ConstructionResultTypeName + ">");
+            Separate();
+            WriteMethod(
+                writer,
+                model,
+                "Resolve",
+                "resolve",
+                "Configures structured destination resolution with " +
+                "declarative operation context.",
+                "A lambda expression that receives the non-null source, the " +
+                "optional existing destination, and declarative mapping " +
+                "context and describes destination resolution.",
+                "global::Morphant.Delegates.Resolve<" +
+                model.DeclarativeSourceTypeName + ", " +
+                model.PreviousDestinationTypeName + ", " +
+                "global::Morphant.Context.MappingContextMarker, " +
+                model.ConstructionResultTypeName + ">");
+        }
+
+        Separate();
+        WriteMethod(
+            writer,
+            model,
+            "ConstructUsing",
+            "construct",
+            "Configures runtime destination construction when no existing " +
+            "destination is used.",
+            "A callback that receives the non-null source and returns the " +
+            "destination.",
+            "global::Morphant.Delegates.ConstructUsing<" +
+            model.DeclarativeSourceTypeName + ", " +
+            model.DestinationTypeName + ">");
+        Separate();
+        WriteMethod(
+            writer,
+            model,
+            "ConstructUsing",
+            "construct",
+            "Configures runtime destination construction with mapping " +
+            "context.",
+            "A callback that receives the non-null source and current mapping " +
+            "context and returns the destination.",
+            "global::Morphant.Delegates.ConstructUsing<" +
+            model.DeclarativeSourceTypeName + ", " +
+            "global::Morphant.Context.MappingContext, " +
+            model.DestinationTypeName + ">");
+        Separate();
+        WriteMethod(
+            writer,
+            model,
+            "ResolveUsing",
+            "resolve",
+            "Configures runtime destination resolution from the source and " +
+            "an optional existing destination.",
+            "A callback that receives the non-null source and optional " +
+            "existing destination and returns the destination.",
+            "global::Morphant.Delegates.ResolveUsing<" +
+            model.DeclarativeSourceTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            model.DestinationTypeName + ">");
+        Separate();
+        WriteMethod(
+            writer,
+            model,
+            "ResolveUsing",
+            "resolve",
+            "Configures runtime destination resolution with mapping context.",
+            "A callback that receives the non-null source, optional existing " +
+            "destination, and current mapping context and returns the " +
+            "destination.",
+            "global::Morphant.Delegates.ResolveUsing<" +
+            model.DeclarativeSourceTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            "global::Morphant.Context.MappingContext, " +
+            model.DestinationTypeName + ">");
+        Separate();
+        WriteMethod(
+            writer,
+            model,
+            "Convert",
+            "mapping",
+            "Configures a fully manual mapping algorithm from the original " +
+            "source.",
+            "A callback that receives the original source and returns the " +
+            "destination.",
+            "global::Morphant.Delegates.Convert<" +
+            model.ManualSourceTypeName + ", " +
+            model.DestinationTypeName + ">");
+        Separate();
+        WriteMethod(
+            writer,
+            model,
+            "Convert",
+            "mapping",
+            "Configures a fully manual mapping algorithm with access to an " +
+            "optional existing destination.",
+            "A callback that receives the original source and optional " +
+            "existing destination and returns the destination.",
+            "global::Morphant.Delegates.Convert<" +
+            model.ManualSourceTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            model.DestinationTypeName + ">");
+        Separate();
+        WriteMethod(
+            writer,
+            model,
+            "Convert",
+            "mapping",
+            "Configures a fully manual mapping algorithm with mapping " +
+            "context.",
+            "A callback that receives the original source, optional existing " +
+            "destination, and current mapping context and returns the " +
+            "destination.",
+            "global::Morphant.Delegates.Convert<" +
+            model.ManualSourceTypeName + ", " +
+            model.PreviousDestinationTypeName + ", " +
+            "global::Morphant.Context.MappingContext, " +
+            model.DestinationTypeName + ">");
 
         writer.CloseBlock();
         writer.CloseBlock();
@@ -29,108 +198,28 @@ internal static class PairConfigurationEmitter
         return writer.ToString();
     }
 
-    private static void WriteSourceOnlyConstruct(
-        CodeWriter writer,
-        PairConfigurationModel model)
-    {
-        WriteSummary(
-            writer,
-            "Configures how to construct a destination when no existing " +
-            "destination is used.");
-        WriteTypeParameterDocumentation(writer, model.TypeParameters);
-        WriteParameterDocumentation(
-            writer,
-            "builder",
-            "The mapping builder to configure.");
-        WriteParameterDocumentation(
-            writer,
-            "construct",
-            "A lambda expression that receives the non-null source and " +
-            "describes destination construction.");
-        WriteReturnsDocumentation(writer);
-
-        WriteMethodStart(writer, model, "Construct");
-        writer.Line($"    this {model.BuilderTypeName} builder,");
-        writer.Line(
-            "    global::Morphant.Delegates.Construct<" +
-            model.DeclarativeSourceTypeName +
-            ", " +
-            model.ConstructionResultTypeName +
-            "> construct)");
-        WriteMethodEnd(writer, model.TypeParameters);
-    }
-
-    private static void WritePreviousAwareConstruct(
-        CodeWriter writer,
-        PairConfigurationModel model)
-    {
-        WriteSummary(
-            writer,
-            "Configures how to select or construct the destination from " +
-            "the source and an optional existing destination.");
-        WriteTypeParameterDocumentation(writer, model.TypeParameters);
-        WriteParameterDocumentation(
-            writer,
-            "builder",
-            "The mapping builder to configure.");
-        WriteParameterDocumentation(
-            writer,
-            "construct",
-            "A lambda expression that receives the non-null source and " +
-            "the optional existing destination and describes destination " +
-            "construction.");
-        WriteReturnsDocumentation(writer);
-
-        WriteMethodStart(writer, model, "Construct");
-        writer.Line($"    this {model.BuilderTypeName} builder,");
-        writer.Line(
-            "    global::Morphant.Delegates.Construct<" +
-            model.DeclarativeSourceTypeName +
-            ", " +
-            model.PreviousDestinationTypeName +
-            ", " +
-            model.ConstructionResultTypeName +
-            "> construct)");
-        WriteMethodEnd(writer, model.TypeParameters);
-    }
-
-    private static void WriteConvert(
-        CodeWriter writer,
-        PairConfigurationModel model)
-    {
-        WriteSummary(
-            writer,
-            "Configures a fully manual mapping algorithm.");
-        WriteTypeParameterDocumentation(writer, model.TypeParameters);
-        WriteParameterDocumentation(
-            writer,
-            "builder",
-            "The mapping builder to configure.");
-        WriteParameterDocumentation(
-            writer,
-            "mapping",
-            "A lambda expression that receives the original source, the " +
-            "optional existing destination, and the current mapping context.");
-        WriteReturnsDocumentation(writer);
-
-        WriteMethodStart(writer, model, "Convert");
-        writer.Line($"    this {model.BuilderTypeName} builder,");
-        writer.Line(
-            "    global::Morphant.Delegates.Convert<" +
-            model.ManualSourceTypeName +
-            ", " +
-            model.PreviousDestinationTypeName +
-            ", " +
-            model.DestinationTypeName +
-            "> mapping)");
-        WriteMethodEnd(writer, model.TypeParameters);
-    }
-
-    private static void WriteMethodStart(
+    private static void WriteMethod(
         CodeWriter writer,
         PairConfigurationModel model,
-        string methodName)
+        string methodName,
+        string callbackName,
+        string summary,
+        string callbackDescription,
+        string delegateTypeName)
     {
+        WriteSummary(writer, summary);
+        WriteTypeParameterDocumentation(writer, model.TypeParameters);
+        WriteParameterDocumentation(
+            writer,
+            "builder",
+            "The mapping builder to configure.");
+        WriteParameterDocumentation(
+            writer,
+            callbackName,
+            callbackDescription);
+        writer.Line(
+            "/// <returns>The <paramref name=\"builder\"/> instance.</returns>");
+
         writer.Line(
             "public static " +
             model.BuilderTypeName +
@@ -138,6 +227,9 @@ internal static class PairConfigurationEmitter
             methodName +
             BuildTypeParameterList(model.TypeParameters) +
             "(");
+        writer.Line($"    this {model.BuilderTypeName} builder,");
+        writer.Line($"    {delegateTypeName} {callbackName})");
+        WriteMethodEnd(writer, model.TypeParameters);
     }
 
     private static void WriteMethodEnd(
@@ -207,12 +299,6 @@ internal static class PairConfigurationEmitter
                 XmlAttribute(typeParameter.Name) +
                 "\">A type used by the mapping pair.</typeparam>");
         }
-    }
-
-    private static void WriteReturnsDocumentation(CodeWriter writer)
-    {
-        writer.Line(
-            "/// <returns>The <paramref name=\"builder\"/> instance.</returns>");
     }
 
     private static void WriteSummary(CodeWriter writer, string summary)

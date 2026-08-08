@@ -9,6 +9,7 @@ internal sealed record PairConfigurationModel(
     string ManualSourceTypeName,
     string DestinationTypeName,
     string PreviousDestinationTypeName,
+    bool HasStructuredConstruction,
     string ConstructionResultTypeName,
     string? MembersPlanTypeName,
     ImmutableArray<ConstructionTypeParameterModel> TypeParameters);

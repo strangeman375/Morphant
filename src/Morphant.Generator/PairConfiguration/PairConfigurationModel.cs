@@ -24,15 +24,16 @@ internal readonly record struct PairConfigurationModel(
     PairConfigurationConflict Conflicts);
 
 internal readonly record struct DeclarativePairConfigurationModel(
-    ImmutableArray<ConstructConfigurationModel> Constructs,
+    ImmutableArray<ResultPolicyConfigurationModel> ResultPolicies,
     ImmutableArray<MembersConfigurationModel> Members);
 
 internal readonly record struct ManualPairConfigurationModel(
     ImmutableArray<ConvertConfigurationModel> Conversions);
 
-internal readonly record struct ConstructConfigurationModel(
+internal readonly record struct ResultPolicyConfigurationModel(
     InvocationExpressionSyntax Invocation,
-    ConstructConfigurationForm Form,
+    ResultPolicyKind Kind,
+    ResultPolicyForm Form,
     BoundConfigurationExpression Expression);
 
 internal readonly record struct MembersConfigurationModel(
@@ -42,6 +43,7 @@ internal readonly record struct MembersConfigurationModel(
 
 internal readonly record struct ConvertConfigurationModel(
     InvocationExpressionSyntax Invocation,
+    ConvertConfigurationForm Form,
     BoundConfigurationExpression Expression);
 
 internal sealed record BoundConfigurationExpression(
@@ -92,23 +94,42 @@ internal enum PairConfigurationSettingOrigin
     Explicit
 }
 
-internal enum ConstructConfigurationForm
+internal enum ResultPolicyKind
+{
+    Construct,
+    Resolve,
+    ConstructUsing,
+    ResolveUsing
+}
+
+internal enum ResultPolicyForm
 {
     Source,
-    SourceAndPrevious
+    SourceAndContext,
+    SourceAndPrevious,
+    SourcePreviousAndContext
 }
 
 internal enum MembersConfigurationForm
 {
+    Source,
     SourceAndPrevious,
-    SourcePreviousAndResult
+    SourcePreviousAndResult,
+    SourcePreviousResultAndContext
+}
+
+internal enum ConvertConfigurationForm
+{
+    Source,
+    SourceAndPrevious,
+    SourcePreviousAndContext
 }
 
 [Flags]
 internal enum PairConfigurationConflict
 {
     None = 0,
-    DuplicateConstruct = 1 << 0,
+    DuplicateResultPolicy = 1 << 0,
     DuplicateMembers = 1 << 1,
     DuplicateConvert = 1 << 2,
     MixedManualAndDeclarative = 1 << 3,

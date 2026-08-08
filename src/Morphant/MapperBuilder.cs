@@ -177,7 +177,7 @@ public abstract class MapperBuilder<TSource, TDestination> : MapperBuilderBase<M
     /// of its map-level settings and its explicit <c>Members</c> rules.
     /// Conventions are evaluated again for the current source and destination
     /// types, and local rules override included rules for the same destination
-    /// member. <c>Construct</c> and <c>Convert</c> plans are not included.
+    /// member. Result policies and <c>Convert</c> plans are not included.
     /// </remarks>
     /// <returns>This mapping builder.</returns>
     public MapperBuilder<TSource, TDestination>

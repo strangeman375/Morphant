@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDeclarativeControlFlowTests/ConstructionControlFlowTests::Executes_structured_construction_control_flow_and_opaque_factory_block
+// Compiled integration scenario: TypeMapperDeclarativeControlFlowTests/ConstructionControlFlowTests::Executes_structured_and_runtime_callback_control_flow
 #nullable enable
 #pragma warning disable CS1591
 
@@ -53,8 +53,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
     {
         public static int LocalCount { get; private set; }
 
-        public static int FactoryCount { get; private set; }
-
         public static int FailureCount { get; private set; }
 
         public static int DirectCount { get; private set; }
@@ -62,7 +60,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .Construct((source, previous) =>
+                .Resolve((source, previous) =>
                 {
                     const int offset = 2;
                     var id = Track(source.Id + offset);
@@ -87,27 +85,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
                                         : Auto()
                                 });
 
-                        case 2:
-                            return new(ByFactory<Destination>(() =>
-                            {
-                                var value = source.Id;
-
-                                for (var index = 0; index < 2; index++)
-                                {
-                                    value++;
-                                }
-
-                                FactoryCount++;
-                                return new Destination(value);
-                            }));
-
                         default:
                             throw BuildFailure();
                     }
                 });
 
             builder.Map<Source, IDirectDestination>()
-                .Construct(source =>
+                .ConstructUsing(source =>
                 {
                     DirectCount++;
                     return new DirectDestination(source.Id);
@@ -159,9 +143,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
             var automatic = mapper.Create(
                 new Source { Id = 4, Mode = 1 },
                 context);
-            var factory = mapper.Create(
-                new Source { Id = 5, Mode = 2 },
-                context);
             var previous = new Destination(17);
             var reused = mapper.Update(
                 new Source { Id = 6, Reuse = true },
@@ -185,7 +166,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
                 System.Reflection.BindingFlags.NonPublic))
             {
                 if (method.Name.StartsWith(
-                    "__ConstructDestination",
+                    "__ConstructUsing",
                     StringComparison.Ordinal))
                 {
                     directHelperCount++;
@@ -195,15 +176,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
             if (explicitValue.Id != 5 ||
                 overridden.Id != 50 ||
                 automatic.Id != 4 ||
-                factory.Id != 7 ||
                 !ReferenceEquals(previous, reused) ||
                 directCreated.Value != 107 ||
                 directCreated.Path != "direct-first" ||
                 !ReferenceEquals(directPrevious, directUpdated) ||
                 directUpdated.Value != 208 ||
                 directUpdated.Path != "direct-second" ||
-                TestMapper.LocalCount != 5 ||
-                TestMapper.FactoryCount != 1 ||
+                TestMapper.LocalCount != 4 ||
                 TestMapper.FailureCount != 0 ||
                 TestMapper.DirectCount != 1 ||
                 directHelperCount != 1)

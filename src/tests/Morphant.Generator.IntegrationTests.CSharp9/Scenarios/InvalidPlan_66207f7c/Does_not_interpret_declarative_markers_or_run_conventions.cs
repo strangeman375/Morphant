@@ -27,10 +27,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidPlan_6620
     {
     }
 
-    public sealed class FactoryDestination
-    {
-    }
-
     public sealed class MapDestination
     {
     }
@@ -55,11 +51,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidPlan_6620
             builder.Map<Source, ConventionDestination>()
                 .Convert((_, _, _) =>
                     Wrap<ConventionDestination>(ByConvention()));
-
-            builder.Map<Source, FactoryDestination>()
-                .Convert((_, _, _) =>
-                    Wrap<FactoryDestination>(
-                        ByFactory(() => new FactoryDestination())));
 
             builder.Map<Source, MapDestination>()
                 .Convert((source, _, _) =>
@@ -96,9 +87,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidPlan_6620
                 .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, ConventionDestination>)mapper)
-                .Create(source, context));
-            ExpectUnsupported(() =>
-                ((ITypeMapper<Source, FactoryDestination>)mapper)
                 .Create(source, context));
             ExpectUnsupported(() =>
                 ((ITypeMapper<Source, MapDestination>)mapper)

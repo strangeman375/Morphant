@@ -2670,14 +2670,6 @@ internal static class DeclarativeControlFlowPlanner
                             .FirstOrDefault();
                 }
 
-                if (IsInsideByFactoryArgument(
-                        identifier,
-                        semanticModel,
-                        cancellationToken))
-                {
-                    continue;
-                }
-
                 if (symbol is ILocalSymbol
                     {
                         IsConst: true
@@ -2701,42 +2693,6 @@ internal static class DeclarativeControlFlowPlanner
                     return true;
                 }
             }
-        }
-
-        return false;
-    }
-
-    private static bool IsInsideByFactoryArgument(
-        SimpleNameSyntax identifier,
-        SemanticModel semanticModel,
-        CancellationToken cancellationToken)
-    {
-        foreach (var argument in identifier
-                     .Ancestors()
-                     .OfType<ArgumentSyntax>())
-        {
-            if (argument.Parent is not ArgumentListSyntax
-                {
-                    Parent:
-                        InvocationExpressionSyntax invocation
-                } ||
-                semanticModel.GetSymbolInfo(
-                        invocation,
-                        cancellationToken)
-                    .Symbol is not IMethodSymbol
-                    {
-                        Name: "ByFactory",
-                        ContainingType: { } containingType
-                    } ||
-                !StringComparer.Ordinal.Equals(
-                    SymbolNameHelper.GetFullMetadataName(
-                        containingType),
-                    TypeMapperMetadataName))
-            {
-                continue;
-            }
-
-            return true;
         }
 
         return false;

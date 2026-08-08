@@ -54,6 +54,49 @@ internal static class DeclarativeDependencyExpressionBuilder
         out string rewrittenExpression,
         out TypeMapperDependencyExpressionModel? dependencyExpression)
     {
+        return TryRewriteWithContext(
+            expression,
+            semanticModel,
+            mapperType,
+            sourceParameter,
+            sourceName,
+            previousParameter,
+            previousSubstitution,
+            resultParameter,
+            resultName,
+            contextParameter: null,
+            contextName: null,
+            transferScope,
+            localSubstitutions,
+            fallbackType,
+            nestedMapTarget,
+            nestedMapUsageRegistry,
+            cancellationToken,
+            out rewrittenExpression,
+            out dependencyExpression);
+    }
+
+    public static bool TryRewriteWithContext(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        IParameterSymbol sourceParameter,
+        string sourceName,
+        IParameterSymbol? previousParameter,
+        PreviousExpressionSubstitution? previousSubstitution,
+        IParameterSymbol? resultParameter,
+        string? resultName,
+        IParameterSymbol? contextParameter,
+        string? contextName,
+        SyntaxNode transferScope,
+        IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
+        ITypeSymbol? fallbackType,
+        DeclarativeNestedMapTargetContext? nestedMapTarget,
+        DeclarativeNestedMapUsageRegistry? nestedMapUsageRegistry,
+        CancellationToken cancellationToken,
+        out string rewrittenExpression,
+        out TypeMapperDependencyExpressionModel? dependencyExpression)
+    {
         if (!DeclarativeNestedMapExpression.TryBuild(
                 expression,
                 fallbackType,
@@ -86,7 +129,8 @@ internal static class DeclarativeDependencyExpressionBuilder
         if (candidates.IsEmpty)
         {
             dependencyExpression = null;
-            if (!ConstructExpressionRewriter.TryRewriteSyntaxWithAnnotations(
+            if (!ConstructExpressionRewriter
+                .TryRewriteSyntaxWithAnnotationsAndContext(
                 expression,
                 semanticModel,
                 mapperType,
@@ -96,6 +140,8 @@ internal static class DeclarativeDependencyExpressionBuilder
                 previousSubstitution,
                 resultParameter,
                 resultName,
+                contextParameter,
+                contextName,
                 transferScope,
                 localSubstitutions,
                 ImmutableDictionary<SyntaxNode, SyntaxAnnotation>.Empty,
@@ -119,7 +165,8 @@ internal static class DeclarativeDependencyExpressionBuilder
             static candidate => candidate.Annotation,
             SyntaxNodeReferenceComparer.Instance);
 
-        if (!ConstructExpressionRewriter.TryRewriteSyntaxWithAnnotations(
+        if (!ConstructExpressionRewriter
+            .TryRewriteSyntaxWithAnnotationsAndContext(
                 expression,
                 semanticModel,
                 mapperType,
@@ -129,6 +176,8 @@ internal static class DeclarativeDependencyExpressionBuilder
                 previousSubstitution,
                 resultParameter,
                 resultName,
+                contextParameter,
+                contextName,
                 transferScope,
                 localSubstitutions,
                 annotations,

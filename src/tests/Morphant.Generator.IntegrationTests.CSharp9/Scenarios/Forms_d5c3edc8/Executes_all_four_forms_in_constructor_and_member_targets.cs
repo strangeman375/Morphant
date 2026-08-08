@@ -70,7 +70,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Forms_d5c3edc8
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<OuterSource, ConstructorDestination>()
-                .Construct((source, previous) => new(
+                .Resolve((source, previous) => new(
                     Create(source.First),
                     Create<ChildDestination>(source.Second),
                     Update(
