@@ -4,7 +4,7 @@
 
 Последнее обновление: 8 августа 2026 года.
 
-Статус: этап 2, категория 4, ожидает ревью.
+Статус: этап 2, категория 5, ожидает ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -38,7 +38,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–3 приняты; категория 4 ожидает ревью; категории 5–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–4 приняты; категория 5 ожидает ревью; категории 6–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -217,6 +217,10 @@ category и каталогом, а не номером.
 Перед назначением четвёртой группы 8 августа 2026 года тем же способом
 проверены `MORPH0015`–`MORPH0018`. Внешних публичных .NET/Roslyn diagnostics с
 этими ID не найдено.
+
+Перед назначением пятой группы 8 августа 2026 года тем же способом проверены
+`MORPH0019`–`MORPH0020`. Внешних публичных .NET/Roslyn diagnostics с этими ID
+не найдено.
 
 ### 6.2. Категория 1: общий contract
 
@@ -1280,6 +1284,207 @@ Package-like integration-категория независимо проверя�
   одноимённый сторонний API не влияет на Morphant generation;
 - реальное `.editorconfig`/MSBuild suppression или severity override для
   каждой recovery-family без изменения generated artifact set.
+
+### 6.39. Категория 5: общий contract
+
+Категория «Локальная композиция mapping plan» содержит ровно две diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0019` | `Duplicate mapping plan fragment` | `Mapping plan fragment '{0}' is configured more than once for contract '{1}' in mapper '{2}'.` |
+| `MORPH0020` | `Manual and declarative mapping cannot be combined` | `Manual Convert cannot be combined with declarative Construct or Members for contract '{0}' in mapper '{1}'.` |
+
+Для обеих diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Composition`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- анализируется только authoritative local chain первой registration canonical
+  pair после успешных structural и builder-flow gates категорий 1–4;
+- effective settings, `MappingMode`, `UnmappedMemberValidation` и кажущаяся
+  достижимость отдельной `Create`- либо `Update`-ветки не меняют факт
+  противоречивой локальной композиции;
+- suppression либо изменение severity меняет только compiler presentation и
+  не выбирает один из конфликтующих callbacks как скрытый fallback.
+
+Fragment name `{0}` в `MORPH0019` — точное имя семейства `Construct`,
+`Members` или `Convert`. Mapping contract форматируется по canonical identity
+категории 3 как
+`global::Morphant.ITypeMapper<{canonicalSource}, {canonicalDestination}>`, а
+mapper type — по fully-qualified nullable-aware display категории 2.
+
+### 6.40. Fragment identity и допустимая локальная композиция
+
+Local fragment — успешно связанный Morphant-вызов `Construct`, `Members` либо
+`Convert` в authoritative chain конкретной registration. Разные generated
+overloads одного метода принадлежат одному fragment family. Порядок fragments
+соответствует порядку выполнения fluent chain слева направо; иные pair methods
+между ними этот порядок не меняют.
+
+Допустимы ровно следующие локальные наборы fragments:
+
+- ни одного fragment;
+- один `Construct`;
+- один `Members`;
+- по одному `Construct` и `Members` в любом порядке;
+- один `Convert` без `Construct` и `Members`.
+
+Второй и каждый следующий вызов одного family создаёт `MORPH0019`. Наличие
+`Convert` вместе хотя бы с одним `Construct` либо `Members` независимо от
+порядка создаёт `MORPH0020`.
+
+В категорию 5 входят только invocations, которые semantic model однозначно
+связал с настоящим Morphant pair API. Одноимённые сторонние methods
+игнорируются. Invocation с неразрешившейся или неоднозначной overload либо с
+callback conversion, ошибочность которой уже полностью объясняет C# compiler,
+не считается fragment и не получает дублирующую Morphant diagnostic.
+
+Pair-level settings не являются plan fragments; корректность их значений и
+применимость к manual/declarative plan относится к категории 6. `IncludeBase`
+и перенесённые им `Members` также не считаются local fragments; их
+взаимодействие с локальным plan относится к категории 7. Содержимое успешно
+связанных callbacks категория 5 не анализирует: переносимость и семантика
+`Construct`, `Members`, `Convert` принадлежат категориям 8–11.
+
+### 6.41. `MORPH0019`: duplicate mapping plan fragment
+
+Diagnostic публикуется на втором и каждом следующем локальном invocation
+одного fragment family в authoritative chain pair. Primary location —
+identifier текущего лишнего `Construct`, `Members` либо `Convert`;
+единственная additional location — identifier первого invocation того же
+family.
+
+Три `Members` дают две diagnostics: на втором и третьем вызовах, обе со
+ссылкой на первый. Смешение разных overloads не образует разные families:
+например, два применимых `Construct` с разными delegate signatures всё равно
+дают одну diagnostic на втором вызове.
+
+Diagnostic identity включает mapper, authoritative registration, fragment
+family и location конкретного лишнего invocation. Одинаковые duplicates в
+разных canonical pairs независимы. Chains поздних registrations, уже
+отброшенные `MORPH0013`, не анализируются и собственных `MORPH0019` не
+получают.
+
+`MORPH0019` и `MORPH0020` являются независимыми причинами. Например, два
+`Convert` вместе с `Construct` дают одну duplicate diagnostic на втором
+`Convert` и одну mixed diagnostic на pair: исправление любой одной причины не
+должно впервые открывать вторую.
+
+### 6.42. `MORPH0020`: manual и declarative fragments
+
+Diagnostic публикуется ровно один раз на authoritative pair, содержащую хотя
+бы один локальный `Convert` и хотя бы один локальный `Construct` либо
+`Members`. Количество invocations каждого family не увеличивает cardinality
+`MORPH0020`; duplicates независимо публикуют собственные `MORPH0019`.
+
+Primary location — identifier первого invocation семейства, появившегося
+вторым: manual family содержит `Convert`, declarative family — `Construct` и
+`Members`. Поэтому `Construct(...).Convert(...)` указывает на `Convert`, а
+`Convert(...).Members(...)` — на `Members`. Если до первого `Convert` уже
+встретились и `Construct`, и `Members`, primary остаётся первым `Convert`; если
+после `Convert` declarative fragments начинаются с `Construct`, primary — этот
+`Construct` независимо от последующего `Members`.
+
+Additional locations содержат identifiers первых участвующих `Construct`,
+`Members` и `Convert` в фиксированном порядке `Construct`, `Members`,
+`Convert`; отсутствующий family пропускается. Span, совпадающий с primary
+location, также сохраняется в additional locations, чтобы дополнительный
+список всегда полностью описывал первый локальный состав конфликтующего plan.
+
+В `{0}` передаётся canonical mapping contract, в `{1}` — mapper type.
+Diagnostic identity — mapper и authoritative canonical pair. Local `Convert`
+не конфликтует в категории 5 только с imported `Members` или иным plan за
+`IncludeBase` boundary: такой effective-plan вопрос остаётся категорией 7.
+
+### 6.43. Recovery, precedence, порядок и suppression
+
+Любая `MORPH0019` либо `MORPH0020` делает локальный plan затронутой pair
+неисполнимым. Pair сохраняет полный
+`ITypeMapper<TSource, TDestination>` contract и independently legal
+construction/member/extension surfaces, но обе операции бросают
+`MappingConfigurationException`. Recovery одинаков независимо от
+`MappingMode`, effective settings и кажущейся применимости только одного
+fragment к одной operation.
+
+Morphant не выбирает первый или последний duplicate callback и не отдаёт
+приоритет manual либо declarative family. Если одна pair имеет обе
+diagnostics, один pair-level throwing recovery применяется без дополнительных
+вариантов. Независимые корректные pairs mapper-а сохраняют исполнимые plans.
+
+Compilation-wide gate категории 1, mapper-wide structural gates категории 2,
+pair exclusion/unsupported-root recovery категории 3 и mapper-/pair-wide
+builder-flow gates категории 4 подавляют недостоверный анализ категории 5 в
+своей области. В частности, анализируется только chain первой authoritative
+registration после `MORPH0013`; исключённый либо unsupported contract и flow,
+который невозможно однозначно восстановить, не получают composition
+diagnostics.
+
+Ошибки значений settings, inheritance/effective composition и callback bodies
+не переопределяются категорией 5 и сохраняют ownership категорий 6–11.
+Downstream diagnostic, которому необходим единый исполнимый local plan,
+подавляется как каскад; независимо доказуемая причина соседней категории
+остаётся видимой. Точная downstream applicability дополнительно фиксируется в
+контракте соответствующей категории.
+
+Publication order — по ID, затем ordinal stable mapper identity, canonical
+pair и source location invocation. Для `MORPH0020` одна pair сохраняет одну
+diagnostic независимо от traversal order; primary и additional locations
+вычисляются из утверждённого fluent order.
+
+Suppression либо понижение severity не меняет throwing recovery, generated
+artifact set или анализ независимых pairs. Добавление, удаление, замена,
+перестановка либо смена overload plan fragment полностью пересчитывается при
+actualization без сохранения прежнего conflict state.
+
+### 6.44. Самостоятельная тестовая матрица категории 5
+
+Unit-категория composition независимо фиксирует:
+
+- exact descriptors `MORPH0019`–`MORPH0020`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и fragment/contract/
+  mapper parameters;
+- отсутствие fragments, один `Construct`, один `Members`, один `Convert` и
+  `Construct` + `Members` в обоих порядках как полную positive matrix;
+- два и три вызова каждого family, смешение overloads, interleaved pair
+  settings, exact primary/first-invocation additional locations и две
+  diagnostics для трёх duplicates `MORPH0019`;
+- `Convert` + `Construct`, `Convert` + `Members` и все три fragment families в
+  каждом значимом порядке, exact first-second-family primary location,
+  фиксированный полный additional-location list и ровно одну `MORPH0020` на
+  pair;
+- совместные duplicate и mixed conflicts, включая два `Convert` +
+  `Construct`, с независимой cardinality обоих IDs;
+- semantic exclusion одноимённых сторонних methods, compiler-owned
+  unresolved/ambiguous overloads и invalid callback conversions;
+- анализ только первой authoritative registration, отсутствие diagnostics в
+  отброшенных `MORPH0013` chains и независимую pair с собственным plan;
+- exclusion `IncludeBase` и imported `Members` из local fragment set,
+  ownership pair settings и отсутствие обхода callback contents;
+- полный generated result recovery: complete mapper contract и legal DSL
+  surfaces, обе throwing operations независимо от `MappingMode`, отсутствие
+  выбранного first/last/manual/declarative fallback и сохранение независимой
+  исполнимой pair;
+- precedence с gates `MORPH0001`–`MORPH0018`, подавление недостоверных
+  downstream diagnostics и сохранение независимо доказуемых соседних причин;
+- deterministic order, suppression/изменение severity без изменения recovery
+  и generated artifact set;
+- add/remove/reorder/replace каждого fragment family и overload при одном
+  сохранённом incremental driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- suppressed duplicate каждого fragment family: mapper и DSL surfaces
+  компилируются, обе operations бросают `MappingConfigurationException`, ни
+  первый, ни последний callback не исполняется;
+- suppressed manual/declarative conflict в обоих порядках: обе operations
+  бросают без выбора family, а независимая pair того же mapper-а остаётся
+  исполнимой;
+- `Construct` + `Members` остаются исполнимой declarative composition, а
+  local fragment рядом с imported plan не получает ложную category-5
+  diagnostic;
+- реальное `.editorconfig`/MSBuild suppression или severity override для
+  duplicate и mixed recovery без изменения generated artifact set.
 
 ## 7. Реализация и тесты
 
