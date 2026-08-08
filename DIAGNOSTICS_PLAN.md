@@ -4,7 +4,7 @@
 
 Последнее обновление: 8 августа 2026 года.
 
-Статус: этап 2, категория 2, ожидает ревью.
+Статус: этап 2, категория 3, ожидает ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -38,7 +38,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категория 1 принята; категория 2 ожидает ревью; категории 3–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Категории 1–2 приняты; категория 3 ожидает ревью; категории 4–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -209,6 +209,10 @@ collision check. При найденной внешней коллизии ещ�
 не найдено. Диапазоны между категориями не резервируются: IDs назначаются в
 общей последовательности, а ownership категории выражается descriptor
 category и каталогом, а не номером.
+
+Перед назначением третьей группы 8 августа 2026 года тем же способом проверены
+`MORPH0011`–`MORPH0014`. Внешних публичных .NET/Roslyn diagnostics с этими ID
+не найдено.
 
 ### 6.2. Категория 1: общий contract
 
@@ -644,6 +648,292 @@ Package-like integration-категория независимо проверя�
   и получает собственную исполнимую generated implementation;
 - реальное `.editorconfig`/MSBuild suppression или severity override:
   presentation меняется, но structurally impossible artifact не появляется.
+
+### 6.20. Категория 3: общий contract
+
+Категория «Регистрация mapping pair и допустимость типов» содержит ровно
+четыре diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0011` | `Mapping type is unavailable to generated code` | `The {0} type '{1}' is unavailable to Morphant-generated code.` |
+| `MORPH0012` | `Unsupported mapping root type` | `The {0} type '{1}' is not supported as a mapping root because it is {2}.` |
+| `MORPH0013` | `Duplicate mapping registration` | `Mapping contract '{0}' is registered more than once in mapper '{1}'.` |
+| `MORPH0014` | `Mapping contracts can unify` | `Mapping contracts '{0}' and '{1}' can unify in mapper '{2}'.` |
+
+Для всех четырёх diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Registration`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- проверка начинается только после успешного compilation-wide gate категории
+  1 и mapper-wide structural gate категории 2;
+- effective settings, `MappingMode`, mapper inheritance settings,
+  `UnmappedMemberValidation` и достижимость `Create` / `Update` не влияют на
+  условия категории: eligibility и уникальность contract-а устанавливаются
+  до построения operation-aware mapping plan;
+- suppression либо изменение severity меняет только compiler presentation и
+  не меняет eligibility, ownership registration или generated recovery.
+
+В `{0}` diagnostics `MORPH0011`/`MORPH0012` передаётся lowercase role
+`source` либо `destination`, а в `{1}` — fully-qualified nullable-aware имя
+фактического type argument с `global::`, special type keywords и escaped
+identifiers. В `{2}` `MORPH0012` передаётся одна из фиксированных reason
+phrases раздела 6.23.
+
+Mapping contracts в `MORPH0013`/`MORPH0014` форматируются как
+`global::Morphant.ITypeMapper<{canonicalSource}, {canonicalDestination}>`.
+Mapper type форматируется тем же fully-qualified display, что и в категории
+2. Message parameters не используют исходные aliases и не зависят от
+nullable-context конкретного syntax tree.
+
+### 6.21. Canonical identity и registration order
+
+Canonical identity mapping type строится рекурсивно по semantic symbol и
+игнорирует:
+
+- source aliases;
+- reference nullable annotations на корне и внутри generic arguments;
+- различие `dynamic` и `object`;
+- имена tuple elements;
+- различие native-integer syntax `nint` / `nuint` и соответствующих
+  `System.IntPtr` / `System.UIntPtr`.
+
+`Nullable<T>` остаётся отдельным constructed value type и не совпадает с `T`.
+Array rank и shape, nominal generic definition, содержащие types, порядок и
+canonical identities generic arguments входят в identity. Разные type
+parameters различаются по symbol identity, а не только по имени.
+
+Registration order — стабильный lexical order вызовов `Map` внутри
+mapper-level. Для одной canonical pair первая registration является
+authoritative: она владеет mapping plan и служит earlier location для всех
+повторов. Одинаковая pair в другом mapper type либо повторно объявленная в
+derived mapper-е является независимой и не конфликтует с base mapper-ом.
+
+`MORPH0011` и `MORPH0012` дедуплицируются по mapper, canonical pair и role и
+привязываются к первой registration pair. Если обе root-позиции независимо
+ошибочны, публикуются две diagnostics — source перед destination. Повторные
+registrations не повторяют eligibility diagnostics, но получают собственные
+`MORPH0013` по разделу 6.25.
+
+### 6.22. `MORPH0011`: unavailable mapping type
+
+Diagnostic публикуется, когда семантически разрешившийся type argument
+`Map<TSource, TDestination>` допустим для пользовательского generic-вызова,
+но полный type graph невозможно однозначно назвать из общего generated
+assembly-context. Проверка рекурсивно охватывает root, его containing types,
+array element и generic arguments. В частности, сюда входят `private`,
+`private protected`, `protected` и file-local types на любой глубине.
+
+Primary location — полный syntax соответствующего source либо destination
+type argument первой registration canonical pair; additional locations
+отсутствуют. Если один inaccessible symbol встречается в нескольких разных
+pairs, каждая затронутая pair получает собственную diagnostic.
+
+Public и доступные из текущей assembly `internal` / `protected internal` types
+diagnostic не создают. Ошибочные, pointer/function-pointer, `void`, ref-like,
+static, anonymous, unbound generic и другие forms, которые уже не могут
+связать generic-вызов либо получают точную достаточную C# diagnostic, Morphant
+повторно не диагностирует.
+
+`MORPH0011` является pair-local structural gate. Pair полностью исключается:
+для неё не генерируются executable `ITypeMapper<,>` contract,
+construction/member/extension surfaces или recovery-stub. Независимые legal
+pairs mapper-а продолжают генерацию. Если хотя бы одна root-позиция получает
+`MORPH0011`, semantic root-анализ всей pair уже недостоверен: `MORPH0012` для
+обеих позиций не публикуется.
+
+### 6.23. Классификация unsupported roots
+
+После успешной проверки nameability с root снимается только верхнеуровневая
+`Nullable<T>`-обёртка. Первый совпавший пункт следующего фиксированного порядка
+задаёт единственную reason phrase `MORPH0012` для root-позиции:
+
+| Root category | Условие | `{2}` |
+|---|---|---|
+| Type parameter | Root является type parameter независимо от constraints | `a root type parameter` |
+| Tuple | Tuple syntax, `System.ValueTuple`, `System.Tuple` либо type, реализующий `System.Runtime.CompilerServices.ITuple` | `a tuple` |
+| Sequence, collection or buffer | Array; `IEnumerable` кроме `string`; `IEnumerator`; async enumerable/enumerator; `Memory<T>`, `ReadOnlyMemory<T>` или `ReadOnlySequence<T>` | `a sequence, collection, or buffer` |
+| Delegate | Конкретный delegate, `System.Delegate` либо `System.MulticastDelegate` | `a delegate` |
+| Expression tree | `System.Linq.Expressions.Expression` либо derived type, включая `Expression<TDelegate>` | `an expression tree` |
+| Deferred or async value | `Task` hierarchy, `ValueTask`, `ValueTask<T>` либо `Lazy<T>` | `a deferred or async value` |
+| Push sequence | Type, реализующий `IObservable<T>` | `a push sequence` |
+
+Категории симметричны для source и destination. Они проверяются только на
+корне: `Envelope<Task<T>>`, `Page<List<int>>` и другие nameable nominal roots
+с отложенной категорией внутри generic arguments остаются eligible. Если сам
+outer root реализует отложенный contract, запрет применяется. `string` не
+считается collection root.
+
+### 6.24. `MORPH0012`: unsupported mapping root
+
+Diagnostic публикуется для каждой root-позиции первой registration pair,
+прошедшей nameability gate и попавшей в классификацию раздела 6.23. Primary
+location — полный syntax соответствующего type argument; additional locations
+отсутствуют. Две unsupported позиции одной pair дают две diagnostics с
+одинаковым ID и разными role, type name и location.
+
+Pair сохраняет полный executable
+`ITypeMapper<TSource, TDestination>` contract. Обе операции независимо от
+effective `MappingMode` бросают `MappingConfigurationException` с
+детерминированной причиной: сначала source, затем destination. Generated
+construction, member и pair-extension surfaces отсутствуют, включая
+`Construct`, `Members` и `Convert`; unsupported registration не получает
+скрытый manual либо runtime fallback.
+
+Независимые eligible pairs mapper-а продолжают генерацию. Diagnostics и
+mapping-plan анализ категорий 5–12 для unsupported pair подавляются; независимо
+доказуемые registration и builder-flow errors сохраняются.
+
+### 6.25. `MORPH0013`: duplicate mapping registration
+
+Diagnostic публикуется на каждой registration canonical pair после первой в
+одном mapper-level. Primary location — identifier `Map` текущей лишней
+registration; единственная additional location — identifier `Map` первой
+authoritative registration. В `{0}` передаётся canonical mapping contract, в
+`{1}` — mapper type.
+
+Три регистрации одной pair дают две diagnostics: на второй и третьей, обе со
+ссылкой на первую. Aliases и остальные normalization rules раздела 6.21 не
+создают отдельные pairs. Exact registrations в разных mapper types, а также в
+base и derived mapper-е, diagnostic не создают.
+
+Первая registration целиком владеет local plan. Все chained configuration
+вызовы последующих registrations игнорируются и не объединяются с первой;
+зависимые diagnostics категорий 4–12 для отброшенного chain не публикуются.
+Recovery первой registration определяется её собственным состоянием, поэтому
+`MORPH0013` может публиковаться вместе с `MORPH0009`, `MORPH0010`,
+`MORPH0011`, `MORPH0012` либо `MORPH0014` этой authoritative pair.
+
+### 6.26. Unification generated contracts
+
+После collapse exact duplicates две разные canonical pairs одного generic
+mapper-а конфликтуют, если существует одна конечная согласованная подстановка
+свободных type parameters mapper-а и его containing types, которая делает
+равными обе позиции их `ITypeMapper<TSource, TDestination>` contracts.
+Подстановка рекурсивна и не допускает self-containing type; generic
+constraints не используются как доказательство невозможности равенства.
+
+Unification проверяет nested constructed roots и canonical normalization
+раздела 6.21. Pair с `MORPH0012` участвует: без structural conflict она всё
+равно получила бы executable exception-stub. Pair, уже исключённая
+`MORPH0009`, `MORPH0010` или `MORPH0011`, не участвует. Exact duplicate
+относится только к `MORPH0013` и не образует `MORPH0014` сама с собой.
+
+Conflict identity — mapper и неупорядоченная пара двух canonical contracts.
+Для сообщения и locations contracts упорядочиваются по registration order;
+при равных source locations используется ordinal canonical identity как
+стабильный tie-breaker.
+
+### 6.27. `MORPH0014`: unifiable mapping contracts
+
+Diagnostic публикуется один раз для каждой конфликтующей неупорядоченной пары
+contracts. В `{0}` передаётся earlier contract, в `{1}` — later contract, в
+`{2}` — mapper type. Primary location — identifier `Map` later registration;
+единственная additional location — identifier `Map` earlier registration.
+
+Три contracts, каждый из которых унифицируется с двумя другими, дают три
+diagnostics. Один contract, конфликтующий с двумя earlier contracts, получает
+две diagnostics на одном primary location, но с разными message parameters и
+additional locations. Неунифицируемые pairs и одинаковые pairs разных mapper
+types diagnostic не создают.
+
+Все pairs, участвующие хотя бы в одном конфликте, исключаются из executable
+mapper artifact: interface и explicit implementations для них не генерируются.
+Их независимо legal construction/member/extension surfaces сохраняются, чтобы
+поддерживаемый configuration DSL компилировался; у unsupported root таких
+surfaces по разделу 6.24 нет. Независимые legal pairs того же mapper-а
+полностью сохраняются.
+
+`MORPH0012` и `MORPH0014` могут публиковаться одновременно. В этом случае
+structural unification recovery имеет приоритет над exception-stub: contract
+unsupported pair отсутствует целиком. Diagnostics категорий 5–12, которым
+нужен формируемый executable plan конфликтующей pair, подавляются;
+независимо доказуемые builder-flow errors сохраняются.
+
+### 6.28. Precedence, порядок и suppression
+
+Compilation-wide gate категории 1 и mapper-wide structural errors
+`MORPH0005`–`MORPH0008` подавляют категорию 3. Pair-local
+`MORPH0009`/`MORPH0010` не скрывают независимо доказуемые
+`MORPH0011`–`MORPH0013`, но исключают pair из `MORPH0014`. Внутри категории 3
+structural `MORPH0011` подавляет semantic `MORPH0012` и unification-анализ
+той же pair; `MORPH0013` остаётся независимой причиной; `MORPH0012` участвует
+в `MORPH0014`.
+
+Publication order — по ID, затем ordinal stable mapper identity, canonical
+contract, role `source` перед `destination` и registration source order.
+`MORPH0014` дополнительно сортируется по ordered pair contracts. Discovery и
+incremental invalidation не меняют diagnostic set, messages, primary или
+additional locations.
+
+Suppression либо понижение severity не меняет authoritative registration,
+eligibility или набор generated artifacts. Add/change/remove/restore type
+accessibility, root shape, duplicate registration либо pair shape
+пересчитывает соответствующий gate при actualization без сохранения прежнего
+recovery.
+
+### 6.29. Самостоятельная тестовая матрица категории 3
+
+Unit-категория registration независимо фиксирует:
+
+- exact descriptors `MORPH0011`–`MORPH0014`: ID, title, category, default
+  severity, enabled/configurable flags, message formats, role/reason и type
+  parameters;
+- positive eligibility matrix: built-in и BCL scalars, enum, class, struct,
+  record, nullable value/reference type, abstract class, interface и
+  constructed generic с type parameter либо отложенной категорией только
+  внутри известного nominal root;
+- private, private-protected, protected и file-local root, containing type и
+  nested generic argument; разрешённые public/internal/protected-internal
+  forms; обе roles, exact type-argument locations и pair-local deduplication
+  `MORPH0011`;
+- malformed generic arguments с достаточной C# diagnostic без дублирующей
+  Morphant diagnostic и сохранение независимой legal pair;
+- каждую root-категорию раздела 6.23 напрямую и под `Nullable<T>`, source и
+  destination, обе позиции одновременно, category precedence, `string`
+  exclusion и пользовательские implementations отложенных contracts;
+- отсутствие `MORPH0012` для отложенного type только внутри legal nominal
+  root, exact role/reason parameters и suppression semantic root diagnostic
+  при `MORPH0011`;
+- aliases, reference nullability на любой глубине, `dynamic`/`object`, tuple
+  element names и native-integer syntax как canonical duplicates, при этом
+  `Nullable<T>` как отдельную pair;
+- две и три exact registrations, разрешённые одинаковые pairs в разных
+  mapper types и в base/derived mapper-ах, primary location каждой лишней
+  `Map`, first-registration additional location и first-plan ownership
+  `MORPH0013`;
+- direct и nested generic unification, содержащие type parameters, ignored
+  constraints, occurs check, non-unifiable shapes и exact one-diagnostic-per-
+  unordered-pair cardinality `MORPH0014`;
+- участие `MORPH0012` и исключение `MORPH0009`, `MORPH0010`, `MORPH0011` из
+  unification, exact primary/additional locations и deterministic order;
+- полный generated result каждого recovery: полное исключение unavailable
+  pair, complete throwing contract без ложных DSL surfaces для unsupported
+  root, first-plan ownership duplicate registration, исключение всех
+  unification participants, сохранение legal DSL surfaces и независимых pairs;
+- suppression/изменение severity без изменения recovery и отсутствие
+  недостоверных downstream diagnostics;
+- add/change/remove/restore accessibility, root category, duplicate и
+  unifiable shape при одном сохранённом incremental driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- unavailable nested/file-local type с exact `MORPH0011`, отсутствующими
+  artifacts только затронутой pair и сохранённой независимой pair;
+- каждую unsupported root family хотя бы в одной из двух positions, обе
+  positions вместе и реальный вызов обеих операций полного suppressed-error
+  contract-а с `MappingConfigurationException`;
+- отсутствие construction/member/extension surfaces unsupported root в
+  реальном consumer project;
+- suppressed duplicate diagnostic: исполним только plan первой registration,
+  поздние chains не дополняют и не переопределяют его;
+- suppressed unification diagnostics: конфликтующие executable contracts
+  отсутствуют, legal configuration surfaces и независимая исполнимая pair
+  сохраняются;
+- реальное `.editorconfig`/MSBuild suppression или severity override для
+  каждой recovery-family без изменения generated artifact set.
 
 ## 7. Реализация и тесты
 
