@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Morphant.Exceptions;
@@ -111,10 +110,6 @@ internal sealed class PublicApiBaselineTests
             Assert.That(supportsMethod.IsPublic, Is.False);
             Assert.That(supportsMethod.IsFamilyOrAssembly, Is.True);
             Assert.That(supportsMethod.IsVirtual, Is.True);
-            Assert.That(
-                supportsMethod.GetCustomAttribute<EditorBrowsableAttribute>()!
-                    .State,
-                Is.EqualTo(EditorBrowsableState.Never));
             Assert.That(
                 supportsMethod.GetParameters()
                     .Select(static parameter => parameter.Name),

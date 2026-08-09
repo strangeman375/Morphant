@@ -113,8 +113,6 @@ public abstract class TypeMapper
     /// This infrastructure member describes pair declarations independently
     /// of the operations enabled by their effective configuration.
     /// </remarks>
-    [global::System.ComponentModel.EditorBrowsable(
-        global::System.ComponentModel.EditorBrowsableState.Never)]
     protected internal virtual bool Supports(
         global::System.Type sourceType,
         global::System.Type destinationType) =>
