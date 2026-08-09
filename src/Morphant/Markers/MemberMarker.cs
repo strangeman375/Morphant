@@ -9,14 +9,14 @@ public abstract class MemberMarker
     }
 }
 
-public abstract class AutoMarker : MemberMarker
+public sealed class AutoMarker : MemberMarker
 {
     private AutoMarker()
     {
     }
 }
 
-public abstract class AutoMarker<T> : MemberMarker
+public sealed class AutoMarker<T> : MemberMarker
 {
     private AutoMarker()
     {
@@ -26,14 +26,14 @@ public abstract class AutoMarker<T> : MemberMarker
         throw new RuntimeInvocationNotSupportedException();
 }
 
-public abstract class IgnoreMarker : MemberMarker
+public sealed class IgnoreMarker : MemberMarker
 {
     private IgnoreMarker()
     {
     }
 }
 
-public abstract class IgnoreMarker<T> : MemberMarker
+public sealed class IgnoreMarker<T> : MemberMarker
 {
     private IgnoreMarker()
     {
@@ -50,7 +50,7 @@ public abstract class MapMarker : MemberMarker
     }
 }
 
-public abstract class MapMarker<T> : MapMarker
+public sealed class MapMarker<T> : MapMarker
 {
     private MapMarker()
     {

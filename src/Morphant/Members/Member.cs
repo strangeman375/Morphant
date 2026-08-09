@@ -3,7 +3,7 @@ using Morphant.Markers;
 
 namespace Morphant.Members;
 
-public abstract class Member<T>
+public sealed class Member<T>
 {
     private Member()
     {

@@ -5,10 +5,12 @@ remaining boundaries are tracked in the
 [mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
 
 Mapping failures produced by Morphant derive from `MorphantException` in the
-`Morphant.Exceptions` namespace. Catch a specific exception when recovery is
-meaningful, or catch `MorphantException` at an application boundary. Messages
-are deterministic and explain the pair or policy involved, but application
-control flow should use the exception type instead of parsing message text.
+`Morphant.Exceptions` namespace. Failures tied to a concrete operation and
+exact pair additionally derive from `MappingException`, which exposes
+`Operation`, `SourceType`, and `DestinationType`. Catch a specific exception
+when recovery is meaningful, or catch `MorphantException` at an application
+boundary. Messages are deterministic, but application control flow should use
+the exception type and structured properties instead of parsing text.
 
 Ordinary argument validation in handwritten public APIs follows .NET
 conventions. For example, constructing `Mapper` with a null service provider
@@ -28,10 +30,18 @@ hierarchy.
 | More than one exact runtime registration | `AmbiguousMappingException` |
 | The only runtime registration resolves to null | `InvalidMappingRegistrationException` |
 | Reuse of a completed scoped mapper | `MappingScopeCompletedException` |
+| Reading a property of a default-initialized context | `InvalidMappingContextException` |
 | Incompatible current value for an explicit nested destination | `NestedDestinationTypeMismatchException` |
 | No branch matches a declarative switch | `UnmatchedMappingSwitchException` |
 | Reading `Option<T>.Value` when `HasValue` is false | `OptionValueMissingException` |
 | Direct runtime invocation of a generated-code DSL marker | `RuntimeInvocationNotSupportedException` |
+
+`MappingConfigurationException` also exposes `Reason`;
+`MappingOperationNotSupportedException` exposes `EffectiveMappingMode`; and
+`NestedDestinationTypeMismatchException` exposes `ExpectedDestinationType`
+and nullable `ActualDestinationType`. Context, `Option<T>`, and DSL-marker
+misuse are not tied to one exact pair, so their exception types inherit
+directly from `MorphantException`.
 
 For example:
 
@@ -44,24 +54,29 @@ try
 }
 catch (MappingNotFoundException exception)
 {
-    logger.LogError(exception, "The order mapping is not registered.");
+    logger.LogError(
+        exception,
+        "{Operation} mapping {Source} -> {Destination} is not registered.",
+        exception.Operation,
+        exception.SourceType,
+        exception.DestinationType);
 }
 ```
 
 ## Generated contract completeness
 
-When C# can declare `ITypeMapper<TSource, TDestination>`, an invalid or
-unsupported configuration does not make the generated partial mapper empty or
-incomplete. Morphant keeps the interface and both methods. Each available
-operation keeps its implementation, while an unavailable operation throws the
-appropriate typed exception.
+When C# can declare `ITypeMapper<TSource, TDestination>`, an invalid
+configuration does not make the generated partial mapper empty or incomplete.
+Morphant keeps the interface and both methods. Each available operation keeps
+its implementation, while an unavailable operation throws the appropriate
+typed exception.
 
-This rule also applies to legal roots outside core v0, such as collections,
-arrays, tuples, delegates, and async or deferred roots. They receive a
-`MappingConfigurationException` stub so a direct cast or manual DI
-registration still has deterministic behavior. Morphant does not generate
-construction, member, or fluent-extension surfaces for those roots, because
-that would imply unsupported mapping semantics.
+Collections, arrays, tuples, delegates, expression trees, buffers, and async,
+deferred, or observable roots are valid opaque pairs rather than unsupported
+contracts. They receive runtime `ConstructUsing` / `ResolveUsing` and manual
+`Convert` extensions, but no structured construction, member, convention, or
+special container/deferred semantics. An invalid policy on such a pair still
+uses the same complete typed exception-stub rule as any other legal pair.
 
 Some contracts cannot be declared safely in C#. Examples include a non-partial
 or file-local mapper, a mapper nested in a non-partial containing type, and two

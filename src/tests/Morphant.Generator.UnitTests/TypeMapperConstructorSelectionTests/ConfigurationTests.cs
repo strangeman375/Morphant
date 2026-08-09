@@ -176,7 +176,7 @@ namespace TestCase
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Create(
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
-            => __Create(source, context);
+            => __Create(source, global::Morphant.Context.MappingOperation.Create, context);
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -187,9 +187,11 @@ namespace TestCase
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,
+            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
+                operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
                 "The effective ConstructorSelection is invalid.");

@@ -11,9 +11,11 @@ status and remaining boundaries are tracked in the
 
 Core v0 is an architectural preview focused on object lifecycle, nullability,
 constructor/member plans, manual algorithms, nested mapping, and predictable
-Update identity. Collections, projection, automatic DI registration, and the
-other [post-v0 capabilities](docs/core-v0.md) are intentionally outside this
-release boundary.
+Update identity. Automatic collection semantics, projection, automatic DI
+registration, and the other [post-v0 capabilities](docs/core-v0.md) are
+intentionally outside this release boundary. Collection, tuple, delegate,
+expression-tree, deferred, and observable roots may still be mapped as opaque
+values with runtime policies or `Convert`.
 
 ## Quick start
 
@@ -64,6 +66,22 @@ var created = mapper.Map<Customer, CustomerDto>(customer);
 var updated = mapper.Map(customer, existingDto);
 existingDto = updated;
 ```
+
+For a concrete mapper without application-wide DI, use the context-free exact
+pair extensions. A statically typed pair infers both types; a multi-pair
+concrete mapper names them directly:
+
+```csharp
+ITypeMapper<Customer, CustomerDto> pair = new ApplicationMapper();
+var direct = pair.Create(customer);
+
+var multiPairMapper = new ApplicationMapper();
+var directFromMultiPair =
+    multiPairMapper.Create<Customer, CustomerDto>(customer);
+```
+
+No separate pair selector is required. Nested mappings can use every exact
+pair implemented by that same mapper instance.
 
 The generated Update may return the supplied instance or an authoritative
 replacement. Ignoring its return value is therefore incorrect.

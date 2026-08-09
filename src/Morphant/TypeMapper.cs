@@ -12,7 +12,11 @@ namespace Morphant;
 /// <typeparam name="TDestination">The destination type.</typeparam>
 /// <remarks>
 /// Morphant generates an implementation of this interface for each configured
-/// mapping.
+/// mapping. Application code normally invokes it through
+/// <see cref="IMapper"/> or the context-free
+/// <see cref="TypeMapperExtensions.Create{TSource, TDestination}(ITypeMapper{TSource, TDestination}, TSource)"/>
+/// and <see cref="TypeMapperExtensions.Update{TSource, TDestination}(ITypeMapper{TSource, TDestination}, TSource, TDestination)"/>
+/// extensions, which create a valid root mapping scope.
 /// </remarks>
 public interface ITypeMapper<in TSource, TDestination>
 {
@@ -24,7 +28,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// apply the effective <see cref="NullSourceHandling"/> setting; a manual
     /// <c>Convert</c> receives the original value instead.
     /// </param>
-    /// <param name="context">The context for the mapping operation.</param>
+    /// <param name="context">
+    /// The context for the mapping operation. A default-initialized value is
+    /// usable only when the selected mapping does not read context data.
+    /// </param>
     /// <returns>The mapped destination.</returns>
     /// <exception cref="MappingConfigurationException">
     /// The effective configuration is invalid or the selected mapping plan
@@ -56,7 +63,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// setting; a manual <c>Convert</c> receives
     /// <see cref="Option{TDestination}.None"/> instead.
     /// </param>
-    /// <param name="context">The context for the mapping operation.</param>
+    /// <param name="context">
+    /// The context for the mapping operation. A default-initialized value is
+    /// usable only when the selected mapping does not read context data.
+    /// </param>
     /// <returns>
     /// The authoritative mapped destination. It may be a replacement for
     /// <paramref name="destination"/>.

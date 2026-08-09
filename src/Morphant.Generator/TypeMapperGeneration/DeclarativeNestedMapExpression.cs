@@ -447,6 +447,8 @@ internal static class DeclarativeNestedMapExpression
             sourceType,
             destinationType,
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(sourceType),
+            TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                sourceType),
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                 destinationType),
             nestedOperation,
@@ -880,6 +882,7 @@ internal readonly record struct TypeMapperNestedMapExpressionModel
     ITypeSymbol SourceType,
     ITypeSymbol DestinationType,
     string SourceTypeName,
+    string RuntimeSourceTypeName,
     string DestinationTypeName,
     DeclarativeNestedMapOperation Operation,
     string? InferredSourceMemberName,

@@ -6,10 +6,22 @@ namespace Morphant.Generator.MappingPair;
 internal static class DestinationCapabilityPolicy
 {
     public static MappingPairCapabilities Build(
+        ITypeSymbol sourceType,
         ITypeSymbol destinationType,
         Compilation compilation,
         CancellationToken cancellationToken)
     {
+        if (MappingTypeEligibilityPolicy.IsDeferredOpaqueRoot(sourceType) ||
+            MappingTypeEligibilityPolicy.IsDeferredOpaqueRoot(
+                destinationType))
+        {
+            return new MappingPairCapabilities(
+                Runtime: true,
+                Manual: true,
+                MappingConstructionKind.Direct,
+                Members: false);
+        }
+
         var destination = GetDestinationType(
             destinationType,
             compilation);
@@ -42,18 +54,44 @@ internal static class DestinationCapabilityPolicy
         ITypeSymbol destinationType,
         Compilation compilation)
     {
+        var normalized = GetNormalizedDestinationType(
+            destinationType,
+            compilation);
+
+        return (INamedTypeSymbol)normalized;
+    }
+
+    internal static ITypeSymbol GetNormalizedDestinationType(
+        ITypeSymbol destinationType,
+        Compilation compilation)
+    {
         if (destinationType is IDynamicTypeSymbol)
         {
             return compilation.GetSpecialType(
                 SpecialType.System_Object);
         }
 
-        var namedType = (INamedTypeSymbol)destinationType;
-
-        return namedType.OriginalDefinition.SpecialType ==
+        return destinationType is INamedTypeSymbol namedType &&
+               namedType.OriginalDefinition.SpecialType ==
                    SpecialType.System_Nullable_T
-            ? (INamedTypeSymbol)namedType.TypeArguments[0]
-            : namedType;
+            ? namedType.TypeArguments[0]
+            : destinationType;
+    }
+
+    internal static bool IsOpaque(
+        ITypeSymbol destinationType,
+        Compilation compilation)
+    {
+        if (MappingTypeEligibilityPolicy.IsDeferredOpaqueRoot(
+                destinationType))
+        {
+            return true;
+        }
+
+        return GetNormalizedDestinationType(
+                destinationType,
+                compilation) is not INamedTypeSymbol namedType ||
+            IsOpaque(namedType);
     }
 
     internal static bool IsOpaque(INamedTypeSymbol destinationType)

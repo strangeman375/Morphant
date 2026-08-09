@@ -325,6 +325,7 @@ internal static class StructuredConstructMappingPlanner
                     contextParameter,
                     contextName: "context",
                     transferScope,
+                    mapping,
                     BuildLeaf,
                     (condition, whenTrue, whenFalse) =>
                         BuildRuntimeConditionNode(

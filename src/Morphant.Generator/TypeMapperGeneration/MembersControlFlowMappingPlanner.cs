@@ -142,6 +142,7 @@ internal static class MembersControlFlowMappingPlanner
                 members.ContextParameter,
                 contextName: "context",
                 members.TransferScope,
+                mapping,
                 BuildCreateLeaf,
                 cancellationToken,
                 out var createRoot) ||
@@ -159,6 +160,7 @@ internal static class MembersControlFlowMappingPlanner
                 members.ContextParameter,
                 contextName: "context",
                 members.TransferScope,
+                mapping,
                 BuildUpdateLeaf,
                 cancellationToken,
                 out var updateRoot))
@@ -572,6 +574,8 @@ internal static class MembersControlFlowMappingPlanner
             !StringComparer.Ordinal.Equals(
                 left.ThrowExpression,
                 right.ThrowExpression) ||
+            left.ThrowUsesCurrentMappingOperation !=
+                right.ThrowUsesCurrentMappingOperation ||
             !StringComparer.Ordinal.Equals(
                 left.SwitchExpression,
                 right.SwitchExpression) ||

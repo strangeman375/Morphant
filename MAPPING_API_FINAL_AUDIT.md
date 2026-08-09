@@ -5,7 +5,10 @@
 Статус документа: независимая продуктовая оценка целевого mapping API,
 выполненная перед naming-аудитом. После завершения этапа 19 и согласования
 callback result-policy и read-only proxy revisions терминология и затронутые
-выводы актуализированы; числовые оценки сохранены от исходного аудита.
+выводы актуализированы. Ревизия API-аудита от 9 августа 2026 года дополнительно
+зафиксировала opaque roots, context-free exact-pair calls, lazy context
+validation, structured failures и sealing конечных API types; числовые оценки
+сохранены от исходного аудита.
 Нормативным источником семантики остаётся `MAPPING_API_DESIGN.md`; этот документ
 фиксирует полноту сценариев, сравнение с конкурентами, найденные риски и
 рекомендации.
@@ -120,7 +123,7 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 | Projection приходится объявлять и конфигурировать повторно в [Mapperly #2252][mapperly-2252] | Есть риск повторить проблему: projection обещана, но её связь с основным pair-plan пока не зафиксирована |
 | Нужен collection-path flattening для EF join entities в [Mapperly #2253][mapperly-2253] | Не включён явно в текущий collection/`IncludeMembers` roadmap |
 | Нужен nested update существующего member-объекта в [Mapperly #1700][mapperly-1700] | Закрыто standalone `Update(source, members.Member)` для eligible read-only reference proxy |
-| Нужны несколько sources для required/init destination в [Mapperly #1978][mapperly-1978] | Поддерживается будущими tuple roots и multi-source mapping |
+| Нужны несколько sources для required/init destination в [Mapperly #1978][mapperly-1978] | Opaque tuple source уже возможен через `Convert`; structured multi-source mapping остаётся будущим этапом |
 | Нужны настраиваемые правила сопоставления имён в [Mapperly #2039][mapperly-2039] | Сейчас доступны exact matching и explicit rules, но нет масштабируемого opt-in affordance |
 
 Основные системные боли конкурентов — неоднозначная композиция, precedence и
@@ -135,6 +138,7 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 | Mutable POCO, records, constructors, optional/`params` | Контракт закрыт хорошо |
 | `init`, `required`, defaults и factories | Контракт закрыт; conditional null-preservation входит в будущий patch |
 | Scalar и opaque value object | Закрыт через runtime `ConstructUsing` / `ResolveUsing` |
+| Collection/deferred root как единое opaque value | Закрыт через runtime policies или `Convert`; automatic element/await semantics остаётся post-v0 |
 | Existing destination: reuse, mutation и replacement | Закрыт лучше, чем у сравниваемых mapper-ов |
 | Immutable existing destination | Закрыт явным replacement или ручным `with`; скрытой mutation нет |
 | Custom expressions, injected services и специальный synchronous algorithm | Закрыт |
@@ -150,7 +154,7 @@ Conversions][mapperly-conversions] и [Enum Mappings][mapperly-enums].
 | Runtime polymorphism | Будущие explicit derived links; направление качественное |
 | Shared references и cycles | Будущий opt-in reference cache; направление качественное |
 | Projection | Обещана после v0, но пока практически не спроектирована |
-| Multi-source и per-call data | Будущие tuple roots и multi-source mapping |
+| Multi-source и per-call data | Opaque tuple root плюс `Convert` доступен; first-class structured semantics остаётся будущей |
 | Open generics и runtime destination | После v0 |
 | Cross-assembly configuration composition | После v0 |
 | Hooks/middleware | Гарантированы после v0; shape не выбран |
@@ -345,10 +349,12 @@ C#, но описывает dependency graph, а не imperative execution order
 
 ## 9. Release readiness
 
-v0 без collections нельзя позиционировать как полноценный general-purpose
-mapper: массивы и списки встречаются почти в каждом реальном DTO graph. Такой
-v0 корректно выпускать как architectural preview, foundation release или
-ограниченный object-mapping core.
+v0 без automatic collection semantics нельзя позиционировать как полноценный
+general-purpose mapper: массивы и списки встречаются почти в каждом реальном
+DTO graph. Opaque runtime/manual root pair позволяет выразить такой алгоритм
+без искусственного запрета типа, но не заменяет first-class collection API.
+Такой v0 корректно выпускать как architectural preview, foundation release
+или ограниченный object-mapping core.
 
 Для пользовательского 1.0 минимальная collection capability должна быть
 реализована. Enum policy и name normalization существенно улучшат onboarding и

@@ -358,11 +358,9 @@ internal static class DestinationMemberPolicy
             return false;
         }
 
-        var destination = DestinationCapabilityPolicy.GetDestinationType(
+        return !DestinationCapabilityPolicy.IsOpaque(
             normalized,
             compilation);
-
-        return !DestinationCapabilityPolicy.IsOpaque(destination);
     }
 
     private static bool IsGeneratedRecordMemberName(

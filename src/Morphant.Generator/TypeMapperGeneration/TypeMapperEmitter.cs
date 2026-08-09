@@ -149,7 +149,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailure(
                 writer,
                 mapping,
-                configurationFailure);
+                configurationFailure,
+                update: false);
             writer.Unindent();
             return;
         }
@@ -159,7 +160,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailure(
                 writer,
                 mapping,
-                InvalidMappingModeExceptionMessage);
+                InvalidMappingModeExceptionMessage,
+                update: false);
             writer.Unindent();
             return;
         }
@@ -190,7 +192,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailure(
                 writer,
                 mapping,
-                InvalidNullSourceHandlingExceptionMessage);
+                InvalidNullSourceHandlingExceptionMessage,
+                update: false);
             writer.Unindent();
             return;
         }
@@ -209,7 +212,7 @@ internal static class TypeMapperEmitter
                 "A Create implementation method name is required.");
 
         writer.Line(
-            $"=> {BuildCreateImplCall(mapping, methodName)};");
+            $"=> {BuildCreateImplCall(mapping, methodName, update: false)};");
         writer.Unindent();
     }
 
@@ -229,7 +232,8 @@ internal static class TypeMapperEmitter
         WriteNonNullSourceNormalization(writer, mapping);
         WriteCreateCallOrStatements(
             writer,
-            mapping);
+            mapping,
+            update: false);
 
         writer.Unindent();
         writer.Line("}");
@@ -237,24 +241,39 @@ internal static class TypeMapperEmitter
 
     private static void WriteCreateCallOrStatements(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        bool update)
     {
         if (mapping.CreateImplMethodName is
             { } createImplMethodName)
         {
-            writer.Line(
-                $"return {BuildCreateImplCall(mapping, createImplMethodName)};");
+            var call = BuildCreateImplCall(
+                mapping,
+                createImplMethodName,
+                update);
+            writer.Line($"return {call};");
             return;
         }
 
         WriteCreateStatements(
             writer,
-            mapping);
+            mapping,
+            update);
     }
 
     private static void WriteCreateStatements(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        bool update) =>
+        WriteCreateStatements(
+            writer,
+            mapping,
+            MappingOperationExpression(update));
+
+    private static void WriteCreateStatements(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        string operationExpression)
     {
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedExceptionMessage)
@@ -262,7 +281,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailureStatement(
                 writer,
                 mapping,
-                unsupportedExceptionMessage);
+                unsupportedExceptionMessage,
+                operationExpression);
             return;
         }
 
@@ -270,18 +290,21 @@ internal static class TypeMapperEmitter
         {
             WriteControlFlowCreateNode(
                 writer,
-                controlFlow.CreateRoot);
+                controlFlow.CreateRoot,
+                operationExpression);
             return;
         }
 
         WriteControlFlowCreateLeaf(
             writer,
-            mapping);
+            mapping,
+            operationExpression);
     }
 
     private static void WriteControlFlowCreateNode(
         CodeWriter writer,
-        TypeMapperControlFlowNode node)
+        TypeMapperControlFlowNode node,
+        string operationExpression)
     {
         WriteLocalValues(
             writer,
@@ -294,7 +317,8 @@ internal static class TypeMapperEmitter
             writer.Line();
             WriteControlFlowCreateNode(
                 writer,
-                node.EvaluationContinuation!);
+                node.EvaluationContinuation!,
+                operationExpression);
             return;
         }
 
@@ -316,7 +340,8 @@ internal static class TypeMapperEmitter
                 writer.Indent();
                 WriteControlFlowCreateNode(
                     writer,
-                    section.Branch);
+                    section.Branch,
+                    operationExpression);
                 writer.Unindent();
                 writer.Line("}");
             }
@@ -330,7 +355,8 @@ internal static class TypeMapperEmitter
                 writer.Line();
                 WriteControlFlowCreateNode(
                     writer,
-                    continuation);
+                    continuation,
+                    operationExpression);
             }
 
             return;
@@ -343,7 +369,8 @@ internal static class TypeMapperEmitter
             writer.Indent();
             WriteControlFlowCreateNode(
                 writer,
-                node.WhenTrue!);
+                node.WhenTrue!,
+                operationExpression);
             writer.Unindent();
             writer.Line("}");
             writer.Line("else");
@@ -351,7 +378,8 @@ internal static class TypeMapperEmitter
             writer.Indent();
             WriteControlFlowCreateNode(
                 writer,
-                node.WhenFalse!);
+                node.WhenFalse!,
+                operationExpression);
             writer.Unindent();
             writer.Line("}");
             return;
@@ -359,18 +387,24 @@ internal static class TypeMapperEmitter
 
         if (node.ThrowExpression is { } throwExpression)
         {
-            writer.Line($"throw {throwExpression};");
+            var resolvedThrowExpression = ResolveThrowExpression(
+                throwExpression,
+                node.ThrowUsesCurrentMappingOperation,
+                operationExpression);
+            writer.Line($"throw {resolvedThrowExpression};");
             return;
         }
 
         WriteControlFlowCreateLeaf(
             writer,
-            node.Leaf!.Value);
+            node.Leaf!.Value,
+            operationExpression);
     }
 
     private static void WriteControlFlowCreateLeaf(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        string operationExpression)
     {
         if (mapping.UnsupportedExceptionMessage is
             { } unsupportedMappingMessage)
@@ -378,7 +412,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailureStatement(
                 writer,
                 mapping,
-                unsupportedMappingMessage);
+                unsupportedMappingMessage,
+                operationExpression);
             return;
         }
 
@@ -388,7 +423,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailureStatement(
                 writer,
                 mapping,
-                unsupportedExceptionMessage);
+                unsupportedExceptionMessage,
+                operationExpression);
             return;
         }
 
@@ -404,7 +440,8 @@ internal static class TypeMapperEmitter
             WriteFactoryCreateStatements(
                 writer,
                 mapping,
-                factory);
+                factory,
+                operationExpression);
             return;
         }
 
@@ -414,7 +451,8 @@ internal static class TypeMapperEmitter
             WriteConstructorCreateStatements(
                 writer,
                 mapping,
-                constructor);
+                constructor,
+                operationExpression);
             return;
         }
 
@@ -422,13 +460,15 @@ internal static class TypeMapperEmitter
             writer,
             mapping,
             "Morphant could not generate the Create operation from the " +
-            "configured mapping plan.");
+            "configured mapping plan.",
+            operationExpression);
     }
 
     private static void WriteConstructorCreateStatements(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        TypeMapperConstructorMappingModel constructor)
+        TypeMapperConstructorMappingModel constructor,
+        string operationExpression)
     {
         var hasValueLocals = false;
 
@@ -564,7 +604,8 @@ internal static class TypeMapperEmitter
                 writer,
                 mapping,
                 postControlFlow,
-                Identifier(mapping.ResultLocalName));
+                Identifier(mapping.ResultLocalName),
+                operationExpression: operationExpression);
             return;
         }
 
@@ -592,7 +633,8 @@ internal static class TypeMapperEmitter
     private static void WriteFactoryCreateStatements(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        TypeMapperFactoryMappingModel factory)
+        TypeMapperFactoryMappingModel factory,
+        string operationExpression)
     {
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);
@@ -655,7 +697,8 @@ internal static class TypeMapperEmitter
                 mapping,
                 postControlFlow,
                 assignmentTarget,
-                returnExpression);
+                returnExpression,
+                operationExpression);
             return;
         }
 
@@ -694,7 +737,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailure(
                 writer,
                 mapping,
-                configurationFailure);
+                configurationFailure,
+                update: true);
             writer.Unindent();
             return;
         }
@@ -704,7 +748,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailure(
                 writer,
                 mapping,
-                InvalidMappingModeExceptionMessage);
+                InvalidMappingModeExceptionMessage,
+                update: true);
             writer.Unindent();
             return;
         }
@@ -735,7 +780,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailure(
                 writer,
                 mapping,
-                InvalidNullSourceHandlingExceptionMessage);
+                InvalidNullSourceHandlingExceptionMessage,
+                update: true);
             writer.Unindent();
             return;
         }
@@ -745,7 +791,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailure(
                 writer,
                 mapping,
-                InvalidNullDestinationHandlingExceptionMessage);
+                InvalidNullDestinationHandlingExceptionMessage,
+                update: true);
             writer.Unindent();
             return;
         }
@@ -781,7 +828,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailure(
                 writer,
                 mapping,
-                unsupportedExceptionMessage);
+                unsupportedExceptionMessage,
+                update);
             return;
         }
 
@@ -905,7 +953,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailureStatement(
                 writer,
                 mapping,
-                unsupportedExceptionMessage);
+                unsupportedExceptionMessage,
+                update: true);
             return;
         }
 
@@ -950,7 +999,8 @@ internal static class TypeMapperEmitter
             case NullSourceHandlingValue.Throw:
                 WriteNullSourceException(
                     writer,
-                    mapping);
+                    mapping,
+                    update);
                 break;
 
             default:
@@ -989,7 +1039,8 @@ internal static class TypeMapperEmitter
             case NullDestinationHandlingValue.Create:
                 WriteCreateCallOrStatements(
                     writer,
-                    mapping);
+                    mapping,
+                    update: true);
                 break;
 
             case NullDestinationHandlingValue.Throw:
@@ -1023,6 +1074,11 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"{mapping.NonNullSourceTypeName} " +
             mapping.NonNullSourceName + ",");
+        if (mapping.CreateImplUsesOperation)
+        {
+            writer.Line(
+                "global::Morphant.Context.MappingOperation operation,");
+        }
         writer.Line(
             "global::Morphant.Context.MappingContext context)");
         writer.Unindent();
@@ -1031,7 +1087,10 @@ internal static class TypeMapperEmitter
 
         WriteCreateStatements(
             writer,
-            mapping);
+            mapping,
+            mapping.CreateImplUsesOperation
+                ? "operation"
+                : MappingOperationExpression(update: false));
 
         writer.Unindent();
         writer.Line("}");
@@ -1039,9 +1098,16 @@ internal static class TypeMapperEmitter
 
     private static string BuildCreateImplCall(
         TypeMapperMappingModel mapping,
-        string methodName)
+        string methodName,
+        bool update)
     {
-        return $"{methodName}({mapping.NonNullSourceName}, context)";
+        var operationArgument = mapping.CreateImplUsesOperation
+            ? MappingOperationExpression(update) + ", "
+            : string.Empty;
+
+        return $"{methodName}({mapping.NonNullSourceName}, " +
+               operationArgument +
+               "context)";
     }
 
     private static void WriteUpdateImpl(
@@ -1092,11 +1158,13 @@ internal static class TypeMapperEmitter
 
     private static void WriteNullSourceException(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        bool update)
     {
         writer.Line(
             "throw new global::Morphant.Exceptions.NullSourceException(");
         writer.Indent();
+        writer.Line(MappingOperationExpression(update) + ",");
         writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
         writer.Line($"typeof({mapping.DestinationRuntimeTypeName}));");
         writer.Unindent();
@@ -1109,6 +1177,7 @@ internal static class TypeMapperEmitter
         writer.Line(
             "throw new global::Morphant.Exceptions.NullDestinationException(");
         writer.Indent();
+        writer.Line(MappingOperationExpression(update: true) + ",");
         writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
         writer.Line($"typeof({mapping.DestinationRuntimeTypeName}));");
         writer.Unindent();
@@ -1194,7 +1263,11 @@ internal static class TypeMapperEmitter
 
         if (node.ThrowExpression is { } throwExpression)
         {
-            writer.Line($"throw {throwExpression};");
+            var resolvedThrowExpression = ResolveThrowExpression(
+                throwExpression,
+                node.ThrowUsesCurrentMappingOperation,
+                MappingOperationExpression(update: true));
+            writer.Line($"throw {resolvedThrowExpression};");
             return;
         }
 
@@ -1215,7 +1288,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailureStatement(
                 writer,
                 mapping,
-                unsupportedMappingMessage);
+                unsupportedMappingMessage,
+                update: true);
             return;
         }
 
@@ -1225,7 +1299,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailureStatement(
                 writer,
                 mapping,
-                unsupportedExceptionMessage);
+                unsupportedExceptionMessage,
+                update: true);
             return;
         }
 
@@ -1242,7 +1317,8 @@ internal static class TypeMapperEmitter
             WriteFactoryCreateStatements(
                 writer,
                 mapping,
-                factory);
+                factory,
+                MappingOperationExpression(update: true));
             return;
         }
 
@@ -1252,7 +1328,8 @@ internal static class TypeMapperEmitter
             WriteConstructorCreateStatements(
                 writer,
                 mapping,
-                constructor);
+                constructor,
+                MappingOperationExpression(update: true));
             return;
         }
 
@@ -1263,7 +1340,8 @@ internal static class TypeMapperEmitter
                 writer,
                 mapping,
                 "Morphant could not generate the Update operation from the " +
-                "configured mapping plan.");
+                "configured mapping plan.",
+                update: true);
             return;
         }
 
@@ -1273,7 +1351,9 @@ internal static class TypeMapperEmitter
                 writer,
                 mapping,
                 postControlFlow,
-                "destination");
+                "destination",
+                operationExpression:
+                    MappingOperationExpression(update: true));
             return;
         }
 
@@ -1306,8 +1386,12 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         TypeMapperMemberControlFlowNode node,
         string assignmentTarget,
-        string? returnExpression = null)
+        string? returnExpression = null,
+        string? operationExpression = null)
     {
+        operationExpression ??=
+            MappingOperationExpression(update: false);
+
         WriteLocalValues(writer, node.Locals);
 
         if (node.EvaluationExpression is { } evaluationExpression)
@@ -1319,7 +1403,8 @@ internal static class TypeMapperEmitter
                 mapping,
                 node.EvaluationContinuation!,
                 assignmentTarget,
-                returnExpression);
+                returnExpression,
+                operationExpression);
             return;
         }
 
@@ -1343,7 +1428,8 @@ internal static class TypeMapperEmitter
                     mapping,
                     section.Branch,
                     assignmentTarget,
-                    returnExpression);
+                    returnExpression,
+                    operationExpression);
                 writer.Unindent();
                 writer.Line("}");
             }
@@ -1359,7 +1445,8 @@ internal static class TypeMapperEmitter
                     mapping,
                     continuation,
                     assignmentTarget,
-                    returnExpression);
+                    returnExpression,
+                    operationExpression);
             }
 
             return;
@@ -1375,7 +1462,8 @@ internal static class TypeMapperEmitter
                 mapping,
                 node.WhenTrue!,
                 assignmentTarget,
-                returnExpression);
+                returnExpression,
+                operationExpression);
             writer.Unindent();
             writer.Line("}");
             writer.Line("else");
@@ -1386,7 +1474,8 @@ internal static class TypeMapperEmitter
                 mapping,
                 node.WhenFalse!,
                 assignmentTarget,
-                returnExpression);
+                returnExpression,
+                operationExpression);
             writer.Unindent();
             writer.Line("}");
             return;
@@ -1394,7 +1483,11 @@ internal static class TypeMapperEmitter
 
         if (node.ThrowExpression is { } throwExpression)
         {
-            writer.Line($"throw {throwExpression};");
+            var resolvedThrowExpression = ResolveThrowExpression(
+                throwExpression,
+                node.ThrowUsesCurrentMappingOperation,
+                operationExpression);
+            writer.Line($"throw {resolvedThrowExpression};");
             return;
         }
 
@@ -1403,7 +1496,8 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailureStatement(
                 writer,
                 mapping,
-                unsupportedMessage);
+                unsupportedMessage,
+                operationExpression);
             return;
         }
 
@@ -1429,7 +1523,19 @@ internal static class TypeMapperEmitter
     private static void WriteMappingConfigurationFailure(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        string reason)
+        string reason,
+        bool update) =>
+        WriteMappingConfigurationFailure(
+            writer,
+            mapping,
+            reason,
+            MappingOperationExpression(update));
+
+    private static void WriteMappingConfigurationFailure(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        string reason,
+        string operationExpression)
     {
         var reasonLiteral =
             SyntaxFactory.LiteralExpression(
@@ -1441,6 +1547,7 @@ internal static class TypeMapperEmitter
             "=> throw new global::Morphant.Exceptions." +
             "MappingConfigurationException(");
         writer.Indent();
+        writer.Line(operationExpression + ",");
         writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
         writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
         writer.Line($"{reasonLiteral});");
@@ -1450,7 +1557,19 @@ internal static class TypeMapperEmitter
     private static void WriteMappingConfigurationFailureStatement(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        string reason)
+        string reason,
+        bool update) =>
+        WriteMappingConfigurationFailureStatement(
+            writer,
+            mapping,
+            reason,
+            MappingOperationExpression(update));
+
+    private static void WriteMappingConfigurationFailureStatement(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        string reason,
+        string operationExpression)
     {
         var reasonLiteral =
             SyntaxFactory.LiteralExpression(
@@ -1462,6 +1581,7 @@ internal static class TypeMapperEmitter
             "throw new global::Morphant.Exceptions." +
             "MappingConfigurationException(");
         writer.Indent();
+        writer.Line(operationExpression + ",");
         writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
         writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
         writer.Line($"{reasonLiteral});");
@@ -1480,7 +1600,10 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"global::Morphant.Context.MappingOperation.{operation},");
         writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
-        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}));");
+        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
+        writer.Line(
+            "global::Morphant.MappingMode." +
+            mapping.EffectiveSettings.MappingMode + ");");
         writer.Unindent();
     }
 
@@ -1610,6 +1733,25 @@ internal static class TypeMapperEmitter
                    mapping.SourceMemberName,
                    sourceValueLocalName: null);
     }
+
+    private static string ResolveThrowExpression(
+        string throwExpression,
+        bool usesCurrentMappingOperation,
+        string operationExpression)
+    {
+        if (!usesCurrentMappingOperation)
+        {
+            return throwExpression;
+        }
+
+        return throwExpression.Replace(
+            "context.Operation",
+            operationExpression);
+    }
+
+    private static string MappingOperationExpression(bool update) =>
+        "global::Morphant.Context.MappingOperation." +
+        (update ? "Update" : "Create");
 
     private static string Identifier(string value)
     {

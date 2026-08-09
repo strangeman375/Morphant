@@ -5,7 +5,7 @@ namespace Morphant.Exceptions;
 /// </summary>
 public abstract class MorphantException : Exception
 {
-    protected MorphantException(string message)
+    private protected MorphantException(string message)
         : base(message)
     {
     }

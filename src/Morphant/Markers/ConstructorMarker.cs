@@ -7,7 +7,7 @@ public abstract class ConstructorMarker
     }
 }
 
-public abstract class ByConventionMarker : ConstructorMarker
+public sealed class ByConventionMarker : ConstructorMarker
 {
     private ByConventionMarker()
     {

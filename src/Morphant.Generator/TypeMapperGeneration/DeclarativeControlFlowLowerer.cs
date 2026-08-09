@@ -117,6 +117,7 @@ internal static class DeclarativeControlFlowLowerer
                 contextParameter,
                 contextName,
                 transferScope,
+                mapping,
                 BuildLeaf,
                 cancellationToken,
                 out var lowered))
@@ -143,6 +144,7 @@ internal static class DeclarativeControlFlowLowerer
         IParameterSymbol? contextParameter,
         string? contextName,
         SyntaxNode transferScope,
+        TypeMapperMappingModel mapping,
         Func<DeclarativeLeafSyntaxNode, TypeMapperControlFlowNode?>
             buildLeaf,
         CancellationToken cancellationToken,
@@ -162,6 +164,7 @@ internal static class DeclarativeControlFlowLowerer
             contextParameter,
             contextName,
             transferScope,
+            mapping,
             buildLeaf,
             buildCondition: null,
             cancellationToken,
@@ -182,6 +185,7 @@ internal static class DeclarativeControlFlowLowerer
         IParameterSymbol? contextParameter,
         string? contextName,
         SyntaxNode transferScope,
+        TypeMapperMappingModel mapping,
         Func<DeclarativeLeafSyntaxNode, TypeMapperControlFlowNode?>
             buildLeaf,
         Func<
@@ -646,7 +650,8 @@ internal static class DeclarativeControlFlowLowerer
             return switchNode.RequiresFallback
                 ? MaterializeSwitchFallback(
                     result,
-                    mapperType)
+                    mapperType,
+                    mapping)
                 : result;
         }
 
@@ -674,7 +679,8 @@ internal static class DeclarativeControlFlowLowerer
 
     private static TypeMapperControlFlowNode MaterializeSwitchFallback(
         TypeMapperControlFlowNode node,
-        INamedTypeSymbol mapperType)
+        INamedTypeSymbol mapperType,
+        TypeMapperMappingModel mapping)
     {
         var usedNames = UserResultMappingPlanner.BuildUsedLocalNames(
             mapperType);
@@ -688,7 +694,8 @@ internal static class DeclarativeControlFlowLowerer
             WhenTrue: null,
             WhenFalse: null,
             Leaf: null,
-            ThrowExpression: BuildUnmatchedSwitchException());
+            ThrowExpression: BuildUnmatchedSwitchException(mapping),
+            ThrowUsesCurrentMappingOperation: true);
 
         return node with
         {
@@ -745,13 +752,18 @@ internal static class DeclarativeControlFlowLowerer
             node.ConditionDependency,
             node.ThrowDependency,
             node.SwitchDependency,
-            node.EvaluationDependency);
+            node.EvaluationDependency,
+            node.ThrowUsesCurrentMappingOperation);
     }
 
-    private static string BuildUnmatchedSwitchException()
+    private static string BuildUnmatchedSwitchException(
+        TypeMapperMappingModel mapping)
     {
         return "new global::Morphant.Exceptions." +
-               "UnmatchedMappingSwitchException()";
+               "UnmatchedMappingSwitchException(" +
+               "context.Operation, " +
+               "typeof(" + mapping.SourceRuntimeTypeName + "), " +
+               "typeof(" + mapping.DestinationRuntimeTypeName + "))";
     }
 
     private static HashSet<string> CollectRequiredLocals(

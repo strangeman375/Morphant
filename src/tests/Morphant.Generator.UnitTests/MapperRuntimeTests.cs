@@ -17,6 +17,118 @@ public sealed class MapperRuntimeTests
     }
 
     [Test]
+    public void Rejects_default_context_only_when_its_data_is_read()
+    {
+        var context = default(MappingContext);
+        var mapper = new DelegateTypeMapper<Source, Destination>(
+            (source, _) => new Destination(source?.Value ?? -1),
+            (_, destination, _) => destination ?? new Destination(-1));
+
+        var result = ((ITypeMapper<Source, Destination>)mapper).Create(
+            new Source(4),
+            context);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Value, Is.EqualTo(4));
+            Assert.That(
+                () => _ = context.Operation,
+                Throws.TypeOf<InvalidMappingContextException>());
+            Assert.That(
+                () => _ = context.Mapper,
+                Throws.TypeOf<InvalidMappingContextException>());
+        });
+    }
+
+    [Test]
+    public void Invokes_single_and_multi_pair_mappers_without_a_root_mapper()
+    {
+        var single = new DelegateTypeMapper<Source, Destination>(
+            (source, _) => new Destination(source?.Value ?? -1),
+            (_, destination, _) => destination ?? new Destination(-1));
+        var multi = new StandaloneTypeMapper();
+
+        var singleResult = single.Create(new Source(2));
+        var created = multi.Create<Source, Destination>(new Source(5));
+        var supplied = new Destination(7);
+        var updated = multi.Update(new Source(9), supplied);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(singleResult.Value, Is.EqualTo(2));
+            Assert.That(created.Value, Is.EqualTo(10));
+            Assert.That(updated, Is.SameAs(supplied));
+            Assert.That(multi.Operations, Is.EqualTo(new[]
+            {
+                MappingOperation.Create,
+                MappingOperation.Update
+            }));
+            Assert.That(
+                () => multi.CapturedMapper!
+                    .Map<ChildSource, ChildDestination>(new ChildSource(1)),
+                Throws.TypeOf<MappingScopeCompletedException>());
+        });
+    }
+
+    [Test]
+    public void Explains_the_boundary_of_a_standalone_mapper_scope()
+    {
+        var mapper = new StandaloneTypeMapper();
+
+        var exception = Assert.Throws<MappingNotFoundException>(() =>
+            mapper.Create<Source, Destination>(new Source(-1)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception!.Operation, Is.EqualTo(MappingOperation.Create));
+            Assert.That(exception.SourceType, Is.EqualTo(typeof(FailingSource)));
+            Assert.That(exception.DestinationType, Is.EqualTo(typeof(Destination)));
+            Assert.That(
+                exception.Message,
+                Does.Contain("standalone mapper instance"));
+            Assert.That(
+                () => mapper.CapturedMapper!
+                    .Map<Source, Destination>(new Source(1)),
+                Throws.TypeOf<MappingScopeCompletedException>());
+        });
+    }
+
+    [Test]
+    public void Keeps_standalone_lookup_exact_despite_source_contravariance()
+    {
+        var mapper = new ContravariantTypeMapper();
+
+        var exception = Assert.Throws<MappingNotFoundException>(() =>
+            mapper.Create<DerivedSource, Destination>(new DerivedSource()));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception!.SourceType, Is.EqualTo(typeof(DerivedSource)));
+            Assert.That(
+                exception.DestinationType,
+                Is.EqualTo(typeof(Destination)));
+            Assert.That(mapper.CallCount, Is.Zero);
+        });
+    }
+
+    [Test]
+    public void Rejects_a_null_context_free_type_mapper()
+    {
+        ITypeMapper<Source, Destination>? mapper = null;
+
+        var createException = Assert.Throws<ArgumentNullException>(() =>
+            mapper!.Create(new Source(1)));
+        var updateException = Assert.Throws<ArgumentNullException>(() =>
+            mapper!.Update(new Source(1), new Destination(1)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(createException!.ParamName, Is.EqualTo("mapper"));
+            Assert.That(updateException!.ParamName, Is.EqualTo("mapper"));
+        });
+    }
+
+    [Test]
     public void Dispatches_create_and_update_by_the_exact_registered_pair()
     {
         var calls = new List<MappingCall>();
@@ -516,6 +628,83 @@ public sealed class MapperRuntimeTests
             _update(source, destination, context);
     }
 
+    private sealed class StandaloneTypeMapper :
+        ITypeMapper<Source, Destination>,
+        ITypeMapper<ChildSource, ChildDestination>
+    {
+        public List<MappingOperation> Operations { get; } = new();
+
+        public IMapper? CapturedMapper { get; private set; }
+
+        Destination ITypeMapper<Source, Destination>.Create(
+            Source? source,
+            MappingContext context)
+        {
+            Operations.Add(context.Operation);
+            CapturedMapper = context.Mapper;
+
+            if (source?.Value < 0)
+            {
+                return context.Mapper.Map<FailingSource, Destination>(
+                    new FailingSource());
+            }
+
+            var child = context.Mapper.Map<
+                ChildSource,
+                ChildDestination>(new ChildSource(source?.Value ?? -1));
+
+            return new Destination((source?.Value ?? -1) + child.Value);
+        }
+
+        Destination ITypeMapper<Source, Destination>.Update(
+            Source? source,
+            Destination? destination,
+            MappingContext context)
+        {
+            Operations.Add(context.Operation);
+            CapturedMapper = context.Mapper;
+
+            return destination ?? new Destination(source?.Value ?? -1);
+        }
+
+        ChildDestination ITypeMapper<ChildSource, ChildDestination>.Create(
+            ChildSource? source,
+            MappingContext context)
+        {
+            Assert.That(context.Mapper, Is.SameAs(CapturedMapper));
+            return new ChildDestination(source?.Value ?? -1);
+        }
+
+        ChildDestination ITypeMapper<ChildSource, ChildDestination>.Update(
+            ChildSource? source,
+            ChildDestination? destination,
+            MappingContext context) =>
+            destination ?? new ChildDestination(source?.Value ?? -1);
+    }
+
+    private sealed class ContravariantTypeMapper :
+        ITypeMapper<BaseSource, Destination>
+    {
+        public int CallCount { get; private set; }
+
+        public Destination Create(
+            BaseSource? source,
+            MappingContext context)
+        {
+            CallCount++;
+            return new Destination(1);
+        }
+
+        public Destination Update(
+            BaseSource? source,
+            Destination? destination,
+            MappingContext context)
+        {
+            CallCount++;
+            return destination ?? new Destination(1);
+        }
+    }
+
     private sealed record Source(int Value);
 
     private sealed record Destination(int Value);
@@ -533,6 +722,10 @@ public sealed class MapperRuntimeTests
     private sealed class FailingSource;
 
     private sealed class RecoverySource;
+
+    private class BaseSource;
+
+    private sealed class DerivedSource : BaseSource;
 
     private sealed class SharedDependency;
 

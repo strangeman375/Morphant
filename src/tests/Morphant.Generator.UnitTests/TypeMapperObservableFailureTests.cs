@@ -15,6 +15,7 @@ internal sealed class TypeMapperObservableFailureTests
         {
             (
                 new MappingConfigurationException(
+                    MappingOperation.Create,
                     typeof(string),
                     typeof(int),
                     "The plan is invalid."),
@@ -25,35 +26,49 @@ internal sealed class TypeMapperObservableFailureTests
                 new MappingOperationNotSupportedException(
                     MappingOperation.Update,
                     typeof(string),
-                    typeof(int)),
+                    typeof(int),
+                    MappingMode.Create),
                 "The Update operation is disabled by the effective " +
                 "MappingMode for mapping from 'System.String' to " +
                 "'System.Int32'."
             ),
             (
-                new NullSourceException(typeof(string), typeof(int)),
+                new NullSourceException(
+                    MappingOperation.Create,
+                    typeof(string),
+                    typeof(int)),
                 "The source is null for mapping from 'System.String' to " +
                 "'System.Int32', while the effective NullSourceHandling " +
                 "is Throw."
             ),
             (
-                new NullDestinationException(typeof(string), typeof(int)),
+                new NullDestinationException(
+                    MappingOperation.Update,
+                    typeof(string),
+                    typeof(int)),
                 "The destination is null for mapping from 'System.String' " +
                 "to 'System.Int32', while the effective " +
                 "NullDestinationHandling is Throw."
             ),
             (
-                new MappingNotFoundException(typeof(string), typeof(int)),
+                new MappingNotFoundException(
+                    MappingOperation.Create,
+                    typeof(string),
+                    typeof(int)),
                 "No mapping is registered from 'System.String' to " +
                 "'System.Int32'."
             ),
             (
-                new AmbiguousMappingException(typeof(string), typeof(int)),
+                new AmbiguousMappingException(
+                    MappingOperation.Create,
+                    typeof(string),
+                    typeof(int)),
                 "Multiple mappings are registered from 'System.String' to " +
                 "'System.Int32'. Exactly one mapping is required."
             ),
             (
                 new InvalidMappingRegistrationException(
+                    MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
                 "The registered mapping from 'System.String' to " +
@@ -61,6 +76,7 @@ internal sealed class TypeMapperObservableFailureTests
             ),
             (
                 new MappingScopeCompletedException(
+                    MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
                 "The mapping scope has already completed; mapping from " +
@@ -68,6 +84,9 @@ internal sealed class TypeMapperObservableFailureTests
             ),
             (
                 new NestedDestinationTypeMismatchException(
+                    MappingOperation.Update,
+                    typeof(object),
+                    typeof(string),
                     typeof(string),
                     typeof(int)),
                 "The current nested destination has runtime type " +
@@ -75,6 +94,9 @@ internal sealed class TypeMapperObservableFailureTests
             ),
             (
                 new NestedDestinationTypeMismatchException(
+                    MappingOperation.Update,
+                    typeof(object),
+                    typeof(string),
                     typeof(string),
                     null),
                 "The current nested destination is null and cannot be " +
@@ -90,7 +112,16 @@ internal sealed class TypeMapperObservableFailureTests
                 "and must not be invoked at runtime."
             ),
             (
-                new UnmatchedMappingSwitchException(),
+                new InvalidMappingContextException(),
+                "The mapping context is not initialized. Invoke the mapper " +
+                "through IMapper or the context-free ITypeMapper " +
+                "Create/Update extension methods before reading context data."
+            ),
+            (
+                new UnmatchedMappingSwitchException(
+                    MappingOperation.Create,
+                    typeof(string),
+                    typeof(int)),
                 "No branch of the declarative mapping switch matched the " +
                 "runtime value."
             )
@@ -102,6 +133,38 @@ internal sealed class TypeMapperObservableFailureTests
             {
                 Assert.That(failure.Message, Is.EqualTo(message));
             }
+
+            Assert.That(
+                failures.Select(static failure => failure.Failure)
+                    .OfType<MappingException>()
+                    .ToArray(),
+                Has.Length.EqualTo(11));
+
+            var configuration =
+                (MappingConfigurationException)failures[0].Failure;
+            Assert.That(
+                configuration.Operation,
+                Is.EqualTo(MappingOperation.Create));
+            Assert.That(configuration.SourceType, Is.EqualTo(typeof(string)));
+            Assert.That(
+                configuration.DestinationType,
+                Is.EqualTo(typeof(int)));
+            Assert.That(configuration.Reason, Is.EqualTo("The plan is invalid."));
+
+            var unsupported =
+                (MappingOperationNotSupportedException)failures[1].Failure;
+            Assert.That(
+                unsupported.EffectiveMappingMode,
+                Is.EqualTo(MappingMode.Create));
+
+            var mismatch =
+                (NestedDestinationTypeMismatchException)failures[8].Failure;
+            Assert.That(
+                mismatch.ExpectedDestinationType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(
+                mismatch.ActualDestinationType,
+                Is.EqualTo(typeof(int)));
         });
     }
 
@@ -146,6 +209,7 @@ namespace TestCase
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)
             => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
                 "The effective MappingMode is invalid.");
@@ -156,6 +220,7 @@ namespace TestCase
             global::TestCase.Destination? destination,
             global::Morphant.Context.MappingContext context)
             => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
                 "The effective MappingMode is invalid.");
@@ -171,73 +236,6 @@ is_global = true
 
 build_property.MorphantMappingMode = Unexpected
 """,
-            (
-                "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
-                expected
-            ));
-    }
-
-    [Test]
-    public async Task Emits_only_a_runtime_stub_for_an_unsupported_root()
-    {
-        // lang=c#
-        const string source =
-"""
-#nullable enable
-#pragma warning disable CS1591
-
-using System.Collections.Generic;
-using Morphant;
-
-namespace TestCase
-{
-    public sealed class Destination { }
-
-    [MorphantMapper]
-    public partial class TestMapper : TypeMapper
-    {
-        protected override void Configure(MapperBuilder builder) =>
-            builder.Map<List<int>, Destination>();
-    }
-}
-""";
-
-        // lang=c#
-        const string expected =
-"""
-// <auto-generated />
-#nullable enable
-
-namespace TestCase
-{
-    public partial class TestMapper :
-        global::Morphant.ITypeMapper<global::System.Collections.Generic.List<int>, global::TestCase.Destination>
-    {
-        /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::System.Collections.Generic.List<int>, global::TestCase.Destination>.Create(
-            global::System.Collections.Generic.List<int>? source,
-            global::Morphant.Context.MappingContext context)
-            => throw new global::Morphant.Exceptions.MappingConfigurationException(
-                typeof(global::System.Collections.Generic.List<int>),
-                typeof(global::TestCase.Destination),
-                "The source type 'global::System.Collections.Generic.List<int>' is a collection or buffer root. Collection mapping is not available.");
-
-        /// <inheritdoc/>
-        global::TestCase.Destination global::Morphant.ITypeMapper<global::System.Collections.Generic.List<int>, global::TestCase.Destination>.Update(
-            global::System.Collections.Generic.List<int>? source,
-            global::TestCase.Destination? destination,
-            global::Morphant.Context.MappingContext context)
-            => throw new global::Morphant.Exceptions.MappingConfigurationException(
-                typeof(global::System.Collections.Generic.List<int>),
-                typeof(global::TestCase.Destination),
-                "The source type 'global::System.Collections.Generic.List<int>' is a collection or buffer root. Collection mapping is not available.");
-    }
-}
-""";
-
-        await ProductionGeneratorTest.RunAndAssert(
-            LanguageVersion.CSharp9,
-            source,
             (
                 "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
                 expected

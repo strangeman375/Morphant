@@ -1348,6 +1348,14 @@ flags-enum `MappingMode`. `Operation` доступен только для чт�
 | Новый для каждого nested `Map` | Одна reference identity на всю chain |
 | Описывает текущий вызов | Завершается вместе с root `Map` |
 
+`default(MappingContext)` не является корректным frame, но его наличие само по
+себе не запрещает прямой вызов context-aware `ITypeMapper.Create` / `Update`.
+Generated mapper не выполняет безусловную проверку context на входе: mapping,
+которому context фактически не нужен, сохраняет обычное поведение. Чтение
+`Operation` либо `Mapper` у default-значения бросает
+`InvalidMappingContextException` с ясным сообщением. Таким образом ошибка
+наблюдается ровно в точке использования отсутствующих context data.
+
 Root mapper и `context.Mapper` реализуют один `IMapper`, но имеют разный
 lifetime. Root-вызов создаёт новый scope. `context.Mapper` привязан к уже
 существующему scope и создаёт новый frame для каждой nested operation.
@@ -1547,19 +1555,18 @@ runtime model, а nested mapping остаётся выражен только DS
 не связаны наследованием и не взаимозаменяемы.
 
 В v0 отдельные per-call arguments и пользовательский context не добавляются.
-После включения tuple roots strongly typed state передаётся обычным source:
+Tuple root можно передать как единое opaque source value и разобрать в
+runtime/manual callback:
 
 ```csharp
 builder.Map<(Order Order, MappingState State), Invoice>()
-    .Members((source, _) => new()
-    {
-        Total = Format(source.Order.Total, source.State.Culture),
-        Address = Map((source.Order.Address, source.State))
-    });
+    .Convert((source, previous, context) =>
+        CreateInvoice(source.Order, source.State, previous, context));
 ```
 
 Tuple здесь не получает особой state-семантики: типы и порядок элементов
-образуют source type, а nested propagation всегда записывается явно. Ни
+образуют source type, pair не получает `Members` или conventions, а nested
+propagation всегда записывается явно. Ни
 `MappingContext`, ни `MappingScope`, ни overload-ы `IMapper` ради этого не
 расширяются. Отдельный автоматически распространяемый per-call contract имеет
 смысл повторно рассматривать только при подтверждённой потребности, которую
@@ -1788,11 +1795,9 @@ Pair eligibility отделяется от конкретной declarative capa
 - могут быть однозначно названы из общего generated assembly-context без
   private/protected-привилегий конкретного mapper-а;
 - после снятия верхнеуровневой `Nullable<T>`-обёртки не являются type
-  parameter;
-- не входят в сознательно отложенные root-категории ниже.
+  parameter.
 
-До специальной поддержки после v0 полностью исключаются в обеих позициях
-mapping-пары:
+Следующие верхнеуровневые формы являются deferred opaque roots:
 
 - tuple roots: tuple syntax, `System.ValueTuple`, `System.Tuple` и типы,
   реализующие `System.Runtime.CompilerServices.ITuple`;
@@ -1811,24 +1816,29 @@ mapping-пары:
 
 Collection-категория включает generic/non-generic sequence interfaces,
 dictionaries, enumerators, async sequences, memory buffers и пользовательские
-типы, реализующие соответствующие контракты. Для delegates, expression trees,
-deferred/async и push values сначала нужна отдельная семантика либо явное
-решение об их долгосрочной неподдерживаемости. Запреты симметричны для source и
-destination и действуют также для runtime result policies и `Convert`. Если типы
-можно законно использовать в `ITypeMapper<TSource, TDestination>`, v0
-генерирует только executable contract, обе операции которого бросают
-`MappingConfigurationException`; construction, member и pair-extension
-surfaces не генерируются. Забытая registration не превращается в runtime
-lookup или скрытый manual fallback.
+типы, реализующие соответствующие контракты. Такая классификация не запрещает
+пару. Если хотя бы один root относится к этой группе, вся pair становится
+opaque и получает:
+
+- executable `ITypeMapper<TSource, TDestination>` contract;
+- pair-specific `ConstructUsing` и `ResolveUsing`;
+- все три `Convert` overload-а.
+
+Она не получает structured `Construct` / `Resolve`, `Members`, conventions или
+read-only nested proxy. Morphant рассматривает оба root-значения целиком и не
+предполагает element mapping, collection lifecycle, ожидание deferred result,
+expression rebinding, delegate adaptation либо push-sequence semantics.
+Необходимое синхронное поведение пользователь задаёт runtime result policy или
+`Convert`; забытая конфигурация не запускает скрытый fallback.
 
 Категория определяется после снятия верхнеуровневой `Nullable<T>`-обёртки:
-например, `ValueTask<int>?` также запрещён как root. Для разрешённого
-underlying value type сама `Nullable<T>`-форма при этом сохраняет собственную
-canonical identity mapping-пары.
+например, `ValueTask<int>?` также является deferred opaque root. Сама
+`Nullable<T>`-форма при этом сохраняет собственную canonical identity
+mapping-пары.
 
-Эти ограничения относятся только к корню пары. Значение любой отложенной
-категории может оставаться типом обычного member-а, constructor parameter либо
-generic argument внешнего разрешённого root-типа. Например,
+Эта классификация относится только к корню пары. Значение deferred-категории
+может оставаться типом обычного member-а, constructor parameter либо generic
+argument внешнего nominal root-типа. Например,
 `Envelope<Task<Result>>` остаётся допустимым root. В v0 вложенное значение
 рассматривается целиком: оно доступно через warning-free implicit
 C#-преобразование либо явное пользовательское expression, но Morphant не
@@ -1854,8 +1864,8 @@ Map<Page<T>, PageDto<T>>();
 Map<Result<T>, Response<T>>();
 ```
 
-Если сам известный root реализует или наследует одну из отложенных категорий,
-соответствующий запрет всё равно применяется.
+Если сам известный root реализует или наследует одну из deferred-категорий,
+pair получает описанную opaque policy.
 
 Технически исключаются `void`, pointers, function pointers, ref-like types,
 error types, anonymous/unnameable types и типы, недоступные из общего generated
@@ -1879,19 +1889,21 @@ declarative методы. Для каждой eligible pair capabilities выв�
 
 | Capability | Условие | Generated surface |
 |---|---|---|
-| Runtime contract | Любая eligible pair | Обе `Map`-операции; effective `MappingMode` остаётся единственным operation gate |
+| Runtime contract | Любая eligible pair | Обе `Create` / `Update`-операции; effective `MappingMode` остаётся единственным operation gate |
 | Runtime result policy | Любая eligible pair | Pair-specific generated `ConstructUsing` и `ResolveUsing` в `MappingExtension` |
 | Manual | Любая eligible pair | Три pair-specific generated `Convert` overload-а |
-| Structured construction | Есть хотя бы один поддерживаемый доступный destination constructor, включая parameterless | Generated `Construct` и `Resolve`, возвращающие `DestinationConstruction` |
-| Members | Есть поддерживаемый writable/creation-time body-member либо eligible read-only nested-update proxy; destination не opaque | Generated `DestinationMembers` и четыре `Members` overload-а |
-| Collection / projection | Не входят в v0 capability model | Никакого generated surface; рассматриваются после v0 на отдельных этапах |
+| Structured construction | Pair не является deferred-opaque; есть хотя бы один поддерживаемый доступный destination constructor, включая parameterless | Generated `Construct` и `Resolve`, возвращающие `DestinationConstruction` |
+| Members | Pair не является deferred-opaque; есть поддерживаемый writable/creation-time body-member либо eligible read-only nested-update proxy; destination не scalar-opaque | Generated `DestinationMembers` и четыре `Members` overload-а |
+| Automatic collection / projection semantics | Не входят в v0 capability model | Никакого специального lowering; рассматриваются после v0 на отдельных этапах |
 
 Structured и runtime result methods имеют разные имена и могут одновременно
 существовать в IntelliSense, но в конфигурации занимают один
 взаимоисключающий result-policy slot. `Convert` доступен для той же пары, но
 является альтернативой всему declarative pipeline, а не fallback отдельной
-неподдерживаемой ветки. Source shape сама по себе не меняет destination
-surface.
+неподдерживаемой ветки. Обычная nominal source shape сама по себе не меняет
+destination surface; deferred opaque source намеренно делает opaque всю pair,
+чтобы generated DSL не обещал частичную структурную обработку container либо
+deferred value.
 
 Отсутствие members не убирает declarative surface. Pair с поддерживаемым
 constructor получает structured `Construct` / `Resolve`; для любой eligible
@@ -2191,7 +2203,40 @@ outer pair, и не ограничивается его assembly. Для одн�
 nested вызовы применяют одинаковое правило `0 / 1 / 2+`; неоднозначность не
 разрешается через outer mapper, call stack или порядок регистрации.
 
-### 12.4. Post-v0 путь к keyed mappings
+### 12.4. Context-free вызов конкретного mapper-а
+
+Когда application-wide dispatch и DI не нужны, точный mapper можно вызвать
+через context-free extensions на `ITypeMapper<TSource, TDestination>`:
+
+```csharp
+ITypeMapper<Source, Destination> mapper = new ApplicationMapper();
+
+var created = mapper.Create(source);
+var updated = mapper.Update(source, destination);
+```
+
+Для concrete mapper-а с несколькими pair типы выбираются явно на самом
+extension-вызове; отдельный pair-selector не вводится:
+
+```csharp
+var created = mapper.Create<Source, Destination>(source);
+var updated = mapper.Update<Source, Destination>(source, destination);
+```
+
+Каждый такой root-вызов создаёт и завершает standalone `MappingScope` тем же
+`finally`-законом, что и `IMapper`. `context.Mapper` внутри callback-а видит все
+exact closed `ITypeMapper<,>` contracts, реализованные тем же runtime instance.
+Инвентарь contracts кэшируется по concrete mapper type. Lookup не использует
+generic variance, assignable source/destination types или другой mapper
+instance: отсутствующая exact pair бросает `MappingNotFoundException` и
+рекомендует application-wide `IMapper`, если требуемая pair живёт отдельно.
+
+Context-aware методы самого `ITypeMapper` остаются низкоуровневым generated
+contract и не дублируются context-free members в интерфейсе. Extension API
+даёт корректный root scope без `IServiceProvider`; после завершения вызова
+захваченный из callback-а scoped mapper больше использовать нельзя.
+
+### 12.5. Post-v0 путь к keyed mappings
 
 После v0 registry можно совместимо расширить явным ключом варианта. Рабочая
 модель descriptor-а тогда имеет lookup identity
@@ -2225,7 +2270,7 @@ registration, точнее может оказаться `WithMappingKey`. Са�
 Этот эскиз резервирует extension path, но не добавляет keyed semantics в v0 и
 не делает текущий unkeyed lookup зависимым от будущего имени API.
 
-### 12.5. Runtime polymorphism после v0
+### 12.6. Runtime polymorphism после v0
 
 В v0 runtime-тип source не меняет requested canonical pair. Вызов
 `Map<Animal, AnimalDto>` всегда разрешает `Animal -> AnimalDto`, даже если
@@ -2262,7 +2307,7 @@ previous обрабатывает base mapping: runtime source сам по се�
 observable errors согласуются после v0. Полное исследование сохранено в
 [`RUNTIME_POLYMORPHISM_RESEARCH.md`](RUNTIME_POLYMORPHISM_RESEARCH.md).
 
-### 12.6. Cycles и shared references после v0
+### 12.7. Cycles и shared references после v0
 
 В v0 Morphant не сохраняет reference identity автоматически и не гарантирует
 завершение cyclic object graph. `MappingScope` уже отделён от immutable
@@ -2288,16 +2333,17 @@ constructor, `init` и required initializer cycle до появления result
 Полное исследование сохранено в
 [`REFERENCE_HANDLING_RESEARCH.md`](REFERENCE_HANDLING_RESEARCH.md).
 
-### 12.7. Projection после v0
+### 12.8. Projection после v0
 
 `IQueryable` projection однозначно исключена из v0. Публичного `Project(...)`,
-projectable capability и special expression-tree roots нет. Точный public
-contract, expression-compatible subset и внутренняя representation будут
+projectable capability и expression-tree lowering нет; expression tree может
+быть только единым opaque root runtime/manual pair. Точный public contract,
+expression-compatible subset и внутренняя representation будут
 спроектированы отдельным post-v0 этапом; текущая спецификация не обещает
 client-side fallback и не накладывает ради будущей projection дополнительные
 ограничения на production implementation v0.
 
-### 12.8. Generic, runtime-type и multi-source boundary
+### 12.9. Generic, runtime-type и multi-source boundary
 
 Constructed generic root со статически известной nominal-формой является
 обычной canonical pair. Например, `Page<Order> -> PageDto<Order>` разрешается
@@ -2312,8 +2358,8 @@ Constructed generic root со статически известной nominal-ф
 сопоставляет generic definitions. Все closed pairs следуют обычному правилу
 `0 / 1 / 2+`.
 
-Generic arguments могут содержать type parameters, nullable-типы и даже
-категории, запрещённые непосредственно как root. Например,
+Generic arguments могут содержать type parameters, nullable-типы и deferred
+opaque-категории. Например,
 `Envelope<Task<T>>` допустим: Morphant рассматривает вложенный `Task<T>` как
 единое значение и не применяет к нему async semantics. Каждый полный
 constructed root должен оставаться выразимым из общего generated
@@ -2347,7 +2393,7 @@ Application-wide правило нескольких registrations здесь н
 возникает раньше, при формировании списка interfaces и explicit implementations
 одного closed mapper type.
 
-### 12.9. `IncludeMembers` после v0
+### 12.10. `IncludeMembers` после v0
 
 First-class convention flattening обязательно входит в post-v0 roadmap.
 Будущий `IncludeMembers` подключает выбранный вложенный либо дополнительный
@@ -2629,7 +2675,11 @@ diagnostic не должно вводить скрытый fallback на дру�
 
 Все продуктовые ошибки маппинга, создаваемые самим Morphant, и все исключения
 из generated code наследуются от публичного
-`Morphant.Exceptions.MorphantException`. Зафиксированы следующие типы:
+`Morphant.Exceptions.MorphantException`. Ошибки, относящиеся к конкретному
+вызову exact pair, дополнительно наследуются от abstract
+`MappingException` и предоставляют структурированные `Operation`,
+`SourceType` и `DestinationType`; consumer не должен извлекать эти данные из
+message. Зафиксированы следующие типы:
 
 | Состояние | Exception |
 |---|---|
@@ -2638,21 +2688,31 @@ diagnostic не должно вводить скрытый fallback на дру�
 | Null source/destination отвергнут policy | `NullSourceException` / `NullDestinationException` |
 | Exact-pair lookup дал `0`, `2+` либо единственный `null` | `MappingNotFoundException` / `AmbiguousMappingException` / `InvalidMappingRegistrationException` |
 | Scoped mapper использован после завершения root call | `MappingScopeCompletedException` |
+| Прочитано свойство default-initialized context | `InvalidMappingContextException` |
 | Adaptive nested destination runtime-несовместим | `NestedDestinationTypeMismatchException` |
 | Declarative switch не выбрал ветку | `UnmatchedMappingSwitchException` |
 | `Option<T>.Value` прочитан у `None` | `OptionValueMissingException` |
 | Compile-time DSL API вызван как runtime API | `RuntimeInvocationNotSupportedException` |
+
+`MappingConfigurationException` дополнительно предоставляет `Reason`,
+`MappingOperationNotSupportedException` — `EffectiveMappingMode`, а
+`NestedDestinationTypeMismatchException` — `ExpectedDestinationType` и
+`ActualDestinationType`. `InvalidMappingContextException`,
+`OptionValueMissingException` и `RuntimeInvocationNotSupportedException` не
+относятся к конкретной pair и поэтому наследуются непосредственно от
+`MorphantException`.
 
 Обычная проверка предусловий рукописного public API следует соглашениям .NET.
 В частности, `new Mapper(null)` бросает `ArgumentNullException` с
 `ParamName == "serviceProvider"`; это не отдельная продуктовая ошибка
 маппинга и не часть иерархии `MorphantException`.
 
-Если C# способен объявить `ITypeMapper<TSource, TDestination>`, invalid либо
-unsupported состояние не оставляет partial mapper незавершённым. Generated
+Если C# способен объявить `ITypeMapper<TSource, TDestination>`, invalid
+конфигурация не оставляет partial mapper незавершённым. Generated
 mapper сохраняет interface и обе операции; недоступная operation получает
-typed exception stub, а доступная остаётся исполнимой. Unsupported root не
-получает ложных construction/member/extension surfaces.
+typed exception stub, а доступная остаётся исполнимой. Deferred opaque root
+является legal pair и получает runtime/manual extensions, но не получает
+ложных structured construction/member/convention surfaces.
 
 Только структурно невозможные contracts не получают executable stub:
 неподходящая mapper declaration (например, non-partial/file-local либо
@@ -2796,9 +2856,12 @@ expressions, mapper dependencies и application service provider не
 35. `Convert` возвращает пользовательский result без generated null guard;
     `null` вместо generated creation/member plan остаётся ошибкой DSL, а не
     destination-result.
-36. Root-вызовы используют независимые scopes и могут выполняться параллельно;
-    scoped mapper действует только до завершения root `Map`, а параллельные
-    nested-вызовы внутри одного scope не поддерживаются.
+36. Root-вызовы через `IMapper` и context-free `ITypeMapper.Create` / `Update`
+    используют независимые scopes и могут выполняться параллельно; scoped
+    mapper действует только до завершения root-вызова, а параллельные
+    nested-вызовы внутри одного scope не поддерживаются. Default
+    `MappingContext` допускается, пока mapping не читает его `Operation` либо
+    `Mapper`; само чтение бросает `InvalidMappingContextException`.
 37. Каждое declarative expression вычисляется не более одного раза. Structured
     `Construct` / `Resolve` и `Members` имеют общий path-sensitive dependency graph: одинаковое
     bound subexpression, нужное обеим частям на выбранном пути, вычисляется
@@ -2834,34 +2897,43 @@ expressions, mapper dependencies и application service provider не
     generic argument известного nominal root. Для классификации верхнеуровневая
     `Nullable<T>`-обёртка снимается, не меняя canonical identity разрешённой
     nullable value pair.
-43. До post-v0 tuple, sequence/collection/buffer, delegate, expression-tree,
-    deferred/async и push-sequence roots полностью исключаются в обеих
-    mapping-позициях даже для runtime/manual mapping.
-44. Для любой другой eligible pair доступны runtime contract и pair-specific
-    generated `ConstructUsing`, `ResolveUsing` и `Convert`; destination с
-    constructor capability дополнительно получает generated `Construct` /
-    `Resolve`, а non-opaque destination — `Members` при наличии применимых
-    body-members.
-    Значение отложенной категории внутри разрешённого root
-    остаётся обычным единым C#-значением. `dynamic`
-    канонически совпадает с `object`; root nullable reference annotation не
-    создаёт отдельную runtime pair.
+43. Tuple, sequence/collection/buffer, delegate, expression-tree,
+    deferred/async и push-sequence roots являются eligible opaque values. Если
+    хотя бы один root относится к этой группе, pair получает runtime contract,
+    `ConstructUsing`, `ResolveUsing` и `Convert`, но не structured
+    construction, `Members`, conventions либо специальную container/deferred
+    semantics.
+44. Для любой eligible pair доступны runtime contract и pair-specific
+    generated `ConstructUsing`, `ResolveUsing` и `Convert`; non-deferred pair с
+    destination constructor capability дополнительно получает generated
+    `Construct` / `Resolve`, а non-opaque destination — `Members` при наличии
+    применимых body-members. Значение deferred-категории внутри nominal root
+    остаётся обычным единым C#-значением. `dynamic` канонически совпадает с
+    `object`; root nullable reference annotation не создаёт отдельную runtime
+    pair.
 45. Manual mapping применяет только `MappingMode`. Остальные settings не
     запускают скрытый declarative pipeline; неприменимая explicit map-level
     setting является ошибкой, а inherited setting может быть безвредным no-op.
 46. Public `IMapper` является application-wide фасадом: concrete `TypeMapper`,
     compilation и assembly не ограничивают видимые manual registrations.
-47. Root и scoped mapper используют один фиксированный набор manual
-    registrations и `IServiceProvider` текущего DI-scope; `MappingScope`
-    хранит только состояние mapping chain. `AddMorphant(...)`, generated
-    manifests и assembly scanning остаются post-v0.
+47. Application-wide root и scoped mapper используют один фиксированный набор
+    manual registrations и `IServiceProvider` текущего DI-scope. Standalone
+    scope вместо provider-а использует набор exact closed contracts одного
+    concrete mapper instance. `MappingScope` хранит только состояние mapping
+    chain. `AddMorphant(...)`, generated manifests и assembly scanning остаются
+    post-v0.
 48. Обычный v0 lookup идентифицируется canonical type pair. Ноль кандидатов
     означает missing mapping, один — выполнение, два и более — ambiguity.
 49. Повторные registrations pair допустимы и не являются generator/startup
     error; Morphant никогда не разрешает их порядком регистрации или правилом
     last-registration-wins.
-50. Explicit nested и manual nested mappings выполняют тот же application-wide
-    lookup, не предпочитая outer `TypeMapper` или assembly.
+50. Explicit nested и manual nested mappings выполняют lookup текущего scope.
+    Application-wide scope не предпочитает outer `TypeMapper` или assembly;
+    standalone scope видит только exact closed pairs того же mapper instance и
+    не использует variance либо assignable lookup. Context-free API —
+    `mapper.Create(source)` для statically typed exact pair и
+    `mapper.Create<TSource, TDestination>(source)` для multi-pair concrete
+    mapper; отдельного pair-selector нет.
 51. Post-v0 keyed lookup добавляется как явное расширение выбора descriptor-а,
     не меняющее базовый `IMapper`/`ITypeMapper` shape; точный API, назначение и
     наследование ключа согласуются отдельно.
@@ -2882,9 +2954,9 @@ expressions, mapper dependencies и application service provider не
     отличии хотя бы одного creation-only member candidate от previous. Эта
     identity-policy не является частью `NullAssignmentHandling`; её equality,
     reconstruction и evaluation contracts требуют отдельного решения.
-56. В v0 нет отдельного per-call arguments/context contract. После включения
-    tuple roots пользовательский state является обычным элементом source и
-    передаётся в nested mappings явно; он не хранится в `MappingContext` или
+56. В v0 нет отдельного per-call arguments/context contract. Tuple root можно
+    передать как единое opaque source value в ручной mapping; пользовательский
+    state передаётся в nested mappings явно, не хранится в `MappingContext` или
     `MappingScope` и не распространяется ambient-механизмом.
 57. В v0 runtime-тип source не меняет requested canonical pair.
     `IncludeBase<TBaseSource, TBaseDestination>()` наследует только
@@ -2899,8 +2971,9 @@ expressions, mapper dependencies и application service provider не
     preservation не
     делает constructor/initializer cycles разрешимыми.
 60. `IQueryable` projection, public `Project(...)`, projectable capability и
-    expression-tree roots полностью отсутствуют в v0 и рассматриваются после
-    него отдельным дизайном.
+    expression-tree lowering отсутствуют в v0 и рассматриваются после него
+    отдельным дизайном. Expression-tree root при этом остаётся допустимым
+    opaque value для runtime/manual pair.
 61. В v0 configuration reuse следует только registrations текущего mapper-level
     и явно подключённой C#-иерархии mapper-ов. Generator не выполняет arbitrary
     builder helpers и не ищет fragments или подходящие plans в application
@@ -2963,9 +3036,10 @@ expressions, mapper dependencies и application service provider не
     generated assembly-context; reflection-обхода недоступности нет.
 73. Bare root type parameter, open-generic registration и mapping по runtime
     `Type` отсутствуют в v0 и не получают fallback через application dispatch.
-74. После v0 tuple/multi-source mapping использует обычный tuple `TSource` без
+74. Tuple root уже можно использовать как единый opaque `TSource` без
     специальных overload-ов `IMapper`; identity учитывает типы и порядок
-    элементов, но не имена, а пользовательский state передаётся детям явно.
+    элементов, но не имена. Будущая structured multi-source semantics требует
+    отдельного дизайна, а пользовательский state передаётся детям явно.
 75. Result-dependent rules `Members` остаются declarative и выполняются после
     появления result; остальные rules не меняют фазу из-за формы перегрузки.
     Зависимость от порядка независимых rules, setter/nested mapping side
@@ -3098,9 +3172,9 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
 Следующие отличия не считаются забытыми features:
 
 - bare root type parameters, которые прежний generator частично поддерживал,
-  в новом v0 запрещены вместе с root tuple/collection/buffer, delegate,
-  expression-tree, deferred/async и push-sequence categories;
-- collections, tuple/multi-source, patch/merge, projection, runtime
+  в новом v0 запрещены; deferred root-категории вместо этого поддерживаются
+  как opaque runtime/manual values без специальной обработки;
+- automatic collections, tuple/multi-source semantics, patch/merge, projection, runtime
   polymorphism, reference tracking и cross-assembly plan composition явно
   отложены;
 - hooks/middleware гарантированы после v0, но не маскируются manual mapping-ом
@@ -3112,9 +3186,12 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
 
 ## 17. Статус реализации и оставшиеся границы
 
-Основная semantics core v0, ревизия callback surface из разделов 6–8 и
-уточнённая граница read-only proxy из разделов 7 и 11 реализованы в
-production-коде, generated API и tests и ожидают пользовательского ревью.
+Основная semantics core v0, ревизии callback/read-only surface и августовский
+API-аудит реализованы в production-коде, generated API, документации и focused
+tests и ожидают пользовательского ревью. Последний срез включает deferred
+opaque roots, context-free exact-pair `ITypeMapper` extensions без отдельного
+pair-selector, lazy validation default `MappingContext`, структурированную
+`MappingException` hierarchy и sealing конечных phantom/API types.
 Текущее состояние и следующий этап фиксируются в
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md), а
 независимая оценка полноты сценариев — в
@@ -3122,8 +3199,8 @@ production-коде, generated API и tests и ожидают пользоват
 
 Observable runtime failures и generated exception-stub boundary реализованы и
 зафиксированы разделом 14.2. Compile-time diagnostics остаются отдельным
-поздним планом и приостановлены до завершения callback API. Collections,
-projection, polymorphism, reference handling и
+поздним планом и приостановлены до пользовательского принятия текущего API.
+Automatic collection semantics, projection, polymorphism, reference handling и
 остальные перечисленные выше возможности остаются post-v0 направлениями и не
 расширяют текущий mapping semantics неявно. До отдельного продуктового решения
 их API не должен определяться удобством существующей реализации.

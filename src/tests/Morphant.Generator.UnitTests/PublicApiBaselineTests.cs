@@ -1,10 +1,127 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using Morphant.Exceptions;
+using Morphant.Markers;
+using Morphant.Members;
 
 namespace Morphant.Generator.UnitTests;
 
 [TestFixture]
 internal sealed class PublicApiBaselineTests
 {
+    [Test]
+    public void Runtime_public_API_preserves_modifiers_inheritance_and_metadata()
+    {
+        var sealedDslTypes = new[]
+        {
+            typeof(ByConventionMarker),
+            typeof(AutoMarker),
+            typeof(AutoMarker<>),
+            typeof(IgnoreMarker),
+            typeof(IgnoreMarker<>),
+            typeof(MapMarker<>),
+            typeof(Member<>),
+            typeof(ConstructorParameter<>),
+            typeof(MapperBuilder),
+            typeof(MapperBuilder<,>)
+        };
+        var abstractInfrastructureTypes = new[]
+        {
+            typeof(ConstructorMarker),
+            typeof(MemberMarker),
+            typeof(MapMarker),
+            typeof(MapperBuilderBase<>),
+            typeof(TypeMapper),
+            typeof(MorphantException),
+            typeof(MappingException)
+        };
+        var reservedConstructors = new[]
+        {
+            typeof(MorphantException),
+            typeof(MappingException)
+        };
+        var typeMapperParameters = typeof(ITypeMapper<,>)
+            .GetGenericArguments();
+        var extensionMethods = typeof(TypeMapperExtensions)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static);
+        var mapMethod = typeof(MapperBuilder)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Single(method => method.Name == nameof(MapperBuilder.Map));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                sealedDslTypes.All(static type => type.IsSealed),
+                Is.True);
+            Assert.That(
+                abstractInfrastructureTypes.All(static type => type.IsAbstract),
+                Is.True);
+            Assert.That(
+                reservedConstructors.Select(type => type.GetConstructors(
+                        BindingFlags.NonPublic |
+                        BindingFlags.Instance |
+                        BindingFlags.DeclaredOnly)
+                    .Single())
+                    .All(static constructor =>
+                        constructor.IsFamilyAndAssembly),
+                Is.True);
+            Assert.That(
+                typeMapperParameters[0].GenericParameterAttributes &
+                GenericParameterAttributes.VarianceMask,
+                Is.EqualTo(GenericParameterAttributes.Contravariant));
+            Assert.That(
+                typeMapperParameters[1].GenericParameterAttributes &
+                GenericParameterAttributes.VarianceMask,
+                Is.EqualTo(GenericParameterAttributes.None));
+            Assert.That(
+                typeof(TypeMapperExtensions).IsDefined(
+                    typeof(ExtensionAttribute),
+                    inherit: false),
+                Is.True);
+            Assert.That(
+                extensionMethods,
+                Has.Length.EqualTo(2));
+            Assert.That(
+                extensionMethods.All(method => method.IsDefined(
+                    typeof(ExtensionAttribute),
+                    inherit: false)),
+                Is.True);
+            Assert.That(
+                extensionMethods.Single(method =>
+                        method.Name == nameof(TypeMapperExtensions.Create))
+                    .GetParameters()
+                    .Select(static parameter => parameter.Name),
+                Is.EqualTo(new[] { "mapper", "source" }));
+            Assert.That(
+                extensionMethods.Single(method =>
+                        method.Name == nameof(TypeMapperExtensions.Update))
+                    .GetParameters()
+                    .Select(static parameter => parameter.Name),
+                Is.EqualTo(new[] { "mapper", "source", "destination" }));
+            Assert.That(
+                mapMethod.GetParameters().Single().HasDefaultValue,
+                Is.True);
+            Assert.That(
+                mapMethod.GetParameters().Single().DefaultValue,
+                Is.EqualTo(MappingMode.Default));
+            Assert.That(
+                GetImplicitOperatorCount(typeof(AutoMarker<>)),
+                Is.EqualTo(1));
+            Assert.That(
+                GetImplicitOperatorCount(typeof(IgnoreMarker<>)),
+                Is.EqualTo(1));
+            Assert.That(
+                GetImplicitOperatorCount(typeof(MapMarker<>)),
+                Is.EqualTo(1));
+            Assert.That(
+                GetImplicitOperatorCount(typeof(Member<>)),
+                Is.EqualTo(7));
+            Assert.That(
+                GetImplicitOperatorCount(typeof(ConstructorParameter<>)),
+                Is.EqualTo(7));
+        });
+    }
+
     [Test]
     public void Runtime_public_API_matches_the_core_v0_baseline()
     {
@@ -96,31 +213,40 @@ T Morphant.Delegates.Resolve<TSource, TPrevious, TContext, TResult>
   M TResult EndInvoke(System.IAsyncResult)
   M TResult Invoke(TSource, Morphant.Option<TPrevious>, TContext)
 T Morphant.Exceptions.AmbiguousMappingException
-  C .ctor(System.Type, System.Type)
-T Morphant.Exceptions.InvalidMappingRegistrationException
-  C .ctor(System.Type, System.Type)
-T Morphant.Exceptions.MappingConfigurationException
-  C .ctor(System.Type, System.Type, System.String)
-T Morphant.Exceptions.MappingNotFoundException
-  C .ctor(System.Type, System.Type)
-T Morphant.Exceptions.MappingOperationNotSupportedException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
+T Morphant.Exceptions.InvalidMappingContextException
+  C .ctor()
+T Morphant.Exceptions.InvalidMappingRegistrationException
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
+T Morphant.Exceptions.MappingConfigurationException
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type, System.String)
+  P System.String Reason { get; }
+T Morphant.Exceptions.MappingException
+  P Morphant.Context.MappingOperation Operation { get; }
+  P System.Type DestinationType { get; }
+  P System.Type SourceType { get; }
+T Morphant.Exceptions.MappingNotFoundException
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
+T Morphant.Exceptions.MappingOperationNotSupportedException
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type, Morphant.MappingMode)
+  P Morphant.MappingMode EffectiveMappingMode { get; }
 T Morphant.Exceptions.MappingScopeCompletedException
-  C .ctor(System.Type, System.Type)
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
 T Morphant.Exceptions.MorphantException
-  C .ctor(System.String)
 T Morphant.Exceptions.NestedDestinationTypeMismatchException
-  C .ctor(System.Type, System.Type)
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type, System.Type, System.Type)
+  P System.Type ActualDestinationType { get; }
+  P System.Type ExpectedDestinationType { get; }
 T Morphant.Exceptions.NullDestinationException
-  C .ctor(System.Type, System.Type)
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
 T Morphant.Exceptions.NullSourceException
-  C .ctor(System.Type, System.Type)
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
 T Morphant.Exceptions.OptionValueMissingException
   C .ctor()
 T Morphant.Exceptions.RuntimeInvocationNotSupportedException
   C .ctor()
 T Morphant.Exceptions.UnmatchedMappingSwitchException
-  C .ctor()
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
 T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource)
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
@@ -185,6 +311,9 @@ T Morphant.TypeMapper
   M Morphant.Markers.MapMarker<T> Map<T>(System.Object)
   M Morphant.Markers.MapMarker<T> Update<T>(System.Object, System.Object)
   M System.Void Configure(Morphant.MapperBuilder)
+T Morphant.TypeMapperExtensions
+  M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
+  M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)
 T Morphant.UnmappedMemberValidation
   V Default, None, Source, Destination, Strict
 """;
@@ -321,4 +450,11 @@ T Morphant.UnmappedMemberValidation
 
     private static bool IsApiVisible(FieldInfo field) =>
         field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly;
+
+    private static int GetImplicitOperatorCount(Type type) =>
+        type.GetMethods(
+                BindingFlags.Public |
+                BindingFlags.Static |
+                BindingFlags.DeclaredOnly)
+            .Count(static method => method.Name == "op_Implicit");
 }

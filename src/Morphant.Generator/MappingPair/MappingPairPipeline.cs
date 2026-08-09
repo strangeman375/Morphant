@@ -85,6 +85,7 @@ internal static class MappingPairPipeline
                 registration,
                 identity,
                 DestinationCapabilityPolicy.Build(
+                    registration.SourceType,
                     registration.DestinationType,
                     context.Compilation,
                     cancellationToken)));

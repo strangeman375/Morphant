@@ -166,6 +166,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
             => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
                 "The effective MemberSelection is invalid.");
@@ -176,6 +177,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
             => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
                 "The effective MemberSelection is invalid.");

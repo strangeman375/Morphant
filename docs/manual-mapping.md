@@ -49,6 +49,23 @@ multiple returns, record `with`, method calls, and exceptions keep their normal
 C# semantics. Configure-local runtime values and Configure-local functions
 cannot be captured; reusable state or behavior belongs on the mapper type.
 
+Collection, tuple, delegate, expression-tree, task/deferred, buffer, and
+observable roots are eligible opaque values. Their pairs receive
+`ConstructUsing`, `ResolveUsing`, and `Convert`, but no `Construct`, `Resolve`,
+`Members`, conventions, or special element/await/rebinding behavior. For
+example, collection mapping is an explicit ordinary algorithm in core v0:
+
+```csharp
+builder.Map<IReadOnlyList<OrderDto>, List<Order>>()
+    .Convert((source, _, context) =>
+        source is null
+            ? new List<Order>()
+            : source.Select(context.Mapper.Map<OrderDto, Order>).ToList());
+```
+
+The opaque boundary prevents the root type from implying a hidden lifecycle;
+the callback is responsible for all container behavior.
+
 For a nested mapping, call the scoped mapper from the current context:
 
 ```csharp

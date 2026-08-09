@@ -38,58 +38,30 @@ internal static class MappingTypeEligibilityPolicy
                    "mapping root.";
         }
 
+        return rootType is IDynamicTypeSymbol or
+            IArrayTypeSymbol or
+            INamedTypeSymbol
+                ? null
+                : $"The {role} type '{typeName}' is not a supported named " +
+                  "mapping root.";
+    }
+
+    internal static bool IsDeferredOpaqueRoot(ITypeSymbol type)
+    {
+        var rootType = UnwrapNullableValueType(type);
+
         if (rootType is IArrayTypeSymbol)
         {
-            return $"The {role} type '{typeName}' is an array root. Array " +
-                   "mapping requires collection support, which is not " +
-                   "available.";
+            return true;
         }
 
-        if (rootType is IDynamicTypeSymbol)
-        {
-            return null;
-        }
-
-        if (rootType is not INamedTypeSymbol namedRootType)
-        {
-            return $"The {role} type '{typeName}' is not a supported named " +
-                   "mapping root.";
-        }
-
-        if (IsTuple(namedRootType))
-        {
-            return $"The {role} type '{typeName}' is a tuple root, which " +
-                   "Morphant does not support.";
-        }
-
-        if (IsCollectionOrBuffer(namedRootType))
-        {
-            return $"The {role} type '{typeName}' is a collection or buffer " +
-                   "root. Collection mapping is not available.";
-        }
-
-        if (IsDelegate(namedRootType))
-        {
-            return $"The {role} type '{typeName}' is a delegate root, which " +
-                   "Morphant does not support.";
-        }
-
-        if (IsExpressionTree(namedRootType))
-        {
-            return $"The {role} type '{typeName}' is an expression-tree " +
-                   "root, which Morphant does not support.";
-        }
-
-        if (IsDeferredOrAsync(namedRootType))
-        {
-            return $"The {role} type '{typeName}' is a deferred or async " +
-                   "root, which Morphant does not support.";
-        }
-
-        return IsPushSequence(namedRootType)
-            ? $"The {role} type '{typeName}' is a push-sequence root, which " +
-              "Morphant does not support."
-            : null;
+        return rootType is INamedTypeSymbol namedRootType &&
+               (IsTuple(namedRootType) ||
+                IsCollectionOrBuffer(namedRootType) ||
+                IsDelegate(namedRootType) ||
+                IsExpressionTree(namedRootType) ||
+                IsDeferredOrAsync(namedRootType) ||
+                IsPushSequence(namedRootType));
     }
 
     public static bool CanBeNamed(

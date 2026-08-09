@@ -77,6 +77,29 @@ the same way; assembly identity is not part of the lookup key.
 See [Runtime dispatch and DI](runtime-dispatch.md) for the exact zero/one/many
 candidate rule and mapping scope lifecycle.
 
+If application-wide dispatch is unnecessary, no DI registration is required.
+Call the context-free extensions on an exact pair:
+
+```csharp
+ITypeMapper<Customer, CustomerDto> pair = new ApplicationMapper();
+
+var created = pair.Create(customer);
+var updated = pair.Update(customer, existingDto);
+```
+
+A concrete mapper that implements several pairs uses explicit method type
+arguments instead of a separate pair selector:
+
+```csharp
+var applicationMapper = new ApplicationMapper();
+var created =
+    applicationMapper.Create<Customer, CustomerDto>(customer);
+```
+
+Nested `context.Mapper` calls in this mode can resolve every exact closed pair
+implemented by the same `applicationMapper` instance. Use application-wide
+`IMapper` when a nested pair belongs to another mapper instance.
+
 ## Create and update
 
 Resolve `IMapper` from the current application scope:

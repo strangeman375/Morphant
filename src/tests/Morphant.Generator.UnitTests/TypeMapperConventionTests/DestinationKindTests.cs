@@ -537,7 +537,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
         }
 
         /// <inheritdoc/>
@@ -556,9 +556,11 @@ namespace TestCase
 
         private int __Create(
             global::TestCase.Source source,
+            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
+                operation,
                 typeof(global::TestCase.Source),
                 typeof(int),
                 "Convention construction is not available for this destination.");
@@ -582,7 +584,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create1(source, context);
+            return __Create1(source, global::Morphant.Context.MappingOperation.Create, context);
         }
 
         /// <inheritdoc/>
@@ -598,7 +600,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create1(source, context);
+                return __Create1(source, global::Morphant.Context.MappingOperation.Update, context);
             }
 
             return __Update1(source, destination, context);
@@ -606,9 +608,11 @@ namespace TestCase
 
         private global::TestCase.IInterfaceDestination __Create1(
             global::TestCase.Source source,
+            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
+                operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.IInterfaceDestination),
                 "Convention construction is not available for this destination.");
@@ -634,7 +638,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create2(source, context);
+            return __Create2(source, global::Morphant.Context.MappingOperation.Create, context);
         }
 
         /// <inheritdoc/>
@@ -650,7 +654,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create2(source, context);
+                return __Create2(source, global::Morphant.Context.MappingOperation.Update, context);
             }
 
             return __Update2(source, destination, context);
@@ -658,9 +662,11 @@ namespace TestCase
 
         private global::TestCase.AbstractDestination __Create2(
             global::TestCase.Source source,
+            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
             throw new global::Morphant.Exceptions.MappingConfigurationException(
+                operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.AbstractDestination),
                 "Convention construction is not available for this destination.");

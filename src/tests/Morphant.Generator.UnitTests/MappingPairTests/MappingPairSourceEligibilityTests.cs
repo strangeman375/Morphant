@@ -98,7 +98,7 @@ namespace TestCase
     }
 
     [Test]
-    public async Task Rejects_every_deferred_source_root_family()
+    public async Task Accepts_every_deferred_source_root_as_opaque()
     {
         // lang=c#
         const string source =
@@ -228,6 +228,46 @@ namespace TestCase
             source,
             "TestCase.TestMapper",
             hasUnifiablePairs: false,
+            Opaque("global::System.ValueTuple<global::System.Int32, global::System.String>"),
+            Opaque("global::System.Nullable<global::System.ValueTuple<global::System.Int32, global::System.String>>"),
+            Opaque("global::System.Tuple<global::System.Int32, global::System.String>"),
+            Opaque("global::System.ValueTuple"),
+            Opaque("global::System.Runtime.CompilerServices.ITuple"),
+            Opaque("global::TestCase.CustomTuple"),
+            Opaque("global::System.Int32[]"),
+            Opaque("global::System.Int32[,]"),
+            Opaque("global::System.Collections.IEnumerable"),
+            Opaque("global::System.Collections.Generic.IEnumerable<global::System.Int32>"),
+            Opaque("global::System.Collections.IEnumerator"),
+            Opaque("global::System.Collections.Generic.IEnumerator<global::System.Int32>"),
+            Opaque("global::System.Collections.Generic.List<global::System.Int32>"),
+            Opaque("global::System.Collections.Generic.Dictionary<global::System.Int32, global::System.String>"),
+            Opaque("global::TestCase.CustomCollection"),
+            Opaque("global::TestCase.CustomEnumerator"),
+            Opaque("global::System.Collections.Generic.IAsyncEnumerable<global::System.Int32>"),
+            Opaque("global::System.Collections.Generic.IAsyncEnumerator<global::System.Int32>"),
+            Opaque("global::TestCase.CustomAsyncEnumerable"),
+            Opaque("global::System.Memory<global::System.Int32>"),
+            Opaque("global::System.ReadOnlyMemory<global::System.Int32>"),
+            Opaque("global::System.Buffers.ReadOnlySequence<global::System.Int32>"),
+            Opaque("global::System.Nullable<global::System.Buffers.ReadOnlySequence<global::System.Int32>>"),
+            Opaque("global::TestCase.CustomDelegate"),
+            Opaque("global::System.Func<global::System.Int32>"),
+            Opaque("global::System.Delegate"),
+            Opaque("global::System.MulticastDelegate"),
+            Opaque("global::System.Linq.Expressions.Expression"),
+            Opaque("global::System.Linq.Expressions.LambdaExpression"),
+            Opaque("global::System.Linq.Expressions.Expression<global::System.Func<global::System.Int32>>"),
+            Opaque("global::System.Threading.Tasks.Task"),
+            Opaque("global::System.Threading.Tasks.Task<global::System.Int32>"),
+            Opaque("global::TestCase.CustomTask"),
+            Opaque("global::System.Threading.Tasks.ValueTask"),
+            Opaque("global::System.Threading.Tasks.ValueTask<global::System.Int32>"),
+            Opaque("global::System.Nullable<global::System.Threading.Tasks.ValueTask<global::System.Int32>>"),
+            Opaque("global::System.Lazy<global::System.Int32>"),
+            Opaque("global::TestCase.CustomLazy"),
+            Opaque("global::System.IObservable<global::System.Int32>"),
+            Opaque("global::TestCase.CustomObservable"),
             Pair(
                 "global::System.String",
                 "global::TestCase.SafeDestination"));
@@ -276,7 +316,7 @@ namespace TestCase
             LanguageVersion.CSharp9,
             source,
             "TestCase.TestMapper`5",
-            hasUnifiablePairs: false,
+            hasUnifiablePairs: true,
             Pair(
                 "global::TestCase.Envelope<TClass>",
                 "global::TestCase.SafeDestination"));
@@ -366,6 +406,15 @@ namespace TestCase
             source,
             destination,
             Structured: true,
+            Members: false);
+    }
+
+    private static MappingPairExpectation Opaque(string source)
+    {
+        return new MappingPairExpectation(
+            source,
+            "global::TestCase.SafeDestination",
+            Structured: false,
             Members: false);
     }
 }

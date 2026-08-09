@@ -57,10 +57,37 @@ Nullable annotations, mapper ownership, registration order, and the current
 operation do not create hidden variants of an exact pair. Open-generic and
 runtime-type lookup are outside core v0.
 
+## Context-free exact-pair calls
+
+DI is optional when the caller already has the generated mapper. The public
+extensions on `ITypeMapper<TSource, TDestination>` create the root mapping
+scope and expose the same authoritative Create/Update result:
+
+```csharp
+ITypeMapper<OrderDto, Order> pair = new ApplicationMapper();
+
+var created = pair.Create(orderDto);
+var updated = pair.Update(orderDto, order);
+```
+
+For a concrete mapper implementing several pairs, specify the pair on the
+method. Morphant intentionally has no additional selector object:
+
+```csharp
+var created = applicationMapper.Create<OrderDto, Order>(orderDto);
+```
+
+Within that root call, `context.Mapper` resolves every exact closed
+`ITypeMapper<,>` contract implemented by the same runtime instance. The lookup
+does not use source contravariance, assignable destination types, or another
+mapper object. A missing nested pair throws `MappingNotFoundException`; use
+application-wide `IMapper` when the pair is registered elsewhere.
+
 ## Mapping scope
 
-Every root `IMapper.Map` creates a mapping scope and completes it in a
-`finally` block. `MappingContext` exposes:
+Every root `IMapper.Map` and context-free `ITypeMapper.Create` / `Update` call
+creates a mapping scope and completes it in a `finally` block.
+`MappingContext` exposes:
 
 - `Operation`, the immutable Create or Update frame for the current call;
 - `Mapper`, the scoped facade used for nested calls.
@@ -72,6 +99,11 @@ mapping scope.
 Sequential recursion, reentrancy, and caught nested exceptions are supported.
 The scoped facade cannot be retained and used after the root call completes;
 doing so throws `MappingScopeCompletedException`.
+
+A default-initialized `MappingContext` is not a mapping frame. It is not
+eagerly rejected by every generated Create/Update entry: a mapping that never
+uses context data can still execute. Reading `Operation` or `Mapper` from that
+default value throws `InvalidMappingContextException` at the point of use.
 
 Independent root calls create independent scopes and may execute in parallel.
 Parallel use of one captured scoped facade inside a single mapping chain has

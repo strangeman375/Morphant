@@ -128,9 +128,11 @@ Observable failures детализированы и приняты этапом 
 детализация и реализация приостановлены до завершения согласованной ревизии
 пользовательского callback API.
 
-Collections, projection и остальные post-v0 возможности в текущую реализацию
-не входят. Они перечислены в конце документа только для сохранения границы и
-не являются следующими этапами этого roadmap.
+Automatic collection semantics, projection и остальные post-v0 возможности в
+текущую реализацию не входят. Collection/tuple/deferred и связанные root-типы
+при этом являются opaque runtime/manual pairs. Future-возможности перечислены
+в конце документа только для сохранения границы и не являются следующими
+этапами этого roadmap.
 
 ## Согласованные ревизии callback surface и read-only proxy
 
@@ -351,12 +353,47 @@ Diagnostics до пользовательского принятия этого 
 `MappingContextMarker`; прежняя категория 8 больше не считается готовой к
 ревью или реализации.
 
+## Согласованная ревизия API-аудита
+
+Статус: production-реализация, документация и focused tests завершены;
+ожидает пользовательского ревью с 9 августа 2026 года.
+
+Ревизия поверх принятого core v0 фиксирует пять решений:
+
+- tuple, collection/buffer, delegate, expression-tree, deferred/async и
+  observable roots больше не являются unsupported contracts. Если любой root
+  попадает в эту группу, pair становится opaque и получает `ITypeMapper`,
+  `ConstructUsing`, `ResolveUsing` и `Convert`, но не structured
+  `Construct` / `Resolve`, `Members` или conventions;
+- context-free root-вызовы добавлены extensions-методами
+  `ITypeMapper<TSource, TDestination>.Create` / `Update`. Для statically typed
+  exact pair типы выводятся, а concrete multi-pair mapper вызывается как
+  `mapper.Create<TSource, TDestination>(source)`; дополнительного
+  pair-selector нет;
+- standalone scope видит все exact closed `ITypeMapper<,>` contracts того же
+  runtime instance. Инвентарь кэшируется по concrete type; variance,
+  assignable lookup и другая mapper identity не участвуют;
+- `default(MappingContext)` проверяется лениво: прямой context-aware mapping,
+  который не читает context, остаётся допустимым, а чтение `Operation` либо
+  `Mapper` бросает `InvalidMappingContextException`;
+- pair/operation failures получили abstract `MappingException` с
+  `Operation`, `SourceType` и `DestinationType`; специализированные exceptions
+  раскрывают `Reason`, `EffectiveMappingMode` и expected/actual destination
+  types. Конечные phantom/API classes sealed там, где это не меняет extension
+  либо inheritance contract.
+
+Аудит также повторно подтвердил path-sensitive expression sharing и сохранил
+существующий statement-only lowering read-only nested `Update`; для этих двух
+решений production behavior не менялся. Public API/nullability reflection,
+opaque-root compiled C# 9 scenarios, standalone exactness/lifecycle и
+структурированные failure data покрыты отдельными focused tests.
+
 ## Следующий этап
 
-**Ревизия callback overload surface, result policies и read-only proxy.**
+**Ревизия API-аудита поверх callback/read-only surface.**
 
-Статус: production-реализация и тесты завершены, ожидают пользовательского
-ревью.
+Статус: production-реализация, документация и focused tests завершены,
+ожидают пользовательского ревью.
 
 После ревью пользователь отдельно определит следующий шаг. Diagnostics этапа
 23 остаются приостановлены до принятия пользовательского API. Принятые ранее
@@ -437,8 +474,9 @@ metadata — одной consumer-side проверкой, а стабильны�
 Production scope:
 
 - реализовать полную симметричную eligibility policy для source и destination;
-- исключить root type parameters и согласованные tuple, collection/buffer,
-  delegate, expression-tree, deferred/async и push-sequence categories;
+- исключить bare root type parameters; после ревизии 9 августа tuple,
+  collection/buffer, delegate, expression-tree, deferred/async и
+  push-sequence categories являются eligible opaque pairs;
 - сохранить допустимость built-in/BCL scalars, enums, classes, structs,
   records, interfaces, abstract types, nullable forms и constructed generic
   roots с известной nominal shape;
@@ -1820,11 +1858,11 @@ C#-legal mapping contracts.
   .NET exceptions;
 - пользовательские exceptions из `Construct`, `Members`, `Convert`, source
   expressions, mapper dependencies и service provider не оборачиваются;
-- если C# может объявить `ITypeMapper<TSource, TDestination>`, invalid либо
-  unsupported mapping сохраняет interface и обе operations; недоступный path
-  получает executable exception-stub;
-- unsupported root не получает ложных construction/member/pair-extension
-  surfaces;
+- если C# может объявить `ITypeMapper<TSource, TDestination>`, invalid mapping
+  сохраняет interface и обе operations; недоступный path получает executable
+  exception-stub;
+- deferred opaque root получает runtime/manual pair extensions, но не получает
+  ложных structured construction/member/convention surfaces;
 - structurally impossible mapper shape, unnameable pair contract и generic
   interfaces, способные унифицироваться, остаются без executable stub до
   diagnostics; независимые legal pairs того же mapper-а генерируются.
@@ -1842,8 +1880,8 @@ Production scope:
   hierarchy;
 - заменить Morphant-authored standard exceptions в runtime и generated code,
   сохранив исходные user-authored throw expressions;
-- выдавать полные mapping stubs для invalid settings/plans и C#-legal
-  unsupported roots;
+- выдавать полные mapping stubs для invalid settings/plans; C#-legal deferred
+  roots исполняются как opaque runtime/manual pairs;
 - исключать только конфликтующие generic pairs, а не весь mapper;
 - сохранить lookup law `0 / 1 / 2+`, отдельно зафиксировать единственную
   registration, разрешившуюся в `null`, и завершённый mapping scope;
@@ -1852,20 +1890,22 @@ Production scope:
 Тестовый scope:
 
 - reflection baseline всего публичного exception API и exact messages;
-- exact generated source для invalid effective setting и unsupported root;
-- production-composition проверка отсутствия ложных DSL artifacts у
-  unsupported root;
+- exact generated source для invalid effective setting и opaque root;
+- production-composition проверка наличия runtime/manual и отсутствия ложных
+  structured/member artifacts у opaque root;
 - generic-unification scenario с независимой pair в том же mapper-е;
 - real `Microsoft.Extensions.DependencyInjection` lookup tests для missing,
   ambiguous, null registration и completed scope;
-- compiled C# 9 consumer для executable unsupported stub и independent generic
+- compiled C# 9 consumer для executable opaque policies и independent generic
   contract;
 - существующие compiled scenarios для operation gates, null policies,
   invalid plans, nested destination mismatch, unmatched switch и неизменённых
   user exceptions.
 
-Реализовано: добавлена публичная hierarchy из общего `MorphantException` и
-двенадцати конкретных типов. Generated code и продуктовые failure paths
+Реализовано: добавлена публичная hierarchy из общего `MorphantException`,
+abstract `MappingException` и тринадцати конкретных типов. Pair/operation
+exceptions предоставляют структурированные operation/source/destination data;
+generated code и продуктовые failure paths
 runtime dispatch, scope и `Option<T>` не создают standard exceptions.
 Обычная проверка аргументов рукописного API следует .NET conventions:
 `Mapper` использует `ArgumentNullException` для отсутствующего service
@@ -1874,13 +1914,13 @@ configuration, отключённой operation, null policies, adaptive destina
 mismatch и non-exhaustive declarative switch; user throw expressions остаются
 без обёртки.
 
-Pair pipeline разделяет supported, unsupported-but-nameable и structurally
-unnameable contracts. C#-legal collection/tuple/array/delegate/deferred и
-прочие запрещённые roots получают полный `ITypeMapper<,>` с двумя throwing
-methods, но не получают construction/member/extensions. Generic unification
-удаляет только конфликтующие pairs; независимые pairs продолжают генерироваться.
-Invalid settings и plan conflicts сохраняют полный interface и сообщают
-конкретную причину вместо общего `not supported yet`.
+Pair pipeline разделяет eligible и structurally unnameable contracts.
+C#-legal collection/tuple/array/delegate/deferred и другие deferred roots после
+ревизии 9 августа получают полный opaque runtime/manual surface, но не
+получают structured construction, members или conventions. Generic unification
+удаляет только конфликтующие pairs; независимые pairs продолжают
+генерироваться. Invalid settings и plan conflicts сохраняют полный interface и
+сообщают конкретную причину вместо общего `not supported yet`.
 
 Добавлены самостоятельные exact-source/unit и compiled C# 9 integration
 сценарии. Обновлены существующие runtime scenarios и snapshots для typed
@@ -1900,12 +1940,13 @@ implementation plans:
   manifests и автоматическое подключение mappings из выбранных assemblies;
 - оптимизация per-call allocations в runtime dispatch и mapping scope без
   изменения lookup/lifecycle semantics;
-- collections, dictionaries, buffers, getter-only collections, clear/fill,
-  replacement, key reconciliation и element-path flattening;
+- automatic collection/dictionary/buffer element mapping, getter-only
+  collections, clear/fill, replacement, key reconciliation и element-path
+  flattening; opaque runtime/manual root pairs уже поддерживаются;
 - `IncludeMembers` и convention flattening;
 - patch/merge presence policy для absent/value/explicit-null/default;
 - automatic immutable Update reconstruction;
-- tuple roots, multi-source mapping и strongly typed per-call state;
+- structured tuple/multi-source mapping и strongly typed per-call state;
 - keyed mapping variants;
 - runtime polymorphism через explicit derived links;
 - reference tracking, shared identity и cycles;

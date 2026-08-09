@@ -557,6 +557,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                             nestedMap.GuardVariableName!,
                             destinationType,
                             nestedMap.DestinationType,
+                            nestedMap.Operation,
+                            nestedMap.RuntimeSourceTypeName,
                             nestedMap.DestinationTypeName,
                             nestedMap.RuntimeDestinationTypeName,
                             nestedMap.CompatibleDestinationName!,
@@ -566,6 +568,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                             destinationExpression,
                             destinationType,
                             nestedMap.DestinationType,
+                            nestedMap.Operation,
+                            nestedMap.RuntimeSourceTypeName,
                             nestedMap.DestinationTypeName,
                             nestedMap.RuntimeDestinationTypeName,
                             nestedMap.CompatibleDestinationName!,
@@ -686,6 +690,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         string expression,
         ITypeSymbol sourceType,
         ITypeSymbol destinationType,
+        DeclarativeNestedMapOperation operation,
+        string runtimeSourceTypeName,
         string destinationTypeName,
         string runtimeDestinationTypeName,
         string compatibleDestinationName,
@@ -711,12 +717,19 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             : destinationTypeName;
 
         var expectedType = $"typeof({runtimeDestinationTypeName})";
+        var mappingOperation =
+            "global::Morphant.Context.MappingOperation." + operation;
+        var mappingSourceType = $"typeof({runtimeSourceTypeName})";
+        var mappingDestinationType = expectedType;
         var actualTypeExpression = allowNull
             ? Identifier(incompatibleDestinationName) + ".GetType()"
             : expression + ".GetType()";
         var mismatch =
             "throw new global::Morphant.Exceptions." +
             "NestedDestinationTypeMismatchException(" +
+            mappingOperation + ", " +
+            mappingSourceType + ", " +
+            mappingDestinationType + ", " +
             expectedType + ", " +
             actualTypeExpression + ")";
 
@@ -737,6 +750,9 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                          }
             ? "throw new global::Morphant.Exceptions." +
               "NestedDestinationTypeMismatchException(" +
+              mappingOperation + ", " +
+              mappingSourceType + ", " +
+              mappingDestinationType + ", " +
               expectedType + ", null)"
             : $"default({castTypeName})";
 

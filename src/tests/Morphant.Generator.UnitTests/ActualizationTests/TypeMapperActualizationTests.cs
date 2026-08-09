@@ -450,7 +450,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
-                typeof(global::TestCase.Destination));
+                typeof(global::TestCase.Destination),
+                global::Morphant.MappingMode.Create);
 
         private global::TestCase.Destination __Create(
             global::TestCase.Source source,

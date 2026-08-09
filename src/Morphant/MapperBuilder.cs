@@ -108,7 +108,7 @@ public abstract class MapperBuilderBase<T>
         throw new RuntimeInvocationNotSupportedException();
 }
 
-public abstract class MapperBuilder : MapperBuilderBase<MapperBuilder>
+public sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
 {
     private MapperBuilder()
     {
@@ -149,7 +149,7 @@ public abstract class MapperBuilder : MapperBuilderBase<MapperBuilder>
         throw new RuntimeInvocationNotSupportedException();
 }
 
-public abstract class MapperBuilder<TSource, TDestination> : MapperBuilderBase<MapperBuilder<TSource, TDestination>>
+public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<MapperBuilder<TSource, TDestination>>
 {
     private MapperBuilder()
     {

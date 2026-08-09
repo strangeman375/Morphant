@@ -417,7 +417,8 @@ internal static class UserResultMappingPlanner
         {
             "source",
             "destination",
-            "context"
+            "context",
+            "operation"
         };
 
         for (var type = mapperType;

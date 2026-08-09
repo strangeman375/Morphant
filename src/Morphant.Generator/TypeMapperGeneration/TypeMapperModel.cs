@@ -53,6 +53,7 @@ internal readonly record struct TypeMapperMappingModel
     EffectiveMappingSettings EffectiveSettings = default,
     string? CreateImplMethodName = null,
     string? UpdateImplMethodName = null,
+    bool CreateImplUsesOperation = false,
     ImmutableArray<string> HelperMethodDeclarations = default
 )
 {
@@ -153,7 +154,8 @@ internal sealed record TypeMapperControlFlowNode
     TypeMapperDependencyExpressionModel? ConditionDependency = null,
     TypeMapperDependencyExpressionModel? ThrowDependency = null,
     TypeMapperDependencyExpressionModel? SwitchDependency = null,
-    TypeMapperDependencyExpressionModel? EvaluationDependency = null
+    TypeMapperDependencyExpressionModel? EvaluationDependency = null,
+    bool ThrowUsesCurrentMappingOperation = false
 );
 
 internal readonly record struct TypeMapperSwitchSectionModel
@@ -182,7 +184,8 @@ internal sealed record TypeMapperMemberControlFlowNode
     TypeMapperDependencyExpressionModel? ConditionDependency = null,
     TypeMapperDependencyExpressionModel? ThrowDependency = null,
     TypeMapperDependencyExpressionModel? SwitchDependency = null,
-    TypeMapperDependencyExpressionModel? EvaluationDependency = null
+    TypeMapperDependencyExpressionModel? EvaluationDependency = null,
+    bool ThrowUsesCurrentMappingOperation = false
 );
 
 internal readonly record struct TypeMapperMemberSwitchSectionModel

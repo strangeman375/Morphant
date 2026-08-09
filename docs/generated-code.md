@@ -34,10 +34,10 @@ The runtime result policies receive a root-normalized source and,
 for `ResolveUsing`, a root-normalized previous, but return the exact destination
 type carried by the pair builder. `Convert` instead receives the original
 source while preserving a root-normalized previous and the same exact result
-type. An unsupported but C#-legal
-root produces only the executable `TypeMapper` contract with typed exception
-stubs; it does not produce placeholder construction, member, or extension
-surfaces.
+type. A tuple, collection/buffer, delegate, expression-tree, deferred/async,
+or observable root makes the pair opaque: Morphant emits its executable
+`TypeMapper` contract plus runtime result-policy and `Convert` extensions, but
+no structured construction, member, convention, or special root lowering.
 
 The `Member` artifact includes a get-only proxy only for a readable
 non-writable member whose type is an eligible non-opaque reference-type nested

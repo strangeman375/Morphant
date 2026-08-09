@@ -3,8 +3,6 @@
 #pragma warning disable CS1591
 
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Morphant;
 using Morphant.Context;
 
@@ -21,15 +19,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ObservableFailur
     public sealed class IndependentDestination { }
 
     [MorphantMapper]
-    public partial class UnsupportedRootMapper : TypeMapper
+    public partial class InvalidPlanMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<List<int>, Destination>();
-            builder.Map<int[], Destination>();
-            builder.Map<(int Left, int Right), Destination>();
-            builder.Map<Func<int>, Destination>();
-            builder.Map<Task<int>, Destination>();
+            builder.Map<Source, Destination>()
+                .ConstructUsing(_ => new Destination())
+                .ResolveUsing((_, __) => new Destination());
         }
     }
 
@@ -48,52 +44,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ObservableFailur
     {
         public static void Verify()
         {
-            var unsupported =
-                (ITypeMapper<List<int>, Destination>)
-                new UnsupportedRootMapper();
-
-            ExpectConfigurationFailure(
-                () => unsupported.Create(
-                    new List<int>(),
-                    default(MappingContext)),
-                "collection or buffer root");
-            ExpectConfigurationFailure(
-                () => unsupported.Update(
-                    new List<int>(),
-                    new Destination(),
-                    default(MappingContext)),
-                "collection or buffer root");
-            ExpectConfigurationFailure(
-                () => ((ITypeMapper<int[], Destination>)
-                    new UnsupportedRootMapper()).Create(
-                        Array.Empty<int>(),
-                        default(MappingContext)),
-                "array root");
-            ExpectConfigurationFailure(
-                () => ((ITypeMapper<(int Left, int Right), Destination>)
-                    new UnsupportedRootMapper()).Create(
-                        (1, 2),
-                        default(MappingContext)),
-                "tuple root");
-            ExpectConfigurationFailure(
-                () => ((ITypeMapper<Func<int>, Destination>)
-                    new UnsupportedRootMapper()).Create(
-                        static () => 1,
-                        default(MappingContext)),
-                "delegate root");
-            ExpectConfigurationFailure(
-                () => ((ITypeMapper<Task<int>, Destination>)
-                    new UnsupportedRootMapper()).Create(
-                        Task.FromResult(1),
-                        default(MappingContext)),
-                "deferred or async root");
+            ExpectConfigurationFailure(new InvalidPlanMapper());
 
             var generic = new GenericMapper<int>();
-            var independent =
-                (ITypeMapper<Source, IndependentDestination>)generic;
-            var result = independent.Create(
-                new Source(),
-                default(MappingContext));
+            var result = generic.Create<Source, IndependentDestination>(
+                new Source());
 
             if (result is null ||
                 generic is ITypeMapper<Envelope<int>, Result<string>> ||
@@ -105,24 +60,26 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ObservableFailur
         }
 
         private static void ExpectConfigurationFailure(
-            Action action,
-            string expectedReason)
+            InvalidPlanMapper mapper)
         {
             try
             {
-                action();
+                mapper.Create(new Source());
             }
             catch (global::Morphant.Exceptions.MappingConfigurationException
                    exception)
-                when (exception.Message.Contains(
-                    expectedReason,
-                    StringComparison.Ordinal))
+                when (exception.Operation == MappingOperation.Create &&
+                      exception.SourceType == typeof(Source) &&
+                      exception.DestinationType == typeof(Destination) &&
+                      exception.Reason ==
+                      "The configured mapping plan is invalid: more than " +
+                      "one result callback is configured.")
             {
                 return;
             }
 
             throw new InvalidOperationException(
-                "The unsupported root did not expose a complete failure " +
+                "The invalid plan did not expose a structured failure " +
                 "contract.");
         }
     }

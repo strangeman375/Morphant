@@ -634,7 +634,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Dog),
-                typeof(global::TestCase.DogDto));
+                typeof(global::TestCase.DogDto),
+                global::Morphant.MappingMode.Create);
 
         private global::TestCase.DogDto __Create(
             global::TestCase.Dog source,

@@ -200,6 +200,9 @@ internal static class TypeMapperPipeline
                     effectiveSettings)
                 ? AllocateName("__Update", usedGeneratedMethodNames)
                 : null;
+            var createImplUsesOperation =
+                createMethodName is not null &&
+                CreatePathNeedsOperationParameter(mapping);
 
             mappings.Add(new OrderedMapping(
                 pairConfiguration.Pair.Registration.Syntax.SpanStart,
@@ -207,7 +210,8 @@ internal static class TypeMapperPipeline
                 {
                     EffectiveSettings = effectiveSettings,
                     CreateImplMethodName = createMethodName,
-                    UpdateImplMethodName = updateMethodName
+                    UpdateImplMethodName = updateMethodName,
+                    CreateImplUsesOperation = createImplUsesOperation
                 }));
         }
 
@@ -617,14 +621,15 @@ internal static class TypeMapperPipeline
         var isNullableValue = destinationType is INamedTypeSymbol named &&
             named.OriginalDefinition.SpecialType ==
                 SpecialType.System_Nullable_T;
-        var memberType = DestinationCapabilityPolicy.GetDestinationType(
+        var memberType = DestinationCapabilityPolicy
+            .GetNormalizedDestinationType(
                 destinationType,
                 compilation)
             .WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-        var updateKind = memberType.TypeKind switch
+        var updateKind = memberType.IsReferenceType
+            ? TypeMapperUpdateKind.Reference
+            : memberType.TypeKind switch
         {
-            TypeKind.Class or TypeKind.Interface =>
-                TypeMapperUpdateKind.Reference,
             TypeKind.Struct or TypeKind.Enum =>
                 isNullableValue
                     ? TypeMapperUpdateKind.NullableValue
@@ -704,6 +709,86 @@ internal static class TypeMapperPipeline
                settings.IsNullDestinationHandlingValid &&
                settings.NullDestinationHandling ==
                    NullDestinationHandlingValue.Create;
+    }
+
+    private static bool CreatePathNeedsOperationParameter(
+        TypeMapperMappingModel mapping)
+    {
+        return mapping.CreateUnsupportedExceptionMessage is not null ||
+               mapping.ControlFlow is { } controlFlow &&
+               ContainsGeneratedCreateFailure(controlFlow.CreateRoot) ||
+               mapping.PostMemberControlFlow is { } postControlFlow &&
+               ContainsGeneratedPostFailure(postControlFlow);
+    }
+
+    private static bool ContainsGeneratedCreateFailure(
+        TypeMapperControlFlowNode node)
+    {
+        if (node.ThrowUsesCurrentMappingOperation)
+        {
+            return true;
+        }
+
+        if (node.Leaf is { } leaf)
+        {
+            return leaf.UnsupportedExceptionMessage is not null ||
+                   leaf.CreateUnsupportedExceptionMessage is not null ||
+                   leaf.CreateDirectExpression is null &&
+                   leaf.CreateFactory is null &&
+                   leaf.CreateConstructor is null;
+        }
+
+        if (node.EvaluationContinuation is { } evaluationContinuation)
+        {
+            return ContainsGeneratedCreateFailure(evaluationContinuation);
+        }
+
+        if (node.SwitchExpression is not null)
+        {
+            return node.SwitchSections.Any(static section =>
+                       ContainsGeneratedCreateFailure(section.Branch)) ||
+                   node.SwitchContinuation is { } continuation &&
+                   ContainsGeneratedCreateFailure(continuation);
+        }
+
+        if (node.Condition is not null)
+        {
+            return ContainsGeneratedCreateFailure(node.WhenTrue!) ||
+                   ContainsGeneratedCreateFailure(node.WhenFalse!);
+        }
+
+        return false;
+    }
+
+    private static bool ContainsGeneratedPostFailure(
+        TypeMapperMemberControlFlowNode node)
+    {
+        if (node.ThrowUsesCurrentMappingOperation ||
+            node.UnsupportedExceptionMessage is not null)
+        {
+            return true;
+        }
+
+        if (node.EvaluationContinuation is { } evaluationContinuation)
+        {
+            return ContainsGeneratedPostFailure(evaluationContinuation);
+        }
+
+        if (node.SwitchExpression is not null)
+        {
+            return node.SwitchSections.Any(static section =>
+                       ContainsGeneratedPostFailure(section.Branch)) ||
+                   node.SwitchContinuation is { } continuation &&
+                   ContainsGeneratedPostFailure(continuation);
+        }
+
+        if (node.Condition is not null)
+        {
+            return ContainsGeneratedPostFailure(node.WhenTrue!) ||
+                   ContainsGeneratedPostFailure(node.WhenFalse!);
+        }
+
+        return false;
     }
 
     private static bool RequiresUpdateMethod(

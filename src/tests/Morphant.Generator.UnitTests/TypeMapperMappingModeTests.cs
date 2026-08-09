@@ -146,7 +146,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
-                typeof(global::TestCase.CreateDestination));
+                typeof(global::TestCase.CreateDestination),
+                global::Morphant.MappingMode.Create);
 
         private global::TestCase.CreateDestination __Create(
             global::TestCase.Source source,
@@ -165,7 +166,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
-                typeof(global::TestCase.UpdateDestination));
+                typeof(global::TestCase.UpdateDestination),
+                global::Morphant.MappingMode.Update);
 
         /// <inheritdoc/>
         global::TestCase.UpdateDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.UpdateDestination>.Update(
@@ -328,7 +330,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
-                typeof(global::TestCase.AssemblyDestination));
+                typeof(global::TestCase.AssemblyDestination),
+                global::Morphant.MappingMode.Update);
 
         /// <inheritdoc/>
         global::TestCase.AssemblyDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.AssemblyDestination>.Update(
@@ -373,7 +376,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
-                typeof(global::TestCase.RootDestination));
+                typeof(global::TestCase.RootDestination),
+                global::Morphant.MappingMode.Create);
 
         private global::TestCase.RootDestination __Create(
             global::TestCase.Source source,
@@ -403,7 +407,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
-                typeof(global::TestCase.PairDestination));
+                typeof(global::TestCase.PairDestination),
+                global::Morphant.MappingMode.Update);
 
         /// <inheritdoc/>
         global::TestCase.PairDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.PairDestination>.Update(
@@ -441,7 +446,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
-                typeof(global::TestCase.ResetDestination));
+                typeof(global::TestCase.ResetDestination),
+                global::Morphant.MappingMode.Update);
 
         /// <inheritdoc/>
         global::TestCase.ResetDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.ResetDestination>.Update(
@@ -533,6 +539,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
             => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.InvalidDestination),
                 "The effective MappingMode is invalid.");
@@ -543,6 +550,7 @@ namespace TestCase
             global::TestCase.InvalidDestination destination,
             global::Morphant.Context.MappingContext context)
             => throw new global::Morphant.Exceptions.MappingConfigurationException(
+                global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.InvalidDestination),
                 "The effective MappingMode is invalid.");
@@ -561,7 +569,8 @@ namespace TestCase
             => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
-                typeof(global::TestCase.OverrideDestination));
+                typeof(global::TestCase.OverrideDestination),
+                global::Morphant.MappingMode.Create);
 
         private global::TestCase.OverrideDestination __Create(
             global::TestCase.Source source,

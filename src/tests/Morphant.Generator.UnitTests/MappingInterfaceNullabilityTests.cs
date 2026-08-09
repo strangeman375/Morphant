@@ -26,6 +26,13 @@ internal sealed class MappingInterfaceNullabilityTests
             .GetMembers(nameof(ITypeMapper<object, object>.Update))
             .OfType<IMethodSymbol>()
             .Single();
+        var extensions = compilation
+            .GetTypeByMetadataName("Morphant.TypeMapperExtensions")!
+            .GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(static method => method.IsExtensionMethod)
+            .OrderBy(static method => method.Parameters.Length)
+            .ToArray();
 
         Assert.Multiple(() =>
         {
@@ -51,6 +58,46 @@ internal sealed class MappingInterfaceNullabilityTests
             Assert.That(
                 typeMapper.GetMembers(nameof(IMapper.Map)),
                 Is.Empty);
+            Assert.That(extensions, Has.Length.EqualTo(2));
+            AssertExtensionMethod(
+                extensions[0],
+                nameof(TypeMapperExtensions.Create),
+                expectedParameterCount: 2);
+            AssertExtensionMethod(
+                extensions[1],
+                nameof(TypeMapperExtensions.Update),
+                expectedParameterCount: 3);
+        });
+    }
+
+    private static void AssertExtensionMethod(
+        IMethodSymbol method,
+        string expectedName,
+        int expectedParameterCount)
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(method.Name, Is.EqualTo(expectedName));
+            Assert.That(method.ReturnNullableAnnotation,
+                Is.EqualTo(NullableAnnotation.NotAnnotated));
+            Assert.That(method.Parameters,
+                Has.Length.EqualTo(expectedParameterCount));
+            Assert.That(method.Parameters[0].Name, Is.EqualTo("mapper"));
+            Assert.That(method.Parameters[0].NullableAnnotation,
+                Is.EqualTo(NullableAnnotation.NotAnnotated));
+            Assert.That(method.Parameters[1].Name, Is.EqualTo("source"));
+            Assert.That(method.Parameters[1].NullableAnnotation,
+                Is.EqualTo(NullableAnnotation.Annotated));
+
+            if (expectedParameterCount == 3)
+            {
+                Assert.That(
+                    method.Parameters[2].Name,
+                    Is.EqualTo("destination"));
+                Assert.That(
+                    method.Parameters[2].NullableAnnotation,
+                    Is.EqualTo(NullableAnnotation.Annotated));
+            }
         });
     }
 

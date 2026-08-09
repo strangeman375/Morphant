@@ -3,7 +3,7 @@ using Morphant.Markers;
 
 namespace Morphant.Members;
 
-public abstract class ConstructorParameter<T>
+public sealed class ConstructorParameter<T>
 {
     private ConstructorParameter()
     {
