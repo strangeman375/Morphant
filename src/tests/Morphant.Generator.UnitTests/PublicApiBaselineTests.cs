@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Morphant.Exceptions;
@@ -47,6 +48,9 @@ internal sealed class PublicApiBaselineTests
         var mapMethod = typeof(MapperBuilder)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Single(method => method.Name == nameof(MapperBuilder.Map));
+        var supportsMethod = typeof(TypeMapper).GetMethod(
+            "Supports",
+            BindingFlags.NonPublic | BindingFlags.Instance)!;
 
         Assert.Multiple(() =>
         {
@@ -104,6 +108,17 @@ internal sealed class PublicApiBaselineTests
             Assert.That(
                 mapMethod.GetParameters().Single().DefaultValue,
                 Is.EqualTo(MappingMode.Default));
+            Assert.That(supportsMethod.IsPublic, Is.False);
+            Assert.That(supportsMethod.IsFamilyOrAssembly, Is.True);
+            Assert.That(supportsMethod.IsVirtual, Is.True);
+            Assert.That(
+                supportsMethod.GetCustomAttribute<EditorBrowsableAttribute>()!
+                    .State,
+                Is.EqualTo(EditorBrowsableState.Never));
+            Assert.That(
+                supportsMethod.GetParameters()
+                    .Select(static parameter => parameter.Name),
+                Is.EqualTo(new[] { "sourceType", "destinationType" }));
             Assert.That(
                 GetImplicitOperatorCount(typeof(AutoMarker<>)),
                 Is.EqualTo(1));
@@ -310,6 +325,7 @@ T Morphant.TypeMapper
   M Morphant.Markers.MapMarker<T> Map<T>()
   M Morphant.Markers.MapMarker<T> Map<T>(System.Object)
   M Morphant.Markers.MapMarker<T> Update<T>(System.Object, System.Object)
+  M System.Boolean Supports(System.Type, System.Type)
   M System.Void Configure(Morphant.MapperBuilder)
 T Morphant.TypeMapperExtensions
   M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)

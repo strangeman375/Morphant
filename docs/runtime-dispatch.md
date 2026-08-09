@@ -77,11 +77,22 @@ method. Morphant intentionally has no additional selector object:
 var created = applicationMapper.Create<OrderDto, Order>(orderDto);
 ```
 
-Within that root call, `context.Mapper` resolves every exact closed
-`ITypeMapper<,>` contract implemented by the same runtime instance. The lookup
-does not use source contravariance, assignable destination types, or another
-mapper object. A missing nested pair throws `MappingNotFoundException`; use
-application-wide `IMapper` when the pair is registered elsewhere.
+The root extension invokes the selected `ITypeMapper<TSource, TDestination>`
+capability directly. A contravariant conversion of the receiver therefore
+remains valid for that root call.
+
+Within a generated `TypeMapper` root call, `context.Mapper` resolves every
+exact closed pair declared by the same mapper instance. The generator emits
+the pair checks into the mapper and chains inherited declarations through the
+base mapper. Runtime code compares exact `Type` identities; it does not scan
+interfaces, inspect assemblies, or maintain a reflection cache.
+
+Nested lookup does not use source contravariance, assignable destination
+types, or another mapper object. A manually implemented `ITypeMapper` that
+does not derive from `TypeMapper` exposes only the pair selected by the root
+receiver; its other interfaces are not discovered. A missing nested pair
+throws `MappingNotFoundException`; use application-wide `IMapper` when the
+pair is registered elsewhere.
 
 ## Mapping scope
 

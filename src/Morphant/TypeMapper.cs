@@ -99,6 +99,27 @@ public interface ITypeMapper<in TSource, TDestination>
 
 public abstract class TypeMapper
 {
+    /// <summary>
+    /// Determines whether this mapper declares the specified exact mapping
+    /// pair.
+    /// </summary>
+    /// <param name="sourceType">The exact source type.</param>
+    /// <param name="destinationType">The exact destination type.</param>
+    /// <returns>
+    /// <see langword="true"/> when the mapping pair is declared; otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// This infrastructure member describes pair declarations independently
+    /// of the operations enabled by their effective configuration.
+    /// </remarks>
+    [global::System.ComponentModel.EditorBrowsable(
+        global::System.ComponentModel.EditorBrowsableState.Never)]
+    protected internal virtual bool Supports(
+        global::System.Type sourceType,
+        global::System.Type destinationType) =>
+        false;
+
     protected abstract void Configure(MapperBuilder builder);
 
     protected static ByConventionMarker ByConvention() =>

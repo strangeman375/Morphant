@@ -13,8 +13,8 @@ deferred root categories remain usable as opaque runtime/manual values.
 
 - application-wide exact-pair `IMapper` dispatch over manual registrations;
 - context-free exact-pair `ITypeMapper.Create` / `Update` calls without DI,
-  including all exact pairs implemented by the same mapper instance for
-  nested dispatch;
+  including generated, reflection-free nested dispatch over all exact pairs
+  declared by the same mapper instance;
 - generated `ITypeMapper.Create` and `ITypeMapper.Update` operations;
 - generated structured `Construct` / `Resolve` for destinations with a
   supported constructor, including a sole parameterless constructor;

@@ -14,9 +14,10 @@ public static class TypeMapperExtensions
     /// <typeparam name="TSource">The source type.</typeparam>
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="mapper">
-    /// The mapper instance. Nested mappings may use every exact
-    /// <see cref="ITypeMapper{TSource, TDestination}"/> pair implemented by
-    /// this same instance.
+    /// The mapper instance. Nested mappings may use every exact mapping pair
+    /// declared by this same generated <see cref="TypeMapper"/> instance. An
+    /// implementation that does not derive from <see cref="TypeMapper"/>
+    /// exposes its selected receiver pair.
     /// </param>
     /// <param name="source">The source to map.</param>
     /// <returns>The mapped destination.</returns>
@@ -36,7 +37,11 @@ public static class TypeMapperExtensions
 
         try
         {
-            return scope.Map<TSource, TDestination>(source);
+            return mapper.Create(
+                source,
+                new MappingContext(
+                    MappingOperation.Create,
+                    scope.Mapper));
         }
         finally
         {
@@ -50,9 +55,10 @@ public static class TypeMapperExtensions
     /// <typeparam name="TSource">The source type.</typeparam>
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="mapper">
-    /// The mapper instance. Nested mappings may use every exact
-    /// <see cref="ITypeMapper{TSource, TDestination}"/> pair implemented by
-    /// this same instance.
+    /// The mapper instance. Nested mappings may use every exact mapping pair
+    /// declared by this same generated <see cref="TypeMapper"/> instance. An
+    /// implementation that does not derive from <see cref="TypeMapper"/>
+    /// exposes its selected receiver pair.
     /// </param>
     /// <param name="source">The source to map.</param>
     /// <param name="destination">The supplied destination.</param>
@@ -77,7 +83,12 @@ public static class TypeMapperExtensions
 
         try
         {
-            return scope.Map(source, destination);
+            return mapper.Update(
+                source,
+                destination,
+                new MappingContext(
+                    MappingOperation.Update,
+                    scope.Mapper));
         }
         finally
         {

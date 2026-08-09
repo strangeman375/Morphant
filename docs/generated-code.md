@@ -30,6 +30,10 @@ Destination-owned construction and member surfaces are deduplicated across
 all mappings that use the same canonical destination. Pair extensions and
 mapper implementations remain pair/mapper owned. `ConstructUsing`,
 `ResolveUsing`, and `Convert` are emitted in the pair-owned `MappingExtension`.
+The generated `TypeMapper` also overrides the protected infrastructure method
+`Supports(Type, Type)`: it compares each local exact pair and then delegates to
+the base mapper. Standalone nested dispatch uses this generated chain without
+runtime reflection or registration state.
 The runtime result policies receive a root-normalized source and,
 for `ResolveUsing`, a root-normalized previous, but return the exact destination
 type carried by the pair builder. `Convert` instead receives the original

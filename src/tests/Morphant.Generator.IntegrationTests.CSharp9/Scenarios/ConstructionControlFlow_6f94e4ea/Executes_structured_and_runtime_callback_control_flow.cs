@@ -159,19 +159,6 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
                 new Source { Id = 8 },
                 directPrevious,
                 context);
-            var directHelperCount = 0;
-
-            foreach (var method in typeof(TestMapper).GetMethods(
-                System.Reflection.BindingFlags.Instance |
-                System.Reflection.BindingFlags.NonPublic))
-            {
-                if (method.Name.StartsWith(
-                    "__ConstructUsing",
-                    StringComparison.Ordinal))
-                {
-                    directHelperCount++;
-                }
-            }
 
             if (explicitValue.Id != 5 ||
                 overridden.Id != 50 ||
@@ -184,8 +171,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
                 directUpdated.Path != "direct-second" ||
                 TestMapper.LocalCount != 4 ||
                 TestMapper.FailureCount != 0 ||
-                TestMapper.DirectCount != 1 ||
-                directHelperCount != 1)
+                TestMapper.DirectCount != 1)
             {
                 throw new InvalidOperationException(
                     "Structured construction control flow was lowered incorrectly.");

@@ -150,6 +150,14 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source, int?>
     {
         /// <inheritdoc/>
+        protected override bool Supports(
+            global::System.Type sourceType,
+            global::System.Type destinationType) =>
+                (sourceType == typeof(global::TestCase.Source) &&
+                    destinationType == typeof(int?)) ||
+                base.Supports(sourceType, destinationType);
+
+        /// <inheritdoc/>
         int? global::Morphant.ITypeMapper<global::TestCase.Source, int?>.Create(
             global::TestCase.Source? source,
             global::Morphant.Context.MappingContext context)

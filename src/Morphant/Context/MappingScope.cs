@@ -1,16 +1,13 @@
-using System.Collections.Concurrent;
 using Morphant.Exceptions;
 
 namespace Morphant.Context;
 
 internal sealed class MappingScope
 {
-    private static readonly ConcurrentDictionary<Type, HashSet<Type>>
-        StandaloneContracts = new();
-
     private readonly IServiceProvider? _serviceProvider;
     private readonly object? _standaloneMapper;
-    private readonly HashSet<Type>? _standaloneContracts;
+    private readonly Type? _standaloneSourceType;
+    private readonly Type? _standaloneDestinationType;
     private bool _isCompleted;
 
     public MappingScope(IServiceProvider serviceProvider)
@@ -19,21 +16,23 @@ internal sealed class MappingScope
         Mapper = new ScopedMapper(this);
     }
 
-    private MappingScope(object standaloneMapper)
+    private MappingScope(
+        object standaloneMapper,
+        Type sourceType,
+        Type destinationType)
     {
         _standaloneMapper = standaloneMapper;
-        _standaloneContracts = StandaloneContracts.GetOrAdd(
-            standaloneMapper.GetType(),
-            static type => new HashSet<Type>(
-                type.GetInterfaces().Where(static contract =>
-                    contract.IsGenericType &&
-                    contract.GetGenericTypeDefinition() ==
-                    typeof(ITypeMapper<,>))));
+        _standaloneSourceType = sourceType;
+        _standaloneDestinationType = destinationType;
         Mapper = new ScopedMapper(this);
     }
 
-    public static MappingScope CreateStandalone(object mapper) =>
-        new(mapper);
+    public static MappingScope CreateStandalone<TSource, TDestination>(
+        ITypeMapper<TSource, TDestination> mapper) =>
+        new(
+            mapper,
+            typeof(TSource),
+            typeof(TDestination));
 
     public IMapper Mapper { get; }
 
@@ -65,19 +64,26 @@ internal sealed class MappingScope
     private ITypeMapper<TSource, TDestination>
         Resolve<TSource, TDestination>(MappingOperation operation)
     {
-        if (_standaloneMapper is not null)
+        if (_standaloneMapper is { } standaloneMapper)
         {
-            if (_standaloneContracts!.Contains(
-                    typeof(ITypeMapper<TSource, TDestination>)))
+            var sourceType = typeof(TSource);
+            var destinationType = typeof(TDestination);
+            var isDeclared = standaloneMapper is TypeMapper typeMapper
+                ? typeMapper.Supports(sourceType, destinationType)
+                : sourceType == _standaloneSourceType &&
+                  destinationType == _standaloneDestinationType;
+
+            if (isDeclared &&
+                standaloneMapper is
+                    ITypeMapper<TSource, TDestination> mapper)
             {
-                return (ITypeMapper<TSource, TDestination>)
-                    _standaloneMapper;
+                return mapper;
             }
 
             throw MappingNotFoundException.ForStandalone(
                 operation,
-                typeof(TSource),
-                typeof(TDestination));
+                sourceType,
+                destinationType);
         }
 
         var serviceType =

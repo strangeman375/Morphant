@@ -2224,12 +2224,23 @@ var updated = mapper.Update<Source, Destination>(source, destination);
 ```
 
 Каждый такой root-вызов создаёт и завершает standalone `MappingScope` тем же
-`finally`-законом, что и `IMapper`. `context.Mapper` внутри callback-а видит все
-exact closed `ITypeMapper<,>` contracts, реализованные тем же runtime instance.
-Инвентарь contracts кэшируется по concrete mapper type. Lookup не использует
-generic variance, assignable source/destination types или другой mapper
-instance: отсутствующая exact pair бросает `MappingNotFoundException` и
-рекомендует application-wide `IMapper`, если требуемая pair живёт отдельно.
+`finally`-законом, что и `IMapper`, но вызывает уже выбранный receiver
+`ITypeMapper<TSource, TDestination>` напрямую. Поэтому безопасная
+контравариантная типизация source сохраняется для самого root-вызова.
+
+Для generated `TypeMapper` generator переопределяет protected infrastructure
+method `Supports(Type, Type)`: override сравнивает локальные exact pair через
+`typeof`, затем вызывает `base.Supports(...)`. `context.Mapper` использует эту
+сгенерированную цепочку объявлений. Runtime не обходит interfaces или assembly
+metadata, не применяет reflection и не хранит cache по concrete mapper type.
+
+Nested lookup не использует generic variance, assignable source/destination
+types или другой mapper instance. Произвольная ручная реализация
+`ITypeMapper`, не наследующая `TypeMapper`, предоставляет standalone scope
+только pair, выбранную receiver-ом root-вызова; остальные реализованные
+ею interfaces автоматически не обнаруживаются. Отсутствующая exact pair
+бросает `MappingNotFoundException` и рекомендует application-wide `IMapper`,
+если требуемая pair живёт отдельно.
 
 Context-aware методы самого `ITypeMapper` остаются низкоуровневым generated
 contract и не дублируются context-free members в интерфейсе. Extension API
@@ -2918,9 +2929,12 @@ expressions, mapper dependencies и application service provider не
     compilation и assembly не ограничивают видимые manual registrations.
 47. Application-wide root и scoped mapper используют один фиксированный набор
     manual registrations и `IServiceProvider` текущего DI-scope. Standalone
-    scope вместо provider-а использует набор exact closed contracts одного
-    concrete mapper instance. `MappingScope` хранит только состояние mapping
-    chain. `AddMorphant(...)`, generated manifests и assembly scanning остаются
+    scope generated `TypeMapper` вместо provider-а использует compile-time
+    exact-pair declarations, emitted в override `Supports(Type, Type)` с
+    продолжением через base mapper. Runtime reflection, interface/assembly
+    scanning и registry отсутствуют; ручной `ITypeMapper` предоставляет
+    выбранную root-пару. `MappingScope` хранит только состояние mapping chain.
+    `AddMorphant(...)`, generated manifests и assembly scanning остаются
     post-v0.
 48. Обычный v0 lookup идентифицируется canonical type pair. Ноль кандидатов
     означает missing mapping, один — выполнение, два и более — ambiguity.
@@ -2929,9 +2943,11 @@ expressions, mapper dependencies и application service provider не
     last-registration-wins.
 50. Explicit nested и manual nested mappings выполняют lookup текущего scope.
     Application-wide scope не предпочитает outer `TypeMapper` или assembly;
-    standalone scope видит только exact closed pairs того же mapper instance и
-    не использует variance либо assignable lookup. Context-free API —
-    `mapper.Create(source)` для statically typed exact pair и
+    standalone nested scope видит только generated exact closed declarations
+    того же mapper instance и не использует variance либо assignable lookup.
+    Выбранный root capability при этом вызывается напрямую и сохраняет обычную
+    contravariance `ITypeMapper`. Context-free API — `mapper.Create(source)`
+    для statically typed pair и
     `mapper.Create<TSource, TDestination>(source)` для multi-pair concrete
     mapper; отдельного pair-selector нет.
 51. Post-v0 keyed lookup добавляется как явное расширение выбора descriptor-а,

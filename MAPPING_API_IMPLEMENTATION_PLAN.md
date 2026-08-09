@@ -370,9 +370,14 @@ Diagnostics до пользовательского принятия этого 
   exact pair типы выводятся, а concrete multi-pair mapper вызывается как
   `mapper.Create<TSource, TDestination>(source)`; дополнительного
   pair-selector нет;
-- standalone scope видит все exact closed `ITypeMapper<,>` contracts того же
-  runtime instance. Инвентарь кэшируется по concrete type; variance,
-  assignable lookup и другая mapper identity не участвуют;
+- standalone root вызывает выбранный `ITypeMapper<,>` capability напрямую, а
+  nested scope generated `TypeMapper` видит все exact closed pairs, объявленные
+  тем же instance. Generator переопределяет инфраструктурный
+  `Supports(Type, Type)`, сравнивает локальные pair и продолжает поиск через
+  `base`; runtime reflection, metadata scan и cache отсутствуют. Variance и
+  assignable lookup в nested dispatch не участвуют; ручная реализация
+  `ITypeMapper`, не наследующая `TypeMapper`, предоставляет scope только
+  выбранную root-пару;
 - `default(MappingContext)` проверяется лениво: прямой context-aware mapping,
   который не читает context, остаётся допустимым, а чтение `Operation` либо
   `Mapper` бросает `InvalidMappingContextException`;

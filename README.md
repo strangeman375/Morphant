@@ -81,7 +81,8 @@ var directFromMultiPair =
 ```
 
 No separate pair selector is required. Nested mappings can use every exact
-pair implemented by that same mapper instance.
+pair declared by that same generated mapper instance. The pair inventory is
+generated into the mapper and does not use runtime reflection.
 
 The generated Update may return the supplied instance or an authoritative
 replacement. Ignoring its return value is therefore incorrect.

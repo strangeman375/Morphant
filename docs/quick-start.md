@@ -97,8 +97,10 @@ var created =
 ```
 
 Nested `context.Mapper` calls in this mode can resolve every exact closed pair
-implemented by the same `applicationMapper` instance. Use application-wide
-`IMapper` when a nested pair belongs to another mapper instance.
+declared by the same generated `applicationMapper` instance. The declaration
+checks are generated into the mapper; no runtime interface scan is performed.
+Use application-wide `IMapper` when a nested pair belongs to another mapper
+instance.
 
 ## Create and update
 

@@ -82,18 +82,45 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
+        WriteSupports(writer, model.Mappings);
+
         for (var index = 0; index < model.Mappings.Length; index++)
         {
-            if (index > 0)
-            {
-                writer.Line();
-            }
+            writer.Line();
 
             WriteMapping(writer, model.Mappings[index]);
         }
 
         writer.Unindent();
         writer.Line("}");
+    }
+
+    private static void WriteSupports(
+        CodeWriter writer,
+        ImmutableArray<TypeMapperMappingModel> mappings)
+    {
+        writer.Line("/// <inheritdoc/>");
+        writer.Line("protected override bool Supports(");
+        writer.Indent();
+        writer.Line("global::System.Type sourceType,");
+        writer.Line("global::System.Type destinationType) =>");
+        writer.Indent();
+
+        foreach (var mapping in mappings)
+        {
+            writer.Line(
+                $"(sourceType == typeof({mapping.SourceRuntimeTypeName}) &&");
+            writer.Indent();
+            writer.Line(
+                "destinationType == typeof(" +
+                mapping.DestinationRuntimeTypeName +
+                ")) ||");
+            writer.Unindent();
+        }
+
+        writer.Line("base.Supports(sourceType, destinationType);");
+        writer.Unindent();
+        writer.Unindent();
     }
 
     private static void WriteMapping(

@@ -614,6 +614,14 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Dog, global::TestCase.DogDto>
     {
         /// <inheritdoc/>
+        protected override bool Supports(
+            global::System.Type sourceType,
+            global::System.Type destinationType) =>
+                (sourceType == typeof(global::TestCase.Dog) &&
+                    destinationType == typeof(global::TestCase.DogDto)) ||
+                base.Supports(sourceType, destinationType);
+
+        /// <inheritdoc/>
         global::TestCase.DogDto global::Morphant.ITypeMapper<global::TestCase.Dog, global::TestCase.DogDto>.Create(
             global::TestCase.Dog? source,
             global::Morphant.Context.MappingContext context)

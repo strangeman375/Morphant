@@ -128,6 +128,14 @@ namespace TestCase
         global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>
     {
         /// <inheritdoc/>
+        protected override bool Supports(
+            global::System.Type sourceType,
+            global::System.Type destinationType) =>
+                (sourceType == typeof(global::TestCase.Source<T>) &&
+                    destinationType == typeof(global::TestCase.Destination<T>)) ||
+                base.Supports(sourceType, destinationType);
+
+        /// <inheritdoc/>
         global::TestCase.Destination<T> global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>.Create(
             global::TestCase.Source<T> source,
             global::Morphant.Context.MappingContext context)
@@ -181,6 +189,14 @@ namespace TestCase
     public partial class TestMapper<T> :
         global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>
     {
+        /// <inheritdoc/>
+        protected override bool Supports(
+            global::System.Type sourceType,
+            global::System.Type destinationType) =>
+                (sourceType == typeof(global::TestCase.Source<T>) &&
+                    destinationType == typeof(global::TestCase.Destination<T>)) ||
+                base.Supports(sourceType, destinationType);
+
         /// <inheritdoc/>
         global::TestCase.Destination<T> global::Morphant.ITypeMapper<global::TestCase.Source<T>, global::TestCase.Destination<T>>.Create(
             global::TestCase.Source<T> source,

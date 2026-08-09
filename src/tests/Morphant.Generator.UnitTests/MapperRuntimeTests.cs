@@ -94,20 +94,48 @@ public sealed class MapperRuntimeTests
     }
 
     [Test]
-    public void Keeps_standalone_lookup_exact_despite_source_contravariance()
+    public void Uses_a_contravariant_root_capability_without_widening_nested_lookup()
     {
         var mapper = new ContravariantTypeMapper();
+        ITypeMapper<DerivedSource, Destination> capability = mapper;
 
-        var exception = Assert.Throws<MappingNotFoundException>(() =>
-            mapper.Create<DerivedSource, Destination>(new DerivedSource()));
+        var result = capability.Create(new DerivedSource());
 
         Assert.Multiple(() =>
         {
-            Assert.That(exception!.SourceType, Is.EqualTo(typeof(DerivedSource)));
+            Assert.That(result.Value, Is.EqualTo(1));
+            Assert.That(mapper.NestedException, Is.Not.Null);
             Assert.That(
-                exception.DestinationType,
+                mapper.NestedException!.SourceType,
+                Is.EqualTo(typeof(DerivedSource)));
+            Assert.That(
+                mapper.NestedException.DestinationType,
                 Is.EqualTo(typeof(Destination)));
-            Assert.That(mapper.CallCount, Is.Zero);
+            Assert.That(mapper.CallCount, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public void Keeps_the_selected_pair_available_to_a_manual_mapper()
+    {
+        var callCount = 0;
+        var mapper = new DelegateTypeMapper<int, int>(
+            (source, context) =>
+            {
+                callCount++;
+
+                return source == 0
+                    ? 0
+                    : context.Mapper.Map<int, int>(source - 1) + 1;
+            },
+            (_, destination, _) => destination);
+
+        var result = mapper.Create(4);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.EqualTo(4));
+            Assert.That(callCount, Is.EqualTo(5));
         });
     }
 
@@ -628,13 +656,26 @@ public sealed class MapperRuntimeTests
             _update(source, destination, context);
     }
 
-    private sealed class StandaloneTypeMapper :
+    private sealed class StandaloneTypeMapper : TypeMapper,
         ITypeMapper<Source, Destination>,
         ITypeMapper<ChildSource, ChildDestination>
     {
         public List<MappingOperation> Operations { get; } = new();
 
         public IMapper? CapturedMapper { get; private set; }
+
+        protected override bool Supports(
+            Type sourceType,
+            Type destinationType) =>
+            sourceType == typeof(Source) &&
+            destinationType == typeof(Destination) ||
+            sourceType == typeof(ChildSource) &&
+            destinationType == typeof(ChildDestination) ||
+            base.Supports(sourceType, destinationType);
+
+        protected override void Configure(MapperBuilder builder)
+        {
+        }
 
         Destination ITypeMapper<Source, Destination>.Create(
             Source? source,
@@ -682,16 +723,40 @@ public sealed class MapperRuntimeTests
             destination ?? new ChildDestination(source?.Value ?? -1);
     }
 
-    private sealed class ContravariantTypeMapper :
+    private sealed class ContravariantTypeMapper : TypeMapper,
         ITypeMapper<BaseSource, Destination>
     {
         public int CallCount { get; private set; }
+
+        public MappingNotFoundException? NestedException { get; private set; }
+
+        protected override bool Supports(
+            Type sourceType,
+            Type destinationType) =>
+            sourceType == typeof(BaseSource) &&
+            destinationType == typeof(Destination) ||
+            base.Supports(sourceType, destinationType);
+
+        protected override void Configure(MapperBuilder builder)
+        {
+        }
 
         public Destination Create(
             BaseSource? source,
             MappingContext context)
         {
             CallCount++;
+
+            try
+            {
+                context.Mapper.Map<DerivedSource, Destination>(
+                    new DerivedSource());
+            }
+            catch (MappingNotFoundException exception)
+            {
+                NestedException = exception;
+            }
+
             return new Destination(1);
         }
 
