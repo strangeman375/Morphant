@@ -103,7 +103,7 @@ internal static class TypeMapperPipeline
             mapperType,
             cancellationToken);
 
-        if (mappings.IsDefaultOrEmpty)
+        if (mappings.Models.IsDefaultOrEmpty)
         {
             return null;
         }
@@ -118,10 +118,16 @@ internal static class TypeMapperPipeline
             GetAccessibility(mapperType.DeclaredAccessibility),
             mapperDeclaration.Identifier.Text,
             BuildTypeParameterList(mapperDeclaration.TypeParameterList),
-            mappings,
+            mappings.Models,
             configureSyntax.DescendantNodes()
                 .OfType<QueryExpressionSyntax>()
                 .Any());
+        model = TypeMapperTransferValidator.Validate(
+            model,
+            mappings.Policies,
+            compilation,
+            configureSyntax.SyntaxTree.Options as CSharpParseOptions,
+            cancellationToken);
 
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),
@@ -141,7 +147,7 @@ internal static class TypeMapperPipeline
             input.Source);
     }
 
-    private static ImmutableArray<TypeMapperMappingModel> BuildMappings(
+    private static TypeMapperMappingsBuildResult BuildMappings(
         MapperPairConfigurationModel configuration,
         MappingSettings assemblySettings,
         CSharpCompilation compilation,
@@ -207,6 +213,9 @@ internal static class TypeMapperPipeline
                 createMethodName is not null &&
                 CreatePathNeedsOperationParameter(mapping);
 
+            var transferPolicy =
+                TransferredCodePolicy.Build(pairConfiguration);
+
             mappings.Add(new OrderedMapping(
                 pairConfiguration.Pair.Registration.Syntax.SpanStart,
                 mapping with
@@ -214,8 +223,11 @@ internal static class TypeMapperPipeline
                     EffectiveSettings = effectiveSettings,
                     CreateImplMethodName = createMethodName,
                     UpdateImplMethodName = updateMethodName,
-                    CreateImplUsesOperation = createImplUsesOperation
-                }));
+                    CreateImplUsesOperation = createImplUsesOperation,
+                    RequiresUnsafeContext =
+                        transferPolicy.RequiresUnsafeContext
+                },
+                transferPolicy));
         }
 
         foreach (var unsupportedPair in
@@ -233,13 +245,21 @@ internal static class TypeMapperPipeline
                 BuildUnsupportedMapping(
                     unsupportedPair,
                     compilation,
-                    mapperType)));
+                    mapperType),
+                TransferredCodePolicy.Empty));
         }
 
-        return mappings
+        var orderedMappings = mappings
             .OrderBy(static mapping => mapping.Position)
-            .Select(static mapping => mapping.Mapping)
             .ToImmutableArray();
+
+        return new TypeMapperMappingsBuildResult(
+            orderedMappings
+                .Select(static mapping => mapping.Mapping)
+                .ToImmutableArray(),
+            orderedMappings
+                .Select(static mapping => mapping.Policy)
+                .ToImmutableArray());
     }
 
     private static TypeMapperMappingModel BuildUnsupportedMapping(
@@ -1131,5 +1151,10 @@ internal static class TypeMapperPipeline
 
     private readonly record struct OrderedMapping(
         int Position,
-        TypeMapperMappingModel Mapping);
+        TypeMapperMappingModel Mapping,
+        TransferredCodePolicy Policy);
+
+    private readonly record struct TypeMapperMappingsBuildResult(
+        ImmutableArray<TypeMapperMappingModel> Models,
+        ImmutableArray<TransferredCodePolicy> Policies);
 }

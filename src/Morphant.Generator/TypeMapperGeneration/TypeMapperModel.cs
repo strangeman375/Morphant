@@ -55,7 +55,9 @@ internal readonly record struct TypeMapperMappingModel
     string? CreateImplMethodName = null,
     string? UpdateImplMethodName = null,
     bool CreateImplUsesOperation = false,
-    ImmutableArray<string> HelperMethodDeclarations = default
+    ImmutableArray<string> HelperMethodDeclarations = default,
+    ImmutableArray<string> TransferredWarningSuppressions = default,
+    bool RequiresUnsafeContext = false
 )
 {
     public string InterfaceTypeName =>

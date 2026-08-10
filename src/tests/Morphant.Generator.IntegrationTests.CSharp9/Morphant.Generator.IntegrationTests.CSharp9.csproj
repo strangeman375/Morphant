@@ -4,6 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>9.0</LangVersion>
         <ImplicitUsings>disable</ImplicitUsings>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>

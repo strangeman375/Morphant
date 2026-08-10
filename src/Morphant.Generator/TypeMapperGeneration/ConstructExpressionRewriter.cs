@@ -41,6 +41,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     private readonly IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
         _mapperTypeSubstitutions;
     private readonly bool _lowerDeclarativeValues;
+    private readonly HashSet<string> _usedGeneratedNames;
 
     private ConstructExpressionRewriter(
         SemanticModel semanticModel,
@@ -84,6 +85,25 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _mapperTypeSubstitutions =
             MapperTypeSubstitution.BuildForHierarchy(
                 _semanticMapperType);
+        _usedGeneratedNames = new HashSet<string>(
+            transferScope.DescendantTokens()
+                .Where(token => token.IsKind(
+                    SyntaxKind.IdentifierToken))
+                .Select(token => token.ValueText),
+            StringComparer.Ordinal)
+        {
+            sourceName
+        };
+
+        if (resultName is not null)
+        {
+            _usedGeneratedNames.Add(resultName);
+        }
+
+        if (contextName is not null)
+        {
+            _usedGeneratedNames.Add(contextName);
+        }
     }
 
     public static bool TryRewrite(
@@ -692,47 +712,12 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         {
             var rewrittenReceiver =
                 (ExpressionSyntax)Visit(receiver)!;
-            var rewrittenMethodName =
-                (SimpleNameSyntax)Visit(methodName)!;
-            var receiverArgument =
-                SyntaxFactory.Argument(rewrittenReceiver);
 
-            if (extensionMethod.Parameters[0].RefKind == RefKind.Ref)
-            {
-                receiverArgument = receiverArgument.WithRefKindKeyword(
-                    SyntaxFactory.Token(SyntaxKind.RefKeyword));
-            }
-
-            var arguments = new List<ArgumentSyntax>
-            {
-                receiverArgument
-            };
-
-            arguments.AddRange(
-                node.ArgumentList.Arguments.Select(argument =>
-                    (ArgumentSyntax)Visit(argument)!));
-
-            AppendCallerInfoArguments(
-                arguments,
-                _semanticModel.GetOperation(node) as
-                    IInvocationOperation);
-
-            var containingType = SyntaxFactory.ParseExpression(
-                SubstituteMapperType(
-                        extensionMethod.ContainingType)
-                    .ToDisplayString(
-                        SymbolDisplayFormats.FullyQualifiedNullable));
-
-            return node
-                .WithExpression(
-                    SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        containingType,
-                        rewrittenMethodName))
-                .WithArgumentList(
-                    node.ArgumentList.WithArguments(
-                        SyntaxFactory.SeparatedList(arguments)))
-                .WithTriviaFrom(node);
+            return RewriteExtensionInvocation(
+                node,
+                methodName,
+                extensionMethod,
+                rewrittenReceiver);
         }
 
         var rewrittenOrdinaryInvocation =
@@ -750,6 +735,154 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         return rewrittenOrdinaryInvocation.WithArgumentList(
             rewrittenOrdinaryInvocation.ArgumentList.WithArguments(
                 SyntaxFactory.SeparatedList(rewrittenArguments)));
+    }
+
+    public override SyntaxNode? VisitConditionalAccessExpression(
+        ConditionalAccessExpressionSyntax node)
+    {
+        if (!TryRewriteConditionalExtensionInvocation(
+                node,
+                out var condition,
+                out var invocation,
+                out var resultType) ||
+            resultType.SpecialType == SpecialType.System_Void)
+        {
+            return base.VisitConditionalAccessExpression(node);
+        }
+
+        return SyntaxFactory.ConditionalExpression(
+                condition,
+                invocation,
+                SyntaxFactory.DefaultExpression(
+                    SyntaxFactory.ParseTypeName(
+                        TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                            SubstituteMapperType(resultType)))))
+            .WithTriviaFrom(node);
+    }
+
+    public override SyntaxNode? VisitExpressionStatement(
+        ExpressionStatementSyntax node)
+    {
+        if (node.Expression is ConditionalAccessExpressionSyntax
+                conditionalAccess &&
+            (_semanticModel.GetTypeInfo(conditionalAccess).Type ??
+             _semanticModel.GetTypeInfo(conditionalAccess).ConvertedType) is
+                {
+                    SpecialType: SpecialType.System_Void
+                } &&
+            TryRewriteConditionalExtensionInvocation(
+                conditionalAccess,
+                out var condition,
+                out var invocation,
+                out _))
+        {
+            return SyntaxFactory.IfStatement(
+                    condition,
+                    SyntaxFactory.ExpressionStatement(invocation))
+                .WithTriviaFrom(node);
+        }
+
+        return base.VisitExpressionStatement(node);
+    }
+
+    private bool TryRewriteConditionalExtensionInvocation(
+        ConditionalAccessExpressionSyntax node,
+        out ExpressionSyntax condition,
+        out InvocationExpressionSyntax invocation,
+        out ITypeSymbol resultType)
+    {
+        if (node.WhenNotNull is not InvocationExpressionSyntax
+            {
+                Expression: MemberBindingExpressionSyntax
+                {
+                    Name: var methodName
+                }
+            } conditionalInvocation ||
+            TryGetExtensionMethod(
+                conditionalInvocation,
+                methodName) is not { } extensionMethod ||
+            (_semanticModel.GetTypeInfo(node).Type ??
+             _semanticModel.GetTypeInfo(node).ConvertedType) is not
+                { } conditionalResultType)
+        {
+            condition = null!;
+            invocation = null!;
+            resultType = null!;
+            return false;
+        }
+
+        var receiverName = UserResultMappingPlanner.AllocateName(
+            "conditionalReceiver",
+            _usedGeneratedNames);
+        var rewrittenReceiver =
+            (ExpressionSyntax)Visit(node.Expression)!;
+        condition = SyntaxFactory.IsPatternExpression(
+            SyntaxFactory.ParenthesizedExpression(
+                rewrittenReceiver.WithoutTrivia()),
+            SyntaxFactory.RecursivePattern()
+                .WithPropertyPatternClause(
+                    SyntaxFactory.PropertyPatternClause())
+                .WithDesignation(
+                    SyntaxFactory.SingleVariableDesignation(
+                        SyntaxFactory.Identifier(
+                            Identifier(receiverName)))));
+        invocation = RewriteExtensionInvocation(
+            conditionalInvocation,
+            methodName,
+            extensionMethod,
+            SyntaxFactory.IdentifierName(
+                Identifier(receiverName)));
+        resultType = conditionalResultType;
+        return true;
+    }
+
+    private InvocationExpressionSyntax RewriteExtensionInvocation(
+        InvocationExpressionSyntax node,
+        SimpleNameSyntax methodName,
+        IMethodSymbol extensionMethod,
+        ExpressionSyntax rewrittenReceiver)
+    {
+        var rewrittenMethodName =
+            (SimpleNameSyntax)Visit(methodName)!;
+        var receiverArgument =
+            SyntaxFactory.Argument(rewrittenReceiver);
+
+        if (extensionMethod.Parameters[0].RefKind == RefKind.Ref)
+        {
+            receiverArgument = receiverArgument.WithRefKindKeyword(
+                SyntaxFactory.Token(SyntaxKind.RefKeyword));
+        }
+
+        var arguments = new List<ArgumentSyntax>
+        {
+            receiverArgument
+        };
+
+        arguments.AddRange(
+            node.ArgumentList.Arguments.Select(argument =>
+                (ArgumentSyntax)Visit(argument)!));
+
+        AppendCallerInfoArguments(
+            arguments,
+            _semanticModel.GetOperation(node) as
+                IInvocationOperation);
+
+        var containingType = SyntaxFactory.ParseExpression(
+            SubstituteMapperType(
+                    extensionMethod.ContainingType)
+                .ToDisplayString(
+                    SymbolDisplayFormats.FullyQualifiedNullable));
+
+        return node
+            .WithExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    containingType,
+                    rewrittenMethodName))
+            .WithArgumentList(
+                node.ArgumentList.WithArguments(
+                    SyntaxFactory.SeparatedList(arguments)))
+            .WithTriviaFrom(node);
     }
 
     public override SyntaxNode? VisitImplicitObjectCreationExpression(

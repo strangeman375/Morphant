@@ -49,6 +49,46 @@ internal sealed class ConventionTypeMapperGeneratorTest
         await test.RunAsync();
     }
 
+    public static async Task RunAndAssertIgnoringCompilerDiagnostics(
+        LanguageVersion languageVersion,
+        string source,
+        string expected,
+        bool allowUnsafe = false)
+    {
+        var test = new ConventionTypeMapperGeneratorTest(languageVersion)
+        {
+            TestCode = source,
+            CompilerDiagnostics = CompilerDiagnostics.None
+        };
+
+        if (allowUnsafe)
+        {
+            test.SolutionTransforms.Add((solution, projectId) =>
+            {
+                var project = solution.GetProject(projectId) ??
+                    throw new InvalidOperationException(
+                        "The test project is unavailable.");
+                var options = project.CompilationOptions as
+                    CSharpCompilationOptions ??
+                    throw new InvalidOperationException(
+                        "C# compilation options are unavailable.");
+
+                return solution.WithProjectCompilationOptions(
+                    projectId,
+                    options.WithAllowUnsafe(true));
+            });
+        }
+
+        test.TestState.GeneratedSources.Add(
+        (
+            typeof(TestConventionTypeMapperGenerator),
+            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+            NormalizeGeneratedSource(expected)
+        ));
+
+        await test.RunAsync();
+    }
+
     public static async Task RunAndAssertWithAnalyzerConfig(
         LanguageVersion languageVersion,
         string source,

@@ -124,7 +124,11 @@ internal static class RuntimeCallbackMethodPlanner
                 contextParameter,
                 parameterNames),
             lambda.Modifiers.Any(modifier =>
-                modifier.IsKind(SyntaxKind.StaticKeyword)));
+                modifier.IsKind(SyntaxKind.StaticKeyword)),
+            lambda.Modifiers.Any(modifier =>
+                modifier.IsKind(SyntaxKind.AsyncKeyword)),
+            TransferredCodePolicy.RequiresUnsafeContextFor(
+                configuration));
 
         helper = rewrittenSyntax switch
         {
@@ -267,8 +271,11 @@ internal static class RuntimeCallbackMethodPlanner
                     sourceParameter,
                     previousParameter,
                     contextParameter,
-                    parameterNames),
-                isStatic: false)
+                parameterNames),
+                isStatic: false,
+                isAsync: false,
+                isUnsafe: TransferredCodePolicy
+                    .RequiresUnsafeContextFor(configuration))
             .WithBody(
                 SyntaxFactory.Block(
                     declaration,
@@ -284,7 +291,9 @@ internal static class RuntimeCallbackMethodPlanner
         BoundConfigurationExpression configuration,
         INamedTypeSymbol mapperType,
         SeparatedSyntaxList<ParameterSyntax> parameters,
-        bool isStatic)
+        bool isStatic,
+        bool isAsync,
+        bool isUnsafe)
     {
         var substitutions = BuildTypeSubstitutions(
             configuration.SemanticModel,
@@ -293,19 +302,35 @@ internal static class RuntimeCallbackMethodPlanner
             configuration.DelegateInvokeMethod.ReturnType,
             substitutions,
             configuration.SemanticModel.Compilation);
-        var modifiers = isStatic
-            ? SyntaxFactory.TokenList(
-                SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
-                SyntaxFactory.Token(SyntaxKind.StaticKeyword))
-            : SyntaxFactory.TokenList(
-                SyntaxFactory.Token(SyntaxKind.PrivateKeyword));
+        var modifiers = new List<SyntaxToken>
+        {
+            SyntaxFactory.Token(SyntaxKind.PrivateKeyword)
+        };
+
+        if (isStatic)
+        {
+            modifiers.Add(
+                SyntaxFactory.Token(SyntaxKind.StaticKeyword));
+        }
+
+        if (isUnsafe)
+        {
+            modifiers.Add(
+                SyntaxFactory.Token(SyntaxKind.UnsafeKeyword));
+        }
+
+        if (isAsync)
+        {
+            modifiers.Add(
+                SyntaxFactory.Token(SyntaxKind.AsyncKeyword));
+        }
 
         return SyntaxFactory.MethodDeclaration(
                 SyntaxFactory.ParseTypeName(
                     TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                         returnType)),
                 SyntaxFactory.Identifier(helperMethodName))
-            .WithModifiers(modifiers)
+            .WithModifiers(SyntaxFactory.TokenList(modifiers))
             .WithParameterList(
                 SyntaxFactory.ParameterList(parameters));
     }

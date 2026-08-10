@@ -90,4 +90,9 @@ internal static class MappingExpressionCompatibility
                 diagnostic.Location.SourceSpan
                     .IntersectsWith(span));
     }
+
+    public static bool IsNullableWarning(string diagnosticId)
+    {
+        return NullableConversionDiagnosticIds.Contains(diagnosticId);
+    }
 }

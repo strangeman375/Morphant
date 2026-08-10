@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.Settings;
@@ -8,6 +9,9 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class TypeMapperEmitter
 {
+    private const string TransferProbePathPrefix =
+        "Morphant.TransferProbe.Mapping.";
+
     private const string InvalidMappingModeExceptionMessage =
         "The effective MappingMode is invalid.";
 
@@ -18,6 +22,42 @@ internal static class TypeMapperEmitter
         "The effective NullDestinationHandling is invalid.";
 
     public static SourceText Emit(TypeMapperModel model)
+    {
+        return Emit(model, includeTransferProbeLocations: false);
+    }
+
+    internal static SourceText EmitTransferProbe(TypeMapperModel model)
+    {
+        return Emit(model, includeTransferProbeLocations: true);
+    }
+
+    internal static bool TryGetTransferProbeMappingIndex(
+        Diagnostic diagnostic,
+        out int mappingIndex)
+    {
+        var path = diagnostic.Location.GetMappedLineSpan().Path;
+
+        if (path.StartsWith(
+                TransferProbePathPrefix,
+                StringComparison.Ordinal) &&
+            path.EndsWith(".g.cs", StringComparison.Ordinal) &&
+            int.TryParse(
+                path.Substring(
+                    TransferProbePathPrefix.Length,
+                    path.Length - TransferProbePathPrefix.Length -
+                    ".g.cs".Length),
+                out mappingIndex))
+        {
+            return true;
+        }
+
+        mappingIndex = -1;
+        return false;
+    }
+
+    private static SourceText Emit(
+        TypeMapperModel model,
+        bool includeTransferProbeLocations)
     {
         var writer = new CodeWriter();
 
@@ -44,7 +84,10 @@ internal static class TypeMapperEmitter
                 containingType.TypeParameterList);
         }
 
-        WriteType(writer, model);
+        WriteType(
+            writer,
+            model,
+            includeTransferProbeLocations);
 
         for (var index = model.ContainingTypes.Length - 1;
              index >= 0;
@@ -65,10 +108,12 @@ internal static class TypeMapperEmitter
 
     private static void WriteType(
         CodeWriter writer,
-        TypeMapperModel model)
+        TypeMapperModel model,
+        bool includeTransferProbeLocations)
     {
         writer.Line(
-            $"{model.Accessibility} partial class " +
+            $"{model.Accessibility} " +
+            "partial class " +
             model.TypeName +
             model.TypeParameterList +
             " :");
@@ -94,7 +139,19 @@ internal static class TypeMapperEmitter
         {
             writer.Line();
 
+            if (includeTransferProbeLocations)
+            {
+                writer.Line(
+                    $"#line 1 \"{TransferProbePathPrefix}{index}.g.cs\"");
+            }
+
             WriteMapping(writer, model.Mappings[index]);
+
+            if (includeTransferProbeLocations)
+            {
+                writer.Line("#line default");
+                writer.Line("#line hidden");
+            }
         }
 
         writer.Unindent();
@@ -133,6 +190,19 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        var warningSuppressions =
+            mapping.TransferredWarningSuppressions.IsDefault
+                ? []
+                : mapping.TransferredWarningSuppressions;
+
+        if (!warningSuppressions.IsEmpty)
+        {
+            writer.Line(
+                "#pragma warning disable " +
+                string.Join(", ", warningSuppressions));
+            writer.Line();
+        }
+
         WriteCreate(writer, mapping);
         writer.Line();
         WriteUpdate(writer, mapping);
@@ -160,6 +230,14 @@ internal static class TypeMapperEmitter
                     writer,
                     declaration);
             }
+        }
+
+        if (!warningSuppressions.IsEmpty)
+        {
+            writer.Line();
+            writer.Line(
+                "#pragma warning restore " +
+                string.Join(", ", warningSuppressions));
         }
     }
 
@@ -1101,7 +1179,9 @@ internal static class TypeMapperEmitter
                 "A Create implementation method name is required.");
 
         writer.Line(
-            $"private {mapping.DestinationTypeName} " +
+            "private " +
+            (mapping.RequiresUnsafeContext ? "unsafe " : string.Empty) +
+            $"{mapping.DestinationTypeName} " +
             $"{methodName}(");
         writer.Indent();
         writer.Line(
@@ -1153,7 +1233,9 @@ internal static class TypeMapperEmitter
                 "An Update implementation method name is required.");
 
         writer.Line(
-            $"private {mapping.DestinationTypeName} " +
+            "private " +
+            (mapping.RequiresUnsafeContext ? "unsafe " : string.Empty) +
+            $"{mapping.DestinationTypeName} " +
             $"{methodName}(");
         writer.Indent();
         writer.Line(
