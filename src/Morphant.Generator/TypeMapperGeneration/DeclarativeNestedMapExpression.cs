@@ -72,7 +72,12 @@ internal static class DeclarativeNestedMapExpression
                 continue;
             }
 
-            if (invocation.Ancestors()
+            if (!DeclarativeIntrinsic.HasSupportedTerminalPlacement(
+                    expression,
+                    invocation,
+                    semanticModel,
+                    cancellationToken) ||
+                invocation.Ancestors()
                 .OfType<InvocationExpressionSyntax>()
                 .Any(ancestor =>
                     expression.Span.Contains(ancestor.Span) &&

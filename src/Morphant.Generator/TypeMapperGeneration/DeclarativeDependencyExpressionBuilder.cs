@@ -522,7 +522,8 @@ internal static class DeclarativeDependencyExpressionBuilder
             }
 
             if (parent is LambdaExpressionSyntax or
-                AnonymousMethodExpressionSyntax)
+                AnonymousMethodExpressionSyntax or
+                LocalFunctionStatementSyntax)
             {
                 return false;
             }

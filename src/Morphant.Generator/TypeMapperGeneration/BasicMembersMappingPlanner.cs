@@ -142,6 +142,13 @@ internal static class BasicMembersMappingPlanner
                 lambda,
                 contextParameter,
                 configured.Expression.SemanticModel,
+                cancellationToken) ||
+            !DeclarativeDeferredCapturePolicy.IsSupported(
+                lambda,
+                previousParameter,
+                resultParameter,
+                contextParameter,
+                configured.Expression.SemanticModel,
                 cancellationToken))
         {
             return BasicMembersMappingResult.Unsupported(

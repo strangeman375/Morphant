@@ -118,7 +118,10 @@ internal static class TypeMapperPipeline
             GetAccessibility(mapperType.DeclaredAccessibility),
             mapperDeclaration.Identifier.Text,
             BuildTypeParameterList(mapperDeclaration.TypeParameterList),
-            mappings);
+            mappings,
+            configureSyntax.DescendantNodes()
+                .OfType<QueryExpressionSyntax>()
+                .Any());
 
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),

@@ -7,6 +7,18 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 {
+    private const string CallerArgumentExpressionAttributeMetadataName =
+        "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute";
+
+    private const string CallerFilePathAttributeMetadataName =
+        "System.Runtime.CompilerServices.CallerFilePathAttribute";
+
+    private const string CallerLineNumberAttributeMetadataName =
+        "System.Runtime.CompilerServices.CallerLineNumberAttribute";
+
+    private const string CallerMemberNameAttributeMetadataName =
+        "System.Runtime.CompilerServices.CallerMemberNameAttribute";
+
     private readonly SemanticModel _semanticModel;
     private readonly INamedTypeSymbol _mapperType;
     private readonly INamedTypeSymbol _semanticMapperType;
@@ -700,6 +712,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 node.ArgumentList.Arguments.Select(argument =>
                     (ArgumentSyntax)Visit(argument)!));
 
+            AppendCallerInfoArguments(
+                arguments,
+                _semanticModel.GetOperation(node) as
+                    IInvocationOperation);
+
             var containingType = SyntaxFactory.ParseExpression(
                 SubstituteMapperType(
                         extensionMethod.ContainingType)
@@ -718,7 +735,39 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 .WithTriviaFrom(node);
         }
 
-        return base.VisitInvocationExpression(node);
+        var rewrittenOrdinaryInvocation =
+            (InvocationExpressionSyntax)base
+                .VisitInvocationExpression(node)!;
+        var rewrittenArguments = rewrittenOrdinaryInvocation
+            .ArgumentList.Arguments
+            .ToList();
+
+        AppendCallerInfoArguments(
+            rewrittenArguments,
+            _semanticModel.GetOperation(node) as
+                IInvocationOperation);
+
+        return rewrittenOrdinaryInvocation.WithArgumentList(
+            rewrittenOrdinaryInvocation.ArgumentList.WithArguments(
+                SyntaxFactory.SeparatedList(rewrittenArguments)));
+    }
+
+    public override SyntaxNode? VisitImplicitObjectCreationExpression(
+        ImplicitObjectCreationExpressionSyntax node)
+    {
+        var rewritten =
+            (ImplicitObjectCreationExpressionSyntax)base
+                .VisitImplicitObjectCreationExpression(node)!;
+        var arguments = rewritten.ArgumentList.Arguments.ToList();
+
+        AppendCallerInfoArguments(
+            arguments,
+            _semanticModel.GetOperation(node) as
+                IObjectCreationOperation);
+
+        return rewritten.WithArgumentList(
+            rewritten.ArgumentList.WithArguments(
+                SyntaxFactory.SeparatedList(arguments)));
     }
 
     public override SyntaxNode? VisitCastExpression(
@@ -768,6 +817,92 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             .Arguments.FirstOrDefault(argument =>
                 argument.Parameter?.Name == "source")?
             .Syntax as ArgumentSyntax;
+    }
+
+    private static void AppendCallerInfoArguments(
+        ICollection<ArgumentSyntax> arguments,
+        IOperation? operation)
+    {
+        var operationArguments = operation switch
+        {
+            IInvocationOperation invocation => invocation.Arguments,
+            IObjectCreationOperation creation => creation.Arguments,
+            _ => default
+        };
+
+        if (operationArguments.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        foreach (var argument in operationArguments)
+        {
+            if (argument.ArgumentKind != ArgumentKind.DefaultValue ||
+                argument.Parameter is not { } parameter ||
+                !HasCallerInfoAttribute(parameter) ||
+                !TryBuildCallerInfoExpression(
+                    argument.Value,
+                    out var expression))
+            {
+                continue;
+            }
+
+            arguments.Add(
+                SyntaxFactory.Argument(expression)
+                    .WithNameColon(
+                        SyntaxFactory.NameColon(
+                            SyntaxFactory.IdentifierName(
+                                Identifier(parameter.Name)))));
+        }
+    }
+
+    private static bool HasCallerInfoAttribute(
+        IParameterSymbol parameter)
+    {
+        return parameter.GetAttributes().Any(attribute =>
+            attribute.AttributeClass is { } attributeType &&
+            SymbolNameHelper.GetFullMetadataName(attributeType) is
+                CallerArgumentExpressionAttributeMetadataName or
+                CallerFilePathAttributeMetadataName or
+                CallerLineNumberAttributeMetadataName or
+                CallerMemberNameAttributeMetadataName);
+    }
+
+    private static bool TryBuildCallerInfoExpression(
+        IOperation operation,
+        out ExpressionSyntax expression)
+    {
+        while (operation is IConversionOperation
+               {
+                   Operand: var operand
+               })
+        {
+            operation = operand;
+        }
+
+        if (operation.ConstantValue is not
+            {
+                HasValue: true
+            } constant)
+        {
+            expression = null!;
+            return false;
+        }
+
+        expression = constant.Value switch
+        {
+            null => SyntaxFactory.LiteralExpression(
+                SyntaxKind.NullLiteralExpression),
+            string value => SyntaxFactory.LiteralExpression(
+                SyntaxKind.StringLiteralExpression,
+                SyntaxFactory.Literal(value)),
+            int value => SyntaxFactory.LiteralExpression(
+                SyntaxKind.NumericLiteralExpression,
+                SyntaxFactory.Literal(value)),
+            _ => null!
+        };
+
+        return expression is not null;
     }
 
     private static ExpressionSyntax BuildDestinationConversion(
@@ -881,27 +1016,49 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     public override SyntaxNode? VisitObjectCreationExpression(
         ObjectCreationExpressionSyntax node)
     {
-        if (_semanticModel.GetTypeInfo(node).Type is not
+        ObjectCreationExpressionSyntax rewritten;
+
+        if (_semanticModel.GetTypeInfo(node).Type is
             INamedTypeSymbol createdType)
         {
-            return base.VisitObjectCreationExpression(node);
+            rewritten = node.WithType(
+                SyntaxFactory.ParseTypeName(
+                    SubstituteMapperType(createdType).ToDisplayString(
+                        SymbolDisplayFormats.FullyQualifiedNullable)));
+
+            if (node.ArgumentList is { } argumentList)
+            {
+                rewritten = rewritten.WithArgumentList(
+                    (ArgumentListSyntax)Visit(argumentList)!);
+            }
+
+            if (node.Initializer is { } initializer)
+            {
+                rewritten = rewritten.WithInitializer(
+                    (InitializerExpressionSyntax)Visit(initializer)!);
+            }
+        }
+        else
+        {
+            rewritten =
+                (ObjectCreationExpressionSyntax)base
+                    .VisitObjectCreationExpression(node)!;
         }
 
-        var rewritten = node.WithType(
-            SyntaxFactory.ParseTypeName(
-                SubstituteMapperType(createdType).ToDisplayString(
-                    SymbolDisplayFormats.FullyQualifiedNullable)));
+        var arguments = rewritten.ArgumentList?.Arguments
+            .ToList() ?? [];
 
-        if (node.ArgumentList is { } argumentList)
+        AppendCallerInfoArguments(
+            arguments,
+            _semanticModel.GetOperation(node) as
+                IObjectCreationOperation);
+
+        if (arguments.Count > 0 || rewritten.ArgumentList is not null)
         {
             rewritten = rewritten.WithArgumentList(
-                (ArgumentListSyntax)Visit(argumentList)!);
-        }
-
-        if (node.Initializer is { } initializer)
-        {
-            rewritten = rewritten.WithInitializer(
-                (InitializerExpressionSyntax)Visit(initializer)!);
+                (rewritten.ArgumentList ?? SyntaxFactory.ArgumentList())
+                .WithArguments(
+                    SyntaxFactory.SeparatedList(arguments)));
         }
 
         return rewritten.WithTriviaFrom(node);
@@ -1223,6 +1380,64 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             : base.VisitSingleVariableDesignation(node);
     }
 
+    public override SyntaxNode? VisitFromClause(
+        FromClauseSyntax node)
+    {
+        var rewritten = (FromClauseSyntax)base.VisitFromClause(node)!;
+        return rewritten.WithIdentifier(
+            RewriteDeclaredIdentifier(node, rewritten.Identifier));
+    }
+
+    public override SyntaxNode? VisitLetClause(
+        LetClauseSyntax node)
+    {
+        var rewritten = (LetClauseSyntax)base.VisitLetClause(node)!;
+        return rewritten.WithIdentifier(
+            RewriteDeclaredIdentifier(node, rewritten.Identifier));
+    }
+
+    public override SyntaxNode? VisitJoinClause(
+        JoinClauseSyntax node)
+    {
+        var rewritten = (JoinClauseSyntax)base.VisitJoinClause(node)!;
+        return rewritten.WithIdentifier(
+            RewriteDeclaredIdentifier(node, rewritten.Identifier));
+    }
+
+    public override SyntaxNode? VisitJoinIntoClause(
+        JoinIntoClauseSyntax node)
+    {
+        var rewritten =
+            (JoinIntoClauseSyntax)base.VisitJoinIntoClause(node)!;
+        return rewritten.WithIdentifier(
+            RewriteDeclaredIdentifier(node, rewritten.Identifier));
+    }
+
+    public override SyntaxNode? VisitQueryContinuation(
+        QueryContinuationSyntax node)
+    {
+        var rewritten =
+            (QueryContinuationSyntax)base.VisitQueryContinuation(node)!;
+        return rewritten.WithIdentifier(
+            RewriteDeclaredIdentifier(node, rewritten.Identifier));
+    }
+
+    private SyntaxToken RewriteDeclaredIdentifier(
+        SyntaxNode declaration,
+        SyntaxToken identifier)
+    {
+        var symbol = _semanticModel.GetDeclaredSymbol(declaration);
+
+        return symbol is not null &&
+               _localSubstitutions is not null &&
+               _localSubstitutions.TryGetValue(
+                   symbol,
+                   out var localName)
+            ? SyntaxFactory.Identifier(localName)
+                .WithTriviaFrom(identifier)
+            : identifier;
+    }
+
     public override SyntaxNode? VisitGenericName(GenericNameSyntax node)
     {
         var symbol = GetReferencedSymbol(node);
@@ -1509,6 +1724,14 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             TypeMapperNestedMapExpressionModel>? nestedMapMappings,
         CancellationToken cancellationToken)
     {
+        if (!DeclarativeQueryExpressionPolicy.IsSupported(
+                expression,
+                semanticModel,
+                cancellationToken))
+        {
+            return false;
+        }
+
         foreach (var name in expression
                      .DescendantNodesAndSelf()
                      .OfType<SimpleNameSyntax>())
@@ -1542,6 +1765,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                         invocation,
                         cancellationToken)
                     .Symbol;
+            }
+
+            if (ContainsFileLocalSymbol(symbol))
+            {
+                return false;
             }
 
             if (SymbolEqualityComparer.Default.Equals(
@@ -1585,6 +1813,73 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         return true;
+    }
+
+    private static bool ContainsFileLocalSymbol(ISymbol? symbol)
+    {
+        if (symbol is IAliasSymbol alias)
+        {
+            symbol = alias.Target;
+        }
+
+        if (ContainsFileLocalType(symbol?.ContainingType))
+        {
+            return true;
+        }
+
+        return symbol switch
+        {
+            ITypeSymbol type => ContainsFileLocalType(type),
+            IFieldSymbol field => ContainsFileLocalType(field.Type),
+            IPropertySymbol property => ContainsFileLocalType(property.Type),
+            IEventSymbol @event => ContainsFileLocalType(@event.Type),
+            ILocalSymbol local => ContainsFileLocalType(local.Type),
+            IParameterSymbol parameter =>
+                ContainsFileLocalType(parameter.Type),
+            IMethodSymbol method =>
+                ContainsFileLocalType(method.ReturnType) ||
+                method.Parameters.Any(parameter =>
+                    ContainsFileLocalType(parameter.Type)) ||
+                method.TypeArguments.Any(ContainsFileLocalType),
+            _ => false
+        };
+    }
+
+    private static bool ContainsFileLocalType(ITypeSymbol? type)
+    {
+        switch (type)
+        {
+            case null:
+                return false;
+
+            case IArrayTypeSymbol array:
+                return ContainsFileLocalType(array.ElementType);
+
+            case IPointerTypeSymbol pointer:
+                return ContainsFileLocalType(pointer.PointedAtType);
+
+            case IFunctionPointerTypeSymbol functionPointer:
+                return ContainsFileLocalType(
+                           functionPointer.Signature.ReturnType) ||
+                       functionPointer.Signature.Parameters.Any(parameter =>
+                           ContainsFileLocalType(parameter.Type));
+
+            case INamedTypeSymbol named:
+                for (var current = named;
+                     current is not null;
+                     current = current.ContainingType)
+                {
+                    if (current.IsFileLocal)
+                    {
+                        return true;
+                    }
+                }
+
+                return named.TypeArguments.Any(ContainsFileLocalType);
+
+            default:
+                return false;
+        }
     }
 
     private static bool IsGeneratedDestinationReference(

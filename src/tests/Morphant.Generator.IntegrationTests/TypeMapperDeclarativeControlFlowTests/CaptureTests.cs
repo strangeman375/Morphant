@@ -8,4 +8,10 @@ internal sealed class CaptureTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Capture_744a52a8.Scenario.Verify();
     }
+
+    [Test]
+    public void Rejects_deferred_previous_and_result_captures_but_allows_snapshots()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DeferredInputs_a11ce008.Scenario.Verify();
+    }
 }

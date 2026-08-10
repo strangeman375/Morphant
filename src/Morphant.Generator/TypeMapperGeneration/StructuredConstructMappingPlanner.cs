@@ -49,6 +49,13 @@ internal static class StructuredConstructMappingPlanner
                 lambda,
                 contextParameter,
                 configuration.Expression.SemanticModel,
+                cancellationToken) ||
+            !DeclarativeDeferredCapturePolicy.IsSupported(
+                lambda,
+                previousParameter,
+                resultParameter: null,
+                contextParameter,
+                configuration.Expression.SemanticModel,
                 cancellationToken))
         {
             return StructuredConstructMappingResult.Unsupported(

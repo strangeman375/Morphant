@@ -8,4 +8,10 @@ internal sealed class NameCollisionTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NameCollision_fd601948.Scenario.Verify();
     }
+
+    [Test]
+    public void Renames_out_declarations_in_all_structured_surfaces()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.BoundNames_a11ce002.Scenario.Verify();
+    }
 }

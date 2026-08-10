@@ -541,6 +541,25 @@ callback-а, comparison/pattern/null check, cast, `ToString` / `GetType` и
 return. Извлечённый `MappingOperation` является обычным declarative значением и
 может сохраняться в local либо передаваться helper-методу.
 
+Граница capture применяется и к синтаксически вложенным callback-ам. Прямое
+`Value<Func<MappingOperation>>(() => context.Operation)` является
+unsupported plan: оно захватило бы уже настоящий runtime `MappingContext`, а
+не compile-time marker. Если callback действительно должен сохранить
+operation текущего вызова, значение сначала извлекается во внешнем
+declarative plan:
+
+```csharp
+.Members((source, previous, result, context) =>
+{
+    var operation = context.Operation;
+
+    return new()
+    {
+        GetOperation = Value<Func<MappingOperation>>(() => operation)
+    };
+})
+```
+
 Structured `Resolve` может вернуть previous благодаря implicit conversion
 `Option<TDestination> -> DestinationConstruction`. В block-lambda это
 сохраняет target-typed `new(...)` в C# 9:
@@ -1272,6 +1291,10 @@ DSL. В них поддерживаются:
 - statement `switch`, если каждый выбранный завершённый путь возвращает plan
   либо бросает exception;
 - conditional- и switch-expressions;
+- стандартный C# query syntax, если query operators связаны с
+  `System.Linq`; query-pattern extensions из других namespaces остаются
+  unsupported, поскольку общий generated source не может безопасно
+  воспроизвести разные file-local using scopes;
 - условный выбор whole plan, creation strategy, constructor/member value,
   `Value(...)`, `Auto()`, `Ignore()` и `Map(...)`.
 
@@ -1308,6 +1331,44 @@ Configure-local compile-time constant подставляется как constant
 lifetime generated mapper-а. Переиспользуемая логика должна быть обычным
 member-ом mapper-а. Local functions внутри runtime/manual block
 переносятся вместе с этим block.
+
+Та же runtime-граница действует внутри обычного target-typed значения
+declarative rule. Вложенная lambda и объявленная целиком внутри неё local
+function переносятся вместе со значением и остаются deferred; их bodies не
+выносятся в dependency graph и не вычисляются во время mapping-а. Range
+variables query syntax, pattern variables и declaration expressions вроде
+`out var` получают symbol-based collision-safe имена, поэтому пользовательские
+`source`, `destination` и `context` не конфликтуют с generated parameters.
+
+`source` уже является обычным runtime value и может захватываться таким
+callback-ом. `previous` и `result` остаются lifecycle-входами внешнего
+declarative plan и напрямую не захватываются вложенной lambda, anonymous method
+либо local function. Запрещены в том числе deferred-чтение, вызов метода и
+mutation через эти параметры. Если callback-у нужен snapshot, обычное значение
+сначала вычисляется во внешнем plan, после чего захватывается уже local:
+
+```csharp
+.Members((source, previous, result) =>
+{
+    var revision = result.Revision;
+
+    return new()
+    {
+        GetRevision = Value<Func<int>>(() => revision)
+    };
+})
+```
+
+Перенос сохраняет уже вычисленную компилятором caller information. Для
+опущенных `[CallerMemberName]`, `[CallerFilePath]`, `[CallerLineNumber]` и
+`[CallerArgumentExpression]` arguments generator материализует значения
+исходного Configure call site; generated method name, `.g.cs` path, generated
+line и переписанное имя source не становятся новым caller site.
+
+Символ из `file`-local типа недоступен из отдельного generated source file.
+Такой helper либо значение поэтому делает только соответствующий plan
+unsupported; Morphant не оставляет ссылку на file-local символ в emitted C#.
+Обычный доступный instance/static member mapper-а остаётся поддержанным.
 
 Generated record `DestinationMembers` имеет properties с обычным `set`.
 Object initializer и `with` входят в declarative plan composition, но это не
@@ -2125,6 +2186,15 @@ compile-time implicit conversions; создать runtime wrapper со знач�
 `Value`/marker API: generator рекурсивно lower-ит все распознанные intrinsics
 либо сохраняет operation как invalid configuration. После обнаружения
 intrinsic fallback к переносу исходного invocation в runtime code запрещён.
+
+Intrinsic result является terminal declarative value. Между вызовом
+`Map` / `Create` / `Update` / `Value` и конечной constructor/member position
+допустимы только прозрачные parentheses/null-forgiving wrappers,
+conditional/switch branch и согласованный cast к generated wrapper-типу.
+Передача marker-а в обычный helper не означает «map, затем вызвать helper»:
+helper overload был выбран по compile-time marker type, а после lowering мог
+бы связаться другой overload. Такая конфигурация fail closed и не выполняет
+повторный runtime overload binding.
 
 Generated documentation наследуется через `inheritdoc` от destination type,
 constructors и members. Если исходной документации нет, Morphant генерирует

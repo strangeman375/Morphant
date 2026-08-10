@@ -11,7 +11,8 @@ internal readonly record struct TypeMapperModel
     string Accessibility,
     string TypeName,
     string TypeParameterList,
-    ImmutableArray<TypeMapperMappingModel> Mappings
+    ImmutableArray<TypeMapperMappingModel> Mappings,
+    bool RequiresSystemLinq
 );
 
 internal readonly record struct TypeMapperContainingTypeModel

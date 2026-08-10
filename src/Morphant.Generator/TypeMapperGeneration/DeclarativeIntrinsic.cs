@@ -513,7 +513,7 @@ internal static class DeclarativeIntrinsic
                 return false;
             }
 
-            if (!HasSupportedValuePlacement(
+            if (!HasSupportedTerminalPlacement(
                     expression,
                     invocation,
                     semanticModel,
@@ -539,7 +539,7 @@ internal static class DeclarativeIntrinsic
         return true;
     }
 
-    private static bool HasSupportedValuePlacement(
+    internal static bool HasSupportedTerminalPlacement(
         ExpressionSyntax root,
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,

@@ -10,11 +10,17 @@ internal static class MapperProbeSyntax
     public static SyntaxTree Build(
         INamedTypeSymbol mapperType,
         string path,
-        Action<CodeWriter> writeMembers)
+        Action<CodeWriter> writeMembers,
+        bool requiresSystemLinq = false)
     {
         var writer = new CodeWriter();
 
         writer.Line("#nullable enable");
+
+        if (requiresSystemLinq)
+        {
+            writer.Line("using global::System.Linq;");
+        }
 
         if (!mapperType.ContainingNamespace.IsGlobalNamespace)
         {

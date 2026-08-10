@@ -393,7 +393,11 @@ internal static class ExplicitStructuredConstructorPlanner
 
                 writer.Unindent();
                 writer.Line("}");
-            });
+            },
+            requiresSystemLinq: arguments.Any(argument =>
+                argument.Value.DescendantNodesAndSelf()
+                    .OfType<QueryExpressionSyntax>()
+                    .Any()));
     }
 
     private static string BuildProbeParameter(

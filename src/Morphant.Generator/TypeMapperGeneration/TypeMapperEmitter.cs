@@ -25,6 +25,12 @@ internal static class TypeMapperEmitter
         writer.Line("#nullable enable");
         writer.Line();
 
+        if (model.RequiresSystemLinq)
+        {
+            writer.Line("using global::System.Linq;");
+            writer.Line();
+        }
+
         if (model.Namespace.Length > 0)
         {
             writer.OpenBlock($"namespace {model.Namespace}");

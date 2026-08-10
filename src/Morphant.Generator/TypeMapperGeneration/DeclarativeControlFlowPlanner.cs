@@ -271,7 +271,7 @@ internal static class DeclarativeControlFlowPlanner
         }
 
         foreach (var designation in
-                 EnumeratePatternVariableDesignations(lambda))
+                 EnumerateBoundVariableDesignations(lambda))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -297,6 +297,36 @@ internal static class DeclarativeControlFlowPlanner
                 new DeclarativeBoundLocalSyntax(
                     placeholder,
                     local.Name));
+        }
+
+        foreach (var rangeVariable in lambda.DescendantNodes()
+                     .Where(static node => node is
+                         FromClauseSyntax or
+                         LetClauseSyntax or
+                         JoinClauseSyntax or
+                         JoinIntoClauseSyntax or
+                         QueryContinuationSyntax)
+                     .Select(node => semanticModel.GetDeclaredSymbol(
+                         node,
+                         cancellationToken))
+                     .OfType<IRangeVariableSymbol>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (runtimeLocalPlaceholders.ContainsKey(rangeVariable))
+            {
+                continue;
+            }
+
+            var placeholder = AllocatePlaceholder(
+                ref placeholderOrdinal,
+                reservedPlaceholderNames,
+                lambda.SpanStart);
+
+            allLocals.Add(rangeVariable);
+            runtimeLocalPlaceholders.Add(
+                rangeVariable,
+                placeholder);
         }
 
         var transferableExpressions =
@@ -2678,17 +2708,20 @@ internal static class DeclarativeControlFlowPlanner
                     continue;
                 }
 
-                if ((symbol is ILocalSymbol local &&
-                     !allowedLocals.Contains(local) &&
-                     !IsDeclaredWithin(
-                         local,
-                         expressionArray)) ||
-                    symbol is IRangeVariableSymbol ||
-                    symbol is IMethodSymbol
-                    {
-                        MethodKind:
-                            MethodKind.LocalFunction
-                    })
+                if (symbol is ILocalSymbol local &&
+                    !allowedLocals.Contains(local) &&
+                    !IsDeclaredWithin(
+                        local,
+                        expressionArray) ||
+                    symbol is IRangeVariableSymbol or
+                        IMethodSymbol
+                        {
+                            MethodKind:
+                                MethodKind.LocalFunction
+                        } &&
+                    !IsDeclaredWithin(
+                        symbol,
+                        expressionArray))
                 {
                     return true;
                 }
@@ -2723,14 +2756,14 @@ internal static class DeclarativeControlFlowPlanner
 
     private static ImmutableArray<
         SingleVariableDesignationSyntax>
-        EnumeratePatternVariableDesignations(
+        EnumerateBoundVariableDesignations(
             LambdaExpressionSyntax lambda)
     {
         var result =
             ImmutableArray.CreateBuilder<
                 SingleVariableDesignationSyntax>();
         var walker =
-            new PatternVariableDesignationWalker(result);
+            new BoundVariableDesignationWalker(result);
 
         if (lambda.Block is { } block)
         {
@@ -2780,7 +2813,7 @@ internal static class DeclarativeControlFlowPlanner
         return expression;
     }
 
-    private sealed class PatternVariableDesignationWalker(
+    private sealed class BoundVariableDesignationWalker(
         ImmutableArray<SingleVariableDesignationSyntax>.Builder
             result)
         : CSharpSyntaxWalker
@@ -2788,12 +2821,7 @@ internal static class DeclarativeControlFlowPlanner
         public override void VisitSingleVariableDesignation(
             SingleVariableDesignationSyntax node)
         {
-            if (node.Ancestors()
-                .OfType<PatternSyntax>()
-                .Any())
-            {
-                result.Add(node);
-            }
+            result.Add(node);
 
             base.VisitSingleVariableDesignation(node);
         }

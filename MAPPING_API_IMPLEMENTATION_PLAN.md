@@ -396,8 +396,7 @@ opaque-root compiled C# 9 scenarios, standalone exactness/lifecycle и
 
 ## Согласованная ревизия declarative explicit-value surface
 
-Статус: production-реализация, документация и focused tests завершены;
-ожидает пользовательского ревью с 10 августа 2026 года.
+Статус: принят пользователем 10 августа 2026 года.
 
 Ревизия добавляет один явный способ зафиксировать конечный тип обычного
 значения внутри structured `Construct` / `Resolve` и `Members`:
@@ -458,15 +457,60 @@ Focused specification разделена по независимым concerns:
   group внутри runtime callback-а;
 - latest consumer фиксирует target-typed collection expression и lambda.
 
+## Ревизия надёжности переноса declarative expressions
+
+Статус: production-реализация, документация и focused tests завершены;
+ожидает пользовательского ревью с 10 августа 2026 года.
+
+Аудит реальных consumer expressions после принятия explicit-value surface
+выявил несколько мест, где исходный C# либо терял binding при переносе, либо
+оставлял ошибку уже в generated source. Ревизия закрывает их одним общим
+правилом: перенос сохраняет исходную observable C# semantics, а физически
+непереносимая форма fail closed до emission.
+
+Согласованный срез:
+
+- nested `Map` / `Create` / `Update` является terminal value; передача marker-а
+  в обычный helper не может после lowering повторно выбрать overload;
+- все outer pattern/declaration designations, включая `out var`, получают
+  symbol-based collision-safe substitution;
+- `MappingContextMarker.Operation` нельзя захватить вложенным runtime
+  callback-ом; предварительно извлечённый `MappingOperation` остаётся обычным
+  переносимым значением;
+- omitted `CallerMemberName`, `CallerFilePath`, `CallerLineNumber` и
+  `CallerArgumentExpression` материализуются значениями исходного call site;
+- ссылка на helper/value из `file`-local типа делает plan unsupported вместо
+  некомпилируемого `.g.cs`;
+- стандартный query syntax с bound `System.Linq` operators поддерживается в
+  `Construct`, `Resolve`, `Members` и во вложенных runtime values; custom
+  extension query-pattern из другого namespace пока fail closed;
+- local function, объявленная целиком внутри переносимой deferred lambda,
+  сохраняется вместе с ней; внешняя local function declarative block-а и
+  Configure-local function по-прежнему не захватываются;
+- `previous` и `result` нельзя напрямую захватывать вложенной lambda, anonymous
+  method либо local function, включая чтение, вызов метода и mutation;
+  предварительно вычисленный обычный local-snapshot остаётся переносимым;
+- query/lambda/local-function bodies не hoist-ятся как безусловные dependency
+  nodes, поэтому deferred и path-sensitive evaluation сохраняются.
+
+Package-like матрицы раздельно покрывают `Construct`, `Resolve` и `Members`:
+terminal/invalid nested marker, три collision имени, outer и deferred queries,
+nested local function, unsupported custom query-pattern, invalid/extracted
+context, caller info методов и конструкторов, а также file-local preflight в
+C# 11. Отдельная capture-матрица проверяет direct read, method call, mutation,
+nested local function и anonymous method для `previous` / `result`, а также
+разрешённые outer snapshots.
+
 ## Следующий этап
 
-**Ревизия declarative explicit-value surface.**
+**Ревизия надёжности переноса declarative expressions.**
 
 Статус: production-реализация, документация и focused tests завершены,
 ожидают пользовательского ревью.
 
-После ревью пользователь отдельно определит следующий шаг. Diagnostics этапа
-23 остаются приостановлены до принятия пользовательского API. Принятые ранее
+После ревью этой ревизии пользователь отдельно определит следующий шаг.
+Diagnostics этапа 23 остаются приостановлены до принятия пользовательского
+API. Принятые ранее
 категории 1–7 сохраняют свои IDs и общие diagnostic contracts, но их callback-
 зависимые части потребуют согласованной актуализации; черновик категории 8
 снят со статуса `ожидает ревью`.
