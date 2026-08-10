@@ -136,6 +136,24 @@ public abstract class TypeMapper
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
+    /// Configures an explicit declarative value whose final target type is
+    /// <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The exact final value type.</typeparam>
+    /// <param name="value">
+    /// The value expression. The expression is evaluated by the generated
+    /// mapper and is never passed to this method at runtime.
+    /// </param>
+    /// <returns>A compile-time marker for the configured value.</returns>
+    /// <remarks>
+    /// Use only inside a supported declarative
+    /// <c>Construct</c>, <c>Resolve</c>, or <c>Members</c> plan.
+    /// Runtime callbacks and <c>Convert</c> use ordinary C# values.
+    /// </remarks>
+    protected static ValueMarker<T> Value<T>(T value) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
     /// Configures a declarative nested mapping whose source is inferred from
     /// the target name and whose operation follows the outer mapping.
     /// </summary>

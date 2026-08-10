@@ -28,6 +28,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         TypeMapperNestedMapExpressionModel>? _nestedMapMappings;
     private readonly IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
         _mapperTypeSubstitutions;
+    private readonly bool _lowerDeclarativeValues;
 
     private ConstructExpressionRewriter(
         SemanticModel semanticModel,
@@ -46,7 +47,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             dependencyAnnotations,
         IReadOnlyDictionary<
             InvocationExpressionSyntax,
-            TypeMapperNestedMapExpressionModel>? nestedMapMappings)
+            TypeMapperNestedMapExpressionModel>? nestedMapMappings,
+        bool lowerDeclarativeValues)
     {
         _semanticModel = semanticModel;
         _mapperType = mapperType;
@@ -66,6 +68,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _localSubstitutions = localSubstitutions;
         _dependencyAnnotations = dependencyAnnotations;
         _nestedMapMappings = nestedMapMappings;
+        _lowerDeclarativeValues = lowerDeclarativeValues;
         _mapperTypeSubstitutions =
             MapperTypeSubstitution.BuildForHierarchy(
                 _semanticMapperType);
@@ -321,7 +324,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     transferScope,
                     localSubstitutions,
                     dependencyAnnotations: null,
-                    nestedMapMappings: null)
+                    nestedMapMappings: null,
+                    lowerDeclarativeValues: false)
                 .Visit(syntax)!;
         return true;
     }
@@ -374,7 +378,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     transferScope,
                     localSubstitutions,
                     dependencyAnnotations: null,
-                    nestedMapMappings: null)
+                    nestedMapMappings: null,
+                    lowerDeclarativeValues: false)
                 .Visit(syntax)!;
         return true;
     }
@@ -431,7 +436,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     transferScope,
                     localSubstitutions,
                     dependencyAnnotations,
-                    nestedMapMappings)
+                    nestedMapMappings,
+                    lowerDeclarativeValues: true)
                 .Visit(expression)!;
         return true;
     }
@@ -486,7 +492,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     transferScope,
                     localSubstitutions,
                     dependencyAnnotations,
-                    nestedMapMappings)
+                    nestedMapMappings,
+                    lowerDeclarativeValues: true)
                 .Visit(expression)!;
         return true;
     }
@@ -508,6 +515,44 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     public override SyntaxNode? VisitInvocationExpression(
         InvocationExpressionSyntax node)
     {
+        if (_lowerDeclarativeValues &&
+            DeclarativeIntrinsic.TryGetKind(
+                node,
+                _semanticModel,
+                default,
+                out var intrinsicKind,
+                out _) &&
+            intrinsicKind == DeclarativeIntrinsicKind.Value &&
+            _semanticModel.GetOperation(node) is IInvocationOperation
+            {
+                TargetMethod:
+                {
+                    IsGenericMethod: true,
+                    TypeArguments.Length: 1
+                } valueMethod,
+                Arguments: var valueArguments
+            } &&
+            valueArguments.FirstOrDefault(argument =>
+                argument.Parameter?.Name == "value")?.Syntax is
+                ArgumentSyntax valueArgument)
+        {
+            var valueType = SubstituteMapperType(
+                valueMethod.TypeArguments[0]
+                    .WithNullableAnnotation(
+                        valueMethod
+                            .TypeArgumentNullableAnnotations[0]));
+            var rewrittenValue = (ExpressionSyntax)
+                Visit(valueArgument.Expression)!;
+
+            return SyntaxFactory.CastExpression(
+                    SyntaxFactory.ParseTypeName(
+                        TypeMapperMappingTypePolicy
+                            .GetGeneratedTypeName(valueType)),
+                    SyntaxFactory.ParenthesizedExpression(
+                        rewrittenValue.WithoutTrivia()))
+                .WithTriviaFrom(node);
+        }
+
         if (_nestedMapMappings is not null &&
             _nestedMapMappings.TryGetValue(
                 node,
@@ -674,6 +719,45 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         return base.VisitInvocationExpression(node);
+    }
+
+    public override SyntaxNode? VisitCastExpression(
+        CastExpressionSyntax node)
+    {
+        if (!_lowerDeclarativeValues)
+        {
+            return base.VisitCastExpression(node);
+        }
+
+        if (!DeclarativeIntrinsic.TryGetWrapperCast(
+                node,
+                MetadataNames.Member,
+                _semanticModel,
+                default,
+                out _,
+                out var targetType) &&
+            !DeclarativeIntrinsic.TryGetWrapperCast(
+                node,
+                MetadataNames.ConstructorParameter,
+                _semanticModel,
+                default,
+                out _,
+                out targetType))
+        {
+            return base.VisitCastExpression(node);
+        }
+
+        var rewrittenValue = (ExpressionSyntax)
+            Visit(node.Expression)!;
+
+        return SyntaxFactory.CastExpression(
+                SyntaxFactory.ParseTypeName(
+                    TypeMapperMappingTypePolicy
+                        .GetGeneratedTypeName(
+                            SubstituteMapperType(targetType))),
+                SyntaxFactory.ParenthesizedExpression(
+                    rewrittenValue.WithoutTrivia()))
+            .WithTriviaFrom(node);
     }
 
     private ArgumentSyntax? GetSourceArgument(

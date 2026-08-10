@@ -34,7 +34,7 @@ hierarchy.
 | Incompatible current value for an explicit nested destination | `NestedDestinationTypeMismatchException` |
 | No branch matches a declarative switch | `UnmatchedMappingSwitchException` |
 | Reading `Option<T>.Value` when `HasValue` is false | `OptionValueMissingException` |
-| Direct runtime invocation of a generated-code DSL marker | `RuntimeInvocationNotSupportedException` |
+| Direct runtime invocation of a compile-time DSL intrinsic, including `Value` | `RuntimeInvocationNotSupportedException` |
 
 `MappingConfigurationException` also exposes `Reason`;
 `MappingOperationNotSupportedException` exposes `EffectiveMappingMode`; and
@@ -42,6 +42,15 @@ hierarchy.
 and nullable `ActualDestinationType`. Context, `Option<T>`, and DSL-marker
 misuse are not tied to one exact pair, so their exception types inherit
 directly from `MorphantException`.
+
+A typed `Value<T>`, `Auto<T>`, or `Ignore<T>` whose `T` does not exactly match
+its final declarative target is an invalid configuration, even when a broader
+intermediate `object` conversion lets the configuration source compile. The
+generated exact-pair operation throws `MappingConfigurationException`.
+Generated code never invokes a compile-time intrinsic: once Morphant binds one
+inside a declarative expression, it must lower every occurrence or reject the
+plan. `RuntimeInvocationNotSupportedException` therefore remains a direct API
+misuse guard, not a fallback failure from a generated mapper.
 
 For example:
 

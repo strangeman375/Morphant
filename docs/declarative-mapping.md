@@ -61,6 +61,40 @@ Structured construction can select an explicit destination constructor or
 `ByConvention()`. It cannot return an arbitrary ready-made destination.
 `ByFactory` is not part of the API.
 
+## Explicit declarative values
+
+Use an ordinary expression when the generated member or constructor parameter
+already provides enough target typing. Use `Value<T>(value)` when the exact
+final type must be stated before Morphant lowers the declarative plan:
+
+```csharp
+builder.Map<JobDto, Job>()
+    .Construct(source => new(
+        Value<long>(source.Id),
+        Value<Action>(() => Record(source.Id))))
+    .Members((source, _) => new()
+    {
+        Payload = Value<object>(source.PayloadId),
+        Label = Value<string?>(source.Label)
+    });
+```
+
+This form supports overload selection, boxing and other implicit conversions,
+nullable annotations, lambdas, method groups, and target-typed language
+expressions. `T` is the exact receiving type, including nullability. The short
+form `Value(value)` infers `T` from the argument only: `Value(1)` pins `int`,
+while intentional boxing is written as `Value<object>(1)`.
+
+`Value<T>` is a compile-time intrinsic, not a runtime wrapper or callback.
+Its argument is evaluated once by the generated mapper, and the conversion to
+`T` is preserved so generated code cannot bind a different constructor
+overload. It may be used through supported conditionals, casts, and
+declarative locals. Put helper calls inside its argument
+(`Value<T>(Compute(...))`); do not pass the marker itself to a helper.
+Morphant either lowers every intrinsic in the expression
+or treats the plan as invalid; it never emits a partial runtime call to
+`Value`, `Auto`, `Ignore`, or a nested-map marker.
+
 ## Runtime result policies
 
 Use the generated runtime policies for a factory, cache, scalar, opaque value,
@@ -86,7 +120,7 @@ factory callback; write `_` when `source` is unused. These callbacks are
 ordinary synchronous C# and may use `context.Mapper` for nested runtime
 dispatch. They receive normalized inputs after declarative null handling, and
 the common `Members` plan runs after a non-null result. Declarative markers are
-unavailable inside them.
+unavailable inside them, including `Value`.
 
 The generated receiver preserves the source and destination types of the
 registered pair. Callback inputs are typed separately: `source` is the
@@ -116,9 +150,16 @@ builder.Map<OrderDto, Order>()
 ```
 
 - an ordinary expression is an explicit rule;
+- `Value<T>(value)` is an explicit rule with an exact final target type;
 - `Auto()` requests the exact-name convention for that member;
 - `Ignore()` occupies the member without assigning it;
 - `Map(...)`, `Create(...)`, and `Update(...)` perform explicit nested mapping.
+
+`Auto<T>()` and `Ignore<T>()` also assert the exact receiving type, including
+nullability. The untyped forms remain preferable in a directly target-typed
+member initializer. Generated `Member<T>` and `ConstructorParameter<T>`
+wrappers have no public value constructors; assignments and constructor
+arguments use ordinary expressions or the intrinsic forms above.
 
 An eligible readable non-writable reference member may appear only as a
 get-only proxy for standalone nested `Update`; it is not an ordinary member

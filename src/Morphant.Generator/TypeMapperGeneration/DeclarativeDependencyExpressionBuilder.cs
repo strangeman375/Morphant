@@ -97,7 +97,13 @@ internal static class DeclarativeDependencyExpressionBuilder
         out string rewrittenExpression,
         out TypeMapperDependencyExpressionModel? dependencyExpression)
     {
-        if (!DeclarativeNestedMapExpression.TryBuild(
+        if (!DeclarativeIntrinsic.ValidateValueTargets(
+                expression,
+                fallbackType,
+                semanticModel,
+                mapperType,
+                cancellationToken) ||
+            !DeclarativeNestedMapExpression.TryBuild(
                 expression,
                 fallbackType,
                 nestedMapTarget,
@@ -108,7 +114,12 @@ internal static class DeclarativeDependencyExpressionBuilder
                 semanticModel,
                 mapperType,
                 cancellationToken,
-                out var nestedMapMappings))
+                out var nestedMapMappings) ||
+            DeclarativeIntrinsic.ContainsUnlowered(
+                expression,
+                nestedMapMappings,
+                semanticModel,
+                cancellationToken))
         {
             rewrittenExpression = string.Empty;
             dependencyExpression = null;
@@ -218,24 +229,7 @@ internal static class DeclarativeDependencyExpressionBuilder
     private static ExpressionSyntax UnwrapTransparentSyntax(
         ExpressionSyntax expression)
     {
-        while (true)
-        {
-            switch (expression)
-            {
-                case ParenthesizedExpressionSyntax parenthesized:
-                    expression = parenthesized.Expression;
-                    continue;
-
-                case PostfixUnaryExpressionSyntax postfix
-                    when postfix.IsKind(
-                        SyntaxKind.SuppressNullableWarningExpression):
-                    expression = postfix.Operand;
-                    continue;
-
-                default:
-                    return expression;
-            }
-        }
+        return DeclarativeIntrinsic.UnwrapTransparentSyntax(expression);
     }
 
     public static string BuildDeclaredValueKey(

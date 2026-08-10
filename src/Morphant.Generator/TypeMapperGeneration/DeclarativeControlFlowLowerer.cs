@@ -225,6 +225,12 @@ internal static class DeclarativeControlFlowLowerer
                 {
                     type = nestedDestinationType;
                 }
+                else if (DeclarativeIntrinsic.TryGetValueType(
+                             type,
+                             out var declaredValueType))
+                {
+                    type = declaredValueType;
+                }
                 else if (DeclarativeNestedMapExpression
                          .IsMapMarkerType(type))
                 {
@@ -436,6 +442,7 @@ internal static class DeclarativeControlFlowLowerer
                     }
 
                     ITypeSymbol storedType = declaredType;
+                    var declarationType = local.DeclarationType;
 
                     if (DeclarativeNestedMapExpression
                         .TryGetMarkerDestinationType(
@@ -449,6 +456,21 @@ internal static class DeclarativeControlFlowLowerer
 
                         storedType = nestedDestinationType;
                     }
+                    else if (DeclarativeIntrinsic.TryGetValueType(
+                                 declaredType,
+                                 out var declaredValueType))
+                    {
+                        if (local.DeclarationType != "var")
+                        {
+                            return null;
+                        }
+
+                        storedType = declaredValueType;
+                        declarationType =
+                            TypeMapperMappingTypePolicy
+                                .GetGeneratedTypeName(
+                                    declaredValueType);
+                    }
                     else if (DeclarativeNestedMapExpression
                              .IsMapMarkerType(declaredType))
                     {
@@ -457,7 +479,7 @@ internal static class DeclarativeControlFlowLowerer
 
                     runtimeLocals.Add(
                         new TypeMapperLocalValueModel(
-                            local.DeclarationType,
+                            declarationType,
                             placeholder,
                             initializer.Value.Expression,
                             local.IsConst,

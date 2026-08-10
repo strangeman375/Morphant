@@ -21,7 +21,8 @@ deferred root categories remain usable as opaque runtime/manual values.
 - pair-specific generated short and context-aware `ConstructUsing` /
   `ResolveUsing` runtime result policies for every eligible pair; the maximum
   overload ends in the real `MappingContext`;
-- destination `Members`, `Auto`, `Ignore`, and exact-name conventions;
+- destination `Members`, exact-target `Value<T>`, `Auto`, `Ignore`, and
+  exact-name conventions;
 - fully manual synchronous `Convert` algorithms;
 - `Option<T>`-based previous-destination presence;
 - authoritative result, identity preservation, and explicit replacement;

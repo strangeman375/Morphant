@@ -20,6 +20,7 @@ internal sealed class PublicApiBaselineTests
             typeof(IgnoreMarker),
             typeof(IgnoreMarker<>),
             typeof(MapMarker<>),
+            typeof(ValueMarker<>),
             typeof(Member<>),
             typeof(ConstructorParameter<>),
             typeof(MapperBuilder),
@@ -124,11 +125,50 @@ internal sealed class PublicApiBaselineTests
                 GetImplicitOperatorCount(typeof(MapMarker<>)),
                 Is.EqualTo(1));
             Assert.That(
+                GetImplicitOperatorCount(typeof(ValueMarker<>)),
+                Is.Zero);
+            Assert.That(
                 GetImplicitOperatorCount(typeof(Member<>)),
                 Is.EqualTo(7));
             Assert.That(
                 GetImplicitOperatorCount(typeof(ConstructorParameter<>)),
                 Is.EqualTo(7));
+            Assert.That(
+                GetImplicitOperatorSourceTypes(typeof(Member<>)),
+                Is.EqualTo(new[]
+                {
+                    "Morphant.Markers.AutoMarker",
+                    "Morphant.Markers.AutoMarker<T>",
+                    "Morphant.Markers.IgnoreMarker",
+                    "Morphant.Markers.IgnoreMarker<T>",
+                    "Morphant.Markers.MapMarker",
+                    "Morphant.Markers.ValueMarker<T>",
+                    "T"
+                }));
+            Assert.That(
+                GetImplicitOperatorSourceTypes(
+                    typeof(ConstructorParameter<>)),
+                Is.EqualTo(new[]
+                {
+                    "Morphant.Markers.AutoMarker",
+                    "Morphant.Markers.AutoMarker<T>",
+                    "Morphant.Markers.IgnoreMarker",
+                    "Morphant.Markers.IgnoreMarker<T>",
+                    "Morphant.Markers.MapMarker",
+                    "Morphant.Markers.ValueMarker<T>",
+                    "T"
+                }));
+            Assert.That(
+                new[] { typeof(Member<>), typeof(ConstructorParameter<>) }
+                    .SelectMany(type => type.GetConstructors(
+                        BindingFlags.Public |
+                        BindingFlags.NonPublic |
+                        BindingFlags.Instance |
+                        BindingFlags.DeclaredOnly))
+                    .All(static constructor =>
+                        constructor.IsPrivate &&
+                        constructor.GetParameters().Length == 0),
+                Is.True);
         });
     }
 
@@ -289,6 +329,7 @@ T Morphant.Markers.IgnoreMarker<T>
 T Morphant.Markers.MapMarker
 T Morphant.Markers.MapMarker<T>
 T Morphant.Markers.MemberMarker
+T Morphant.Markers.ValueMarker<T>
 T Morphant.MemberSelection
   V Default, Auto, Explicit
 T Morphant.Members.ConstructorParameter<T>
@@ -320,6 +361,7 @@ T Morphant.TypeMapper
   M Morphant.Markers.MapMarker<T> Map<T>()
   M Morphant.Markers.MapMarker<T> Map<T>(System.Object)
   M Morphant.Markers.MapMarker<T> Update<T>(System.Object, System.Object)
+  M Morphant.Markers.ValueMarker<T> Value<T>(T)
   M System.Boolean Supports(System.Type, System.Type)
   M System.Void Configure(Morphant.MapperBuilder)
 T Morphant.TypeMapperExtensions
@@ -468,4 +510,15 @@ T Morphant.UnmappedMemberValidation
                 BindingFlags.Static |
                 BindingFlags.DeclaredOnly)
             .Count(static method => method.Name == "op_Implicit");
+
+    private static string[] GetImplicitOperatorSourceTypes(Type type) =>
+        type.GetMethods(
+                BindingFlags.Public |
+                BindingFlags.Static |
+                BindingFlags.DeclaredOnly)
+            .Where(static method => method.Name == "op_Implicit")
+            .Select(method => FormatType(
+                method.GetParameters().Single().ParameterType))
+            .OrderBy(static name => name, StringComparer.Ordinal)
+            .ToArray();
 }

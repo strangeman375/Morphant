@@ -98,6 +98,8 @@ manual registration, and Create/Update behavior.
   policies emitted for every eligible pair; each has a short overload and a
   context-aware overload whose final parameter is the real `MappingContext`.
 - `Members` describes destination member values around that selected result.
+- `Value<T>` pins an exact declarative member or constructor-parameter type
+  when ordinary target typing is insufficient.
 - `Convert` replaces the declarative pipeline with an ordinary synchronous C#
   algorithm.
 - `Option<T>` distinguishes an absent previous destination from a present

@@ -150,8 +150,16 @@ internal static class StructuredConstructMappingPlanner
                     ExpressionSyntax expression,
                     IParameterSymbol parameter)
             {
-                var parameterType = parameter.Type.WithNullableAnnotation(
-                    parameter.NullableAnnotation);
+                var parameterType = DeclarativeIntrinsic
+                        .TryGetWrapperTargetType(
+                            expression,
+                            MetadataNames.ConstructorParameter,
+                            configuration.Expression.SemanticModel,
+                            cancellationToken,
+                            out var contextualTargetType)
+                    ? contextualTargetType
+                    : parameter.Type.WithNullableAnnotation(
+                        parameter.NullableAnnotation);
                 var destinationMembers =
                     ConventionMemberMappingPlanner.BuildReadableMembers(
                         destination,
@@ -994,7 +1002,17 @@ internal static class StructuredConstructMappingPlanner
 
             if (DeclarativeConstructorMarker.TryGetKind(
                     rule.Value,
+                    DeclarativeIntrinsic.TryGetWrapperTargetType(
+                        rule.Value,
+                        MetadataNames.ConstructorParameter,
+                        semanticModel,
+                        cancellationToken,
+                        out var contextualTargetType)
+                        ? contextualTargetType
+                        : parameter.Type.WithNullableAnnotation(
+                            parameter.NullableAnnotation),
                     semanticModel,
+                    mapperType,
                     cancellationToken,
                     out var markerKind))
             {
@@ -1032,15 +1050,7 @@ internal static class StructuredConstructMappingPlanner
                     rule.Value,
                     parameter);
             var explicitExpression =
-                rewrittenDependency?.Expression ??
-                ExplicitStructuredConstructorPlanner
-                    .RewriteArgumentExpression(
-                        rule.Value,
-                        parameter,
-                        compilation,
-                        semanticModel,
-                        rewriteExpression,
-                        cancellationToken);
+                rewrittenDependency?.Expression;
 
             if (explicitExpression is null)
             {

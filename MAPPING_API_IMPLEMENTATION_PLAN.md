@@ -119,6 +119,7 @@ coverage.
   mapping services;
 - root и scoped `IMapper`, `MappingContext` и `MappingScope`;
 - adaptive nested `Map` и explicit nested `Create` / `Update`;
+- declarative explicit values с exact-target `Value<T>`;
 - settings и явная композиция через mapper inheritance;
 - generated surface, actualization, incrementality и интеграционный сценарий.
 
@@ -393,9 +394,73 @@ Diagnostics до пользовательского принятия этого 
 opaque-root compiled C# 9 scenarios, standalone exactness/lifecycle и
 структурированные failure data покрыты отдельными focused tests.
 
+## Согласованная ревизия declarative explicit-value surface
+
+Статус: production-реализация, документация и focused tests завершены;
+ожидает пользовательского ревью с 10 августа 2026 года.
+
+Ревизия добавляет один явный способ зафиксировать конечный тип обычного
+значения внутри structured `Construct` / `Resolve` и `Members`:
+
+```csharp
+Value<T>(T value)
+```
+
+Метод возвращает отдельный compile-time `ValueMarker<T>`, который не является
+`MemberMarker` и не имеет runtime instance. Обычное выражение остаётся
+предпочтительным, когда target typing уже достаточен. `Value<T>` нужен для
+точного constructor-overload binding, boxing, nullable-аннотации,
+numeric/user-defined conversion, lambda, method group и других target-typed
+выражений. Короткая запись `Value(value)` выводит `T` только из argument-а:
+`Value(1)` утверждает `int`, а намеренный широкий target записывается как
+`Value<object>(1)`.
+
+Exact-target law применяется ко всему typed value/marker surface:
+
+- `Value<T>`, `Auto<T>()` и `Ignore<T>()` требуют точного совпадения final
+  member/constructor-parameter type, включая nullability и подстановки generic
+  mapper-а;
+- generic `Map<TDestination>` задаёт тип nested result, но допускает его
+  обычное warning-free implicit C#-преобразование к более широкому final
+  target-у;
+- `Member<T>` и `ConstructorParameter<T>` сохраняют ровно семь implicit
+  inputs: обычный `T`, typed/untyped `Auto` и `Ignore`, non-generic
+  `MapMarker` и exact `ValueMarker<T>`;
+- отдельные `MapMarker<T> -> Member<T>` и
+  `MapMarker<T> -> ConstructorParameter<T>` operators удалены; generic marker
+  использует общую base-form `MapMarker`, а совместимость mapped result
+  проверяется semantic pipeline;
+- wrapper value-constructors не вводятся: обе wrapper-family и
+  `ValueMarker<T>` имеют только закрытое compile-time создание.
+
+Lowering становится рекурсивным и fail-closed для всех intrinsics
+`Value` / `Auto` / `Ignore` / `Map` / `Create` / `Update` /
+`ByConvention`. После semantic binding generator обязан lower-ить каждое
+вхождение с учётом casts, conditional/switch expressions и declarative locals
+либо сохранить operation как invalid configuration. Fallback к переносу
+intrinsic invocation, marker object или intrinsic method group в runtime code
+запрещён. `Value<T>` lower-ится вместе с подтверждённым conversion к exact
+`T`, поэтому generated C# не выполняет повторный overload binding; argument
+по-прежнему вычисляется ровно один раз и участвует в общем dependency graph.
+
+Focused specification разделена по независимым concerns:
+
+- reflection inventory фиксирует `ValueMarker<T>`, `TypeMapper.Value<T>` и
+  точный operator/constructor surface wrappers;
+- compiled C# 9 member matrix покрывает ordinary и exact values, nullable,
+  boxing, user-defined conversion, lambda/method group, conditional, cast,
+  local, generic-base specialization, typed `Auto`/`Ignore` и warning-free
+  generic nested result;
+- compiled C# 9 constructor matrix покрывает overload selection, named-source
+  evaluation order, local, wrapper cast, nested result и exact marker forms;
+- отдельная invalid matrix доказывает exact-type/nullability rejection и
+  отсутствие runtime intrinsic leakage, включая direct invocation и method
+  group внутри runtime callback-а;
+- latest consumer фиксирует target-typed collection expression и lambda.
+
 ## Следующий этап
 
-**Ревизия API-аудита поверх callback/read-only surface.**
+**Ревизия declarative explicit-value surface.**
 
 Статус: production-реализация, документация и focused tests завершены,
 ожидают пользовательского ревью.

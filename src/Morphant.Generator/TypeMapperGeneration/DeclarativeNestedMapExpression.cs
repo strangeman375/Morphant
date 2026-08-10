@@ -9,9 +9,6 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class DeclarativeNestedMapExpression
 {
-    private const string TypeMapperMetadataName =
-        "Morphant.TypeMapper";
-
     private const string MapMarkerMetadataName =
         "Morphant.Markers.MapMarker";
 
@@ -162,6 +159,12 @@ internal static class DeclarativeNestedMapExpression
             mappings.TryGetValue(invocation, out var mapping))
         {
             return mapping.DestinationType;
+        }
+
+        if (DeclarativeIntrinsic.GetEffectiveValueType(operation) is
+            { } valueType)
+        {
+            return valueType;
         }
 
         if (TryGetMarkerDestinationType(
@@ -819,30 +822,27 @@ internal static class DeclarativeNestedMapExpression
         CancellationToken cancellationToken,
         out IMethodSymbol method)
     {
-        method = semanticModel.GetSymbolInfo(
+        if (!DeclarativeIntrinsic.TryGetKind(
                 invocation,
-                cancellationToken)
-            .Symbol as IMethodSymbol ?? null!;
-
-        if (method is null ||
-            method.Name is not ("Map" or "Create" or "Update") ||
-            !method.IsStatic ||
-            !StringComparer.Ordinal.Equals(
-                SymbolNameHelper.GetFullMetadataName(
-                    method.ContainingType),
-                TypeMapperMetadataName) ||
-            method.ReturnType is not INamedTypeSymbol returnType)
+                semanticModel,
+                cancellationToken,
+                out var kind,
+                out _) ||
+            kind is not (
+                DeclarativeIntrinsicKind.Map or
+                DeclarativeIntrinsicKind.Create or
+                DeclarativeIntrinsicKind.Update) ||
+            semanticModel.GetSymbolInfo(
+                    invocation,
+                    cancellationToken)
+                .Symbol is not IMethodSymbol boundMethod)
         {
+            method = null!;
             return false;
         }
 
-        var returnMetadataName =
-            SymbolNameHelper.GetFullMetadataName(
-                returnType.OriginalDefinition);
-
-        return returnMetadataName is
-            MapMarkerMetadataName or
-            GenericMapMarkerMetadataName;
+        method = boundMethod;
+        return true;
     }
 
     private static bool IsNonGenericMapMarker(ITypeSymbol? type)

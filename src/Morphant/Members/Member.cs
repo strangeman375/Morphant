@@ -27,6 +27,6 @@ public sealed class Member<T>
     public static implicit operator Member<T>(MapMarker marker) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public static implicit operator Member<T>(MapMarker<T> marker) =>
+    public static implicit operator Member<T>(ValueMarker<T> marker) =>
         throw new RuntimeInvocationNotSupportedException();
 }

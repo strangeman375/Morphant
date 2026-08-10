@@ -27,6 +27,6 @@ public sealed class ConstructorParameter<T>
     public static implicit operator ConstructorParameter<T>(MapMarker marker) =>
         throw new RuntimeInvocationNotSupportedException();
 
-    public static implicit operator ConstructorParameter<T>(MapMarker<T> marker) =>
+    public static implicit operator ConstructorParameter<T>(ValueMarker<T> marker) =>
         throw new RuntimeInvocationNotSupportedException();
 }

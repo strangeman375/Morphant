@@ -42,6 +42,18 @@ The source expression's static type selects the nested source type. A generic
 destination must have a warning-free implicit conversion to the member or
 constructor parameter receiving the result.
 
+`Map<TDestination>` fixes the nested result type, not the exact final target
+type. Its generic marker flows through the common `Map` marker surface, and
+the mapped result is then checked with the normal warning-free implicit C#
+conversion. This permits, for example, a concrete nested result to enter an
+`object` or interface target without nullable warnings. Use
+`Value<T>(value)` when the final receiving type itself must be exact.
+
+An explicit cast to generated `Member<T>` or `ConstructorParameter<T>` may be
+used to disambiguate C# binding. The cast is compile-time context only and is
+removed during lowering, while its equivalent conversion to the actual `T` is
+preserved. No wrapper object reaches runtime.
+
 For parameterless `Map`, Morphant finds a readable source property or field
 from the target name. Member names are matched exactly. A constructor
 parameter is first associated with a readable destination member by exact

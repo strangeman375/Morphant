@@ -9,9 +9,6 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class ExplicitStructuredConstructorPlanner
 {
-    private const string ConstructorParameterMetadataName =
-        "Morphant.Members.ConstructorParameter`1";
-
     public static ExplicitStructuredConstructorPlan? Build(
         ImmutableArray<StructuredObjectArgument> planArguments,
         ITypeSymbol sourceType,
@@ -187,10 +184,22 @@ internal static class ExplicitStructuredConstructorPlanner
                 destinationConstructor.Parameters[
                     probeParameter.Ordinal];
             var planArgument = planArguments[index];
+            var targetType = DeclarativeIntrinsic
+                    .TryGetWrapperTargetType(
+                        planArgument.Value,
+                        MetadataNames.ConstructorParameter,
+                        semanticModel,
+                        cancellationToken,
+                        out var contextualTargetType)
+                ? contextualTargetType
+                : destinationParameter.Type.WithNullableAnnotation(
+                    destinationParameter.NullableAnnotation);
 
             if (DeclarativeConstructorMarker.TryGetKind(
                     planArgument.Value,
+                    targetType,
                     semanticModel,
+                    mapperType,
                     cancellationToken,
                     out var markerKind))
             {
@@ -237,26 +246,11 @@ internal static class ExplicitStructuredConstructorPlanner
             }
 
             var rewrittenDependency =
-                !TryGetConstructorParameterCast(
+                rewriteDependencyExpression(
                     planArgument.Value,
-                    destinationParameter,
-                    compilation,
-                    semanticModel,
-                    cancellationToken,
-                    out _)
-                    ? rewriteDependencyExpression(
-                        planArgument.Value,
-                        destinationParameter)
-                    : null;
+                    destinationParameter);
             var explicitValueExpression =
-                rewrittenDependency?.Expression ??
-                RewriteArgumentExpression(
-                    planArgument.Value,
-                    destinationParameter,
-                    compilation,
-                    semanticModel,
-                    rewriteExpression,
-                    cancellationToken);
+                rewrittenDependency?.Expression;
 
             if (explicitValueExpression is null)
             {
@@ -546,45 +540,6 @@ internal static class ExplicitStructuredConstructorPlanner
         return true;
     }
 
-    internal static string? RewriteArgumentExpression(
-        ExpressionSyntax expression,
-        IParameterSymbol destinationParameter,
-        CSharpCompilation compilation,
-        SemanticModel semanticModel,
-        Func<ExpressionSyntax, string?> rewriteExpression,
-        CancellationToken cancellationToken)
-    {
-        if (!TryGetConstructorParameterCast(
-                expression,
-                destinationParameter,
-                compilation,
-                semanticModel,
-                cancellationToken,
-                out var constructorParameterCast))
-        {
-            return rewriteExpression(expression);
-        }
-
-        if (rewriteExpression(constructorParameterCast.Expression) is not
-            { } rewrittenOperand)
-        {
-            return null;
-        }
-
-        var parameterTypeName = destinationParameter.Type
-            .WithNullableAnnotation(
-                destinationParameter.NullableAnnotation)
-            .ToDisplayString(
-                SymbolDisplayFormats.FullyQualifiedNullable);
-
-        return SyntaxFactory.ParseExpression(
-                $"({parameterTypeName})" +
-                rewrittenOperand)
-            .WithoutTrivia()
-            .NormalizeWhitespace()
-            .ToFullString();
-    }
-
     private static string? BuildProbeArgumentExpression(
         ExpressionSyntax expression,
         CSharpCompilation compilation,
@@ -650,33 +605,6 @@ internal static class ExplicitStructuredConstructorPlanner
 
     private static bool TryGetConstructorParameterCast(
         ExpressionSyntax expression,
-        IParameterSymbol destinationParameter,
-        CSharpCompilation compilation,
-        SemanticModel semanticModel,
-        CancellationToken cancellationToken,
-        out CastExpressionSyntax constructorParameterCast)
-    {
-        if (!TryGetConstructorParameterCast(
-                expression,
-                compilation,
-                semanticModel,
-                cancellationToken,
-                out constructorParameterCast,
-                out var castType) ||
-            castType.TypeArguments.Length != 1 ||
-            !MappingTypeIdentityPolicy.AreEquivalent(
-                castType.TypeArguments[0],
-                destinationParameter.Type))
-        {
-            constructorParameterCast = null!;
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool TryGetConstructorParameterCast(
-        ExpressionSyntax expression,
         CSharpCompilation compilation,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
@@ -696,7 +624,7 @@ internal static class ExplicitStructuredConstructorPlanner
         }
 
         if (compilation.GetTypeByMetadataName(
-                ConstructorParameterMetadataName) is not
+                MetadataNames.ConstructorParameter) is not
             { } constructorParameterDefinition ||
             semanticModel.GetTypeInfo(
                     cast.Type,

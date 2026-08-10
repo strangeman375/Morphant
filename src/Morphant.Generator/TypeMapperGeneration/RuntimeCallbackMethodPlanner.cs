@@ -469,35 +469,10 @@ internal static class RuntimeCallbackMethodPlanner
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        foreach (var invocation in syntax.DescendantNodesAndSelf()
-                     .OfType<InvocationExpressionSyntax>())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (semanticModel.GetSymbolInfo(
-                    invocation,
-                    cancellationToken).Symbol is not IMethodSymbol method)
-            {
-                continue;
-            }
-
-            method = method.ReducedFrom ?? method;
-
-            if ((method.Name is
-                     "Auto" or
-                     "Ignore" or
-                     "Map" or
-                     "Create" or
-                     "Update" or
-                     "ByConvention") &&
-                SymbolNameHelper.GetFullMetadataName(method.ContainingType) ==
-                    MetadataNames.TypeMapper)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return DeclarativeIntrinsic.Contains(
+            syntax,
+            semanticModel,
+            cancellationToken);
     }
 
     private static IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>

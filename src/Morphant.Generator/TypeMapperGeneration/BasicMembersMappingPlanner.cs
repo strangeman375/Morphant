@@ -331,9 +331,21 @@ internal static class BasicMembersMappingPlanner
                 return false;
             }
 
+            var targetType = DeclarativeIntrinsic
+                    .TryGetWrapperTargetType(
+                        assignment.Value,
+                        MetadataNames.Member,
+                        semanticModel,
+                        cancellationToken,
+                        out var contextualTargetType)
+                ? contextualTargetType
+                : destinationMember.Type;
+
             if (DeclarativeMemberMarker.TryGetKind(
                     assignment.Value,
+                    targetType,
                     semanticModel,
+                    mapperType,
                     cancellationToken,
                     out var markerKind))
             {
@@ -391,6 +403,7 @@ internal static class BasicMembersMappingPlanner
                     createNestedMapUsages,
                     mapReplacementNestedMapUsages,
                     updateNestedMapUsages,
+                    targetType,
                     cancellationToken,
                     out var explicitPlan))
             {
@@ -592,6 +605,7 @@ internal static class BasicMembersMappingPlanner
         DeclarativeNestedMapUsageRegistry createNestedMapUsages,
         DeclarativeNestedMapUsageRegistry mapReplacementNestedMapUsages,
         DeclarativeNestedMapUsageRegistry updateNestedMapUsages,
+        ITypeSymbol targetType,
         CancellationToken cancellationToken,
         out ExplicitMemberMappingPlan plan)
     {
@@ -610,9 +624,9 @@ internal static class BasicMembersMappingPlanner
                 contextName: "context",
                 transferScope,
                 localSubstitutions,
-                destinationMember.Type,
+                targetType,
                 new DeclarativeNestedMapTargetContext(
-                    destinationMember.Type,
+                    targetType,
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Create,
                     CurrentDestinationExpression: null),
@@ -635,9 +649,9 @@ internal static class BasicMembersMappingPlanner
                 contextName: "context",
                 transferScope,
                 localSubstitutions,
-                destinationMember.Type,
+                targetType,
                 new DeclarativeNestedMapTargetContext(
-                    destinationMember.Type,
+                    targetType,
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Update,
                     mapping.ResultLocalName + "." +
@@ -661,9 +675,9 @@ internal static class BasicMembersMappingPlanner
                 contextName: "context",
                 transferScope,
                 localSubstitutions,
-                destinationMember.Type,
+                targetType,
                 new DeclarativeNestedMapTargetContext(
-                    destinationMember.Type,
+                    targetType,
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Update,
                     "destination." +
@@ -688,7 +702,7 @@ internal static class BasicMembersMappingPlanner
                 cancellationToken);
         var valueTypeName =
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                destinationMember.Type);
+                targetType);
         TypeMapperMemberMappingModel BuildMapping(
             string valueExpression,
             TypeMapperDependencyExpressionModel? dependencyExpression,

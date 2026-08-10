@@ -1,82 +1,86 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class DeclarativeMemberMarker
 {
-    private const string TypeMapperMetadataName =
-        "Morphant.TypeMapper";
-
-    private const string AutoMarkerMetadataName =
-        "Morphant.Markers.AutoMarker";
-
-    private const string GenericAutoMarkerMetadataName =
-        "Morphant.Markers.AutoMarker`1";
-
-    private const string IgnoreMarkerMetadataName =
-        "Morphant.Markers.IgnoreMarker";
-
-    private const string GenericIgnoreMarkerMetadataName =
-        "Morphant.Markers.IgnoreMarker`1";
-
     public static bool TryGetKind(
         ExpressionSyntax expression,
+        ITypeSymbol targetType,
         SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
         CancellationToken cancellationToken,
         out DeclarativeMemberMarkerKind kind)
     {
-        expression = UnwrapParentheses(expression);
+        if (DeclarativeIntrinsic.TryGetWrapperCast(
+                expression,
+                MetadataNames.Member,
+                semanticModel,
+                cancellationToken,
+                out var wrapperCast,
+                out _))
+        {
+            expression = wrapperCast.Expression;
+        }
+
+        expression = DeclarativeIntrinsic.UnwrapTransparentSyntax(
+            expression);
 
         if (expression is not InvocationExpressionSyntax invocation ||
-            semanticModel.GetSymbolInfo(
-                    invocation,
-                    cancellationToken)
-                .Symbol is not IMethodSymbol
-                {
-                    ContainingType: { } containingType,
-                    ReturnType: INamedTypeSymbol returnType
-                } ||
-            !StringComparer.Ordinal.Equals(
-                SymbolNameHelper.GetFullMetadataName(containingType),
-                TypeMapperMetadataName))
+            !DeclarativeIntrinsic.TryGetKind(
+                invocation,
+                semanticModel,
+                cancellationToken,
+                out var intrinsicKind,
+                out _))
         {
             kind = default;
             return false;
         }
 
-        var metadataName = SymbolNameHelper.GetFullMetadataName(
-            returnType.OriginalDefinition);
-
-        if (metadataName is
-            AutoMarkerMetadataName or
-            GenericAutoMarkerMetadataName)
+        if (intrinsicKind == DeclarativeIntrinsicKind.Auto)
         {
             kind = DeclarativeMemberMarkerKind.Auto;
-            return true;
         }
-
-        if (metadataName is
-            IgnoreMarkerMetadataName or
-            GenericIgnoreMarkerMetadataName)
+        else if (intrinsicKind == DeclarativeIntrinsicKind.Ignore)
         {
             kind = DeclarativeMemberMarkerKind.Ignore;
-            return true;
         }
-
-        kind = default;
-        return false;
-    }
-
-    private static ExpressionSyntax UnwrapParentheses(
-        ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        else
         {
-            expression = parenthesized.Expression;
+            kind = default;
+            return false;
         }
 
-        return expression;
+        if (semanticModel.GetOperation(
+                invocation,
+                cancellationToken) is IInvocationOperation
+            {
+                TargetMethod:
+                {
+                    IsGenericMethod: true,
+                    TypeArguments.Length: 1
+                } markerMethod
+            })
+        {
+            var assertedType = markerMethod.TypeArguments[0]
+                .WithNullableAnnotation(
+                    markerMethod.TypeArgumentNullableAnnotations[0]);
+
+            if (!DeclarativeIntrinsic.HasExactTargetType(
+                    assertedType,
+                    targetType,
+                    semanticModel,
+                    mapperType))
+            {
+                kind = default;
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

@@ -1,74 +1,58 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class DeclarativeConstructorMarker
 {
-    private const string TypeMapperMetadataName =
-        "Morphant.TypeMapper";
-
-    private const string AutoMarkerMetadataName =
-        "Morphant.Markers.AutoMarker";
-
-    private const string GenericAutoMarkerMetadataName =
-        "Morphant.Markers.AutoMarker`1";
-
-    private const string IgnoreMarkerMetadataName =
-        "Morphant.Markers.IgnoreMarker";
-
-    private const string GenericIgnoreMarkerMetadataName =
-        "Morphant.Markers.IgnoreMarker`1";
-
-    private const string MapMarkerMetadataName =
-        "Morphant.Markers.MapMarker";
-
-    private const string GenericMapMarkerMetadataName =
-        "Morphant.Markers.MapMarker`1";
-
     public static bool TryGetKind(
         ExpressionSyntax expression,
+        ITypeSymbol targetType,
         SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
         CancellationToken cancellationToken,
         out DeclarativeConstructorMarkerKind kind)
     {
-        expression = UnwrapParentheses(expression);
+        if (DeclarativeIntrinsic.TryGetWrapperCast(
+                expression,
+                MetadataNames.ConstructorParameter,
+                semanticModel,
+                cancellationToken,
+                out var wrapperCast,
+                out _))
+        {
+            expression = wrapperCast.Expression;
+        }
+
+        expression = DeclarativeIntrinsic.UnwrapTransparentSyntax(
+            expression);
 
         if (expression is not InvocationExpressionSyntax invocation ||
-            semanticModel.GetSymbolInfo(
-                    invocation,
-                    cancellationToken)
-                .Symbol is not IMethodSymbol
-                {
-                    ContainingType: { } containingType,
-                    ReturnType: INamedTypeSymbol returnType
-                } ||
-            !StringComparer.Ordinal.Equals(
-                SymbolNameHelper.GetFullMetadataName(containingType),
-                TypeMapperMetadataName))
+            !DeclarativeIntrinsic.TryGetKind(
+                invocation,
+                semanticModel,
+                cancellationToken,
+                out var intrinsicKind,
+                out _))
         {
             kind = default;
             return false;
         }
 
-        var metadataName =
-            SymbolNameHelper.GetFullMetadataName(
-                returnType.OriginalDefinition);
-
-        switch (metadataName)
+        switch (intrinsicKind)
         {
-            case AutoMarkerMetadataName:
-            case GenericAutoMarkerMetadataName:
+            case DeclarativeIntrinsicKind.Auto:
                 kind = DeclarativeConstructorMarkerKind.Auto;
-                return true;
+                break;
 
-            case IgnoreMarkerMetadataName:
-            case GenericIgnoreMarkerMetadataName:
+            case DeclarativeIntrinsicKind.Ignore:
                 kind = DeclarativeConstructorMarkerKind.Ignore;
-                return true;
+                break;
 
-            case MapMarkerMetadataName:
-            case GenericMapMarkerMetadataName:
+            case DeclarativeIntrinsicKind.Map:
+            case DeclarativeIntrinsicKind.Create:
+            case DeclarativeIntrinsicKind.Update:
                 kind = DeclarativeConstructorMarkerKind.Map;
                 return true;
 
@@ -76,17 +60,34 @@ internal static class DeclarativeConstructorMarker
                 kind = default;
                 return false;
         }
-    }
 
-    private static ExpressionSyntax UnwrapParentheses(
-        ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        if (semanticModel.GetOperation(
+                invocation,
+                cancellationToken) is IInvocationOperation
+            {
+                TargetMethod:
+                {
+                    IsGenericMethod: true,
+                    TypeArguments.Length: 1
+                } markerMethod
+            })
         {
-            expression = parenthesized.Expression;
+            var assertedType = markerMethod.TypeArguments[0]
+                .WithNullableAnnotation(
+                    markerMethod.TypeArgumentNullableAnnotations[0]);
+
+            if (!DeclarativeIntrinsic.HasExactTargetType(
+                    assertedType,
+                    targetType,
+                    semanticModel,
+                    mapperType))
+            {
+                kind = default;
+                return false;
+            }
         }
 
-        return expression;
+        return true;
     }
 }
 

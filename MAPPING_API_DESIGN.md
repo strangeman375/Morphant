@@ -569,7 +569,8 @@ pair-builder-а без root-normalization. В
 выполняется effective `Members` plan. В отличие от них `Convert` получает
 исходные inputs до null handling и не запускает никакую declarative stage.
 
-Declarative markers внутри `ConstructUsing` и `ResolveUsing` недоступны.
+Declarative intrinsics, включая `Value`, `Auto`, `Ignore`, nested markers и
+`ByConvention`, внутри `ConstructUsing` и `ResolveUsing` недоступны.
 Constructor, object initializer, cache, factory, mutation, conditions, loops,
 exceptions и local functions являются обычным C#. `ByFactory` полностью
 удалён: ни marker-а внутри `DestinationConstruction`, ни top-level alias, ни
@@ -612,6 +613,7 @@ Constructor-parameter rules сохраняют текущую модель:
 | Запись | Семантика |
 |---|---|
 | Явное выражение | Вычислить и передать значение параметра |
+| `Value(value)` / `Value<T>(value)` | Вычислить explicit value с точным конечным типом `T` |
 | `Auto()` | Обязательно получить параметр по convention |
 | `Ignore()` | Опустить параметр, когда это допустимо для optional / `params` |
 | `Map()` / `Map<TDestination>()` | Вывести source по target-name и выполнить adaptive nested mapping |
@@ -622,6 +624,23 @@ Constructor-parameter rules сохраняют текущую модель:
 Typed-формы `Auto<T>()` и `Ignore<T>()` сохраняются вместе с generic-формами
 nested markers. Они нужны там, где обычного target typing недостаточно,
 например внутри declarative local, conditional- либо switch-expression.
+Typed `Auto<T>()` и `Ignore<T>()` утверждают точный тип target-а, включая
+nullability, а не только возможность implicit conversion к нему.
+
+Обычное выражение остаётся предпочтительной explicit-value формой, когда
+target typing уже достаточен. `Value<T>(value)` используется, когда DSL должен
+зафиксировать точный конечный тип до lowering: для выбора constructor overload,
+boxing или numeric/user-defined conversion, nullable-аннотации, lambda, method
+group и другого target-typed выражения. В короткой форме `Value(value)` generic
+argument выводится только из argument-а по обычным правилам C# и затем также
+считается точным конечным типом. Поэтому `Value(1)` означает `int`, а
+`Value<object>(1)` — `object`; generator не расширяет первое значение до
+`object` молча.
+
+Marker является финальной DSL-обёрткой: пользовательское вычисление помещается
+в argument (`Value<T>(Compute(...))`), но сам `ValueMarker<T>` не передаётся в
+helper, delegate, field/property либо другой runtime consumer. Такое
+использование является invalid configuration даже при совпадающем `T`.
 
 Generated overload-ы creation-plan являются compiler probe для настоящих
 destination constructors. Positional, named и mixed arguments, optional
@@ -630,6 +649,13 @@ parameters, omission и overload ambiguity разрешает C# compiler, а н
 целиком, но не expanded-форму. Явный cast к `ConstructorParameter<T>` остаётся
 способом выбрать нужную generated overload; при lowering он превращается в
 cast к фактическому типу destination parameter-а.
+
+`ConstructorParameter<T>` не имеет public value-constructor-а. Его compact
+compile-time surface принимает обычный `T`, typed/untyped `Auto` и `Ignore`,
+non-generic `MapMarker` и точный `ValueMarker<T>`. Generic `MapMarker<TNested>`
+наследует `MapMarker`; его mapped result отдельно проверяется на warning-free
+implicit conversion к конечному parameter type. Отдельного exact
+`MapMarker<T> -> ConstructorParameter<T>` conversion нет.
 
 ### 6.5. Поведение по умолчанию
 
@@ -938,6 +964,7 @@ Destination без constructor surface вообще не получает `init`
 | Запись | Результат |
 |---|---|
 | Явное выражение | Вычислить и присвоить member выбранного result |
+| `Value(value)` / `Value<T>(value)` | Вычислить explicit value с точным конечным типом `T` |
 | `Auto()` | Обязательно найти convention mapping |
 | `Ignore()` | Не маппить member и сохранить значение выбранного result |
 | `Map()` / `Map<TDestination>()` | Вывести source по target-name и выполнить adaptive nested mapping |
@@ -953,6 +980,22 @@ Destination без constructor surface вообще не получает `init`
 форма остаётся предпочтительной. `Map<TDestination>(...)` аналогично явно
 задаёт nested destination, когда его нельзя либо не следует выводить из
 целевого места.
+
+`Value<T>(value)` является отдельным explicit-value intrinsic и не наследует
+`MemberMarker`. `T` обязан точно совпасть с принимаемым member type, включая
+вложенные nullable-аннотации и mapper generic substitutions. Короткая форма
+`Value(value)` сначала выводит `T` из argument-а; return-target не участвует в
+generic inference. Если C# смог провести несовпадающий marker через более
+широкий `object` conversion, это всё равно invalid mapping configuration, а не
+разрешение расширить заявленный final type. Для намеренного boxing пользователь
+пишет, например, `Value<object>(source.Id)`.
+
+Как и `ConstructorParameter<T>`, `Member<T>` не имеет public
+value-constructor-а и принимает ровно обычный `T`, typed/untyped `Auto` и
+`Ignore`, non-generic `MapMarker` и точный `ValueMarker<T>`. Generic nested
+marker остаётся warning-free implicit input через свою non-generic base-form;
+его `TDestination` задаёт nested result type, но не утверждает точное равенство
+типу member-а.
 
 Выбор неуказанных members задаёт отдельная setting:
 
@@ -1185,6 +1228,13 @@ target conversions применяются к уже разделяемому з�
 текст, связавшийся с другим overload/symbol или другой target-typed nested
 mapping, общей нодой не является.
 
+`Value<T>` входит в тот же dependency graph. Его argument вычисляется ровно
+один раз, а подтверждённое преобразование к точному `T` сохраняется после
+удаления compile-time marker-а, поэтому overload selection, boxing,
+user-defined conversion, lambda и method-group binding не привязываются заново
+к другому типу в generated code. Declarative locals с выведенным
+`ValueMarker<T>` lower-ятся в runtime local типа `T`.
+
 Sharing остаётся path-sensitive: expression не выносится из условия и не
 вычисляется, если ни одно effective использование на выбранном пути не нужно.
 Если creation-use требует значение до constructor-а, это и задаёт момент
@@ -1223,7 +1273,7 @@ DSL. В них поддерживаются:
   либо бросает exception;
 - conditional- и switch-expressions;
 - условный выбор whole plan, creation strategy, constructor/member value,
-  `Auto()`, `Ignore()` и `Map(...)`.
+  `Value(...)`, `Auto()`, `Ignore()` и `Map(...)`.
 
 Каждая ветка планируется отдельно для достижимой mapping operation. Условие,
 selector, local и value не выполняются, если от них не зависит выбранный путь.
@@ -1511,7 +1561,7 @@ Exception из nested mapping не меняет outer frame. Его можно �
 - convention member mapping не применяется;
 - result policy и `Members` не выполняются;
 - `Auto()`, `Ignore()`, `Map(...)`, `Create(...)`, `Update(...)`,
-  `ByConvention()` не являются DSL-маркерами и недоступны;
+  `Value(...)`, `ByConvention()` не являются DSL-маркерами и недоступны;
 - ручные nested mappings доступны через `context.Mapper.Map(...)`;
 - scoped mapper автоматически создаёт для вложенного вызова новый
   `MappingContext` и сохраняет общий scope;
@@ -2067,6 +2117,14 @@ destination constructor parameter или body-member:
   аннотацию parameter-а;
 - nullability, зависящая от effective mapping settings, выводится только после
   разрешения этих settings и не подменяется общей консервативной аннотацией.
+
+Обе wrapper-family имеют только private parameterless constructor и
+compile-time implicit conversions; создать runtime wrapper со значением
+нельзя. `ValueMarker<T>` также не имеет runtime instance и преобразуется только
+в wrapper с тем же exact `T`. Ни один generated path не вызывает
+`Value`/marker API: generator рекурсивно lower-ит все распознанные intrinsics
+либо сохраняет operation как invalid configuration. После обнаружения
+intrinsic fallback к переносу исходного invocation в runtime code запрещён.
 
 Generated documentation наследуется через `inheritdoc` от destination type,
 constructors и members. Если исходной документации нет, Morphant генерирует
@@ -2703,7 +2761,7 @@ message. Зафиксированы следующие типы:
 | Adaptive nested destination runtime-несовместим | `NestedDestinationTypeMismatchException` |
 | Declarative switch не выбрал ветку | `UnmatchedMappingSwitchException` |
 | `Option<T>.Value` прочитан у `None` | `OptionValueMissingException` |
-| Compile-time DSL API вызван как runtime API | `RuntimeInvocationNotSupportedException` |
+| Compile-time DSL intrinsic, включая `Value`, вызван как runtime API | `RuntimeInvocationNotSupportedException` |
 
 `MappingConfigurationException` дополнительно предоставляет `Reason`,
 `MappingOperationNotSupportedException` — `EffectiveMappingMode`, а
@@ -2800,7 +2858,12 @@ expressions, mapper dependencies и application service provider не
     `Auto()` используют только warning-free implicit C#-преобразование и не
     предполагают наличие mapping-пары. Get-only member обновляется только
     standalone `Update(..., members.Member)` с generated null guard и discard
-    returned result.
+    returned result. `Value<T>(value)` отдельно утверждает exact final target
+    type, включая nullability, и сохраняет это target conversion при lowering;
+    `Value(value)` выводит `T` только из argument-а. Typed `Auto<T>()` и
+    `Ignore<T>()` следуют тому же exact-target закону, тогда как generic
+    `Map<TDestination>` задаёт nested result и требует warning-free implicit
+    conversion к принимающему target-у.
 16. `Convert` является pair-specific generated extension на обычном fluent
     pair-builder, а не отдельным builder-типом.
 17. У `Convert` есть три prefix-overload-а: с `source`; с `source` /
@@ -2850,6 +2913,9 @@ expressions, mapper dependencies и application service provider не
     `MappingContextMarker`, который предоставляет только `Operation` и не имеет
     runtime instance. Сам marker нельзя использовать как значение; declarative
     nested mapping выражается только `Map` / `Create` / `Update` markers.
+    `Value`, как и остальные declarative intrinsics, полностью lower-ится до
+    runtime C# value; любой неполный lowering делает plan invalid и никогда не
+    оставляет intrinsic invocation либо marker object в generated path.
 31. Public `Map` принимает nullable source/destination inputs, но возвращает
     ровно выбранный пользователем `TDestination`, а не безусловный
     `TDestination?`.
