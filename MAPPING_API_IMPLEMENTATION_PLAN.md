@@ -125,9 +125,9 @@ coverage.
 
 Диагностики и observable failures вынесены в отдельные поздние этапы.
 Observable failures детализированы и приняты этапом 24. Diagnostics ведутся в
-отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md), но их дальнейшая
-детализация и реализация приостановлены до завершения согласованной ревизии
-пользовательского callback API.
+отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): категории 1–8
+синхронизированы с принятым callback API и готовы, категории 9–12 остаются
+следующей незавершённой частью каталога.
 
 Automatic collection semantics, projection и остальные post-v0 возможности в
 текущую реализацию не входят. Collection/tuple/deferred и связанные root-типы
@@ -137,9 +137,9 @@ Automatic collection semantics, projection и остальные post-v0 воз�
 
 ## Согласованные ревизии callback surface и read-only proxy
 
-Статус: ожидает пользовательского ревью с 8 августа 2026 года. Нормативный
-дизайн, production-код, generated API, XML documentation, exact-source,
-actualization и package-like integration tests актуализированы одним срезом.
+Статус: принят пользователем 10 августа 2026 года. Нормативный дизайн,
+production-код, generated API, XML documentation, exact-source, actualization
+и package-like integration tests актуализированы одним срезом.
 
 Ревизия устраняет скрытую зависимость semantics от arity прежнего
 `Construct`. Overload одного fluent method выбирает только доступные callback-у
@@ -348,16 +348,15 @@ conventions / `Auto()` / unmapped validation сохраняются.
   lowering, XML documentation, exact-source snapshots, integration scenarios,
   actualization и public API inventory одним coherent change.
 
-Diagnostics до пользовательского принятия этого среза не продолжаются. Перед
-возвращением к их каталогу категории 1, 4, 5, 7 и 8 согласованно
-пересматриваются для шести callback families, общего result-policy slot-а и
-`MappingContextMarker`; прежняя категория 8 больше не считается готовой к
-ревью или реализации.
+После принятия этого среза категории diagnostics 1–8 согласованно
+пересмотрены для шести callback families, общего result-policy slot-а и
+`MappingContextMarker`; актуальный контракт зафиксирован в
+`DIAGNOSTICS_PLAN.md`.
 
 ## Согласованная ревизия API-аудита
 
-Статус: production-реализация, документация и focused tests завершены;
-ожидает пользовательского ревью с 9 августа 2026 года.
+Статус: принят пользователем 10 августа 2026 года; production-реализация,
+документация и focused tests завершены.
 
 Ревизия поверх принятого core v0 фиксирует пять решений:
 
@@ -457,10 +456,10 @@ Focused specification разделена по независимым concerns:
   group внутри runtime callback-а;
 - latest consumer фиксирует target-typed collection expression и lambda.
 
-## Ревизия надёжности переноса declarative expressions
+## Ревизия надёжности переноса пользовательского C#
 
-Статус: production-реализация, документация и focused tests завершены;
-ожидает пользовательского ревью с 10 августа 2026 года.
+Статус: принят пользователем 10 августа 2026 года; production-реализация,
+документация и focused tests завершены.
 
 Аудит реальных consumer expressions после принятия explicit-value surface
 выявил несколько мест, где исходный C# либо терял binding при переносе, либо
@@ -491,7 +490,17 @@ Focused specification разделена по независимым concerns:
   method либо local function, включая чтение, вызов метода и mutation;
   предварительно вычисленный обычный local-snapshot остаётся переносимым;
 - query/lambda/local-function bodies не hoist-ятся как безусловные dependency
-  nodes, поэтому deferred и path-sensitive evaluation сохраняются.
+  nodes, поэтому deferred и path-sensitive evaluation сохраняются;
+- `async` / `static async` runtime lambda сохраняет modifier, а unsafe context
+  добавляется только generated helpers конкретной pair и не заражает соседний
+  async callback;
+- локальный `#pragma warning` и nullable warning state переносятся узко на
+  affected generated pair;
+- value- и void-returning null-conditional extension calls квалифицируются с
+  сохранением null propagation и однократного вычисления receiver-а;
+- итоговый mapper проходит compiler preflight: непереносимый extension method
+  group/custom pattern и иная новая generated ошибка fail closed через typed
+  `MappingConfigurationException`, не попадая в `.g.cs`.
 
 Package-like матрицы раздельно покрывают `Construct`, `Resolve` и `Members`:
 terminal/invalid nested marker, три collision имени, outer и deferred queries,
@@ -501,27 +510,60 @@ C# 11. Отдельная capture-матрица проверяет direct read,
 nested local function и anonymous method для `previous` / `result`, а также
 разрешённые outer snapshots.
 
+Отдельные C# 9 consumer scenarios покрывают `async` runtime callbacks,
+structured/runtime unsafe, warning/nullable context, conditional extension
+binding и fail-closed method-group/`foreach` extension pattern. Exact-source
+tests фиксируют локальную гранулярность `unsafe`, `async` modifier и
+перенесённые suppressions.
+
+## Согласованная ревизия diagnostic-категорий 1–8
+
+Статус: принята пользователем 10 августа 2026 года; нормативный каталог
+обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+
+Ревизия сохранила `MORPH0001`–`MORPH0033`, не сдвигая согласованные IDs, и
+добавила один следующий ID `MORPH0034` для собственного mapper member-а,
+конфликтующего с обязательным generated `Supports(Type, Type)`.
+
+Основные изменения каталога:
+
+- bootstrap manifest категории 1 синхронизирован с `Supports`,
+  `MappingContextMarker`, `Value<T>`, шестью delegate families и актуальной
+  exception hierarchy; первая опубликованная contract revision остаётся `1`;
+- `MORPH0012` сужена до root type parameter. Tuple/collection/delegate/
+  expression/deferred/observable roots являются positive opaque matrix;
+- builder flow больше не владеет callback arguments; category 5 анализирует
+  общий result-policy slot, `Members` и `Convert`;
+- settings и exact same-pair `IncludeBase` учитывают structured/runtime result
+  policies, opaque capabilities и callback accessibility;
+- `MORPH0030` стал общим semantic transfer failure, `MORPH0033` охватывает
+  любой выход compile-time marker-а в runtime/non-terminal position, а
+  category 8 включает compiler preflight, lexical context, extension binding,
+  async/unsafe и deferred-capture laws.
+
+До implementation diagnostics нужен один предварительный production-срез:
+
+1. исправить exact same-pair `IncludeBase` lookup/full-plan import и удалить
+   внутренний `CyclicIncludeBase` state;
+2. передать callback arguments из builder discovery в category-8 model;
+3. отличать source-owned warning от новой preflight failure;
+4. заменить boolean/string failure states structured observations с origin,
+   reason, locations, target mapper и affected operations/path.
+
 ## Следующий этап
 
-**Ревизия надёжности переноса declarative expressions.**
+**Diagnostics: категория 9 — корректность construction plan.**
 
-Статус: production-реализация, документация и focused tests завершены,
-ожидают пользовательского ревью.
-
-После ревью этой ревизии пользователь отдельно определит следующий шаг.
-Diagnostics этапа 23 остаются приостановлены до принятия пользовательского
-API. Принятые ранее
-категории 1–7 сохраняют свои IDs и общие diagnostic contracts, но их callback-
-зависимые части потребуют согласованной актуализации; черновик категории 8
-снят со статуса `ожидает ревью`.
+Статус: не начат. Категории 1–8 приняты; перед production-реализацией всего
+каталога остаются категории 9–12 и предварительный срез, перечисленный выше.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
 `ByFactory`, прежних `Members` / `Convert` arities, более широкого read-only
 member surface и соответствующих tests не являются целевым контрактом или
-compatibility requirement. Они удаляются либо переписываются вместе с
-production-срезом; нормативный target до этого задают раздел выше и
-`MAPPING_API_DESIGN.md`.
+compatibility requirement. Они сохраняются только как журнал уже завершённых
+этапов; нормативный target задают актуальные разделы выше,
+`DIAGNOSTICS_PLAN.md` и `MAPPING_API_DESIGN.md`.
 
 ## Фаза 1. Публичный фундамент и generated surface
 
@@ -1942,18 +1984,24 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: приостановлен до завершения ревизии пользовательского callback API.
+Статус: в работе на уровне каталога. Категории 1–8 приняты; категории 9–12 не
+начаты; production-реализация diagnostics ещё не начата.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
 таксономия v0, затем по одной категории составляется полный каталог с IDs,
 сообщениями, locations, severity, suppression и recovery. Реализация и тесты
 начинаются только после согласования каталога; завершает этап двусторонний
-аудит плана и production-кода. Таксономия и категории 1–7 с
-`MORPH0001`–`MORPH0028` были приняты. Их callback-зависимые части требуют
-синхронизации с новым surface, а категория 8 с `MORPH0029`–`MORPH0033`
-возвращена в замороженный pre-revision draft и не готова к ревью либо
-реализации.
+аудит плана и production-кода. Таксономия и категории 1–8 с
+`MORPH0001`–`MORPH0034` приняты и синхронизированы с текущим API; новый
+`MORPH0034` относится к категории 2, а номера `MORPH0029`–`MORPH0033`
+сохранены за category-8 transfer contract. Следующая каталожная работа —
+категория 9.
+
+Перед первым implementation slice выполняется согласованный preflight:
+exact-same-pair `IncludeBase`, callback ownership builder discovery, различие
+source/generated warnings и structured failure observations. Точный scope и
+тестовые требования зафиксированы разделом 7 `DIAGNOSTICS_PLAN.md`.
 
 ### Этап 24. Observable failures
 

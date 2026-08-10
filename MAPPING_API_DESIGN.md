@@ -2778,6 +2778,8 @@ source, factory/derived behavior и точный evaluation order будут с�
 
 - несовместимое compilation environment или отсутствие однозначного
   совместимого обязательного contract Morphant;
+- собственный mapper member `Supports(System.Type, System.Type)`, который
+  конфликтует с обязательным generated infrastructure override;
 - использование Morphant builder-а вне поддерживаемого прямого линейного
   `Configure` flow;
 - повторную регистрацию одной canonical pair внутри одного mapper-а;
@@ -2787,6 +2789,10 @@ source, factory/derived behavior и точный evaluation order будут с�
 - повторный `Convert`;
 - смешивание `Convert` с любой result policy или `Members`;
 - pair-specific constructor/member settings, несовместимые с manual mapping;
+- callback либо compile-time marker, который нельзя перенести в generated
+  mapper с сохранением C# binding, lexical context, lifetime и terminal DSL
+  semantics; такая форма должна fail closed до emission, а не оставлять ошибку
+  compiler-а в `.g.cs`;
 - достижимый explicit `init`-rule либо creation-time `required`-rule structured
   surface, который невозможно применить в конкретной creation branch: result
   уже создан runtime callback-ом либо value/условие rule транзитивно зависит от ещё
@@ -3338,12 +3344,15 @@ general-purpose mapper-а. После expression sharing, member-only `with`,
 
 ## 17. Статус реализации и оставшиеся границы
 
-Основная semantics core v0, ревизии callback/read-only surface и августовский
-API-аудит реализованы в production-коде, generated API, документации и focused
-tests и ожидают пользовательского ревью. Последний срез включает deferred
+Основная semantics core v0, ревизии callback/read-only surface, августовский
+API-аудит, explicit `Value<T>` и надёжность expression transfer реализованы в
+production-коде, generated API, документации и focused tests и приняты
+пользователем. Последние срезы включают deferred
 opaque roots, context-free exact-pair `ITypeMapper` extensions без отдельного
 pair-selector, lazy validation default `MappingContext`, структурированную
-`MappingException` hierarchy и sealing конечных phantom/API types.
+`MappingException` hierarchy, sealing конечных phantom/API types, terminal
+markers, collision-safe binding, caller-info materialization, lexical
+warning/nullable context, async/unsafe transfer и compiler preflight.
 Текущее состояние и следующий этап фиксируются в
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md), а
 независимая оценка полноты сценариев — в
@@ -3351,7 +3360,8 @@ pair-selector, lazy validation default `MappingContext`, структуриро�
 
 Observable runtime failures и generated exception-stub boundary реализованы и
 зафиксированы разделом 14.2. Compile-time diagnostics остаются отдельным
-поздним планом и приостановлены до пользовательского принятия текущего API.
+поздним планом: категории 1–8 приняты и синхронизированы с текущим API,
+категории 9–12 ещё не проработаны.
 Automatic collection semantics, projection, polymorphism, reference handling и
 остальные перечисленные выше возможности остаются post-v0 направлениями и не
 расширяют текущий mapping semantics неявно. До отдельного продуктового решения
