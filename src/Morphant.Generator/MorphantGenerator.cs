@@ -60,6 +60,11 @@ public sealed class MorphantGenerator : IIncrementalGenerator
         MappingCompositionDiagnosticPipeline.Register(
             context,
             contractAnalyses);
+        MappingSettingsDiagnosticPipeline.Register(
+            context,
+            compilationContext,
+            assemblySettings,
+            contractAnalyses);
         var canonicalSurfacePairs = CanonicalMappingPairPipeline.Build(
             pairConfigurations);
         ConstructionSurfacePipeline.Register(

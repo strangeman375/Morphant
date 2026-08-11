@@ -27,8 +27,9 @@ public partial class TestMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder)
     {
+        builder.NullSourceHandling(NullSourceHandling.Throw);
+
         builder.Map<Source, Destination>()
-            .NullSourceHandling(NullSourceHandling.Throw)
             .Convert(source =>
             {
                 builder.Map<Source, Destination>()

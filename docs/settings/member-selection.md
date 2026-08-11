@@ -130,15 +130,24 @@ only post-construction setters and mutable fields on that branch. Structured
 construction can additionally apply `init` and creation-time `required`
 members in its initializer.
 
+`MemberSelection` applies only to declarative mappings. An inherited setting
+is harmless on a manual `Convert`, but a pair-local call on that manual
+mapping, including `Default`, reports `MORPH0023`. Both operations of the pair
+then throw `MappingConfigurationException` regardless of `MappingMode`.
+
 ## Invalid values
 
 C# setting expressions must be compile-time constants whose values are
 defined by `MemberSelection`. The MSBuild property must use one of the named
-values above.
+values above. Morphant reports `MORPH0021` for an effective invalid C#
+argument and `MORPH0022` for an effective invalid MSBuild property.
 
 An invalid effective value keeps the generated `ITypeMapper` contract, but
-both mapping methods throw `MappingConfigurationException` when invoked. A
-valid value at a more specific level overrides an invalid outer value.
+every enabled declarative operation throws `MappingConfigurationException`
+when invoked. An operation disabled by `MappingMode` remains unsupported. A
+valid value at a more specific level overrides an invalid outer value;
+inactive values do not produce diagnostics. `MORPH0023` takes precedence over
+`MORPH0021` for the same call, and suppression does not alter recovery.
 
 See [Declarative mapping](../declarative-mapping.md) for `Members`, `Auto`,
 `Ignore`, and dependency-graph execution, and

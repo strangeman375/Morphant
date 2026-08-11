@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperMemberTests/MemberSelectionTests::Preserves_an_invalid_effective_MemberSelection_as_a_complete_stub
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0021
 
 using Morphant;
 using Morphant.Context;

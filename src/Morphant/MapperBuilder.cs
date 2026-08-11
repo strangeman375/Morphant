@@ -23,6 +23,14 @@ public abstract class MapperBuilderBase<T>
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.NullSourceHandling"/>.
     /// </param>
+    /// <remarks>
+    /// An effective invalid C# argument reports <c>MORPH0021</c>; an invalid
+    /// assembly property reports <c>MORPH0022</c>. Each enabled declarative
+    /// operation using the invalid policy throws
+    /// <see cref="MappingConfigurationException"/>. A pair-local call on a
+    /// manual <c>Convert</c> reports <c>MORPH0023</c> and makes both mapping
+    /// operations throw <see cref="MappingConfigurationException"/>.
+    /// </remarks>
     /// <returns>This builder.</returns>
     public T NullSourceHandling(
         NullSourceHandling nullSourceHandling) =>
@@ -43,6 +51,13 @@ public abstract class MapperBuilderBase<T>
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.NullDestinationHandling"/>.
     /// </param>
+    /// <remarks>
+    /// An effective invalid C# argument reports <c>MORPH0021</c>; an invalid
+    /// assembly property reports <c>MORPH0022</c>. Only an enabled declarative
+    /// <c>Update</c> operation uses invalid-policy recovery. A pair-local call
+    /// on a manual <c>Convert</c> reports <c>MORPH0023</c> and makes both
+    /// mapping operations throw <see cref="MappingConfigurationException"/>.
+    /// </remarks>
     /// <returns>This builder.</returns>
     public T NullDestinationHandling(
         NullDestinationHandling nullDestinationHandling) =>
@@ -63,6 +78,14 @@ public abstract class MapperBuilderBase<T>
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.ConstructorSelection"/>.
     /// </param>
+    /// <remarks>
+    /// An effective invalid C# argument reports <c>MORPH0021</c>; an invalid
+    /// assembly property reports <c>MORPH0022</c> when a convention or
+    /// <c>ByConvention</c> path is reachable. A pair-local call on a manual
+    /// <c>Convert</c> or a mapping without structured construction capability
+    /// reports <c>MORPH0023</c> and makes both mapping operations throw
+    /// <see cref="MappingConfigurationException"/>.
+    /// </remarks>
     /// <returns>This builder.</returns>
     public T ConstructorSelection(
         ConstructorSelection constructorSelection) =>
@@ -83,6 +106,14 @@ public abstract class MapperBuilderBase<T>
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.MemberSelection"/>.
     /// </param>
+    /// <remarks>
+    /// An effective invalid C# argument reports <c>MORPH0021</c>; an invalid
+    /// assembly property reports <c>MORPH0022</c>. Each enabled declarative
+    /// operation using the invalid policy throws
+    /// <see cref="MappingConfigurationException"/>. A pair-local call on a
+    /// manual <c>Convert</c> reports <c>MORPH0023</c> and makes both mapping
+    /// operations throw <see cref="MappingConfigurationException"/>.
+    /// </remarks>
     /// <returns>This builder.</returns>
     public T MemberSelection(MemberSelection memberSelection) =>
         throw new RuntimeInvocationNotSupportedException();
@@ -102,6 +133,14 @@ public abstract class MapperBuilderBase<T>
     /// The argument expression must be a compile-time constant whose value is
     /// defined by <see cref="Morphant.UnmappedMemberValidation"/>.
     /// </param>
+    /// <remarks>
+    /// An effective invalid C# argument reports <c>MORPH0021</c>; an invalid
+    /// assembly property reports <c>MORPH0022</c>. Invalid effective values
+    /// do not change runtime mapping and disable only the affected unmapped
+    /// member analysis. A pair-local call on a manual <c>Convert</c> reports
+    /// <c>MORPH0023</c> and makes both mapping operations throw
+    /// <see cref="MappingConfigurationException"/>.
+    /// </remarks>
     /// <returns>This builder.</returns>
     public T UnmappedMemberValidation(
         UnmappedMemberValidation unmappedMemberValidation) =>
@@ -126,6 +165,12 @@ public sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
     /// The argument expression must be a compile-time constant composed only
     /// from the defined mapping mode flags.
     /// </param>
+    /// <remarks>
+    /// An invalid final C# argument reports <c>MORPH0021</c>; an invalid final
+    /// assembly property reports <c>MORPH0022</c>. Every mapping that inherits
+    /// that value keeps both operations, and both throw
+    /// <see cref="MappingConfigurationException"/>.
+    /// </remarks>
     /// <returns>This builder.</returns>
     public MapperBuilder MappingMode(MappingMode mappingMode) =>
         throw new RuntimeInvocationNotSupportedException();
@@ -144,6 +189,12 @@ public sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
     /// The argument expression must be a compile-time constant composed only
     /// from the defined mapping mode flags.
     /// </param>
+    /// <remarks>
+    /// An invalid final C# argument reports <c>MORPH0021</c>; an invalid final
+    /// assembly property reports <c>MORPH0022</c>. The generated mapping keeps
+    /// both operations, and both throw
+    /// <see cref="MappingConfigurationException"/>.
+    /// </remarks>
     /// <returns>The builder for the registered mapping.</returns>
     public MapperBuilder<TSource, TDestination> Map<TSource, TDestination>(MappingMode mappingMode = Morphant.MappingMode.Default) =>
         throw new RuntimeInvocationNotSupportedException();

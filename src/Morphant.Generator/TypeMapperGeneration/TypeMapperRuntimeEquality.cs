@@ -68,6 +68,12 @@ internal static class TypeMapperRuntimeEquality
             UpdateFailure = Normalize(
                 mapping.UpdateFailure,
                 mapping.AnalysisContext),
+            CreateOperationFailure = Normalize(
+                mapping.CreateOperationFailure,
+                mapping.AnalysisContext),
+            UpdateOperationFailure = Normalize(
+                mapping.UpdateOperationFailure,
+                mapping.AnalysisContext),
             Failure = Normalize(
                 mapping.Failure,
                 mapping.AnalysisContext),

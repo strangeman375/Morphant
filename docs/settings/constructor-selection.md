@@ -170,21 +170,30 @@ Inherited constructor settings have no effect on `ConstructUsing`,
 mapping configured with `Convert`; the same mapper-level default can serve
 other structured mappings.
 
-Setting `ConstructorSelection` explicitly on an individual runtime-policy or
-manual mapping is an invalid configuration, including an explicit `Default`.
-Invoking that mapping throws `MappingConfigurationException`.
+Setting `ConstructorSelection` explicitly on a manual mapping or on a pair
+whose destination has no structured construction capability reports
+`MORPH0023`, including an explicit `Default`. Both operations of that pair
+then throw `MappingConfigurationException`, regardless of `MappingMode`.
+A runtime result policy on a structurally capable destination simply makes
+the setting inactive unless another reachable branch uses `ByConvention()`;
+it is not by itself an applicability error.
 
 ## Invalid values
 
 C# setting expressions must be compile-time constants whose values are
 defined by `ConstructorSelection`. The MSBuild property must use one of the
-named values above.
+named values above. Morphant reports `MORPH0021` for an effective invalid C#
+argument and `MORPH0022` for an effective invalid MSBuild property, but only
+when a convention or `ByConvention()` path is reachable.
 
 An invalid effective value makes convention-based creation and
 `ByConvention()` unavailable. The generated mapping contract remains, and an
 Update call with an existing destination may still execute without creating a
 replacement. A valid value at a more specific level overrides an invalid
-outer value.
+outer value. An explicit constructor or runtime result branch that does not
+use `ByConvention()` is unaffected. `MORPH0023` takes precedence over
+`MORPH0021` for the same call, and diagnostic suppression does not change the
+generated recovery.
 
 See [Declarative mapping](../declarative-mapping.md) for result selection,
 structured `Resolve`, runtime result policies, and Update identity.

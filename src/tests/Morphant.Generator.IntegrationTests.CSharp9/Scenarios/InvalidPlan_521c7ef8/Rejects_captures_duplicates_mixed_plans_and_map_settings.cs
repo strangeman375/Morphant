@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConvertTests/InvalidPlanTests::Rejects_captures_duplicates_mixed_plans_and_map_settings
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0023
 #pragma warning disable MORPH0019, MORPH0020
 
 using System;

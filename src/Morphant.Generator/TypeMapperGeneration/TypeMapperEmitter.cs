@@ -287,6 +287,17 @@ internal static class TypeMapperEmitter
             return;
         }
 
+        if (mapping.CreateOperationFailure is { } operationFailure)
+        {
+            WriteMappingConfigurationFailure(
+                writer,
+                mapping,
+                operationFailure,
+                update: false);
+            writer.Unindent();
+            return;
+        }
+
         if (mapping.ManualMapping is { } manualMapping)
         {
             WriteManualMapping(
@@ -871,6 +882,17 @@ internal static class TypeMapperEmitter
                 writer,
                 mapping,
                 "Update");
+            writer.Unindent();
+            return;
+        }
+
+        if (mapping.UpdateOperationFailure is { } operationFailure)
+        {
+            WriteMappingConfigurationFailure(
+                writer,
+                mapping,
+                operationFailure,
+                update: true);
             writer.Unindent();
             return;
         }

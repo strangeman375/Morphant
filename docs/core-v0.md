@@ -90,9 +90,12 @@ different runtime mapping algorithm when a capability is unavailable. Use
 explicit code or `Convert` for a supported synchronous special case, or wait
 for the separately designed post-v0 capability.
 
-Compile-time diagnostics remain a separate follow-up plan. In the meantime,
-every C#-legal mapping contract has deterministic executable behavior: invalid
-paths throw a typed Morphant exception instead of leaving the mapper partial
-implementation incomplete, while deferred roots are executable opaque pairs.
-Only contracts that cannot be declared in C# are omitted. See
+Compile-time diagnostics are being delivered by the separate diagnostics
+roadmap. Its first six categories are implemented, including configuration,
+registration, composition, and setting diagnostics through `MORPH0023` (plus
+`MORPH0034`). Categories that remain pending still have deterministic
+executable recovery: every C#-legal invalid path throws a typed Morphant
+exception instead of leaving the mapper partial implementation incomplete,
+while deferred roots are executable opaque pairs. Only contracts that cannot
+be declared in C# are omitted. See
 [Observable failures](observable-failures.md).

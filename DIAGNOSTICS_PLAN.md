@@ -6,9 +6,9 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Vertical slices категорий 1–4 реализованы и приняты пользователем. Vertical
-slice категории 5 реализован и ожидает пользовательского ревью; следующий
-slice после его принятия — категория 6.
+Vertical slices категорий 1–5 реализованы и приняты пользователем. Vertical
+slice категории 6 реализован и ожидает пользовательского ревью; следующий
+slice после его принятия — категория 7.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -81,7 +81,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–4 приняты, категория 5 реализована и ожидает ревью |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–5 приняты, категория 6 реализована и ожидает ревью |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -4962,8 +4962,30 @@ precedence, deterministic order, полный generated result и actualization
 одного incremental driver-а. Обычные C# 9 consumers исполняют duplicate и
 mixed recovery, четыре допустимые result-policy + `Members`, imported boundary
 и независимую pair; package/MSBuild fixture проверяет реальные `.editorconfig`
-overrides. Срез реализован и ожидает пользовательского ревью; следующий —
-категория 6.
+overrides. Срез принят пользователем.
+
+Шестой vertical slice категории 6 реализует configurable `MORPH0021`–
+`MORPH0023`: invalid effective C# setting, invalid effective MSBuild setting и
+неприменимую pair-local setting. Все шесть settings разрешаются по полной
+pair/root/assembly/library precedence chain; `Default` продолжает inheritance,
+invalid final value его останавливает, а последняя успешно связанная C# setting
+на одном уровне выигрывает. MSBuild принимает только точные case-insensitive
+enum names, а `MappingMode` проверяется по объявленным atomic flags.
+
+Applicability учитывает manual/declarative model, enabled operations и
+reachable convention/`ByConvention` paths. `MORPH0023` имеет precedence над
+`MORPH0021` для того же local call и переводит обе операции pair в
+configuration recovery независимо от `MappingMode`; invalid effective
+settings используют policy-specific operation/path recovery. Suppression и
+severity override не меняют artifacts либо runtime behavior.
+
+Самостоятельная unit-категория фиксирует descriptors, C#/MSBuild grammar,
+precedence, ownership, deduplication/order, полную applicability/recovery
+matrix, exact generated result и actualization одного driver-а. Обычные C# 9
+consumers исполняют все шесть recovery families, pair-wide `MORPH0023` и
+независимую pair; package/MSBuild fixture проверяет реальные `.globalconfig`
+overrides всех трёх IDs. Срез реализован и ожидает пользовательского ревью;
+следующий — категория 7.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

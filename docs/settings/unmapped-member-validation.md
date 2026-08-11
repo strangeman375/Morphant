@@ -21,10 +21,10 @@ UnmappedMemberValidation.None
 | `Destination` | Validate supported destination members |
 | `Strict` | Validate supported source and destination members |
 
-Diagnostic emission is intentionally deferred to Morphant's diagnostics
-phase. The setting already has its final configuration, inheritance, and
-applicability model, but changing it does not yet emit warnings or change
-generated runtime behavior.
+The source/destination completeness warnings selected by this setting belong
+to the later diagnostics slice and are not emitted yet. Validation of the
+setting value and its applicability is implemented now; changing a valid
+effective value still does not change generated runtime behavior.
 
 ## Configure an assembly default
 
@@ -105,15 +105,23 @@ Morphant:
 `Convert` owns a manual algorithm, so this validation does not apply. An
 inherited mapper/root setting is inactive for a manual pair and may still
 serve declarative pairs. Writing `UnmappedMemberValidation` explicitly on the
-manual pair is an invalid configuration.
+manual pair, including `Default`, reports `MORPH0023`. Both operations of that
+pair then throw `MappingConfigurationException` regardless of `MappingMode`.
 
 ## Invalid values
 
 C# setting expressions must be compile-time constants defined by
 `UnmappedMemberValidation`; the MSBuild property must use one of the named
-values above. Final diagnostics for invalid values and unmapped members belong
-to the separately planned diagnostics phase. Until then, the setting preserves
-its deterministic model without defining diagnostic IDs or messages.
+values above. Morphant reports `MORPH0021` for an effective invalid C#
+argument and `MORPH0022` for an effective invalid MSBuild property when at
+least one declarative operation is enabled. Runtime mapping remains unchanged;
+the affected pair is omitted only from the later completeness analysis. A
+valid more-specific value overrides an invalid outer value, and a value used
+only by disabled or manual operations is inactive.
+
+`MORPH0023` takes precedence over `MORPH0021` for the same pair-local call.
+Suppressing a setting diagnostic or changing its severity changes only
+compiler presentation, not runtime behavior or recovery.
 
 See [Declarative mapping](../declarative-mapping.md) for the plan phases whose
 effective member use this setting validates.

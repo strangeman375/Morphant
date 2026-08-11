@@ -617,16 +617,19 @@ internal static class TypeMapperPipeline
 
         if (!effectiveSettings.IsMemberSelectionValid)
         {
+            var failure = MappingFailureObservation.Create(
+                mapping.AnalysisContext,
+                MappingFailureReason.InvalidSetting,
+                InvalidMemberSelectionMessage,
+                MappingObservationOriginKind.Setting,
+                MappingAffectedPath.All(
+                    MappingPlanPhase.Configuration),
+                configuration.Settings.MemberSelection.Syntax);
+
             return mapping with
             {
-                Failure = MappingFailureObservation.Create(
-                    mapping.AnalysisContext,
-                    MappingFailureReason.InvalidSetting,
-                    InvalidMemberSelectionMessage,
-                    MappingObservationOriginKind.Setting,
-                    MappingAffectedPath.All(
-                        MappingPlanPhase.Configuration),
-                    configuration.Settings.MemberSelection.Syntax)
+                CreateOperationFailure = failure,
+                UpdateOperationFailure = failure
             };
         }
 
@@ -994,12 +997,19 @@ internal static class TypeMapperPipeline
             return false;
         }
 
-        return settings.SupportsCreate ||
-               mapping.DestinationCanBeNull &&
-               settings.SupportsUpdate &&
-               settings.IsNullDestinationHandlingValid &&
-               settings.NullDestinationHandling ==
-                   NullDestinationHandlingValue.Create;
+        var createRequiresImplementation =
+            settings.SupportsCreate &&
+            mapping.CreateOperationFailure is null;
+        var updateWithoutPreviousRequiresImplementation =
+            mapping.DestinationCanBeNull &&
+            settings.SupportsUpdate &&
+            mapping.UpdateOperationFailure is null &&
+            settings.IsNullDestinationHandlingValid &&
+            settings.NullDestinationHandling ==
+                NullDestinationHandlingValue.Create;
+
+        return createRequiresImplementation ||
+               updateWithoutPreviousRequiresImplementation;
     }
 
     private static bool CreatePathNeedsOperationParameter(
@@ -1088,6 +1098,7 @@ internal static class TypeMapperPipeline
     {
         return mapping.Failure is null &&
                mapping.ManualMapping is null &&
+               mapping.UpdateOperationFailure is null &&
                settings.IsMappingModeValid &&
                settings.SupportsUpdate &&
                settings.IsNullSourceHandlingValid &&

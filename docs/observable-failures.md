@@ -94,9 +94,10 @@ contracts are omitted and are candidates for compile-time diagnostics. A
 structural problem in one pair does not suppress independent legal pairs in
 the same mapper.
 
-Compile-time diagnostics are a separate compatibility surface. Their later
-introduction does not change the runtime exception contract for generated
-code that can still compile and execute.
+Compile-time diagnostics are a separate compatibility surface. The categories
+implemented so far do not change the runtime exception contract for generated
+code that can still compile and execute; suppression or severity overrides
+also leave generated recovery unchanged.
 
 ## User and dependency exceptions
 

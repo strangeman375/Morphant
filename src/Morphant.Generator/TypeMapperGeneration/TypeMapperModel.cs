@@ -51,6 +51,8 @@ internal readonly record struct TypeMapperMappingModel
     TypeMapperManualMappingModel? ManualMapping = null,
     MappingFailureObservation? CreateFailure = null,
     MappingFailureObservation? UpdateFailure = null,
+    MappingFailureObservation? CreateOperationFailure = null,
+    MappingFailureObservation? UpdateOperationFailure = null,
     MappingFailureObservation? Failure = null,
     TypeMapperMemberControlFlowNode? PostMemberControlFlow = null,
     ConstructorPlanningObservation? ConstructorObservation = null,

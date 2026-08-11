@@ -160,8 +160,9 @@ Both null-handling settings are bypassed by a mapping configured with
 
 Inherited null-handling settings remain useful to declarative mappings in the
 same mapper but have no effect on `Convert`. Setting either policy explicitly
-on a manual pair is an invalid configuration. Invoking that pair throws
-`MappingConfigurationException`.
+on a manual pair, including setting it to `Default`, reports `MORPH0023`.
+Both operations of that pair throw `MappingConfigurationException`
+regardless of its effective `MappingMode`.
 
 The value returned by `Convert`, including `null`, is final. Morphant does not
 apply a null guard, construction fallback, or member mapping afterward.
@@ -170,16 +171,22 @@ apply a null guard, construction fallback, or member mapping afterward.
 
 C# setting expressions must be compile-time constants whose values are
 defined by the corresponding enum. MSBuild properties must use a named enum
-value.
+value. Morphant reports `MORPH0021` for an effective invalid C# argument and
+`MORPH0022` for an effective invalid MSBuild property.
 
 An invalid effective `NullSourceHandling` keeps the generated mapping
-contract, but both methods throw `MappingConfigurationException`. An invalid
-effective `NullDestinationHandling` affects only `Update`; public `Create`
-remains available and `Update` throws `MappingConfigurationException`.
+contract, but every enabled declarative operation throws
+`MappingConfigurationException`. An operation disabled by `MappingMode`
+continues to throw `MappingOperationNotSupportedException`. An invalid
+effective `NullDestinationHandling` affects only an enabled `Update`; public
+`Create` remains available, and a disabled `Update` remains unsupported.
 
 Configuration validity is checked independently of runtime arguments and type
 nullability. A valid value at a more specific level can override an invalid
-outer value for the same property.
+outer value for the same property. An invalid value on an operation excluded
+by `MappingMode` is inactive and does not produce a diagnostic. `MORPH0023`
+takes precedence over `MORPH0021` for the same pair-local call. Suppression or
+severity changes do not alter recovery.
 
 See [Declarative mapping](../declarative-mapping.md) for previous presence and
 the authoritative result, and [Manual mapping](../manual-mapping.md) for the

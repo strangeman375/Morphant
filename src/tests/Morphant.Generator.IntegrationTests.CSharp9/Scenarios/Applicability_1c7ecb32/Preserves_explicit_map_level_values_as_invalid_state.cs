@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConstructorSelectionTests/ApplicabilityTests::Preserves_explicit_map_level_values_as_invalid_state
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0023
 
 using Morphant;
 using Morphant.Context;

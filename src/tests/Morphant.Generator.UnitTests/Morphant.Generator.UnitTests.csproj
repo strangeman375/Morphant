@@ -21,7 +21,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="CompatibilityDiagnosticsTests/Fixtures/*.txt" />
+        <EmbeddedResource Include="CompatibilityDiagnosticsTests/Fixtures/*.txt">
+            <WithCulture>false</WithCulture>
+        </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>

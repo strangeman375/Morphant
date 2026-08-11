@@ -113,10 +113,11 @@ of the named values listed above.
 ## Invalid values
 
 If a C# mode is not a compile-time constant, contains undefined flags, or an
-inherited `MorphantMappingMode` value is not recognized, Morphant still
-generates the `ITypeMapper<TSource, TDestination>` implementation for the
-registered pair. Both mapping methods throw `MappingConfigurationException`
-when invoked.
+inherited `MorphantMappingMode` value is not recognized, Morphant reports
+`MORPH0021` for the effective C# argument or `MORPH0022` for the effective
+MSBuild property. Morphant still generates the
+`ITypeMapper<TSource, TDestination>` implementation for the registered pair;
+both mapping methods throw `MappingConfigurationException` when invoked.
 
 An explicit valid mapping-level mode still overrides an invalid mapper-level
 value. A mapping that uses `Default` inherits the invalid mapper-level value
@@ -125,6 +126,12 @@ and therefore has two throwing methods.
 The same rule applies to the assembly level: a valid mapper-level or
 mapping-level value overrides an invalid `MorphantMappingMode`, while a
 mapping that inherits the invalid property has two throwing methods.
+
+An invalid value that is overridden before it becomes effective does not
+produce a diagnostic. A C# expression whose binding failure is already
+reported by the compiler does not receive a duplicate `MORPH0021`.
+Suppressing either diagnostic or changing its severity changes only compiler
+presentation, not the generated recovery.
 
 See [Configuration inheritance](../configuration-inheritance.md) for the full
 settings chain and [Runtime dispatch and DI](../runtime-dispatch.md) for how a

@@ -154,7 +154,8 @@ it does not reuse a constructor chosen for `AnimalDto`.
 An inherited setting that does not apply to the selected mapping model has no
 effect. For example, inherited constructor and member settings do not
 invalidate a local `Convert`. The same setting written explicitly on that
-manual pair remains an invalid configuration.
+manual pair reports `MORPH0023` and uses pair-wide configuration-failure
+recovery.
 
 ## Plan composition
 

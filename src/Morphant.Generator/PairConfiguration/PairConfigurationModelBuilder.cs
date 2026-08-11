@@ -1378,7 +1378,7 @@ internal static class PairConfigurationModelBuilder
                 semanticModel,
                 cancellationToken,
                 out var numericValue) ||
-            (numericValue & ~(int)MappingModeValue.CreateAndUpdate) != 0)
+            (numericValue & ~GetAtomicMappingModeMask()) != 0)
         {
             value = default;
             return false;
@@ -1386,6 +1386,24 @@ internal static class PairConfigurationModelBuilder
 
         value = (MappingModeValue)numericValue;
         return true;
+    }
+
+    private static int GetAtomicMappingModeMask()
+    {
+        var mask = 0;
+
+        foreach (var value in Enum.GetValues(typeof(MappingModeValue)))
+        {
+            var numericValue = (int)value;
+
+            if (numericValue != 0 &&
+                (numericValue & (numericValue - 1)) == 0)
+            {
+                mask |= numericValue;
+            }
+        }
+
+        return mask;
     }
 
     private static bool TryGetDefinedEnum<TValue>(

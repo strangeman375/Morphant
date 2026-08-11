@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConstructorSelectionTests/ConfigurationTests::Rejects_an_invalid_ConstructorSelection_only_when_construction_is_required
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0021
 
 using Morphant;
 using Morphant.Context;
