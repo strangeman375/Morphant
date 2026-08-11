@@ -773,6 +773,8 @@ internal static class PairConfigurationModelBuilder
             ImmutableArray.CreateBuilder<MembersConfigurationModel>();
         var conversions =
             ImmutableArray.CreateBuilder<ConvertConfigurationModel>();
+        var localPlanSlots =
+            ImmutableArray.CreateBuilder<MappingPlanSlotOccurrenceModel>();
         var includeBaseCalls =
             ImmutableArray.CreateBuilder<IncludeBaseConfigurationModel>();
         var reachedRegistration = false;
@@ -845,6 +847,9 @@ internal static class PairConfigurationModelBuilder
             switch (method.Name)
             {
                 case "Construct":
+                    localPlanSlots.Add(new MappingPlanSlotOccurrenceModel(
+                        invocation,
+                        MappingPlanSlotKind.ResultPolicy));
                     resultPolicies.Add(
                         new ResultPolicyConfigurationModel(
                             invocation,
@@ -856,6 +861,9 @@ internal static class PairConfigurationModelBuilder
                     break;
 
                 case "Resolve":
+                    localPlanSlots.Add(new MappingPlanSlotOccurrenceModel(
+                        invocation,
+                        MappingPlanSlotKind.ResultPolicy));
                     resultPolicies.Add(
                         new ResultPolicyConfigurationModel(
                             invocation,
@@ -867,6 +875,9 @@ internal static class PairConfigurationModelBuilder
                     break;
 
                 case "ConstructUsing":
+                    localPlanSlots.Add(new MappingPlanSlotOccurrenceModel(
+                        invocation,
+                        MappingPlanSlotKind.ResultPolicy));
                     resultPolicies.Add(
                         new ResultPolicyConfigurationModel(
                             invocation,
@@ -878,6 +889,9 @@ internal static class PairConfigurationModelBuilder
                     break;
 
                 case "ResolveUsing":
+                    localPlanSlots.Add(new MappingPlanSlotOccurrenceModel(
+                        invocation,
+                        MappingPlanSlotKind.ResultPolicy));
                     resultPolicies.Add(
                         new ResultPolicyConfigurationModel(
                             invocation,
@@ -889,6 +903,9 @@ internal static class PairConfigurationModelBuilder
                     break;
 
                 case "Members":
+                    localPlanSlots.Add(new MappingPlanSlotOccurrenceModel(
+                        invocation,
+                        MappingPlanSlotKind.Members));
                     members.Add(
                         new MembersConfigurationModel(
                             invocation,
@@ -905,6 +922,9 @@ internal static class PairConfigurationModelBuilder
                     break;
 
                 case "Convert":
+                    localPlanSlots.Add(new MappingPlanSlotOccurrenceModel(
+                        invocation,
+                        MappingPlanSlotKind.Convert));
                     conversions.Add(
                         new ConvertConfigurationModel(
                             invocation,
@@ -949,6 +969,7 @@ internal static class PairConfigurationModelBuilder
 
         return new PairConfigurationModel(
             pair,
+            localPlanSlots.ToImmutable(),
             settings,
             new DeclarativePairConfigurationModel(
                 immutableResultPolicies,

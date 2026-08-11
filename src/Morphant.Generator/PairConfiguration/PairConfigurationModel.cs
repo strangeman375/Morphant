@@ -28,11 +28,23 @@ internal readonly record struct MapperPairConfigurationModel(
 
 internal readonly record struct PairConfigurationModel(
     MappingPairModel Pair,
+    ImmutableArray<MappingPlanSlotOccurrenceModel> LocalPlanSlots,
     PairConfigurationSettings Settings,
     DeclarativePairConfigurationModel Declarative,
     ManualPairConfigurationModel Manual,
     PairConfigurationCompositionModel Composition,
     PairConfigurationConflict Conflicts);
+
+internal readonly record struct MappingPlanSlotOccurrenceModel(
+    InvocationExpressionSyntax Invocation,
+    MappingPlanSlotKind Kind);
+
+internal enum MappingPlanSlotKind
+{
+    ResultPolicy,
+    Members,
+    Convert
+}
 
 internal readonly record struct DeclarativePairConfigurationModel(
     ImmutableArray<ResultPolicyConfigurationModel> ResultPolicies,

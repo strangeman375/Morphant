@@ -2,6 +2,7 @@
 #nullable enable
 #pragma warning disable CS1591
 #pragma warning disable MORPH0014
+#pragma warning disable MORPH0019
 
 using System;
 using Morphant;

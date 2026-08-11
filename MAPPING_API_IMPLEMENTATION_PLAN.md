@@ -704,29 +704,32 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 4.**
+**Diagnostics: vertical slice категории 5.**
 
 Статус: реализован, ожидает пользовательского ревью. Vertical slices
-категорий 1–3 приняты пользователем. Категория 4 добавляет configurable
-`MORPH0015`–`MORPH0018`: обязательный собственный source-bodied `Configure`,
-недоступную прямую base-конфигурацию и unsupported root-/pair-builder flow.
+категорий 1–4 приняты пользователем. Категория 5 добавляет configurable
+`MORPH0019`–`MORPH0020`: duplicate local mapping-plan slot и несовместимость
+`Convert` с result policy либо `Members`.
 
-Semantic flow-анализ поддерживает линейные direct fluent chains,
-source-connected base levels, parentheses/null-forgiving и callback-owned
-arguments. Alias/helper/delegate, сторонний fluent method, conditional либо
-deferred flow диагностируются без угадывания hidden registrations;
-compiler-owned binding failures остаются за C# compiler-ом.
+Semantic composition-анализ сохраняет упорядоченные local occurrences только
+успешно связанных generated Morphant methods первой authoritative
+registration. Все четыре result-policy family образуют один slot; settings,
+`IncludeBase`, imported plan и callback bodies не входят в local slot set.
+Compiler-owned binding failures и gates категорий 1–4 подавляют недостоверный
+анализ в своей области.
 
-`MORPH0016`/`MORPH0017` создают mapper-wide throwing recovery для всех
-непосредственно известных legal pairs, `MORPH0018` — pair-local recovery;
-обе operations бросают `MappingConfigurationException` независимо от
-`MappingMode`. Самостоятельная unit-категория фиксирует descriptors,
-locations, precedence/deduplication, suppression/severity, deterministic
-artifact set и actualization. Семь обычных consumer/package scenarios
-проверяют source/metadata base boundary, обе recovery operations, отсутствие
-guessed artifacts, независимую исполнимую pair, callback ownership и реальные
-`.editorconfig` overrides. Следующий vertical slice — категория 5 после
-принятия категории 4 пользователем.
+Каждый лишний slot получает отдельный `MORPH0019` со ссылкой на первый;
+`MORPH0020` публикуется один раз на pair с детерминированными primary и
+additional locations. Оба конфликта сохраняют полный mapper/DSL surface и
+переводят обе operations только затронутой pair в
+`MappingConfigurationException`, независимо от `MappingMode`, suppression или
+severity override. Самостоятельная unit-категория фиксирует descriptors,
+полную slot matrix, ownership/precedence, exact recovery, ordering и
+actualization. Обычные C# 9 consumer/package scenarios проверяют runtime
+recovery всех slots, mixed order, четыре допустимые result-policy + `Members`,
+imported boundary, независимую pair и реальные `.editorconfig` overrides.
+Следующий vertical slice — категория 6 после принятия категории 5
+пользователем.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2156,8 +2159,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slices категорий 1–3 приняты пользователем;
-vertical slice категории 4 реализован и ожидает пользовательского ревью.
+production model и vertical slices категорий 1–4 приняты пользователем;
+vertical slice категории 5 реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2193,8 +2196,11 @@ runtime- и package/MSBuild-тестами; slice принят пользова�
 slice реализует configuration diagnostics `MORPH0015`–`MORPH0018`, source/base
 body discovery, semantic builder-flow ownership и mapper-/pair-wide throwing
 recovery с самостоятельными unit-, C# 9 runtime- и package/MSBuild-тестами.
-Следующий vertical slice реализует категорию 5 после пользовательского
-принятия категории 4.
+Slice принят пользователем. Пятый slice реализует composition diagnostics
+`MORPH0019`–`MORPH0020`, упорядоченные local plan slots, pair-local throwing
+recovery и suppression/actualization с самостоятельными unit-, C# 9 runtime-
+и package/MSBuild-тестами. Следующий vertical slice реализует категорию 6
+после пользовательского принятия категории 5.
 
 ### Этап 24. Observable failures
 

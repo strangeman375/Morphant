@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.PairConfigurationTests;
 internal sealed class PairConfigurationBoundaryTests
 {
     [Test]
-    public async Task Ignores_false_configuration_methods_aliases_helpers_and_branches()
+    public async Task Preserves_visible_flow_break_registrations_and_ignores_hidden_or_foreign_calls()
     {
         // lang=c#
         const string source =
@@ -101,29 +101,43 @@ namespace TestCase
 // Mapper 0: TestCase.TestMapper
 // Unifiable: False
 // Root settings: MappingMode=Unset; NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
-// Pairs: 4
-// Pair 0: global::TestCase.Source -> global::TestCase.Destination
+// Pairs: 6
+// Pair 0: global::TestCase.AliasSource -> global::TestCase.AliasDestination
+// Map: builder.Map<AliasSource, AliasDestination>()
+// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
+// Declarative: ResultPolicies=0; Members=0
+// Manual: Converts=0
+// IncludeBase: 0
+// Conflicts: None
+// Pair 1: global::TestCase.ConditionalSource -> global::TestCase.ConditionalDestination
+// Map: builder.Map<ConditionalSource, ConditionalDestination>()
+// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
+// Declarative: ResultPolicies=0; Members=0
+// Manual: Converts=0
+// IncludeBase: 0
+// Conflicts: None
+// Pair 2: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
-// Pair 1: global::TestCase.MembersSource -> global::TestCase.MembersDestination
+// Pair 3: global::TestCase.MembersSource -> global::TestCase.MembersDestination
 // Map: builder.Map<MembersSource, MembersDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
-// Pair 2: global::TestCase.ConvertSource -> global::TestCase.ConvertDestination
+// Pair 4: global::TestCase.ConvertSource -> global::TestCase.ConvertDestination
 // Map: builder.Map<ConvertSource, ConvertDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
-// Pair 3: global::TestCase.VisibleSource -> global::TestCase.VisibleDestination
+// Pair 5: global::TestCase.VisibleSource -> global::TestCase.VisibleDestination
 // Map: builder.Map<VisibleSource, VisibleDestination>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0

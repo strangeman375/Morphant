@@ -22,4 +22,6 @@ MORPH0015 | Morphant.Configuration | Error | Mapper must declare Configure
 MORPH0016 | Morphant.Configuration | Error | Base mapper configuration is unavailable
 MORPH0017 | Morphant.Configuration | Error | Unsupported mapper builder flow
 MORPH0018 | Morphant.Configuration | Error | Unsupported mapping builder flow
+MORPH0019 | Morphant.Composition | Error | Duplicate mapping plan slot
+MORPH0020 | Morphant.Composition | Error | Convert cannot be combined with result policy or Members
 MORPH0034 | Morphant.Declaration | Error | Mapper member conflicts with generated Supports

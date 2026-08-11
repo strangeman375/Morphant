@@ -26,7 +26,7 @@ using Morphant.Delegates;
 
 namespace Morphant
 {
-    internal static class PairConfigurationCompilerFallback
+    internal static partial class MorphantGeneratedMappingExtensions
     {
         public static MapperBuilder<TSource, TDestination> Construct<TSource, TDestination>(
             this MapperBuilder<TSource, TDestination> builder,

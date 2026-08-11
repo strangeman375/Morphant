@@ -6,9 +6,9 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Vertical slices категорий 1–3 реализованы и приняты пользователем. Vertical
-slice категории 4 реализован и ожидает пользовательского ревью; следующий
-slice после его принятия — категория 5.
+Vertical slices категорий 1–4 реализованы и приняты пользователем. Vertical
+slice категории 5 реализован и ожидает пользовательского ревью; следующий
+slice после его принятия — категория 6.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -81,7 +81,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–3 приняты, категория 4 реализована и ожидает ревью |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–4 приняты, категория 5 реализована и ожидает ревью |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -4942,8 +4942,28 @@ incremental driver-а. Обычные C# 9 consumers исполняют mapper-w
 pair-local recovery, проверяют отсутствие guessed helper registrations,
 сохранение независимой pair и source/metadata base boundary; package/MSBuild
 fixtures проверяют отсутствие artifacts для `MORPH0015` и реальные
-`.editorconfig` overrides всех четырёх IDs. Срез реализован и ожидает
-пользовательского ревью; следующий — категория 5.
+`.editorconfig` overrides всех четырёх IDs. Срез принят пользователем.
+
+Пятый vertical slice категории 5 реализует configurable `MORPH0019`–
+`MORPH0020`: duplicate local result-policy/`Members`/`Convert` slots и
+локальное смешение `Convert` с result policy либо `Members`. Анализ использует
+только успешно связанные Morphant invocations первой authoritative
+registration, сохраняет fluent order и не включает settings, `IncludeBase`,
+imported plan либо callback bodies.
+
+Каждый лишний slot указывает на свой identifier и первый occurrence;
+mixed-plan diagnostic публикуется один раз с primary на первой стороне,
+появившейся второй, и фиксированным additional-location order. Любой конфликт
+переводит обе operations только затронутой pair в throwing recovery без
+выбора first/last/manual/declarative fallback; suppression и severity override
+не меняют artifacts либо recovery. Самостоятельная unit-категория фиксирует
+descriptors, полную positive/negative slot matrix, locations, ownership,
+precedence, deterministic order, полный generated result и actualization
+одного incremental driver-а. Обычные C# 9 consumers исполняют duplicate и
+mixed recovery, четыре допустимые result-policy + `Members`, imported boundary
+и независимую pair; package/MSBuild fixture проверяет реальные `.editorconfig`
+overrides. Срез реализован и ожидает пользовательского ревью; следующий —
+категория 6.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,
