@@ -15,6 +15,17 @@ public sealed class MorphantGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var compilationContext = CompilationContextPipeline.Build(context);
+        context.RegisterSourceOutput(
+            compilationContext,
+            static (productionContext, compilation) =>
+            {
+                foreach (var diagnostic in
+                         compilation.Compatibility.CreateDiagnostics(
+                             compilation.LanguageVersion))
+                {
+                    productionContext.ReportDiagnostic(diagnostic);
+                }
+            });
         var assemblySettings =
             AssemblyMappingSettingsPipeline.Build(context);
         var configureInfos = TypeMapperConfigurePipeline.Build(context, compilationContext);

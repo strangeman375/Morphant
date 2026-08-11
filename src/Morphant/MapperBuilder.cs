@@ -173,11 +173,14 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     /// before or after this mapping. An inherited mapping is available only
     /// when the mapper connects its configuration with an explicit
     /// <c>base.Configure(builder)</c> call. Morphant validates both type
-    /// relationships during generation. The included mapping contributes all
-    /// of its map-level settings and its explicit <c>Members</c> rules.
-    /// Conventions are evaluated again for the current source and destination
-    /// types, and local rules override included rules for the same destination
-    /// member. Result policies and <c>Convert</c> plans are not included.
+    /// relationships during generation. An included different pair
+    /// contributes all of its map-level settings and explicit
+    /// <c>Members</c> rules. Conventions are evaluated again for the current
+    /// source and destination types, and local rules override included rules
+    /// for the same destination member. Its result policy and <c>Convert</c>
+    /// plan are not included. An exact same pair from a connected base mapper
+    /// contributes its complete applicable plan, including a result policy or
+    /// <c>Convert</c>, under the documented local precedence rules.
     /// </remarks>
     /// <returns>This mapping builder.</returns>
     public MapperBuilder<TSource, TDestination>

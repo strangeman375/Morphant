@@ -5,9 +5,9 @@
 Последнее обновление: 11 августа 2026 года.
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
-разделе 7 предварительные выравнивания production-model реализованы и ожидают
-пользовательского ревью; первый vertical diagnostic slice до этого ревью
-заблокирован.
+разделе 7 предварительные выравнивания production-model приняты пользователем.
+Первый vertical diagnostic slice категории 1 реализован и ожидает ревью перед
+переходом к категории 2.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -80,7 +80,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован пользовательским ревью реализованных выравниваний раздела 7 |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категория 1 реализована и ожидает ревью |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -4862,8 +4862,8 @@ Package-like integration-категория независимо проверя�
 Эти выравнивания не вводят новую diagnostic semantics и выполнены одним
 предварительным coherent change с самостоятельными focused regression tests.
 
-Статус на 11 августа 2026 года: все пять выравниваний реализованы и ожидают
-пользовательского ревью. Exact same-pair regression исполняет inherited
+Статус на 11 августа 2026 года: все пять выравниваний реализованы и приняты
+пользователем. Exact same-pair regression исполняет inherited
 `Construct` / `Resolve` / `ConstructUsing` / `ResolveUsing` / `Members` /
 `Convert` и три local-precedence формы. Отдельные consumer scenarios фиксируют
 ownership callback arguments всех шести families, отсутствие runtime getter
@@ -4876,13 +4876,26 @@ convention и explicit structured planning. Representative ранее приня
 inheritance и control-flow consumers повторно исполняются без изменения
 semantics.
 
-После принятия preflight-а этап 3 выполняется вертикальными срезами по
-согласованным категориям:
+Этап 3 выполняется вертикальными срезами по согласованным категориям:
 detection, diagnostic publication, locations, deduplication, recovery,
 самостоятельные unit- и integration-тесты и соответствующая документация
 входят в один coherent change.
 
-Первый vertical slice категории 1 заблокирован до принятия этого preflight-а.
+Первый vertical slice категории 1 реализован. Runtime assembly публикует
+contract revision `1`; generator проверяет effective C# version, единственность
+runtime candidate, revision metadata и ordered structural manifest, публикует
+точные `MORPH0001`–`MORPH0004` и fail-closed отключает все mapper pipelines
+независимо от suppression либо severity override. Analyzer release tracking
+фиксирует все четыре правила.
+
+Самостоятельная unit-категория покрывает exact descriptor contract, language
+aliases, missing/ambiguous/incompatible runtime, все классы manifest failure,
+global gate, suppression/severity и actualization одного incremental driver-а.
+Package-like integration-категория проверяет bundled package execution,
+analyzer-only, mismatched/duplicate runtime, C# 8 и реальную analyzer config;
+focused production-composition regression подтверждает неизменный normal
+generated artifact set. Срез ожидает пользовательского ревью перед категорией
+2.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

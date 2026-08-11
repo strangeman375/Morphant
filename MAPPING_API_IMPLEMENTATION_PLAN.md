@@ -704,20 +704,19 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: предварительное выравнивание production model перед vertical
-slices.**
+**Diagnostics: vertical slice категории 1.**
 
-Статус: ожидает ревью. Пять предварительных пунктов реализованы одним coherent
-change с focused regression coverage: full-plan exact same-pair inheritance и
-local precedence, ownership arguments всех шести callback families,
-source-owned compiler warning, structured/runtime source discard и non-discard
-`_` symbol, а focused model tests фиксируют constructor candidates, selection,
-rejections и parameter-rule origins. Дополнительно повторно исполнены
-representative invalid composition и result/construction control-flow
-scenarios.
+Статус: реализован и ожидает ревью. Предварительное выравнивание production
+model принято пользователем. Runtime публикует contract revision `1`, а
+generator проверяет effective C# version и ordered structural runtime manifest,
+публикует `MORPH0001`–`MORPH0004` и fail-closed отключает все mapper pipelines
+при любой prerequisite failure. Самостоятельные unit- и package-like
+integration-тесты фиксируют exact diagnostics, global gate, configuration,
+incremental actualization и bundled-package happy path; focused regression
+подтверждает неизменный normal generated surface.
 
-Следующий срез — vertical production-реализация diagnostic-категории 1 —
-заблокирован до пользовательского принятия текущего model-alignment.
+Следующий срез — vertical production-реализация diagnostic-категории 2 — после
+пользовательского ревью категории 1.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2147,8 +2146,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model реализовано и ожидает пользовательского ревью. Production-
-реализация diagnostics ещё не начата.
+production model принято пользователем; vertical slice категории 1 реализован
+и ожидает ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2168,8 +2167,11 @@ completeness contract.
 exact-same-pair `IncludeBase`, callback ownership builder discovery, различие
 source/generated warnings, structured failure observations и compile-time
 source discard lowering. Точный scope и тестовые требования зафиксированы
-разделом 7 `DIAGNOSTICS_PLAN.md`. Первый vertical slice категории 1 остаётся
-заблокирован пользовательским ревью preflight-а.
+разделом 7 `DIAGNOSTICS_PLAN.md`. Первый vertical slice реализует contract
+revision `1`, ordered runtime manifest, global compatibility diagnostics
+`MORPH0001`–`MORPH0004` и fail-closed gate с самостоятельными unit- и
+package-like integration-тестами. Переход к категории 2 ожидает
+пользовательского ревью категории 1.
 
 ### Этап 24. Observable failures
 

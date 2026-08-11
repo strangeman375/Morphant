@@ -33,6 +33,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <AssemblyMetadata Include="Morphant.GeneratorContractVersion"
+                          Value="1" />
+
         <ProjectReference Include="..\Morphant.Generator\Morphant.Generator.csproj"
                           ReferenceOutputAssembly="false"
                           PrivateAssets="all" />
