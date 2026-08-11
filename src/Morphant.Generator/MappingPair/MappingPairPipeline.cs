@@ -27,18 +27,31 @@ internal static class MappingPairPipeline
         var pairs = ImmutableArray.CreateBuilder<MappingPairModel>();
         var unsupportedPairs =
             ImmutableArray.CreateBuilder<UnsupportedMappingPairModel>();
-        var identities = new HashSet<MappingPairIdentityKey>();
+        var unavailablePairs =
+            ImmutableArray.CreateBuilder<UnavailableMappingPairModel>();
+        var duplicateRegistrations = ImmutableArray.CreateBuilder<
+            DuplicateMappingPairRegistrationModel>();
+        var authoritativeRegistrations = new Dictionary<
+            MappingPairIdentityKey,
+            (MappingPairRegistrationModel Registration,
+                MappingPairIdentity Identity)>();
 
         foreach (var registration in mappingInfo.Registrations)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!MappingTypeEligibilityPolicy.CanBeNamed(
+            var sourceNameability =
+                MappingTypeEligibilityPolicy.GetNameability(
                     registration.SourceType,
-                    context.Compilation) ||
-                !MappingTypeEligibilityPolicy.CanBeNamed(
+                    context.Compilation);
+            var destinationNameability =
+                MappingTypeEligibilityPolicy.GetNameability(
                     registration.DestinationType,
-                    context.Compilation))
+                    context.Compilation);
+
+            if (sourceNameability == MappingTypeNameability.CompilerOwned ||
+                destinationNameability ==
+                    MappingTypeNameability.CompilerOwned)
             {
                 continue;
             }
@@ -52,32 +65,81 @@ internal static class MappingPairPipeline
                 identity.Source.Key,
                 identity.Destination.Key);
 
-            if (!identities.Add(identityKey))
+            if (authoritativeRegistrations.TryGetValue(
+                    identityKey,
+                    out var authoritative))
             {
+                duplicateRegistrations.Add(
+                    new DuplicateMappingPairRegistrationModel(
+                        registration,
+                        authoritative.Registration,
+                        authoritative.Identity));
+                continue;
+            }
+
+            authoritativeRegistrations.Add(
+                identityKey,
+                (registration, identity));
+
+            var unavailableTypes =
+                ImmutableArray.CreateBuilder<UnavailableMappingTypeModel>(2);
+
+            if (sourceNameability == MappingTypeNameability.Unavailable)
+            {
+                unavailableTypes.Add(new UnavailableMappingTypeModel(
+                    MappingTypeRole.Source,
+                    registration.SourceType));
+            }
+
+            if (destinationNameability == MappingTypeNameability.Unavailable)
+            {
+                unavailableTypes.Add(new UnavailableMappingTypeModel(
+                    MappingTypeRole.Destination,
+                    registration.DestinationType));
+            }
+
+            if (unavailableTypes.Count != 0)
+            {
+                unavailablePairs.Add(new UnavailableMappingPairModel(
+                    registration,
+                    identity,
+                    unavailableTypes.ToImmutable()));
                 continue;
             }
 
             var sourceReason =
                 MappingTypeEligibilityPolicy.GetUnsupportedRootReason(
-                    registration.SourceType,
-                    "source",
-                    context.Compilation);
+                    registration.SourceType);
             var destinationReason =
                 MappingTypeEligibilityPolicy.GetUnsupportedRootReason(
-                    registration.DestinationType,
-                    "destination",
-                    context.Compilation);
+                    registration.DestinationType);
 
             if (sourceReason is not null || destinationReason is not null)
             {
+                var unsupportedRoots = ImmutableArray.CreateBuilder<
+                    UnsupportedMappingRootModel>(2);
+
+                if (sourceReason is not null)
+                {
+                    unsupportedRoots.Add(new UnsupportedMappingRootModel(
+                        MappingTypeRole.Source,
+                        registration.SourceType,
+                        sourceReason));
+                }
+
+                if (destinationReason is not null)
+                {
+                    unsupportedRoots.Add(new UnsupportedMappingRootModel(
+                        MappingTypeRole.Destination,
+                        registration.DestinationType,
+                        destinationReason));
+                }
+
                 unsupportedPairs.Add(
                     new UnsupportedMappingPairModel(
                         registration,
                         identity,
-                        string.Join(
-                            " ",
-                            new[] { sourceReason, destinationReason }
-                                .Where(static reason => reason is not null))));
+                        unsupportedRoots.ToImmutable()));
                 continue;
             }
 
@@ -116,6 +178,8 @@ internal static class MappingPairPipeline
             SymbolNameHelper.GetFullMetadataName(mapperType),
             immutablePairs,
             immutableUnsupportedPairs,
+            unavailablePairs.ToImmutable(),
+            duplicateRegistrations.ToImmutable(),
             unifiable.HasAny);
     }
 

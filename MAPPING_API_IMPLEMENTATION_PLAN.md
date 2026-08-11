@@ -704,24 +704,29 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 2.**
+**Diagnostics: vertical slice категории 3.**
 
-Статус: реализован, ожидает пользовательского ревью. Vertical slice категории
-1 принят пользователем. Категория 2 добавляет configurable
-`MORPH0005`–`MORPH0010` и `MORPH0034`, отдельную declaration-модель до поиска
-`Configure`, mapper-wide structural gates и pair-local исключение exact либо
-unifiable user-declared `ITypeMapper<,>` contract-а. При `MORPH0006`–
-`MORPH0008`/`MORPH0034` executable mapper artifact отсутствует, но независимо
-legal DSL surfaces сохраняются; `MORPH0009`/`MORPH0010` исключают только свою
-pair и не мешают независимым pairs.
+Статус: реализован, ожидает пользовательского ревью. Vertical slices
+категорий 1–2 приняты пользователем. Категория 3 добавляет configurable
+`MORPH0011`–`MORPH0014`: unavailable mapping types, unsupported root type
+parameters, повторную canonical pair и унификацию generated
+`ITypeMapper<,>` contracts.
 
-Самостоятельная читаемая unit-категория фиксирует descriptors, locations,
-deduplication, precedence, canonical messages, recovery, suppression и
-incremental actualization. Обычные статические consumer-проекты отдельно
-проверяют structural failures без C# cascades, pair-local recovery, реальную
-`.editorconfig` suppression и компилируемые abstract/generic/nested/
-private/protected/inherited mapper contracts. Следующий vertical slice —
-категория 3 после принятия категории 2 пользователем.
+Первая canonical registration остаётся авторитетной. Unavailable pair
+исключается без каскада, root type parameter сохраняет обе operations через
+typed exception-stub, а унифицируемые contracts не объявляются и не подавляют
+независимые pairs либо legal DSL surfaces. Recursive availability учитывает
+containing и generic argument types; compiler-owned invalid type arguments не
+получают дублирующую Morphant diagnostic.
+
+Самостоятельная unit-категория фиксирует descriptors, canonical identity,
+locations/additional locations, deterministic ordering, recovery,
+suppression/severity и actualization одного incremental driver-а, включая
+полный exact generated result. Обычные C# 9 consumers исполняют suppressed
+unsupported, duplicate, unavailable, unification и opaque-root scenarios;
+package/MSBuild fixtures проверяют file-local type и реальные `.editorconfig`
+overrides. Следующий vertical slice — категория 4 после принятия категории 3
+пользователем.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2151,8 +2156,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slice категории 1 приняты пользователем;
-vertical slice категории 2 реализован и ожидает пользовательского ревью.
+production model и vertical slices категорий 1–2 приняты пользователем;
+vertical slice категории 3 реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2180,8 +2185,12 @@ package-like integration-тестами. После ревью test-owned runtim
 scenarios — в обычные consumer-проекты; покрытие категории сохранено.
 Второй vertical slice реализует declaration diagnostics `MORPH0005`–
 `MORPH0010`/`MORPH0034`, mapper-wide и pair-local generation recovery,
-самостоятельную unit-категорию и обычные consumer fixtures. Следующий vertical
-slice реализует категорию 3 после пользовательского принятия категории 2.
+самостоятельную unit-категорию и обычные consumer fixtures; slice принят
+пользователем. Третий vertical slice реализует registration diagnostics
+`MORPH0011`–`MORPH0014`, recursive type eligibility, first-registration
+ownership и generated-contract unification с самостоятельными unit-, C# 9
+runtime- и package/MSBuild-тестами. Следующий vertical slice реализует
+категорию 4 после пользовательского принятия категории 3.
 
 ### Этап 24. Observable failures
 

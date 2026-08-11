@@ -148,7 +148,11 @@ internal static class MappingTypeIdentityPolicy
         {
             key.Append("array(");
             Append(arrayType.ElementType, key, displayName);
-            key.Append(';').Append(arrayType.Rank).Append(')');
+            key.Append(';')
+                .Append(arrayType.Rank)
+                .Append(';')
+                .Append(arrayType.IsSZArray)
+                .Append(')');
 
             displayName.Append('[');
 

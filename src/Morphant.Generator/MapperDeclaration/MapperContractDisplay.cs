@@ -21,6 +21,12 @@ internal static class MapperContractDisplay
         return result.ToString();
     }
 
+    public static string CreateType(ITypeSymbol type)
+    {
+        return type.ToDisplayString(
+            SymbolDisplayFormats.FullyQualifiedNullable);
+    }
+
     private static void AppendType(
         ITypeSymbol type,
         StringBuilder result)

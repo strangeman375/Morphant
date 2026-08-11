@@ -33,7 +33,7 @@ internal static class MapperContractPipeline
         if (!configuration.Declaration.CanGenerateExecutableArtifact ||
             context.KnownSymbols is not { } knownSymbols)
         {
-            return new MapperContractAnalysis(configuration, []);
+            return new MapperContractAnalysis(configuration, [], []);
         }
 
         var interfaceGraphs = FindDirectInterfaceGraphs(
@@ -78,9 +78,75 @@ internal static class MapperContractPipeline
             }
         }
 
+        var immutableConflicts = conflicts.ToImmutable();
+
         return new MapperContractAnalysis(
             configuration,
-            conflicts.ToImmutable());
+            immutableConflicts,
+            FindGeneratedConflicts(
+                configuration.MappingPairs,
+                immutableConflicts,
+                cancellationToken));
+    }
+
+    private static ImmutableArray<GeneratedMapperContractConflict>
+        FindGeneratedConflicts(
+            MapperMappingPairModel model,
+            ImmutableArray<MapperContractConflict> declaredConflicts,
+            CancellationToken cancellationToken)
+    {
+        var excluded = new HashSet<PairIdentityKey>(
+            declaredConflicts.Select(static conflict => new PairIdentityKey(
+                conflict.PairIdentity.Source.Key,
+                conflict.PairIdentity.Destination.Key)));
+        var pairs = EnumeratePairs(model)
+            .Where(pair => !excluded.Contains(new PairIdentityKey(
+                pair.Identity.Source.Key,
+                pair.Identity.Destination.Key)))
+            .OrderBy(static pair => pair.Registration.Syntax.SpanStart)
+            .ThenBy(static pair => pair.Identity.Source.Key,
+                StringComparer.Ordinal)
+            .ThenBy(static pair => pair.Identity.Destination.Key,
+                StringComparer.Ordinal)
+            .ToImmutableArray();
+        var result =
+            ImmutableArray.CreateBuilder<GeneratedMapperContractConflict>();
+
+        for (var leftIndex = 0; leftIndex < pairs.Length; leftIndex++)
+        {
+            for (var rightIndex = leftIndex + 1;
+                 rightIndex < pairs.Length;
+                 rightIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var earlier = pairs[leftIndex];
+                var later = pairs[rightIndex];
+
+                if (!MappingTypeIdentityPolicy.CanPairsUnify(
+                        earlier.SourceType,
+                        earlier.DestinationType,
+                        later.SourceType,
+                        later.DestinationType))
+                {
+                    continue;
+                }
+
+                result.Add(new GeneratedMapperContractConflict(
+                    earlier.Registration,
+                    earlier.Identity,
+                    MapperContractDisplay.Create(
+                        earlier.SourceType,
+                        earlier.DestinationType),
+                    later.Registration,
+                    later.Identity,
+                    MapperContractDisplay.Create(
+                        later.SourceType,
+                        later.DestinationType)));
+            }
+        }
+
+        return result.ToImmutable();
     }
 
     private static ImmutableArray<DirectInterfaceGraph>
@@ -226,4 +292,8 @@ internal static class MapperContractPipeline
         MappingPairIdentity Identity,
         ITypeSymbol SourceType,
         ITypeSymbol DestinationType);
+
+    private readonly record struct PairIdentityKey(
+        string Source,
+        string Destination);
 }

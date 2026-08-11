@@ -6,9 +6,9 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Первый vertical diagnostic slice категории 1 реализован и принят
-пользователем. Vertical slice категории 2 реализован и ожидает
-пользовательского ревью; следующий slice после его принятия — категория 3.
+Vertical slices категорий 1–2 реализованы и приняты пользователем. Vertical
+slice категории 3 реализован и ожидает пользовательского ревью; следующий
+slice после его принятия — категория 4.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -81,7 +81,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категория 1 принята, категория 2 реализована и ожидает ревью |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–2 приняты, категория 3 реализована и ожидает ревью |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -4900,6 +4900,29 @@ contract вынесен в отдельный fixture с именованным�
 package scenarios представлены обычными consumer-проектами вместо
 динамической генерации project/source файлов. Срез принят; следующий —
 категория 2.
+
+Второй vertical slice категории 2 реализует configurable `MORPH0005`–
+`MORPH0010` и `MORPH0034`, отдельную declaration-модель, mapper-wide
+structural gates и pair-local исключение конфликтующих user-declared
+contracts. Самостоятельные unit- и package-like integration-тесты фиксируют
+точные diagnostics, recovery, suppression и incremental actualization. Срез
+принят пользователем.
+
+Третий vertical slice категории 3 реализует configurable `MORPH0011`–
+`MORPH0014`: рекурсивную доступность mapping types, запрет root type
+parameter-а, canonical duplicate registration и унификацию generated
+`ITypeMapper<,>` contracts. Первая canonical registration остаётся
+авторитетной; unavailable pair исключается, unsupported root сохраняет typed
+exception-stub, а унифицируемые contracts не объявляются. Compiler-owned
+invalid type arguments не получают дублирующую Morphant diagnostic.
+
+Самостоятельная unit-категория фиксирует descriptors, canonical identity,
+locations/additional locations, ordering, suppression/severity, incremental
+actualization и полный recovery output. Обычные C# 9 consumers исполняют
+suppressed unsupported, duplicate, unavailable, unification и opaque-root
+scenarios; package/MSBuild fixtures проверяют file-local type и реальные
+`.editorconfig` overrides. Срез реализован и ожидает пользовательского ревью;
+следующий — категория 4.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

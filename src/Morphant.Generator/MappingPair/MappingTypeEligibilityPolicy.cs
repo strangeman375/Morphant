@@ -4,6 +4,8 @@ namespace Morphant.Generator.MappingPair;
 
 internal static class MappingTypeEligibilityPolicy
 {
+    public const string RootTypeParameterReason = "a root type parameter";
+
     private const string ITupleMetadataName =
         "System.Runtime.CompilerServices.ITuple";
 
@@ -11,39 +13,18 @@ internal static class MappingTypeEligibilityPolicy
         ITypeSymbol type,
         Compilation compilation)
     {
-        return CanBeUsedAsGenericArgument(type, compilation) &&
-               GetUnsupportedRootReason(type, "mapping", compilation) is null;
+        return GetNameability(type, compilation) ==
+                   MappingTypeNameability.Available &&
+               GetUnsupportedRootReason(type) is null;
     }
 
-    public static string? GetUnsupportedRootReason(
-        ITypeSymbol type,
-        string role,
-        Compilation compilation)
+    public static string? GetUnsupportedRootReason(ITypeSymbol type)
     {
-        var typeName = type.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable);
-
-        if (!CanBeUsedAsGenericArgument(type, compilation))
-        {
-            return $"The {role} type '{typeName}' cannot be named in a " +
-                   "generated ITypeMapper contract.";
-        }
-
         var rootType = UnwrapNullableValueType(type);
 
-        if (rootType is ITypeParameterSymbol)
-        {
-            return $"The {role} type '{typeName}' is a root type " +
-                   "parameter, which Morphant does not support as a " +
-                   "mapping root.";
-        }
-
-        return rootType is IDynamicTypeSymbol or
-            IArrayTypeSymbol or
-            INamedTypeSymbol
-                ? null
-                : $"The {role} type '{typeName}' is not a supported named " +
-                  "mapping root.";
+        return rootType is ITypeParameterSymbol
+            ? RootTypeParameterReason
+            : null;
     }
 
     internal static bool IsDeferredOpaqueRoot(ITypeSymbol type)
@@ -68,12 +49,11 @@ internal static class MappingTypeEligibilityPolicy
         ITypeSymbol type,
         Compilation compilation)
     {
-        return CanBeUsedAsGenericArgument(
-            type,
-            compilation);
+        return GetNameability(type, compilation) ==
+               MappingTypeNameability.Available;
     }
 
-    private static bool CanBeUsedAsGenericArgument(
+    internal static MappingTypeNameability GetNameability(
         ITypeSymbol type,
         Compilation compilation)
     {
@@ -84,47 +64,73 @@ internal static class MappingTypeEligibilityPolicy
             type.SpecialType == SpecialType.System_Void ||
             type.IsRefLikeType)
         {
-            return false;
+            return MappingTypeNameability.CompilerOwned;
         }
 
         if (type is IDynamicTypeSymbol or ITypeParameterSymbol)
         {
-            return true;
+            return MappingTypeNameability.Available;
         }
 
         if (type is IArrayTypeSymbol arrayType)
         {
-            return CanBeUsedAsGenericArgument(
+            return GetNameability(
                 arrayType.ElementType,
                 compilation);
         }
 
         if (type is not INamedTypeSymbol namedType ||
             namedType.IsAnonymousType ||
-            namedType.IsFileLocal ||
             namedType.IsStatic ||
             namedType.IsUnboundGenericType ||
-            !namedType.CanBeReferencedByName ||
-            !compilation.IsSymbolAccessibleWithin(
-                namedType,
-                compilation.Assembly))
+            !namedType.CanBeReferencedByName)
         {
-            return false;
+            return MappingTypeNameability.CompilerOwned;
         }
 
-        if (namedType.ContainingType is { } containingType &&
-            !CanBeUsedAsGenericArgument(
+        var result = namedType.IsFileLocal ||
+                     !compilation.IsSymbolAccessibleWithin(
+                         namedType,
+                         compilation.Assembly)
+            ? MappingTypeNameability.Unavailable
+            : MappingTypeNameability.Available;
+
+        if (namedType.ContainingType is { } containingType)
+        {
+            var containingNameability = GetNameability(
                 containingType,
-                compilation))
-        {
-            return false;
+                compilation);
+
+            if (containingNameability != MappingTypeNameability.Available)
+            {
+                if (containingNameability ==
+                    MappingTypeNameability.CompilerOwned)
+                {
+                    return MappingTypeNameability.CompilerOwned;
+                }
+
+                result = MappingTypeNameability.Unavailable;
+            }
         }
 
-        return namedType.TypeArguments.All(
-            typeArgument =>
-                CanBeUsedAsGenericArgument(
-                    typeArgument,
-                    compilation));
+        foreach (var typeArgument in namedType.TypeArguments)
+        {
+            var argumentNameability = GetNameability(
+                typeArgument,
+                compilation);
+
+            if (argumentNameability == MappingTypeNameability.CompilerOwned)
+            {
+                return MappingTypeNameability.CompilerOwned;
+            }
+
+            if (argumentNameability == MappingTypeNameability.Unavailable)
+            {
+                result = MappingTypeNameability.Unavailable;
+            }
+        }
+
+        return result;
     }
 
     private static ITypeSymbol UnwrapNullableValueType(ITypeSymbol type)
@@ -251,4 +257,11 @@ internal static class MappingTypeEligibilityPolicy
         return SymbolNameHelper.GetFullMetadataName(
             type.OriginalDefinition);
     }
+}
+
+internal enum MappingTypeNameability
+{
+    Available,
+    Unavailable,
+    CompilerOwned
 }

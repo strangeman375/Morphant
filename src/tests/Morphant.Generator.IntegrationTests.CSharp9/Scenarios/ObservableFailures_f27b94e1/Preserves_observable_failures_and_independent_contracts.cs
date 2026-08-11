@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperObservableFailureTests::Preserves_observable_failures_and_independent_contracts
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0014
 
 using System;
 using Morphant;

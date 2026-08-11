@@ -538,10 +538,14 @@ public abstract partial class TestMapper :
 """;
 
         var result = MapperDeclarationGeneratorTest.Run(source);
-        var diagnostic = result.Diagnostics.Single();
+        var diagnostic = result.Diagnostics.Single(candidate =>
+            candidate.Id == "MORPH0009");
 
         Assert.Multiple(() =>
         {
+            Assert.That(
+                result.Diagnostics.Select(candidate => candidate.Id),
+                Is.EqualTo(new[] { "MORPH0009", "MORPH0013" }));
             Assert.That(diagnostic.Id, Is.EqualTo("MORPH0009"));
             Assert.That(
                 diagnostic.Location.SourceTree!

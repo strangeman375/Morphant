@@ -14,4 +14,8 @@ MORPH0007 | Morphant.Declaration | Error | Containing type must be partial
 MORPH0008 | Morphant.Declaration | Error | File-local mapper declaration is not supported
 MORPH0009 | Morphant.Declaration | Error | Mapping contract is already declared
 MORPH0010 | Morphant.Declaration | Error | Mapping contract conflicts with a declared interface
+MORPH0011 | Morphant.Registration | Error | Mapping type is unavailable to generated code
+MORPH0012 | Morphant.Registration | Error | Unsupported mapping root type
+MORPH0013 | Morphant.Registration | Error | Duplicate mapping registration
+MORPH0014 | Morphant.Registration | Error | Mapping contracts can unify
 MORPH0034 | Morphant.Declaration | Error | Mapper member conflicts with generated Supports

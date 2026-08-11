@@ -179,7 +179,8 @@ internal static class TypeMapperPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (pairConfiguration.Pair.HasUnifiableConflict)
+            if (analysis.HasGeneratedConflict(
+                    pairConfiguration.Pair.Identity))
             {
                 continue;
             }
@@ -270,7 +271,7 @@ internal static class TypeMapperPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (unsupportedPair.HasUnifiableConflict)
+            if (analysis.HasGeneratedConflict(unsupportedPair.Identity))
             {
                 continue;
             }
@@ -371,10 +372,28 @@ internal static class TypeMapperPipeline
                     pair.Identity,
                     mapperType),
                 MappingFailureReason.UnsupportedMappingContract,
-                pair.Reason,
+                BuildUnsupportedMappingReason(pair),
                 MappingObservationOriginKind.Registration,
                 MappingAffectedPath.All(
                     MappingPlanPhase.Configuration)));
+    }
+
+    private static string BuildUnsupportedMappingReason(
+        UnsupportedMappingPairModel pair)
+    {
+        return string.Join(
+            " ",
+            pair.UnsupportedRoots.Select(static root =>
+                $"The {GetRoleName(root.Role)} type " +
+                $"'{MapperContractDisplay.CreateType(root.Type)}' is not " +
+                $"supported as a mapping root because it is {root.Reason}."));
+    }
+
+    private static string GetRoleName(MappingTypeRole role)
+    {
+        return role == MappingTypeRole.Source
+            ? "source"
+            : "destination";
     }
 
     private static TypeMapperMappingModel BuildMapping(

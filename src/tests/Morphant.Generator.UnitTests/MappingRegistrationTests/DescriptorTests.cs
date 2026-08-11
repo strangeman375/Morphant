@@ -1,0 +1,76 @@
+using Microsoft.CodeAnalysis;
+using Morphant.Generator.MappingPair;
+
+namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
+
+[TestFixture]
+internal sealed class DescriptorTests
+{
+    public static IEnumerable<TestCaseData> Descriptors()
+    {
+        yield return Case(
+            MappingRegistrationDiagnosticDescriptors
+                .UnavailableMappingType,
+            "MORPH0011",
+            "Mapping type is unavailable to generated code",
+            "The {0} type '{1}' is unavailable to Morphant-generated code.");
+        yield return Case(
+            MappingRegistrationDiagnosticDescriptors
+                .UnsupportedMappingRoot,
+            "MORPH0012",
+            "Unsupported mapping root type",
+            "The {0} type '{1}' is not supported as a mapping root because " +
+            "it is {2}.");
+        yield return Case(
+            MappingRegistrationDiagnosticDescriptors.DuplicateRegistration,
+            "MORPH0013",
+            "Duplicate mapping registration",
+            "Mapping contract '{0}' is registered more than once in mapper " +
+            "'{1}'.");
+        yield return Case(
+            MappingRegistrationDiagnosticDescriptors.UnifiableContracts,
+            "MORPH0014",
+            "Mapping contracts can unify",
+            "Mapping contracts '{0}' and '{1}' can unify in mapper '{2}'.");
+    }
+
+    [TestCaseSource(nameof(Descriptors))]
+    public void Registration_descriptor_matches_the_public_contract(
+        DiagnosticDescriptor descriptor,
+        string id,
+        string title,
+        string message)
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(descriptor.Id, Is.EqualTo(id));
+            Assert.That(descriptor.Title.ToString(), Is.EqualTo(title));
+            Assert.That(
+                descriptor.MessageFormat.ToString(),
+                Is.EqualTo(message));
+            Assert.That(
+                descriptor.Category,
+                Is.EqualTo("Morphant.Registration"));
+            Assert.That(
+                descriptor.DefaultSeverity,
+                Is.EqualTo(DiagnosticSeverity.Error));
+            Assert.That(descriptor.IsEnabledByDefault, Is.True);
+            Assert.That(descriptor.Description.ToString(), Is.Empty);
+            Assert.That(descriptor.HelpLinkUri, Is.Empty);
+            Assert.That(descriptor.CustomTags, Is.Empty);
+            Assert.That(
+                descriptor.CustomTags,
+                Does.Not.Contain(WellKnownDiagnosticTags.NotConfigurable));
+        });
+    }
+
+    private static TestCaseData Case(
+        DiagnosticDescriptor descriptor,
+        string id,
+        string title,
+        string message)
+    {
+        return new TestCaseData(descriptor, id, title, message)
+            .SetName(id + "_descriptor");
+    }
+}

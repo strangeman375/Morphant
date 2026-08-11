@@ -18,6 +18,9 @@ internal readonly record struct MapperMappingPairModel(
     string MapperIdentity,
     ImmutableArray<MappingPairModel> Pairs,
     ImmutableArray<UnsupportedMappingPairModel> UnsupportedPairs,
+    ImmutableArray<UnavailableMappingPairModel> UnavailablePairs,
+    ImmutableArray<DuplicateMappingPairRegistrationModel>
+        DuplicateRegistrations,
     bool HasUnifiablePairs);
 
 internal readonly record struct MappingPairModel(
@@ -36,13 +39,32 @@ internal readonly record struct MappingPairModel(
 internal readonly record struct UnsupportedMappingPairModel(
     MappingPairRegistrationModel Registration,
     MappingPairIdentity Identity,
-    string Reason,
+    ImmutableArray<UnsupportedMappingRootModel> UnsupportedRoots,
     bool HasUnifiableConflict = false)
 {
     public ITypeSymbol SourceType => Registration.SourceType;
 
     public ITypeSymbol DestinationType => Registration.DestinationType;
 }
+
+internal readonly record struct UnavailableMappingPairModel(
+    MappingPairRegistrationModel Registration,
+    MappingPairIdentity Identity,
+    ImmutableArray<UnavailableMappingTypeModel> UnavailableTypes);
+
+internal readonly record struct UnavailableMappingTypeModel(
+    MappingTypeRole Role,
+    ITypeSymbol Type);
+
+internal readonly record struct UnsupportedMappingRootModel(
+    MappingTypeRole Role,
+    ITypeSymbol Type,
+    string Reason);
+
+internal readonly record struct DuplicateMappingPairRegistrationModel(
+    MappingPairRegistrationModel Registration,
+    MappingPairRegistrationModel AuthoritativeRegistration,
+    MappingPairIdentity Identity);
 
 internal readonly record struct MappingPairIdentity(
     MappingTypeIdentity Source,
@@ -63,6 +85,12 @@ internal readonly record struct MappingPairCapabilities(
 
     public bool DirectConstruction =>
         Construction == MappingConstructionKind.Direct;
+}
+
+internal enum MappingTypeRole
+{
+    Source,
+    Destination
 }
 
 internal enum MappingConstructionKind
