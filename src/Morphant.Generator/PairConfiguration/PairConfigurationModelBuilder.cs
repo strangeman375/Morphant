@@ -36,7 +36,9 @@ internal static class PairConfigurationModelBuilder
                 PairConfigurationSettings.Empty,
                 [],
                 [],
-                HasInvalidBaseConfiguration: false);
+                HasInvalidBaseConfiguration: false,
+                discovery.UnavailableBaseConfigurations,
+                discovery.FlowBreaks);
         }
 
         var bindingMapperModels = discovery.Levels
@@ -63,7 +65,9 @@ internal static class PairConfigurationModelBuilder
                 PairConfigurationSettings.Empty,
                 [],
                 [],
-                HasInvalidBaseConfiguration: false);
+                HasInvalidBaseConfiguration: false,
+                discovery.UnavailableBaseConfigurations,
+                discovery.FlowBreaks);
         }
 
         var levels =
@@ -139,7 +143,9 @@ internal static class PairConfigurationModelBuilder
             ImmutableArray.Create(mappingPairs)
                 .AddRange(bindingMapperModels),
             levels.ToImmutable(),
-            discovery.HasUnavailableBaseConfiguration,
+            discovery.HasInvalidBaseConfiguration,
+            discovery.UnavailableBaseConfigurations,
+            discovery.FlowBreaks,
             compilation,
             augmentedCompilation,
             targetMapperType,
@@ -209,7 +215,10 @@ internal static class PairConfigurationModelBuilder
         MapperMappingPairModel mappingPairs,
         ImmutableArray<MapperMappingPairModel> surfaceMappingPairs,
         ImmutableArray<LocalMapperConfigurationLevel> levels,
-        bool hasUnavailableBaseConfiguration,
+        bool hasInvalidBaseConfiguration,
+        ImmutableArray<UnavailableBaseConfigurationModel>
+            unavailableBaseConfigurations,
+        ImmutableArray<BuilderFlowBreakModel> flowBreaks,
         CSharpCompilation sourceCompilation,
         CSharpCompilation augmentedCompilation,
         INamedTypeSymbol targetMapperType,
@@ -224,7 +233,9 @@ internal static class PairConfigurationModelBuilder
                 PairConfigurationSettings.Empty,
                 [],
                 [],
-                hasUnavailableBaseConfiguration);
+                hasInvalidBaseConfiguration,
+                unavailableBaseConfigurations,
+                flowBreaks);
         }
 
         var effectivePairs =
@@ -255,7 +266,7 @@ internal static class PairConfigurationModelBuilder
                     composedLocalPairs,
                     hasConnectedBaseConfiguration:
                         levelIndex + 1 < levels.Length,
-                    hasUnavailableBaseConfiguration &&
+                    hasInvalidBaseConfiguration &&
                         levelIndex + 1 == levels.Length,
                     sourceCompilation));
             }
@@ -294,9 +305,11 @@ internal static class PairConfigurationModelBuilder
                 .Select(static level => level.RootSettings)
                 .ToImmutableArray(),
             pairs.ToImmutable(),
-            hasUnavailableBaseConfiguration ||
+            hasInvalidBaseConfiguration ||
             levels.Any(static level =>
-                level.BaseConfigureCalls.Length > 1));
+                level.BaseConfigureCalls.Length > 1),
+            unavailableBaseConfigurations,
+            flowBreaks);
     }
 
     private static PairConfigurationModel ComposeLevelPair(
@@ -730,7 +743,11 @@ internal static class PairConfigurationModelBuilder
             }
         }
 
-        return default;
+        // Unsupported builder flow can still expose a Map registration that
+        // deliberately has no linear invocation chain. Keep the registration
+        // model so recovery can emit the pair surface, but do not attempt to
+        // lower any pair-level configuration after it.
+        return new PairConfigurationInvocationChain([]);
     }
 
     private static PairConfigurationModel BuildPair(

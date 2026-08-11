@@ -99,6 +99,8 @@ internal enum MappingFailureReason
 {
     UnsupportedMappingContract,
     InvalidBaseConfiguration,
+    UnsupportedMapperBuilderFlow,
+    UnsupportedMappingBuilderFlow,
     InvalidPairConfiguration,
     InvalidManualSetting,
     InvalidSetting,

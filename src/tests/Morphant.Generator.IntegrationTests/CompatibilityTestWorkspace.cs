@@ -32,6 +32,7 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
 
         arguments.Add($"-p:MorphantGeneratorPath={GetGeneratorAssemblyPath()}");
         arguments.Add($"-p:MorphantRuntimePath={GetRuntimeAssemblyPath()}");
+        arguments.Add($"-p:MorphantTestAssetsPath={GetTestAssetsAssemblyPath()}");
         arguments.Add($"-p:RestoreSources={PackageFeed}");
 
         if (runtimeCandidatePath is not null)
@@ -205,6 +206,19 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
     private static string GetRuntimeAssemblyPath()
     {
         return typeof(TypeMapper).Assembly.Location;
+    }
+
+    private string GetTestAssetsAssemblyPath()
+    {
+        return Path.Combine(
+            _repositoryRoot,
+            "src",
+            "tests",
+            "Morphant.Generator.UnitTests.TestAssets",
+            "bin",
+            _configuration,
+            "netstandard2.0",
+            "Morphant.Generator.UnitTests.TestAssets.dll");
     }
 
     private static string FindRepositoryRoot()

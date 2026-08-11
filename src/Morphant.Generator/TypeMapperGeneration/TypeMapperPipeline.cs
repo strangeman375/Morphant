@@ -16,6 +16,12 @@ internal static class TypeMapperPipeline
         "The mapper inheritance chain contains a base mapper whose " +
         "configuration cannot be composed.";
 
+    private const string UnsupportedMapperBuilderFlowMessage =
+        "The mapper builder flow cannot be analyzed.";
+
+    private const string UnsupportedMappingBuilderFlowMessage =
+        "The mapping builder flow cannot be analyzed.";
+
     private const string ConventionConstructionUnavailableMessage =
         "Convention construction is not available for this destination.";
 
@@ -174,6 +180,7 @@ internal static class TypeMapperPipeline
         var mappings = ImmutableArray.CreateBuilder<OrderedMapping>(
             configuration.Pairs.Length +
             configuration.MappingPairs.UnsupportedPairs.Length);
+        var configuredPairKeys = new HashSet<MappingIdentityKey>();
 
         foreach (var pairConfiguration in configuration.Pairs)
         {
@@ -187,6 +194,28 @@ internal static class TypeMapperPipeline
 
             if (analysis.Excludes(pairConfiguration.Pair.Identity))
             {
+                continue;
+            }
+
+            configuredPairKeys.Add(MappingIdentityKey.Create(
+                pairConfiguration.Pair));
+
+            if (TryGetConfigurationFlowFailure(
+                    configuration,
+                    pairConfiguration.Pair.Identity,
+                    out var flowFailure))
+            {
+                mappings.Add(new OrderedMapping(
+                    pairConfiguration.Pair.Registration.Syntax.SpanStart,
+                    BuildFailedMapping(
+                        pairConfiguration.Pair.Registration,
+                        pairConfiguration.Pair.Identity,
+                        compilation,
+                        mapperType,
+                        flowFailure.Reason,
+                        flowFailure.Message,
+                        flowFailure.OriginKind),
+                    TransferredCodePolicy.Empty));
                 continue;
             }
 
@@ -211,22 +240,6 @@ internal static class TypeMapperPipeline
                 mapperType,
                 usedGeneratedMethodNames,
                 cancellationToken);
-
-            if (configuration.HasInvalidBaseConfiguration)
-            {
-                mapping = mapping with
-                {
-                    Failure = MappingFailureObservation.Create(
-                        mapping.AnalysisContext,
-                        MappingFailureReason.InvalidBaseConfiguration,
-                        InvalidBaseConfigurationMessage,
-                        MappingObservationOriginKind.MapperConfiguration,
-                        MappingAffectedPath.All(
-                            MappingPlanPhase.Configuration),
-                        configuration.MappingPairs.ConfigureSyntax,
-                    mapperType)
-                };
-            }
 
             mapping = MappingCompletenessObservationBuilder.Attach(
                 mapping,
@@ -264,6 +277,34 @@ internal static class TypeMapperPipeline
                         transferPolicy.RequiresUnsafeContext
                 },
                 transferPolicy));
+        }
+
+        foreach (var pair in configuration.MappingPairs.Pairs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (configuredPairKeys.Contains(
+                    MappingIdentityKey.Create(pair)) ||
+                analysis.Excludes(pair.Identity) ||
+                !TryGetConfigurationFlowFailure(
+                    configuration,
+                    pair.Identity,
+                    out var flowFailure))
+            {
+                continue;
+            }
+
+            mappings.Add(new OrderedMapping(
+                pair.Registration.Syntax.SpanStart,
+                BuildFailedMapping(
+                    pair.Registration,
+                    pair.Identity,
+                    compilation,
+                    mapperType,
+                    flowFailure.Reason,
+                    flowFailure.Message,
+                    flowFailure.OriginKind),
+                TransferredCodePolicy.Empty));
         }
 
         foreach (var unsupportedPair in
@@ -308,16 +349,35 @@ internal static class TypeMapperPipeline
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType)
     {
+        return BuildFailedMapping(
+            pair.Registration,
+            pair.Identity,
+            compilation,
+            mapperType,
+            MappingFailureReason.UnsupportedMappingContract,
+            BuildUnsupportedMappingReason(pair),
+            MappingObservationOriginKind.Registration);
+    }
+
+    private static TypeMapperMappingModel BuildFailedMapping(
+        MappingPairRegistrationModel registration,
+        MappingPairIdentity identity,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        MappingFailureReason failureReason,
+        string failureMessage,
+        MappingObservationOriginKind originKind)
+    {
         var declarativeSourceType =
             MappingTypeNormalization.NormalizeDeclarativeSource(
-                pair.SourceType,
+                registration.SourceType,
                 compilation);
         var previousDestinationType =
             MappingTypeNormalization.NormalizePreviousDestination(
-                pair.DestinationType,
+                registration.DestinationType,
                 compilation);
         var nonNullSourceName = BuildNonNullSourceName(
-            pair.SourceType,
+            registration.SourceType,
             mapperType);
         var usedLocalNames =
             UserResultMappingPlanner.BuildUsedLocalNames(mapperType);
@@ -326,38 +386,39 @@ internal static class TypeMapperPipeline
         return new TypeMapperMappingModel(
             SourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                    pair.SourceType),
+                    registration.SourceType),
             SourceRuntimeTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
-                    pair.SourceType),
+                    registration.SourceType),
             MaybeNullSourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedMaybeNullTypeName(
-                    pair.SourceType),
+                    registration.SourceType),
             NonNullSourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     declarativeSourceType),
             NonNullSourceName: nonNullSourceName,
             DestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                    pair.DestinationType),
+                    registration.DestinationType),
             DestinationRuntimeTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
-                    pair.DestinationType),
+                    registration.DestinationType),
             MaybeNullDestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedMaybeNullTypeName(
-                    pair.DestinationType),
+                    registration.DestinationType),
             NonNullDestinationTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     previousDestinationType),
             ResultLocalName: AllocateName("result", usedLocalNames),
             AnalysisContext: new MappingAnalysisContext(
-                pair.Registration,
-                pair.Identity,
+                registration,
+                identity,
                 mapperType),
-            SourceCanBeNull: CanBeNull(pair.SourceType),
+            SourceCanBeNull: CanBeNull(registration.SourceType),
             SourceIsNullableValue:
-                MappingTypeNormalization.IsNullableValue(pair.SourceType),
-            DestinationCanBeNull: CanBeNull(pair.DestinationType),
+                MappingTypeNormalization.IsNullableValue(
+                    registration.SourceType),
+            DestinationCanBeNull: CanBeNull(registration.DestinationType),
             CreateDirectExpression: null,
             UpdateDirectExpression: null,
             CreateFactory: null,
@@ -368,14 +429,83 @@ internal static class TypeMapperPipeline
             UpdateMemberMappings: [],
             Failure: MappingFailureObservation.Create(
                 new MappingAnalysisContext(
-                    pair.Registration,
-                    pair.Identity,
+                    registration,
+                    identity,
                     mapperType),
-                MappingFailureReason.UnsupportedMappingContract,
-                BuildUnsupportedMappingReason(pair),
-                MappingObservationOriginKind.Registration,
+                failureReason,
+                failureMessage,
+                originKind,
                 MappingAffectedPath.All(
                     MappingPlanPhase.Configuration)));
+    }
+
+    private static bool TryGetConfigurationFlowFailure(
+        MapperPairConfigurationModel configuration,
+        MappingPairIdentity identity,
+        out ConfigurationFlowFailure failure)
+    {
+        if (configuration.HasInvalidBaseConfiguration)
+        {
+            failure = new ConfigurationFlowFailure(
+                MappingFailureReason.InvalidBaseConfiguration,
+                InvalidBaseConfigurationMessage,
+                MappingObservationOriginKind.MapperConfiguration);
+            return true;
+        }
+
+        if (configuration.FlowBreaks.Any(static flowBreak =>
+                flowBreak.Kind == BuilderFlowBreakKind.Mapper))
+        {
+            failure = new ConfigurationFlowFailure(
+                MappingFailureReason.UnsupportedMapperBuilderFlow,
+                UnsupportedMapperBuilderFlowMessage,
+                MappingObservationOriginKind.MapperConfiguration);
+            return true;
+        }
+
+        if (configuration.FlowBreaks.Any(flowBreak =>
+                flowBreak.Kind == BuilderFlowBreakKind.Mapping &&
+                flowBreak.Registration is { } registration &&
+                IsIdentity(registration, identity) &&
+                !IsDiscardedDuplicate(configuration, registration)))
+        {
+            failure = new ConfigurationFlowFailure(
+                MappingFailureReason.UnsupportedMappingBuilderFlow,
+                UnsupportedMappingBuilderFlowMessage,
+                MappingObservationOriginKind.Registration);
+            return true;
+        }
+
+        failure = default;
+        return false;
+    }
+
+    private static bool IsIdentity(
+        MappingPairRegistrationModel registration,
+        MappingPairIdentity identity)
+    {
+        var registrationIdentity = new MappingPairIdentity(
+            MappingTypeIdentityPolicy.Create(registration.SourceType),
+            MappingTypeIdentityPolicy.Create(registration.DestinationType));
+
+        return StringComparer.Ordinal.Equals(
+                   registrationIdentity.Source.Key,
+                   identity.Source.Key) &&
+               StringComparer.Ordinal.Equals(
+                   registrationIdentity.Destination.Key,
+                   identity.Destination.Key);
+    }
+
+    private static bool IsDiscardedDuplicate(
+        MapperPairConfigurationModel configuration,
+        MappingPairRegistrationModel registration)
+    {
+        return configuration.SurfaceMappingPairs.Any(model =>
+            model.DuplicateRegistrations.Any(duplicate =>
+                duplicate.Registration.Syntax.SyntaxTree ==
+                    registration.Syntax.SyntaxTree &&
+                duplicate.Registration.Syntax.Span ==
+                    registration.Syntax.Span));
     }
 
     private static string BuildUnsupportedMappingReason(
@@ -1288,4 +1418,17 @@ internal static class TypeMapperPipeline
     private readonly record struct TypeMapperMappingsBuildResult(
         ImmutableArray<TypeMapperMappingModel> Models,
         ImmutableArray<TransferredCodePolicy> Policies);
+
+    private readonly record struct ConfigurationFlowFailure(
+        MappingFailureReason Reason,
+        string Message,
+        MappingObservationOriginKind OriginKind);
+
+    private readonly record struct MappingIdentityKey(
+        string Source,
+        string Destination)
+    {
+        public static MappingIdentityKey Create(MappingPairModel pair) =>
+            new(pair.Identity.Source.Key, pair.Identity.Destination.Key);
+    }
 }

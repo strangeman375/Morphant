@@ -11,25 +11,59 @@ internal static class TypeMapperConfigurePipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext)
     {
-        return Build(
-            MapperDeclarationPipeline.Build(context, compilationContext),
-            compilationContext);
+        return Build(BuildDeclarations(context, compilationContext));
     }
 
     public static IncrementalValuesProvider<TypeMapperConfigureInfo> Build(
         IncrementalValuesProvider<MapperDeclarationInfo> mapperDeclarations,
         IncrementalValueProvider<CompilationContext> compilationContext)
     {
+        return Build(BuildDeclarations(
+            mapperDeclarations,
+            compilationContext));
+    }
+
+    public static IncrementalValuesProvider<MapperConfigureDeclarationInfo>
+        BuildDeclarations(
+        IncrementalGeneratorInitializationContext context,
+        IncrementalValueProvider<CompilationContext> compilationContext)
+    {
+        return BuildDeclarations(
+            MapperDeclarationPipeline.Build(context, compilationContext),
+            compilationContext);
+    }
+
+    public static IncrementalValuesProvider<MapperConfigureDeclarationInfo>
+        BuildDeclarations(
+        IncrementalValuesProvider<MapperDeclarationInfo> mapperDeclarations,
+        IncrementalValueProvider<CompilationContext> compilationContext)
+    {
         return mapperDeclarations
             .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
-                TryBuild(source, cancellationToken))
-            .WhereHasValue()
+                TryBuildDeclaration(source, cancellationToken))
+            .Where(static declaration => declaration is not null)
+            .Select(static (declaration, _) => declaration!)
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildTypeMapperConfigureInfos);
     }
 
-    private static TypeMapperConfigureInfo? TryBuild(
+    public static IncrementalValuesProvider<TypeMapperConfigureInfo> Build(
+        IncrementalValuesProvider<MapperConfigureDeclarationInfo>
+            declarations)
+    {
+        return declarations
+            .Where(static declaration =>
+                declaration.State ==
+                    MapperConfigureDeclarationState.SourceBody)
+            .Select(static (declaration, _) =>
+                new TypeMapperConfigureInfo(
+                    declaration.Syntax!,
+                    declaration.Declaration.MapperType,
+                    declaration.Declaration));
+    }
+
+    private static MapperConfigureDeclarationInfo? TryBuildDeclaration(
         (
             MapperDeclarationInfo Declaration,
             CompilationContext Context
@@ -59,40 +93,80 @@ internal static class TypeMapperConfigurePipeline
 
         if (configureMethod is null)
         {
-            return null;
+            var malformedAttempt = FindMalformedConfigureAttempt(
+                mapperType,
+                context.Compilation,
+                cancellationToken);
+
+            return new MapperConfigureDeclarationInfo(
+                declaration,
+                malformedAttempt,
+                malformedAttempt is null
+                    ? MapperConfigureDeclarationState.Missing
+                    : MapperConfigureDeclarationState.CompilerOwnedInvalid);
         }
+
+        MethodDeclarationSyntax? bodylessSyntax = null;
 
         foreach (var syntaxReference
                  in configureMethod.DeclaringSyntaxReferences)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (syntaxReference.GetSyntax(cancellationToken)
-                    is MethodDeclarationSyntax
-                    {
-                        Body: not null
-                    } configureSyntax)
+            if (!context.Compilation.SyntaxTrees.Contains(
+                    syntaxReference.SyntaxTree) ||
+                syntaxReference.GetSyntax(cancellationToken)
+                    is not MethodDeclarationSyntax configureSyntax)
             {
-                return new TypeMapperConfigureInfo(
-                    configureSyntax,
-                    mapperType,
-                    declaration);
+                continue;
             }
 
-            if (syntaxReference.GetSyntax(cancellationToken)
-                    is MethodDeclarationSyntax
-                    {
-                        ExpressionBody: not null
-                    } expressionBodiedSyntax)
+            if (configureSyntax.Body is not null ||
+                configureSyntax.ExpressionBody is not null)
             {
-                return new TypeMapperConfigureInfo(
-                    expressionBodiedSyntax,
-                    mapperType,
-                    declaration);
+                return new MapperConfigureDeclarationInfo(
+                    declaration,
+                    configureSyntax,
+                    MapperConfigureDeclarationState.SourceBody);
             }
+
+            bodylessSyntax ??= configureSyntax;
         }
 
-        return null;
+        return new MapperConfigureDeclarationInfo(
+            declaration,
+            bodylessSyntax,
+            MapperConfigureDeclarationState.Bodyless);
+    }
+
+    private static MethodDeclarationSyntax? FindMalformedConfigureAttempt(
+        INamedTypeSymbol mapperType,
+        Compilation compilation,
+        CancellationToken cancellationToken)
+    {
+        var syntaxTreeOrder = compilation.SyntaxTrees
+            .Select((tree, index) => (tree, index))
+            .ToDictionary(
+                static item => item.tree,
+                static item => item.index);
+
+        return mapperType.DeclaringSyntaxReferences
+            .Where(reference => compilation.SyntaxTrees.Contains(
+                reference.SyntaxTree))
+            .Select(reference => reference.GetSyntax(cancellationToken))
+            .OfType<ClassDeclarationSyntax>()
+            .SelectMany(static declaration => declaration.Members)
+            .OfType<MethodDeclarationSyntax>()
+            .Where(static method =>
+                method.Identifier.ValueText == "Configure" &&
+                method.Modifiers.Any(SyntaxKind.OverrideKeyword))
+            .Where(method => compilation.GetSemanticModel(method.SyntaxTree)
+                .GetDiagnostics(method.Span, cancellationToken)
+                .Any(static diagnostic =>
+                    diagnostic.Severity == DiagnosticSeverity.Error))
+            .OrderBy(method => syntaxTreeOrder[method.SyntaxTree])
+            .ThenBy(static method => method.SpanStart)
+            .FirstOrDefault();
     }
 
     private static IMethodSymbol? FindConfigureOverride(

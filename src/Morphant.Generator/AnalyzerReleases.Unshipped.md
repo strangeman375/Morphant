@@ -18,4 +18,8 @@ MORPH0011 | Morphant.Registration | Error | Mapping type is unavailable to gener
 MORPH0012 | Morphant.Registration | Error | Unsupported mapping root type
 MORPH0013 | Morphant.Registration | Error | Duplicate mapping registration
 MORPH0014 | Morphant.Registration | Error | Mapping contracts can unify
+MORPH0015 | Morphant.Configuration | Error | Mapper must declare Configure
+MORPH0016 | Morphant.Configuration | Error | Base mapper configuration is unavailable
+MORPH0017 | Morphant.Configuration | Error | Unsupported mapper builder flow
+MORPH0018 | Morphant.Configuration | Error | Unsupported mapping builder flow
 MORPH0034 | Morphant.Declaration | Error | Mapper member conflicts with generated Supports

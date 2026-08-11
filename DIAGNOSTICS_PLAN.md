@@ -6,9 +6,9 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Vertical slices категорий 1–2 реализованы и приняты пользователем. Vertical
-slice категории 3 реализован и ожидает пользовательского ревью; следующий
-slice после его принятия — категория 4.
+Vertical slices категорий 1–3 реализованы и приняты пользователем. Vertical
+slice категории 4 реализован и ожидает пользовательского ревью; следующий
+slice после его принятия — категория 5.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -81,7 +81,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–2 приняты, категория 3 реализована и ожидает ревью |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–3 приняты, категория 4 реализована и ожидает ревью |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -4921,8 +4921,29 @@ locations/additional locations, ordering, suppression/severity, incremental
 actualization и полный recovery output. Обычные C# 9 consumers исполняют
 suppressed unsupported, duplicate, unavailable, unification и opaque-root
 scenarios; package/MSBuild fixtures проверяют file-local type и реальные
-`.editorconfig` overrides. Срез реализован и ожидает пользовательского ревью;
-следующий — категория 4.
+`.editorconfig` overrides. Срез принят пользователем.
+
+Четвёртый vertical slice категории 4 реализует configurable `MORPH0015`–
+`MORPH0018`: обязательный собственный source-bodied `Configure`, недоступный
+body прямой base-конфигурации, unsupported root-builder flow и unsupported
+pair-builder flow. Semantic flow-анализ принимает только линейные direct
+chains, не обходит callback-owned bodies и materialized delegates, не
+дублирует compiler-owned binding failures и сохраняет видимые legal
+registrations для recovery.
+
+Отсутствующий `Configure` не создаёт artifacts. Недоступный base body и
+root-builder escape переводят все непосредственно известные contracts
+mapper-а в throwing recovery, pair-builder escape — только затронутую pair;
+обе операции бросают `MappingConfigurationException` независимо от
+`MappingMode`. Самостоятельная unit-категория фиксирует descriptors,
+locations, deduplication/precedence, deterministic order,
+suppression/severity, полный generated artifact set и actualization одного
+incremental driver-а. Обычные C# 9 consumers исполняют mapper-wide и
+pair-local recovery, проверяют отсутствие guessed helper registrations,
+сохранение независимой pair и source/metadata base boundary; package/MSBuild
+fixtures проверяют отсутствие artifacts для `MORPH0015` и реальные
+`.editorconfig` overrides всех четырёх IDs. Срез реализован и ожидает
+пользовательского ревью; следующий — категория 5.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

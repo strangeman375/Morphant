@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.TypeMapperConfigure;
@@ -42,9 +41,13 @@ internal static class PairConfigurationDiscoveryPipeline
 
         var levels =
             ImmutableArray.CreateBuilder<PairConfigurationDiscoveryLevel>();
+        var unavailableBaseConfigurations = ImmutableArray.CreateBuilder<
+            UnavailableBaseConfigurationModel>();
+        var flowBreaks =
+            ImmutableArray.CreateBuilder<BuilderFlowBreakModel>();
         var currentInfo = configureInfo;
         var currentConstructedType = configureInfo.MapperType;
-        var hasUnavailableBaseConfiguration = false;
+        var hasInvalidBaseConfiguration = false;
         var visitedMethods = new HashSet<IMethodSymbol>(
             SymbolEqualityComparer.Default);
 
@@ -63,25 +66,53 @@ internal static class PairConfigurationDiscoveryPipeline
                 return null;
             }
 
+            var levelOrder = levels.Count;
+            level = level with
+            {
+                FlowBreaks = level.FlowBreaks
+                    .Select(flowBreak => flowBreak with
+                    {
+                        LevelOrder = levelOrder
+                    })
+                    .ToImmutableArray()
+            };
             levels.Add(level);
+            flowBreaks.AddRange(level.FlowBreaks);
+
             if (level.BaseConfigureCalls.IsEmpty)
             {
                 break;
             }
 
-            if (!TryGetConnectedBaseConfigure(
+            if (!TryResolveConnectedBaseConfigure(
                     level,
                     context.Compilation,
                     cancellationToken,
-                    out var baseInfo,
-                    out var constructedBaseType) ||
-                !visitedMethods.Add(
-                    GetDeclaredConfigureMethod(
-                        baseInfo,
-                        context.Compilation,
-                        cancellationToken)))
+                    out var baseMethod,
+                    out var constructedBaseType))
             {
-                hasUnavailableBaseConfiguration = true;
+                hasInvalidBaseConfiguration = true;
+                break;
+            }
+
+            if (!TryGetSourceConfigureInfo(
+                    baseMethod,
+                    context.Compilation,
+                    cancellationToken,
+                    out var baseInfo))
+            {
+                unavailableBaseConfigurations.Add(
+                    new UnavailableBaseConfigurationModel(
+                        level.BaseConfigureCalls[0],
+                        constructedBaseType,
+                        levelOrder));
+                hasInvalidBaseConfiguration = true;
+                break;
+            }
+
+            if (!visitedMethods.Add(baseMethod.OriginalDefinition))
+            {
+                hasInvalidBaseConfiguration = true;
                 break;
             }
 
@@ -93,7 +124,9 @@ internal static class PairConfigurationDiscoveryPipeline
             configureInfo,
             levels[0].InstantiatedRegistrations,
             levels.ToImmutable(),
-            hasUnavailableBaseConfiguration);
+            unavailableBaseConfigurations.ToImmutable(),
+            flowBreaks.ToImmutable(),
+            hasInvalidBaseConfiguration);
     }
 
     private static bool TryBuildLevel(
@@ -123,43 +156,16 @@ internal static class PairConfigurationDiscoveryPipeline
             return false;
         }
 
-        var chains = FindInvocationChains(
+        var flowAnalysis = BuilderFlowAnalyzer.Build(
             configureInfo.Syntax,
             semanticModel,
             builderParameter,
             knownSymbols,
             cancellationToken);
-        var registrations =
-            ImmutableArray.CreateBuilder<MappingPairRegistrationModel>();
-
-        foreach (var chain in chains)
-        {
-            foreach (var invocation in chain.Invocations)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                if (!IsMapInvocationCandidate(invocation) ||
-                    semanticModel.GetSymbolInfo(
-                        invocation,
-                        cancellationToken).Symbol is not IMethodSymbol method ||
-                    !IsMapperBuilderMapMethod(method, knownSymbols))
-                {
-                    continue;
-                }
-
-                registrations.Add(
-                    new MappingPairRegistrationModel(
-                        invocation,
-                        method.TypeArguments[0],
-                        method.TypeArguments[1]));
-            }
-        }
-
-        var immutableRegistrations = registrations.ToImmutable();
         var substitutions = MapperTypeSubstitution.Build(
             configureInfo.MapperType,
             constructedMapperType);
-        var instantiatedRegistrations = immutableRegistrations
+        var instantiatedRegistrations = flowAnalysis.Registrations
             .Select(registration =>
                 registration with
                 {
@@ -173,122 +179,43 @@ internal static class PairConfigurationDiscoveryPipeline
                         context.Compilation)
                 })
             .ToImmutableArray();
+        var instantiatedByInvocation = instantiatedRegistrations
+            .ToDictionary(
+                static registration =>
+                    (registration.Syntax.SyntaxTree,
+                        registration.Syntax.SpanStart,
+                        registration.Syntax.Span.Length));
+        var instantiatedBreaks = flowAnalysis.FlowBreaks
+            .Select(flowBreak => flowBreak.Registration is { } registration &&
+                instantiatedByInvocation.TryGetValue(
+                    (registration.Syntax.SyntaxTree,
+                        registration.Syntax.SpanStart,
+                        registration.Syntax.Span.Length),
+                    out var instantiated)
+                    ? flowBreak with { Registration = instantiated }
+                    : flowBreak)
+            .ToImmutableArray();
 
         level = new PairConfigurationDiscoveryLevel(
             configureInfo,
             constructedMapperType,
             new MapperMappingRegistrationModel(
                 configureInfo.Syntax,
-                immutableRegistrations),
+                flowAnalysis.Registrations),
             new MapperMappingRegistrationModel(
                 configureInfo.Syntax,
                 instantiatedRegistrations),
-            chains,
-            FindBaseConfigureCalls(
-                configureInfo.Syntax,
-                semanticModel,
-                builderParameter,
-                knownSymbols,
-                cancellationToken));
+            flowAnalysis.InvocationChains,
+            flowAnalysis.BaseConfigureCalls,
+            instantiatedBreaks);
         return true;
     }
 
-    private static ImmutableArray<InvocationExpressionSyntax>
-        FindBaseConfigureCalls(
-            MethodDeclarationSyntax configureSyntax,
-            SemanticModel semanticModel,
-            IParameterSymbol builderParameter,
-            KnownSymbols knownSymbols,
-            CancellationToken cancellationToken)
-    {
-        if (configureSyntax.ExpressionBody?.Expression is { } expression)
-        {
-            return IsBaseConfigureCall(
-                    expression,
-                    semanticModel,
-                    builderParameter,
-                    knownSymbols,
-                    cancellationToken,
-                    out var invocation)
-                ? [invocation]
-                : [];
-        }
-
-        if (configureSyntax.Body is null)
-        {
-            return [];
-        }
-
-        var result =
-            ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
-
-        foreach (var statement in configureSyntax.Body.Statements)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (statement is not ExpressionStatementSyntax
-                {
-                    Expression: var statementExpression
-                } ||
-                !IsBaseConfigureCall(
-                    statementExpression,
-                    semanticModel,
-                    builderParameter,
-                    knownSymbols,
-                    cancellationToken,
-                    out var invocation))
-            {
-                continue;
-            }
-
-            result.Add(invocation);
-        }
-
-        return result.ToImmutable();
-    }
-
-    private static bool IsBaseConfigureCall(
-        ExpressionSyntax expression,
-        SemanticModel semanticModel,
-        IParameterSymbol builderParameter,
-        KnownSymbols knownSymbols,
-        CancellationToken cancellationToken,
-        out InvocationExpressionSyntax invocation)
-    {
-        expression = UnwrapParentheses(expression);
-
-        if (expression is not InvocationExpressionSyntax
-            {
-                Expression: MemberAccessExpressionSyntax
-                {
-                    Expression: BaseExpressionSyntax,
-                    Name.Identifier.ValueText: "Configure"
-                },
-                ArgumentList.Arguments.Count: 1
-            } candidate ||
-            semanticModel.GetSymbolInfo(
-                candidate,
-                cancellationToken).Symbol is not IMethodSymbol method ||
-            !IsTypeMapperConfigureOverride(method, knownSymbols) ||
-            !ReferencesBuilderParameter(
-                candidate.ArgumentList.Arguments[0].Expression,
-                semanticModel,
-                builderParameter,
-                cancellationToken))
-        {
-            invocation = null!;
-            return false;
-        }
-
-        invocation = candidate;
-        return true;
-    }
-
-    private static bool TryGetConnectedBaseConfigure(
+    private static bool TryResolveConnectedBaseConfigure(
         PairConfigurationDiscoveryLevel level,
         Compilation compilation,
         CancellationToken cancellationToken,
-        out TypeMapperConfigureInfo configureInfo,
+        out IMethodSymbol method,
         out INamedTypeSymbol constructedBaseType)
     {
         var semanticModel = compilation.GetSemanticModel(
@@ -296,26 +223,35 @@ internal static class PairConfigurationDiscoveryPipeline
 
         if (semanticModel.GetSymbolInfo(
                 level.BaseConfigureCalls[0],
-                cancellationToken).Symbol is not IMethodSymbol method)
+                cancellationToken).Symbol is not IMethodSymbol resolvedMethod)
         {
-            configureInfo = default;
+            method = null!;
             constructedBaseType = null!;
             return false;
         }
 
         var resolvedConstructedBaseType = FindConstructedBaseType(
             level.ConstructedMapperType,
-            method.ContainingType);
+            resolvedMethod.ContainingType);
 
         if (resolvedConstructedBaseType is null)
         {
-            configureInfo = default;
+            method = null!;
             constructedBaseType = null!;
             return false;
         }
 
+        method = resolvedMethod;
         constructedBaseType = resolvedConstructedBaseType;
+        return true;
+    }
 
+    private static bool TryGetSourceConfigureInfo(
+        IMethodSymbol method,
+        Compilation compilation,
+        CancellationToken cancellationToken,
+        out TypeMapperConfigureInfo configureInfo)
+    {
         foreach (var syntaxReference in method.DeclaringSyntaxReferences)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -329,11 +265,11 @@ internal static class PairConfigurationDiscoveryPipeline
                 continue;
             }
 
-            var baseSemanticModel = compilation.GetSemanticModel(
+            var semanticModel = compilation.GetSemanticModel(
                 syntax.SyntaxTree);
 
             if (syntax.Parent is ClassDeclarationSyntax declaration &&
-                baseSemanticModel.GetDeclaredSymbol(
+                semanticModel.GetDeclaredSymbol(
                     declaration,
                     cancellationToken) is INamedTypeSymbol mapperType)
             {
@@ -366,357 +302,5 @@ internal static class PairConfigurationDiscoveryPipeline
         }
 
         return null;
-    }
-
-    private static IMethodSymbol GetDeclaredConfigureMethod(
-        TypeMapperConfigureInfo configureInfo,
-        Compilation compilation,
-        CancellationToken cancellationToken)
-    {
-        return (IMethodSymbol)compilation.GetSemanticModel(
-                configureInfo.Syntax.SyntaxTree)
-            .GetDeclaredSymbol(
-                configureInfo.Syntax,
-                cancellationToken)!;
-    }
-
-    private static bool ReferencesBuilderParameter(
-        ExpressionSyntax expression,
-        SemanticModel semanticModel,
-        IParameterSymbol builderParameter,
-        CancellationToken cancellationToken)
-    {
-        expression = UnwrapParentheses(expression);
-
-        return expression is IdentifierNameSyntax identifier &&
-               SymbolEqualityComparer.Default.Equals(
-                   semanticModel.GetSymbolInfo(
-                       identifier,
-                       cancellationToken).Symbol,
-                   builderParameter);
-    }
-
-    private static bool IsTypeMapperConfigureOverride(
-        IMethodSymbol method,
-        KnownSymbols knownSymbols)
-    {
-        if (method.IsStatic ||
-            !method.ReturnsVoid ||
-            method.TypeParameters.Length != 0 ||
-            method.Parameters.Length != 1 ||
-            !SymbolEqualityComparer.Default.Equals(
-                method.Parameters[0].Type,
-                knownSymbols.MapperBuilder))
-        {
-            return false;
-        }
-
-        for (var overridden = method;
-             overridden is not null;
-             overridden = overridden.OverriddenMethod)
-        {
-            if (SymbolEqualityComparer.Default.Equals(
-                    overridden.OriginalDefinition,
-                    knownSymbols.TypeMapperConfigure.OriginalDefinition))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static ImmutableArray<PairConfigurationInvocationChain>
-        FindInvocationChains(
-            MethodDeclarationSyntax configureSyntax,
-            SemanticModel semanticModel,
-            IParameterSymbol builderParameter,
-            KnownSymbols knownSymbols,
-            CancellationToken cancellationToken)
-    {
-        var result =
-            ImmutableArray.CreateBuilder<PairConfigurationInvocationChain>();
-
-        if (configureSyntax.Body is { } body)
-        {
-            foreach (var statement in body.Statements)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                if (statement is not ExpressionStatementSyntax
-                    {
-                        Expression: var expression
-                    })
-                {
-                    continue;
-                }
-
-                if (TryBuildInvocationChain(
-                        expression,
-                        semanticModel,
-                        builderParameter,
-                        knownSymbols,
-                        cancellationToken,
-                        out var chain))
-                {
-                    result.Add(chain);
-                }
-            }
-        }
-        else if (configureSyntax.ExpressionBody is
-                 {
-                     Expression: var expression
-                 } &&
-                 TryBuildInvocationChain(
-                     expression,
-                     semanticModel,
-                     builderParameter,
-                     knownSymbols,
-                     cancellationToken,
-                     out var chain))
-        {
-            result.Add(chain);
-        }
-
-        return result.ToImmutable();
-    }
-
-    private static bool TryBuildInvocationChain(
-        ExpressionSyntax expression,
-        SemanticModel semanticModel,
-        IParameterSymbol builderParameter,
-        KnownSymbols knownSymbols,
-        CancellationToken cancellationToken,
-        out PairConfigurationInvocationChain chain)
-    {
-        if (ContainsLogicalBranchingOutsideCallbacks(
-                expression,
-                cancellationToken))
-        {
-            chain = default;
-            return false;
-        }
-
-        var invocations = new Stack<InvocationExpressionSyntax>();
-        var current = UnwrapParentheses(expression);
-
-        while (current is InvocationExpressionSyntax invocation)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            invocations.Push(invocation);
-
-            if (invocation.Expression is not MemberAccessExpressionSyntax
-                {
-                    Expression: var receiver
-                })
-            {
-                chain = default;
-                return false;
-            }
-
-            receiver = UnwrapParentheses(receiver);
-
-            if (receiver is InvocationExpressionSyntax)
-            {
-                current = receiver;
-                continue;
-            }
-
-            if (receiver is not IdentifierNameSyntax builderIdentifier ||
-                !SymbolEqualityComparer.Default.Equals(
-                    semanticModel.GetSymbolInfo(
-                        builderIdentifier,
-                        cancellationToken).Symbol,
-                    builderParameter) ||
-                !IsMapperBuilderRootInvocation(
-                    invocation,
-                    semanticModel,
-                    knownSymbols,
-                    cancellationToken) ||
-                ContainsBuilderReferenceInArguments(
-                    invocations,
-                    semanticModel,
-                    builderParameter,
-                    cancellationToken))
-            {
-                chain = default;
-                return false;
-            }
-
-            chain = new PairConfigurationInvocationChain(
-                invocations.ToImmutableArray());
-            return true;
-        }
-
-        chain = default;
-        return false;
-    }
-
-    private static bool ContainsBuilderReferenceInArguments(
-        IEnumerable<InvocationExpressionSyntax> invocations,
-        SemanticModel semanticModel,
-        IParameterSymbol builderParameter,
-        CancellationToken cancellationToken)
-    {
-        foreach (var invocation in invocations)
-        {
-            if (IsConfigurationCallbackInvocationCandidate(invocation))
-            {
-                continue;
-            }
-
-            foreach (var argument in invocation.ArgumentList.Arguments)
-            {
-                foreach (var identifier in argument.Expression
-                             .DescendantNodesAndSelf()
-                             .OfType<IdentifierNameSyntax>())
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (identifier.Identifier.ValueText ==
-                            builderParameter.Name &&
-                        SymbolEqualityComparer.Default.Equals(
-                            semanticModel.GetSymbolInfo(
-                                identifier,
-                                cancellationToken).Symbol,
-                            builderParameter))
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private static bool ContainsLogicalBranchingOutsideCallbacks(
-        ExpressionSyntax expression,
-        CancellationToken cancellationToken)
-    {
-        foreach (var node in expression.DescendantNodesAndSelf(
-                     static node =>
-                         node is not AnonymousFunctionExpressionSyntax &&
-                         !IsConfigurationCallbackArgument(node)))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (IsConfigurationCallbackArgument(node))
-            {
-                continue;
-            }
-
-            if (node is ConditionalExpressionSyntax or
-                SwitchExpressionSyntax or
-                ConditionalAccessExpressionSyntax ||
-                node.IsKind(SyntaxKind.LogicalAndExpression) ||
-                node.IsKind(SyntaxKind.LogicalOrExpression) ||
-                node.IsKind(SyntaxKind.CoalesceExpression) ||
-                node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsConfigurationCallbackArgument(SyntaxNode node)
-    {
-        return node is ExpressionSyntax expression &&
-               expression.Parent is ArgumentSyntax
-               {
-                   Parent.Parent: InvocationExpressionSyntax invocation
-               } argument &&
-               ReferenceEquals(argument.Expression, expression) &&
-               IsConfigurationCallbackInvocationCandidate(invocation);
-    }
-
-    private static bool IsConfigurationCallbackInvocationCandidate(
-        InvocationExpressionSyntax invocation)
-    {
-        if (invocation.ArgumentList.Arguments.Count != 1 ||
-            invocation.Expression is not MemberAccessExpressionSyntax
-            {
-                Name.Identifier.ValueText: var methodName
-            })
-        {
-            return false;
-        }
-
-        return methodName is "Construct" or "Resolve" or
-            "ConstructUsing" or "ResolveUsing" or "Members" or "Convert";
-    }
-
-    private static ExpressionSyntax UnwrapParentheses(
-        ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
-    }
-
-    private static bool IsMapperBuilderRootInvocation(
-        InvocationExpressionSyntax invocation,
-        SemanticModel semanticModel,
-        KnownSymbols knownSymbols,
-        CancellationToken cancellationToken)
-    {
-        if (semanticModel.GetSymbolInfo(
-                invocation,
-                cancellationToken).Symbol is not IMethodSymbol method ||
-            method.IsStatic)
-        {
-            return false;
-        }
-
-        for (var type = knownSymbols.MapperBuilder;
-             type is not null &&
-             type.SpecialType != SpecialType.System_Object;
-             type = type.BaseType)
-        {
-            if (SymbolEqualityComparer.Default.Equals(
-                    method.ContainingType.OriginalDefinition,
-                    type.OriginalDefinition))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsMapInvocationCandidate(
-        InvocationExpressionSyntax invocation)
-    {
-        return invocation is
-        {
-            ArgumentList.Arguments.Count: <= 1,
-            Expression: MemberAccessExpressionSyntax
-            {
-                Name: GenericNameSyntax
-                {
-                    Identifier.ValueText: "Map",
-                    TypeArgumentList.Arguments.Count: 2
-                }
-            }
-        };
-    }
-
-    private static bool IsMapperBuilderMapMethod(
-        IMethodSymbol method,
-        KnownSymbols knownSymbols)
-    {
-        return method.Name == "Map" &&
-               method.MethodKind == MethodKind.Ordinary &&
-               !method.IsStatic &&
-               method.Parameters.Length == 1 &&
-               method.TypeArguments.Length == 2 &&
-               SymbolEqualityComparer.Default.Equals(
-                   method.ContainingType,
-                   knownSymbols.MapperBuilder);
     }
 }

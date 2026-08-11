@@ -704,29 +704,29 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 3.**
+**Diagnostics: vertical slice категории 4.**
 
 Статус: реализован, ожидает пользовательского ревью. Vertical slices
-категорий 1–2 приняты пользователем. Категория 3 добавляет configurable
-`MORPH0011`–`MORPH0014`: unavailable mapping types, unsupported root type
-parameters, повторную canonical pair и унификацию generated
-`ITypeMapper<,>` contracts.
+категорий 1–3 приняты пользователем. Категория 4 добавляет configurable
+`MORPH0015`–`MORPH0018`: обязательный собственный source-bodied `Configure`,
+недоступную прямую base-конфигурацию и unsupported root-/pair-builder flow.
 
-Первая canonical registration остаётся авторитетной. Unavailable pair
-исключается без каскада, root type parameter сохраняет обе operations через
-typed exception-stub, а унифицируемые contracts не объявляются и не подавляют
-независимые pairs либо legal DSL surfaces. Recursive availability учитывает
-containing и generic argument types; compiler-owned invalid type arguments не
-получают дублирующую Morphant diagnostic.
+Semantic flow-анализ поддерживает линейные direct fluent chains,
+source-connected base levels, parentheses/null-forgiving и callback-owned
+arguments. Alias/helper/delegate, сторонний fluent method, conditional либо
+deferred flow диагностируются без угадывания hidden registrations;
+compiler-owned binding failures остаются за C# compiler-ом.
 
-Самостоятельная unit-категория фиксирует descriptors, canonical identity,
-locations/additional locations, deterministic ordering, recovery,
-suppression/severity и actualization одного incremental driver-а, включая
-полный exact generated result. Обычные C# 9 consumers исполняют suppressed
-unsupported, duplicate, unavailable, unification и opaque-root scenarios;
-package/MSBuild fixtures проверяют file-local type и реальные `.editorconfig`
-overrides. Следующий vertical slice — категория 4 после принятия категории 3
-пользователем.
+`MORPH0016`/`MORPH0017` создают mapper-wide throwing recovery для всех
+непосредственно известных legal pairs, `MORPH0018` — pair-local recovery;
+обе operations бросают `MappingConfigurationException` независимо от
+`MappingMode`. Самостоятельная unit-категория фиксирует descriptors,
+locations, precedence/deduplication, suppression/severity, deterministic
+artifact set и actualization. Семь обычных consumer/package scenarios
+проверяют source/metadata base boundary, обе recovery operations, отсутствие
+guessed artifacts, независимую исполнимую pair, callback ownership и реальные
+`.editorconfig` overrides. Следующий vertical slice — категория 5 после
+принятия категории 4 пользователем.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2156,8 +2156,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slices категорий 1–2 приняты пользователем;
-vertical slice категории 3 реализован и ожидает пользовательского ревью.
+production model и vertical slices категорий 1–3 приняты пользователем;
+vertical slice категории 4 реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2189,8 +2189,12 @@ scenarios — в обычные consumer-проекты; покрытие кат
 пользователем. Третий vertical slice реализует registration diagnostics
 `MORPH0011`–`MORPH0014`, recursive type eligibility, first-registration
 ownership и generated-contract unification с самостоятельными unit-, C# 9
-runtime- и package/MSBuild-тестами. Следующий vertical slice реализует
-категорию 4 после пользовательского принятия категории 3.
+runtime- и package/MSBuild-тестами; slice принят пользователем. Четвёртый
+slice реализует configuration diagnostics `MORPH0015`–`MORPH0018`, source/base
+body discovery, semantic builder-flow ownership и mapper-/pair-wide throwing
+recovery с самостоятельными unit-, C# 9 runtime- и package/MSBuild-тестами.
+Следующий vertical slice реализует категорию 5 после пользовательского
+принятия категории 4.
 
 ### Этап 24. Observable failures
 

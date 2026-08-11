@@ -15,7 +15,16 @@ internal readonly record struct MapperPairConfigurationModel(
     PairConfigurationSettings RootSettings,
     ImmutableArray<PairConfigurationSettings> BaseRootSettings,
     ImmutableArray<PairConfigurationModel> Pairs,
-    bool HasInvalidBaseConfiguration);
+    bool HasInvalidBaseConfiguration,
+    ImmutableArray<UnavailableBaseConfigurationModel>
+        UnavailableBaseConfigurations,
+    ImmutableArray<BuilderFlowBreakModel> FlowBreaks)
+{
+    public bool HasMapperWideConfigurationFlowFailure =>
+        !UnavailableBaseConfigurations.IsEmpty ||
+        FlowBreaks.Any(static flowBreak =>
+            flowBreak.Kind == BuilderFlowBreakKind.Mapper);
+}
 
 internal readonly record struct PairConfigurationModel(
     MappingPairModel Pair,

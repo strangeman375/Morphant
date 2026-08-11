@@ -32,9 +32,12 @@ public sealed class MorphantGenerator : IIncrementalGenerator
         var mapperDeclarations = MapperDeclarationPipeline.Build(
             context,
             compilationContext);
-        var configureInfos = TypeMapperConfigurePipeline.Build(
+        var configureDeclarations =
+            TypeMapperConfigurePipeline.BuildDeclarations(
             mapperDeclarations,
             compilationContext);
+        var configureInfos = TypeMapperConfigurePipeline.Build(
+            configureDeclarations);
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
@@ -49,6 +52,10 @@ public sealed class MorphantGenerator : IIncrementalGenerator
             contractAnalyses);
         MappingRegistrationDiagnosticPipeline.Register(
             context,
+            contractAnalyses);
+        ConfigurationFlowDiagnosticPipeline.Register(
+            context,
+            configureDeclarations,
             contractAnalyses);
         var canonicalSurfacePairs = CanonicalMappingPairPipeline.Build(
             pairConfigurations);
