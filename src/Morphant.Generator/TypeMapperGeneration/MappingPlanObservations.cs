@@ -1,0 +1,325 @@
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.MappingPair;
+using Morphant.Generator.PairConfiguration;
+using Morphant.Generator.Settings;
+
+namespace Morphant.Generator.TypeMapperGeneration;
+
+internal readonly record struct MappingAnalysisContext(
+    MappingPairRegistrationModel Registration,
+    MappingPairIdentity Identity,
+    INamedTypeSymbol TargetMapper)
+{
+    public ITypeSymbol SourceType => Registration.SourceType;
+
+    public ITypeSymbol DestinationType => Registration.DestinationType;
+}
+
+[Flags]
+internal enum MappingOperationSet
+{
+    None = 0,
+    Create = 1 << 0,
+    Update = 1 << 1,
+    All = Create | Update
+}
+
+[Flags]
+internal enum MappingExecutionPathSet
+{
+    None = 0,
+    Create = 1 << 0,
+    UpdateWithoutPrevious = 1 << 1,
+    UpdateWithPrevious = 1 << 2,
+    NoPrevious = Create | UpdateWithoutPrevious,
+    Update = UpdateWithoutPrevious | UpdateWithPrevious,
+    All = Create | Update
+}
+
+internal enum MappingPlanPhase
+{
+    Configuration,
+    Transfer,
+    ResultSelection,
+    Construction,
+    Members,
+    NestedMapping,
+    Completeness
+}
+
+internal readonly record struct MappingAffectedPath(
+    MappingExecutionPathSet Paths,
+    MappingPlanPhase Phase,
+    SyntaxNode? BranchOrigin = null)
+{
+    public MappingOperationSet Operations =>
+        (Paths.HasFlag(MappingExecutionPathSet.Create)
+            ? MappingOperationSet.Create
+            : MappingOperationSet.None) |
+        (Paths.HasFlag(MappingExecutionPathSet.UpdateWithoutPrevious) ||
+         Paths.HasFlag(MappingExecutionPathSet.UpdateWithPrevious)
+            ? MappingOperationSet.Update
+            : MappingOperationSet.None);
+
+    public static MappingAffectedPath All(MappingPlanPhase phase) =>
+        new(MappingExecutionPathSet.All, phase);
+
+    public static MappingAffectedPath Create(MappingPlanPhase phase) =>
+        new(MappingExecutionPathSet.Create, phase);
+
+    public static MappingAffectedPath NoPrevious(MappingPlanPhase phase) =>
+        new(MappingExecutionPathSet.NoPrevious, phase);
+
+    public static MappingAffectedPath Update(MappingPlanPhase phase) =>
+        new(MappingExecutionPathSet.Update, phase);
+
+    public static MappingAffectedPath ExistingDestination(
+        MappingPlanPhase phase) =>
+        new(MappingExecutionPathSet.UpdateWithPrevious, phase);
+}
+
+internal enum MappingObservationOriginKind
+{
+    Registration,
+    MapperConfiguration,
+    Setting,
+    IncludeBaseEdge,
+    Callback,
+    CompilerPreflight,
+    Convention,
+    Constructor,
+    ConstructorParameter,
+    Member,
+    NestedMarker
+}
+
+internal enum MappingFailureReason
+{
+    UnsupportedMappingContract,
+    InvalidBaseConfiguration,
+    InvalidPairConfiguration,
+    InvalidManualSetting,
+    InvalidSetting,
+    InapplicableSetting,
+    CallbackCannotBeTransferred,
+    UnsupportedRuntimeCallback,
+    UnsupportedStructuredCallback,
+    UnsupportedStructuredSyntax,
+    StructuredResultRequiresDestination,
+    MissingConstructionPolicy,
+    ConstructorSelectionFailed,
+    ConstructorParameterRuleInvalid,
+    TerminalPreviousWithoutValue,
+    TerminalNullConstruction,
+    MemberRuleInvalid,
+    RequiredMemberUninitialized,
+    MemberLifecycleInvalid,
+    TerminalNullMembers,
+    NestedPairUnknown,
+    NestedResultIncompatible,
+    NestedUpdateDestinationInvalid
+}
+
+internal sealed record MappingFailureObservation(
+    MappingFailureReason Reason,
+    string RecoveryMessage,
+    MappingObservationOriginKind OriginKind,
+    SyntaxNode OriginNode,
+    SyntaxNode? OffendingNode,
+    ISymbol? OffendingSymbol,
+    Location PrimaryLocation,
+    ImmutableArray<Location> AdditionalLocations,
+    INamedTypeSymbol SourceMapper,
+    MappingAnalysisContext Context,
+    MappingAffectedPath AffectedPath,
+    ImmutableArray<NestedMappingObservation> NestedObservations)
+{
+    public static MappingFailureObservation Create(
+        MappingAnalysisContext context,
+        MappingFailureReason reason,
+        string recoveryMessage,
+        MappingObservationOriginKind originKind,
+        MappingAffectedPath affectedPath,
+        SyntaxNode? originNode = null,
+        INamedTypeSymbol? sourceMapper = null,
+        SyntaxNode? offendingNode = null,
+        ISymbol? offendingSymbol = null,
+        Location? primaryLocation = null,
+        ImmutableArray<Location> additionalLocations = default,
+        ImmutableArray<NestedMappingObservation> nestedObservations = default)
+    {
+        var resolvedOrigin = originNode ?? context.Registration.Syntax;
+
+        return new MappingFailureObservation(
+            reason,
+            recoveryMessage,
+            originKind,
+            resolvedOrigin,
+            offendingNode,
+            offendingSymbol,
+            primaryLocation ??
+            offendingNode?.GetLocation() ??
+            resolvedOrigin.GetLocation(),
+            additionalLocations.IsDefault ? [] : additionalLocations,
+            sourceMapper ?? context.TargetMapper,
+            context,
+            affectedPath,
+            nestedObservations.IsDefault ? [] : nestedObservations);
+    }
+}
+
+internal enum ConstructorCandidateRejectionReason
+{
+    None,
+    StrategyShape,
+    AmbiguousStrategy,
+    AbstractDestination,
+    RequiredMember,
+    ResultDependentInitializer,
+    MissingSourceMember,
+    IncompatibleArgument,
+    InvocationBinding,
+    NullableInvocation,
+    ExplicitRule
+}
+
+internal enum ConstructorParameterRuleOrigin
+{
+    Convention,
+    Auto,
+    Ignore,
+    Value,
+    Omitted
+}
+
+internal sealed record ConstructorParameterRuleObservation(
+    IParameterSymbol? Parameter,
+    string ParameterName,
+    ConstructorParameterRuleOrigin Origin,
+    SyntaxNode? OriginNode,
+    ISymbol? SourceMember,
+    ISymbol? DestinationMember,
+    bool IsApplicable,
+    ConstructorCandidateRejectionReason RejectionReason);
+
+internal sealed record ConstructorCandidateObservation(
+    IMethodSymbol Constructor,
+    ImmutableArray<ConstructorParameterRuleObservation> ParameterRules,
+    ConstructorCandidateRejectionReason RejectionReason);
+
+internal sealed record ConstructorPlanningObservation(
+    ConstructorSelectionValue? Strategy,
+    SyntaxNode? StrategyOrigin,
+    ImmutableArray<ConstructorCandidateObservation> Candidates,
+    IMethodSymbol? SelectedConstructor,
+    ImmutableArray<StructuredTerminalObservation> Terminals);
+
+internal enum StructuredTerminalKind
+{
+    Previous,
+    NullConstruction,
+    NullMembers
+}
+
+internal sealed record StructuredTerminalObservation(
+    StructuredTerminalKind Kind,
+    SyntaxNode OriginNode,
+    MappingAffectedPath AffectedPath);
+
+internal enum MemberRuleOrigin
+{
+    Convention,
+    Auto,
+    Ignore,
+    ExplicitValue,
+    NestedMapping,
+    ConstructorArgument
+}
+
+[Flags]
+internal enum MemberLifecycleDependency
+{
+    None = 0,
+    Creation = 1 << 0,
+    ExistingDestination = 1 << 1,
+    Result = 1 << 2,
+    InitOnly = 1 << 3
+}
+
+internal sealed record MemberRuleObservation(
+    ISymbol DestinationMember,
+    ISymbol? SourceMember,
+    MemberRuleOrigin Origin,
+    SyntaxNode? OriginNode,
+    bool IsRequired,
+    MemberLifecycleDependency Lifecycle,
+    ISymbol? HiddenImportedSlot);
+
+internal sealed record MemberPlanningObservation(
+    ImmutableArray<ISymbol> SupportedSourceMembers,
+    ImmutableArray<ISymbol> SupportedDestinationMembers,
+    ImmutableArray<MemberRuleObservation> Rules,
+    ImmutableArray<ISymbol> RequiredObligations,
+    ImmutableArray<StructuredTerminalObservation> Terminals,
+    ImmutableArray<NestedMappingObservation> NestedMappings = default,
+    ImmutableArray<SourceDiscardObservation> SourceDiscards = default);
+
+internal enum NestedDestinationOrigin
+{
+    None,
+    Explicit,
+    GeneratedCurrent,
+    ReadOnlyProxy
+}
+
+internal enum NestedConversionStatus
+{
+    Unknown,
+    Compatible,
+    Incompatible
+}
+
+internal sealed record NestedMappingObservation(
+    InvocationExpressionSyntax Producer,
+    IMethodSymbol ProducerSymbol,
+    SyntaxNode? TerminalTarget,
+    DeclarativeNestedMapOperation? Operation,
+    ITypeSymbol? InferredSourceType,
+    ITypeSymbol? InferredDestinationType,
+    NestedConversionStatus ResultConversion,
+    NestedDestinationOrigin DestinationOrigin,
+    SyntaxNode? ExplicitDestination,
+    string? GeneratedCurrentDestination,
+    ISymbol? ReadOnlyProxy,
+    ImmutableArray<string> AdaptiveLocalTargets);
+
+internal enum SourceUseKind
+{
+    Semantic,
+    Potential
+}
+
+internal sealed record SourceUseObservation(
+    ISymbol Member,
+    SourceUseKind Kind,
+    SyntaxNode OriginNode);
+
+internal sealed record SourceDiscardObservation(
+    ISymbol Member,
+    ExpressionStatementSyntax Statement,
+    BoundConfigurationExpression Callback);
+
+internal sealed record DestinationOccupancyObservation(
+    ISymbol Member,
+    MemberRuleOrigin Origin,
+    SyntaxNode? OriginNode);
+
+internal sealed record CompletenessPlanningObservation(
+    ImmutableArray<ISymbol> SupportedSourceMembers,
+    ImmutableArray<ISymbol> SupportedDestinationMembers,
+    ImmutableArray<SourceUseObservation> SourceUses,
+    ImmutableArray<SourceDiscardObservation> SourceDiscards,
+    ImmutableArray<DestinationOccupancyObservation> DestinationOccupancy,
+    ImmutableArray<ISymbol> ErrorDerivedUncertainty);

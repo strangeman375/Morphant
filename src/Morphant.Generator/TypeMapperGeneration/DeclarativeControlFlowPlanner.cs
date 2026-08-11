@@ -335,6 +335,20 @@ internal static class DeclarativeControlFlowPlanner
                     lambda.Block!.Statements)
                 : localInitializers.Values.Append(
                     resultExpression!);
+        var sourceDiscards = lambda.Block is null
+            ? ImmutableArray<DeclarativeSourceDiscardSyntax>.Empty
+            : lambda.Block.Statements
+                .OfType<ExpressionStatementSyntax>()
+                .Select(statement =>
+                    TryBuildCompileTimeSourceDiscard(
+                        statement,
+                        semanticModel,
+                        cancellationToken,
+                        out var discard)
+                            ? discard
+                            : (DeclarativeSourceDiscardSyntax?)null)
+                .OfType<DeclarativeSourceDiscardSyntax>()
+                .ToImmutableArray();
 
         if (ContainsUnsupportedCapture(
                 transferableExpressions,
@@ -417,7 +431,8 @@ internal static class DeclarativeControlFlowPlanner
             root,
             runtimeLocals.ToImmutable(),
             runtimeLocalPlaceholders,
-            boundLocals.ToImmutable());
+            boundLocals.ToImmutable(),
+            sourceDiscards);
     }
 
     private static bool ContainsReadOnlyInputMutation(
@@ -497,13 +512,104 @@ internal static class DeclarativeControlFlowPlanner
                     .IsReadOnlyMemberUpdateStatement(
                         statement.Expression,
                         semanticModel,
-                        cancellationToken))
+                        cancellationToken) &&
+                !TryBuildCompileTimeSourceDiscard(
+                    statement,
+                    semanticModel,
+                    cancellationToken,
+                    out _))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    internal static bool TryBuildCompileTimeSourceDiscard(
+        ExpressionStatementSyntax statement,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out DeclarativeSourceDiscardSyntax discard)
+    {
+        var lambda = statement.Ancestors()
+            .OfType<LambdaExpressionSyntax>()
+            .FirstOrDefault();
+        var firstParameter = lambda switch
+        {
+            SimpleLambdaExpressionSyntax simple => simple.Parameter,
+            ParenthesizedLambdaExpressionSyntax parenthesized
+                when parenthesized.ParameterList.Parameters.Count > 0 =>
+                parenthesized.ParameterList.Parameters[0],
+            _ => null
+        };
+
+        if (lambda?.Block is null ||
+            !ReferenceEquals(statement.Parent, lambda.Block) ||
+            firstParameter is null ||
+            semanticModel.GetDeclaredSymbol(
+                    firstParameter,
+                    cancellationToken) is not IParameterSymbol
+                sourceParameter ||
+            statement.Expression is not AssignmentExpressionSyntax
+            {
+                RawKind: (int)SyntaxKind.SimpleAssignmentExpression,
+                Left: IdentifierNameSyntax
+                {
+                    Identifier.ValueText: "_"
+                } discardIdentifier,
+                Right: MemberAccessExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax receiver
+                } memberAccess
+            } ||
+            !SymbolEqualityComparer.Default.Equals(
+                semanticModel.GetSymbolInfo(
+                        receiver,
+                        cancellationToken)
+                    .Symbol,
+                sourceParameter) ||
+            semanticModel.GetSymbolInfo(
+                    discardIdentifier,
+                    cancellationToken)
+                .Symbol is { } discardSymbol &&
+            discardSymbol is not IDiscardSymbol)
+        {
+            discard = default;
+            return false;
+        }
+
+        var member = semanticModel.GetSymbolInfo(
+                memberAccess,
+                cancellationToken)
+            .Symbol;
+
+        if (member is not IPropertySymbol
+            {
+                IsStatic: false,
+                IsIndexer: false,
+                ReturnsByRef: false,
+                ReturnsByRefReadonly: false,
+                IsImplicitlyDeclared: false,
+                GetMethod: not null
+            } &&
+            member is not IFieldSymbol
+            {
+                IsStatic: false,
+                IsConst: false,
+                IsImplicitlyDeclared: false,
+                IsFixedSizeBuffer: false
+            })
+        {
+            discard = default;
+            return false;
+        }
+
+        discard = new DeclarativeSourceDiscardSyntax(
+            member,
+            statement,
+            sourceParameter);
+        return true;
     }
 
     private static bool IsMutationOf(
@@ -965,6 +1071,15 @@ internal static class DeclarativeControlFlowPlanner
                     break;
 
                 case ExpressionStatementSyntax expressionStatement:
+                    if (TryBuildCompileTimeSourceDiscard(
+                            expressionStatement,
+                            semanticModel,
+                            cancellationToken,
+                            out _))
+                    {
+                        break;
+                    }
+
                     if (root is null)
                     {
                         return false;
@@ -2858,8 +2973,14 @@ internal sealed record DeclarativeControlFlowProgram(
     DeclarativeControlFlowSyntaxNode Root,
     ImmutableArray<DeclarativeRuntimeLocalSyntax> RuntimeLocals,
     IReadOnlyDictionary<ISymbol, string> RuntimeLocalPlaceholders,
-    ImmutableArray<DeclarativeBoundLocalSyntax> BoundLocals)
+    ImmutableArray<DeclarativeBoundLocalSyntax> BoundLocals,
+    ImmutableArray<DeclarativeSourceDiscardSyntax> SourceDiscards)
     : DeclarativeControlFlowBuildResult;
+
+internal readonly record struct DeclarativeSourceDiscardSyntax(
+    ISymbol Member,
+    ExpressionStatementSyntax Statement,
+    IParameterSymbol SourceParameter);
 
 internal readonly record struct DeclarativeRuntimeLocalSyntax(
     string PlaceholderName,

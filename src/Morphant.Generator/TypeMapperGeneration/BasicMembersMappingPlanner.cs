@@ -58,13 +58,18 @@ internal static class BasicMembersMappingPlanner
                 mapperType,
                 cancellationToken);
 
-            if (result.UnsupportedMessage is not null ||
+            if (result.Failure is not null ||
                 result.ControlFlow is not null)
             {
-                return result.UnsupportedMessage is { } message
-                    ? BasicMembersMappingResult.Unsupported(message)
+                return result.Failure is { } failure
+                    ? BasicMembersMappingResult.Unsupported(failure)
                     : BasicMembersMappingResult.Unsupported(
-                        UnsupportedMembersMessage);
+                        BuildFailure(
+                            mapping,
+                            configuration,
+                            MappingFailureReason
+                                .UnsupportedStructuredCallback,
+                            UnsupportedMembersMessage));
             }
 
             results.Add(result);
@@ -80,7 +85,7 @@ internal static class BasicMembersMappingPlanner
                 compilation,
                 cancellationToken),
             ControlFlow: null,
-            UnsupportedMessage: null);
+            Failure: null);
     }
 
     private static BasicMembersMappingResult BuildSingle(
@@ -101,7 +106,7 @@ internal static class BasicMembersMappingPlanner
                 return new BasicMembersMappingResult(
                     convention,
                     ControlFlow: null,
-                    UnsupportedMessage: null);
+                    Failure: null);
             }
 
             var emptyCreate =
@@ -114,15 +119,18 @@ internal static class BasicMembersMappingPlanner
                     emptyCreate,
                     [],
                     [],
-                    ConventionMemberMappingPlanner
-                        .HasUnmappedRequiredMembers(
-                            destination,
-                            emptyCreate,
-                            cancellationToken),
-                    HasExplicitCreationOnlyMappings: false,
-                    HasResultDependentCreationOnlyMappings: false),
+                    convention.Observation with
+                    {
+                        Rules = [],
+                        RequiredObligations =
+                            ConventionMemberMappingPlanner
+                                .FindUnmappedRequiredMembers(
+                                    destination,
+                                    emptyCreate,
+                                    cancellationToken)
+                    }),
                 ControlFlow: null,
-                UnsupportedMessage: null);
+                Failure: null);
         }
 
         var configured = configuration.Value;
@@ -152,7 +160,11 @@ internal static class BasicMembersMappingPlanner
                 cancellationToken))
         {
             return BasicMembersMappingResult.Unsupported(
-                UnsupportedMembersMessage);
+                BuildFailure(
+                    mapping,
+                    configured,
+                    MappingFailureReason.UnsupportedStructuredCallback,
+                    UnsupportedMembersMessage));
         }
 
         var controlFlowResult = DeclarativeControlFlowPlanner.Build(
@@ -164,14 +176,22 @@ internal static class BasicMembersMappingPlanner
             unsupportedControlFlow)
         {
             return BasicMembersMappingResult.Unsupported(
-                unsupportedControlFlow.Message);
+                BuildFailure(
+                    mapping,
+                    configured,
+                    MappingFailureReason.UnsupportedStructuredSyntax,
+                    unsupportedControlFlow.Message));
         }
 
         if (controlFlowResult is not DeclarativeControlFlowProgram
             controlFlow)
         {
             return BasicMembersMappingResult.Unsupported(
-                UnsupportedMembersMessage);
+                BuildFailure(
+                    mapping,
+                    configured,
+                    MappingFailureReason.UnsupportedStructuredCallback,
+                    UnsupportedMembersMessage));
         }
 
         var writableMembers =
@@ -207,10 +227,22 @@ internal static class BasicMembersMappingPlanner
             new Dictionary<
                 DeclarativeLeafSyntaxNode,
                 ConventionMemberMappingPlan>();
-        string? leafUnsupportedMessage = null;
+        MappingFailureObservation? leafFailure = null;
 
         bool BuildLeaf(DeclarativeLeafSyntaxNode leaf)
         {
+            if (leaf.DirectExpression is { } directExpression &&
+                IsOmitted(directExpression))
+            {
+                leafFailure = BuildFailure(
+                    mapping,
+                    configured,
+                    MappingFailureReason.TerminalNullMembers,
+                    UnsupportedMembersMessage,
+                    directExpression);
+                return false;
+            }
+
             if (leaf.ObjectCreation is null ||
                 !leaf.Arguments.IsEmpty ||
                 !TryBuildLeafPlan(
@@ -230,14 +262,29 @@ internal static class BasicMembersMappingPlanner
                     resultParameter,
                     contextParameter,
                     lambda,
+                    configured.Expression.DeclaringMapperType,
                     controlFlow.RuntimeLocalPlaceholders,
                     runtimeLocalInitializers,
                     cancellationToken,
                     out var plan,
-                    out leafUnsupportedMessage))
+                    out leafFailure))
             {
                 return false;
             }
+
+            plan = plan with
+            {
+                Observation = plan.Observation with
+                {
+                    SourceDiscards = controlFlow.SourceDiscards
+                        .Select(discard =>
+                            new SourceDiscardObservation(
+                                discard.Member,
+                                discard.Statement,
+                                configured.Expression))
+                        .ToImmutableArray()
+                }
+            };
 
             leaves.Add(leaf, plan);
             return true;
@@ -248,8 +295,12 @@ internal static class BasicMembersMappingPlanner
             if (!BuildLeaf(leaf))
             {
                 return BasicMembersMappingResult.Unsupported(
-                    leafUnsupportedMessage ??
-                    UnsupportedMembersMessage);
+                    leafFailure ?? BuildFailure(
+                        mapping,
+                        configured,
+                        MappingFailureReason.UnsupportedStructuredSyntax,
+                        UnsupportedMembersMessage,
+                        leaf.ObjectCreation ?? leaf.DirectExpression));
             }
         }
 
@@ -274,7 +325,7 @@ internal static class BasicMembersMappingPlanner
                     lambda,
                     runtimeLocalInitializers)
                 : null,
-            UnsupportedMessage: null);
+            Failure: null);
     }
 
     private static bool TryBuildLeafPlan(
@@ -298,11 +349,12 @@ internal static class BasicMembersMappingPlanner
         IParameterSymbol? resultParameter,
         IParameterSymbol? contextParameter,
         LambdaExpressionSyntax transferScope,
+        INamedTypeSymbol sourceMapper,
         IReadOnlyDictionary<ISymbol, string> localSubstitutions,
         IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
         CancellationToken cancellationToken,
         out ConventionMemberMappingPlan plan,
-        out string? unsupportedMessage)
+        out MappingFailureObservation? failure)
     {
         var create =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
@@ -315,8 +367,8 @@ internal static class BasicMembersMappingPlanner
         var update =
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var occupiedNames = new HashSet<string>(StringComparer.Ordinal);
-        var hasExplicitCreationOnlyMappings = false;
-        var hasResultDependentCreationOnlyMappings = false;
+        var observedRules =
+            ImmutableArray.CreateBuilder<MemberRuleObservation>();
         var createNestedMapUsages =
             new DeclarativeNestedMapUsageRegistry();
         var mapReplacementNestedMapUsages =
@@ -334,7 +386,17 @@ internal static class BasicMembersMappingPlanner
                     out var destinationMember))
             {
                 plan = default;
-                unsupportedMessage = UnsupportedMembersMessage;
+                failure = BuildFailure(
+                    mapping,
+                    sourceMapper,
+                    MappingFailureReason.MemberRuleInvalid,
+                    UnsupportedMembersMessage,
+                    transferScope,
+                    assignment.Value,
+                    createNestedMapUsages.Observations
+                        .AddRange(
+                            mapReplacementNestedMapUsages.Observations)
+                        .AddRange(updateNestedMapUsages.Observations));
                 return false;
             }
 
@@ -358,6 +420,14 @@ internal static class BasicMembersMappingPlanner
             {
                 if (markerKind == DeclarativeMemberMarkerKind.Ignore)
                 {
+                    observedRules.Add(
+                        BuildMemberRuleObservation(
+                            convention,
+                            destinationMember,
+                            sourceMember: null,
+                            MemberRuleOrigin.Ignore,
+                            assignment.Value,
+                            MemberLifecycleDependency.None));
                     continue;
                 }
 
@@ -366,8 +436,13 @@ internal static class BasicMembersMappingPlanner
                         out var automaticCreate))
                 {
                     plan = default;
-                    unsupportedMessage =
-                        AutomaticMemberUnavailableMessage;
+                    failure = BuildFailure(
+                        mapping,
+                        sourceMapper,
+                        MappingFailureReason.MemberRuleInvalid,
+                        AutomaticMemberUnavailableMessage,
+                        transferScope,
+                        assignment.Value);
                     return false;
                 }
 
@@ -389,8 +464,22 @@ internal static class BasicMembersMappingPlanner
                     update.Add(automaticUpdate);
                 }
 
-                hasExplicitCreationOnlyMappings |=
-                    !destinationMember.CanAssign;
+                observedRules.Add(
+                    BuildMemberRuleObservation(
+                        convention,
+                        destinationMember,
+                        convention.Observation.Rules.FirstOrDefault(rule =>
+                                StringComparer.Ordinal.Equals(
+                                    rule.DestinationMember.Name,
+                                    destinationMember.Name))
+                            ?.SourceMember,
+                        MemberRuleOrigin.Auto,
+                        assignment.Value,
+                        MemberLifecycleDependency.Creation |
+                        (destinationMember.CanAssign
+                            ? MemberLifecycleDependency
+                                .ExistingDestination
+                            : MemberLifecycleDependency.InitOnly)));
                 continue;
             }
 
@@ -415,7 +504,17 @@ internal static class BasicMembersMappingPlanner
                     out var explicitPlan))
             {
                 plan = default;
-                unsupportedMessage = UnsupportedMembersMessage;
+                failure = BuildFailure(
+                    mapping,
+                    sourceMapper,
+                    MappingFailureReason.MemberRuleInvalid,
+                    UnsupportedMembersMessage,
+                    transferScope,
+                    assignment.Value,
+                    createNestedMapUsages.Observations
+                        .AddRange(
+                            mapReplacementNestedMapUsages.Observations)
+                        .AddRange(updateNestedMapUsages.Observations));
                 return false;
             }
 
@@ -446,11 +545,35 @@ internal static class BasicMembersMappingPlanner
                 update.Add(existing);
             }
 
-            hasExplicitCreationOnlyMappings |=
-                explicitPlan.IsCreationOnly;
-            hasResultDependentCreationOnlyMappings |=
-                explicitPlan.IsCreationOnly &&
-                explicitPlan.IsResultDependent;
+            var lifecycle = MemberLifecycleDependency.Creation;
+
+            if (!explicitPlan.IsCreationOnly)
+            {
+                lifecycle |=
+                    MemberLifecycleDependency.ExistingDestination;
+            }
+            else
+            {
+                lifecycle |= MemberLifecycleDependency.InitOnly;
+            }
+
+            if (explicitPlan.IsResultDependent)
+            {
+                lifecycle |= MemberLifecycleDependency.Result;
+            }
+
+            observedRules.Add(
+                BuildMemberRuleObservation(
+                    convention,
+                    destinationMember,
+                    TryGetDirectSourceMember(
+                        assignment.Value,
+                        sourceParameter,
+                        semanticModel,
+                        cancellationToken),
+                    MemberRuleOrigin.ExplicitValue,
+                    assignment.Value,
+                    lifecycle));
         }
 
         if (memberSelection == MemberSelectionValue.Auto)
@@ -475,6 +598,11 @@ internal static class BasicMembersMappingPlanner
                 convention.Update.Where(candidate =>
                     !occupiedNames.Contains(
                         candidate.DestinationMemberName)));
+
+            observedRules.AddRange(
+                convention.Observation.Rules.Where(rule =>
+                    !occupiedNames.Contains(
+                        rule.DestinationMember.Name)));
         }
 
         var immutableCreate = create.ToImmutable();
@@ -485,14 +613,21 @@ internal static class BasicMembersMappingPlanner
             mapReplacement.ToImmutable(),
             mapReplacementPost.ToImmutable(),
             update.ToImmutable(),
-            ConventionMemberMappingPlanner.HasUnmappedRequiredMembers(
-                destination,
-                immutableCreate,
-                cancellationToken),
-            hasExplicitCreationOnlyMappings,
-            hasResultDependentCreationOnlyMappings,
+            convention.Observation with
+            {
+                Rules = observedRules.ToImmutable(),
+                RequiredObligations =
+                    ConventionMemberMappingPlanner
+                        .FindUnmappedRequiredMembers(
+                            destination,
+                            immutableCreate,
+                            cancellationToken),
+                NestedMappings = createNestedMapUsages.Observations
+                    .AddRange(mapReplacementNestedMapUsages.Observations)
+                    .AddRange(updateNestedMapUsages.Observations)
+            },
             occupiedNames.ToImmutableArray());
-        unsupportedMessage = null;
+        failure = null;
         return true;
     }
 
@@ -562,23 +697,25 @@ internal static class BasicMembersMappingPlanner
         var update = Merge(
             static plan => plan.Update,
             convention.Update);
-        var writableMembers =
-            ConventionMemberMappingPlanner.BuildWritableMembers(
-                destination,
-                capabilities,
-                compilation,
-                cancellationToken)
-            .ToDictionary(
-                static member => member.Name,
-                StringComparer.Ordinal);
-        var creationOnlyMappings = create
-            .Where(mapping =>
-                occupiedNames.Contains(mapping.DestinationMemberName) &&
-                writableMembers.TryGetValue(
-                    mapping.DestinationMemberName,
-                    out var member) &&
-                !member.CanAssign)
-            .ToArray();
+        var rules = memberSelection == MemberSelectionValue.Auto
+            ? convention.Observation.Rules.ToList()
+            : new List<MemberRuleObservation>();
+
+        foreach (var plan in immutablePlans)
+        {
+            var overriddenNames = plan.ConfiguredMemberNames.IsDefault
+                ? []
+                : plan.ConfiguredMemberNames;
+
+            rules.RemoveAll(rule =>
+                overriddenNames.Contains(
+                    rule.DestinationMember.Name,
+                    StringComparer.Ordinal));
+            rules.AddRange(plan.Observation.Rules.Where(rule =>
+                overriddenNames.Contains(
+                    rule.DestinationMember.Name,
+                    StringComparer.Ordinal)));
+        }
 
         return new ConventionMemberMappingPlan(
             create,
@@ -586,13 +723,26 @@ internal static class BasicMembersMappingPlanner
             mapReplacement,
             mapReplacementPost,
             update,
-            ConventionMemberMappingPlanner.HasUnmappedRequiredMembers(
-                destination,
-                create,
-                cancellationToken),
-            creationOnlyMappings.Length > 0,
-            creationOnlyMappings.Any(static mapping =>
-                mapping.IsResultDependent),
+            convention.Observation with
+            {
+                Rules = rules.ToImmutableArray(),
+                RequiredObligations =
+                    ConventionMemberMappingPlanner
+                        .FindUnmappedRequiredMembers(
+                            destination,
+                            create,
+                            cancellationToken),
+                NestedMappings = immutablePlans.SelectMany(plan =>
+                        plan.Observation.NestedMappings.IsDefault
+                            ? []
+                            : plan.Observation.NestedMappings)
+                    .ToImmutableArray(),
+                SourceDiscards = immutablePlans.SelectMany(plan =>
+                        plan.Observation.SourceDiscards.IsDefault
+                            ? []
+                            : plan.Observation.SourceDiscards)
+                    .ToImmutableArray()
+            },
             occupiedNames.ToImmutableArray());
     }
 
@@ -1043,15 +1193,163 @@ internal static class BasicMembersMappingPlanner
         assignments = result.ToImmutable();
         return true;
     }
+
+    private static bool IsOmitted(ExpressionSyntax expression)
+    {
+        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expression = parenthesized.Expression;
+        }
+
+        return expression is LiteralExpressionSyntax
+        {
+            RawKind: (int)SyntaxKind.NullLiteralExpression or
+                (int)SyntaxKind.DefaultLiteralExpression
+        } or DefaultExpressionSyntax;
+    }
+
+    private static MappingFailureObservation BuildFailure(
+        TypeMapperMappingModel mapping,
+        MembersConfigurationModel configuration,
+        MappingFailureReason reason,
+        string recoveryMessage,
+        SyntaxNode? offendingNode = null)
+    {
+        return BuildFailure(
+            mapping,
+            configuration.Expression.DeclaringMapperType,
+            reason,
+            recoveryMessage,
+            configuration.Invocation,
+            offendingNode);
+    }
+
+    private static MemberRuleObservation BuildMemberRuleObservation(
+        ConventionMemberMappingPlan convention,
+        ConventionWritableMember destinationMember,
+        ISymbol? sourceMember,
+        MemberRuleOrigin origin,
+        SyntaxNode originNode,
+        MemberLifecycleDependency lifecycle)
+    {
+        var hiddenImportedRule = convention.Observation.Rules
+            .FirstOrDefault(rule =>
+                SymbolEqualityComparer.Default.Equals(
+                    rule.DestinationMember,
+                    destinationMember.Symbol));
+
+        return new MemberRuleObservation(
+            destinationMember.Symbol,
+            sourceMember,
+            origin,
+            originNode,
+            destinationMember.IsRequired,
+            lifecycle,
+            hiddenImportedRule?.DestinationMember);
+    }
+
+    private static ISymbol? TryGetDirectSourceMember(
+        ExpressionSyntax expression,
+        IParameterSymbol sourceParameter,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expression = parenthesized.Expression;
+        }
+
+        if (expression is not MemberAccessExpressionSyntax memberAccess ||
+            !SymbolEqualityComparer.Default.Equals(
+                semanticModel.GetSymbolInfo(
+                        memberAccess.Expression,
+                        cancellationToken)
+                    .Symbol,
+                sourceParameter))
+        {
+            return null;
+        }
+
+        return semanticModel.GetSymbolInfo(
+                memberAccess,
+                cancellationToken)
+            .Symbol;
+    }
+
+    private static MappingFailureObservation BuildFailure(
+        TypeMapperMappingModel mapping,
+        INamedTypeSymbol sourceMapper,
+        MappingFailureReason reason,
+        string recoveryMessage,
+        SyntaxNode originNode,
+        SyntaxNode? offendingNode = null,
+        ImmutableArray<NestedMappingObservation> nestedObservations =
+            default)
+    {
+        var nestedObservation = nestedObservations.IsDefaultOrEmpty
+            ? null
+            : nestedObservations[0];
+
+        if (nestedObservation is not null)
+        {
+            reason = ClassifyNestedFailure(
+                nestedObservation,
+                reason);
+        }
+
+        return MappingFailureObservation.Create(
+            mapping.AnalysisContext,
+            reason,
+            recoveryMessage,
+            nestedObservation is null
+                ? MappingObservationOriginKind.Callback
+                : MappingObservationOriginKind.NestedMarker,
+            MappingAffectedPath.All(
+                nestedObservation is null
+                    ? MappingPlanPhase.Members
+                    : MappingPlanPhase.NestedMapping) with
+            {
+                BranchOrigin = offendingNode
+            },
+            originNode,
+            sourceMapper,
+            nestedObservation?.Producer ?? offendingNode,
+            nestedObservation?.ProducerSymbol,
+            nestedObservations: nestedObservations);
+    }
+
+    private static MappingFailureReason ClassifyNestedFailure(
+        NestedMappingObservation observation,
+        MappingFailureReason fallback)
+    {
+        if (observation.InferredSourceType is null ||
+            observation.InferredDestinationType is null)
+        {
+            return MappingFailureReason.NestedPairUnknown;
+        }
+
+        if (observation.ResultConversion ==
+            NestedConversionStatus.Incompatible)
+        {
+            return MappingFailureReason.NestedResultIncompatible;
+        }
+
+        return observation.Operation ==
+                   DeclarativeNestedMapOperation.Update &&
+               observation.DestinationOrigin != NestedDestinationOrigin.None
+            ? MappingFailureReason.NestedUpdateDestinationInvalid
+            : fallback;
+    }
 }
 
 internal readonly record struct BasicMembersMappingResult(
     ConventionMemberMappingPlan Plan,
     MembersDeclarativeControlFlowPlan? ControlFlow,
-    string? UnsupportedMessage)
+    MappingFailureObservation? Failure)
 {
-    public static BasicMembersMappingResult Unsupported(string message) =>
-        new(default, ControlFlow: null, message);
+    public static BasicMembersMappingResult Unsupported(
+        MappingFailureObservation failure) =>
+        new(default, ControlFlow: null, failure);
 }
 
 internal sealed record MembersDeclarativeControlFlowPlan(

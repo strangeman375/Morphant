@@ -59,7 +59,11 @@ internal static class StructuredConstructMappingPlanner
                 cancellationToken))
         {
             return StructuredConstructMappingResult.Unsupported(
-                UnsupportedConstructMessage);
+                BuildFailure(
+                    mapping,
+                    configuration,
+                    MappingFailureReason.UnsupportedStructuredCallback,
+                    UnsupportedConstructMessage));
         }
 
         var transferScope = (SyntaxNode?)lambda.ExpressionBody ??
@@ -68,7 +72,11 @@ internal static class StructuredConstructMappingPlanner
         if (transferScope is null)
         {
             return StructuredConstructMappingResult.Unsupported(
-                UnsupportedConstructMessage);
+                BuildFailure(
+                    mapping,
+                    configuration,
+                    MappingFailureReason.UnsupportedStructuredCallback,
+                    UnsupportedConstructMessage));
         }
 
         if (DeclarativeControlFlowPlanner.Build(
@@ -78,7 +86,11 @@ internal static class StructuredConstructMappingPlanner
             DeclarativeControlFlowProgram controlFlowProgram)
         {
             return StructuredConstructMappingResult.Unsupported(
-                UnsupportedConstructMessage);
+                BuildFailure(
+                    mapping,
+                    configuration,
+                    MappingFailureReason.UnsupportedStructuredCallback,
+                    UnsupportedConstructMessage));
         }
 
         TypeMapperControlFlowNode? BuildPlan(
@@ -215,10 +227,15 @@ internal static class StructuredConstructMappingPlanner
                     Rewrite,
                     RewriteDependency,
                     (_, whenTrue, whenFalse) =>
-                        Equals(whenTrue, whenFalse)
+                        AreEquivalentPlanNodes(whenTrue, whenFalse)
                             ? whenTrue
                             : null,
                     previousParameter,
+                    mapping,
+                    configuration.Expression.DeclaringMapperType,
+                    previousAvailable == true
+                        ? MappingExecutionPathSet.UpdateWithPrevious
+                        : MappingExecutionPathSet.NoPrevious,
                     cancellationToken);
 
             TypeMapperControlFlowNode? BuildLeaf(
@@ -266,20 +283,28 @@ internal static class StructuredConstructMappingPlanner
                             RewriteDependency,
                             cancellationToken);
 
-                        plannedLeaf = convention is null
-                            ? new StructuredConstructLeafNode(
-                                StructuredConstructLeafKind.Unsupported,
-                                Constructor: null,
-                                UnsupportedMessage:
-                                    UnsupportedConstructMessage)
+                        plannedLeaf = convention.Plan is not { } conventionPlan
+                            ? BuildUnsupportedPlanLeaf(
+                                mapping,
+                                configuration.Expression.DeclaringMapperType,
+                                leaf.ObjectCreation,
+                                previousAvailable == true
+                                    ? MappingExecutionPathSet
+                                        .UpdateWithPrevious
+                                    : MappingExecutionPathSet.NoPrevious,
+                                MappingFailureReason
+                                    .ConstructorSelectionFailed,
+                                convention.Observation)
                             : new StructuredConstructLeafNode(
                                 StructuredConstructLeafKind.Constructor,
-                                convention,
-                                UnsupportedMessage: null);
+                                conventionPlan,
+                                convention.Observation,
+                                Failure: null,
+                                Terminal: null);
                     }
                     else
                     {
-                        var explicitPlan =
+                        var explicitPlanning =
                             ExplicitStructuredConstructorPlanner.Build(
                                 arguments,
                                 sourceType,
@@ -289,24 +314,64 @@ internal static class StructuredConstructMappingPlanner
                                 configuration.Expression.SemanticModel,
                                 Rewrite,
                                 RewriteDependency,
+                                leaf.ObjectCreation,
                                 cancellationToken);
 
-                        plannedLeaf = explicitPlan is null
-                            ? StructuredConstructLeafNode.Unsupported
-                            : ConventionConstructorMappingPlanner
-                                .BuildExplicitPlan(
-                                    destination,
-                                    constructorMembers,
-                                    explicitPlan.Value.Constructor,
-                                    explicitPlan.Value.Arguments,
-                                    mapperType,
-                                    mapping.NonNullSourceName) is
-                                { } constructor
-                                ? new StructuredConstructLeafNode(
-                                    StructuredConstructLeafKind.Constructor,
-                                    constructor,
-                                    UnsupportedMessage: null)
-                                : StructuredConstructLeafNode.Unsupported;
+                        if (explicitPlanning.Plan is not { } explicitPlan)
+                        {
+                            plannedLeaf = BuildUnsupportedPlanLeaf(
+                                mapping,
+                                configuration.Expression.DeclaringMapperType,
+                                leaf.ObjectCreation,
+                                previousAvailable == true
+                                    ? MappingExecutionPathSet
+                                        .UpdateWithPrevious
+                                    : MappingExecutionPathSet.NoPrevious,
+                                MappingFailureReason
+                                    .ConstructorParameterRuleInvalid,
+                                explicitPlanning.Observation);
+                        }
+                        else if (ConventionConstructorMappingPlanner
+                                     .BuildExplicitPlan(
+                                         destination,
+                                         constructorMembers,
+                                         explicitPlan.Constructor,
+                                         explicitPlan.Arguments,
+                                         compilation,
+                                         mapperType,
+                                         mapping.NonNullSourceName,
+                                         cancellationToken) is
+                                 { } constructor)
+                        {
+                            constructor = constructor with
+                            {
+                                Observation = explicitPlanning.Observation
+                            };
+                            plannedLeaf = new StructuredConstructLeafNode(
+                                StructuredConstructLeafKind.Constructor,
+                                constructor,
+                                explicitPlanning.Observation,
+                                Failure: null,
+                                Terminal: null);
+                        }
+                        else
+                        {
+                            var observation =
+                                ObserveMemberConstraintFailure(
+                                    explicitPlanning.Observation,
+                                    constructorMembers);
+                            plannedLeaf = BuildUnsupportedPlanLeaf(
+                                mapping,
+                                configuration.Expression.DeclaringMapperType,
+                                leaf.ObjectCreation,
+                                previousAvailable == true
+                                    ? MappingExecutionPathSet
+                                        .UpdateWithPrevious
+                                    : MappingExecutionPathSet.NoPrevious,
+                                MappingFailureReason
+                                    .ConstructorParameterRuleInvalid,
+                                observation);
+                        }
                     }
                 }
                 else
@@ -323,6 +388,7 @@ internal static class StructuredConstructMappingPlanner
                     plannedLeaf,
                     mapping,
                     memberMappings,
+                    nestedMapUsages.Observations,
                     create: previousAvailable != true);
             }
 
@@ -373,7 +439,11 @@ internal static class StructuredConstructMappingPlanner
             if (plannedRoot is null)
             {
                 return StructuredConstructMappingResult.Unsupported(
-                    UnsupportedConstructMessage);
+                    BuildFailure(
+                        mapping,
+                        configuration,
+                        MappingFailureReason.UnsupportedStructuredCallback,
+                        UnsupportedConstructMessage));
             }
 
             createRoot = plannedRoot;
@@ -390,7 +460,11 @@ internal static class StructuredConstructMappingPlanner
             if (createPlan is null || updatePlan is null)
             {
                 return StructuredConstructMappingResult.Unsupported(
-                    UnsupportedConstructMessage);
+                    BuildFailure(
+                        mapping,
+                        configuration,
+                        MappingFailureReason.UnsupportedStructuredCallback,
+                        UnsupportedConstructMessage));
             }
 
             createRoot = createPlan;
@@ -402,7 +476,7 @@ internal static class StructuredConstructMappingPlanner
                 createRoot,
                 updateRoot),
             HelperMethodDeclarations: [],
-            UnsupportedMessage: null);
+            Failure: null);
     }
 
     private static PreviousExpressionSubstitution
@@ -546,7 +620,9 @@ internal static class StructuredConstructMappingPlanner
             return null;
         }
 
-        return Equals(whenTrue, whenFalse)
+        return TypeMapperRuntimeEquality.AreEquivalent(
+            whenTrue,
+            whenFalse)
             ? new TypeMapperControlFlowNode(
                 Locals: [],
                 Condition: null,
@@ -736,6 +812,9 @@ internal static class StructuredConstructMappingPlanner
             StructuredConstructPlanNode,
             StructuredConstructPlanNode?> buildCondition,
         IParameterSymbol? previousParameter,
+        TypeMapperMappingModel mapping,
+        INamedTypeSymbol sourceMapper,
+        MappingExecutionPathSet paths,
         CancellationToken cancellationToken)
     {
         expression = UnwrapParentheses(expression);
@@ -757,6 +836,9 @@ internal static class StructuredConstructMappingPlanner
                 rewriteDependencyExpression,
                 buildCondition,
                 previousParameter,
+                mapping,
+                sourceMapper,
+                paths,
                 cancellationToken);
             var whenFalse = BuildPlanNode(
                 conditional.WhenFalse,
@@ -773,6 +855,9 @@ internal static class StructuredConstructMappingPlanner
                 rewriteDependencyExpression,
                 buildCondition,
                 previousParameter,
+                mapping,
+                sourceMapper,
+                paths,
                 cancellationToken);
 
             return whenTrue is null || whenFalse is null
@@ -790,13 +875,39 @@ internal static class StructuredConstructMappingPlanner
                 semanticModel,
                 cancellationToken))
         {
-            return StructuredConstructLeafNode.Previous;
+            return new StructuredConstructLeafNode(
+                StructuredConstructLeafKind.Previous,
+                Constructor: null,
+                ConstructorObservation: null,
+                Failure: null,
+                Terminal: new StructuredTerminalObservation(
+                    StructuredTerminalKind.Previous,
+                    expression,
+                    new MappingAffectedPath(
+                        paths,
+                        MappingPlanPhase.Construction,
+                        expression)));
+        }
+
+        if (IsOmitted(expression))
+        {
+            return BuildUnsupportedPlanLeaf(
+                mapping,
+                sourceMapper,
+                expression,
+                paths,
+                MappingFailureReason.TerminalNullConstruction);
         }
 
         if (expression is not BaseObjectCreationExpressionSyntax creation ||
             creation.Initializer is not null)
         {
-            return StructuredConstructLeafNode.Unsupported;
+            return BuildUnsupportedPlanLeaf(
+                mapping,
+                sourceMapper,
+                expression,
+                paths,
+                MappingFailureReason.UnsupportedStructuredSyntax);
         }
 
         var arguments = BuildObjectArguments(creation);
@@ -822,18 +933,23 @@ internal static class StructuredConstructMappingPlanner
                 rewriteDependencyExpression,
                 cancellationToken);
 
-            return convention is null
-                ? new StructuredConstructLeafNode(
-                    StructuredConstructLeafKind.Unsupported,
-                    Constructor: null,
-                    UnsupportedMessage: UnsupportedConstructMessage)
+            return convention.Plan is not { } conventionPlan
+                ? BuildUnsupportedPlanLeaf(
+                    mapping,
+                    sourceMapper,
+                    creation,
+                    paths,
+                    MappingFailureReason.ConstructorSelectionFailed,
+                    convention.Observation)
                 : new StructuredConstructLeafNode(
                     StructuredConstructLeafKind.Constructor,
-                    convention,
-                    UnsupportedMessage: null);
+                    conventionPlan,
+                    convention.Observation,
+                    Failure: null,
+                    Terminal: null);
         }
 
-        var explicitPlan =
+        var explicitPlanning =
             ExplicitStructuredConstructorPlanner.Build(
                 arguments,
                 sourceType,
@@ -843,31 +959,58 @@ internal static class StructuredConstructMappingPlanner
                 semanticModel,
                 rewriteExpression,
                 rewriteDependencyExpression,
+                creation,
                 cancellationToken);
 
-        if (explicitPlan is null)
+        if (explicitPlanning.Plan is not { } explicitPlan)
         {
-            return StructuredConstructLeafNode.Unsupported;
+            return BuildUnsupportedPlanLeaf(
+                mapping,
+                sourceMapper,
+                creation,
+                paths,
+                MappingFailureReason.ConstructorParameterRuleInvalid,
+                explicitPlanning.Observation);
         }
 
         var constructor =
             ConventionConstructorMappingPlanner.BuildExplicitPlan(
                 destination,
                 memberMappings,
-                explicitPlan.Value.Constructor,
-                explicitPlan.Value.Arguments,
+                explicitPlan.Constructor,
+                explicitPlan.Arguments,
+                compilation,
                 mapperType,
-                nonNullSourceName);
+                nonNullSourceName,
+                cancellationToken);
 
-        return constructor is null
-            ? StructuredConstructLeafNode.Unsupported
-            : new StructuredConstructLeafNode(
-                StructuredConstructLeafKind.Constructor,
-                constructor,
-                UnsupportedMessage: null);
+        if (constructor is not { } resolvedConstructor)
+        {
+            return BuildUnsupportedPlanLeaf(
+                mapping,
+                sourceMapper,
+                creation,
+                paths,
+                MappingFailureReason.ConstructorParameterRuleInvalid,
+                ObserveMemberConstraintFailure(
+                    explicitPlanning.Observation,
+                    memberMappings));
+        }
+
+        resolvedConstructor = resolvedConstructor with
+        {
+            Observation = explicitPlanning.Observation
+        };
+
+        return new StructuredConstructLeafNode(
+            StructuredConstructLeafKind.Constructor,
+            resolvedConstructor,
+            explicitPlanning.Observation,
+            Failure: null,
+            Terminal: null);
     }
 
-    private static ConventionConstructorMappingPlan?
+    private static ConventionConstructorPlanningResult
         BuildByConventionPlan(
             ImmutableArray<StructuredObjectArgument> arguments,
             ITypeSymbol sourceType,
@@ -890,9 +1033,56 @@ internal static class StructuredConstructMappingPlanner
                 destination,
                 compilation,
                 cancellationToken);
+        var strategyOrigin = arguments.FirstOrDefault(argument =>
+                IsMarker(
+                    argument.Value,
+                    ByConventionMarkerMetadataName,
+                    semanticModel,
+                    cancellationToken))
+            .Value;
 
-        if (constructorSelection is null ||
-            !TryGetByConventionRules(
+        ConventionConstructorPlanningResult ObserveStrategy(
+            ConventionConstructorPlanningResult planning)
+        {
+            var observation = planning.Observation with
+            {
+                Strategy = constructorSelection,
+                StrategyOrigin = strategyOrigin
+            };
+
+            return new ConventionConstructorPlanningResult(
+                planning.Plan is { } plan
+                    ? plan with
+                    {
+                        Observation = observation
+                    }
+                    : null,
+                observation);
+        }
+
+        ConventionConstructorPlanningResult Unsupported(
+            ConstructorCandidateRejectionReason rejection) =>
+            ObserveStrategy(new ConventionConstructorPlanningResult(
+                Plan: null,
+                new ConstructorPlanningObservation(
+                    constructorSelection,
+                    strategyOrigin,
+                    constructors.Select(constructor =>
+                            new ConstructorCandidateObservation(
+                                constructor,
+                                ParameterRules: [],
+                                rejection))
+                        .ToImmutableArray(),
+                    SelectedConstructor: null,
+                    Terminals: [])));
+
+        if (constructorSelection is null)
+        {
+            return Unsupported(
+                ConstructorCandidateRejectionReason.StrategyShape);
+        }
+
+        if (!TryGetByConventionRules(
                 arguments,
                 destination,
                 compilation,
@@ -900,21 +1090,23 @@ internal static class StructuredConstructMappingPlanner
                 cancellationToken,
                 out var rules))
         {
-            return null;
+            return Unsupported(
+                ConstructorCandidateRejectionReason.ExplicitRule);
         }
 
         if (rules.IsEmpty)
         {
-            return ConventionConstructorMappingPlanner.Build(
-                sourceType,
-                destination,
-                memberMappings,
-                capabilities,
-                constructorSelection,
-                compilation,
-                mapperType,
-                nonNullSourceName,
-                cancellationToken);
+            return ObserveStrategy(
+                ConventionConstructorMappingPlanner.Build(
+                    sourceType,
+                    destination,
+                    memberMappings,
+                    capabilities,
+                    constructorSelection,
+                    compilation,
+                    mapperType,
+                    nonNullSourceName,
+                    cancellationToken));
         }
 
         var sourceMembers =
@@ -923,59 +1115,104 @@ internal static class StructuredConstructMappingPlanner
                 compilation,
                 mapperType,
                 cancellationToken);
+        var destinationMembers =
+            ConventionConstructorMappingPlanner
+                .BuildConstructorDestinationMembers(
+                    destination,
+                    memberMappings.Observation,
+                    compilation,
+                    mapperType,
+                    cancellationToken);
+        var plannedCandidates = constructors.Select(constructor =>
+                BuildByConventionPlanForConstructor(
+                    constructor,
+                    sourceType,
+                    rules,
+                    sourceMembers,
+                    destinationMembers,
+                    destination,
+                    memberMappings,
+                    compilation,
+                    mapperType,
+                    semanticModel,
+                    nonNullSourceName,
+                    rewriteExpression,
+                    rewriteDependencyExpression,
+                    cancellationToken))
+            .ToImmutableArray();
+        ConventionConstructorMappingPlan? selectedPlan = null;
+        IMethodSymbol? selectedConstructor = null;
 
         if (constructorSelection ==
             ConstructorSelectionValue.Greediest)
         {
-            return ConventionConstructorMappingPlanner
-                .TrySelectGreediestPlan(
-                    constructors,
-                    candidate => BuildByConventionPlanForConstructor(
-                        candidate,
-                        sourceType,
-                        rules,
-                        sourceMembers,
-                        destination,
-                        memberMappings,
-                        compilation,
-                        mapperType,
-                        semanticModel,
-                        nonNullSourceName,
-                        rewriteExpression,
-                        rewriteDependencyExpression,
-                        cancellationToken),
-                    cancellationToken);
-        }
+            var selectedArgumentCount = -1;
+            var hasTie = false;
 
-        if (ConventionConstructorMappingPlanner.TrySelectConstructor(
-                constructors,
-                constructorSelection.Value) is not { } constructor)
+            foreach (var candidate in plannedCandidates)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (candidate.Plan is not { } candidatePlan)
+                {
+                    continue;
+                }
+
+                var argumentCount =
+                    candidatePlan.Constructor.Arguments.Length;
+
+                if (argumentCount > selectedArgumentCount)
+                {
+                    selectedPlan = candidatePlan;
+                    selectedConstructor = candidate.Constructor;
+                    selectedArgumentCount = argumentCount;
+                    hasTie = false;
+                }
+                else if (argumentCount == selectedArgumentCount)
+                {
+                    hasTie = true;
+                }
+            }
+
+            if (hasTie)
+            {
+                selectedPlan = null;
+                selectedConstructor = null;
+            }
+        }
+        else if (ConventionConstructorMappingPlanner.TrySelectConstructor(
+                     constructors,
+                     constructorSelection.Value) is { } constructor)
         {
-            return null;
+            selectedConstructor = constructor;
+            selectedPlan = plannedCandidates.First(candidate =>
+                    SymbolEqualityComparer.Default.Equals(
+                        candidate.Constructor,
+                        constructor))
+                .Plan;
         }
 
-        return BuildByConventionPlanForConstructor(
-            constructor,
-            sourceType,
-            rules,
-            sourceMembers,
-            destination,
-            memberMappings,
-            compilation,
-            mapperType,
-            semanticModel,
-            nonNullSourceName,
-            rewriteExpression,
-            rewriteDependencyExpression,
-            cancellationToken);
+        var observation = new ConstructorPlanningObservation(
+            constructorSelection,
+            strategyOrigin,
+            plannedCandidates.Select(static candidate =>
+                    candidate.Observation)
+                .ToImmutableArray(),
+            selectedConstructor,
+            Terminals: []);
+
+        return ObserveStrategy(new ConventionConstructorPlanningResult(
+            selectedPlan,
+            observation));
     }
 
-    private static ConventionConstructorMappingPlan?
+    private static StructuredConstructorCandidatePlanningResult
         BuildByConventionPlanForConstructor(
             IMethodSymbol constructor,
             ITypeSymbol sourceType,
             ImmutableArray<StructuredConstructorParameterRule> rules,
             ImmutableArray<ConventionReadableMember> sourceMembers,
+            ImmutableArray<ISymbol> destinationMembers,
             INamedTypeSymbol destination,
             ConstructorInitializationMappingPlan memberMappings,
             CSharpCompilation compilation,
@@ -993,6 +1230,18 @@ internal static class StructuredConstructMappingPlanner
         var mappedArguments =
             ImmutableArray.CreateBuilder<
                 TypeMapperConstructorArgumentMappingModel>();
+        var parameterObservations =
+            ImmutableArray.CreateBuilder<
+                ConstructorParameterRuleObservation>();
+        var rejection = ConstructorCandidateRejectionReason.None;
+
+        void Reject(ConstructorCandidateRejectionReason reason)
+        {
+            if (rejection == ConstructorCandidateRejectionReason.None)
+            {
+                rejection = reason;
+            }
+        }
 
         foreach (var rule in rules)
         {
@@ -1001,10 +1250,42 @@ internal static class StructuredConstructMappingPlanner
                     candidate.Name,
                     rule.ParameterName));
 
-            if (parameter is null ||
-                !configuredParameterNames.Add(parameter.Name))
+            if (parameter is null)
             {
-                return null;
+                Reject(ConstructorCandidateRejectionReason.ExplicitRule);
+                parameterObservations.Add(
+                    new ConstructorParameterRuleObservation(
+                        Parameter: null,
+                        rule.ParameterName,
+                        ConstructorParameterRuleOrigin.Value,
+                        rule.Value,
+                        SourceMember: null,
+                        DestinationMember: null,
+                        IsApplicable: false,
+                        ConstructorCandidateRejectionReason.ExplicitRule));
+                continue;
+            }
+
+            var destinationMember =
+                ConventionConstructorMappingPlanner
+                    .FindAssociatedDestinationMember(
+                        destinationMembers,
+                        parameter.Name);
+
+            if (!configuredParameterNames.Add(parameter.Name))
+            {
+                Reject(ConstructorCandidateRejectionReason.ExplicitRule);
+                parameterObservations.Add(
+                    new ConstructorParameterRuleObservation(
+                        parameter,
+                        parameter.Name,
+                        ConstructorParameterRuleOrigin.Value,
+                        rule.Value,
+                        SourceMember: null,
+                        destinationMember,
+                        IsApplicable: false,
+                        ConstructorCandidateRejectionReason.ExplicitRule));
+                continue;
             }
 
             if (DeclarativeConstructorMarker.TryGetKind(
@@ -1026,10 +1307,27 @@ internal static class StructuredConstructMappingPlanner
                 if (markerKind ==
                     DeclarativeConstructorMarkerKind.Ignore)
                 {
-                    if (!ConventionConstructorMappingPlanner.CanOmit(
-                            parameter))
+                    var canOmit =
+                        ConventionConstructorMappingPlanner.CanOmit(
+                            parameter);
+                    parameterObservations.Add(
+                        new ConstructorParameterRuleObservation(
+                            parameter,
+                            parameter.Name,
+                            ConstructorParameterRuleOrigin.Ignore,
+                            rule.Value,
+                            SourceMember: null,
+                            destinationMember,
+                            canOmit,
+                            canOmit
+                                ? ConstructorCandidateRejectionReason.None
+                                : ConstructorCandidateRejectionReason
+                                    .ExplicitRule));
+
+                    if (!canOmit)
                     {
-                        return null;
+                        Reject(
+                            ConstructorCandidateRejectionReason.ExplicitRule);
                     }
 
                     continue;
@@ -1038,16 +1336,47 @@ internal static class StructuredConstructMappingPlanner
                 if (markerKind ==
                     DeclarativeConstructorMarkerKind.Auto)
                 {
-                    if (!TryBuildAutomaticArgument(
-                            sourceMembers,
+                    var sourceMember =
+                        ConventionConstructorMappingPlanner
+                            .TryFindSourceMember(
+                                sourceMembers,
+                                parameter.Name);
+                    var compatible = sourceMember is { } candidate &&
+                        MappingExpressionCompatibility
+                            .HasPotentiallyCompatibleConversion(
+                                candidate.Type,
+                                parameter.Type,
+                                compilation);
+                    var ruleRejection = sourceMember is null
+                        ? ConstructorCandidateRejectionReason
+                            .MissingSourceMember
+                        : compatible
+                            ? ConstructorCandidateRejectionReason.None
+                            : ConstructorCandidateRejectionReason
+                                .IncompatibleArgument;
+                    parameterObservations.Add(
+                        new ConstructorParameterRuleObservation(
                             parameter,
-                            compilation,
-                            out var automaticArgument))
+                            parameter.Name,
+                            ConstructorParameterRuleOrigin.Auto,
+                            rule.Value,
+                            sourceMember?.Symbol,
+                            destinationMember,
+                            compatible,
+                            ruleRejection));
+
+                    if (!compatible || sourceMember is null)
                     {
-                        return null;
+                        Reject(ruleRejection);
+                        continue;
                     }
 
-                    mappedArguments.Add(automaticArgument);
+                    mappedArguments.Add(
+                        BuildAutomaticArgument(
+                            sourceMember.Value,
+                            parameter,
+                            rule.Value,
+                            ConstructorParameterRuleOrigin.Auto));
                     continue;
                 }
             }
@@ -1061,8 +1390,30 @@ internal static class StructuredConstructMappingPlanner
 
             if (explicitExpression is null)
             {
-                return null;
+                Reject(ConstructorCandidateRejectionReason.ExplicitRule);
+                parameterObservations.Add(
+                    new ConstructorParameterRuleObservation(
+                        parameter,
+                        parameter.Name,
+                        ConstructorParameterRuleOrigin.Value,
+                        rule.Value,
+                        SourceMember: null,
+                        destinationMember,
+                        IsApplicable: false,
+                        ConstructorCandidateRejectionReason.ExplicitRule));
+                continue;
             }
+
+            parameterObservations.Add(
+                new ConstructorParameterRuleObservation(
+                    parameter,
+                    parameter.Name,
+                    ConstructorParameterRuleOrigin.Value,
+                    rule.Value,
+                    SourceMember: null,
+                    destinationMember,
+                    IsApplicable: true,
+                    ConstructorCandidateRejectionReason.None));
 
             mappedArguments.Add(
                 new TypeMapperConstructorArgumentMappingModel(
@@ -1077,7 +1428,11 @@ internal static class StructuredConstructMappingPlanner
                         ConventionConstructorMappingPlanner
                             .BuildTargetValueLocalTypeName(parameter),
                     DependencyExpression:
-                        rewrittenDependency?.DependencyExpression));
+                        rewrittenDependency?.DependencyExpression,
+                    ParameterSymbol: parameter,
+                    RuleOriginNode: rule.Value,
+                    RuleOrigin:
+                        ConstructorParameterRuleOrigin.Value));
         }
 
         foreach (var parameter in constructor.Parameters)
@@ -1087,23 +1442,82 @@ internal static class StructuredConstructMappingPlanner
                 continue;
             }
 
-            if (TryBuildAutomaticArgument(
+            var sourceMember =
+                ConventionConstructorMappingPlanner.TryFindSourceMember(
                     sourceMembers,
-                    parameter,
-                    compilation,
-                    out var automaticArgument))
+                    parameter.Name);
+            var compatible = sourceMember is { } candidate &&
+                MappingExpressionCompatibility
+                    .HasPotentiallyCompatibleConversion(
+                        candidate.Type,
+                        parameter.Type,
+                        compilation);
+
+            if (compatible && sourceMember is { } automaticSource)
             {
-                mappedArguments.Add(automaticArgument);
+                mappedArguments.Add(
+                    BuildAutomaticArgument(
+                        automaticSource,
+                        parameter,
+                        originNode: null,
+                        ConstructorParameterRuleOrigin.Convention));
+                parameterObservations.Add(
+                    new ConstructorParameterRuleObservation(
+                        parameter,
+                        parameter.Name,
+                        ConstructorParameterRuleOrigin.Convention,
+                        OriginNode: null,
+                        automaticSource.Symbol,
+                        ConventionConstructorMappingPlanner
+                            .FindAssociatedDestinationMember(
+                                destinationMembers,
+                                parameter.Name),
+                        IsApplicable: true,
+                        ConstructorCandidateRejectionReason.None));
             }
-            else if (!ConventionConstructorMappingPlanner.CanOmit(parameter))
+            else if (ConventionConstructorMappingPlanner.CanOmit(parameter))
             {
-                return null;
+                parameterObservations.Add(
+                    new ConstructorParameterRuleObservation(
+                        parameter,
+                        parameter.Name,
+                        ConstructorParameterRuleOrigin.Omitted,
+                        OriginNode: null,
+                        sourceMember?.Symbol,
+                        ConventionConstructorMappingPlanner
+                            .FindAssociatedDestinationMember(
+                                destinationMembers,
+                                parameter.Name),
+                        IsApplicable: true,
+                        ConstructorCandidateRejectionReason.None));
+            }
+            else
+            {
+                var ruleRejection = sourceMember is null
+                    ? ConstructorCandidateRejectionReason.MissingSourceMember
+                    : ConstructorCandidateRejectionReason
+                        .IncompatibleArgument;
+                Reject(ruleRejection);
+                parameterObservations.Add(
+                    new ConstructorParameterRuleObservation(
+                        parameter,
+                        parameter.Name,
+                        ConstructorParameterRuleOrigin.Convention,
+                        OriginNode: null,
+                        sourceMember?.Symbol,
+                        ConventionConstructorMappingPlanner
+                            .FindAssociatedDestinationMember(
+                                destinationMembers,
+                                parameter.Name),
+                        IsApplicable: false,
+                        ruleRejection));
             }
         }
 
         var argumentArray = mappedArguments.ToImmutable();
 
-        if (!ConventionConstructorMappingPlanner
+        if (rejection == ConstructorCandidateRejectionReason.None &&
+            !ConventionConstructorMappingPlanner
                 .HasCompatibleAutomaticArguments(
                     sourceType,
                     destination,
@@ -1113,45 +1527,68 @@ internal static class StructuredConstructMappingPlanner
                     mapperType,
                     cancellationToken))
         {
-            return null;
+            rejection = ConstructorCandidateRejectionReason.InvocationBinding;
         }
 
-        return ConventionConstructorMappingPlanner.BuildExplicitPlan(
-            destination,
-            memberMappings,
+        if (rejection == ConstructorCandidateRejectionReason.None &&
+            !memberMappings.ResultDependentCreationOnlyRules.IsEmpty)
+        {
+            rejection = ConstructorCandidateRejectionReason
+                .ResultDependentInitializer;
+        }
+        else if (rejection == ConstructorCandidateRejectionReason.None &&
+                 !memberMappings.RequiredObligations.IsEmpty &&
+                 !ConventionConstructorMappingPlanner
+                     .HasSetsRequiredMembersAttribute(constructor))
+        {
+            rejection = ConstructorCandidateRejectionReason.RequiredMember;
+        }
+
+        var plan = rejection == ConstructorCandidateRejectionReason.None
+            ? ConventionConstructorMappingPlanner.BuildExplicitPlan(
+                destination,
+                memberMappings,
+                constructor,
+                argumentArray,
+                compilation,
+                mapperType,
+                nonNullSourceName,
+                cancellationToken)
+            : null;
+
+        if (plan is null &&
+            rejection == ConstructorCandidateRejectionReason.None)
+        {
+            rejection = ConstructorCandidateRejectionReason.InvocationBinding;
+        }
+
+        return new StructuredConstructorCandidatePlanningResult(
             constructor,
-            argumentArray,
-            mapperType,
-            nonNullSourceName);
+            plan,
+            new ConstructorCandidateObservation(
+                constructor,
+                parameterObservations.ToImmutable(),
+                rejection));
     }
 
-    private static bool TryBuildAutomaticArgument(
-        ImmutableArray<ConventionReadableMember> sourceMembers,
-        IParameterSymbol parameter,
-        CSharpCompilation compilation,
-        out TypeMapperConstructorArgumentMappingModel argument)
+    private static TypeMapperConstructorArgumentMappingModel
+        BuildAutomaticArgument(
+            ConventionReadableMember sourceMember,
+            IParameterSymbol parameter,
+            SyntaxNode? originNode,
+            ConstructorParameterRuleOrigin ruleOrigin)
     {
-        if (ConventionConstructorMappingPlanner.TryFindSourceMember(
-                sourceMembers,
-                parameter.Name) is not { } sourceMember ||
-            !MappingExpressionCompatibility
-                .HasPotentiallyCompatibleConversion(
-                    sourceMember.Type,
-                    parameter.Type,
-                    compilation))
-        {
-            argument = default;
-            return false;
-        }
-
-        argument = new TypeMapperConstructorArgumentMappingModel(
+        return new TypeMapperConstructorArgumentMappingModel(
             parameter.Name,
             sourceMember.Name,
             ValueLocalName: null,
             TargetTypeName:
                 ConventionConstructorMappingPlanner
-                    .BuildTargetValueLocalTypeName(parameter));
-        return true;
+                    .BuildTargetValueLocalTypeName(parameter),
+            ParameterSymbol: parameter,
+            SourceMemberSymbol: sourceMember.Symbol,
+            RuleOriginNode: originNode,
+            RuleOrigin: ruleOrigin);
     }
 
     private static bool TryGetByConventionRules(
@@ -1411,16 +1848,184 @@ internal static class StructuredConstructMappingPlanner
                            identifier,
                            cancellationToken)
                        .Symbol,
-                   parameter);
+               parameter);
+    }
+
+    private static bool AreEquivalentPlanNodes(
+        StructuredConstructPlanNode left,
+        StructuredConstructPlanNode right)
+    {
+        if (ReferenceEquals(left, right))
+        {
+            return true;
+        }
+
+        if (left is not StructuredConstructLeafNode leftLeaf ||
+            right is not StructuredConstructLeafNode rightLeaf ||
+            leftLeaf.Kind != rightLeaf.Kind)
+        {
+            return false;
+        }
+
+        if (leftLeaf.Constructor is not { } leftConstructor ||
+            rightLeaf.Constructor is not { } rightConstructor)
+        {
+            return leftLeaf.Constructor is null &&
+                   rightLeaf.Constructor is null &&
+                   StringComparer.Ordinal.Equals(
+                       leftLeaf.Failure?.RecoveryMessage,
+                       rightLeaf.Failure?.RecoveryMessage);
+        }
+
+        return TypeMapperRuntimeEquality.AreEquivalent(
+                   leftConstructor.Constructor,
+                   rightConstructor.Constructor) &&
+               leftConstructor.CreateMemberMappings.SequenceEqual(
+                   rightConstructor.CreateMemberMappings) &&
+               leftConstructor.CreatePostMemberMappings.SequenceEqual(
+                   rightConstructor.CreatePostMemberMappings);
+    }
+
+    private static MappingFailureObservation BuildFailure(
+        TypeMapperMappingModel mapping,
+        ResultPolicyConfigurationModel configuration,
+        MappingFailureReason reason,
+        string recoveryMessage)
+    {
+        return MappingFailureObservation.Create(
+            mapping.AnalysisContext,
+            reason,
+            recoveryMessage,
+            MappingObservationOriginKind.Callback,
+            new MappingAffectedPath(
+                configuration.Kind == ResultPolicyKind.Construct
+                    ? MappingExecutionPathSet.NoPrevious
+                    : MappingExecutionPathSet.All,
+                MappingPlanPhase.ResultSelection),
+            configuration.Expression.Syntax,
+            configuration.Expression.DeclaringMapperType,
+            configuration.Expression.Syntax);
+    }
+
+    private static ConstructorPlanningObservation
+        ObserveMemberConstraintFailure(
+            ConstructorPlanningObservation observation,
+            ConstructorInitializationMappingPlan memberMappings)
+    {
+        var rejection =
+            !memberMappings.ResultDependentCreationOnlyRules.IsEmpty
+                ? ConstructorCandidateRejectionReason
+                    .ResultDependentInitializer
+                : !memberMappings.RequiredObligations.IsEmpty
+                    ? ConstructorCandidateRejectionReason.RequiredMember
+                    : ConstructorCandidateRejectionReason.InvocationBinding;
+
+        return observation with
+        {
+            Candidates = observation.Candidates.Select(candidate =>
+                    observation.SelectedConstructor is not null &&
+                    SymbolEqualityComparer.Default.Equals(
+                        candidate.Constructor,
+                        observation.SelectedConstructor)
+                        ? candidate with
+                        {
+                            RejectionReason = rejection
+                        }
+                        : candidate)
+                .ToImmutableArray()
+        };
+    }
+
+    private static StructuredConstructLeafNode BuildUnsupportedPlanLeaf(
+        TypeMapperMappingModel mapping,
+        INamedTypeSymbol sourceMapper,
+        SyntaxNode? originNode,
+        MappingExecutionPathSet paths,
+        MappingFailureReason reason,
+        ConstructorPlanningObservation? constructorObservation = null)
+    {
+        var origin = originNode ??
+            mapping.AnalysisContext.Registration.Syntax;
+        var affectedPath = new MappingAffectedPath(
+            paths,
+            MappingPlanPhase.Construction,
+            origin);
+        var terminal = reason ==
+            MappingFailureReason.TerminalNullConstruction
+                ? new StructuredTerminalObservation(
+                    StructuredTerminalKind.NullConstruction,
+                    origin,
+                    affectedPath)
+                : null;
+
+        return new StructuredConstructLeafNode(
+            StructuredConstructLeafKind.Unsupported,
+            Constructor: null,
+            ConstructorObservation: constructorObservation,
+            Failure: MappingFailureObservation.Create(
+                mapping.AnalysisContext,
+                reason,
+                UnsupportedConstructMessage,
+                terminal is null
+                    ? MappingObservationOriginKind.Constructor
+                    : MappingObservationOriginKind.Callback,
+                affectedPath,
+                origin,
+                sourceMapper,
+                origin),
+            Terminal: terminal);
     }
 
     private static TypeMapperControlFlowNode BuildRuntimeNode(
         StructuredConstructPlanNode node,
         TypeMapperMappingModel mapping,
         ConventionMemberMappingPlan memberMappings,
+        ImmutableArray<NestedMappingObservation> nestedObservations,
         bool create)
     {
+        var retainedNestedObservations =
+            mapping.NestedObservations.IsDefault
+                ? ImmutableArray<NestedMappingObservation>.Empty
+                : mapping.NestedObservations;
+        mapping = mapping with
+        {
+            NestedObservations = retainedNestedObservations.AddRange(
+                nestedObservations)
+        };
         var leaf = (StructuredConstructLeafNode)node;
+
+        if (leaf.Failure is { } leafFailure &&
+            !nestedObservations.IsDefaultOrEmpty)
+        {
+            var nestedObservation = nestedObservations[0];
+            var nestedReason = ClassifyNestedFailure(
+                nestedObservation,
+                leafFailure.Reason);
+
+            leaf = leaf with
+            {
+                Failure = nestedReason == leafFailure.Reason
+                    ? leafFailure with
+                    {
+                        NestedObservations = nestedObservations
+                    }
+                    : leafFailure with
+                    {
+                        Reason = nestedReason,
+                        OriginKind = MappingObservationOriginKind.NestedMarker,
+                        OffendingNode = nestedObservation.Producer,
+                        OffendingSymbol = nestedObservation.ProducerSymbol,
+                        PrimaryLocation = nestedObservation.Producer
+                            .GetLocation(),
+                        AffectedPath = leafFailure.AffectedPath with
+                        {
+                            Phase = MappingPlanPhase.NestedMapping,
+                            BranchOrigin = nestedObservation.Producer
+                        },
+                        NestedObservations = nestedObservations
+                    }
+            };
+        }
 
         return leaf.Kind switch
         {
@@ -1431,11 +2036,23 @@ internal static class StructuredConstructMappingPlanner
                 BuildPreviousLeaf(
                     mapping,
                     memberMappings,
-                    create),
+                    create,
+                    leaf.Terminal),
             _ => BuildUnsupportedLeaf(
                 mapping,
                 create,
-                leaf.UnsupportedMessage ?? UnsupportedConstructMessage)
+                leaf.Failure ?? MappingFailureObservation.Create(
+                    mapping.AnalysisContext,
+                    MappingFailureReason.UnsupportedStructuredSyntax,
+                    UnsupportedConstructMessage,
+                    MappingObservationOriginKind.Constructor,
+                    create
+                        ? MappingAffectedPath.NoPrevious(
+                            MappingPlanPhase.Construction)
+                        : MappingAffectedPath.ExistingDestination(
+                            MappingPlanPhase.Construction)),
+                leaf.Terminal,
+                leaf.ConstructorObservation)
         };
     }
 
@@ -1452,9 +2069,11 @@ internal static class StructuredConstructMappingPlanner
                 constructor.CreatePostMemberMappings,
             UpdateMemberMappings = [],
             ControlFlow = null,
-            CreateUnsupportedExceptionMessage = null,
-            UpdateUnsupportedExceptionMessage = null,
-            UnsupportedExceptionMessage = null
+            CreateFailure = null,
+            UpdateFailure = null,
+            Failure = null,
+            ConstructorObservation = constructor.Observation ??
+                mapping.ConstructorObservation
         };
 
         return new TypeMapperControlFlowNode(
@@ -1466,19 +2085,61 @@ internal static class StructuredConstructMappingPlanner
             ThrowExpression: null);
     }
 
+    private static MappingFailureReason ClassifyNestedFailure(
+        NestedMappingObservation observation,
+        MappingFailureReason fallback)
+    {
+        if (observation.InferredSourceType is null ||
+            observation.InferredDestinationType is null)
+        {
+            return MappingFailureReason.NestedPairUnknown;
+        }
+
+        if (observation.ResultConversion ==
+            NestedConversionStatus.Incompatible)
+        {
+            return MappingFailureReason.NestedResultIncompatible;
+        }
+
+        return observation.Operation ==
+                   DeclarativeNestedMapOperation.Update &&
+               observation.DestinationOrigin != NestedDestinationOrigin.None
+            ? MappingFailureReason.NestedUpdateDestinationInvalid
+            : fallback;
+    }
+
     private static TypeMapperControlFlowNode BuildPreviousLeaf(
         TypeMapperMappingModel mapping,
         ConventionMemberMappingPlan memberMappings,
-        bool create)
+        bool create,
+        StructuredTerminalObservation? terminal = null)
     {
         if (create)
         {
+            var origin = terminal?.OriginNode ??
+                mapping.AnalysisContext.Registration.Syntax;
+
             return BuildUnsupportedLeaf(
                 mapping,
                 create: true,
-                UnavailablePreviousMessage);
+                MappingFailureObservation.Create(
+                    mapping.AnalysisContext,
+                    MappingFailureReason.TerminalPreviousWithoutValue,
+                    UnavailablePreviousMessage,
+                    MappingObservationOriginKind.Callback,
+                    MappingAffectedPath.NoPrevious(
+                        MappingPlanPhase.Construction) with
+                    {
+                        BranchOrigin = origin
+                    },
+                    originNode: origin,
+                    offendingNode: origin),
+                terminal);
         }
 
+        var terminals = mapping.StructuredTerminals.IsDefault
+            ? ImmutableArray<StructuredTerminalObservation>.Empty
+            : mapping.StructuredTerminals;
         var leaf = mapping with
         {
             CreateConstructor = null,
@@ -1486,9 +2147,12 @@ internal static class StructuredConstructMappingPlanner
             CreatePostMemberMappings = [],
             UpdateMemberMappings = memberMappings.Update,
             ControlFlow = null,
-            CreateUnsupportedExceptionMessage = null,
-            UpdateUnsupportedExceptionMessage = null,
-            UnsupportedExceptionMessage = null
+            CreateFailure = null,
+            UpdateFailure = null,
+            Failure = null,
+            StructuredTerminals = terminal is null
+                ? terminals
+                : terminals.Add(terminal)
         };
 
         return new TypeMapperControlFlowNode(
@@ -1503,16 +2167,39 @@ internal static class StructuredConstructMappingPlanner
     private static TypeMapperControlFlowNode BuildUnsupportedLeaf(
         TypeMapperMappingModel mapping,
         bool create,
-        string message)
+        MappingFailureObservation failure,
+        StructuredTerminalObservation? terminal = null,
+        ConstructorPlanningObservation? constructorObservation = null)
     {
+        var terminals = mapping.StructuredTerminals.IsDefault
+            ? ImmutableArray<StructuredTerminalObservation>.Empty
+            : mapping.StructuredTerminals;
+
+        if (terminal is not null &&
+            constructorObservation is { } observedConstructor)
+        {
+            var constructorTerminals = observedConstructor.Terminals.IsDefault
+                ? ImmutableArray<StructuredTerminalObservation>.Empty
+                : observedConstructor.Terminals;
+            constructorObservation = observedConstructor with
+            {
+                Terminals = constructorTerminals.Add(terminal)
+            };
+        }
+
         var leaf = mapping with
         {
             ControlFlow = null,
-            CreateUnsupportedExceptionMessage =
-                create ? message : null,
-            UpdateUnsupportedExceptionMessage =
-                create ? null : message,
-            UnsupportedExceptionMessage = null
+            CreateFailure =
+                create ? failure : null,
+            UpdateFailure =
+                create ? null : failure,
+            Failure = null,
+            ConstructorObservation = constructorObservation ??
+                mapping.ConstructorObservation,
+            StructuredTerminals = terminal is null
+                ? terminals
+                : terminals.Add(terminal)
         };
 
         return new TypeMapperControlFlowNode(
@@ -1566,17 +2253,22 @@ internal readonly record struct StructuredConstructorParameterRule(
     string ParameterName,
     ExpressionSyntax Value);
 
+internal readonly record struct StructuredConstructorCandidatePlanningResult(
+    IMethodSymbol Constructor,
+    ConventionConstructorMappingPlan? Plan,
+    ConstructorCandidateObservation Observation);
+
 internal readonly record struct StructuredConstructMappingResult(
     TypeMapperControlFlowMappingModel? ControlFlow,
     ImmutableArray<string> HelperMethodDeclarations,
-    string? UnsupportedMessage)
+    MappingFailureObservation? Failure)
 {
     public static StructuredConstructMappingResult Unsupported(
-        string message) =>
+        MappingFailureObservation failure) =>
         new(
             ControlFlow: null,
             HelperMethodDeclarations: [],
-            UnsupportedMessage: message);
+            Failure: failure);
 }
 
 internal abstract record StructuredConstructPlanNode;
@@ -1584,28 +2276,10 @@ internal abstract record StructuredConstructPlanNode;
 internal sealed record StructuredConstructLeafNode(
     StructuredConstructLeafKind Kind,
     ConventionConstructorMappingPlan? Constructor,
-    string? UnsupportedMessage)
-    : StructuredConstructPlanNode
-{
-    public static StructuredConstructLeafNode Previous { get; } =
-        new(
-            StructuredConstructLeafKind.Previous,
-            Constructor: null,
-            UnsupportedMessage: null);
-
-    public static StructuredConstructLeafNode Unsupported { get; } =
-        new(
-            StructuredConstructLeafKind.Unsupported,
-            Constructor: null,
-            UnsupportedConstructMappingMessage.Value);
-
-    private static class UnsupportedConstructMappingMessage
-    {
-        public const string Value =
-            "The configured structured Construct callback cannot be " +
-            "represented by the supported declarative grammar.";
-    }
-}
+    ConstructorPlanningObservation? ConstructorObservation,
+    MappingFailureObservation? Failure,
+    StructuredTerminalObservation? Terminal)
+    : StructuredConstructPlanNode;
 
 internal enum StructuredConstructLeafKind
 {

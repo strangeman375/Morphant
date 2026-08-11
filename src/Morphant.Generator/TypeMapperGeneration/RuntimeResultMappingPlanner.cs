@@ -45,12 +45,26 @@ internal static class RuntimeResultMappingPlanner
         {
             usedGeneratedMethodNames.Remove(helperMethodName);
             return RuntimeResultMappingResult.Unsupported(
-                UnsupportedCallbackMessage);
+                MappingFailureObservation.Create(
+                    mapping.AnalysisContext,
+                    MappingFailureReason.UnsupportedRuntimeCallback,
+                    UnsupportedCallbackMessage,
+                    MappingObservationOriginKind.Callback,
+                    new MappingAffectedPath(
+                        configuration.Kind == ResultPolicyKind.ConstructUsing
+                            ? MappingExecutionPathSet.NoPrevious
+                            : MappingExecutionPathSet.All,
+                        MappingPlanPhase.Transfer),
+                    configuration.Invocation,
+                    configuration.Expression.DeclaringMapperType));
         }
 
         TypeMapperControlFlowNode BuildCallbackLeaf(bool previousAvailable)
         {
-            if (memberMappings.HasExplicitCreationOnlyMappings)
+            if (memberMappings.Observation.Rules.Any(static rule =>
+                    rule.Origin != MemberRuleOrigin.Convention &&
+                    rule.Lifecycle.HasFlag(
+                        MemberLifecycleDependency.InitOnly)))
             {
                 return BuildUnsupportedLeaf(
                     mapping,
@@ -82,9 +96,9 @@ internal static class RuntimeResultMappingPlanner
                 CreatePostMemberMappings = postMembers,
                 UpdateMemberMappings = [],
                 ControlFlow = null,
-                CreateUnsupportedExceptionMessage = null,
-                UpdateUnsupportedExceptionMessage = null,
-                UnsupportedExceptionMessage = null
+                CreateFailure = null,
+                UpdateFailure = null,
+                Failure = null
             };
 
             return Leaf(leaf);
@@ -100,7 +114,7 @@ internal static class RuntimeResultMappingPlanner
                 createRoot,
                 updateRoot),
             [method.Value.HelperMethodDeclaration],
-            UnsupportedMessage: null);
+            Failure: null);
     }
 
     private static string BuildInvocation(
@@ -161,9 +175,9 @@ internal static class RuntimeResultMappingPlanner
                 CreatePostMemberMappings = [],
                 UpdateMemberMappings = memberMappings,
                 ControlFlow = null,
-                CreateUnsupportedExceptionMessage = null,
-                UpdateUnsupportedExceptionMessage = null,
-                UnsupportedExceptionMessage = null
+                CreateFailure = null,
+                UpdateFailure = null,
+                Failure = null
             });
     }
 
@@ -172,13 +186,23 @@ internal static class RuntimeResultMappingPlanner
         bool create,
         string message)
     {
+        var failure = MappingFailureObservation.Create(
+            mapping.AnalysisContext,
+            MappingFailureReason.MemberLifecycleInvalid,
+            message,
+            MappingObservationOriginKind.Member,
+            create
+                ? MappingAffectedPath.NoPrevious(MappingPlanPhase.Members)
+                : MappingAffectedPath.ExistingDestination(
+                    MappingPlanPhase.Members));
+
         return Leaf(
             mapping with
             {
                 ControlFlow = null,
-                CreateUnsupportedExceptionMessage = create ? message : null,
-                UpdateUnsupportedExceptionMessage = create ? null : message,
-                UnsupportedExceptionMessage = null
+                CreateFailure = create ? failure : null,
+                UpdateFailure = create ? null : failure,
+                Failure = null
             });
     }
 
@@ -198,11 +222,12 @@ internal static class RuntimeResultMappingPlanner
 internal readonly record struct RuntimeResultMappingResult(
     TypeMapperControlFlowMappingModel? ControlFlow,
     ImmutableArray<string> HelperMethodDeclarations,
-    string? UnsupportedMessage)
+    MappingFailureObservation? Failure)
 {
-    public static RuntimeResultMappingResult Unsupported(string message) =>
+    public static RuntimeResultMappingResult Unsupported(
+        MappingFailureObservation failure) =>
         new(
             ControlFlow: null,
             HelperMethodDeclarations: [],
-            UnsupportedMessage: message);
+            Failure: failure);
 }

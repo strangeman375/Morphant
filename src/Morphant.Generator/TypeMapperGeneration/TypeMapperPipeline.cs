@@ -195,10 +195,25 @@ internal static class TypeMapperPipeline
             {
                 mapping = mapping with
                 {
-                    UnsupportedExceptionMessage =
-                        InvalidBaseConfigurationMessage
+                    Failure = MappingFailureObservation.Create(
+                        mapping.AnalysisContext,
+                        MappingFailureReason.InvalidBaseConfiguration,
+                        InvalidBaseConfigurationMessage,
+                        MappingObservationOriginKind.MapperConfiguration,
+                        MappingAffectedPath.All(
+                            MappingPlanPhase.Configuration),
+                        configuration.MappingPairs.ConfigureSyntax,
+                    mapperType)
                 };
             }
+
+            mapping = MappingCompletenessObservationBuilder.Attach(
+                mapping,
+                pairConfiguration,
+                compilation,
+                mapperType,
+                cancellationToken);
+
             var createMethodName = RequiresCreateMethod(
                     mapping,
                     effectiveSettings)
@@ -309,6 +324,10 @@ internal static class TypeMapperPipeline
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     previousDestinationType),
             ResultLocalName: AllocateName("result", usedLocalNames),
+            AnalysisContext: new MappingAnalysisContext(
+                pair.Registration,
+                pair.Identity,
+                mapperType),
             SourceCanBeNull: CanBeNull(pair.SourceType),
             SourceIsNullableValue:
                 MappingTypeNormalization.IsNullableValue(pair.SourceType),
@@ -321,7 +340,16 @@ internal static class TypeMapperPipeline
             CreateMemberMappings: [],
             CreatePostMemberMappings: [],
             UpdateMemberMappings: [],
-            UnsupportedExceptionMessage: pair.Reason);
+            Failure: MappingFailureObservation.Create(
+                new MappingAnalysisContext(
+                    pair.Registration,
+                    pair.Identity,
+                    mapperType),
+                MappingFailureReason.UnsupportedMappingContract,
+                pair.Reason,
+                MappingObservationOriginKind.Registration,
+                MappingAffectedPath.All(
+                    MappingPlanPhase.Configuration)));
     }
 
     private static TypeMapperMappingModel BuildMapping(
@@ -360,9 +388,14 @@ internal static class TypeMapperPipeline
                     : new TypeMapperManualMappingModel(
                         null,
                         configuration.Manual.Conversions[0].Form),
-                UnsupportedExceptionMessage =
+                Failure = MappingFailureObservation.Create(
+                    mapping.AnalysisContext,
+                    MappingFailureReason.InvalidPairConfiguration,
                     BuildConfiguredPlanConflictMessage(
-                        configuration.Conflicts)
+                        configuration.Conflicts),
+                    MappingObservationOriginKind.Registration,
+                    MappingAffectedPath.All(
+                        MappingPlanPhase.Configuration))
             };
         }
 
@@ -375,14 +408,22 @@ internal static class TypeMapperPipeline
                     ManualMapping = new TypeMapperManualMappingModel(
                         null,
                         configuration.Manual.Conversions[0].Form),
-                    UnsupportedExceptionMessage =
+                    Failure = MappingFailureObservation.Create(
+                        mapping.AnalysisContext,
+                        MappingFailureReason.InvalidManualSetting,
                         BuildManualSettingConflictMessage(
-                            configuration.Settings)
+                            configuration.Settings),
+                        MappingObservationOriginKind.Setting,
+                        MappingAffectedPath.All(
+                            MappingPlanPhase.Configuration),
+                        FindFirstExplicitManualSettingSyntax(
+                            configuration.Settings))
                 };
             }
 
             var manual = ManualConvertMappingPlanner.Build(
                 configuration.Manual.Conversions[0],
+                mapping.AnalysisContext,
                 mapperType,
                 usedGeneratedMethodNames,
                 cancellationToken);
@@ -396,7 +437,7 @@ internal static class TypeMapperPipeline
                     { } helperMethodDeclaration
                     ? [helperMethodDeclaration]
                     : [],
-                UnsupportedExceptionMessage = manual.UnsupportedMessage
+                Failure = manual.Failure
             };
         }
 
@@ -404,8 +445,14 @@ internal static class TypeMapperPipeline
         {
             return mapping with
             {
-                UnsupportedExceptionMessage =
-                    InvalidMemberSelectionMessage
+                Failure = MappingFailureObservation.Create(
+                    mapping.AnalysisContext,
+                    MappingFailureReason.InvalidSetting,
+                    InvalidMemberSelectionMessage,
+                    MappingObservationOriginKind.Setting,
+                    MappingAffectedPath.All(
+                        MappingPlanPhase.Configuration),
+                    configuration.Settings.MemberSelection.Syntax)
             };
         }
 
@@ -415,8 +462,14 @@ internal static class TypeMapperPipeline
         {
             return mapping with
             {
-                UnsupportedExceptionMessage =
-                    DirectConstructorSelectionConflictMessage
+                Failure = MappingFailureObservation.Create(
+                    mapping.AnalysisContext,
+                    MappingFailureReason.InapplicableSetting,
+                    DirectConstructorSelectionConflictMessage,
+                    MappingObservationOriginKind.Setting,
+                    MappingAffectedPath.All(
+                        MappingPlanPhase.Configuration),
+                    configuration.Settings.ConstructorSelection.Syntax)
             };
         }
 
@@ -439,11 +492,11 @@ internal static class TypeMapperPipeline
             mapperType,
             cancellationToken);
 
-        if (members.UnsupportedMessage is { } membersUnsupportedMessage)
+        if (members.Failure is { } membersFailure)
         {
             return mapping with
             {
-                UnsupportedExceptionMessage = membersUnsupportedMessage
+                Failure = membersFailure
             };
         }
 
@@ -456,6 +509,15 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel BuildFlatMapping(
             ConventionMemberMappingPlan memberMappings)
         {
+            var observedMapping = mapping with
+            {
+                MemberObservation = memberMappings.Observation,
+                NestedObservations = memberMappings.Observation
+                    .NestedMappings.IsDefault
+                        ? []
+                        : memberMappings.Observation.NestedMappings
+            };
+
             if (resultPolicy is { } configuredResultPolicy)
             {
                 if (configuredResultPolicy.Kind is
@@ -463,20 +525,19 @@ internal static class TypeMapperPipeline
                     ResultPolicyKind.ResolveUsing)
                 {
                     var runtimeResult = RuntimeResultMappingPlanner.Build(
-                            configuredResultPolicy,
-                            mapping,
-                            memberMappings,
-                            mapperType,
-                            usedGeneratedMethodNames,
-                            cancellationToken);
+                        configuredResultPolicy,
+                        observedMapping,
+                        memberMappings,
+                        mapperType,
+                        usedGeneratedMethodNames,
+                        cancellationToken);
 
-                    return mapping with
+                    return observedMapping with
                     {
                         ControlFlow = runtimeResult.ControlFlow,
                         HelperMethodDeclarations =
                             runtimeResult.HelperMethodDeclarations,
-                        UnsupportedExceptionMessage =
-                            runtimeResult.UnsupportedMessage
+                        Failure = runtimeResult.Failure
                     };
                 }
 
@@ -484,19 +545,31 @@ internal static class TypeMapperPipeline
                     destinationPlan.MemberType is not
                     INamedTypeSymbol structuredDestination)
                 {
-                    return mapping with
+                    return observedMapping with
                     {
-                        UnsupportedExceptionMessage =
+                        Failure = MappingFailureObservation.Create(
+                            observedMapping.AnalysisContext,
+                            MappingFailureReason
+                                .StructuredResultRequiresDestination,
                             "The configured structured result callback " +
-                            "requires a " +
-                            "structured destination type."
+                            "requires a structured destination type.",
+                            MappingObservationOriginKind.Callback,
+                            new MappingAffectedPath(
+                                configuredResultPolicy.Kind ==
+                                    ResultPolicyKind.Construct
+                                        ? MappingExecutionPathSet.NoPrevious
+                                        : MappingExecutionPathSet.All,
+                                MappingPlanPhase.ResultSelection),
+                            configuredResultPolicy.Invocation,
+                            configuredResultPolicy.Expression
+                                .DeclaringMapperType)
                     };
                 }
 
                 var structuredConstruct =
                     StructuredConstructMappingPlanner.Build(
                         configuredResultPolicy,
-                        mapping,
+                        observedMapping,
                         declarativeSourceType,
                         structuredDestination,
                         pair.Capabilities,
@@ -507,20 +580,19 @@ internal static class TypeMapperPipeline
                         usedGeneratedMethodNames,
                         cancellationToken);
 
-                return mapping with
+                return observedMapping with
                 {
                     ControlFlow = structuredConstruct.ControlFlow,
                     HelperMethodDeclarations =
                         structuredConstruct.HelperMethodDeclarations,
-                    UnsupportedExceptionMessage =
-                        structuredConstruct.UnsupportedMessage
+                    Failure = structuredConstruct.Failure
                 };
             }
 
             ConventionConstructorMappingPlan? constructorMapping = null;
-            string? createUnsupportedMessage = null;
+            MappingFailureObservation? createFailure = null;
 
-            constructorMapping =
+            var constructorPlanning =
                 ConventionConstructorMappingPlanner.Build(
                     declarativeSourceType,
                     destinationPlan.MemberType,
@@ -532,15 +604,33 @@ internal static class TypeMapperPipeline
                     mapperType,
                     nonNullSourceName,
                     cancellationToken);
+            constructorMapping = constructorPlanning.Plan;
+            var constructorObservation =
+                constructorPlanning.Observation with
+                {
+                    StrategyOrigin = configuration.Settings
+                        .ConstructorSelection.Syntax
+                };
 
             if (constructorMapping is null)
             {
-                createUnsupportedMessage = constructorSelection is null
-                    ? InvalidConstructorSelectionMessage
-                    : ConventionConstructionUnavailableMessage;
+                createFailure = MappingFailureObservation.Create(
+                    observedMapping.AnalysisContext,
+                    constructorSelection is null
+                        ? MappingFailureReason.InvalidSetting
+                        : MappingFailureReason.ConstructorSelectionFailed,
+                    constructorSelection is null
+                        ? InvalidConstructorSelectionMessage
+                        : ConventionConstructionUnavailableMessage,
+                    constructorSelection is null
+                        ? MappingObservationOriginKind.Setting
+                        : MappingObservationOriginKind.Convention,
+                    MappingAffectedPath.NoPrevious(
+                        MappingPlanPhase.Construction),
+                    configuration.Settings.ConstructorSelection.Syntax);
             }
 
-            return mapping with
+            return observedMapping with
             {
                 CreateConstructor = constructorMapping?.Constructor,
                 CreateMemberMappings =
@@ -550,8 +640,8 @@ internal static class TypeMapperPipeline
                     constructorMapping?.CreatePostMemberMappings ??
                     [],
                 UpdateMemberMappings = memberMappings.Update,
-                CreateUnsupportedExceptionMessage =
-                    createUnsupportedMessage
+                CreateFailure = createFailure,
+                ConstructorObservation = constructorObservation
             };
         }
 
@@ -619,6 +709,10 @@ internal static class TypeMapperPipeline
                 TypeMapperMappingTypePolicy.GetGeneratedTypeName(
                     destinationPlan.MemberType),
             ResultLocalName: resultLocalName,
+            AnalysisContext: new MappingAnalysisContext(
+                pair.Registration,
+                pair.Identity,
+                mapperType),
             SourceCanBeNull: CanBeNull(pair.SourceType),
             SourceIsNullableValue:
                 MappingTypeNormalization.IsNullableValue(
@@ -718,7 +812,7 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel mapping,
         EffectiveMappingSettings settings)
     {
-        if (mapping.UnsupportedExceptionMessage is not null ||
+        if (mapping.Failure is not null ||
             mapping.ManualMapping is not null ||
             !settings.IsMappingModeValid ||
             !settings.IsNullSourceHandlingValid)
@@ -737,7 +831,7 @@ internal static class TypeMapperPipeline
     private static bool CreatePathNeedsOperationParameter(
         TypeMapperMappingModel mapping)
     {
-        return mapping.CreateUnsupportedExceptionMessage is not null ||
+        return mapping.CreateFailure is not null ||
                mapping.ControlFlow is { } controlFlow &&
                ContainsGeneratedCreateFailure(controlFlow.CreateRoot) ||
                mapping.PostMemberControlFlow is { } postControlFlow &&
@@ -754,8 +848,8 @@ internal static class TypeMapperPipeline
 
         if (node.Leaf is { } leaf)
         {
-            return leaf.UnsupportedExceptionMessage is not null ||
-                   leaf.CreateUnsupportedExceptionMessage is not null ||
+            return leaf.Failure is not null ||
+                   leaf.CreateFailure is not null ||
                    leaf.CreateDirectExpression is null &&
                    leaf.CreateFactory is null &&
                    leaf.CreateConstructor is null;
@@ -787,7 +881,7 @@ internal static class TypeMapperPipeline
         TypeMapperMemberControlFlowNode node)
     {
         if (node.ThrowUsesCurrentMappingOperation ||
-            node.UnsupportedExceptionMessage is not null)
+            node.Failure is not null)
         {
             return true;
         }
@@ -818,7 +912,7 @@ internal static class TypeMapperPipeline
         TypeMapperMappingModel mapping,
         EffectiveMappingSettings settings)
     {
-        return mapping.UnsupportedExceptionMessage is null &&
+        return mapping.Failure is null &&
                mapping.ManualMapping is null &&
                settings.IsMappingModeValid &&
                settings.SupportsUpdate &&
@@ -839,6 +933,36 @@ internal static class TypeMapperPipeline
                    PairConfigurationSettingOrigin.Explicit ||
                settings.UnmappedMemberValidation.Origin ==
                    PairConfigurationSettingOrigin.Explicit;
+    }
+
+    private static SyntaxNode? FindFirstExplicitManualSettingSyntax(
+        PairConfigurationSettings settings)
+    {
+        if (settings.NullSourceHandling.Origin ==
+            PairConfigurationSettingOrigin.Explicit)
+        {
+            return settings.NullSourceHandling.Syntax;
+        }
+
+        if (settings.NullDestinationHandling.Origin ==
+            PairConfigurationSettingOrigin.Explicit)
+        {
+            return settings.NullDestinationHandling.Syntax;
+        }
+
+        if (settings.ConstructorSelection.Origin ==
+            PairConfigurationSettingOrigin.Explicit)
+        {
+            return settings.ConstructorSelection.Syntax;
+        }
+
+        if (settings.MemberSelection.Origin ==
+            PairConfigurationSettingOrigin.Explicit)
+        {
+            return settings.MemberSelection.Syntax;
+        }
+
+        return settings.UnmappedMemberValidation.Syntax;
     }
 
     private static string BuildManualSettingConflictMessage(
@@ -933,11 +1057,6 @@ internal static class TypeMapperPipeline
             conflicts,
             PairConfigurationConflict.InaccessibleInheritedPlan,
             "an inherited callback is inaccessible from the generated mapper");
-        AddConflictReason(
-            reasons,
-            conflicts,
-            PairConfigurationConflict.CyclicIncludeBase,
-            "IncludeBase contains a cycle");
 
         return "The configured mapping plan is invalid: " +
                string.Join("; ", reasons) + ".";

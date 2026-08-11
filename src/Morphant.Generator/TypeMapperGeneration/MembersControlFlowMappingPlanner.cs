@@ -55,11 +55,11 @@ internal static class MembersControlFlowMappingPlanner
                     mapperType)
                 : buildFlatMapping(leaf.Value);
 
-            if (flat.UnsupportedExceptionMessage is { } unsupported)
+            if (flat.Failure is { } unsupported)
             {
                 return mapping with
                 {
-                    UnsupportedExceptionMessage = unsupported
+                    Failure = unsupported
                 };
             }
 
@@ -97,8 +97,9 @@ internal static class MembersControlFlowMappingPlanner
             {
                 return mapping with
                 {
-                    UnsupportedExceptionMessage =
-                        UnsupportedMembersMessage
+                    Failure = BuildUnsupportedMembersFailure(
+                        mapping,
+                        members)
                 };
             }
 
@@ -108,7 +109,7 @@ internal static class MembersControlFlowMappingPlanner
             {
                 ControlFlow = resultDependentControlFlow,
                 HelperMethodDeclarations = helperDeclarations.ToImmutable(),
-                UnsupportedExceptionMessage = null
+                Failure = null
             };
         }
 
@@ -167,8 +168,9 @@ internal static class MembersControlFlowMappingPlanner
         {
             return mapping with
             {
-                UnsupportedExceptionMessage =
-                    UnsupportedMembersMessage
+                Failure = BuildUnsupportedMembersFailure(
+                    mapping,
+                    members)
             };
         }
 
@@ -180,7 +182,7 @@ internal static class MembersControlFlowMappingPlanner
                 createRoot,
                 updateRoot),
             HelperMethodDeclarations = helperDeclarations.ToImmutable(),
-            UnsupportedExceptionMessage = null
+            Failure = null
         };
     }
 
@@ -682,15 +684,40 @@ internal static class MembersControlFlowMappingPlanner
                    right.CreateConstructor) &&
                left.CreateMemberMappings.SequenceEqual(
                    right.CreateMemberMappings) &&
-               StringComparer.Ordinal.Equals(
-                   left.CreateUnsupportedExceptionMessage,
-                   right.CreateUnsupportedExceptionMessage) &&
-               StringComparer.Ordinal.Equals(
-                   left.UpdateUnsupportedExceptionMessage,
-                   right.UpdateUnsupportedExceptionMessage) &&
-               StringComparer.Ordinal.Equals(
-                   left.UnsupportedExceptionMessage,
-                   right.UnsupportedExceptionMessage);
+               AreEquivalentFailure(
+                   left.CreateFailure,
+                   right.CreateFailure) &&
+               AreEquivalentFailure(
+                   left.UpdateFailure,
+                   right.UpdateFailure) &&
+               AreEquivalentFailure(
+                   left.Failure,
+                   right.Failure);
+    }
+
+    private static bool AreEquivalentFailure(
+        MappingFailureObservation? left,
+        MappingFailureObservation? right)
+    {
+        return left is null || right is null
+            ? left is null && right is null
+            : StringComparer.Ordinal.Equals(
+                left.RecoveryMessage,
+                right.RecoveryMessage);
+    }
+
+    private static MappingFailureObservation BuildUnsupportedMembersFailure(
+        TypeMapperMappingModel mapping,
+        MembersDeclarativeControlFlowPlan members)
+    {
+        return MappingFailureObservation.Create(
+            mapping.AnalysisContext,
+            MappingFailureReason.UnsupportedStructuredSyntax,
+            UnsupportedMembersMessage,
+            MappingObservationOriginKind.Callback,
+            MappingAffectedPath.All(MappingPlanPhase.Members),
+            members.TransferScope,
+            members.MapperType);
     }
 
     private static bool AreEquivalentConstructor(
@@ -705,8 +732,46 @@ internal static class MembersControlFlowMappingPlanner
         return StringComparer.Ordinal.Equals(
                    left.Value.ConstructedTypeName,
                    right.Value.ConstructedTypeName) &&
-               left.Value.Arguments.SequenceEqual(
-                   right.Value.Arguments);
+               left.Value.Arguments.Length ==
+                   right.Value.Arguments.Length &&
+               left.Value.Arguments.Zip(
+                       right.Value.Arguments,
+                       AreEquivalentConstructorArgument)
+                   .All(static equivalent => equivalent);
+    }
+
+    private static bool AreEquivalentConstructorArgument(
+        TypeMapperConstructorArgumentMappingModel left,
+        TypeMapperConstructorArgumentMappingModel right)
+    {
+        return StringComparer.Ordinal.Equals(
+                   left.ParameterName,
+                   right.ParameterName) &&
+               StringComparer.Ordinal.Equals(
+                   left.SourceMemberName,
+                   right.SourceMemberName) &&
+               StringComparer.Ordinal.Equals(
+                   left.ValueLocalName,
+                   right.ValueLocalName) &&
+               StringComparer.Ordinal.Equals(
+                   left.ExplicitValueExpression,
+                   right.ExplicitValueExpression) &&
+               StringComparer.Ordinal.Equals(
+                   left.ValueLocalTypeName,
+                   right.ValueLocalTypeName) &&
+               StringComparer.Ordinal.Equals(
+                   left.TargetTypeName,
+                   right.TargetTypeName) &&
+               Equals(
+                   left.DependencyExpression,
+                   right.DependencyExpression) &&
+               (left.EvaluationLocals.IsDefault
+                    ? ImmutableArray<TypeMapperLocalValueModel>.Empty
+                    : left.EvaluationLocals)
+               .SequenceEqual(
+                   right.EvaluationLocals.IsDefault
+                       ? ImmutableArray<TypeMapperLocalValueModel>.Empty
+                       : right.EvaluationLocals);
     }
 
     private static TypeMapperControlFlowNode SelectRoot(

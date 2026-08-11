@@ -88,6 +88,7 @@ internal static class DeclarativeNestedMapExpression
                         out _)) ||
                 !TryBuildMapping(
                     invocation,
+                    expression,
                     method,
                     effectiveTargetType,
                     effectiveTargetContext,
@@ -100,6 +101,18 @@ internal static class DeclarativeNestedMapExpression
                     cancellationToken,
                     out var mapping))
             {
+                usageRegistry.Observe(
+                    BuildFailedObservation(
+                        invocation,
+                        expression,
+                        method,
+                        effectiveTargetType,
+                        effectiveTargetContext,
+                        usageRegistry,
+                        resultName,
+                        semanticModel,
+                        mapperType,
+                        cancellationToken));
                 mappings = ImmutableDictionary<
                     InvocationExpressionSyntax,
                     TypeMapperNestedMapExpressionModel>.Empty;
@@ -248,6 +261,7 @@ internal static class DeclarativeNestedMapExpression
 
     private static bool TryBuildMapping(
         InvocationExpressionSyntax invocation,
+        SyntaxNode terminalTarget,
         IMethodSymbol method,
         ITypeSymbol? targetType,
         DeclarativeNestedMapTargetContext? targetContext,
@@ -470,8 +484,113 @@ internal static class DeclarativeNestedMapExpression
                     destinationType,
                     semanticModel.Compilation)),
             compatibleDestinationName,
-            incompatibleDestinationName);
+            incompatibleDestinationName,
+            new NestedMappingObservation(
+                invocation,
+                method,
+                terminalTarget,
+                nestedOperation,
+                sourceType,
+                destinationType,
+                NestedConversionStatus.Compatible,
+                readOnlyTarget is not null
+                    ? NestedDestinationOrigin.ReadOnlyProxy
+                    : generatedDestinationExpression is not null
+                        ? NestedDestinationOrigin.GeneratedCurrent
+                        : operation.Arguments.Any(argument =>
+                            argument.Parameter?.Name == "destination")
+                            ? NestedDestinationOrigin.Explicit
+                            : NestedDestinationOrigin.None,
+                operation.Arguments.FirstOrDefault(argument =>
+                        argument.Parameter?.Name == "destination")
+                    ?.Syntax is ArgumentSyntax destinationArgument
+                        ? destinationArgument.Expression
+                        : null,
+                generatedDestinationExpression,
+                readOnlyTarget?.Member,
+                usageRegistry.GetAdaptiveTargets(invocation)));
+        usageRegistry.Observe(mapping.Observation);
         return true;
+    }
+
+    private static NestedMappingObservation BuildFailedObservation(
+        InvocationExpressionSyntax invocation,
+        SyntaxNode terminalTarget,
+        IMethodSymbol method,
+        ITypeSymbol? targetType,
+        DeclarativeNestedMapTargetContext? targetContext,
+        DeclarativeNestedMapUsageRegistry usageRegistry,
+        string? resultName,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        var operation = semanticModel.GetOperation(
+            invocation,
+            cancellationToken) as IInvocationOperation;
+        var sourceArgument = operation?.Arguments.FirstOrDefault(argument =>
+            argument.Parameter?.Name == "source")?.Syntax as ArgumentSyntax;
+        var sourceType = sourceArgument is null
+            ? null
+            : semanticModel.GetTypeInfo(
+                    sourceArgument.Expression,
+                    cancellationToken)
+                .Type;
+        var destinationType = method.IsGenericMethod &&
+            method.TypeArguments.Length == 1
+                ? method.TypeArguments[0]
+                : targetType;
+        var nestedOperation = TryGetOperation(
+                method,
+                targetContext,
+                out var resolvedOperation)
+            ? resolvedOperation
+            : (DeclarativeNestedMapOperation?)null;
+        var explicitDestination = operation?.Arguments.FirstOrDefault(
+                argument => argument.Parameter?.Name == "destination")
+            ?.Syntax is ArgumentSyntax destinationArgument
+                ? destinationArgument.Expression
+                : null;
+        var readOnlyTarget = default(ReadOnlyMemberUpdateTarget);
+        var hasReadOnlyProxy = operation is not null &&
+            TryBuildReadOnlyMemberUpdateTarget(
+                invocation,
+                operation,
+                resultName,
+                semanticModel,
+                cancellationToken,
+                out readOnlyTarget);
+        var resultConversion = destinationType is null
+            ? NestedConversionStatus.Unknown
+            : targetType is null ||
+              HasWarningFreeImplicitConversion(
+                  destinationType,
+                  targetType,
+                  semanticModel.Compilation,
+                  mapperType,
+                  cancellationToken)
+                ? NestedConversionStatus.Compatible
+                : NestedConversionStatus.Incompatible;
+
+        return new NestedMappingObservation(
+            invocation,
+            method,
+            terminalTarget,
+            nestedOperation,
+            sourceType,
+            destinationType,
+            resultConversion,
+            hasReadOnlyProxy
+                ? NestedDestinationOrigin.ReadOnlyProxy
+                : explicitDestination is not null
+                    ? NestedDestinationOrigin.Explicit
+                    : targetContext?.CurrentDestinationExpression is not null
+                        ? NestedDestinationOrigin.GeneratedCurrent
+                        : NestedDestinationOrigin.None,
+            explicitDestination,
+            targetContext?.CurrentDestinationExpression,
+            hasReadOnlyProxy ? readOnlyTarget.Member : null,
+            usageRegistry.GetAdaptiveTargets(invocation));
     }
 
     private static bool HasCompatibleDestinationArgument(
@@ -640,7 +759,8 @@ internal static class DeclarativeNestedMapExpression
         target = new ReadOnlyMemberUpdateTarget(
             property.Name,
             memberType,
-            resultName + "." + Identifier(property.Name));
+            resultName + "." + Identifier(property.Name),
+            property);
         return true;
     }
 
@@ -897,7 +1017,8 @@ internal readonly record struct TypeMapperNestedMapExpressionModel
     string? GuardVariableName,
     string RuntimeDestinationTypeName,
     string? CompatibleDestinationName,
-    string? IncompatibleDestinationName
+    string? IncompatibleDestinationName,
+    NestedMappingObservation Observation
 );
 
 internal enum DeclarativeNestedMapOperation
@@ -918,13 +1039,54 @@ internal sealed class DeclarativeNestedMapUsageRegistry
         _adaptiveUpdateTargets = new(
             DeclarativeNestedMapExpression
                 .InvocationReferenceComparer.Instance);
+    private readonly Dictionary<InvocationExpressionSyntax, List<string>>
+        _adaptiveUpdateTargetUses = new(
+            DeclarativeNestedMapExpression
+                .InvocationReferenceComparer.Instance);
     private readonly HashSet<string> _usedGuardNames =
         new(StringComparer.Ordinal);
+    private readonly Dictionary<InvocationExpressionSyntax,
+        NestedMappingObservation> _observations = new(
+            DeclarativeNestedMapExpression
+                .InvocationReferenceComparer.Instance);
+
+    public ImmutableArray<NestedMappingObservation> Observations =>
+        _observations.Values.ToImmutableArray();
+
+    public void Observe(NestedMappingObservation observation)
+    {
+        _observations[observation.Producer] = observation;
+    }
+
+    public ImmutableArray<string> GetAdaptiveTargets(
+        InvocationExpressionSyntax invocation)
+    {
+        return _adaptiveUpdateTargetUses.TryGetValue(
+            invocation,
+            out var targets)
+                ? targets.ToImmutableArray()
+                : [];
+    }
 
     public bool TryRegisterAdaptiveUpdate(
         InvocationExpressionSyntax invocation,
         string currentDestinationExpression)
     {
+        if (!_adaptiveUpdateTargetUses.TryGetValue(
+                invocation,
+                out var targets))
+        {
+            targets = [];
+            _adaptiveUpdateTargetUses.Add(invocation, targets);
+        }
+
+        if (!targets.Contains(
+                currentDestinationExpression,
+                StringComparer.Ordinal))
+        {
+            targets.Add(currentDestinationExpression);
+        }
+
         if (_adaptiveUpdateTargets.TryGetValue(
                 invocation,
                 out var existingTarget))
@@ -959,4 +1121,5 @@ internal sealed class DeclarativeNestedMapUsageRegistry
 internal readonly record struct ReadOnlyMemberUpdateTarget(
     string MemberName,
     ITypeSymbol MemberType,
-    string Expression);
+    string Expression,
+    ISymbol Member);

@@ -137,6 +137,5 @@ internal enum PairConfigurationConflict
     MissingBaseConfiguration = 1 << 5,
     MissingBasePair = 1 << 6,
     IncompatibleBasePair = 1 << 7,
-    InaccessibleInheritedPlan = 1 << 8,
-    CyclicIncludeBase = 1 << 9
+    InaccessibleInheritedPlan = 1 << 8
 }

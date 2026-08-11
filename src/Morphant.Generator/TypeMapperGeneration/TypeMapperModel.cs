@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
 
@@ -34,6 +35,7 @@ internal readonly record struct TypeMapperMappingModel
     string MaybeNullDestinationTypeName,
     string NonNullDestinationTypeName,
     string ResultLocalName,
+    MappingAnalysisContext AnalysisContext,
     bool SourceCanBeNull,
     bool SourceIsNullableValue,
     bool DestinationCanBeNull,
@@ -47,10 +49,16 @@ internal readonly record struct TypeMapperMappingModel
     ImmutableArray<TypeMapperMemberMappingModel> UpdateMemberMappings,
     TypeMapperControlFlowMappingModel? ControlFlow = null,
     TypeMapperManualMappingModel? ManualMapping = null,
-    string? CreateUnsupportedExceptionMessage = null,
-    string? UpdateUnsupportedExceptionMessage = null,
-    string? UnsupportedExceptionMessage = null,
+    MappingFailureObservation? CreateFailure = null,
+    MappingFailureObservation? UpdateFailure = null,
+    MappingFailureObservation? Failure = null,
     TypeMapperMemberControlFlowNode? PostMemberControlFlow = null,
+    ConstructorPlanningObservation? ConstructorObservation = null,
+    MemberPlanningObservation? MemberObservation = null,
+    ImmutableArray<NestedMappingObservation> NestedObservations = default,
+    CompletenessPlanningObservation? CompletenessObservation = null,
+    ImmutableArray<StructuredTerminalObservation> StructuredTerminals =
+        default,
     EffectiveMappingSettings EffectiveSettings = default,
     string? CreateImplMethodName = null,
     string? UpdateImplMethodName = null,
@@ -103,7 +111,11 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
     string? ValueLocalTypeName = null,
     string? TargetTypeName = null,
     TypeMapperDependencyExpressionModel? DependencyExpression = null,
-    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
+    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default,
+    IParameterSymbol? ParameterSymbol = null,
+    ISymbol? SourceMemberSymbol = null,
+    SyntaxNode? RuleOriginNode = null,
+    ConstructorParameterRuleOrigin? RuleOrigin = null
 );
 
 internal readonly record struct TypeMapperMemberMappingModel
@@ -175,7 +187,7 @@ internal sealed record TypeMapperMemberControlFlowNode
     TypeMapperMemberControlFlowNode? WhenFalse,
     ImmutableArray<TypeMapperMemberMappingModel> MemberMappings,
     string? ThrowExpression,
-    string? UnsupportedExceptionMessage = null,
+    MappingFailureObservation? Failure = null,
     string? SwitchExpression = null,
     ImmutableArray<TypeMapperMemberSwitchSectionModel> SwitchSections =
         default,

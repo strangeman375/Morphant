@@ -24,6 +24,9 @@ internal sealed class TransferredCodePolicy
 
     public bool HasTransferredCode => !_expressions.IsEmpty;
 
+    public BoundConfigurationExpression? PrimaryExpression =>
+        _expressions.IsEmpty ? null : _expressions[0];
+
     public bool RequiresUnsafeContext { get; }
 
     public static TransferredCodePolicy Build(
@@ -64,6 +67,32 @@ internal sealed class TransferredCodePolicy
                     diagnostic.Id,
                     isNullableWarning,
                     cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool IsSourceOwned(
+        Diagnostic diagnostic,
+        CancellationToken cancellationToken)
+    {
+        foreach (var expression in _expressions)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var sourceDiagnostics = expression.SemanticModel.GetDiagnostics(
+                expression.Syntax.Span,
+                cancellationToken);
+
+            if (sourceDiagnostics.Any(sourceDiagnostic =>
+                    sourceDiagnostic.Id == diagnostic.Id &&
+                    sourceDiagnostic.Severity == diagnostic.Severity &&
+                    StringComparer.Ordinal.Equals(
+                        sourceDiagnostic.GetMessage(),
+                        diagnostic.GetMessage())))
             {
                 return true;
             }

@@ -13,7 +13,7 @@ internal static class ConventionConstructorMappingPlanner
     private const string SetsRequiredMembersAttributeMetadataName =
         "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute";
 
-    public static ConventionConstructorMappingPlan? Build(
+    public static ConventionConstructorPlanningResult Build(
         ITypeSymbol sourceType,
         ITypeSymbol? destination,
         ConstructorInitializationMappingPlan memberMappings,
@@ -24,16 +24,28 @@ internal static class ConventionConstructorMappingPlanner
         string nonNullSourceName,
         CancellationToken cancellationToken)
     {
+        ConstructorPlanningObservation EmptyObservation() =>
+            new(
+                constructorSelection,
+                StrategyOrigin: null,
+                Candidates: [],
+                SelectedConstructor: null,
+                Terminals: []);
+
         if (!capabilities.StructuredConstruction)
         {
-            return null;
+            return new ConventionConstructorPlanningResult(
+                Plan: null,
+                EmptyObservation());
         }
 
         if (destination is not INamedTypeSymbol namedDestination ||
             namedDestination.IsAbstract ||
             constructorSelection is null)
         {
-            return null;
+            return new ConventionConstructorPlanningResult(
+                Plan: null,
+                EmptyObservation());
         }
 
         var constructors =
@@ -42,38 +54,104 @@ internal static class ConventionConstructorMappingPlanner
                 compilation,
                 cancellationToken);
 
-        if (constructorSelection == ConstructorSelectionValue.Greediest)
-        {
-            return TrySelectGreediestPlan(
-                constructors,
-                constructor => BuildPlanForConstructor(
-                    sourceType,
-                    namedDestination,
-                    memberMappings,
-                    constructor,
-                    compilation,
-                    mapperType,
-                    nonNullSourceName,
-                    cancellationToken),
+        var sourceMembers =
+            ConventionMemberMappingPlanner.BuildReadableMembers(
+                sourceType,
+                compilation,
+                mapperType,
                 cancellationToken);
-        }
-
-        if (TrySelectConstructor(
-                constructors,
-                constructorSelection.Value) is not { } constructor)
-        {
-            return null;
-        }
-
-        return BuildPlanForConstructor(
-            sourceType,
+        var destinationMembers = BuildConstructorDestinationMembers(
             namedDestination,
-            memberMappings,
-            constructor,
+            memberMappings.Observation,
             compilation,
             mapperType,
-            nonNullSourceName,
             cancellationToken);
+        var plannedCandidates = constructors.Select(constructor =>
+                (
+                    Constructor: constructor,
+                    Plan: BuildPlanForConstructor(
+                        sourceType,
+                        namedDestination,
+                        memberMappings,
+                        constructor,
+                        compilation,
+                        mapperType,
+                        nonNullSourceName,
+                        cancellationToken)
+                ))
+            .ToImmutableArray();
+        ConventionConstructorMappingPlan? selectedPlan = null;
+        IMethodSymbol? selectedConstructor = null;
+
+        if (constructorSelection == ConstructorSelectionValue.Greediest)
+        {
+            var selectedArgumentCount = -1;
+            var hasTie = false;
+
+            foreach (var candidate in plannedCandidates)
+            {
+                if (candidate.Plan is not { } candidatePlan)
+                {
+                    continue;
+                }
+
+                var argumentCount =
+                    candidatePlan.Constructor.Arguments.Length;
+
+                if (argumentCount > selectedArgumentCount)
+                {
+                    selectedPlan = candidatePlan;
+                    selectedConstructor = candidate.Constructor;
+                    selectedArgumentCount = argumentCount;
+                    hasTie = false;
+                }
+                else if (argumentCount == selectedArgumentCount)
+                {
+                    hasTie = true;
+                }
+            }
+
+            if (hasTie)
+            {
+                selectedPlan = null;
+                selectedConstructor = null;
+            }
+        }
+        else if (TrySelectConstructor(
+                     constructors,
+                     constructorSelection.Value) is { } constructor)
+        {
+            selectedConstructor = constructor;
+            selectedPlan = plannedCandidates.First(candidate =>
+                    AreSameConstructor(
+                        candidate.Constructor,
+                        constructor))
+                .Plan;
+        }
+
+        var observation = new ConstructorPlanningObservation(
+            constructorSelection,
+            StrategyOrigin: null,
+            plannedCandidates.Select(candidate =>
+                    BuildCandidateObservation(
+                        candidate.Constructor,
+                        candidate.Plan,
+                        sourceMembers,
+                        destinationMembers,
+                        memberMappings,
+                        compilation))
+                .ToImmutableArray(),
+            selectedConstructor,
+            Terminals: []);
+
+        return new ConventionConstructorPlanningResult(
+            selectedPlan is { } plan
+                ? plan with
+                {
+                    Observation = observation
+                }
+                : null,
+            observation);
     }
 
     private static ConventionConstructorMappingPlan?
@@ -90,8 +168,8 @@ internal static class ConventionConstructorMappingPlanner
         var setsRequiredMembers =
             HasSetsRequiredMembersAttribute(constructor);
 
-        if (memberMappings.HasResultDependentCreationOnlyMappings ||
-            memberMappings.HasUnmappedRequiredMembers &&
+        if (!memberMappings.ResultDependentCreationOnlyRules.IsEmpty ||
+            !memberMappings.RequiredObligations.IsEmpty &&
             !setsRequiredMembers)
         {
             return null;
@@ -203,6 +281,111 @@ internal static class ConventionConstructorMappingPlanner
             mapperType,
             nonNullSourceName,
             namedDestination);
+    }
+
+    private static ConstructorCandidateObservation
+        BuildCandidateObservation(
+            IMethodSymbol constructor,
+            ConventionConstructorMappingPlan? plan,
+            ImmutableArray<ConventionReadableMember> sourceMembers,
+            ImmutableArray<ISymbol> destinationMembers,
+            ConstructorInitializationMappingPlan memberMappings,
+            CSharpCompilation compilation)
+    {
+        var parameterRules =
+            ImmutableArray.CreateBuilder<
+                ConstructorParameterRuleObservation>();
+        var rejection = ConstructorCandidateRejectionReason.None;
+
+        if (!memberMappings.ResultDependentCreationOnlyRules.IsEmpty)
+        {
+            rejection = ConstructorCandidateRejectionReason
+                .ResultDependentInitializer;
+        }
+        else if (!memberMappings.RequiredObligations.IsEmpty &&
+                 !HasSetsRequiredMembersAttribute(constructor))
+        {
+            rejection = ConstructorCandidateRejectionReason.RequiredMember;
+        }
+
+        var hasPlanWideMemberRejection =
+            rejection != ConstructorCandidateRejectionReason.None;
+
+        foreach (var parameter in constructor.Parameters)
+        {
+            var sourceMember = TryFindSourceMember(
+                sourceMembers,
+                parameter.Name);
+            var ruleOrigin = ConstructorParameterRuleOrigin.Convention;
+            var ruleRejection = ConstructorCandidateRejectionReason.None;
+            var applicable = true;
+
+            if (sourceMember is null)
+            {
+                ruleOrigin = CanOmit(parameter)
+                    ? ConstructorParameterRuleOrigin.Omitted
+                    : ConstructorParameterRuleOrigin.Convention;
+                applicable = CanOmit(parameter);
+                ruleRejection = applicable
+                    ? ConstructorCandidateRejectionReason.None
+                    : ConstructorCandidateRejectionReason
+                        .MissingSourceMember;
+            }
+            else if (!MappingExpressionCompatibility
+                         .HasPotentiallyCompatibleConversion(
+                             sourceMember.Value.Type,
+                             parameter.Type,
+                             compilation))
+            {
+                applicable = CanOmit(parameter);
+                ruleOrigin = applicable
+                    ? ConstructorParameterRuleOrigin.Omitted
+                    : ConstructorParameterRuleOrigin.Convention;
+                ruleRejection = applicable
+                    ? ConstructorCandidateRejectionReason.None
+                    : ConstructorCandidateRejectionReason
+                        .IncompatibleArgument;
+            }
+            else if (plan is null &&
+                     !hasPlanWideMemberRejection &&
+                     rejection == ConstructorCandidateRejectionReason.None)
+            {
+                applicable = false;
+                ruleRejection = ConstructorCandidateRejectionReason
+                    .InvocationBinding;
+            }
+
+            if (rejection == ConstructorCandidateRejectionReason.None &&
+                ruleRejection != ConstructorCandidateRejectionReason.None)
+            {
+                rejection = ruleRejection;
+            }
+
+            parameterRules.Add(
+                new ConstructorParameterRuleObservation(
+                    parameter,
+                    parameter.Name,
+                    ruleOrigin,
+                    OriginNode: null,
+                    sourceMember?.Symbol,
+                    FindAssociatedDestinationMember(
+                        destinationMembers,
+                        parameter.Name),
+                    applicable,
+                    ruleRejection));
+        }
+
+        if (plan is null &&
+            rejection == ConstructorCandidateRejectionReason.None)
+        {
+            rejection = ConstructorCandidateRejectionReason
+                .InvocationBinding;
+        }
+
+        return new ConstructorCandidateObservation(
+            constructor,
+            parameterRules.ToImmutable(),
+            rejection);
     }
 
     internal static string BuildTargetValueLocalTypeName(
@@ -732,7 +915,11 @@ internal static class ConventionConstructorMappingPlanner
                         ValueLocalName: null,
                         TargetTypeName:
                             BuildTargetValueLocalTypeName(
-                                argument.Parameter)))
+                                argument.Parameter),
+                        ParameterSymbol: argument.Parameter,
+                        SourceMemberSymbol: argument.SourceMember.Symbol,
+                        RuleOrigin:
+                            ConstructorParameterRuleOrigin.Convention))
             .ToArray();
 
         for (var argumentIndex = 0;
@@ -954,14 +1141,22 @@ internal static class ConventionConstructorMappingPlanner
         ConstructorInitializationMappingPlan memberMappings,
         IMethodSymbol constructor,
         ImmutableArray<TypeMapperConstructorArgumentMappingModel> arguments,
+        CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
-        string nonNullSourceName)
+        string nonNullSourceName,
+        CancellationToken cancellationToken)
     {
         var setsRequiredMembers =
             HasSetsRequiredMembersAttribute(constructor);
+        var destinationMembers = BuildConstructorDestinationMembers(
+            destination,
+            memberMappings.Observation,
+            compilation,
+            mapperType,
+            cancellationToken);
 
-        if (memberMappings.HasResultDependentCreationOnlyMappings ||
-            memberMappings.HasUnmappedRequiredMembers &&
+        if (!memberMappings.ResultDependentCreationOnlyRules.IsEmpty ||
+            !memberMappings.RequiredObligations.IsEmpty &&
             !setsRequiredMembers)
         {
             return null;
@@ -1093,7 +1288,48 @@ internal static class ConventionConstructorMappingPlanner
                     destination),
                 argumentModels.ToImmutableArray()),
             create.ToImmutable(),
-            memberMappings.PostMappings);
+            memberMappings.PostMappings,
+            new ConstructorPlanningObservation(
+                ConstructorSelectionValue.Explicit,
+                StrategyOrigin: null,
+                Candidates:
+                [
+                    new ConstructorCandidateObservation(
+                        constructor,
+                        constructor.Parameters.Select(parameter =>
+                            {
+                                var argument = arguments.FirstOrDefault(
+                                    candidate =>
+                                        StringComparer.Ordinal.Equals(
+                                            candidate.ParameterName,
+                                            parameter.Name));
+                                var hasArgument = !String.IsNullOrEmpty(
+                                    argument.ParameterName);
+
+                                return new
+                                    ConstructorParameterRuleObservation(
+                                        parameter,
+                                        parameter.Name,
+                                        !hasArgument
+                                            ? ConstructorParameterRuleOrigin
+                                                .Omitted
+                                            : argument.RuleOrigin ??
+                                              ConstructorParameterRuleOrigin
+                                                  .Value,
+                                        argument.RuleOriginNode,
+                                        argument.SourceMemberSymbol,
+                                        FindAssociatedDestinationMember(
+                                            destinationMembers,
+                                            parameter.Name),
+                                        IsApplicable: true,
+                                        ConstructorCandidateRejectionReason
+                                            .None);
+                            })
+                            .ToImmutableArray(),
+                        ConstructorCandidateRejectionReason.None)
+                ],
+                constructor,
+                Terminals: []));
     }
 
     internal static string BuildExplicitValueLocalTypeName(
@@ -1113,6 +1349,84 @@ internal static class ConventionConstructorMappingPlanner
             .WithNullableAnnotation(nullableAnnotation)
             .ToDisplayString(
                 SymbolDisplayFormats.FullyQualifiedNullable);
+    }
+
+    internal static ISymbol? FindAssociatedDestinationMember(
+        ImmutableArray<ISymbol> members,
+        string parameterName)
+    {
+        foreach (var member in members)
+        {
+            if (StringComparer.Ordinal.Equals(
+                    member.Name,
+                    parameterName))
+            {
+                return member;
+            }
+        }
+
+        ISymbol? result = null;
+
+        foreach (var member in members)
+        {
+            if (!StringComparer.OrdinalIgnoreCase.Equals(
+                    member.Name,
+                    parameterName))
+            {
+                continue;
+            }
+
+            if (result is not null)
+            {
+                return null;
+            }
+
+            result = member;
+        }
+
+        return result;
+    }
+
+    internal static ImmutableArray<ISymbol>
+        BuildConstructorDestinationMembers(
+            ITypeSymbol destination,
+            MemberPlanningObservation? memberObservation,
+            CSharpCompilation compilation,
+            INamedTypeSymbol mapperType,
+            CancellationToken cancellationToken)
+    {
+        var result = ImmutableArray.CreateBuilder<ISymbol>();
+
+        void Add(ISymbol member)
+        {
+            if (!result.Any(candidate =>
+                    SymbolEqualityComparer.Default.Equals(
+                        candidate,
+                        member)))
+            {
+                result.Add(member);
+            }
+        }
+
+        if (memberObservation is { } observation)
+        {
+            foreach (var member in observation.SupportedDestinationMembers)
+            {
+                Add(member);
+            }
+        }
+
+        foreach (var member in ConventionMemberMappingPlanner
+                     .BuildReadableMembers(
+                         destination,
+                         compilation,
+                         mapperType,
+                         cancellationToken))
+        {
+            Add(member.Symbol);
+        }
+
+        return result.ToImmutable();
     }
 
     internal static bool HasSetsRequiredMembersAttribute(
@@ -1216,4 +1530,9 @@ internal static class ConventionConstructorMappingPlanner
 internal readonly record struct ConventionConstructorMappingPlan(
     TypeMapperConstructorMappingModel Constructor,
     ImmutableArray<TypeMapperMemberMappingModel> CreateMemberMappings,
-    ImmutableArray<TypeMapperMemberMappingModel> CreatePostMemberMappings);
+    ImmutableArray<TypeMapperMemberMappingModel> CreatePostMemberMappings,
+    ConstructorPlanningObservation? Observation = null);
+
+internal readonly record struct ConventionConstructorPlanningResult(
+    ConventionConstructorMappingPlan? Plan,
+    ConstructorPlanningObservation Observation);

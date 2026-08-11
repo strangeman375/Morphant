@@ -37,12 +37,14 @@ internal static class TypeMapperTransferValidator
 
         var mappings = model.Mappings.ToArray();
         var suppressions = new HashSet<string>?[mappings.Length];
-        var unsupported = new bool[mappings.Length];
-        var hasUnmappedDiagnostic = false;
+        var failures = new MappingFailureObservation?[mappings.Length];
+        var unmappedDiagnostics =
+            ImmutableArray.CreateBuilder<TransferPreflightDiagnostic>();
 
-        foreach (var diagnostic in diagnostics)
+        foreach (var preflightDiagnostic in diagnostics)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = preflightDiagnostic.Diagnostic;
 
             if (!TypeMapperEmitter.TryGetTransferProbeMappingIndex(
                     diagnostic,
@@ -51,13 +53,18 @@ internal static class TypeMapperTransferValidator
                 mappingIndex >= policies.Length ||
                 !policies[mappingIndex].HasTransferredCode)
             {
-                hasUnmappedDiagnostic = true;
+                unmappedDiagnostics.Add(preflightDiagnostic);
                 continue;
             }
 
-            if (policies[mappingIndex].CanSuppress(
-                    diagnostic,
-                    cancellationToken))
+            if (diagnostic.DefaultSeverity ==
+                    DiagnosticSeverity.Warning &&
+                (policies[mappingIndex].IsSourceOwned(
+                     diagnostic,
+                     cancellationToken) ||
+                 policies[mappingIndex].CanSuppress(
+                     diagnostic,
+                     cancellationToken)))
             {
                 (suppressions[mappingIndex] ??=
                     new HashSet<string>(StringComparer.Ordinal))
@@ -65,17 +72,23 @@ internal static class TypeMapperTransferValidator
             }
             else
             {
-                unsupported[mappingIndex] = true;
+                failures[mappingIndex] = BuildFailure(
+                    mappings[mappingIndex],
+                    policies[mappingIndex],
+                    preflightDiagnostic);
             }
         }
 
-        if (hasUnmappedDiagnostic)
+        if (unmappedDiagnostics.Count > 0)
         {
             for (var index = 0; index < policies.Length; index++)
             {
                 if (policies[index].HasTransferredCode)
                 {
-                    unsupported[index] = true;
+                    failures[index] ??= BuildFailure(
+                        mappings[index],
+                        policies[index],
+                        unmappedDiagnostics[0]);
                 }
             }
         }
@@ -83,7 +96,7 @@ internal static class TypeMapperTransferValidator
         ApplyDecisions(
             mappings,
             suppressions,
-            unsupported);
+            failures);
         model = model with
         {
             Mappings = mappings.ToImmutableArray()
@@ -100,9 +113,10 @@ internal static class TypeMapperTransferValidator
             return model;
         }
 
-        foreach (var diagnostic in diagnostics)
+        foreach (var preflightDiagnostic in diagnostics)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = preflightDiagnostic.Diagnostic;
 
             if (TypeMapperEmitter.TryGetTransferProbeMappingIndex(
                     diagnostic,
@@ -112,7 +126,11 @@ internal static class TypeMapperTransferValidator
                 policies[mappingIndex].HasTransferredCode)
             {
                 mappings[mappingIndex] = MakeUnsupported(
-                    mappings[mappingIndex]);
+                    mappings[mappingIndex],
+                    BuildFailure(
+                        mappings[mappingIndex],
+                        policies[mappingIndex],
+                        preflightDiagnostic));
                 continue;
             }
 
@@ -120,7 +138,12 @@ internal static class TypeMapperTransferValidator
             {
                 if (policies[index].HasTransferredCode)
                 {
-                    mappings[index] = MakeUnsupported(mappings[index]);
+                    mappings[index] = MakeUnsupported(
+                        mappings[index],
+                        BuildFailure(
+                            mappings[index],
+                            policies[index],
+                            preflightDiagnostic));
                 }
             }
         }
@@ -134,13 +157,15 @@ internal static class TypeMapperTransferValidator
     private static void ApplyDecisions(
         TypeMapperMappingModel[] mappings,
         IReadOnlyList<HashSet<string>?> suppressions,
-        IReadOnlyList<bool> unsupported)
+        IReadOnlyList<MappingFailureObservation?> failures)
     {
         for (var index = 0; index < mappings.Length; index++)
         {
-            if (unsupported[index])
+            if (failures[index] is { } failure)
             {
-                mappings[index] = MakeUnsupported(mappings[index]);
+                mappings[index] = MakeUnsupported(
+                    mappings[index],
+                    failure);
                 continue;
             }
 
@@ -159,11 +184,39 @@ internal static class TypeMapperTransferValidator
     }
 
     private static TypeMapperMappingModel MakeUnsupported(
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        MappingFailureObservation failure)
     {
+        var completeness = mapping.CompletenessObservation;
+
+        if (completeness is not null)
+        {
+            var uncertainty = completeness.ErrorDerivedUncertainty
+                .ToBuilder();
+
+            foreach (var member in completeness.SupportedSourceMembers
+                         .AddRange(
+                             completeness.SupportedDestinationMembers))
+            {
+                if (!uncertainty.Any(candidate =>
+                        SymbolEqualityComparer.Default.Equals(
+                            candidate,
+                            member)))
+                {
+                    uncertainty.Add(member);
+                }
+            }
+
+            completeness = completeness with
+            {
+                ErrorDerivedUncertainty = uncertainty.ToImmutable()
+            };
+        }
+
         return mapping with
         {
-            UnsupportedExceptionMessage = UnsupportedTransferMessage,
+            Failure = failure,
+            CompletenessObservation = completeness,
             CreateImplMethodName = null,
             UpdateImplMethodName = null,
             CreateImplUsesOperation = false,
@@ -172,7 +225,28 @@ internal static class TypeMapperTransferValidator
         };
     }
 
-    private static ImmutableArray<Diagnostic> GetDiagnostics(
+    private static MappingFailureObservation BuildFailure(
+        TypeMapperMappingModel mapping,
+        TransferredCodePolicy policy,
+        TransferPreflightDiagnostic diagnostic)
+    {
+        var sourceExpression = policy.PrimaryExpression;
+
+        return MappingFailureObservation.Create(
+            mapping.AnalysisContext,
+            MappingFailureReason.CallbackCannotBeTransferred,
+            UnsupportedTransferMessage,
+            MappingObservationOriginKind.CompilerPreflight,
+            MappingAffectedPath.All(MappingPlanPhase.Transfer),
+            sourceExpression?.Syntax,
+            sourceExpression?.DeclaringMapperType,
+            diagnostic.Node,
+            diagnostic.Symbol,
+            sourceExpression?.Syntax.GetLocation(),
+            [diagnostic.Diagnostic.Location]);
+    }
+
+    private static ImmutableArray<TransferPreflightDiagnostic> GetDiagnostics(
         TypeMapperModel model,
         CSharpCompilation compilation,
         CSharpParseOptions? parseOptions,
@@ -196,6 +270,26 @@ internal static class TypeMapperTransferValidator
                 diagnostic.Severity is
                     DiagnosticSeverity.Warning or
                     DiagnosticSeverity.Error)
+            .Select(diagnostic =>
+            {
+                var node = syntaxTree.GetRoot(cancellationToken)
+                    .FindNode(
+                        diagnostic.Location.SourceSpan,
+                        getInnermostNodeForTie: true);
+
+                return new TransferPreflightDiagnostic(
+                    diagnostic,
+                    node,
+                    semanticModel.GetSymbolInfo(
+                            node,
+                            cancellationToken)
+                        .Symbol);
+            })
             .ToImmutableArray();
     }
+
+    private sealed record TransferPreflightDiagnostic(
+        Diagnostic Diagnostic,
+        SyntaxNode Node,
+        ISymbol? Symbol);
 }

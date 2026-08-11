@@ -254,7 +254,7 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullSourceTypeName} source,");
         writer.Line("global::Morphant.Context.MappingContext context)");
 
-        if (mapping.UnsupportedExceptionMessage is
+        if (mapping.Failure is
             { } configurationFailure)
         {
             WriteMappingConfigurationFailure(
@@ -386,7 +386,7 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         string operationExpression)
     {
-        if (mapping.UnsupportedExceptionMessage is
+        if (mapping.Failure is
             { } unsupportedExceptionMessage)
         {
             WriteMappingConfigurationFailureStatement(
@@ -517,7 +517,7 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         string operationExpression)
     {
-        if (mapping.UnsupportedExceptionMessage is
+        if (mapping.Failure is
             { } unsupportedMappingMessage)
         {
             WriteMappingConfigurationFailureStatement(
@@ -528,7 +528,7 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.CreateUnsupportedExceptionMessage is
+        if (mapping.CreateFailure is
             { } unsupportedExceptionMessage)
         {
             WriteMappingConfigurationFailureStatement(
@@ -842,7 +842,7 @@ internal static class TypeMapperEmitter
             $"{mapping.MaybeNullDestinationTypeName} destination,");
         writer.Line("global::Morphant.Context.MappingContext context)");
 
-        if (mapping.UnsupportedExceptionMessage is
+        if (mapping.Failure is
             { } configurationFailure)
         {
             WriteMappingConfigurationFailure(
@@ -933,7 +933,7 @@ internal static class TypeMapperEmitter
         TypeMapperManualMappingModel manualMapping,
         bool update)
     {
-        if (mapping.UnsupportedExceptionMessage is
+        if (mapping.Failure is
             { } unsupportedExceptionMessage)
         {
             WriteMappingConfigurationFailure(
@@ -1058,7 +1058,7 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
-        if (mapping.UnsupportedExceptionMessage is
+        if (mapping.Failure is
             { } unsupportedExceptionMessage)
         {
             WriteMappingConfigurationFailureStatement(
@@ -1397,7 +1397,7 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         bool allowReplacement)
     {
-        if (mapping.UnsupportedExceptionMessage is
+        if (mapping.Failure is
             { } unsupportedMappingMessage)
         {
             WriteMappingConfigurationFailureStatement(
@@ -1408,7 +1408,7 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.UpdateUnsupportedExceptionMessage is
+        if (mapping.UpdateFailure is
             { } unsupportedExceptionMessage)
         {
             WriteMappingConfigurationFailureStatement(
@@ -1606,7 +1606,7 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (node.UnsupportedExceptionMessage is { } unsupportedMessage)
+        if (node.Failure is { } unsupportedMessage)
         {
             WriteMappingConfigurationFailureStatement(
                 writer,
@@ -1638,6 +1638,17 @@ internal static class TypeMapperEmitter
     private static void WriteMappingConfigurationFailure(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
+        MappingFailureObservation failure,
+        bool update) =>
+        WriteMappingConfigurationFailure(
+            writer,
+            mapping,
+            failure.RecoveryMessage,
+            update);
+
+    private static void WriteMappingConfigurationFailure(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
         string reason,
         bool update) =>
         WriteMappingConfigurationFailure(
@@ -1645,6 +1656,17 @@ internal static class TypeMapperEmitter
             mapping,
             reason,
             MappingOperationExpression(update));
+
+    private static void WriteMappingConfigurationFailure(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        MappingFailureObservation failure,
+        string operationExpression) =>
+        WriteMappingConfigurationFailure(
+            writer,
+            mapping,
+            failure.RecoveryMessage,
+            operationExpression);
 
     private static void WriteMappingConfigurationFailure(
         CodeWriter writer,
@@ -1672,6 +1694,17 @@ internal static class TypeMapperEmitter
     private static void WriteMappingConfigurationFailureStatement(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
+        MappingFailureObservation failure,
+        bool update) =>
+        WriteMappingConfigurationFailureStatement(
+            writer,
+            mapping,
+            failure.RecoveryMessage,
+            update);
+
+    private static void WriteMappingConfigurationFailureStatement(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
         string reason,
         bool update) =>
         WriteMappingConfigurationFailureStatement(
@@ -1679,6 +1712,17 @@ internal static class TypeMapperEmitter
             mapping,
             reason,
             MappingOperationExpression(update));
+
+    private static void WriteMappingConfigurationFailureStatement(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        MappingFailureObservation failure,
+        string operationExpression) =>
+        WriteMappingConfigurationFailureStatement(
+            writer,
+            mapping,
+            failure.RecoveryMessage,
+            operationExpression);
 
     private static void WriteMappingConfigurationFailureStatement(
         CodeWriter writer,

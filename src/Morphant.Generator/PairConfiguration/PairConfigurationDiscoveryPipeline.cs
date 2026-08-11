@@ -488,7 +488,7 @@ internal static class PairConfigurationDiscoveryPipeline
         CancellationToken cancellationToken,
         out PairConfigurationInvocationChain chain)
     {
-        if (ContainsLogicalBranchingOutsideLambdas(
+        if (ContainsLogicalBranchingOutsideCallbacks(
                 expression,
                 cancellationToken))
         {
@@ -559,6 +559,11 @@ internal static class PairConfigurationDiscoveryPipeline
     {
         foreach (var invocation in invocations)
         {
+            if (IsConfigurationCallbackInvocationCandidate(invocation))
+            {
+                continue;
+            }
+
             foreach (var argument in invocation.ArgumentList.Arguments)
             {
                 foreach (var identifier in argument.Expression
@@ -584,15 +589,21 @@ internal static class PairConfigurationDiscoveryPipeline
         return false;
     }
 
-    private static bool ContainsLogicalBranchingOutsideLambdas(
+    private static bool ContainsLogicalBranchingOutsideCallbacks(
         ExpressionSyntax expression,
         CancellationToken cancellationToken)
     {
         foreach (var node in expression.DescendantNodesAndSelf(
                      static node =>
-                         node is not AnonymousFunctionExpressionSyntax))
+                         node is not AnonymousFunctionExpressionSyntax &&
+                         !IsConfigurationCallbackArgument(node)))
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsConfigurationCallbackArgument(node))
+            {
+                continue;
+            }
 
             if (node is ConditionalExpressionSyntax or
                 SwitchExpressionSyntax or
@@ -607,6 +618,33 @@ internal static class PairConfigurationDiscoveryPipeline
         }
 
         return false;
+    }
+
+    private static bool IsConfigurationCallbackArgument(SyntaxNode node)
+    {
+        return node is ExpressionSyntax expression &&
+               expression.Parent is ArgumentSyntax
+               {
+                   Parent.Parent: InvocationExpressionSyntax invocation
+               } argument &&
+               ReferenceEquals(argument.Expression, expression) &&
+               IsConfigurationCallbackInvocationCandidate(invocation);
+    }
+
+    private static bool IsConfigurationCallbackInvocationCandidate(
+        InvocationExpressionSyntax invocation)
+    {
+        if (invocation.ArgumentList.Arguments.Count != 1 ||
+            invocation.Expression is not MemberAccessExpressionSyntax
+            {
+                Name.Identifier.ValueText: var methodName
+            })
+        {
+            return false;
+        }
+
+        return methodName is "Construct" or "Resolve" or
+            "ConstructUsing" or "ResolveUsing" or "Members" or "Convert";
     }
 
     private static ExpressionSyntax UnwrapParentheses(

@@ -10,6 +10,7 @@ internal static class ManualConvertMappingPlanner
 
     public static ManualConvertMappingResult Build(
         ConvertConfigurationModel configuration,
+        MappingAnalysisContext analysisContext,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
         CancellationToken cancellationToken)
@@ -34,14 +35,21 @@ internal static class ManualConvertMappingPlanner
         {
             usedGeneratedMethodNames.Remove(helperMethodName);
             return ManualConvertMappingResult.Unsupported(
-                UnsupportedConvertMessage);
+                MappingFailureObservation.Create(
+                    analysisContext,
+                    MappingFailureReason.UnsupportedRuntimeCallback,
+                    UnsupportedConvertMessage,
+                    MappingObservationOriginKind.Callback,
+                    MappingAffectedPath.All(MappingPlanPhase.Transfer),
+                    configuration.Invocation,
+                    configuration.Expression.DeclaringMapperType));
         }
 
         return new ManualConvertMappingResult(
             method.Value.HelperMethodName,
             method.Value.HelperMethodDeclaration,
             configuration.Form,
-            UnsupportedMessage: null);
+            Failure: null);
     }
 }
 
@@ -49,12 +57,13 @@ internal readonly record struct ManualConvertMappingResult(
     string? HelperMethodName,
     string? HelperMethodDeclaration,
     ConvertConfigurationForm Form,
-    string? UnsupportedMessage)
+    MappingFailureObservation? Failure)
 {
-    public static ManualConvertMappingResult Unsupported(string message) =>
+    public static ManualConvertMappingResult Unsupported(
+        MappingFailureObservation failure) =>
         new(
             HelperMethodName: null,
             HelperMethodDeclaration: null,
             Form: default,
-            UnsupportedMessage: message);
+            Failure: failure);
 }

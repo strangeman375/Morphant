@@ -232,7 +232,6 @@ internal static class PairConfigurationModelBuilder
                 static pair => MappingPairKey.Create(pair.Pair));
             var composedLocalPairs =
                 new Dictionary<MappingPairKey, PairConfigurationModel>();
-            var composingPairs = new HashSet<MappingPairKey>();
             var composedPairs =
                 ImmutableArray.CreateBuilder<PairConfigurationModel>(
                     level.Pairs.Length);
@@ -244,7 +243,6 @@ internal static class PairConfigurationModelBuilder
                     localPairs,
                     inheritedPairs,
                     composedLocalPairs,
-                    composingPairs,
                     hasConnectedBaseConfiguration:
                         levelIndex + 1 < levels.Length,
                     hasUnavailableBaseConfiguration &&
@@ -296,7 +294,6 @@ internal static class PairConfigurationModelBuilder
         IReadOnlyDictionary<MappingPairKey, PairConfigurationModel>
             inheritedPairs,
         IDictionary<MappingPairKey, PairConfigurationModel> composedLocalPairs,
-        ISet<MappingPairKey> composingPairs,
         bool hasConnectedBaseConfiguration,
         bool hasUnavailableBaseConfiguration,
         CSharpCompilation compilation)
@@ -308,11 +305,8 @@ internal static class PairConfigurationModelBuilder
             return cached;
         }
 
-        composingPairs.Add(localKey);
-
         var includeBase = local.Composition.IncludeBaseCalls.FirstOrDefault();
         PairConfigurationModel? basePair = null;
-        var isCyclic = false;
 
         if (includeBase != default)
         {
@@ -320,20 +314,19 @@ internal static class PairConfigurationModelBuilder
                 includeBase.SourceType,
                 includeBase.DestinationType);
 
-            if (localPairs.TryGetValue(includeBaseKey, out var localBasePair))
+            if (includeBaseKey != localKey &&
+                localPairs.TryGetValue(includeBaseKey, out var localBasePair))
             {
-                if (composingPairs.Contains(includeBaseKey))
-                {
-                    isCyclic = true;
-                }
-                else
+                if (IsCompatibleBasePair(
+                        local.Pair,
+                        includeBase,
+                        compilation))
                 {
                     basePair = ComposeLevelPair(
                         localBasePair,
                         localPairs,
                         inheritedPairs,
                         composedLocalPairs,
-                        composingPairs,
                         hasConnectedBaseConfiguration,
                         hasUnavailableBaseConfiguration,
                         compilation);
@@ -347,24 +340,13 @@ internal static class PairConfigurationModelBuilder
             }
         }
 
-        var composed = isCyclic
-            ? local with
-            {
-                Composition = local.Composition with
-                {
-                    IncludedBaseSettings = []
-                },
-                Conflicts = local.Conflicts |
-                    PairConfigurationConflict.CyclicIncludeBase
-            }
-            : ComposePair(
-                local,
-                basePair,
-                hasConnectedBaseConfiguration,
-                hasUnavailableBaseConfiguration,
-                compilation);
+        var composed = ComposePair(
+            local,
+            basePair,
+            hasConnectedBaseConfiguration,
+            hasUnavailableBaseConfiguration,
+            compilation);
 
-        composingPairs.Remove(localKey);
         composedLocalPairs[localKey] = composed;
         return composed;
     }
@@ -435,22 +417,66 @@ internal static class PairConfigurationModelBuilder
 
         var inherited = basePair.Value;
         var localHasConvert = !local.Manual.Conversions.IsEmpty;
+        var localHasDeclarative =
+            !local.Declarative.ResultPolicies.IsEmpty ||
+            !local.Declarative.Members.IsEmpty;
+        var exactSamePair =
+            MappingPairKey.Create(local.Pair) ==
+            MappingPairKey.Create(inherited.Pair);
         DeclarativePairConfigurationModel declarative;
+        ManualPairConfigurationModel manual;
 
-        if (localHasConvert)
+        if (!exactSamePair)
+        {
+            if (localHasConvert)
+            {
+                declarative = local.Declarative;
+                conflicts |= inherited.Conflicts &
+                    CompositionConflictMask;
+            }
+            else
+            {
+                declarative = new DeclarativePairConfigurationModel(
+                    local.Declarative.ResultPolicies,
+                    inherited.Declarative.Members.AddRange(
+                        local.Declarative.Members));
+                conflicts |= inherited.Conflicts &
+                    IncludedMembersConflictMask;
+            }
+
+            manual = local.Manual;
+        }
+        else if (localHasConvert)
         {
             declarative = local.Declarative;
+            manual = local.Manual;
             conflicts |= inherited.Conflicts &
                 CompositionConflictMask;
         }
-        else
+        else if (localHasDeclarative)
         {
+            var localHasResultPolicy =
+                !local.Declarative.ResultPolicies.IsEmpty;
+
             declarative = new DeclarativePairConfigurationModel(
-                local.Declarative.ResultPolicies,
+                localHasResultPolicy
+                    ? local.Declarative.ResultPolicies
+                    : inherited.Declarative.ResultPolicies,
                 inherited.Declarative.Members.AddRange(
                     local.Declarative.Members));
+            manual = local.Manual;
             conflicts |= inherited.Conflicts &
-                IncludedMembersConflictMask;
+                (CompositionConflictMask |
+                 PairConfigurationConflict.DuplicateMembers |
+                 (localHasResultPolicy
+                     ? PairConfigurationConflict.None
+                     : PairConfigurationConflict.DuplicateResultPolicy));
+        }
+        else
+        {
+            declarative = inherited.Declarative;
+            manual = inherited.Manual;
+            conflicts |= inherited.Conflicts;
         }
 
         var composition = local.Composition with
@@ -464,7 +490,7 @@ internal static class PairConfigurationModelBuilder
         return local with
         {
             Declarative = declarative,
-            Manual = local.Manual,
+            Manual = manual,
             Composition = composition,
             Conflicts = conflicts
         };
@@ -474,8 +500,7 @@ internal static class PairConfigurationModelBuilder
         PairConfigurationConflict.DuplicateIncludeBase |
         PairConfigurationConflict.MissingBaseConfiguration |
         PairConfigurationConflict.MissingBasePair |
-        PairConfigurationConflict.IncompatibleBasePair |
-        PairConfigurationConflict.CyclicIncludeBase;
+        PairConfigurationConflict.IncompatibleBasePair;
 
     private const PairConfigurationConflict IncludedMembersConflictMask =
         CompositionConflictMask |

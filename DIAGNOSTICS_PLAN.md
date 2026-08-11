@@ -4,9 +4,10 @@
 
 Последнее обновление: 11 августа 2026 года.
 
-Статус: таксономия и полный контракт категорий 1–12 приняты. Каталог завершён;
-реализация diagnostics заблокирована только перечисленными в разделе 7
-предварительными выравниваниями production-model.
+Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
+разделе 7 предварительные выравнивания production-model реализованы и ожидают
+пользовательского ревью; первый vertical diagnostic slice до этого ревью
+заблокирован.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -79,7 +80,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован предварительными выравниваниями раздела 7 |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован пользовательским ревью реализованных выравниваний раздела 7 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -4858,14 +4859,30 @@ Package-like integration-категория независимо проверя�
    discard/assignment shapes сохраняют category-8 unsupported ownership, а
    runtime callbacks остаются обычным C#.
 
-Эти выравнивания не вводят новую diagnostic semantics и могут быть выполнены
-одним предварительным coherent change с самостоятельными focused regression
-tests. После них этап 3 выполняется вертикальными срезами по согласованным
-категориям:
+Эти выравнивания не вводят новую diagnostic semantics и выполнены одним
+предварительным coherent change с самостоятельными focused regression tests.
 
+Статус на 11 августа 2026 года: все пять выравниваний реализованы и ожидают
+пользовательского ревью. Exact same-pair regression исполняет inherited
+`Construct` / `Resolve` / `ConstructUsing` / `ResolveUsing` / `Members` /
+`Convert` и три local-precedence формы. Отдельные consumer scenarios фиксируют
+ownership callback arguments всех шести families, отсутствие runtime getter
+read у structured source discard, обычный runtime read у `Using` callbacks и
+то, что настоящий local symbol `_` discard-ом не считается. Focused
+exact-source test сохраняет source-owned `CS0618` и подавляет только generated
+duplicate. Focused model tests отдельно фиксируют полный constructor candidate
+set, selected constructor, rejection reason и parameter-rule origin для
+convention и explicit structured planning. Representative ранее принятые
+inheritance и control-flow consumers повторно исполняются без изменения
+semantics.
+
+После принятия preflight-а этап 3 выполняется вертикальными срезами по
+согласованным категориям:
 detection, diagnostic publication, locations, deduplication, recovery,
 самостоятельные unit- и integration-тесты и соответствующая документация
 входят в один coherent change.
+
+Первый vertical slice категории 1 заблокирован до принятия этого preflight-а.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

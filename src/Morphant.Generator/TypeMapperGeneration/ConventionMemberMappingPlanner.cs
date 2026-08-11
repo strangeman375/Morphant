@@ -65,16 +65,15 @@ internal static class ConventionMemberMappingPlanner
                 [],
                 [],
                 [],
-                HasUnmappedRequiredMembers: false,
-                HasExplicitCreationOnlyMappings: false,
-                HasResultDependentCreationOnlyMappings: false);
+                new MemberPlanningObservation([], [], [], [], []));
         }
 
-        var sourceMembers = BuildReadableMembers(
+        var readableMembers = BuildReadableMembers(
                 sourceType,
                 compilation,
                 mapperType,
-                cancellationToken)
+                cancellationToken);
+        var sourceMembers = readableMembers
             .ToDictionary(
                 static member => member.Name,
                 StringComparer.Ordinal);
@@ -90,7 +89,16 @@ internal static class ConventionMemberMappingPlanner
                 MemberTypeCompatibilityCandidate>();
         var candidateRequiredMembers =
             ImmutableArray.CreateBuilder<bool>();
-        var hasUnmappedRequiredMembers = false;
+        var candidateSourceMembers =
+            ImmutableArray.CreateBuilder<ISymbol>();
+        var candidateDestinationMembers =
+            ImmutableArray.CreateBuilder<ISymbol>();
+        var supportedDestinationMembers =
+            ImmutableArray.CreateBuilder<ISymbol>();
+        var requiredObligations =
+            ImmutableArray.CreateBuilder<ISymbol>();
+        var rules =
+            ImmutableArray.CreateBuilder<MemberRuleObservation>();
 
         foreach (var memberGroup in BuildEffectiveMemberGroups(
                      destination,
@@ -100,34 +108,52 @@ internal static class ConventionMemberMappingPlanner
 
             var isRequired = IsRequiredInstanceMember(
                 memberGroup);
+            var requiredMember = isRequired
+                ? FindRequiredMember(memberGroup)
+                : null;
 
-            if (!hasMemberCapability ||
-                (excludeGeneratedPlanMemberNames &&
-                 IsGeneratedPlanMemberName(
-                     memberGroup.Name,
-                     destination)) ||
-                TryBuildWritableMember(
-                    memberGroup,
-                    destination,
-                    compilation,
-                    destinationAccessWithin,
-                    includeInitOnlyProperties) is not { } writableMember ||
+            var writableMember = hasMemberCapability &&
+                !(excludeGeneratedPlanMemberNames &&
+                  IsGeneratedPlanMemberName(
+                      memberGroup.Name,
+                      destination))
+                    ? TryBuildWritableMember(
+                        memberGroup,
+                        destination,
+                        compilation,
+                        destinationAccessWithin,
+                        includeInitOnlyProperties)
+                    : null;
+
+            if (writableMember is { } supportedWritable)
+            {
+                supportedDestinationMembers.Add(
+                    supportedWritable.Symbol);
+            }
+
+            if (writableMember is not { } selectedWritable ||
                 !sourceMembers.TryGetValue(
-                    writableMember.Name,
+                    selectedWritable.Name,
                     out var sourceMember))
             {
-                hasUnmappedRequiredMembers |= isRequired;
+                if (requiredMember is not null)
+                {
+                    requiredObligations.Add(requiredMember);
+                }
+
                 continue;
             }
 
             candidates.Add(
                 new MemberTypeCompatibilityCandidate(
                     sourceMember.Name,
-                    writableMember.Name,
+                    selectedWritable.Name,
                     sourceMember.Type,
-                    writableMember.Type,
-                    writableMember.CanAssign));
+                    selectedWritable.Type,
+                    selectedWritable.CanAssign));
             candidateRequiredMembers.Add(isRequired);
+            candidateSourceMembers.Add(sourceMember.Symbol);
+            candidateDestinationMembers.Add(selectedWritable.Symbol);
         }
 
         var compatibleCandidates =
@@ -149,8 +175,12 @@ internal static class ConventionMemberMappingPlanner
 
             if (!compatibleCandidates[index])
             {
-                hasUnmappedRequiredMembers |=
-                    candidateRequiredMembers[index];
+                if (candidateRequiredMembers[index])
+                {
+                    requiredObligations.Add(
+                        candidateDestinationMembers[index]);
+                }
+
                 continue;
             }
 
@@ -161,6 +191,19 @@ internal static class ConventionMemberMappingPlanner
                 SourceValueLocalName: null);
 
             create.Add(mapping);
+
+            rules.Add(
+                new MemberRuleObservation(
+                    candidateDestinationMembers[index],
+                    candidateSourceMembers[index],
+                    MemberRuleOrigin.Convention,
+                    OriginNode: null,
+                    candidateRequiredMembers[index],
+                    MemberLifecycleDependency.Creation |
+                    (candidate.CanAssign
+                        ? MemberLifecycleDependency.ExistingDestination
+                        : MemberLifecycleDependency.InitOnly),
+                    HiddenImportedSlot: null));
 
             if (candidate.CanAssign)
             {
@@ -178,9 +221,13 @@ internal static class ConventionMemberMappingPlanner
             immutableCreate,
             immutableUpdate,
             immutableUpdate,
-            hasUnmappedRequiredMembers,
-            HasExplicitCreationOnlyMappings: false,
-            HasResultDependentCreationOnlyMappings: false);
+            new MemberPlanningObservation(
+                readableMembers.Select(static member => member.Symbol)
+                    .ToImmutableArray(),
+                supportedDestinationMembers.ToImmutable(),
+                rules.ToImmutable(),
+                requiredObligations.ToImmutable(),
+                Terminals: []));
     }
 
     internal static ImmutableArray<ConventionReadableMember>
@@ -253,17 +300,19 @@ internal static class ConventionMemberMappingPlanner
                     writableMember.Name,
                     writableMember.Type,
                     writableMember.CanAssign,
-                    IsRequiredInstanceMember(memberGroup)));
+                    IsRequiredInstanceMember(memberGroup),
+                    writableMember.Symbol));
         }
 
         return result.ToImmutable();
     }
 
-    internal static bool HasUnmappedRequiredMembers(
+    internal static ImmutableArray<ISymbol> FindUnmappedRequiredMembers(
         ITypeSymbol destination,
         ImmutableArray<TypeMapperMemberMappingModel> mappings,
         CancellationToken cancellationToken)
     {
+        var result = ImmutableArray.CreateBuilder<ISymbol>();
         var mappedNames = new HashSet<string>(
             mappings.Select(
                 static mapping => mapping.DestinationMemberName),
@@ -278,11 +327,11 @@ internal static class ConventionMemberMappingPlanner
             if (IsRequiredInstanceMember(memberGroup) &&
                 !mappedNames.Contains(memberGroup.Name))
             {
-                return true;
+                result.Add(FindRequiredMember(memberGroup)!);
             }
         }
 
-        return false;
+        return result.ToImmutable();
     }
 
     private static ImmutableArray<EffectiveMemberGroup>
@@ -738,7 +787,8 @@ internal static class ConventionMemberMappingPlanner
 
                 return new ConventionReadableMember(
                     property.Name,
-                    property.Type);
+                    property.Type,
+                    property);
             }
 
             if (member is IFieldSymbol field &&
@@ -754,7 +804,8 @@ internal static class ConventionMemberMappingPlanner
             {
                 return new ConventionReadableMember(
                     field.Name,
-                    field.Type);
+                    field.Type,
+                    field);
             }
         }
 
@@ -796,7 +847,8 @@ internal static class ConventionMemberMappingPlanner
                 return new WritableMember(
                     property.Name,
                     property.Type,
-                    CanAssign: !setter.IsInitOnly);
+                    CanAssign: !setter.IsInitOnly,
+                    property);
             }
 
             if (member is IFieldSymbol field &&
@@ -814,7 +866,8 @@ internal static class ConventionMemberMappingPlanner
                 return new WritableMember(
                     field.Name,
                     field.Type,
-                    CanAssign: true);
+                    CanAssign: true,
+                    field);
             }
         }
 
@@ -854,10 +907,10 @@ internal static class ConventionMemberMappingPlanner
                memberName == "ToString";
     }
 
-    private static bool IsRequiredInstanceMember(
+    private static ISymbol? FindRequiredMember(
         EffectiveMemberGroup memberGroup)
     {
-        return memberGroup.Members.Any(
+        return memberGroup.Members.FirstOrDefault(
             static member =>
                 !member.IsStatic &&
                 member is IPropertySymbol
@@ -869,6 +922,12 @@ internal static class ConventionMemberMappingPlanner
                 });
     }
 
+    private static bool IsRequiredInstanceMember(
+        EffectiveMemberGroup memberGroup)
+    {
+        return FindRequiredMember(memberGroup) is not null;
+    }
+
     private readonly record struct EffectiveMemberGroup(
         string Name,
         ImmutableArray<ISymbol> Members);
@@ -876,7 +935,8 @@ internal static class ConventionMemberMappingPlanner
     private readonly record struct WritableMember(
         string Name,
         ITypeSymbol Type,
-        bool CanAssign);
+        bool CanAssign,
+        ISymbol Symbol);
 }
 
 internal readonly record struct ConventionMemberMappingPlan(
@@ -885,9 +945,7 @@ internal readonly record struct ConventionMemberMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> MapReplacement,
     ImmutableArray<TypeMapperMemberMappingModel> MapReplacementPost,
     ImmutableArray<TypeMapperMemberMappingModel> Update,
-    bool HasUnmappedRequiredMembers,
-    bool HasExplicitCreationOnlyMappings,
-    bool HasResultDependentCreationOnlyMappings,
+    MemberPlanningObservation Observation,
     ImmutableArray<string> ConfiguredMemberNames = default)
 {
     public ConstructorInitializationMappingPlan BuildConstructorInitializationPlan(
@@ -905,23 +963,35 @@ internal readonly record struct ConventionMemberMappingPlan(
         return new ConstructorInitializationMappingPlan(
             initializerMappings,
             postMappings,
-            HasUnmappedRequiredMembers,
-            HasResultDependentCreationOnlyMappings);
+            Observation.RequiredObligations,
+            Observation.Rules.Where(static rule =>
+                    rule.Lifecycle.HasFlag(
+                        MemberLifecycleDependency.Creation) &&
+                    rule.Lifecycle.HasFlag(
+                        MemberLifecycleDependency.Result) &&
+                    !rule.Lifecycle.HasFlag(
+                        MemberLifecycleDependency.ExistingDestination))
+                .ToImmutableArray(),
+            Observation);
     }
 }
 
 internal readonly record struct ConstructorInitializationMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> InitializerMappings,
     ImmutableArray<TypeMapperMemberMappingModel> PostMappings,
-    bool HasUnmappedRequiredMembers,
-    bool HasResultDependentCreationOnlyMappings);
+    ImmutableArray<ISymbol> RequiredObligations,
+    ImmutableArray<MemberRuleObservation>
+        ResultDependentCreationOnlyRules,
+    MemberPlanningObservation Observation);
 
 internal readonly record struct ConventionReadableMember(
     string Name,
-    ITypeSymbol Type);
+    ITypeSymbol Type,
+    ISymbol Symbol);
 
 internal readonly record struct ConventionWritableMember(
     string Name,
     ITypeSymbol Type,
     bool CanAssign,
-    bool IsRequired);
+    bool IsRequired,
+    ISymbol Symbol);

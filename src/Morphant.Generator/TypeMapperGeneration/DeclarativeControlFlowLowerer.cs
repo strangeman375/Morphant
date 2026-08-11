@@ -88,9 +88,9 @@ internal static class DeclarativeControlFlowLowerer
                 CreatePostMemberMappings = [],
                 UpdateMemberMappings = buildLeaf(leaf),
                 ControlFlow = null,
-                CreateUnsupportedExceptionMessage = null,
-                UpdateUnsupportedExceptionMessage = null,
-                UnsupportedExceptionMessage = null,
+                CreateFailure = null,
+                UpdateFailure = null,
+                Failure = null,
                 PostMemberControlFlow = null
             };
 
@@ -576,7 +576,9 @@ internal static class DeclarativeControlFlowLowerer
                     return whenFalse;
                 }
 
-                return Equals(whenTrue, whenFalse)
+                return TypeMapperRuntimeEquality.AreEquivalent(
+                    whenTrue,
+                    whenFalse)
                     ? new TypeMapperControlFlowNode(
                         Locals: [],
                         Condition: null,
@@ -752,7 +754,7 @@ internal static class DeclarativeControlFlowLowerer
                 : null,
             node.Leaf?.UpdateMemberMappings ?? [],
             node.ThrowExpression,
-            node.Leaf?.UnsupportedExceptionMessage,
+            node.Leaf?.Failure,
             node.SwitchExpression,
             node.SwitchSections.IsDefault
                 ? default

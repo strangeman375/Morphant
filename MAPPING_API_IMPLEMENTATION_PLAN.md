@@ -541,7 +541,8 @@ tests фиксируют локальную гранулярность `unsafe`,
   category 8 включает compiler preflight, lexical context, extension binding,
   async/unsafe и deferred-capture laws.
 
-До implementation diagnostics нужен один предварительный production-срез:
+Перед implementation diagnostics согласован один предварительный
+production-срез:
 
 1. исправить exact same-pair `IncludeBase` lookup/full-plan import и удалить
    внутренний `CyclicIncludeBase` state;
@@ -553,6 +554,14 @@ tests фиксируют локальную гранулярность `unsafe`,
    `_ = source.Member;` во внешнем structured DSL, сохранять его как
    completeness observation и удалять из runtime lowering без вычисления
    getter-а.
+
+Срез реализован 11 августа 2026 года и ожидает пользовательского ревью. Он не
+публикует `MORPH` diagnostics: production model теперь хранит canonical pair,
+source/target mapper, granular execution paths, typed failure origins,
+constructor/member/nested observations и pair-wide completeness participation.
+Runtime-equivalence отдельно исключает эту metadata из сравнения generated
+веток, поэтому диагностическая модель не меняет уже принятую evaluation
+semantics.
 
 ## Согласованная diagnostic-категория 9
 
@@ -693,15 +702,22 @@ occupancy не создают. Exact errors категорий 8–11 подав
 warning своего uncertain slice; independent completeness продолжает
 анализироваться.
 
-## Следующий этап
+## Текущий этап
 
 **Diagnostics: предварительное выравнивание production model перед vertical
 slices.**
 
-Статус: не начат. Полный каталог категорий 1–12 принят; следующий coherent
-change выполняет пять предварительных пунктов, перечисленных выше, с
-самостоятельными focused regression tests. После него начинается production-
-реализация diagnostics вертикальными срезами.
+Статус: ожидает ревью. Пять предварительных пунктов реализованы одним coherent
+change с focused regression coverage: full-plan exact same-pair inheritance и
+local precedence, ownership arguments всех шести callback families,
+source-owned compiler warning, structured/runtime source discard и non-discard
+`_` symbol, а focused model tests фиксируют constructor candidates, selection,
+rejections и parameter-rule origins. Дополнительно повторно исполнены
+representative invalid composition и result/construction control-flow
+scenarios.
+
+Следующий срез — vertical production-реализация diagnostic-категории 1 —
+заблокирован до пользовательского принятия текущего model-alignment.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2130,8 +2146,9 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: полный каталог категорий 1–12 принят; production-реализация diagnostics
-ещё не начата, следующий срез — предварительное выравнивание production model.
+Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
+production model реализовано и ожидает пользовательского ревью. Production-
+реализация diagnostics ещё не начата.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2147,11 +2164,12 @@ category-10 member contract, а `MORPH0044`–`MORPH0046` — category-11 nested
 mapping contract. `MORPH0047`–`MORPH0048` завершают category-12 pair-wide
 completeness contract.
 
-Перед первым implementation slice выполняется согласованный preflight:
+Перед первым implementation slice выполнен согласованный preflight:
 exact-same-pair `IncludeBase`, callback ownership builder discovery, различие
 source/generated warnings, structured failure observations и compile-time
 source discard lowering. Точный scope и тестовые требования зафиксированы
-разделом 7 `DIAGNOSTICS_PLAN.md`.
+разделом 7 `DIAGNOSTICS_PLAN.md`. Первый vertical slice категории 1 остаётся
+заблокирован пользовательским ревью preflight-а.
 
 ### Этап 24. Observable failures
 

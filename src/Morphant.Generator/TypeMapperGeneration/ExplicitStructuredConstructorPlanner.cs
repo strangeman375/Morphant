@@ -4,12 +4,13 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class ExplicitStructuredConstructorPlanner
 {
-    public static ExplicitStructuredConstructorPlan? Build(
+    public static ExplicitStructuredConstructorPlanningResult Build(
         ImmutableArray<StructuredObjectArgument> planArguments,
         ITypeSymbol sourceType,
         INamedTypeSymbol destination,
@@ -20,26 +21,51 @@ internal static class ExplicitStructuredConstructorPlanner
         Func<ExpressionSyntax, IParameterSymbol,
             TypeMapperRewrittenDependencyExpression?>
             rewriteDependencyExpression,
+        SyntaxNode strategyOrigin,
         CancellationToken cancellationToken)
     {
-        if (destination.TypeKind == TypeKind.Interface ||
-            destination.IsAbstract ||
-            planArguments.Any(argument =>
-                !argument.Syntax.RefKindKeyword.IsKind(
-                    SyntaxKind.None)))
-        {
-            return null;
-        }
-
         var constructors =
             DestinationCapabilityPolicy.GetSupportedConstructors(
                 destination,
                 compilation,
                 cancellationToken);
 
+        ExplicitStructuredConstructorPlanningResult Unsupported(
+            ConstructorCandidateRejectionReason rejection,
+            IMethodSymbol? selectedConstructor = null,
+            ImmutableArray<ConstructorParameterRuleObservation>
+                selectedRules = default) =>
+            new(
+                Plan: null,
+                BuildObservation(
+                    constructors,
+                    strategyOrigin,
+                    selectedConstructor,
+                    selectedRules,
+                    rejection));
+
+        if (destination.TypeKind == TypeKind.Interface ||
+            destination.IsAbstract)
+        {
+            return Unsupported(
+                destination.IsAbstract
+                    ? ConstructorCandidateRejectionReason
+                        .AbstractDestination
+                    : ConstructorCandidateRejectionReason.StrategyShape);
+        }
+
+        if (planArguments.Any(argument =>
+                !argument.Syntax.RefKindKeyword.IsKind(
+                    SyntaxKind.None)))
+        {
+            return Unsupported(
+                ConstructorCandidateRejectionReason.ExplicitRule);
+        }
+
         if (constructors.IsEmpty)
         {
-            return null;
+            return Unsupported(
+                ConstructorCandidateRejectionReason.StrategyShape);
         }
 
         var usedNames = BuildUsedProbeNames(mapperType);
@@ -69,7 +95,8 @@ internal static class ExplicitStructuredConstructorPlanner
 
         if (probeTree is null)
         {
-            return null;
+            return Unsupported(
+                ConstructorCandidateRejectionReason.ExplicitRule);
         }
 
         var probeCompilation = compilation
@@ -98,7 +125,8 @@ internal static class ExplicitStructuredConstructorPlanner
                     ObjectCreationExpressionSyntax probeObjectCreation
             })
         {
-            return null;
+            return Unsupported(
+                ConstructorCandidateRejectionReason.InvocationBinding);
         }
 
         var selectedProbeConstructor = probeSemanticModel
@@ -112,7 +140,8 @@ internal static class ExplicitStructuredConstructorPlanner
                 .GetSyntax(cancellationToken) is not
             ConstructorDeclarationSyntax selectedSyntax)
         {
-            return null;
+            return Unsupported(
+                ConstructorCandidateRejectionReason.AmbiguousStrategy);
         }
 
         var probeConstructors = probeType.Members
@@ -135,7 +164,8 @@ internal static class ExplicitStructuredConstructorPlanner
         if (selectedConstructorIndex < 0 ||
             selectedConstructorIndex >= constructors.Length)
         {
-            return null;
+            return Unsupported(
+                ConstructorCandidateRejectionReason.InvocationBinding);
         }
 
         var destinationConstructor =
@@ -145,7 +175,9 @@ internal static class ExplicitStructuredConstructorPlanner
         if (probeArgumentList is null ||
             probeArgumentList.Arguments.Count != planArguments.Length)
         {
-            return null;
+            return Unsupported(
+                ConstructorCandidateRejectionReason.InvocationBinding,
+                destinationConstructor);
         }
 
         var arguments =
@@ -158,6 +190,31 @@ internal static class ExplicitStructuredConstructorPlanner
                 compilation,
                 mapperType,
                 cancellationToken);
+        var destinationMembers =
+            ConventionConstructorMappingPlanner
+                .BuildConstructorDestinationMembers(
+                    destination,
+                    memberObservation: null,
+                    compilation,
+                    mapperType,
+                    cancellationToken);
+        var parameterRules = destinationConstructor.Parameters
+            .Select(parameter =>
+                new ConstructorParameterRuleObservation(
+                    parameter,
+                    parameter.Name,
+                    ConstructorParameterRuleOrigin.Omitted,
+                    OriginNode: null,
+                    SourceMember: null,
+                    ConventionConstructorMappingPlanner
+                        .FindAssociatedDestinationMember(
+                            destinationMembers,
+                            parameter.Name),
+                    ConventionConstructorMappingPlanner.CanOmit(parameter),
+                    ConventionConstructorMappingPlanner.CanOmit(parameter)
+                        ? ConstructorCandidateRejectionReason.None
+                        : ConstructorCandidateRejectionReason.ExplicitRule))
+            .ToArray();
 
         for (var index = 0;
              index < probeArgumentList.Arguments.Count;
@@ -177,12 +234,18 @@ internal static class ExplicitStructuredConstructorPlanner
                 probeParameter.Ordinal >=
                     destinationConstructor.Parameters.Length)
             {
-                return null;
+                return Unsupported(
+                    ConstructorCandidateRejectionReason.InvocationBinding,
+                    destinationConstructor,
+                    parameterRules.ToImmutableArray());
             }
 
             var destinationParameter =
                 destinationConstructor.Parameters[
                     probeParameter.Ordinal];
+            var destinationMember =
+                parameterRules[probeParameter.Ordinal]
+                    .DestinationMember;
             var planArgument = planArguments[index];
             var targetType = DeclarativeIntrinsic
                     .TryGetWrapperTargetType(
@@ -206,10 +269,29 @@ internal static class ExplicitStructuredConstructorPlanner
                 if (markerKind ==
                     DeclarativeConstructorMarkerKind.Ignore)
                 {
-                    if (!ConventionConstructorMappingPlanner.CanOmit(
-                            destinationParameter))
+                    var canOmit =
+                        ConventionConstructorMappingPlanner.CanOmit(
+                            destinationParameter);
+                    parameterRules[probeParameter.Ordinal] =
+                        new ConstructorParameterRuleObservation(
+                            destinationParameter,
+                            destinationParameter.Name,
+                            ConstructorParameterRuleOrigin.Ignore,
+                            planArgument.Value,
+                            SourceMember: null,
+                            destinationMember,
+                            canOmit,
+                            canOmit
+                                ? ConstructorCandidateRejectionReason.None
+                                : ConstructorCandidateRejectionReason
+                                    .ExplicitRule);
+
+                    if (!canOmit)
                     {
-                        return null;
+                        return Unsupported(
+                            ConstructorCandidateRejectionReason.ExplicitRule,
+                            destinationConstructor,
+                            parameterRules.ToImmutableArray());
                     }
 
                     continue;
@@ -218,29 +300,57 @@ internal static class ExplicitStructuredConstructorPlanner
                 if (markerKind ==
                     DeclarativeConstructorMarkerKind.Auto)
                 {
-                    if (ConventionConstructorMappingPlanner
+                    var sourceMember =
+                        ConventionConstructorMappingPlanner
                             .TryFindSourceMember(
                                 sourceMembers,
-                                destinationParameter.Name) is not
-                        { } sourceMember ||
-                        !MappingExpressionCompatibility
+                                destinationParameter.Name);
+                    var compatible = sourceMember is { } candidate &&
+                        MappingExpressionCompatibility
                             .HasPotentiallyCompatibleConversion(
-                                sourceMember.Type,
+                                candidate.Type,
                                 destinationParameter.Type,
-                                compilation))
+                                compilation);
+                    var rejection = sourceMember is null
+                        ? ConstructorCandidateRejectionReason
+                            .MissingSourceMember
+                        : compatible
+                            ? ConstructorCandidateRejectionReason.None
+                            : ConstructorCandidateRejectionReason
+                                .IncompatibleArgument;
+                    parameterRules[probeParameter.Ordinal] =
+                        new ConstructorParameterRuleObservation(
+                            destinationParameter,
+                            destinationParameter.Name,
+                            ConstructorParameterRuleOrigin.Auto,
+                            planArgument.Value,
+                            sourceMember?.Symbol,
+                            destinationMember,
+                            compatible,
+                            rejection);
+
+                    if (!compatible || sourceMember is null)
                     {
-                        return null;
+                        return Unsupported(
+                            rejection,
+                            destinationConstructor,
+                            parameterRules.ToImmutableArray());
                     }
 
                     arguments.Add(
                         new TypeMapperConstructorArgumentMappingModel(
                             destinationParameter.Name,
-                            sourceMember.Name,
+                            sourceMember.Value.Name,
                             ValueLocalName: null,
                             TargetTypeName:
                                 ConventionConstructorMappingPlanner
                                     .BuildTargetValueLocalTypeName(
-                                        destinationParameter)));
+                                        destinationParameter),
+                            ParameterSymbol: destinationParameter,
+                            SourceMemberSymbol: sourceMember.Value.Symbol,
+                            RuleOriginNode: planArgument.Syntax,
+                            RuleOrigin:
+                                ConstructorParameterRuleOrigin.Auto));
                     continue;
                 }
             }
@@ -254,8 +364,33 @@ internal static class ExplicitStructuredConstructorPlanner
 
             if (explicitValueExpression is null)
             {
-                return null;
+                parameterRules[probeParameter.Ordinal] =
+                    new ConstructorParameterRuleObservation(
+                        destinationParameter,
+                        destinationParameter.Name,
+                        ConstructorParameterRuleOrigin.Value,
+                        planArgument.Value,
+                        SourceMember: null,
+                        destinationMember,
+                        IsApplicable: false,
+                        ConstructorCandidateRejectionReason.ExplicitRule);
+
+                return Unsupported(
+                    ConstructorCandidateRejectionReason.ExplicitRule,
+                    destinationConstructor,
+                    parameterRules.ToImmutableArray());
             }
+
+            parameterRules[probeParameter.Ordinal] =
+                new ConstructorParameterRuleObservation(
+                    destinationParameter,
+                    destinationParameter.Name,
+                    ConstructorParameterRuleOrigin.Value,
+                    planArgument.Value,
+                    SourceMember: null,
+                    destinationMember,
+                    IsApplicable: true,
+                    ConstructorCandidateRejectionReason.None);
 
             arguments.Add(
                 new TypeMapperConstructorArgumentMappingModel(
@@ -272,7 +407,11 @@ internal static class ExplicitStructuredConstructorPlanner
                             .BuildTargetValueLocalTypeName(
                                 destinationParameter),
                     DependencyExpression:
-                        rewrittenDependency?.DependencyExpression));
+                        rewrittenDependency?.DependencyExpression,
+                    ParameterSymbol: destinationParameter,
+                    RuleOriginNode: planArgument.Syntax,
+                    RuleOrigin:
+                        ConstructorParameterRuleOrigin.Value));
         }
 
         var argumentModels = arguments.ToImmutable();
@@ -287,12 +426,24 @@ internal static class ExplicitStructuredConstructorPlanner
                 destinationProbeMethodName,
                 cancellationToken))
         {
-            return null;
+            return Unsupported(
+                ConstructorCandidateRejectionReason.InvocationBinding,
+                destinationConstructor,
+                parameterRules.ToImmutableArray());
         }
 
-        return new ExplicitStructuredConstructorPlan(
+        var observation = BuildObservation(
+            constructors,
+            strategyOrigin,
             destinationConstructor,
-            argumentModels);
+            parameterRules.ToImmutableArray(),
+            ConstructorCandidateRejectionReason.None);
+
+        return new ExplicitStructuredConstructorPlanningResult(
+            new ExplicitStructuredConstructorPlan(
+                destinationConstructor,
+                argumentModels),
+            observation);
     }
 
     private static SyntaxTree? BuildProbeTree(
@@ -668,6 +819,40 @@ internal static class ExplicitStructuredConstructorPlanner
         }
     }
 
+    private static ConstructorPlanningObservation BuildObservation(
+        ImmutableArray<IMethodSymbol> constructors,
+        SyntaxNode strategyOrigin,
+        IMethodSymbol? selectedConstructor,
+        ImmutableArray<ConstructorParameterRuleObservation> selectedRules,
+        ConstructorCandidateRejectionReason rejection)
+    {
+        var rules = selectedRules.IsDefault
+            ? ImmutableArray<ConstructorParameterRuleObservation>.Empty
+            : selectedRules;
+        var candidates = constructors.Select(constructor =>
+            {
+                var isSelected = selectedConstructor is not null &&
+                    SymbolEqualityComparer.Default.Equals(
+                        constructor,
+                        selectedConstructor);
+
+                return new ConstructorCandidateObservation(
+                    constructor,
+                    isSelected ? rules : [],
+                    isSelected || selectedConstructor is null
+                        ? rejection
+                        : ConstructorCandidateRejectionReason.StrategyShape);
+            })
+            .ToImmutableArray();
+
+        return new ConstructorPlanningObservation(
+            ConstructorSelectionValue.Explicit,
+            strategyOrigin,
+            candidates,
+            selectedConstructor,
+            Terminals: []);
+    }
+
     private static HashSet<string> BuildUsedProbeNames(
         INamedTypeSymbol mapperType)
     {
@@ -701,3 +886,7 @@ internal static class ExplicitStructuredConstructorPlanner
 internal readonly record struct ExplicitStructuredConstructorPlan(
     IMethodSymbol Constructor,
     ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments);
+
+internal readonly record struct ExplicitStructuredConstructorPlanningResult(
+    ExplicitStructuredConstructorPlan? Plan,
+    ConstructorPlanningObservation Observation);
