@@ -2803,6 +2803,10 @@ source, factory/derived behavior и точный evaluation order будут с�
 - `null` вместо generated `DestinationConstruction` или `DestinationMembers`
   plan;
 - невозможный explicit constructor/member marker;
+- nested marker без статически определимой source/destination pair, с
+  несовместимым result type либо без допустимого explicit/generated destination
+  для nested Update; широкое adaptive current value проверяется runtime и не
+  требует видимой generator-у registration;
 - две registrations одного generic mapper-а, чьи pair shapes могут
   унифицироваться при подстановке type parameters и породить одинаковый
   generated `ITypeMapper` contract.
@@ -3360,10 +3364,12 @@ warning/nullable context, async/unsafe transfer и compiler preflight.
 
 Observable runtime failures и generated exception-stub boundary реализованы и
 зафиксированы разделом 14.2. Compile-time diagnostics остаются отдельным
-поздним планом: категории 1–10 приняты и синхронизированы с текущим API,
-категории 11–12 ещё не проработаны. Category-10 contract фиксирует invalid
+поздним планом: категории 1–11 приняты и синхронизированы с текущим API,
+категория 12 ещё не проработана. Category-10 contract фиксирует invalid
 explicit member rule, required obligation, lifecycle applicability и
-structured member-plan null без изменения описанной выше mapping semantics.
+structured member-plan null. Category-11 contract отделяет статическую pair,
+result conversion и Update destination nested marker-а от application-wide
+runtime lookup без изменения описанной выше mapping semantics.
 Automatic collection semantics, projection, polymorphism, reference handling и
 остальные перечисленные выше возможности остаются post-v0 направлениями и не
 расширяют текущий mapping semantics неявно. До отдельного продуктового решения

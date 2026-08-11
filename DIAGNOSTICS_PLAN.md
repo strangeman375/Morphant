@@ -4,9 +4,9 @@
 
 Последнее обновление: 11 августа 2026 года.
 
-Статус: таксономия и полный контракт категорий 1–10 приняты. Категории 11–12
-ещё не проработаны; реализация diagnostics заблокирована завершением каталога
-и перечисленными в разделе 7 предварительными выравниваниями production-model.
+Статус: таксономия и полный контракт категорий 1–11 приняты. Категория 12 ещё
+не проработана; реализация diagnostics заблокирована завершением каталога и
+перечисленными в разделе 7 предварительными выравниваниями production-model.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -42,6 +42,12 @@ contract с `MORPH0040`–`MORPH0043`: invalid explicit rule, неудовлет
 plan. Required/init blockers теперь имеют точный первичный ownership и
 подавляют производную construction diagnostic.
 
+Третья ревизия от 11 августа 2026 года зафиксировала category-11 nested
+mapping contract с `MORPH0044`–`MORPH0046`: статически неопределимая nested
+pair, несовместимый result и недопустимый destination nested Update. Lookup и
+фактическая runtime-совместимость широкого current slot-а остаются runtime
+contract-ом.
+
 План можно уточнять по мере детализации diagnostics. Изменение публичной
 семантики, severity, diagnostic ownership, recovery либо границы v0 сначала
 согласуется с пользователем, затем фиксируется здесь и в нормативном дизайне.
@@ -67,7 +73,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | В работе: категории 1–10 приняты; категории 11–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | В работе: категории 1–11 приняты; категория 12 не начата |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 и предварительными выравниваниями раздела 7 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -280,6 +286,12 @@ identifier из биологического каталога, а не analyzer 
 Перед назначением десятой группы 11 августа 2026 года тем же способом
 проверены `MORPH0040`–`MORPH0043`. Внешних публичных .NET/Roslyn diagnostics с
 этими ID не найдено.
+
+Перед назначением одиннадцатой группы 11 августа 2026 года тем же способом
+проверены `MORPH0044`–`MORPH0046`. Внешних публичных .NET/Roslyn diagnostics с
+этими ID не найдено. Case-insensitive совпадения `Morph0044` и `Morph0045`
+являются specimen identifiers из биологических каталогов, а не analyzer
+diagnostics, поэтому коллизией не считаются.
 
 ### 6.2. Категория 1: общий contract
 
@@ -3907,6 +3919,445 @@ Package-like integration-категория независимо проверя�
 - real `.editorconfig` / MSBuild suppression or severity override for all four
   IDs without changing generated artifact set and effective recovery.
 
+### 6.89. Категория 11: общий contract
+
+Категория «Корректность nested mapping» содержит ровно три diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0044` | `Nested mapping pair cannot be determined` | `Nested mapping pair for marker '{0}' in contract '{1}' cannot be determined: {2}. Reachable paths: {3}.` |
+| `MORPH0045` | `Nested mapping result is incompatible` | `Nested mapping result type '{0}' in contract '{1}' cannot be converted warning-free to target type '{2}'. Reachable paths: {3}.` |
+| `MORPH0046` | `Nested Update destination is invalid` | `Nested Update destination for marker '{0}' in contract '{1}' is invalid: {2}. Reachable paths: {3}.` |
+
+Для всех трёх diagnostics действует общий descriptor contract:
+
+- category — `Morphant.NestedMapping`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- анализируется только effective declarative nested marker, оставшийся после
+  успешных категорий 1–10 и специализации outer result/member paths;
+- manual `Convert`, `ConstructUsing` и `ResolveUsing` используют настоящий
+  runtime `IMapper` либо обычный C# callback и категорией 11 не разбираются;
+- `UnmappedMemberValidation` не скрывает category-11 error и не понижает её до
+  warning;
+- suppression либо изменение severity меняет только compiler presentation и
+  не выбирает nested pair, не вставляет conversion, не меняет Create на Update
+  или наоборот и не включает runtime fallback.
+
+Outer mapping contract в `{1}` форматируется по canonical identity категории
+3. Marker name в `{0}` у `MORPH0044` и `MORPH0046` является одним из `Map`,
+`Create` либо `Update` без generic suffix-а. Nested source, destination и
+target types используют fully-qualified nullable-aware display после mapper
+generic substitutions. Target означает конечный destination member либо
+constructor parameter, а для standalone read-only Update — соответствующий
+get-only member proxy.
+
+Affected paths используют общие стабильные имена категорий 9–10:
+
+1. `Create`;
+2. `Update without a previous destination`;
+3. `Update with a previous destination`.
+
+Message перечисляет paths в этом порядке через `, `. Один marker origin не
+размножается по public operations, если одинаковая причина и recovery
+затрагивают несколько paths. Разные terminal target uses declarative local-а
+остаются разными observations, когда их pair, conversion либо current
+destination различаются.
+
+### 6.90. Nested origins, static pair и lifecycle model
+
+Category-11 observation принадлежит одному из следующих origins:
+
+- nested marker invocation, являющемуся producer-ом source/destination pair;
+- конечному member/constructor target use этого marker-а;
+- explicit destination argument nested `Update`;
+- generated current destination adaptive `Map` на конкретном outer path;
+- standalone destination proxy read-only nested `Update`;
+- набору terminal uses одного adaptive declarative local-а, которым нужны
+  разные current destinations.
+
+После category-8 lowering и category-9/10 specialization generator отдельно
+анализирует каждый reachable construction/member leaf. Conditional/switch
+branches, declarative locals, `with` overlays, overridden rules и actual
+result origin уже разрешены. Discarded marker, недостижимая branch и path, на
+котором member rule не применяется, category-11 observation не получают.
+
+Static nested pair определяется без application lookup:
+
+- source type берётся из естественного статического типа explicit
+  source-expression до conversion к `object?` marker surface;
+- у parameterless `Map()` source выводится из unique readable source
+  property/field по точному имени конечного target-а;
+- destination type берётся из explicit generic argument либо из конечного
+  member/constructor target-а у non-generic marker-а;
+- mapper generic substitutions и canonical type normalization применяются до
+  проверки pair, но runtime type source/current destination pair не меняет;
+- наличие local pair, mapper type, assembly или service registration не
+  участвует в выводе: dispatch остаётся application-wide.
+
+Adaptive `Map` получает nested operation из фактического outer lifecycle.
+`Create` и Update без previous вызывают nested Create. Update с previous
+вызывает nested Update: writable member читает current member фактически
+выбранного `result`, включая replacement, а constructor parameter использует
+соответствующий readable member outer `previous`. Explicit `Create` и
+`Update` сохраняют выбранную nested operation на любом outer path.
+
+Declarative local является alias marker producer-а и получает target context
+от каждого terminal use. Один producer может безопасно использоваться в
+нескольких Create contexts с одной pair/conversion. На adaptive Update один и
+тот же producer не может одновременно обозначать разные current destinations:
+это не порядок вычисления, а неоднозначная lifecycle dependency.
+
+Standalone `Update(source, members.Member)` является отдельным terminal
+statement только для get-only proxy текущего effective `DestinationMembers`
+plan. Eligible proxy представляет non-opaque reference-type destination,
+читает actual `result.Member` один раз, выполняет null guard до source и
+отбрасывает returned nested replacement. Writable member, другой plan local,
+обычное значение либо non-terminal use proxy semantics не получают.
+
+Category 11 не пытается доказать:
+
+- существует ли registration вычисленной nested pair;
+- одна она либо registrations несколько и вернула ли factory non-null mapper;
+- разрешена ли nested Create/Update effective `MappingMode` найденного mapper-а;
+- какое runtime значение хранится в широком adaptive current slot-е.
+
+Первые три состояния сохраняют утверждённые runtime lookup/operation failures.
+Последнее проверяется generated runtime guard-ом и при incompatible non-null
+значении бросает `NestedDestinationTypeMismatchException`.
+
+### 6.91. `MORPH0044`: nested pair нельзя определить
+
+`MORPH0044` публикуется, когда успешно C#-связанный terminal marker не задаёт
+одну статическую source/destination pair. Стабильный `{2}` reason имеет одну
+из форм:
+
+- `source expression does not have a statically determined type`;
+- `parameterless Map does not resolve a unique readable source member named '{memberName}'`;
+- `non-generic marker has no final target from which to infer the destination type`.
+
+Первая форма охватывает untyped `null`, targetless `default` и transparent
+aliases этих expressions. Conversion public marker argument-а к `object?` не
+делает `object` nested source type-ом: это потеряло бы заявленную exact pair.
+Явно типизированные `(Source?)null` и `default(Source)` имеют static source type
+и этой причиной не затрагиваются.
+
+Вторая форма относится только к `Map()` / `Map<TDestination>()`. Поиск source
+использует effective target name и readable source surface с правилами hiding,
+accessibility и exact ordinal name. Отсутствие candidate либо отсутствие
+однозначного readable symbol-а не заменяется похожим именем, runtime type-ом
+или поиском зарегистрированной pair. Для constructor parameter no-previous
+path может использовать имя parameter-а; если existing Update требует
+отсутствующую association с readable destination member-ом, первичная причина
+принадлежит `MORPH0046`, а не второй форме `MORPH0044`.
+
+Третья форма возможна только для terminal marker-а, чья placement сама по себе
+допустима category 8, но target context не предоставляет destination type.
+Non-terminal marker, return/capture/cast/method-group use либо marker в runtime
+callback по-прежнему принадлежит `MORPH0033`. Unnameable/file-local type с уже
+определённой identity является transfer failure `MORPH0030`, а malformed C#
+binding с error type остаётся compiler-owned.
+
+Primary location для source-expression reason — само untyped expression. Для
+parameterless inference и отсутствующего target-а primary — identifier `Map`,
+`Create` либо `Update`. Конечный member/parameter designator, declarative local
+use и соответствующая source/destination declaration добавляются как
+additional locations в source order, если имеют spans.
+
+Diagnostic identity включает mapper, outer canonical pair, marker producer,
+terminal target context и normalized set missing side/reason. Один marker/use
+получает одну `MORPH0044`; если независимо не определены обе стороны, `{2}`
+перечисляет source- и destination-reasons в этом порядке через `; `. Primary
+берётся у первой причины, location второй становится additional. Producer не
+повторяется для каждого outer path; разные terminal target contexts остаются
+разными observations только когда их inference либо recovery различаются.
+
+Recovery блокирует только construction/member leaf и paths, которым нужна
+неопределённая pair. Marker arguments не вычисляются; leaf бросает
+`MappingConfigurationException`. Paths, где marker либо его invalid terminal
+use не достигается, а также independent rules/branches/pairs остаются
+исполняемыми.
+
+### 6.92. `MORPH0045`: nested result несовместим с target
+
+`MORPH0045` публикуется, когда статическая nested pair определена, но выбранный
+nested destination type не имеет warning-free implicit C# conversion к
+конечному member/constructor target type. Diagnostic относится прежде всего к
+generic `Map<TDestination>`, `Create<TDestination>` и
+`Update<TDestination>` либо к их declarative local alias: у прямой
+non-generic формы destination уже равен target type.
+
+Warning-free law использует ту же compilation/nullable context, что и
+generated call/assignment. Разрешены стандартные и user-defined implicit
+conversions, включая reference/interface/variance, numeric/lifted, tuple и
+boxing, если probe не создаёт warning. Narrowing/downcast/unboxing, explicit
+operator и nullable-warning conversion не становятся допустимыми через cast
+либо null-forgiving operator generator-а.
+
+`MORPH0045` является post-binding diagnostic. Если C# уже отверг initializer,
+marker overload либо generic type argument и Morphant не может установить
+symbol/target identity, отдельная diagnostic не публикуется. Exact type
+совпадение не требуется: в отличие от `Value<T>` и typed `Auto`/`Ignore`,
+generic nested destination намеренно допускает warning-free conversion к
+более широкому target-у.
+
+Primary location — explicit `TDestination` type argument marker producer-а.
+Если generic destination пришёл через alias и его source type argument span
+недоступен, primary становится marker identifier. Конечный member/parameter
+designator и declaration target type-а добавляются как additional locations.
+Для consumer-specific cross-pair conversion, которая была valid в source
+contract-е, primary переносится на effective `IncludeBase` edge, а исходный
+type argument и current target становятся additional locations.
+
+Diagnostic identity включает mapper, outer canonical pair, marker producer,
+terminal target use, nested destination/target types и conversion reason.
+Несколько outer paths одного use агрегируются; один local, использованный с
+разными target types, получает отдельную `MORPH0045` только для каждого
+несовместимого use.
+
+Recovery блокирует affected leaf до nested dispatch, constructor arguments и
+member assignments. Compatible uses того же local, другие control-flow leaves
+и independent paths сохраняются. Generator не меняет explicit nested
+destination, не выбирает non-generic overload и не вставляет conversion,
+которой пользователь не написал.
+
+### 6.93. `MORPH0046`: destination nested Update недопустим
+
+`MORPH0046` публикуется, когда pair и final result conversion определены, но
+nested Update не имеет допустимого destination input на reachable path.
+Стабильный `{2}` reason имеет одну из форм:
+
+- `explicit destination expression of type '{actualType}' does not have a warning-free implicit conversion to nested destination type '{destinationType}'`;
+- `explicit null destination cannot represent non-nullable value destination type '{destinationType}'`;
+- `adaptive Map has no readable current destination for target '{target}'`;
+- `current destination slot of type '{currentType}' cannot contain nested destination type '{destinationType}'`;
+- `adaptive Map local is associated with multiple current destinations: {targets}`;
+- `standalone Update destination is not an eligible get-only DestinationMembers proxy`.
+
+Первые две формы относятся к explicit `Update(source, destination)` и
+`Update<TDestination>(source, destination)`. Marker public surface принимает
+`object?`, но generated scoped call должен получить normalized nullable
+destination input (`TDestination?` для reference type) по обычной warning-free
+implicit conversion. Explicit `null` допустим для reference и
+nullable value destination и передаётся nested null policy; для non-nullable
+value destination он invalid. Target-typed `default` обозначает настоящий
+`default(TDestination)` и сам по себе допустим. В отличие от generated
+adaptive current slot-а, explicit user argument типа `object` не получает
+скрытый runtime downcast: пользователь задаёт compatible static expression.
+
+Третья форма относится к adaptive `Map` только на existing-previous outer
+path. Writable member всегда берёт current value из фактического `result`.
+Constructor parameter обязан однозначно связаться с readable destination
+member outer `previous`: exact name имеет приоритет, затем разрешено одно
+unique `OrdinalIgnoreCase` совпадение. Без association nested Create на
+no-previous paths остаётся valid, а nested Update path получает
+`MORPH0046`.
+
+Четвёртая форма применяется к generated adaptive current slot-у и eligible
+read-only proxy. Static slot должен хотя бы быть способен содержать выбранный
+`TDestination`. Exact/implicit conversion не требуется: `object`, interface
+либо base slot, для которого runtime-compatible value возможен, разрешён и
+получает generated checked conversion. Фактически incompatible non-null
+значение бросает `NestedDestinationTypeMismatchException`; `null` writable
+slot передаётся nested Update, если destination type способен его представить.
+Если selected destination — non-nullable value type, runtime `null` также
+бросает typed mismatch до dispatch. Заведомо unrelated sealed/static shapes
+получают compile-time `MORPH0046`.
+
+Пятая форма относится к одному adaptive marker producer-у, terminal uses
+которого на одном reachable Update plan требуют разных current expressions.
+Разные текстовые выражения одного exact current slot-а не создают ambiguity
+после semantic normalization; разные members/constructor associations
+создают. Mutually exclusive uses остаются конфликтом, если producer вычислен
+до выбора target-а и не имеет единственного current destination. Local нужно
+разделить на отдельные marker invocations либо выбрать explicit Update.
+
+Шестая форма относится только к terminal expression statement `Update(...)`
+в structured `Members`. Destination обязан быть get-only marker current
+effective `DestinationMembers` local-а. Writable marker, proxy другого local-а,
+обычное destination expression либо попытка использовать proxy не как
+standalone statement не получают in-place/discard semantics. Non-terminal use
+marker-а по-прежнему принадлежит `MORPH0033`; отсутствие самого proxy из-за
+неподдерживаемого destination member surface обычно остаётся точной C# binding
+error и не дублируется.
+
+Primary location для explicit forms — destination argument expression. Для
+adaptive current reasons — identifier `Map`; target designator/current member
+declaration и explicit `TDestination` добавляются как additional locations.
+Для ambiguous local primary — producer `Map`, а все conflicting terminal
+target designators являются additional locations в source order. Для wrong
+read-only proxy primary — destination argument member access, identifier
+`Update` становится первой additional location. Consumer-specific failure
+valid inherited rule-а использует effective `IncludeBase` edge как primary.
+
+Diagnostic identity включает mapper, outer canonical pair, marker producer,
+destination/current origin, terminal target set и reason. Одна причина
+агрегирует paths, но разные explicit destination arguments и разные
+consumer-specific current slots остаются независимыми. Ambiguous local даёт
+одну diagnostic на producer и normalized conflicting target set.
+
+Recovery блокирует только leaves/paths, где nested Update destination invalid.
+Adaptive no-previous nested Create того же marker-а, branch с одной valid
+current destination, compatible runtime-wide slot и unrelated nested markers
+сохраняются. Invalid leaf бросает `MappingConfigurationException` до чтения
+current destination, вычисления explicit source/destination arguments и
+nested dispatch.
+
+### 6.94. Recovery, precedence, порядок и suppression
+
+Все три diagnostics сохраняют C#-legal outer `ITypeMapper<,>` contract,
+capability-specific fluent surfaces и application-wide runtime dispatch.
+Invalid nested leaf/path бросает `MappingConfigurationException`; valid nested
+calls используют исходные static pair, operation, argument order и shared
+mapping scope.
+
+Recovery granularity:
+
+- `MORPH0044` блокирует leaves, которым нужна неопределённая source либо
+  destination side pair;
+- `MORPH0045` блокирует только incompatible terminal target uses;
+- `MORPH0046` блокирует explicit/adaptive/read-only Update paths с invalid
+  destination input.
+
+Construction leaf с blocking nested observation бросает до вычисления
+constructor arguments. Member-plan leaf бросает до любых assignments и
+standalone in-place updates этого leaf-а, сохраняя branch-atomic law категории
+10. Control-flow conditions и dependencies, необходимые для выбора leaf-а,
+сохраняют обычную evaluation semantics; marker arguments и current members
+заблокированного nested call не вычисляются.
+
+Если marker/target attribution невозможна после valid category-8 lowering,
+весь соответствующий structured fragment считается transfer-invalid и
+ownership возвращается к `MORPH0030`. Category 11 не угадывает pair по
+generated text, регистрации либо имени похожего member-а.
+
+Precedence действует так:
+
+- gates категорий 1–4, invalid composition/settings/inheritance категорий 5–7
+  и invalid transfer/grammar категории 8 подавляют category-11 analysis своей
+  области;
+- invalid construction leaf категории 9 и invalid/null/lifecycle member leaf
+  категории 10 не получают nested cascade;
+- exact invalid nested marker категории 11 подавляет производную
+  `MORPH0041` required-obligation diagnostic того же rule/path;
+- `MORPH0044` подавляет `MORPH0045`/`MORPH0046`, которым неизвестна
+  соответствующая source/destination side;
+- `MORPH0045` подавляет только производную adaptive-current incompatibility
+  `MORPH0046` того же target use; independently invalid explicit destination
+  argument может публиковаться рядом;
+- ambiguous adaptive-local analysis учитывает только otherwise valid terminal
+  uses и потому не каскадирует от уже invalid target-а;
+- non-terminal/runtime marker остаётся `MORPH0033`, inaccessible/file-local
+  transfer — `MORPH0030`, а точная C# binding/type error не дублируется;
+- missing/ambiguous/null runtime registration, disabled nested operation и
+  actual mismatch широкого current slot-а не получают category-11 diagnostic;
+- category-12 warning-анализ исключает invalid affected paths, но продолжает
+  анализировать independent effective plan.
+
+Intrinsic origin diagnostic не размножается по exact/same-context inherited
+consumers: retained origin переносит recovery, local override/discard удаляет
+его. Cross-pair substitution, новый target conversion/current slot либо
+изменившаяся constructor association создаёт consumer-specific observation на
+effective edge.
+
+Publication order — по ID. Внутри ID: ordinal mapper identity, outer canonical
+pair, marker producer, terminal target declaration order/source location,
+reason и affected paths. Внутри combined `MORPH0044` source-side reason
+предшествует destination-side reason. Additional locations сохраняют порядок
+разделов 6.91–6.93.
+
+Suppression либо severity override не меняет pair inference, nested operation,
+conversion, current destination, read-only guard, runtime lookup, recovery или
+artifact set. Изменение source/target/current member types и declarations,
+marker overload/generic argument, terminal local uses, construction/member
+control flow, outer result policy, null/operation settings, override либо
+inheritance полностью actualizes category-11 observations и affected stubs при
+одном сохранённом incremental driver-е.
+
+### 6.95. Самостоятельная тестовая матрица категории 11
+
+Unit-категория nested mapping diagnostics независимо фиксирует:
+
+- exact descriptors `MORPH0044`–`MORPH0046`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и все parameters;
+- canonical outer contract, marker, nullable-aware type/target/path formatting,
+  deterministic ordering и exact primary/additional locations;
+- все восемь marker forms в constructor parameter, writable member,
+  declarative local и допустимом standalone read-only statement;
+- `MORPH0044` для untyped `null`/`default` source и aliases, valid typed null/
+  default, explicit source natural type до `object?` conversion;
+- parameterless `Map` source inference: exact readable property/field,
+  missing/ambiguous/inaccessible/hiding candidates, constructor parameter
+  target association и path-specific fallback name;
+- destination inference non-generic/generic/targetless forms, compiler-owned
+  malformed binding, `MORPH0033` non-terminal marker и `MORPH0030` unnameable
+  transfer без duplicate category-11 diagnostic;
+- `MORPH0045` exact/reference/interface/variance/numeric/lifted/tuple/boxing/
+  user-defined implicit positive conversions и narrowing/downcast/unboxing/
+  nullable-warning negative conversions;
+- generic marker locals с compatible и incompatible multiple targets,
+  per-use cardinality и отсутствие exact-target restriction nested result-а;
+- `MORPH0046` explicit Update destination exact/implicit/nullable forms,
+  reference/nullable/non-nullable `null`, target-typed `default`, broad `object`
+  argument и compiler-rejected expression;
+- adaptive Create/Update specialization across no previous, existing previous,
+  replacement result и constructor parameter current-member association;
+- current slot matrix: exact, nullable, object, base/interface/boxing-capable,
+  unrelated sealed/value shapes, runtime guard requirement и отсутствие
+  compile-time diagnostic для potentially compatible wide slot;
+- adaptive local reuse for same normalized current, different writable members,
+  constructor associations, mutually exclusive terminal uses and separate
+  producers;
+- eligible get-only property/readonly field proxy, wrong writable/foreign
+  proxy, generic destination compatibility, null guard, single read, skipped
+  source on null and discarded replacement;
+- outer reachability across every `MappingMode`, null destination policy,
+  structured/runtime result origin, member overlays and conditional/switch
+  branches;
+- absence of category-11 diagnostics for missing/ambiguous/null registration,
+  disabled nested operation and runtime mismatch wide slot; exact runtime
+  exception ownership remains unchanged;
+- branch-atomic full generated recovery for every ID: throwing affected leaf
+  before marker arguments/constructor/member side effects, preserved adaptive
+  Create, valid Update branch, independent rules/operations/pairs and no hidden
+  fallback;
+- category 8–10 precedence, derivative required suppression, category-12
+  exclusion, compiler/runtime ownership and independently provable explicit
+  destination error;
+- local/exact/cross-pair inheritance origin laws, retained/discarded marker,
+  consumer-specific conversion/current failure and local override;
+- real suppression/severity override for all three IDs without changing
+  recovery, dispatch or generated artifacts;
+- actualization source/target/current declarations, marker type argument,
+  local use graph, result policy, settings, control flow and inheritance при
+  одном incremental driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- suppressed `MORPH0044` для untyped source, failed parameterless inference и
+  unavailable non-generic target: affected path throws before source effects,
+  typed/explicit pair и independent branch исполняются;
+- suppressed `MORPH0045` для generic destination nullable/type mismatch:
+  incompatible use throws, compatible wider target и другой use того же local
+  выполняют реальный nested dispatch;
+- suppressed `MORPH0046` для explicit destination, unavailable/impossible
+  adaptive current, ambiguous local и wrong read-only proxy: invalid Update
+  throws без partial mutation, no-previous adaptive Create и valid current
+  path сохраняются;
+- wide object/base/interface adaptive current с compatible runtime value,
+  incompatible non-null value и runtime null реально даёт соответственно
+  nested Update либо `NestedDestinationTypeMismatchException` по design law;
+- get-only proxy non-null/null paths сохраняют single read, source skip и
+  discard replacement, а invalid sibling leaf не выполняет in-place update;
+- application-wide nested registration вне outer mapper/assembly, missing/
+  ambiguous/null registration и disabled operation сохраняют runtime lookup/
+  operation exceptions без compile-time category-11 error;
+- exact/inherited origin recovery, consumer-specific cross-pair failure,
+  independent pair isolation и отсутствие category 9–10/12 cascade;
+- real `.editorconfig` / MSBuild suppression or severity override для всех
+  трёх IDs без изменения generated artifact set и effective recovery.
+
 ## 7. Реализация и тесты
 
 До первого vertical diagnostic slice production-model выравнивается с уже
@@ -3933,7 +4384,10 @@ Package-like integration-категория независимо проверя�
    previous/null origins, а member planner — effective member identity,
    explicit/convention origin, required obligation, lifecycle/result
    dependency, hidden imported slot и terminal null-plan origin вместо
-   неразличимых `null`/unsupported states.
+   неразличимых `null`/unsupported states. Nested planner дополнительно
+   сохраняет marker producer/terminal target, inferred source/destination
+   sides, result conversion, explicit/generated current destination,
+   read-only proxy и adaptive-local use set вместо общего unsupported result.
    Recovery строится из тех же observations, а не из повторного эвристического
    анализа.
 

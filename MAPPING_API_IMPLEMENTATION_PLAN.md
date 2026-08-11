@@ -125,8 +125,8 @@ coverage.
 
 Диагностики и observable failures вынесены в отдельные поздние этапы.
 Observable failures детализированы и приняты этапом 24. Diagnostics ведутся в
-отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): категории 1–10
-синхронизированы с принятым API и готовы, категории 11–12 остаются следующей
+отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): категории 1–11
+синхронизированы с принятым API и готовы, категория 12 остаётся следующей
 незавершённой частью каталога.
 
 Automatic collection semantics, projection и остальные post-v0 возможности в
@@ -612,12 +612,46 @@ branches/operations/pairs сохраняются. Required/init blocker кате
 подавляет производную `MORPH0036`; точная invalid nested operation остаётся
 категорией 11 и не дублируется required-ошибкой.
 
+## Согласованная diagnostic-категория 11
+
+Статус: принята пользователем 11 августа 2026 года; нормативный каталог
+обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+
+Категория «Корректность nested mapping» получила три последовательных ID:
+
+- `MORPH0044` — static source/destination pair terminal marker-а нельзя
+  определить из source expression, parameterless inference либо final target;
+- `MORPH0045` — выбранный nested destination result не имеет warning-free
+  implicit conversion к конечному member/constructor target-у;
+- `MORPH0046` — explicit либо generated destination nested Update недопустим:
+  incompatible argument/current slot, unavailable adaptive current,
+  ambiguous adaptive-local reuse либо неправильный read-only proxy.
+
+Source и destination inference используют один ID с точным reason, поскольку
+имеют общий marker origin и recovery. Все Update-destination failures также
+объединены одним ID; explicit argument, adaptive current, local reuse и proxy
+сохраняют собственные reasons и locations.
+
+Категория статически проверяет pair, result conversion и возможность получить
+current destination, но не application-wide registration либо effective
+operation найденного runtime mapper-а. Широкий adaptive slot (`object`, base,
+interface), способный содержать `TDestination`, получает runtime guard;
+фактически incompatible value по-прежнему бросает
+`NestedDestinationTypeMismatchException`.
+
+Recovery path-sensitive и branch-atomic: invalid nested leaf бросает
+`MappingConfigurationException` до marker arguments, constructor/member side
+effects и in-place update. Adaptive no-previous Create, independent
+branches/operations/pairs и valid runtime-wide slot сохраняются. Exact nested
+error подавляет только производную required-obligation diagnostic того же
+rule/path.
+
 ## Следующий этап
 
-**Diagnostics: категория 11 — корректность nested mapping.**
+**Diagnostics: категория 12 — полнота mapping-а через `UnmappedMemberValidation`.**
 
-Статус: не начат. Категории 1–10 приняты; перед production-реализацией всего
-каталога остаются категории 11–12 и предварительный срез, перечисленный выше.
+Статус: не начат. Категории 1–11 приняты; перед production-реализацией всего
+каталога остаётся категория 12 и предварительный срез, перечисленный выше.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2046,20 +2080,21 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: в работе на уровне каталога. Категории 1–10 приняты; категории 11–12 не
-начаты; production-реализация diagnostics ещё не начата.
+Статус: в работе на уровне каталога. Категории 1–11 приняты; категория 12 не
+начата; production-реализация diagnostics ещё не начата.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
 таксономия v0, затем по одной категории составляется полный каталог с IDs,
 сообщениями, locations, severity, suppression и recovery. Реализация и тесты
 начинаются только после согласования каталога; завершает этап двусторонний
-аудит плана и production-кода. Таксономия и категории 1–10 с
-`MORPH0001`–`MORPH0043` приняты и синхронизированы с текущим API;
+аудит плана и production-кода. Таксономия и категории 1–11 с
+`MORPH0001`–`MORPH0046` приняты и синхронизированы с текущим API;
 `MORPH0034` относится к категории 2, `MORPH0029`–`MORPH0033` сохранены за
 category-8 transfer contract, а `MORPH0035`–`MORPH0039` описывают
 category-9 construction contract. `MORPH0040`–`MORPH0043` образуют
-category-10 member contract. Следующая каталожная работа — категория 11.
+category-10 member contract, а `MORPH0044`–`MORPH0046` — category-11 nested
+mapping contract. Следующая каталожная работа — категория 12.
 
 Перед первым implementation slice выполняется согласованный preflight:
 exact-same-pair `IncludeBase`, callback ownership builder discovery, различие
