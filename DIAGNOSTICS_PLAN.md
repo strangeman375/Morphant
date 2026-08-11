@@ -4,7 +4,7 @@
 
 Последнее обновление: 11 августа 2026 года.
 
-Статус: таксономия и полный контракт категорий 1–9 приняты. Категории 10–12
+Статус: таксономия и полный контракт категорий 1–10 приняты. Категории 11–12
 ещё не проработаны; реализация diagnostics заблокирована завершением каталога
 и перечисленными в разделе 7 предварительными выравниваниями production-model.
 
@@ -34,8 +34,13 @@ compile-time markers и fail-closed compiler preflight. IDs
 Ревизия от 11 августа 2026 года зафиксировала category-9 construction contract
 с `MORPH0035`–`MORPH0039`: отсутствие construction policy, convention
 selection, explicit constructor-parameter rules, unavailable previous и
-`null` / `default` structured plan. Category 10 остаётся владельцем точных
-required/init member blockers.
+`null` / `default` structured plan.
+
+Следующая ревизия от 11 августа 2026 года зафиксировала category-10 member
+contract с `MORPH0040`–`MORPH0043`: invalid explicit rule, неудовлетворённый
+`required`, неприменимая lifecycle-фаза и `null` / `default` structured member
+plan. Required/init blockers теперь имеют точный первичный ownership и
+подавляют производную construction diagnostic.
 
 План можно уточнять по мере детализации diagnostics. Изменение публичной
 семантики, severity, diagnostic ownership, recovery либо границы v0 сначала
@@ -62,7 +67,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | В работе: категории 1–9 приняты; категории 10–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | В работе: категории 1–10 приняты; категории 11–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 и предварительными выравниваниями раздела 7 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -271,6 +276,10 @@ diagnostics, поэтому коллизией не считаются.
 этими ID не найдено. Case-insensitive совпадение `Morph0035` является specimen
 identifier из биологического каталога, а не analyzer diagnostic, поэтому
 коллизией не считается.
+
+Перед назначением десятой группы 11 августа 2026 года тем же способом
+проверены `MORPH0040`–`MORPH0043`. Внешних публичных .NET/Roslyn diagnostics с
+этими ID не найдено.
 
 ### 6.2. Категория 1: общий contract
 
@@ -3102,7 +3111,7 @@ automatic warning-free conversions и actual invocation binding входят в
 applicability. Shape strategies не откатываются к другому constructor-у после
 выбора. `Greediest` не считает inapplicable candidate. Required/init member
 readiness участвует в applicability computation, но точные member-plan blockers
-принадлежат категории 10 по разделу 6.79.
+принадлежат категории 10 по разделам 6.84–6.85.
 
 ### 6.74. `MORPH0035`: destination construction не настроена
 
@@ -3193,8 +3202,9 @@ constructor либо `ByConvention` leaf-а, когда C# binding callback surf
 - `Ignore` пытается опустить required non-optional, non-`params` parameter;
 - written `ByConvention` rule именует parameter, которого нет у selected
   constructor-а;
-- typed `Auto` / `Ignore` / `Value<T>` marker утверждает target type, не
-  совпадающий точно с конечным parameter type;
+- typed `Auto` / `Ignore` / `Value<T>` marker успешно прошёл C# binding,
+  например через более широкий `object` либо nullability conversion, но
+  утверждает target type, не совпадающий точно с конечным parameter type;
 - rule проходит generated wrapper surface, но actual selected constructor
   нельзя вызвать с ним без изменения compiler binding.
 
@@ -3226,7 +3236,8 @@ rule не размножается по paths или inherited consumers. Automa
 parameter failure остаётся `MORPH0036`. Invalid nested `Map` / `Create` /
 `Update` marker принадлежит категории 11; unsupported terminal-marker use —
 категории 8. Обычная C# type/binding error explicit expression остаётся
-compiler-owned.
+compiler-owned. Если несовпадение typed marker-а уже отвергнуто compiler-ом,
+`MORPH0037` не публикуется.
 
 Invalid становится только construction leaf, зависящий от rule. Его expression
 не вычисляется; leaf бросает `MappingConfigurationException`. Другие leaves и
@@ -3373,8 +3384,8 @@ Unit-категория construction diagnostics независимо фикси
   locations;
 - `MORPH0037` for explicit-constructor and `ByConvention` `Auto` without a
   unique compatible source, required `Ignore`, rule absent from selected
-  constructor, typed `Auto` / `Ignore` / `Value<T>` mismatch and final binding
-  incompatibility;
+  constructor, прошедшее C# binding typed `Auto` / `Ignore` / `Value<T>`
+  mismatch and final binding incompatibility;
 - greediest uniform-rule attribution to `MORPH0037` versus mixed/no-plan
   `MORPH0036`, exact per-rule cardinality/locations and absence for successful
   explicit rules;
@@ -3431,6 +3442,471 @@ Package-like integration-категория независимо проверя�
 - real `.editorconfig` / MSBuild suppression or severity override for all five
   IDs without changing generated artifact set and effective recovery.
 
+### 6.81. Категория 10: общий contract
+
+Категория «Корректность member plan» содержит ровно четыре diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0040` | `Member rule is invalid` | `Member rule for '{0}' in contract '{1}' is invalid: {2}.` |
+| `MORPH0041` | `Required destination member is not initialized` | `Required destination member '{0}' in contract '{1}' is not initialized on reachable paths: {2}.` |
+| `MORPH0042` | `Member rule cannot be applied` | `Member rule for '{0}' in contract '{1}' cannot be applied: {2}. Reachable paths: {3}.` |
+| `MORPH0043` | `Structured member plan is null` | `Structured member plan for contract '{0}' cannot be null on reachable paths: {1}.` |
+
+Для всех четырёх diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Members`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- анализируется только оставшийся effective declarative member plan после
+  успешного выбора result категориями 1–9;
+- `MappingMode`, null handling, result-policy specialization, structured
+  control flow, member-plan overlays и model precedence определяют
+  достижимые paths и effective rules до публикации diagnostics;
+- manual `Convert` не имеет declarative member stage и категорией 10 не
+  анализируется;
+- runtime `ConstructUsing` / `ResolveUsing` остаются непрозрачными producers
+  настоящего destination: категория 10 не проверяет, как callback создаёт
+  объект, но учитывает, что non-null runtime result уже создан до `Members`;
+- `UnmappedMemberValidation` не скрывает category-10 error и не понижает её до
+  warning;
+- suppression либо изменение severity меняет только compiler presentation и
+  не делает invalid rule применимой, не инициализирует `required`, не
+  превращает `null` в пустой plan и не меняет generated recovery.
+
+Mapping contract передаётся в `{1}` у `MORPH0040`–`MORPH0042` и в `{0}` у
+`MORPH0043`; он форматируется по canonical identity категории 3. Имя member-а
+в `{0}` у первых трёх diagnostics сохраняет точное destination spelling без
+case normalization. Member/type displays внутри reason используют
+fully-qualified nullable-aware containing type, member name и конечный
+read/write type. Generic substitutions и oblivious/nullability context
+сохраняются по законам generated member surface.
+
+Affected paths используют те же три стабильных пользовательских имени, что и
+категория 9:
+
+1. `Create`;
+2. `Update without a previous destination`;
+3. `Update with a previous destination`.
+
+`MORPH0041`–`MORPH0043` перечисляют affected paths в этом порядке через `, `.
+Intrinsic `MORPH0040` сохраняет тот же path set для recovery/deduplication, но
+не включает его в message и не размножается по operations. Внутри одного
+public path независимые member-plan leaves остаются разными origins и не
+сливаются только из-за одинакового имени path-а.
+
+### 6.82. Member origins, effective rules и lifecycle model
+
+Category-10 observation принадлежит одному из четырёх source-backed либо
+destination-backed origins:
+
+- effective explicit member rule после локального/inherited merge и `with`-
+  overlays;
+- obligation конкретного `required` destination member-а на конкретном
+  structured creation leaf;
+- lifecycle boundary между effective member rule и фактическим result origin;
+- terminal `null` / `default` leaf structured `Members` callback-а.
+
+Весь `Members` callback не считается одной атомарной member operation. После
+category-8 lowering generator строит общий с construction plan path-sensitive
+dependency graph, специализирует `Create`, Update без previous и Update с
+previous, разрешает conditional/switch branches и удаляет overridden rules с
+их неиспользуемыми dependencies. Diagnostic получает только rule либо plan leaf,
+который остался effective и достижим. Полностью перекрытый local/inherited
+rule, discarded `with` value и недостижимая branch category-10 diagnostic не
+получают.
+
+Destination member identity определяется generated surface до анализа rules:
+
+- class/record/struct members следуют base-first declaration order, но новое
+  declaration derived destination скрывает одноимённый base slot, даже если
+  само declaration непригодно;
+- override сохраняет одну member identity и не считается hiding;
+- interface member должен иметь единственное most-derived declaration;
+- local rule current pair всегда относится к member-у, выбранному generated
+  `DestinationMembers` surface C# binding-ом;
+- cross-pair imported rule сохраняет identity исходного destination slot-а и
+  не перенаправляется по одному имени на новый derived slot;
+- local rule того же имени перекрывает imported rule до проверки его
+  применимости и тем самым может удалить конфликтующий inherited origin.
+
+Для каждого effective writable/creation-time member применяется следующая
+последовательность:
+
+1. Обычная explicit expression должна успешно связаться с generated
+   `Member<T>` surface; точную C# type/binding error Morphant не дублирует.
+2. Explicit `Auto` обязан разрешить unique readable source member с точным
+   case-sensitive именем и warning-free implicit conversion.
+3. Typed `Auto<T>` / `Ignore<T>` и `Value<T>` после успешного C# binding
+   обязаны утверждать exact final member type. Более широкий `object`, boxing
+   либо nullability conversion wrapper-а не ослабляет exact-target law.
+4. `Ignore` является допустимым no-op: он сохраняет уже выбранное значение и
+   сам по себе не требует assignment. Его влияние на `required` structured
+   creation проверяется отдельно `MORPH0041`.
+5. Nested `Map` / `Create` / `Update` сначала считается member rule, но
+   корректность nested operation/result принадлежит категории 11.
+
+Неуказанный member при `MemberSelection.Auto` получает convention rule только
+при unique readable warning-free source candidate. Отсутствующий automatic
+candidate сам по себе не является category-10 error: для обычного member-а это
+возможный warning категории 12, а для `required` — точная `MORPH0041`.
+`MemberSelection.Explicit` просто не создаёт unwritten rules.
+
+Member phase различает три result origin-а:
+
+- structured constructor/convention result ещё допускает object-initializer
+  assignments для result-independent `init` и creation-time `required` rules;
+- previous result уже создан: обычные setters/mutable fields применяются, а
+  `init` rules сохраняют существующее значение, не вычисляя свои expressions;
+- non-null result runtime `ConstructUsing` / `ResolveUsing` также уже создан:
+  обычные post-construction rules применяются, но явный value-producing
+  `init` rule неприменим. Runtime `null` завершает mapping до member stage.
+
+Прямая либо транзитивная dependency value или условия rule-а от `result`
+делает rule post-creation. Для обычного setter/mutable field это допустимо.
+Для `init` и любого `required` rule-а, который обязан удовлетворить
+structured creation, такая dependency возникает до появления result и
+принадлежит `MORPH0042`.
+
+### 6.83. `MORPH0040`: member rule invalid
+
+`MORPH0040` публикуется, когда C#-связанный effective explicit rule не может
+обозначать заявленный destination member по законам Morphant. Стабильный `{2}`
+reason имеет одну из форм:
+
+- `Auto does not resolve a unique readable source member with a warning-free implicit conversion`;
+- `marker target type '{actualType}' does not exactly match member type '{memberType}'`;
+- `imported rule targets destination member '{targetMember}', which is hidden by '{hidingMember}' in the current destination`.
+
+Первая форма относится только к написанному `Auto()` / `Auto<T>()`. Она
+охватывает отсутствие читаемого exact-name source member-а, несколько
+равноправных candidates, недоступный candidate и отсутствие warning-free
+implicit conversion. Unwritten convention с тем же результатом `MORPH0040` не
+получает.
+
+Вторая форма относится к typed `Auto` / `Ignore` / `Value<T>`, которое уже
+прошло C# binding generated wrapper-а, например через `object` либо
+nullability conversion. Если compiler сам отверг вызов/initializer,
+`MORPH0040` не публикуется. Обычное explicit expression, включая его nullable
+warning, остаётся compiler-owned и не получает exact-target restriction
+marker-а.
+
+Третья форма относится только к retained cross-pair imported rule. Morphant
+не перенаправляет его на одноимённый member нового derived destination и не
+применяет скрытый base slot через cast. Exact same-pair import сохраняет тот же
+destination contract и этой причиной не затрагивается. Явный local rule того
+же имени удаляет imported origin до category-10 анализа и является
+единственным неявно не меняющим slot способом разрешить конфликт.
+
+Primary location для `Auto`/typed-marker reasons — identifier `Auto`, `Ignore`
+либо `Value`. Для hidden imported rule primary — identifier `IncludeBase`
+consumer edge. Member designator исходного rule-а и declaration hiding member-а
+становятся additional locations в этом порядке, если имеют source spans.
+
+Diagnostic identity включает current mapper, canonical pair, effective member
+identity, rule/edge origin и reason kind. Один rule, достигнутый несколькими
+operations либо generic substitutions, публикуется один раз с агрегированными
+affected paths для recovery. Consumer-specific hiding конфликт диагностируется
+отдельно для каждой current pair; сам исходный valid base rule diagnostic не
+получает.
+
+Recovery делает invalid только те member-plan leaves, которым нужен rule. При
+выборе такого leaf mapping бросает `MappingConfigurationException` до
+вычисления value и до assignments member stage. Независимая branch без rule,
+previous/creation path, где rule не применяется, другой member plan и pair
+сохраняются. Morphant не заменяет explicit `Auto` convention-ом, не вставляет
+cast и не выбирает скрытый base member.
+
+### 6.84. `MORPH0041`: required destination member не инициализирован
+
+`MORPH0041` публикуется для каждого `required` property/field, которое не
+удовлетворено на хотя бы одном reachable structured constructor/convention
+creation leaf. Obligation отсутствует, если selected destination constructor
+помечен `[SetsRequiredMembers]`. Constructor argument с тем же именем,
+destination field/property initializer и значение по умолчанию сами по себе
+не заменяют required object-initializer obligation без этого атрибута.
+
+Member считается удовлетворённым, когда на leaf существует effective valid
+result-independent rule, который Morphant может выполнить в creation-time
+initializer: explicit expression/`Value`, valid `Auto`, valid nested rule либо
+применимая unwritten convention. `MORPH0041` возникает, в частности, когда:
+
+- `MemberSelection.Explicit` оставляет required member неуказанным;
+- `MemberSelection.Auto` не находит unique warning-free source candidate;
+- explicit `Ignore` сохраняет значение вместо required initializer-а;
+- выбранная conditional/switch member-plan branch не содержит required rule;
+- required member отсутствует в writable generated surface из-за
+  accessibility, unsupported/reserved shape либо hiding.
+
+Previous-result и result runtime `ConstructUsing` / `ResolveUsing` уже были
+созданы до Morphant member stage, поэтому category 10 не проверяет, как их
+`required` members были удовлетворены. C# проверяет написанный пользователем
+`new` внутри runtime callback-а, а другой factory/cache остаётся обычным
+runtime C#. Existing previous branch также не получает `MORPH0041`.
+
+Если exact rule уже invalid по `MORPH0040`, неприменим по `MORPH0042` либо его
+nested marker invalid по категории 11, производная `MORPH0041` того же
+member/path подавляется. Explicit `Ignore` при этом является valid rule и
+потому получает именно `MORPH0041`, а не `MORPH0040`. Один и тот же required
+member может независимо иметь valid previous/runtime paths и invalid
+structured replacement path.
+
+Primary location выбирается по наиболее конкретной причине:
+
+- marker name `Ignore` для effective explicit ignore;
+- terminal `DestinationMembers` plan expression для explicit plan leaf,
+  который не задаёт member;
+- declaration required destination member-а для implicit/no-`Members` plan;
+- identifier `Map` authoritative registration, если destination member
+  доступен только из metadata.
+
+Source-backed final argument effective `MemberSelection` и declaration
+selected constructor-а добавляются после primary в этом порядке, когда они
+непосредственно определяют obligation. Additional locations отсутствуют, если
+соответствующий origin задан MSBuild/library default либо metadata.
+
+Diagnostic identity включает mapper, canonical pair, required member symbol,
+structured construction origin и member-plan leaf/cause. Paths одного origin
+агрегируются; независимые constructor/member-plan leaves диагностируются
+отдельно. Declaration order destination members определяет порядок diagnostics
+одного leaf-а.
+
+Recovery заменяет affected structured creation leaf typed
+`MappingConfigurationException` stub-ом до вычисления constructor arguments и
+member values. Existing previous, runtime-result и другие structured leaves
+сохраняются. Generator не подставляет `default`, не выполняет скрытый
+assignment и не считает constructor parameter эквивалентом required member-а.
+
+### 6.85. `MORPH0042`: member rule не может быть применён
+
+`MORPH0042` публикуется для effective explicit rule, который сам по себе valid,
+но требует недоступную lifecycle-фазу хотя бы на одном reachable path. `{2}`
+имеет одну из двух стабильных форм:
+
+- `init-only member cannot be assigned after a runtime result policy has returned the result`;
+- `creation-time member rule depends on result before it is created`.
+
+Первая причина применяется к value-producing explicit rule `init`-member-а на
+non-null result из `ConstructUsing` / `ResolveUsing`. `ConstructUsing`
+затрагивает только no-previous paths: existing previous остаётся result, и
+`init` rule на нём пропускается. `ResolveUsing` является full result policy,
+поэтому потенциально non-null runtime result делает rule неприменимым на всех
+его достижимых paths. Callback остаётся непрозрачным: Morphant не пытается
+доказать, вернул ли он previous, cache object либо новый instance.
+
+Explicit `Ignore` не требует assignment и потому остаётся допустимым для уже
+созданного result. Unwritten `MemberSelection.Auto` convention для
+неприменимого `init` также просто отсутствует; он не превращает default
+runtime-policy mapping в error. Явный `Auto`, expression, `Value` либо nested
+rule является value-producing и после собственной проверки применимости
+попадает под `MORPH0042`.
+
+Вторая причина применяется к `init` rule и к rule любого `required` member-а,
+который должен войти в structured creation initializer, когда его value либо
+условие применимости прямо или транзитивно зависит от `result`. Само наличие
+третьего/четвёртого параметра `Members` dependency не создаёт. Обычный setter
+либо mutable-field rule может зависеть от result и выполняется
+post-construction без diagnostic.
+
+Primary location — member designator effective explicit rule-а. Для
+result-dependency первая прямая source reference, образующая dependency,
+является первой additional location. Для runtime-result причины identifier
+effective `ConstructUsing` / `ResolveUsing` является первой additional
+location. Source-backed `IncludeBase` edge добавляется последним, если rule и
+lifecycle origin встретились только после import-а.
+
+Diagnostic identity включает mapper, canonical pair, member/rule origin,
+lifecycle origin и reason kind. Один rule не размножается по operations и
+generic substitutions; affected paths агрегируются в `{3}`. Независимые rules
+одного member-а в разных effective plan leaves остаются независимыми.
+
+Recovery блокирует только leaf/path, где rule должен быть применён. Structured
+creation leaf бросает до construction/member values; non-null runtime result
+сначала получается один раз, затем member stage бросает до assignments.
+Runtime `null` по-прежнему завершает mapping до member stage и stub-а.
+Previous branch, где `init` rule неприменим и не вычисляется, остаётся valid.
+Morphant не превращает `init` в setter, не переносит creation-time rule после
+constructor-а и не вычисляет expression только ради side effect.
+
+### 6.86. `MORPH0043`: structured member plan равен null
+
+`MORPH0043` публикуется, когда reachable terminal leaf structured `Members`
+callback-а статически является `null`, target-typed `default`,
+`default(DestinationMembers)` либо тем же значением через поддерживаемые
+transparent wrappers и single-value structured local alias.
+
+Primary location — наименьшее `null` / `default`-producing expression.
+Terminal alias uses того же producer-а являются additional locations в source
+order. Diagnostic identity — callback и null-producing origin; повторное
+достижение producer-а из нескольких paths дедуплицируется с агрегированным
+списком paths, независимые producers диагностируются отдельно.
+
+`null!`, nullable-disabled context, explicit cast и suppression C# nullable
+warning не делают member plan допустимым. Compiler warning остаётся
+независимой compiler diagnostic. Empty `new DestinationMembers()` и полное
+отсутствие configured `Members` являются valid plans: вторая форма оставляет
+только effective conventions.
+
+`null` runtime result `ConstructUsing` / `ResolveUsing` завершает mapping до
+`Members` и не является `MORPH0043`. Manual `Convert` null также не имеет
+member plan. `null` вместо `DestinationConstruction` принадлежит
+`MORPH0039`.
+
+Recovery сохраняет control-flow conditions и dependencies до invalid terminal
+leaf, после чего бросает `MappingConfigurationException` до вычисления member
+values и assignments. Generator не заменяет plan пустым object initializer-ом,
+не включает conventions как fallback и не применяет частичный соседний plan.
+
+### 6.87. Recovery, precedence, порядок и suppression
+
+Все четыре diagnostics сохраняют C#-legal `ITypeMapper<,>` contract,
+capability-specific fluent surfaces и независимые operations/pairs. Invalid
+member-plan leaf/path бросает `MappingConfigurationException`; valid leaves и
+paths исполняются по исходному declarative lifecycle.
+
+Recovery granularity:
+
+- `MORPH0040` блокирует leaves, использующие invalid explicit rule;
+- `MORPH0041` блокирует только structured creation leaves с
+  неудовлетворённым required obligation;
+- `MORPH0042` блокирует lifecycle path, где valid rule нужно было бы применить
+  в недоступной фазе;
+- `MORPH0043` блокирует terminal null/default member-plan leaf.
+
+Если выбранный effective plan leaf содержит хотя бы один blocking member
+observation, recovery бросает до любых member assignments этого leaf-а. Это не
+создаёт гарантии порядка независимых valid member rules, но исключает частично
+изменённый existing result только из-за diagnostic stub-а. Control-flow
+conditions, runtime result policy и зависимости, необходимые для выбора leaf-а,
+сохраняют обычную evaluation semantics; значения самих заблокированных rules
+не вычисляются.
+
+Если attribution rule/leaf невозможна после valid category-8 lowering, весь
+structured member callback считается атомарно invalid и primary ownership
+возвращается к `MORPH0030`. Category 10 не строит эвристический pair-wide
+fallback и не анализирует body runtime result callback-а.
+
+Precedence действует так:
+
+- gates категорий 1–4, invalid local composition/settings/inheritance
+  категорий 5–7 и invalid callback transfer/grammar категории 8 подавляют
+  category-10 analysis соответствующей области;
+- invalid construction leaf категории 9 не получает member cascade;
+  successful selection с точным required/init blocker-ом, напротив, сохраняет
+  ownership категории 10 и подавляет производную `MORPH0036`;
+- `MORPH0043` делает contents null plan leaf-а неизвестными и подавляет
+  `MORPH0040`–`MORPH0042` только внутри него;
+- `MORPH0040` invalid rule подавляет производные `MORPH0041`/`MORPH0042` того
+  же member/path;
+- exact `MORPH0042` lifecycle failure подавляет производную `MORPH0041` того
+  же required member/path;
+- explicit valid `Ignore` required member-а получает `MORPH0041`, а не
+  `MORPH0040` либо `MORPH0042`;
+- invalid nested `Map` / `Create` / `Update` категории 11 сохраняет точный
+  nested ownership и подавляет только производную required-obligation
+  diagnostic того же rule/path;
+- category-12 warning-анализ исключает invalid affected paths, но продолжает
+  анализировать независимый effective plan;
+- точная source C# binding/type error не дублируется Morphant diagnostic-ой.
+
+Intrinsic invalid rule origin не размножается по exact same-pair inheritance
+consumers: retained origin переносит recovery, local override/discard удаляет
+его. Consumer-specific cross-pair hiding либо lifecycle конфликт получает
+diagnostic current pair, потому что исходный base rule остаётся valid в своём
+contract-е.
+
+Publication order — по ID. Внутри ID: ordinal mapper identity, canonical pair,
+member declaration order, member-plan/construction origin, primary source
+location, reason и affected paths. Additional locations сохраняют порядок,
+заданный разделами 6.83–6.86.
+
+Suppression либо severity override не меняет member selection, result phase,
+required obligations, recovery или artifact set. Изменение destination member
+surface/hiding, source candidates, marker exact type, `MemberSelection`,
+constructor/`SetsRequiredMembers`, result policy, member control flow,
+dependency on `result`, settings, override либо inheritance полностью
+actualizes category-10 observations и affected stubs при одном сохранённом
+incremental driver-е.
+
+### 6.88. Самостоятельная тестовая матрица категории 10
+
+Unit-категория member diagnostics независимо фиксирует:
+
+- exact descriptors `MORPH0040`–`MORPH0043`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и все parameters;
+- canonical contract/member/type/path formatting, deterministic ordering и
+  exact primary/additional locations;
+- explicit `Auto` без source, с ambiguous/inaccessible source и без
+  warning-free conversion; отсутствие `MORPH0040` у успешного `Auto` и
+  неуказанного convention member-а;
+- прошедшие C# binding typed `Auto` / `Ignore` / `Value<T>` mismatches через
+  broader object/boxing/nullability forms, exact valid markers и отсутствие
+  Morphant duplicate для compiler-rejected mismatch/ordinary expression;
+- cross-pair imported rule, скрытый eligible либо ineligible derived member-ом,
+  override как тот же slot, exact same-pair import и local same-name override;
+- `MORPH0041` для required set/init properties и fields при
+  `MemberSelection.Auto` / `Explicit`, missing convention, explicit `Ignore`,
+  conditional/switch omission, inaccessible/reserved/hiding surface;
+- required satisfaction explicit expression/`Value`, valid `Auto`, valid
+  nested rule и unwritten convention; constructor parameter/default member
+  initializer не удовлетворяет obligation без `[SetsRequiredMembers]`;
+- `[SetsRequiredMembers]` matrix для implicit, explicit и `ByConvention`
+  constructors, multiple construction leaves и independent required members;
+- отсутствие `MORPH0041` на previous/runtime-result paths и точная ownership
+  invalid explicit/lifecycle/nested rule без derivative required diagnostic;
+- `MORPH0042` для explicit value-producing init rule после
+  `ConstructUsing`/`ResolveUsing`, paths каждого result policy, runtime-null
+  short circuit, valid `Ignore` и skipped unwritten/previous init rules;
+- direct/transitive/local/condition dependency on `result` для init и required
+  creation-time rules, отсутствие ошибки для result-independent rules и
+  result-dependent ordinary setter/mutable-field rules;
+- `MORPH0043` для `null`, `null!`, target-typed/typed `default`, transparent
+  casts/wrappers, conditional/switch leaves и local aliases; producer
+  deduplication и exact use additional locations;
+- valid empty/no `Members` plan, runtime/manual null и category-9 construction
+  null без `MORPH0043`;
+- operation/previous/result-origin reachability across every `MappingMode`,
+  null destination policy, structured previous/replacement branches and all
+  four result-policy families;
+- branch-atomic full generated recovery for every ID: legal interfaces and
+  fluent surfaces, throwing affected leaf before values/assignments,
+  preserved runtime-null short circuit, previous reuse, independent
+  branches/operations/pairs and no hidden fallback;
+- category 9/11 ownership and suppression, category-12 exclusion of invalid
+  paths, compiler-owned diagnostics and no dependent cascades;
+- local/exact/cross-pair inheritance origin laws, retained versus discarded
+  rules, consumer-specific conflicts and independent local overrides;
+- real suppression/severity override for all four IDs without changing
+  recovery/artifacts;
+- actualization member/source declarations, hiding/override, marker type,
+  required/`SetsRequiredMembers`, result policy, callback control flow,
+  `result` dependency, settings and inheritance при одном incremental driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- suppressed `MORPH0040` for invalid explicit `Auto`, exact-marker mismatch
+  and imported hidden rule: affected plan throws without value/assignment,
+  valid branch and local override execute normally;
+- suppressed `MORPH0041` on Create, null-Update and existing-Update structured
+  replacement: invalid creation throws before constructor/member side effects,
+  previous reuse, `[SetsRequiredMembers]` and runtime-result paths remain
+  executable;
+- suppressed `MORPH0042` for result-dependent structured initializer,
+  `ConstructUsing` init and full `ResolveUsing` init: non-null affected path
+  throws, runtime null returns terminally, previous/skipped and ordinary
+  setter paths execute;
+- suppressed `MORPH0043` for null/default member-plan leaves while empty plan,
+  non-null conditional branch and independent member plan preserve their
+  control flow and side effects;
+- one invalid member rule never partially mutates an existing result before
+  recovery throw; branch not selecting the rule still applies all valid
+  members;
+- exact/inherited origin recovery, independent pair isolation and no category
+  11–12 cascade from invalid member leaf;
+- real `.editorconfig` / MSBuild suppression or severity override for all four
+  IDs without changing generated artifact set and effective recovery.
+
 ## 7. Реализация и тесты
 
 До первого vertical diagnostic slice production-model выравнивается с уже
@@ -3454,7 +3930,10 @@ Package-like integration-категория независимо проверя�
    source и target mapper, canonical pair и affected operations/path. В
    частности, convention/structured construction planners сохраняют strategy,
    candidate rejection, selected constructor, parameter-rule и terminal
-   previous/null origins вместо неразличимых `null`/unsupported states.
+   previous/null origins, а member planner — effective member identity,
+   explicit/convention origin, required obligation, lifecycle/result
+   dependency, hidden imported slot и terminal null-plan origin вместо
+   неразличимых `null`/unsupported states.
    Recovery строится из тех же observations, а не из повторного эвристического
    анализа.
 

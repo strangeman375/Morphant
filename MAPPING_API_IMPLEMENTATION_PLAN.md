@@ -125,8 +125,8 @@ coverage.
 
 Диагностики и observable failures вынесены в отдельные поздние этапы.
 Observable failures детализированы и приняты этапом 24. Diagnostics ведутся в
-отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): категории 1–9
-синхронизированы с принятым API и готовы, категории 10–12 остаются следующей
+отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): категории 1–10
+синхронизированы с принятым API и готовы, категории 11–12 остаются следующей
 незавершённой частью каталога.
 
 Automatic collection semantics, projection и остальные post-v0 возможности в
@@ -571,18 +571,53 @@ reason в message. Shape и applicability не получают отдельны
 категорией 10; когда exact member observation полностью объясняет
 неприменимость, производная `MORPH0036` подавляется.
 
+Typed `Auto` / `Ignore` / `Value<T>` mismatch относится к `MORPH0037` только
+после успешного C# binding, например через более широкий `object` либо
+nullability conversion. Несовпадение, уже отвергнутое compiler-ом, остаётся
+compiler-owned и не дублируется Morphant diagnostic-ой.
+
 Все diagnostics path-sensitive. Suppression меняет только presentation:
 affected leaf бросает `MappingConfigurationException`, а existing Update,
 независимые branches/operations/pairs и C#-legal fluent surfaces сохраняются.
 Runtime `ConstructUsing` / `ResolveUsing` null остаётся авторитетным destination
 result; `MORPH0039` относится только к отсутствующему structured DSL plan.
 
+## Согласованная diagnostic-категория 10
+
+Статус: принята пользователем 11 августа 2026 года; нормативный каталог
+обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+
+Категория «Корректность member plan» получила четыре последовательных ID:
+
+- `MORPH0040` — invalid effective explicit member rule: неприменимый `Auto`,
+  прошедший C# binding exact-marker mismatch либо imported rule, target slot
+  которого скрыт новым derived destination member-ом;
+- `MORPH0041` — неудовлетворённый `required` member на reachable structured
+  creation/replacement leaf;
+- `MORPH0042` — valid rule, требующий недоступной lifecycle-фазы: explicit
+  value-producing `init` после runtime result policy либо creation-time rule,
+  зависящий от ещё не созданного `result`;
+- `MORPH0043` — terminal `null` / `default` structured member plan.
+
+Cross-pair inherited rule сохраняет identity исходного destination slot-а и не
+перенаправляется по имени на hiding member; local same-name rule удаляет
+imported origin до анализа. `Ignore` остаётся допустимым no-op для previous и
+runtime result, но не удовлетворяет structured required obligation без
+`[SetsRequiredMembers]`. Неприменимый `init` на previous branch пропускается без
+вычисления и diagnostic.
+
+Recovery path-sensitive и branch-atomic: affected leaf бросает
+`MappingConfigurationException` до member assignments, остальные
+branches/operations/pairs сохраняются. Required/init blocker категории 10
+подавляет производную `MORPH0036`; точная invalid nested operation остаётся
+категорией 11 и не дублируется required-ошибкой.
+
 ## Следующий этап
 
-**Diagnostics: категория 10 — корректность member plan.**
+**Diagnostics: категория 11 — корректность nested mapping.**
 
-Статус: не начат. Категории 1–9 приняты; перед production-реализацией всего
-каталога остаются категории 10–12 и предварительный срез, перечисленный выше.
+Статус: не начат. Категории 1–10 приняты; перед production-реализацией всего
+каталога остаются категории 11–12 и предварительный срез, перечисленный выше.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2011,7 +2046,7 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: в работе на уровне каталога. Категории 1–9 приняты; категории 10–12 не
+Статус: в работе на уровне каталога. Категории 1–10 приняты; категории 11–12 не
 начаты; production-реализация diagnostics ещё не начата.
 
 Работа ведётся по отдельному
@@ -2019,11 +2054,12 @@ baseline проходят `3/3`. Остальная документационн
 таксономия v0, затем по одной категории составляется полный каталог с IDs,
 сообщениями, locations, severity, suppression и recovery. Реализация и тесты
 начинаются только после согласования каталога; завершает этап двусторонний
-аудит плана и production-кода. Таксономия и категории 1–9 с
-`MORPH0001`–`MORPH0039` приняты и синхронизированы с текущим API;
+аудит плана и production-кода. Таксономия и категории 1–10 с
+`MORPH0001`–`MORPH0043` приняты и синхронизированы с текущим API;
 `MORPH0034` относится к категории 2, `MORPH0029`–`MORPH0033` сохранены за
 category-8 transfer contract, а `MORPH0035`–`MORPH0039` описывают
-category-9 construction contract. Следующая каталожная работа — категория 10.
+category-9 construction contract. `MORPH0040`–`MORPH0043` образуют
+category-10 member contract. Следующая каталожная работа — категория 11.
 
 Перед первым implementation slice выполняется согласованный preflight:
 exact-same-pair `IncludeBase`, callback ownership builder discovery, различие

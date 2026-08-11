@@ -3360,8 +3360,10 @@ warning/nullable context, async/unsafe transfer и compiler preflight.
 
 Observable runtime failures и generated exception-stub boundary реализованы и
 зафиксированы разделом 14.2. Compile-time diagnostics остаются отдельным
-поздним планом: категории 1–9 приняты и синхронизированы с текущим API,
-категории 10–12 ещё не проработаны.
+поздним планом: категории 1–10 приняты и синхронизированы с текущим API,
+категории 11–12 ещё не проработаны. Category-10 contract фиксирует invalid
+explicit member rule, required obligation, lifecycle applicability и
+structured member-plan null без изменения описанной выше mapping semantics.
 Automatic collection semantics, projection, polymorphism, reference handling и
 остальные перечисленные выше возможности остаются post-v0 направлениями и не
 расширяют текущий mapping semantics неявно. До отдельного продуктового решения
