@@ -125,9 +125,9 @@ coverage.
 
 Диагностики и observable failures вынесены в отдельные поздние этапы.
 Observable failures детализированы и приняты этапом 24. Diagnostics ведутся в
-отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): категории 1–11
-синхронизированы с принятым API и готовы, категория 12 остаётся следующей
-незавершённой частью каталога.
+отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): полный каталог
+категорий 1–12 синхронизирован с принятым API и готов к production-реализации
+после предварительного model-alignment среза.
 
 Automatic collection semantics, projection и остальные post-v0 возможности в
 текущую реализацию не входят. Collection/tuple/deferred и связанные root-типы
@@ -548,7 +548,11 @@ tests фиксируют локальную гранулярность `unsafe`,
 2. передать callback arguments из builder discovery в category-8 model;
 3. отличать source-owned warning от новой preflight failure;
 4. заменить boolean/string failure states structured observations с origin,
-   reason, locations, target mapper и affected operations/path.
+   reason, locations, target mapper и affected operations/path;
+5. распознавать exact direct-body compile-time source discard
+   `_ = source.Member;` во внешнем structured DSL, сохранять его как
+   completeness observation и удалять из runtime lowering без вычисления
+   getter-а.
 
 ## Согласованная diagnostic-категория 9
 
@@ -646,12 +650,58 @@ branches/operations/pairs и valid runtime-wide slot сохраняются. Exa
 error подавляет только производную required-obligation diagnostic того же
 rule/path.
 
+## Согласованная diagnostic-категория 12
+
+Статус: принята пользователем 11 августа 2026 года; нормативный каталог
+обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+
+Категория «Полнота mapping-а через `UnmappedMemberValidation`» завершает
+каталог двумя последовательными warning IDs:
+
+- `MORPH0047` — supported source member не участвует в effective plan;
+- `MORPH0048` — supported destination member не занят effective plan.
+
+`None` отключает обе diagnostics, `Source` включает `MORPH0047`,
+`Destination` — `MORPH0048`, `Strict` — обе. Completeness pair-wide: use либо
+occupancy хотя бы на одной valid reachable operation/branch достаточно, а один
+member не размножается по Create/Update и conditional paths. Warnings не
+меняют generated code, runtime behavior или recovery даже после suppression
+либо повышения severity до error.
+
+Source-use анализируется семантически в structured plan и inline
+`ConstructUsing` / `ResolveUsing`. Whole-source handoff непрозрачному коду
+консервативно делает supported source members potentially used, но runtime
+callback не становится скрытым destination plan. Для явного исключения
+source member-а согласована exact outer structured форма:
+
+```csharp
+_ = source.LegacyValue;
+```
+
+Это direct-body compile-time source discard во всех `Construct`, `Resolve` и
+`Members`:
+getter не вызывается, generated mapping не меняется, member pair-wide
+исключается только из `MORPH0047`. Chains, aliases и arbitrary expressions
+остаются unsupported side-effect statements категории 8. В
+`ConstructUsing` / `ResolveUsing` тот же код является обычным runtime read.
+
+Destination occupancy создают valid member rule, member-level `Ignore()` и
+фактически переданный constructor argument, связанный с member-ом. Omitted
+optional/`params`, constructor `Ignore()`, `[SetsRequiredMembers]`, reuse
+existing result, read-only nested proxy и runtime result callback скрытого
+occupancy не создают. Exact errors категорий 8–11 подавляют только производный
+warning своего uncertain slice; independent completeness продолжает
+анализироваться.
+
 ## Следующий этап
 
-**Diagnostics: категория 12 — полнота mapping-а через `UnmappedMemberValidation`.**
+**Diagnostics: предварительное выравнивание production model перед vertical
+slices.**
 
-Статус: не начат. Категории 1–11 приняты; перед production-реализацией всего
-каталога остаётся категория 12 и предварительный срез, перечисленный выше.
+Статус: не начат. Полный каталог категорий 1–12 принят; следующий coherent
+change выполняет пять предварительных пунктов, перечисленных выше, с
+самостоятельными focused regression tests. После него начинается production-
+реализация diagnostics вертикальными срезами.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2080,26 +2130,28 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: в работе на уровне каталога. Категории 1–11 приняты; категория 12 не
-начата; production-реализация diagnostics ещё не начата.
+Статус: полный каталог категорий 1–12 принят; production-реализация diagnostics
+ещё не начата, следующий срез — предварительное выравнивание production model.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
 таксономия v0, затем по одной категории составляется полный каталог с IDs,
 сообщениями, locations, severity, suppression и recovery. Реализация и тесты
 начинаются только после согласования каталога; завершает этап двусторонний
-аудит плана и production-кода. Таксономия и категории 1–11 с
-`MORPH0001`–`MORPH0046` приняты и синхронизированы с текущим API;
+аудит плана и production-кода. Таксономия и категории 1–12 с
+`MORPH0001`–`MORPH0048` приняты и синхронизированы с текущим API;
 `MORPH0034` относится к категории 2, `MORPH0029`–`MORPH0033` сохранены за
 category-8 transfer contract, а `MORPH0035`–`MORPH0039` описывают
 category-9 construction contract. `MORPH0040`–`MORPH0043` образуют
 category-10 member contract, а `MORPH0044`–`MORPH0046` — category-11 nested
-mapping contract. Следующая каталожная работа — категория 12.
+mapping contract. `MORPH0047`–`MORPH0048` завершают category-12 pair-wide
+completeness contract.
 
 Перед первым implementation slice выполняется согласованный preflight:
 exact-same-pair `IncludeBase`, callback ownership builder discovery, различие
-source/generated warnings и structured failure observations. Точный scope и
-тестовые требования зафиксированы разделом 7 `DIAGNOSTICS_PLAN.md`.
+source/generated warnings, structured failure observations и compile-time
+source discard lowering. Точный scope и тестовые требования зафиксированы
+разделом 7 `DIAGNOSTICS_PLAN.md`.
 
 ### Этап 24. Observable failures
 

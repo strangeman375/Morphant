@@ -279,9 +279,10 @@ Effective settings разрешаются от более конкретного
 Импорт mapping plan зависит от отношения узлов:
 
 - cross-pair `IncludeBase`, например `Dog -> DogDto` из
-  `Animal -> AnimalDto`, импортирует только правила `Members`; result policy и
-  `Convert` не переносятся, а conventions и constructor selection вычисляются
-  заново для текущей pair;
+  `Animal -> AnimalDto`, импортирует только effective `Members` plan: member
+  rules и compile-time source discards, объявленные в `Members`; source
+  discards из result policy, сама result policy и `Convert` не переносятся, а
+  conventions и constructor selection вычисляются заново для текущей pair;
 - exact same-pair из connected base mapper-а импортирует весь applicable
   effective plan, включая одну из четырёх result policies либо `Convert`, без
   runtime casts, адаптеров delegate signatures или попыток перенести result
@@ -290,7 +291,9 @@ Effective settings разрешаются от более конкретного
 Правила `Members` в обоих случаях объединяются по destination member
 независимо от формы перегрузки. Локальный expression, `Auto()` или `Ignore()`
 перекрывает унаследованное правило, после чего зависимости каждого effective
-rule анализируются отдельно.
+rule анализируются отдельно. Source discard является независимым plan item и
+дедуплицируется по exact source member symbol после substitutions; он
+сохраняется, пока импортировавший его `Members` fragment остаётся effective.
 
 Локальный plan разрешается предсказуемо:
 
@@ -1295,6 +1298,10 @@ DSL. В них поддерживаются:
   `System.Linq`; query-pattern extensions из других namespaces остаются
   unsupported, поскольку общий generated source не может безопасно
   воспроизвести разные file-local using scopes;
+- direct compile-time source discard точной формы `_ = source.Member;` в
+  statement list callback body, где `_` семантически является discard, а
+  `Member` — прямой supported property либо field нормализованного source
+  parameter-а текущего callback-а;
 - условный выбор whole plan, creation strategy, constructor/member value,
   `Value(...)`, `Auto()`, `Ignore()` и `Map(...)`.
 
@@ -1311,10 +1318,28 @@ effects не задаётся. Declarative locals задают dependency для
 
 - locals без initializer-а, последующие/deconstruction/compound assignments и
   `++` / `--`;
-- loops, `break` / `continue` и standalone statements только ради side effect;
+- loops, `break` / `continue` и standalone statements только ради side effect,
+  кроме точного compile-time source discard;
 - local functions, объявленные во внешнем declarative block;
 - `try` / `catch` / `finally`, `using`, `lock`, labels / `goto`;
 - `ref` / `using` locals, `unsafe` / `fixed`, `async` / `await` и `yield`.
+
+Source discard является declarative instruction для
+`UnmappedMemberValidation.Source`, а не runtime expression. Generator удаляет
+его при lowering и никогда не вызывает getter. Он pair-wide исключает
+указанный source member из unmapped warning, но не создаёт source use, member
+rule, convention либо destination mapping. Statement обязан быть direct child
+внешнего callback body, а right-hand side — прямой ссылкой на source parameter:
+member chains, aliases, tuples, arbitrary expressions, control-flow-nested
+statement и discard внутри runtime/deferred lambda специальной семантики не
+получают. Несколько members исключаются отдельными statements.
+
+Тот же contract действует во всех structured `Construct`, `Resolve` и
+`Members`. В `ConstructUsing` и `ResolveUsing` `_ = source.Member;` остаётся
+обычным C# statement и действительно читает member; `Convert` полностью
+исключён из unmapped-member validation. Source discard учитывается только из
+effective retained callback slice. Доказанно недостижимый, перекрытый либо
+отброшенный inherited fragment не сохраняет suppression.
 
 Сложное вычисление выносится в обычный instance/static member mapper-а, сложное
 получение result — в `ConstructUsing` либо `ResolveUsing`, а полностью
@@ -2154,7 +2179,64 @@ rule или setting без требуемой capability дают diagnostic. Д
 `Morphant.Exceptions.MappingConfigurationException`, но не переключается на
 manual, другую creation-ветку или runtime discovery.
 
-### 11.4. Carry-forward contract generated surface
+### 11.4. Pair-wide completeness model
+
+`UnmappedMemberValidation` проверяет effective mapping plan после разрешения
+settings, composition, control flow, construction, member и nested rules.
+`None` отключает анализ, `Source` включает только source completeness,
+`Destination` — только destination completeness, а `Strict` — обе независимые
+стороны. Это warning-policy: она не меняет generated code, runtime behavior,
+selection либо recovery даже после suppression или повышения severity до
+error.
+
+Validation universe строится отдельно для сторон pair:
+
+- source-side содержит доступные readable instance properties и fields
+  нормализованного non-opaque source root-а по тем же accessibility, hiding и
+  interface-ambiguity laws, что convention source surface; static/const,
+  indexer, ref-return и нечитаемые members не входят, а совместимость с
+  конкретным destination target-ом для включения не требуется;
+- destination-side содержит ordinary writable/init/mutable-field surface и
+  readable member, однозначно связанный с параметром фактически выбранного
+  structured constructor-а; get-only proxy, существующий только для
+  standalone nested Update, static/const/indexer/ref-return и member, который
+  Morphant не способен занять ни constructor-ом, ни member rule, не входят;
+- conditional constructor branches дают объединение supported destination
+  members всех valid reachable selections, а один member identity после
+  override/hiding учитывается один раз.
+
+Полнота pair-wide, а не operation- либо path-wide. Supported member считается
+участвующим, если хотя бы один valid reachable effective branch использует или
+занимает его. Поэтому creation-only `init`, условный rule и member, нужный лишь
+одной operation, не получают warning из-за остальных branches. Доказанно
+недостижимый, overridden, discarded либо invalid slice участия не создаёт;
+точная category-8–11 error подавляет только производный completeness warning,
+который нельзя достоверно отделить от этого slice.
+
+Source member участвует при семантическом чтении его значения в structured
+plan либо inline runtime `ConstructUsing` / `ResolveUsing`. Передача всего
+source в непрозрачный helper/delegate/receiver консервативно делает все
+supported source members potentially used; это предотвращает ложные warnings,
+но не превращает runtime callback в destination member plan. `nameof` и иные
+symbol-only references чтением не являются. Точный compile-time source discard
+из раздела 7.6 отдельно исключает member из source warning без runtime read.
+
+Destination member занимает effective explicit/convention member rule,
+member-level `Ignore()` либо фактически переданный constructor argument,
+однозначно связанный с member-ом. Опущенный optional/`params` argument,
+constructor-parameter `Ignore()`, простой reuse existing destination и
+`[SetsRequiredMembers]` сами по себе member не занимают. Runtime
+`ConstructUsing` / `ResolveUsing` может создать заполненный instance, но его
+body не анализируется как скрытый набор destination mappings.
+
+Manual `Convert` полностью исключает pair из completeness validation.
+Inherited setting на manual pair остаётся безвредным no-op, а explicit
+map-level setting для неё диагностируется как неприменимая по общему settings
+contract-у. Effective retained source uses, discards, constructor arguments и
+member rules участвуют после composition; отброшенный inherited origin не
+оставляет фиктивного use либо suppression.
+
+### 11.5. Carry-forward contract generated surface
 
 Новый `DestinationConstruction` / `DestinationConstructorParameters` /
 `DestinationMembers` surface сохраняет уже проверенные UX-контракты прежних
@@ -3160,12 +3242,14 @@ expressions, mapper dependencies и application service provider не
     `MappingMode` и `ConstructorSelection`. Settings precedence — current pair,
     included base pair, current mapper root, connected base roots, assembly,
     library default; `Default` продолжает поиск на следующем уровне.
-65. Cross-pair `IncludeBase` импортирует только `Members`. Правила независимо
-    от формы перегрузки объединяются по destination member с локальным
-    приоритетом, включая expression, `Auto()` и `Ignore()`. Conventions и
+65. Cross-pair `IncludeBase` импортирует только effective `Members` plan.
+    Правила независимо от формы перегрузки объединяются по destination member
+    с локальным приоритетом, включая expression, `Auto()` и `Ignore()`;
+    compile-time source discards из `Members` сохраняются как independent plan
+    items и дедуплицируются по exact source member symbol. Conventions и
     constructor selection вычисляются заново для текущей pair, а dependencies
-    effective rules анализируются отдельно. Result policies и `Convert` между
-    разными pairs не импортируются.
+    effective rules анализируются отдельно. Source discards из result policy,
+    сами result policies и `Convert` между разными pairs не импортируются.
 66. Exact same-pair из connected base mapper-а импортирует весь applicable
     effective plan, включая result policy либо `Convert`. Локальный `Convert`
     заменяет inherited plan; локальный declarative plan отбрасывает inherited
@@ -3247,6 +3331,17 @@ expressions, mapper dependencies и application service provider не
     добавляется числовой суффикс;
     explicit implementations `ITypeMapper.Create` / `Update` сохраняют имена
     публичного контракта.
+86. `UnmappedMemberValidation` является pair-wide warning-анализом effective
+    Morphant-built plan. Source и destination стороны включаются независимо;
+    участие хотя бы в одной valid reachable branch достаточно, а простой reuse
+    existing destination, runtime result callback и `[SetsRequiredMembers]` не
+    создают скрытых destination mappings. `Convert` исключает validation.
+87. Direct-body `_ = source.Member;` во внешнем structured `Construct`,
+    `Resolve` либо `Members` является compile-time source discard: direct
+    supported member исключается из source completeness warning, getter не
+    вызывается и generated mapping не меняется. В runtime callback это обычный
+    C# read; control-flow-nested statements, chains, aliases и arbitrary
+    discard expressions специальной семантики не получают.
 
 ## 16. Аудит переноса прежнего `Template()`-дизайна
 
@@ -3364,12 +3459,14 @@ warning/nullable context, async/unsafe transfer и compiler preflight.
 
 Observable runtime failures и generated exception-stub boundary реализованы и
 зафиксированы разделом 14.2. Compile-time diagnostics остаются отдельным
-поздним планом: категории 1–11 приняты и синхронизированы с текущим API,
-категория 12 ещё не проработана. Category-10 contract фиксирует invalid
+поздним планом: полный каталог категорий 1–12 принят и синхронизирован с
+текущим API. Category-10 contract фиксирует invalid
 explicit member rule, required obligation, lifecycle applicability и
 structured member-plan null. Category-11 contract отделяет статическую pair,
 result conversion и Update destination nested marker-а от application-wide
-runtime lookup без изменения описанной выше mapping semantics.
+runtime lookup без изменения описанной выше mapping semantics. Category-12
+contract задаёт pair-wide source/destination completeness warnings и
+compile-time source discard без изменения generated runtime behavior.
 Automatic collection semantics, projection, polymorphism, reference handling и
 остальные перечисленные выше возможности остаются post-v0 направлениями и не
 расширяют текущий mapping semantics неявно. До отдельного продуктового решения

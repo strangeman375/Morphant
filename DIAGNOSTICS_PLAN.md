@@ -4,9 +4,9 @@
 
 Последнее обновление: 11 августа 2026 года.
 
-Статус: таксономия и полный контракт категорий 1–11 приняты. Категория 12 ещё
-не проработана; реализация diagnostics заблокирована завершением каталога и
-перечисленными в разделе 7 предварительными выравниваниями production-model.
+Статус: таксономия и полный контракт категорий 1–12 приняты. Каталог завершён;
+реализация diagnostics заблокирована только перечисленными в разделе 7
+предварительными выравниваниями production-model.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -48,6 +48,11 @@ pair, несовместимый result и недопустимый destination 
 фактическая runtime-совместимость широкого current slot-а остаются runtime
 contract-ом.
 
+Четвёртая ревизия от 11 августа 2026 года завершила каталог category-12
+warnings `MORPH0047`–`MORPH0048`: pair-wide source/destination completeness,
+semantic source-use, точный compile-time source discard и destination
+occupancy. Warnings не меняют generated mapping либо recovery.
+
 План можно уточнять по мере детализации diagnostics. Изменение публичной
 семантики, severity, diagnostic ownership, recovery либо границы v0 сначала
 согласуется с пользователем, затем фиксируется здесь и в нормативном дизайне.
@@ -73,8 +78,8 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | В работе: категории 1–11 приняты; категория 12 не начата |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 и предварительными выравниваниями раздела 7 |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован предварительными выравниваниями раздела 7 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -292,6 +297,10 @@ identifier из биологического каталога, а не analyzer 
 этими ID не найдено. Case-insensitive совпадения `Morph0044` и `Morph0045`
 являются specimen identifiers из биологических каталогов, а не analyzer
 diagnostics, поэтому коллизией не считаются.
+
+Перед назначением двенадцатой группы 11 августа 2026 года тем же способом
+проверены `MORPH0047`–`MORPH0048`. Внешних публичных .NET/Roslyn diagnostics с
+этими ID не найдено.
 
 ### 6.2. Категория 1: общий contract
 
@@ -2137,7 +2146,7 @@ assembly -> library default`.
 
 | Relation | Импортируемый plan |
 |---|---|
-| Cross-pair, например `Dog -> DogDto` из `Animal -> AnimalDto` | Effective `Members`; никакая result policy и `Convert` не импортируются, conventions и constructor selection вычисляются заново для current pair |
+| Cross-pair, например `Dog -> DogDto` из `Animal -> AnimalDto` | Effective `Members` plan: member rules и compile-time source discards из `Members`; никакая result policy, source discard из result policy и `Convert` не импортируются, conventions и constructor selection вычисляются заново для current pair |
 | Exact same-pair на connected base level | Весь applicable effective plan: одна из `Construct` / `Resolve` / `ConstructUsing` / `ResolveUsing`, `Members` либо `Convert`, без casts и callback adapters |
 
 Exact same-pair не переносит выбранный runtime result через type boundary:
@@ -2152,7 +2161,7 @@ runtime callback class.
 
 | Local plan | Effective behavior |
 |---|---|
-| Нет локальной result policy, `Members` или `Convert` | Exact same-pair полностью сохраняет inherited plan; cross-pair использует imported `Members` и заново построенные current conventions/construction |
+| Нет локальной result policy, `Members` или `Convert` | Exact same-pair полностью сохраняет inherited plan; cross-pair использует imported `Members` plan и заново построенные current conventions/construction |
 | Локальный `Convert` | Полностью заменяет inherited mapping plan; imported settings остаются в precedence chain, но неприменимые manual policies следуют категории 6 |
 | Локальная result policy и/или `Members` | Выбирает declarative model и отбрасывает inherited `Convert` |
 | Declarative plan с обеих сторон | Inherited result policy любого имени является fallback; локальная result policy любого другого либо того же имени перекрывает её как общий slot. `Members` объединяются по destination member с локальным приоритетом |
@@ -2160,7 +2169,10 @@ runtime callback class.
 Imported и local `Members` объединяются независимо от формы overload-а.
 Local expression, `Auto()` либо `Ignore()` перекрывает inherited rule того же
 destination member; conventions заполняют только остаток. Dependencies
-строятся заново для оставшихся effective rules. Imported plan slices не
+строятся заново для оставшихся effective rules. Compile-time source discard из
+`Members` является independent plan item, сохраняется при cross-pair import и
+дедуплицируется по exact source member после substitutions; source discard из
+cross-pair result policy не импортируется. Imported plan slices не
 становятся local slots категории 5: inherited `Construct` рядом с local
 `ResolveUsing` не является duplicate, а намеренно отброшенный inherited
 `Convert` рядом с local declarative plan не создаёт mixed-model diagnostic.
@@ -2445,8 +2457,9 @@ Unit-категория inheritance diagnostics независимо фикси�
   edge с `MORPH0027` и compiler-owned cyclic type hierarchy;
 - inheritance всех шести map-level settings и полную precedence matrix через
   transitive included pairs и connected roots;
-- cross-pair import только `Members`, повторное применение current
-  conventions/construction и отсутствие переноса любой result policy и
+- cross-pair import только effective `Members` plan, включая retained source
+  discards из `Members`, повторное применение current conventions/construction
+  и отсутствие переноса любой result policy, source discard из неё и
   `Convert`;
 - exact same-pair full-plan inheritance отдельно для `Construct`, `Resolve`,
   `ConstructUsing`, `ResolveUsing`, declarative `Members` и manual `Convert`,
@@ -2489,7 +2502,8 @@ Package-like integration-категория независимо проверя�
   transitive consumer бросают без fallback, independent pair исполняется;
 - exact same-pair inheritance реально исполняет base result policy, `Members`
   либо `Convert`, local model precedence заменяет их по таблице раздела 6.55,
-  а cross-pair переносит только `Members`;
+  а cross-pair переносит только `Members` plan, включая compile-time source
+  discards без runtime getter evaluation;
 - same-level/nearest-level/transitive lookup, generic/nested mapper
   substitution и class/interface/boxing compatibility на обычном
   analyzer-backed consumer build;
@@ -2565,6 +2579,10 @@ Structured lambda поддерживает expression body и конечную o
   operators, nested lambdas и local function, объявленную целиком внутри
   переносимой deferred lambda;
 - object initializer construction plan и `DestinationMembers` `with` overlay;
+- compile-time source discard точной формы `_ = source.Member;` как direct
+  statement callback body structured lambda, где `_` семантически является
+  discard, receiver — exact source parameter текущего callback-а, а `Member`
+  — direct supported source property либо field;
 - обычные expressions, доступные mapper/static members, compile-time
   Configure constants, caller-info calls, `nameof(...)`, ambient unsafe
   pointer/function-pointer expressions и collision-safe declarations;
@@ -2574,8 +2592,9 @@ Structured lambda поддерживает expression body и конечную o
 
 За structured outer boundary остаются local без initializer-а, последующая
 mutation local-а, deconstruction/compound assignment, `++` / `--`, loops,
-`break` / `continue`, side-effect-only statements, local function внешнего
-structured block-а, `try` / `catch` / `finally`, `using`, `lock`, labels /
+`break` / `continue`, side-effect-only statements кроме точного compile-time
+source discard, local function внешнего structured block-а, `try` / `catch` /
+`finally`, `using`, `lock`, labels /
 `goto`, `ref` / `using` local, outer `unsafe` / `fixed`, `await` и `yield`.
 Точная C# binding error принадлежит compiler-у; `MORPH0031` появляется только
 для успешно связанного structured callback-а, который generator не может
@@ -2705,7 +2724,7 @@ function во время generation, не добавляет namespace-wide `usi
   structured local-а и `++` / `--`;
 - `for`, `foreach`, `while`, `do`, `break` и `continue`;
 - invocation, assignment либо другая statement-expression только ради side
-  effect;
+  effect, кроме exact compile-time source discard `_ = source.Member;`;
 - local function во внешнем declarative block;
 - `try` / `catch` / `finally`, `using`, `lock`, label и `goto`;
 - `ref` / `using` local, outer `unsafe`, `fixed`, `await` и `yield`.
@@ -2727,6 +2746,25 @@ local/source остаётся `MORPH0031`.
 общим purity analyzer-ом и не пытается классифицировать вызываемый method как
 mutating; она ограничивает только явно наблюдаемую structured statement и
 mutation grammar.
+
+Compile-time source discard является единственным специальным standalone
+assignment statement. Он распознаётся только как direct child statement list-а
+body structured `Construct`, `Resolve` либо `Members`, когда left-hand `_`
+связан как настоящий C# discard, а right-hand side после снятия только
+parentheses является прямой property/field reference exact source parameter-а
+текущего callback-а. Member обязан входить в category-12 supported source
+universe. Generator сохраняет source-discard observation, но полностью удаляет
+statement из runtime lowering: receiver и getter не вычисляются.
+
+Member chain, indexer, conditional access, conversion, invocation, tuple,
+несколько expressions, reference через alias либо `previous` / `result`,
+control-flow/nested-block statement, а также unsupported source member exact
+source-discard contract не получают и остаются `MORPH0031` как обычный
+side-effect-only statement. Discard внутри вложенной lambda/local function
+принадлежит обычному runtime/deferred C# и не является outer structured
+instruction. В `ConstructUsing` и `ResolveUsing`
+тот же текст является обычным C# read; `Convert` category-12 validation не
+запускает.
 
 ### 6.68. `MORPH0032`: destination inputs structured callback-а read-only
 
@@ -2919,12 +2957,18 @@ Unit-категория callback diagnostics независимо фиксиру
 - полную positive structured grammar: expression/block lambdas, initialized
   locals, nested blocks, complete if/switch, multiple return/throw,
   conditional/switch/query expressions, object initializer, member `with`,
-  patterns и допустимые terminal marker positions;
+  patterns, допустимые terminal marker positions и direct compile-time source
+  discard во всех трёх structured families;
 - `MORPH0031` для каждого класса неподдерживаемой grammar: uninitialized/
   mutated/deconstructed locals, compound assignment/inc-dec, every loop,
   break/continue, side-effect statement, external local function, try/catch/
   finally, using/lock, label/goto, ref/using local, outer unsafe/fixed,
   await/yield;
+- отсутствие `MORPH0031` и runtime getter evaluation для exact direct
+  `_ = source.Member;`; несколько direct fields/properties и retained
+  inherited origin, а также `MORPH0031` для control-flow/nested-block,
+  chain/indexer/conditional access/conversion/invocation/tuple/alias/
+  unsupported-member variants;
 - outer-node cardinality и exact keyword/operator locations, отсутствие
   nested cascade внутри уже unsupported node и совместную публикацию
   независимых grammar breaks;
@@ -2968,8 +3012,9 @@ Unit-категория callback diagnostics независимо фиксиру
   recovery либо artifacts;
 - actualization callback overload/class/body, destination capability,
   captured symbol/declaration, warning/nullable/unsafe context, extension/query
-  binding, mapper member conversion, marker binding, reachability, override и
-  inheritance при одном сохранённом incremental driver-е.
+  binding, mapper member conversion, marker binding, source-discard shape и
+  semantic binding, reachability, override и inheritance при одном сохранённом
+  incremental driver-е.
 
 Package-like integration-категория независимо проверяет:
 
@@ -2985,6 +3030,9 @@ Package-like integration-категория независимо проверя�
 - suppressed representative `MORPH0031` / `MORPH0032`: invalid member/
   construction path бросает без выполнения side effect, valid branches и
   operations реально возвращают результат;
+- exact source discard во всех structured families реально не вызывает getter
+  и не меняет generated values; тот же statement в `ConstructUsing` /
+  `ResolveUsing` выполняет обычный getter read;
 - suppressed `MORPH0033` для каждой runtime family и representative
   non-terminal structured/context-marker use, отсутствие исполнения marker
   body и сохранение независимой reuse/branch;
@@ -4358,6 +4406,416 @@ Package-like integration-категория независимо проверя�
 - real `.editorconfig` / MSBuild suppression or severity override для всех
   трёх IDs без изменения generated artifact set и effective recovery.
 
+### 6.96. Категория 12: общий contract
+
+Категория «Полнота mapping-а через `UnmappedMemberValidation`» содержит ровно
+две diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0047` | `Source member is not used` | `Source member '{0}' in contract '{1}' does not participate in the effective mapping plan.` |
+| `MORPH0048` | `Destination member is not mapped` | `Destination member '{0}' in contract '{1}' is not mapped by the effective mapping plan.` |
+
+Для обеих diagnostics действует общий descriptor contract:
+
+- category — `Morphant.MappingCompleteness`;
+- default severity — `Warning`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- анализируется только effective non-manual pair после успешного разрешения
+  категорий 1–11, supported member surfaces и reachable plan;
+- `UnmappedMemberValidation.None` не публикует ни одну diagnostic, `Source`
+  включает только `MORPH0047`, `Destination` — только `MORPH0048`, а `Strict`
+  — обе независимо;
+- manual `Convert` полностью исключён из category-12 analysis независимо от
+  inherited setting; explicit map-level setting на manual pair остаётся
+  category-6 applicability error;
+- warning не меняет generated code, runtime behavior, convention selection,
+  lifecycle, evaluation order, diagnostics recovery либо artifact set;
+- suppression, понижение либо повышение severity до `Error` меняет только
+  compiler presentation и не превращает incompleteness в throwing stub.
+
+Member display `{0}` использует fully-qualified containing type с nullable-
+aware generic substitutions и точное объявленное member name, например
+`global::Example.Source.LegacyId`. Contract `{1}` форматируется по canonical
+identity категории 3. Category 12 намеренно не перечисляет Create/Update paths
+в message: participation pair-wide и один member не размножается по
+operations/branches.
+
+### 6.97. Supported member universes и pair-wide participation
+
+Source и destination validation universes строятся независимо до поиска
+неучаствующих members. Root nullable reference annotation снимается так же,
+как для pair capability, но вложенная nullability member type-а сохраняется.
+Member identity является symbol-based после mapper generic substitutions;
+одинаковое имя разных hiding slots не объединяется.
+
+Supported source universe содержит instance properties с доступным readable
+getter-ом и instance fields нормализованного non-opaque source root-а, включая
+readonly field. Применяются те же assembly accessibility, override/hiding и
+interface most-derived/ambiguity laws, что к convention source surface.
+Static/const, indexer, ref-return, fixed buffer, explicit interface member без
+доступного receiver-а и нечитаемый member исключены. Для включения не
+требуется name match либо conversion к конкретному destination: именно
+отсутствие любого effective use такого readable member-а проверяет
+`MORPH0047`. Scalar/opaque source root самостоятельного member universe не
+получает.
+
+Supported destination universe содержит:
+
+- ordinary body-member surface: property с доступным setter-ом либо `init` и
+  mutable field;
+- readable otherwise non-writable member, однозначно ассоциированный хотя бы с
+  одним parameter-ом фактически выбранного structured constructor-а на valid
+  reachable branch;
+- один canonical slot для override и один most-derived interface slot по
+  общим member-surface laws.
+
+Constructor association ищет readable destination member сначала по exact
+parameter name, затем по единственному `OrdinalIgnoreCase`-совпадению. Member,
+который нельзя занять ни effective constructor argument-ом, ни ordinary
+member rule, не включается только ради неизбежного warning. Generated get-only
+proxy для standalone nested Update также исключён: он не является обычным
+destination state, которое Morphant способен присвоить. Static/const,
+indexer, ref-return, fixed buffer, inaccessible, ambiguous и прочие
+unsupported members validation universe не получают.
+
+Conditional/switch construction даёт объединение supported destination slots
+всех valid reachable constructor selections. Разные reachable constructors,
+занимающие один symbol, не дублируют member. Если одна branch не выбирается ни
+одной enabled operation либо доказанно недостижима после specialization, её
+constructor/member surface в completeness не участвует.
+
+Participation pair-wide: member достаточно использовать либо занять хотя бы в
+одной valid reachable operation/branch effective plan-а. Поэтому:
+
+- `init` member, заполняемый только при structured Create/replacement, уже
+  участвует и не предупреждается из-за existing Update reuse;
+- conditional rule занимает member, даже если runtime condition может выбрать
+  другую branch;
+- source read, нужный только одной enabled operation, является use всей pair;
+- один member получает не более одного warning-а, без отдельных variants для
+  Create, Update и conditional branches;
+- простое сохранение existing destination без constructor argument/member rule
+  destination participation не создаёт.
+
+Доказанно недостижимые branches, overridden rules/result policies, discarded
+inherited fragments и invalid slices не создают фиктивного participation.
+Category 12 проверяет effective model, а не текстовое наличие member name в
+`Configure`.
+
+### 6.98. Semantic source use и compile-time source discard
+
+Source member считается used, когда его runtime value семантически читается
+effective plan-ом. Анализ охватывает:
+
+- structured `Construct`, `Resolve` и `Members`: conditions, selectors,
+  initialized locals, constructor/member expressions, `Value`, nested marker
+  source/destination arguments и переносимые deferred values;
+- convention и explicit `Auto`, фактически выбравшие этот source member;
+- inline expression/block `ConstructUsing` и `ResolveUsing`, но только для
+  source-use — callback result не интерпретируется как destination mappings.
+
+Root member read учитывается и при дальнейшем chain-е (`source.Address.City`
+использует root member `Address`). `nameof(source.Member)`, declaration symbol,
+type test без чтения member value и другой symbol-only reference use не
+создают. Text/syntax match без semantic binding к exact member также не
+участвует.
+
+Если whole source value передан непрозрачному helper/delegate/constructor,
+использован receiver-ом arbitrary instance call-а, возвращён как opaque value
+либо иначе покидает анализируемый value-flow, все supported source members
+считаются potentially used. То же действует для natural method group,
+materialized/conditional runtime delegate и другого valid runtime callback-а,
+body которого generator не видит. Morphant не способен доказать, какие
+members такой код прочитает, и выбирает отсутствие ложных `MORPH0047`.
+Передача одного `source.Member` в opaque code использует только этот root
+member, если whole source отдельно не уходит.
+
+Отдельный explicit escape hatch — direct statement внешнего structured
+callback body:
+
+```csharp
+_ = source.LegacyValue;
+```
+
+Он является compile-time source discard, а не source use. Точный contract:
+
+- left-hand `_` должен семантически быть C# discard, а не local/parameter с
+  именем `_`;
+- right-hand side после снятия parentheses — direct supported property/field
+  exact source parameter-а текущего structured callback-а;
+- statement не находится внутри `if` / `switch`, nested block, loop,
+  deferred lambda либо local function;
+- receiver/member expression и getter при mapping-е не вычисляются;
+- member pair-wide исключается только из `MORPH0047`; conventions,
+  `MORPH0048`, generated assignments и runtime values не меняются;
+- несколько members исключаются отдельными statements;
+- chain, alias, tuple, indexer, conditional access, conversion, invocation,
+  arbitrary expression и reference через `previous` / `result` специальной
+  семантики не получают и принадлежат `MORPH0031`;
+- discard внутри deferred lambda/local function является обычным runtime C#;
+  в `ConstructUsing` / `ResolveUsing` тот же statement действительно читает
+  getter и потому является normal semantic use;
+- retained discard участвует pair-wide независимо от structured family и
+  конкретной reachable operation; недостижимый, overridden либо discarded
+  inherited callback slice suppression не сохраняет.
+
+Source discard хранится как самостоятельная effective observation. Он не
+подменяется скрытым `IgnoreSource`, не генерирует runtime statement и не
+считается mapping rule для source/destination conventions.
+
+### 6.99. `MORPH0047`: source member не используется
+
+`MORPH0047` публикуется для каждого supported source member effective pair,
+когда одновременно выполнены условия:
+
+1. effective `UnmappedMemberValidation` равно `Source` либо `Strict`;
+2. ни один valid reachable effective slice семантически не читает member;
+3. member не покрыт whole-source potentially-used observation;
+4. retained compile-time source discard exact member-а отсутствует;
+5. category-8–11 error/unknown slice не делает его potential use
+   недостоверным.
+
+Отсутствие matching destination name, несовместимость convention conversion,
+`MemberSelection.Explicit`, использование другого source member-а и
+destination `Ignore()` сами по себе warning не снимают. Source member,
+который только сохраняется как часть исходного object graph без чтения plan-ом,
+также остаётся unused.
+
+Primary location — source type argument соответствующего effective
+`Map<TSource, TDestination>` registration-а. Declaration source member-а
+добавляется первой additional location, если находится в текущей compilation;
+для metadata member additional location отсутствует. Alias/nullable syntax
+registration-а не меняет symbol identity, но primary сохраняет фактический
+пользовательский type-argument span.
+
+Diagnostic identity — mapper, canonical pair и supported source member symbol
+после substitutions. Несколько registrations одной pair раньше принадлежат
+категории 3; inherited consumers анализируют собственную effective pair и не
+получают origin fan-out. Несколько missing uses одного member-а дают один
+warning.
+
+`MORPH0047` recovery не имеет: mapper генерируется ровно как при
+`UnmappedMemberValidation.None`. После suppression getter не добавляется и
+source value не snapshot-ится. Fix состоит в настоящем use, whole-source
+opaque handoff, exact compile-time source discard либо изменении effective
+setting, но generator не выбирает fix автоматически.
+
+### 6.100. Destination occupancy model
+
+Supported destination member считается mapped/occupied, если хотя бы один
+valid reachable effective slice содержит:
+
+- explicit member value, terminal `Value`/`Auto`/nested marker либо convention
+  member rule для exact slot-а;
+- member-level `Ignore()`, намеренно сохраняющий constructor/runtime/default
+  value или current selected result;
+- фактически переданный argument выбранного structured constructor-а,
+  однозначно ассоциированный с member-ом по законам раздела 6.97;
+- valid creation-time `init`/`required` rule для slot-а, даже если он не
+  применяется к already-created result.
+
+Occupancy означает участие Morphant plan-а, а не доказательство конкретного
+runtime значения. Conditional assignment/`Ignore` достаточно при одной
+reachable branch. Explicit `Members` rule сильнее constructor occupancy, но
+не создаёт второй member observation.
+
+Не занимают destination member:
+
+- optional/`params` constructor parameter, который фактически опущен;
+- constructor-parameter `Ignore()`, означающий omission, а не member-level
+  decision;
+- parameter без unique destination member association;
+- default/parameterless construction, field/property initializer и CLR
+  default сами по себе;
+- `[SetsRequiredMembers]` на constructor-е: attribute снимает required
+  obligation, но не утверждает, какие members mapper заполнил;
+- reuse existing destination, непригодный convention candidate либо
+  read-only standalone nested Update proxy;
+- object, возвращённый `ConstructUsing` / `ResolveUsing`: runtime callback
+  opaque для destination completeness, даже если C# body содержит object
+  initializer либо assignments.
+
+Invalid member/constructor/nested rule не становится occupancy. Вместо
+производного warning-а exact target может быть suppressed по precedence
+раздела 6.102, но suppressed error не превращает invalid rule в valid mapping.
+
+### 6.101. `MORPH0048`: destination member не mapped
+
+`MORPH0048` публикуется для каждого supported destination member effective
+pair, когда одновременно выполнены условия:
+
+1. effective `UnmappedMemberValidation` равно `Destination` либо `Strict`;
+2. ни один valid reachable constructor/member slice member не занимает;
+3. member-level `Ignore()` отсутствует;
+4. category-8–11 error/unknown slice не делает возможную occupancy
+   недостоверной.
+
+Member может получить warning при `MemberSelection.Auto`, если matching source
+отсутствует либо conversion не warning-free, и при `MemberSelection.Explicit`,
+если rule не задан. Отсутствие mutation на existing Update само по себе не
+создаёт второй warning, если member занят на Create/replacement branch.
+`required` member, не удовлетворённый на reachable creation path, остаётся
+`MORPH0041`; `MORPH0048` не дублирует эту точную ошибку для того же slot-а.
+
+Primary location — destination type argument соответствующего effective
+`Map<TSource, TDestination>` registration-а. Declaration destination member-а
+добавляется первой additional location, если находится в текущей compilation;
+metadata member additional location не имеет. Conditional constructors и
+несколько possible member-rule origins location не меняют: warning относится
+к pair/member, а не к одной branch.
+
+Diagnostic identity — mapper, canonical pair и supported destination member
+symbol после substitutions. Override учитывается один раз; hiding slots
+различаются, если оба реально входят supported universe. Inherited consumer
+получает собственный warning только для своей effective pair. Один member не
+размножается по constructors, operations и branches.
+
+`MORPH0048` recovery не имеет: constructor/member selection и generated
+assignments остаются прежними. Suppression не вставляет `Ignore()`, convention,
+default assignment либо mutation existing destination.
+
+### 6.102. Precedence, uncertainty, порядок и suppression
+
+Category 12 запускается последней и никогда не заменяет error более ранней
+категории. Precedence действует так:
+
+- compilation/mapper/pair gates категорий 1–3 и недостоверный builder flow
+  категории 4 подавляют completeness в своей области;
+- invalid local composition, effective setting либо inheritance edge
+  категорий 5–7 разрешаются до validation; invalid
+  `UnmappedMemberValidation` полностью отключает category 12 affected pair;
+- manual `Convert` не анализируется; discarded declarative/runtime fragments
+  не оставляют source use, discard либо destination occupancy;
+- category-8 callback error, из-за которой body/branch невозможно разобрать,
+  подавляет только warnings members, чьё use/occupancy могло находиться в
+  неизвестном slice; independently provable members остального plan-а
+  продолжают анализироваться;
+- exact category-9 constructor error подавляет производные destination
+  warnings ассоциированных slots и source warnings values неизвестного/
+  invalid constructor leaf-а;
+- exact category-10 member error подавляет `MORPH0048` target slot-а и
+  `MORPH0047` source members, возможное use которых принадлежит invalid rule;
+- exact category-11 nested error применяет ту же локальную policy к target и
+  marker arguments; независимые unmapped members warnings сохраняются;
+- source-visible C# error, из-за которой exact member/callback binding
+  неизвестен, остаётся compiler-owned и не порождает speculative category-12
+  warnings в затронутой области.
+
+Unknown set вычисляется из structured observations, а не глобальным правилом
+«любая error скрывает всю pair». Если недоступен весь structured callback,
+подавляются все source/destination members, которые callback по своей family
+мог использовать/занять. Если invalid один terminal member rule, подавление
+ограничивается target-ом и source dependencies этого rule. Runtime
+`ConstructUsing`/`ResolveUsing` никогда не создаёт unknown destination
+occupancy, поскольку destination body принципиально непрозрачен и без error.
+
+`MORPH0047` публикуется раньше `MORPH0048` по ID. Внутри ID порядок — ordinal
+stable mapper identity, canonical pair и member symbol order: base-first,
+затем declaration order, с deterministic interface order категории 10.
+Primary type-argument location не используется как единственный sort key,
+поэтому generic substitutions, inheritance fan-out, discovery order и
+incremental invalidation порядок не меняют.
+
+Suppression/severity override не меняет participation/uncertainty model и не
+влияет на другие warning-и. Изменение effective setting, supported type
+surface, constructor selection, callback body/class, member rule, source
+discard, opaque handoff, reachability, override либо inheritance полностью
+actualizes affected member observations при одном incremental driver-е.
+
+### 6.103. Самостоятельная тестовая матрица категории 12
+
+Unit-категория completeness diagnostics независимо фиксирует:
+
+- exact descriptors `MORPH0047`–`MORPH0048`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и parameters;
+- полную setting matrix `Default` inheritance, `None`, `Source`,
+  `Destination`, `Strict` на pair/root/base/MSBuild levels, last-call-wins и
+  manual-pair applicability без зависимости от settings tests;
+- supported source universe: properties/fields, readonly, base/override/hiding,
+  interface most-derived/ambiguity, assembly accessibility, generic
+  substitutions и исключённые static/const/indexer/ref-return/fixed/
+  unreadable/opaque cases;
+- supported destination universe: setter/init/mutable field, constructor-only
+  readable association, exact/unique ignore-case matching, conditional
+  constructors, override/hiding/interface/accessibility и исключённые
+  read-only proxy/unsupported/opaque cases;
+- pair-wide participation across Create, Update without previous, Update with
+  previous, replacement/reuse, conditional/switch branches, null policies и
+  `MappingMode`, включая отсутствие path-duplicated warnings;
+- source uses из conventions, `Auto`, explicit constructor/member expressions,
+  conditions, locals, nested marker arguments, chained reads и deferred
+  values; `nameof`/symbol-only и unrelated same-text members не считаются;
+- inline `ConstructUsing`/`ResolveUsing` direct reads, whole-source opaque
+  helper/receiver/return/capture и body-less runtime delegates; no false
+  warnings после potential use и отсутствие inferred destination occupancy;
+- compile-time source discard во всех structured families: exact semantic
+  discard, direct property/field, multiple direct statements, retained exact/
+  cross-pair inheritance и pair-wide suppression;
+- отсутствие runtime evaluation receiver/getter у source discard, отсутствие
+  влияния на conventions/destination warnings и обычный runtime read в
+  `ConstructUsing`/`ResolveUsing`;
+- control-flow/nested-block, chain/alias/indexer/conditional access/conversion/
+  invocation/tuple, non-discard `_` symbol, unsupported member,
+  previous/result receiver и deferred-lambda variants как `MORPH0031`, а не
+  hidden suppression;
+- destination occupancy каждым explicit/convention/`Auto`/`Value`/nested/
+  member-level `Ignore` rule и фактически passed associated constructor
+  argument;
+- отсутствие occupancy у omitted optional/`params`, constructor `Ignore`,
+  unassociated parameter, default construction, initializer, reuse,
+  `[SetsRequiredMembers]`, get-only nested proxy и runtime result callback;
+- `required`/`init` coexistence: category-10 error priority, valid Create-only
+  occupancy и отсутствие ложного existing-Update warning;
+- exact primary source/destination type-argument locations, member-declaration
+  additional locations, metadata absence, generic alias/nullability syntax и
+  stable fully-qualified message display;
+- one warning per mapper/pair/member, separate hiding symbols, override dedup,
+  inherited consumer ownership, source-before-destination publication и stable
+  member ordering;
+- full precedence/unknown-set matrix с representative categories 1–11,
+  callback-wide и terminal-local suppression, compiler-owned binding errors и
+  сохранение independent warnings;
+- `UnmappedMemberValidation.None` и manual `Convert` как полный no-diagnostic
+  boundary, inherited no-op и explicit manual setting category-6 error;
+- suppression/`Warning`→`Error` override без stubs, selection либо generated
+  artifact changes;
+- exact complete generated outputs при каждом warning, включая unchanged
+  mapper contracts и отсутствие diagnostic-driven reads/assignments;
+- actualization setting, source/destination declaration surface, constructor,
+  member rule, callback direct/opaque use, discard semantic shape,
+  reachability, override и inheritance при одном сохранённом incremental
+  driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- реальные `Source`, `Destination` и `Strict` warnings из C# и MSBuild
+  settings с exact locations, а `None` реально оставляет compilation clean;
+- suppressed `MORPH0047`/`MORPH0048`: Create/Update выполняются с теми же
+  results, side effects и generated artifact set, warning-as-error не включает
+  `MappingConfigurationException` recovery;
+- compile-time source discard в `Construct`, `Resolve` и `Members` не вызывает
+  throwing/side-effect getter, тогда как direct runtime discard в
+  `ConstructUsing`/`ResolveUsing` вызывает его ровно один раз;
+- pair-wide lifecycle: Create-only `init`, conditional rule, existing reuse и
+  constructor replacement дают одну ожидаемую completeness модель во всех
+  public operations;
+- inline runtime source reads и whole-source helper реально выполняются, но
+  object initializer/runtime mutation callback-а не скрывают destination
+  warning;
+- constructor argument, member-level/constructor-level `Ignore`, optional /
+  `params`, `[SetsRequiredMembers]` и read-only nested Update proxy сохраняют
+  заявленную occupancy в реальном consumer assembly;
+- exact/cross-pair composition и local override удаляют uses/discards только
+  вместе с discarded origin; retained consumer warning-и принадлежат current
+  pair без origin duplication;
+- representative suppressed category-8–11 error сохраняет свой throwing
+  recovery и подавляет только derived completeness warning, independent
+  warning остаётся;
+- `.editorconfig`/MSBuild severity configuration обеих IDs меняет только
+  compiler presentation, не runtime behavior.
+
 ## 7. Реализация и тесты
 
 До первого vertical diagnostic slice production-model выравнивается с уже
@@ -4388,8 +4846,17 @@ Package-like integration-категория независимо проверя�
    сохраняет marker producer/terminal target, inferred source/destination
    sides, result conversion, explicit/generated current destination,
    read-only proxy и adaptive-local use set вместо общего unsupported result.
+   Completeness planner сохраняет supported source/destination universes,
+   semantic/potential source uses, retained source discards, constructor/member
+   occupancy и error-derived uncertainty set вместо повторного обхода
+   generated syntax.
    Recovery строится из тех же observations, а не из повторного эвристического
    анализа.
+5. Structured grammar распознаёт exact direct-body compile-time source discard
+   `_ = source.Member;` до общего side-effect-statement rejection, переносит
+   его как category-12 observation и удаляет из runtime lowering. Остальные
+   discard/assignment shapes сохраняют category-8 unsupported ownership, а
+   runtime callbacks остаются обычным C#.
 
 Эти выравнивания не вводят новую diagnostic semantics и могут быть выполнены
 одним предварительным coherent change с самостоятельными focused regression
