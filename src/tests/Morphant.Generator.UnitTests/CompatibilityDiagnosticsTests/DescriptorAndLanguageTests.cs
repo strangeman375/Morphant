@@ -12,7 +12,7 @@ internal sealed class DescriptorAndLanguageTests
         var runtime =
             CompatibilityGeneratorTest.ActualRuntimeReference;
         var duplicate =
-            CompatibilityGeneratorTest.CreateCompatibleRuntimeReference();
+            RuntimeContractFixture.Compatible().CreateReference();
         var metadataOnly = CompatibilityGeneratorTest.CreateReference(
             "MetadataOnlyRuntime",
 """
@@ -91,8 +91,8 @@ using System.Reflection;
     {
         var result = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp8,
-            [CompatibilityGeneratorTest.MapperSource],
-            [CompatibilityGeneratorTest.ActualRuntimeReference]);
+            sources: [CompatibilityGeneratorTest.MapperSource],
+            references: [CompatibilityGeneratorTest.ActualRuntimeReference]);
 
         CompatibilityGeneratorTest.AssertDiagnostics(
             result,

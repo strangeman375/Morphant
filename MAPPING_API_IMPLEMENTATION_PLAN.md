@@ -704,19 +704,18 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 1.**
+**Diagnostics: vertical slice категории 2.**
 
-Статус: реализован и ожидает ревью. Предварительное выравнивание production
-model принято пользователем. Runtime публикует contract revision `1`, а
-generator проверяет effective C# version и ordered structural runtime manifest,
-публикует `MORPH0001`–`MORPH0004` и fail-closed отключает все mapper pipelines
-при любой prerequisite failure. Самостоятельные unit- и package-like
-integration-тесты фиксируют exact diagnostics, global gate, configuration,
-incremental actualization и bundled-package happy path; focused regression
-подтверждает неизменный normal generated surface.
+Статус: не начат. Предварительное выравнивание production model и vertical
+slice категории 1 приняты пользователем. Runtime публикует contract revision
+`1`, а generator проверяет effective C# version и ordered structural runtime
+manifest, публикует `MORPH0001`–`MORPH0004` и fail-closed отключает все mapper
+pipelines при любой prerequisite failure. Самостоятельные unit- и
+package-like integration-тесты фиксируют exact diagnostics, global gate,
+configuration, incremental actualization и bundled-package happy path;
+focused regression подтверждает неизменный normal generated surface.
 
-Следующий срез — vertical production-реализация diagnostic-категории 2 — после
-пользовательского ревью категории 1.
+Следующий срез — vertical production-реализация diagnostic-категории 2.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2146,8 +2145,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model принято пользователем; vertical slice категории 1 реализован
-и ожидает ревью.
+production model и vertical slice категории 1 приняты пользователем;
+vertical slice категории 2 не начат.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2170,8 +2169,10 @@ source discard lowering. Точный scope и тестовые требован
 разделом 7 `DIAGNOSTICS_PLAN.md`. Первый vertical slice реализует contract
 revision `1`, ordered runtime manifest, global compatibility diagnostics
 `MORPH0001`–`MORPH0004` и fail-closed gate с самостоятельными unit- и
-package-like integration-тестами. Переход к категории 2 ожидает
-пользовательского ревью категории 1.
+package-like integration-тестами. После ревью test-owned runtime contract
+вынесен в отдельный fixture с именованными дефектами, а package/MSBuild
+scenarios — в обычные consumer-проекты; покрытие категории сохранено.
+Следующий vertical slice реализует категорию 2.
 
 ### Этап 24. Observable failures
 

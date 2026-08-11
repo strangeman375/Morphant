@@ -6,8 +6,8 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Первый vertical diagnostic slice категории 1 реализован и ожидает ревью перед
-переходом к категории 2.
+Первый vertical diagnostic slice категории 1 реализован и принят
+пользователем. Следующий vertical slice — категория 2.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -80,7 +80,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категория 1 реализована и ожидает ревью |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категория 1 принята, следующая категория 2 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -4894,8 +4894,11 @@ global gate, suppression/severity и actualization одного incremental driv
 Package-like integration-категория проверяет bundled package execution,
 analyzer-only, mismatched/duplicate runtime, C# 8 и реальную analyzer config;
 focused production-composition regression подтверждает неизменный normal
-generated artifact set. Срез ожидает пользовательского ревью перед категорией
-2.
+generated artifact set. После пользовательского ревью test-owned runtime
+contract вынесен в отдельный fixture с именованными дефектами, а MSBuild и
+package scenarios представлены обычными consumer-проектами вместо
+динамической генерации project/source файлов. Срез принят; следующий —
+категория 2.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

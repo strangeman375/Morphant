@@ -12,9 +12,9 @@ internal sealed class GateAndActualizationTests
     {
         var result = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp8,
-            [CompatibilityGeneratorTest.MapperSource],
-            [CompatibilityGeneratorTest.ActualRuntimeReference],
-            new Dictionary<string, ReportDiagnostic>
+            sources: [CompatibilityGeneratorTest.MapperSource],
+            references: [CompatibilityGeneratorTest.ActualRuntimeReference],
+            diagnosticOptions: new Dictionary<string, ReportDiagnostic>
             {
                 ["MORPH0001"] = ReportDiagnostic.Suppress
             });
@@ -31,9 +31,9 @@ internal sealed class GateAndActualizationTests
     {
         var result = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp8,
-            [CompatibilityGeneratorTest.MapperSource],
-            [CompatibilityGeneratorTest.ActualRuntimeReference],
-            new Dictionary<string, ReportDiagnostic>
+            sources: [CompatibilityGeneratorTest.MapperSource],
+            references: [CompatibilityGeneratorTest.ActualRuntimeReference],
+            diagnosticOptions: new Dictionary<string, ReportDiagnostic>
             {
                 ["MORPH0001"] = ReportDiagnostic.Warn
             });
@@ -85,7 +85,9 @@ internal sealed class GateAndActualizationTests
                 "Morphant generator requires a reference to a compatible Morphant runtime library."));
 
         var incompatibleReference =
-            CompatibilityGeneratorTest.CreateCompatibleRuntimeReference("2");
+            RuntimeContractFixture.Compatible()
+                .WithRevision("2")
+                .CreateReference();
         var incompatible = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
             references: [incompatibleReference],

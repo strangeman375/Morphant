@@ -1,0 +1,3 @@
+is_global = true
+global_level = 100
+dotnet_diagnostic.MORPH0001.severity = warning
