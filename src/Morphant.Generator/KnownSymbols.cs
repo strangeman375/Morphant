@@ -4,9 +4,11 @@ namespace Morphant.Generator;
 
 internal sealed record KnownSymbols(
     INamedTypeSymbol TypeMapper,
+    INamedTypeSymbol TypeMapperInterface,
     INamedTypeSymbol MapperBuilder,
     INamedTypeSymbol MapperBuilderBase,
-    IMethodSymbol TypeMapperConfigure)
+    IMethodSymbol TypeMapperConfigure,
+    INamedTypeSymbol SystemType)
 {
     public static KnownSymbols? TryCreate(
         Compilation compilation)
@@ -20,9 +22,17 @@ internal sealed record KnownSymbols(
         var mapperBuilderBase = compilation.GetTypeByMetadataName(
             MetadataNames.MapperBuilderBase);
 
+        var typeMapperInterface = compilation.GetTypeByMetadataName(
+            MetadataNames.TypeMapperInterface);
+
+        var systemType = compilation.GetTypeByMetadataName(
+            MetadataNames.SystemType);
+
         if (typeMapper is null ||
+            typeMapperInterface is null ||
             mapperBuilder is null ||
-            mapperBuilderBase is null)
+            mapperBuilderBase is null ||
+            systemType is null)
         {
             return null;
         }
@@ -47,8 +57,10 @@ internal sealed record KnownSymbols(
 
         return new KnownSymbols(
             typeMapper,
+            typeMapperInterface,
             mapperBuilder,
             mapperBuilderBase,
-            configureMethod);
+            configureMethod,
+            systemType);
     }
 }

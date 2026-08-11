@@ -8,6 +8,9 @@ internal static class MetadataNames
     public const string TypeMapper =
         "Morphant.TypeMapper";
 
+    public const string TypeMapperInterface =
+        "Morphant.ITypeMapper`2";
+
     public const string MapperBuilder =
         "Morphant.MapperBuilder";
 
@@ -34,4 +37,7 @@ internal static class MetadataNames
 
     public const string MappingContextMarker =
         "Morphant.Context.MappingContextMarker";
+
+    public const string SystemType =
+        "System.Type";
 }

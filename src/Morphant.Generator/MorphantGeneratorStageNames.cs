@@ -6,6 +6,8 @@ internal static class MorphantGeneratorStageNames
     public const string BuildAssemblyMappingSettings = nameof(BuildAssemblyMappingSettings);
 
     public const string FindMorphantMapperDeclarations = nameof(FindMorphantMapperDeclarations);
+    public const string BuildMapperDeclarationInfos = nameof(BuildMapperDeclarationInfos);
+    public const string BuildMapperContractAnalyses = nameof(BuildMapperContractAnalyses);
 
     public const string BuildTypeMapperConfigureInfos = nameof(BuildTypeMapperConfigureInfos);
 

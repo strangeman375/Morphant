@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.MapperDeclaration;
 using Morphant.Generator.MemberSurface;
 using Morphant.Generator.Settings;
 using Morphant.Generator.TypeMapperGeneration;
@@ -22,9 +23,14 @@ internal static class PairConfigurationModelBuilder
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        var mapperDeclaration = discovery.ConfigureInfo.Declaration ??
+            throw new InvalidOperationException(
+                "The root mapper configuration must have a declaration model.");
+
         if (context.Compilation is not CSharpCompilation compilation)
         {
             return new MapperPairConfigurationModel(
+                mapperDeclaration,
                 mappingPairs,
                 [mappingPairs],
                 PairConfigurationSettings.Empty,
@@ -51,6 +57,7 @@ internal static class PairConfigurationModelBuilder
         if (knownSymbols is null)
         {
             return new MapperPairConfigurationModel(
+                mapperDeclaration,
                 mappingPairs,
                 [mappingPairs],
                 PairConfigurationSettings.Empty,
@@ -127,6 +134,7 @@ internal static class PairConfigurationModelBuilder
         }
 
         return Compose(
+            mapperDeclaration,
             mappingPairs,
             ImmutableArray.Create(mappingPairs)
                 .AddRange(bindingMapperModels),
@@ -197,6 +205,7 @@ internal static class PairConfigurationModelBuilder
     }
 
     private static MapperPairConfigurationModel Compose(
+        MapperDeclarationInfo declaration,
         MapperMappingPairModel mappingPairs,
         ImmutableArray<MapperMappingPairModel> surfaceMappingPairs,
         ImmutableArray<LocalMapperConfigurationLevel> levels,
@@ -209,6 +218,7 @@ internal static class PairConfigurationModelBuilder
         if (levels.IsEmpty)
         {
             return new MapperPairConfigurationModel(
+                declaration,
                 mappingPairs,
                 surfaceMappingPairs,
                 PairConfigurationSettings.Empty,
@@ -276,6 +286,7 @@ internal static class PairConfigurationModelBuilder
         }
 
         return new MapperPairConfigurationModel(
+            declaration,
             mappingPairs,
             surfaceMappingPairs,
             levels[0].RootSettings,

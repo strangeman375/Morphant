@@ -339,7 +339,8 @@ internal static class PairConfigurationDiscoveryPipeline
             {
                 configureInfo = new TypeMapperConfigureInfo(
                     syntax,
-                    mapperType);
+                    mapperType,
+                    Declaration: null);
                 return true;
             }
         }

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.Incrementality;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.MapperDeclaration;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
 
@@ -35,7 +36,22 @@ internal static class TypeMapperPipeline
         IncrementalValuesProvider<MapperPairConfigurationModel>
             mapperConfigurations)
     {
-        var models = mapperConfigurations
+        Register(
+            context,
+            compilationContext,
+            assemblySettings,
+            MapperContractPipeline.Build(
+                mapperConfigurations,
+                compilationContext));
+    }
+
+    public static void Register(
+        IncrementalGeneratorInitializationContext context,
+        IncrementalValueProvider<CompilationContext> compilationContext,
+        IncrementalValueProvider<MappingSettings> assemblySettings,
+        IncrementalValuesProvider<MapperContractAnalysis> contractAnalyses)
+    {
+        var models = contractAnalyses
             .Combine(compilationContext)
             .Combine(assemblySettings)
             .Select(static (source, cancellationToken) =>
@@ -73,31 +89,29 @@ internal static class TypeMapperPipeline
     private static TypeMapperGenerationInput? TryBuildGenerationInput(
         (
             (
-                MapperPairConfigurationModel Configuration,
+                MapperContractAnalysis Analysis,
                 CompilationContext Context
             ) Input,
             MappingSettings AssemblySettings
         ) source,
         CancellationToken cancellationToken)
     {
-        var ((configuration, context), assemblySettings) = source;
+        var ((analysis, context), assemblySettings) = source;
+        var configuration = analysis.Configuration;
         var configureSyntax = configuration.MappingPairs.ConfigureSyntax;
-        var semanticModel = context.Compilation.GetSemanticModel(
-            configureSyntax.SyntaxTree);
+        var mapperDeclaration =
+            configuration.Declaration.AttributedDeclaration;
+        var mapperType = configuration.Declaration.MapperType;
 
-        if (configureSyntax.Parent is not
-                ClassDeclarationSyntax mapperDeclaration ||
-            semanticModel.GetDeclaredSymbol(
-                mapperDeclaration,
-                cancellationToken) is not INamedTypeSymbol mapperType ||
-            !CanGenerate(mapperType, mapperDeclaration) ||
+        if (!configuration.Declaration.CanGenerateExecutableArtifact ||
+            !IsSupportedAccessibility(mapperType.DeclaredAccessibility) ||
             context.Compilation is not CSharpCompilation compilation)
         {
             return null;
         }
 
         var mappings = BuildMappings(
-            configuration,
+            analysis,
             assemblySettings,
             compilation,
             mapperType,
@@ -148,12 +162,13 @@ internal static class TypeMapperPipeline
     }
 
     private static TypeMapperMappingsBuildResult BuildMappings(
-        MapperPairConfigurationModel configuration,
+        MapperContractAnalysis analysis,
         MappingSettings assemblySettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
+        var configuration = analysis.Configuration;
         var usedGeneratedMethodNames = BuildUsedGeneratedMethodNames(
             mapperType);
         var mappings = ImmutableArray.CreateBuilder<OrderedMapping>(
@@ -165,6 +180,11 @@ internal static class TypeMapperPipeline
             cancellationToken.ThrowIfCancellationRequested();
 
             if (pairConfiguration.Pair.HasUnifiableConflict)
+            {
+                continue;
+            }
+
+            if (analysis.Excludes(pairConfiguration.Pair.Identity))
             {
                 continue;
             }
@@ -251,6 +271,11 @@ internal static class TypeMapperPipeline
             cancellationToken.ThrowIfCancellationRequested();
 
             if (unsupportedPair.HasUnifiableConflict)
+            {
+                continue;
+            }
+
+            if (analysis.Excludes(unsupportedPair.Identity))
             {
                 continue;
             }
@@ -1141,38 +1166,6 @@ internal static class TypeMapperPipeline
                 return candidate;
             }
         }
-    }
-
-    private static bool CanGenerate(
-        INamedTypeSymbol mapperType,
-        ClassDeclarationSyntax mapperDeclaration)
-    {
-        if (!IsPartial(mapperDeclaration) ||
-            !IsSupportedAccessibility(mapperType.DeclaredAccessibility) ||
-            mapperDeclaration
-                .Ancestors()
-                .OfType<TypeDeclarationSyntax>()
-                .Any(static declaration => !IsPartial(declaration)))
-        {
-            return false;
-        }
-
-        for (var current = mapperType;
-             current is not null;
-             current = current.ContainingType)
-        {
-            if (current.IsFileLocal)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static bool IsPartial(TypeDeclarationSyntax declaration)
-    {
-        return declaration.Modifiers.Any(SyntaxKind.PartialKeyword);
     }
 
     private static bool IsSupportedAccessibility(

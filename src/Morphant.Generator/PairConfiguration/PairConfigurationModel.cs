@@ -3,11 +3,13 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.MapperDeclaration;
 using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.PairConfiguration;
 
 internal readonly record struct MapperPairConfigurationModel(
+    MapperDeclarationInfo Declaration,
     MapperMappingPairModel MappingPairs,
     ImmutableArray<MapperMappingPairModel> SurfaceMappingPairs,
     PairConfigurationSettings RootSettings,

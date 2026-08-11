@@ -32,6 +32,7 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
 
         arguments.Add($"-p:MorphantGeneratorPath={GetGeneratorAssemblyPath()}");
         arguments.Add($"-p:MorphantRuntimePath={GetRuntimeAssemblyPath()}");
+        arguments.Add($"-p:RestoreSources={PackageFeed}");
 
         if (runtimeCandidatePath is not null)
         {

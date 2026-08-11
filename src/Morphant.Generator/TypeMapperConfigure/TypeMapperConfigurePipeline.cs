@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.MapperDeclaration;
 
 namespace Morphant.Generator.TypeMapperConfigure;
 
@@ -10,16 +11,15 @@ internal static class TypeMapperConfigurePipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext)
     {
-        var mapperDeclarations = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                MetadataNames.MorphantMapperAttribute,
-                static (node, _) =>
-                    node is ClassDeclarationSyntax,
-                static (attributeContext, _) =>
-                    (ClassDeclarationSyntax)attributeContext.TargetNode)
-            .WithTrackingName(
-                MorphantGeneratorStageNames.FindMorphantMapperDeclarations);
+        return Build(
+            MapperDeclarationPipeline.Build(context, compilationContext),
+            compilationContext);
+    }
 
+    public static IncrementalValuesProvider<TypeMapperConfigureInfo> Build(
+        IncrementalValuesProvider<MapperDeclarationInfo> mapperDeclarations,
+        IncrementalValueProvider<CompilationContext> compilationContext)
+    {
         return mapperDeclarations
             .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
@@ -31,29 +31,26 @@ internal static class TypeMapperConfigurePipeline
 
     private static TypeMapperConfigureInfo? TryBuild(
         (
-            ClassDeclarationSyntax MapperDeclaration,
+            MapperDeclarationInfo Declaration,
             CompilationContext Context
         ) source,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var (mapperDeclaration, context) = source;
+        var (declaration, context) = source;
 
         if (context.KnownSymbols is not { } knownSymbols)
         {
             return null;
         }
 
-        var semanticModel = context.Compilation.GetSemanticModel(
-            mapperDeclaration.SyntaxTree);
-
-        if (semanticModel.GetDeclaredSymbol(
-                mapperDeclaration,
-                cancellationToken) is not INamedTypeSymbol mapperType)
+        if (!declaration.DerivesFromTypeMapper)
         {
             return null;
         }
+
+        var mapperType = declaration.MapperType;
 
         var configureMethod = FindConfigureOverride(
             mapperType,
@@ -78,7 +75,8 @@ internal static class TypeMapperConfigurePipeline
             {
                 return new TypeMapperConfigureInfo(
                     configureSyntax,
-                    mapperType);
+                    mapperType,
+                    declaration);
             }
 
             if (syntaxReference.GetSyntax(cancellationToken)
@@ -89,7 +87,8 @@ internal static class TypeMapperConfigurePipeline
             {
                 return new TypeMapperConfigureInfo(
                     expressionBodiedSyntax,
-                    mapperType);
+                    mapperType,
+                    declaration);
             }
         }
 

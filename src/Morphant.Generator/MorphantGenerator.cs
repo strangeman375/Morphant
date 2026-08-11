@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.MapperDeclaration;
 using Morphant.Generator.MemberSurface;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
@@ -28,10 +29,24 @@ public sealed class MorphantGenerator : IIncrementalGenerator
             });
         var assemblySettings =
             AssemblyMappingSettingsPipeline.Build(context);
-        var configureInfos = TypeMapperConfigurePipeline.Build(context, compilationContext);
+        var mapperDeclarations = MapperDeclarationPipeline.Build(
+            context,
+            compilationContext);
+        var configureInfos = TypeMapperConfigurePipeline.Build(
+            mapperDeclarations,
+            compilationContext);
         var pairConfigurations = PairConfigurationPipeline.Build(
             compilationContext,
             configureInfos);
+        var contractAnalyses = MapperContractPipeline.Build(
+            pairConfigurations,
+            compilationContext);
+
+        MapperDeclarationDiagnosticPipeline.Register(
+            context,
+            compilationContext,
+            mapperDeclarations,
+            contractAnalyses);
         var canonicalSurfacePairs = CanonicalMappingPairPipeline.Build(
             pairConfigurations);
         ConstructionSurfacePipeline.Register(
@@ -47,6 +62,6 @@ public sealed class MorphantGenerator : IIncrementalGenerator
             context,
             compilationContext,
             assemblySettings,
-            pairConfigurations);
+            contractAnalyses);
     }
 }
