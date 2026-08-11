@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperInheritanceTests/InvalidCompositionTests::Rejects_duplicate_base_Configure_calls_for_the_mapper
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0024
 
 using Morphant;
 using System;

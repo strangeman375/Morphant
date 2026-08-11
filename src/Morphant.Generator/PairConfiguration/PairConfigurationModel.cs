@@ -14,6 +14,8 @@ internal readonly record struct MapperPairConfigurationModel(
     ImmutableArray<MapperMappingPairModel> SurfaceMappingPairs,
     PairConfigurationSettings RootSettings,
     ImmutableArray<PairConfigurationSettings> BaseRootSettings,
+    ImmutableArray<DuplicateBaseConfigurationCallModel>
+        DuplicateBaseConfigurationCalls,
     ImmutableArray<PairConfigurationModel> Pairs,
     bool HasInvalidBaseConfiguration,
     ImmutableArray<UnavailableBaseConfigurationModel>
@@ -28,6 +30,7 @@ internal readonly record struct MapperPairConfigurationModel(
 
 internal readonly record struct PairConfigurationModel(
     MappingPairModel Pair,
+    PairConfigurationOriginModel Origin,
     ImmutableArray<MappingPlanSlotOccurrenceModel> LocalPlanSlots,
     PairConfigurationSettings Settings,
     DeclarativePairConfigurationModel Declarative,
@@ -76,7 +79,25 @@ internal sealed record BoundConfigurationExpression(
     INamedTypeSymbol DelegateType,
     IMethodSymbol DelegateInvokeMethod,
     INamedTypeSymbol DeclaringMapperType,
-    bool IsAccessibleFromTargetMapper);
+    int DeclaringLevelOrder,
+    ImmutableArray<Location> InaccessibleReferenceLocations)
+{
+    public bool IsAccessibleFromTargetMapper =>
+        InaccessibleReferenceLocations.IsEmpty;
+}
+
+internal readonly record struct PairConfigurationOriginModel(
+    INamedTypeSymbol DeclaringMapperType,
+    INamedTypeSymbol ConstructedMapperType,
+    MappingPairRegistrationModel Registration,
+    MappingPairRegistrationModel DeclaredRegistration,
+    int LevelOrder);
+
+internal sealed record DuplicateBaseConfigurationCallModel(
+    INamedTypeSymbol DeclaringMapperType,
+    InvocationExpressionSyntax FirstInvocation,
+    InvocationExpressionSyntax DuplicateInvocation,
+    int LevelOrder);
 
 internal readonly record struct IncludeBaseConfigurationModel(
     InvocationExpressionSyntax Invocation,
@@ -85,11 +106,35 @@ internal readonly record struct IncludeBaseConfigurationModel(
 
 internal readonly record struct PairConfigurationCompositionModel(
     ImmutableArray<IncludeBaseConfigurationModel> IncludeBaseCalls,
-    ImmutableArray<PairConfigurationSettings> IncludedBaseSettings)
+    ImmutableArray<PairConfigurationSettings> IncludedBaseSettings,
+    ImmutableArray<InheritanceCompositionIssueModel> Issues,
+    ImmutableArray<InheritedCallbackAccessibilityModel>
+        InaccessibleCallbacks)
 {
     public static PairConfigurationCompositionModel Empty =>
-        new([], []);
+        new([], [], [], []);
 }
+
+internal sealed record InheritanceCompositionIssueModel(
+    InheritanceCompositionIssueKind Kind,
+    PairConfigurationOriginModel Origin,
+    IncludeBaseConfigurationModel IncludeBase,
+    InvocationExpressionSyntax? FirstInvocation = null);
+
+internal enum InheritanceCompositionIssueKind
+{
+    DuplicateIncludeBase,
+    MissingIncludedPair,
+    IncompatibleSource,
+    IncompatibleDestination,
+    InvalidIncludedPair
+}
+
+internal sealed record InheritedCallbackAccessibilityModel(
+    string CallbackName,
+    InvocationExpressionSyntax Invocation,
+    int LevelOrder,
+    ImmutableArray<Location> ReferenceLocations);
 
 internal readonly record struct PairConfigurationSettings(
     PairConfigurationSetting<MappingModeValue> MappingMode,
@@ -160,5 +205,6 @@ internal enum PairConfigurationConflict
     MissingBaseConfiguration = 1 << 5,
     MissingBasePair = 1 << 6,
     IncompatibleBasePair = 1 << 7,
-    InaccessibleInheritedPlan = 1 << 8
+    InaccessibleInheritedPlan = 1 << 8,
+    InvalidBasePair = 1 << 9
 }

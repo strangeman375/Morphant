@@ -24,6 +24,7 @@ internal static class MappingSettingsDiagnosticPipeline
         PairConfigurationConflict.MissingBaseConfiguration |
         PairConfigurationConflict.MissingBasePair |
         PairConfigurationConflict.IncompatibleBasePair |
+        PairConfigurationConflict.InvalidBasePair |
         PairConfigurationConflict.InaccessibleInheritedPlan;
 
     public static void Register(

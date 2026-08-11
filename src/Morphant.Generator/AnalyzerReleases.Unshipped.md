@@ -27,4 +27,9 @@ MORPH0020 | Morphant.Composition | Error | Convert cannot be combined with resul
 MORPH0021 | Morphant.Settings | Error | Invalid mapping setting value
 MORPH0022 | Morphant.Settings | Error | Invalid MSBuild mapping setting value
 MORPH0023 | Morphant.Settings | Error | Mapping setting is not applicable
+MORPH0024 | Morphant.Inheritance | Error | Duplicate base configuration call
+MORPH0025 | Morphant.Inheritance | Error | Duplicate IncludeBase call
+MORPH0026 | Morphant.Inheritance | Error | Included mapping pair not found
+MORPH0027 | Morphant.Inheritance | Error | Included mapping type is incompatible
+MORPH0028 | Morphant.Inheritance | Error | Inherited mapping callback is inaccessible
 MORPH0034 | Morphant.Declaration | Error | Mapper member conflicts with generated Supports

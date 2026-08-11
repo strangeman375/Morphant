@@ -124,8 +124,10 @@ chain, the current-level pair wins. `base.Configure(builder)` is required only
 when the requested pair comes from that chain.
 
 The call is invalid when either type is not assignable, the exact base pair is
-not available on the current or connected levels, the pair includes itself, or
-`IncludeBase` is called more than once on the current pair.
+not available on the current or connected levels, or `IncludeBase` is called
+more than once on the current pair. An exact same-pair include is valid only
+when lookup can select another node on a connected base level; without that
+ancestor, the current node cannot include itself.
 
 A local mapping without `IncludeBase` starts with a clean pair plan. It still
 uses connected root settings, but it does not import another pair's map-level
@@ -203,3 +205,24 @@ cannot transfer a base `Configure` body that is unavailable in the current
 compilation. Register mappings from another assembly independently instead.
 See [Runtime dispatch and DI](runtime-dispatch.md) for cross-assembly runtime
 registration.
+
+## Diagnostics and recovery
+
+Inheritance mistakes are reported at the composition boundary:
+
+- `MORPH0024` marks the second and each later direct
+  `base.Configure(builder)` call on one mapper level.
+- `MORPH0025` marks the second and each later `IncludeBase` call on one pair.
+- `MORPH0026` reports a requested pair that lookup cannot find.
+- `MORPH0027` reports the source and destination assignability failures
+  separately.
+- `MORPH0028` reports each effective inherited callback that refers to a base
+  member inaccessible from the final generated mapper.
+
+These diagnostics are errors by default and support normal
+`dotnet_diagnostic.<ID>.severity` configuration. Suppression or a severity
+override changes only compiler presentation. A duplicate base configuration
+makes every known pair in that mapper throw `MappingConfigurationException`;
+the other four diagnostics affect only the invalid pair and consumers that
+retain its effective plan slice. Both `Create` and `Update` throw regardless
+of `MappingMode`, while independent mappers and pairs continue to execute.

@@ -704,35 +704,31 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 6.**
+**Diagnostics: vertical slice категории 7.**
 
 Статус: реализован, ожидает пользовательского ревью. Vertical slices
-категорий 1–5 приняты пользователем. Категория 6 добавляет configurable
-`MORPH0021`–`MORPH0023`: invalid effective C# setting, invalid effective
-MSBuild setting и неприменимую pair-local setting.
+категорий 1–6 приняты пользователем. Категория 7 добавляет configurable
+`MORPH0024`–`MORPH0028`: duplicate `base.Configure`, duplicate `IncludeBase`,
+missing requested pair, отдельную несовместимость source/destination и
+недоступный effective inherited callback.
 
-Все шесть settings разрешаются по полной цепочке current pair -> included base
-pairs -> current mapper root -> connected base roots -> assembly -> library.
-Последний успешно связанный C# call выигрывает, `Default` продолжает
-inheritance, а invalid final value останавливает его. MSBuild принимает только
-точные case-insensitive enum names; missing, empty и `Default` продолжают
-inheritance. `MappingMode` проверяется по объявленным atomic flags без numeric
-range assumption.
+Level-aware lookup исключает только current composition node, выбирает
+authoritative current-level candidate перед connected levels и проходит base
+chain nearest-first. Registered category-3-invalid candidate считается
+найденным origin-ом и не получает dependent lookup/compatibility diagnostic.
+Exact same-pair переносит полный effective plan, cross-pair — только
+`Members`; local model precedence отбрасывает заменённые callbacks до проверки
+accessibility.
 
-Applicability учитывает manual/declarative model, enabled operations и
-reachable convention/`ByConvention` construction paths. Pair-local
-non-mode setting рядом с `Convert` и explicit `ConstructorSelection` без
-structured construction capability получают `MORPH0023`; inherited inactive
-settings безвредны. Recovery остаётся policy-specific и path-sensitive, кроме
-`MORPH0023`, переводящей обе операции pair в configuration stubs независимо
-от `MappingMode`. Suppression и severity override меняют только presentation.
-
-Самостоятельная unit-категория фиксирует descriptors, C#/MSBuild grammar,
-precedence, ownership, applicability, deduplication/order, exact recovery и
-actualization одного driver-а. Обычные C# 9 consumers исполняют все шесть
-recovery families, pair-wide `MORPH0023`, независимую pair и реальные
-`.globalconfig` overrides всех трёх IDs. Следующий vertical slice — категория
-7 после принятия категории 6 пользователем.
+`MORPH0024` использует mapper-wide recovery, `MORPH0025`–`MORPH0028` —
+pair-wide recovery, распространяющийся только на consumers retained slice.
+Обе операции бросают независимо от `MappingMode`; suppression и severity
+override не меняют lookup, artifacts или runtime behavior. Самостоятельные
+unit-, C# 9 runtime- и package/MSBuild-тесты фиксируют exact diagnostics,
+generic/context deduplication, compatibility, все шесть callback families,
+полный generated result, actualization и реальные `.editorconfig` overrides.
+Следующий vertical slice — категория 8 после принятия категории 7
+пользователем.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2162,8 +2158,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slices категорий 1–5 приняты пользователем;
-vertical slice категории 6 реализован и ожидает пользовательского ревью.
+production model и vertical slices категорий 1–6 приняты пользователем;
+vertical slice категории 7 реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2205,8 +2201,12 @@ recovery и suppression/actualization с самостоятельными unit-,
 и package/MSBuild-тестами; slice принят пользователем. Шестой slice реализует
 settings diagnostics `MORPH0021`–`MORPH0023`, полную effective precedence,
 applicability и policy-specific recovery с самостоятельными unit-, C# 9
-runtime- и package/MSBuild-тестами. Следующий vertical slice реализует
-категорию 7 после пользовательского принятия категории 6.
+runtime- и package/MSBuild-тестами; slice принят пользователем. Седьмой slice
+реализует inheritance diagnostics `MORPH0024`–`MORPH0028`, level-aware
+`IncludeBase` lookup, retained-slice propagation и accessibility всех шести
+callback families с самостоятельными unit-, C# 9 runtime- и package/MSBuild-
+тестами; slice ожидает пользовательского ревью. Следующий vertical slice —
+категория 8 после принятия категории 7.
 
 ### Этап 24. Observable failures
 

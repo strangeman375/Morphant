@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperInheritanceTests/InvalidCompositionTests::Preserves_invalid_IncludeBase_forms_as_unsupported_states
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0025, MORPH0026, MORPH0027
 
 using Morphant;
 using System;

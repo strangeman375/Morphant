@@ -164,7 +164,7 @@ public partial class DerivedMapper : ExternalBase<int>
 
         Assert.That(
             result.Diagnostics.Select(static diagnostic => diagnostic.Id),
-            Is.EqualTo(new[] { "MORPH0016" }));
+            Is.EqualTo(new[] { "MORPH0016", "MORPH0024" }));
     }
 
     private static Microsoft.CodeAnalysis.MetadataReference BuildMetadataBase()

@@ -36,6 +36,7 @@ internal static class PairConfigurationModelBuilder
                 PairConfigurationSettings.Empty,
                 [],
                 [],
+                [],
                 HasInvalidBaseConfiguration: false,
                 discovery.UnavailableBaseConfigurations,
                 discovery.FlowBreaks);
@@ -65,6 +66,7 @@ internal static class PairConfigurationModelBuilder
                 PairConfigurationSettings.Empty,
                 [],
                 [],
+                [],
                 HasInvalidBaseConfiguration: false,
                 discovery.UnavailableBaseConfigurations,
                 discovery.FlowBreaks);
@@ -78,9 +80,12 @@ internal static class PairConfigurationModelBuilder
                     discovery.ConfigureInfo.MapperType)) ??
             discovery.ConfigureInfo.MapperType;
 
-        foreach (var level in discovery.Levels)
+        for (var levelOrder = 0;
+             levelOrder < discovery.Levels.Length;
+             levelOrder++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var level = discovery.Levels[levelOrder];
 
             var sourceSemanticModel = compilation.GetSemanticModel(
                 level.ConfigureInfo.Syntax.SyntaxTree);
@@ -112,6 +117,9 @@ internal static class PairConfigurationModelBuilder
                     localPairs.Add(
                         BuildPair(
                             pair,
+                            FindDeclaredRegistration(
+                                level.BindingRegistrations,
+                                pair.Registration.Syntax),
                             chain,
                             semanticModel,
                             sourceSemanticModel,
@@ -122,18 +130,26 @@ internal static class PairConfigurationModelBuilder
                             augmentedCompilation,
                             targetMapperType,
                             declaringMapperType,
+                            level.ConstructedMapperType,
+                            levelOrder,
                             cancellationToken));
                 }
             }
 
             levels.Add(
                 new LocalMapperConfigurationLevel(
+                    declaringMapperType,
                     BuildRootSettings(
                         level.InvocationChains,
                         semanticModel,
                         knownSymbols,
                         cancellationToken),
                     localPairs.ToImmutable(),
+                    localMappingPairs is { } candidateModel
+                        ? BuildCandidates(
+                            candidateModel,
+                            localPairs)
+                        : [],
                     level.BaseConfigureCalls));
         }
 
@@ -233,24 +249,27 @@ internal static class PairConfigurationModelBuilder
                 PairConfigurationSettings.Empty,
                 [],
                 [],
+                [],
                 hasInvalidBaseConfiguration,
                 unavailableBaseConfigurations,
                 flowBreaks);
         }
 
-        var effectivePairs =
-            new Dictionary<MappingPairKey, PairConfigurationModel>();
+        var effectiveCandidates =
+            new Dictionary<MappingPairKey, PairConfigurationCandidateModel>();
 
         for (var levelIndex = levels.Length - 1;
              levelIndex >= 0;
              levelIndex--)
         {
             var level = levels[levelIndex];
-            var inheritedPairs =
-                new Dictionary<MappingPairKey, PairConfigurationModel>(
-                    effectivePairs);
+            var inheritedCandidates =
+                new Dictionary<MappingPairKey,
+                    PairConfigurationCandidateModel>(effectiveCandidates);
             var localPairs = level.Pairs.ToDictionary(
                 static pair => MappingPairKey.Create(pair.Pair));
+            var localCandidates = level.Candidates.ToDictionary(
+                static candidate => candidate.Key);
             var composedLocalPairs =
                 new Dictionary<MappingPairKey, PairConfigurationModel>();
             var composedPairs =
@@ -262,19 +281,23 @@ internal static class PairConfigurationModelBuilder
                 composedPairs.Add(ComposeLevelPair(
                     localPair,
                     localPairs,
-                    inheritedPairs,
+                    localCandidates,
+                    inheritedCandidates,
                     composedLocalPairs,
-                    hasConnectedBaseConfiguration:
-                        levelIndex + 1 < levels.Length,
-                    hasInvalidBaseConfiguration &&
-                        levelIndex + 1 == levels.Length,
+                    hasUnknownBaseConfiguration:
+                        hasInvalidBaseConfiguration,
                     sourceCompilation));
             }
 
-            foreach (var composedPair in composedPairs)
+            foreach (var candidate in level.Candidates)
             {
-                effectivePairs[MappingPairKey.Create(composedPair.Pair)] =
-                    composedPair;
+                effectiveCandidates[candidate.Key] =
+                    !candidate.IsCategory3Invalid &&
+                    composedLocalPairs.TryGetValue(
+                        candidate.Key,
+                        out var composedPair)
+                        ? candidate with { Configuration = composedPair }
+                        : candidate;
             }
         }
 
@@ -283,9 +306,10 @@ internal static class PairConfigurationModelBuilder
 
         foreach (var pair in mappingPairs.Pairs)
         {
-            if (effectivePairs.TryGetValue(
+            if (effectiveCandidates.TryGetValue(
                     MappingPairKey.Create(pair),
-                    out var configuration))
+                    out var candidate) &&
+                candidate.Configuration is { } configuration)
             {
                 pairs.Add(
                     AddAccessibilityConflict(
@@ -304,6 +328,7 @@ internal static class PairConfigurationModelBuilder
             levels.Skip(1)
                 .Select(static level => level.RootSettings)
                 .ToImmutableArray(),
+            BuildDuplicateBaseConfigurationCalls(levels),
             pairs.ToImmutable(),
             hasInvalidBaseConfiguration ||
             levels.Any(static level =>
@@ -315,11 +340,12 @@ internal static class PairConfigurationModelBuilder
     private static PairConfigurationModel ComposeLevelPair(
         PairConfigurationModel local,
         IReadOnlyDictionary<MappingPairKey, PairConfigurationModel> localPairs,
-        IReadOnlyDictionary<MappingPairKey, PairConfigurationModel>
-            inheritedPairs,
+        IReadOnlyDictionary<MappingPairKey, PairConfigurationCandidateModel>
+            localCandidates,
+        IReadOnlyDictionary<MappingPairKey, PairConfigurationCandidateModel>
+            inheritedCandidates,
         IDictionary<MappingPairKey, PairConfigurationModel> composedLocalPairs,
-        bool hasConnectedBaseConfiguration,
-        bool hasUnavailableBaseConfiguration,
+        bool hasUnknownBaseConfiguration,
         CSharpCompilation compilation)
     {
         var localKey = MappingPairKey.Create(local.Pair);
@@ -329,46 +355,67 @@ internal static class PairConfigurationModelBuilder
             return cached;
         }
 
-        var includeBase = local.Composition.IncludeBaseCalls.FirstOrDefault();
-        PairConfigurationModel? basePair = null;
+        var includeBaseCalls = local.Composition.IncludeBaseCalls;
+        var lookup = IncludeBaseLookupResult.None;
 
-        if (includeBase != default)
+        if (includeBaseCalls.Length == 1)
         {
+            var includeBase = includeBaseCalls[0];
             var includeBaseKey = MappingPairKey.Create(
                 includeBase.SourceType,
                 includeBase.DestinationType);
 
             if (includeBaseKey != localKey &&
-                localPairs.TryGetValue(includeBaseKey, out var localBasePair))
+                localCandidates.TryGetValue(
+                    includeBaseKey,
+                    out var localCandidate))
             {
-                if (IsCompatibleBasePair(
-                        local.Pair,
-                        includeBase,
-                        compilation))
+                if (localCandidate.IsCategory3Invalid)
                 {
-                    basePair = ComposeLevelPair(
-                        localBasePair,
-                        localPairs,
-                        inheritedPairs,
-                        composedLocalPairs,
-                        hasConnectedBaseConfiguration,
-                        hasUnavailableBaseConfiguration,
-                        compilation);
+                    lookup = IncludeBaseLookupResult.Invalid;
+                }
+                else if (!IsCompatibleBasePair(
+                             local.Pair,
+                             includeBase,
+                             compilation))
+                {
+                    lookup = IncludeBaseLookupResult.Found(null);
+                }
+                else if (localPairs.TryGetValue(
+                             includeBaseKey,
+                             out var localBasePair))
+                {
+                    lookup = IncludeBaseLookupResult.Found(
+                        ComposeLevelPair(
+                            localBasePair,
+                            localPairs,
+                            localCandidates,
+                            inheritedCandidates,
+                            composedLocalPairs,
+                            hasUnknownBaseConfiguration,
+                            compilation));
                 }
             }
-            else if (inheritedPairs.TryGetValue(
+            else if (inheritedCandidates.TryGetValue(
                          includeBaseKey,
-                         out var inheritedBasePair))
+                         out var inheritedCandidate))
             {
-                basePair = inheritedBasePair;
+                lookup = inheritedCandidate.IsCategory3Invalid
+                    ? IncludeBaseLookupResult.Invalid
+                    : IncludeBaseLookupResult.Found(
+                        inheritedCandidate.Configuration);
+            }
+            else
+            {
+                lookup = hasUnknownBaseConfiguration
+                    ? IncludeBaseLookupResult.Unknown
+                    : IncludeBaseLookupResult.Missing;
             }
         }
 
         var composed = ComposePair(
             local,
-            basePair,
-            hasConnectedBaseConfiguration,
-            hasUnavailableBaseConfiguration,
+            lookup,
             compilation);
 
         composedLocalPairs[localKey] = composed;
@@ -377,9 +424,7 @@ internal static class PairConfigurationModelBuilder
 
     private static PairConfigurationModel ComposePair(
         PairConfigurationModel local,
-        PairConfigurationModel? basePair,
-        bool hasConnectedBaseConfiguration,
-        bool hasUnavailableBaseConfiguration,
+        IncludeBaseLookupResult lookup,
         CSharpCompilation compilation)
     {
         var includeBaseCalls = local.Composition.IncludeBaseCalls;
@@ -387,7 +432,28 @@ internal static class PairConfigurationModelBuilder
 
         if (includeBaseCalls.Length > 1)
         {
-            conflicts |= PairConfigurationConflict.DuplicateIncludeBase;
+            var first = includeBaseCalls[0];
+            var issues = includeBaseCalls.Skip(1)
+                .Select(includeBase =>
+                    new InheritanceCompositionIssueModel(
+                        InheritanceCompositionIssueKind
+                            .DuplicateIncludeBase,
+                        local.Origin,
+                        includeBase,
+                        first.Invocation))
+                .ToImmutableArray();
+
+            return local with
+            {
+                Composition = local.Composition with
+                {
+                    IncludedBaseSettings = [],
+                    Issues = issues,
+                    InaccessibleCallbacks = []
+                },
+                Conflicts = conflicts |
+                    PairConfigurationConflict.DuplicateIncludeBase
+            };
         }
 
         if (includeBaseCalls.IsEmpty)
@@ -401,45 +467,111 @@ internal static class PairConfigurationModelBuilder
 
         var includeBase = includeBaseCalls[0];
 
-        if (!IsCompatibleBasePair(
-                local.Pair,
-                includeBase,
-                compilation))
+        if (lookup.Status == IncludeBaseLookupStatus.Missing)
         {
             return local with
             {
                 Composition = local.Composition with
                 {
-                    IncludedBaseSettings = []
+                    IncludedBaseSettings = [],
+                    Issues =
+                    [
+                        new InheritanceCompositionIssueModel(
+                            InheritanceCompositionIssueKind
+                                .MissingIncludedPair,
+                            local.Origin,
+                            includeBase)
+                    ],
+                    InaccessibleCallbacks = []
                 },
                 Conflicts = conflicts |
-                    PairConfigurationConflict.IncompatibleBasePair
+                    PairConfigurationConflict.MissingBasePair
             };
         }
 
-        if (basePair is null)
+        if (lookup.Status == IncludeBaseLookupStatus.Unknown)
         {
-            conflicts |= hasConnectedBaseConfiguration
-                ? PairConfigurationConflict.MissingBasePair
-                : PairConfigurationConflict.MissingBaseConfiguration;
-
-            if (hasUnavailableBaseConfiguration)
+            return local with
             {
-                conflicts |=
-                    PairConfigurationConflict.MissingBaseConfiguration;
+                Composition = local.Composition with
+                {
+                    IncludedBaseSettings = [],
+                    Issues = [],
+                    InaccessibleCallbacks = []
+                },
+                Conflicts = conflicts |
+                    PairConfigurationConflict.MissingBaseConfiguration
+            };
+        }
+
+        if (lookup.Status == IncludeBaseLookupStatus.Invalid)
+        {
+            return local with
+            {
+                Composition = local.Composition with
+                {
+                    IncludedBaseSettings = [],
+                    Issues =
+                    [
+                        new InheritanceCompositionIssueModel(
+                            InheritanceCompositionIssueKind
+                                .InvalidIncludedPair,
+                            local.Origin,
+                            includeBase)
+                    ],
+                    InaccessibleCallbacks = []
+                },
+                Conflicts = conflicts |
+                    PairConfigurationConflict.InvalidBasePair
+            };
+        }
+
+        var sourceCompatible = IsBaseTypeConversion(
+            compilation.ClassifyConversion(
+                local.Pair.SourceType,
+                includeBase.SourceType));
+        var destinationCompatible = IsBaseTypeConversion(
+            compilation.ClassifyConversion(
+                local.Pair.DestinationType,
+                includeBase.DestinationType));
+
+        if (!sourceCompatible || !destinationCompatible)
+        {
+            var issues = ImmutableArray.CreateBuilder<
+                InheritanceCompositionIssueModel>(2);
+
+            if (!sourceCompatible)
+            {
+                issues.Add(new InheritanceCompositionIssueModel(
+                    InheritanceCompositionIssueKind.IncompatibleSource,
+                    local.Origin,
+                    includeBase));
+            }
+
+            if (!destinationCompatible)
+            {
+                issues.Add(new InheritanceCompositionIssueModel(
+                    InheritanceCompositionIssueKind.IncompatibleDestination,
+                    local.Origin,
+                    includeBase));
             }
 
             return local with
             {
                 Composition = local.Composition with
                 {
-                    IncludedBaseSettings = []
+                    IncludedBaseSettings = [],
+                    Issues = issues.ToImmutable(),
+                    InaccessibleCallbacks = []
                 },
-                Conflicts = conflicts
+                Conflicts = conflicts |
+                    PairConfigurationConflict.IncompatibleBasePair
             };
         }
 
-        var inherited = basePair.Value;
+        var inherited = lookup.Configuration ??
+            throw new InvalidOperationException(
+                "A compatible IncludeBase candidate must have a model.");
         var localHasConvert = !local.Manual.Conversions.IsEmpty;
         var localHasDeclarative =
             !local.Declarative.ResultPolicies.IsEmpty ||
@@ -508,7 +640,11 @@ internal static class PairConfigurationModelBuilder
             IncludedBaseSettings =
                 ImmutableArray.Create(inherited.Settings)
                     .AddRange(
-                        inherited.Composition.IncludedBaseSettings)
+                        inherited.Composition.IncludedBaseSettings),
+            Issues = FilterInheritedIssues(
+                inherited.Composition.Issues,
+                conflicts),
+            InaccessibleCallbacks = []
         };
 
         return local with
@@ -524,11 +660,74 @@ internal static class PairConfigurationModelBuilder
         PairConfigurationConflict.DuplicateIncludeBase |
         PairConfigurationConflict.MissingBaseConfiguration |
         PairConfigurationConflict.MissingBasePair |
-        PairConfigurationConflict.IncompatibleBasePair;
+        PairConfigurationConflict.IncompatibleBasePair |
+        PairConfigurationConflict.InvalidBasePair;
 
     private const PairConfigurationConflict IncludedMembersConflictMask =
         CompositionConflictMask |
         PairConfigurationConflict.DuplicateMembers;
+
+    private static ImmutableArray<DuplicateBaseConfigurationCallModel>
+        BuildDuplicateBaseConfigurationCalls(
+            ImmutableArray<LocalMapperConfigurationLevel> levels)
+    {
+        var result = ImmutableArray.CreateBuilder<
+            DuplicateBaseConfigurationCallModel>();
+
+        for (var levelOrder = 0;
+             levelOrder < levels.Length;
+             levelOrder++)
+        {
+            var level = levels[levelOrder];
+
+            if (level.BaseConfigureCalls.Length < 2)
+            {
+                continue;
+            }
+
+            var first = level.BaseConfigureCalls[0];
+
+            foreach (var duplicate in level.BaseConfigureCalls.Skip(1))
+            {
+                result.Add(new DuplicateBaseConfigurationCallModel(
+                    level.DeclaringMapperType,
+                    first,
+                    duplicate,
+                    levelOrder));
+            }
+        }
+
+        return result.ToImmutable();
+    }
+
+    private static ImmutableArray<InheritanceCompositionIssueModel>
+        FilterInheritedIssues(
+            ImmutableArray<InheritanceCompositionIssueModel> issues,
+            PairConfigurationConflict propagatedConflicts)
+    {
+        return issues
+            .Where(issue =>
+                propagatedConflicts.HasFlag(GetConflict(issue.Kind)))
+            .ToImmutableArray();
+    }
+
+    private static PairConfigurationConflict GetConflict(
+        InheritanceCompositionIssueKind kind)
+    {
+        return kind switch
+        {
+            InheritanceCompositionIssueKind.DuplicateIncludeBase =>
+                PairConfigurationConflict.DuplicateIncludeBase,
+            InheritanceCompositionIssueKind.MissingIncludedPair =>
+                PairConfigurationConflict.MissingBasePair,
+            InheritanceCompositionIssueKind.IncompatibleSource or
+                InheritanceCompositionIssueKind.IncompatibleDestination =>
+                PairConfigurationConflict.IncompatibleBasePair,
+            InheritanceCompositionIssueKind.InvalidIncludedPair =>
+                PairConfigurationConflict.InvalidBasePair,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        };
+    }
 
     private static bool IsCompatibleBasePair(
         MappingPairModel pair,
@@ -558,33 +757,85 @@ internal static class PairConfigurationModelBuilder
         INamedTypeSymbol targetMapperType,
         CancellationToken cancellationToken)
     {
-        var accessible = model.Declarative.ResultPolicies.All(
-                static policy =>
-                    policy.Expression.IsAccessibleFromTargetMapper) &&
-            AreEffectiveMembersAccessible(
-                model.Declarative.Members,
-                compilation,
-                targetMapperType,
-                cancellationToken) &&
-            model.Manual.Conversions.All(static conversion =>
-                conversion.Expression.IsAccessibleFromTargetMapper);
+        if ((model.Conflicts &
+             (CompositionConflictMask |
+              PairConfigurationConflict.DuplicateResultPolicy |
+              PairConfigurationConflict.DuplicateMembers |
+              PairConfigurationConflict.DuplicateConvert |
+              PairConfigurationConflict.MixedManualAndDeclarative)) != 0)
+        {
+            return model;
+        }
 
-        return accessible
-            ? model
-            : model with
+        var failures = ImmutableArray.CreateBuilder<
+            InheritedCallbackAccessibilityModel>();
+
+        foreach (var policy in model.Declarative.ResultPolicies)
+        {
+            AddFailure(
+                policy.Kind.ToString(),
+                policy.Invocation,
+                policy.Expression.DeclaringLevelOrder,
+                policy.Expression.InaccessibleReferenceLocations);
+        }
+
+        failures.AddRange(FindInaccessibleMemberCallbacks(
+            model.Declarative.Members,
+            compilation,
+            targetMapperType,
+            cancellationToken));
+
+        foreach (var conversion in model.Manual.Conversions)
+        {
+            AddFailure(
+                "Convert",
+                conversion.Invocation,
+                conversion.Expression.DeclaringLevelOrder,
+                conversion.Expression.InaccessibleReferenceLocations);
+        }
+
+        if (failures.Count == 0)
+        {
+            return model;
+        }
+
+        return model with
+        {
+            Composition = model.Composition with
             {
-                Conflicts = model.Conflicts |
-                    PairConfigurationConflict.InaccessibleInheritedPlan
-            };
+                InaccessibleCallbacks = failures.ToImmutable()
+            },
+            Conflicts = model.Conflicts |
+                PairConfigurationConflict.InaccessibleInheritedPlan
+        };
+
+        void AddFailure(
+            string callbackName,
+            InvocationExpressionSyntax invocation,
+            int levelOrder,
+            ImmutableArray<Location> references)
+        {
+            if (!references.IsEmpty)
+            {
+                failures.Add(new InheritedCallbackAccessibilityModel(
+                    callbackName,
+                    invocation,
+                    levelOrder,
+                    references));
+            }
+        }
     }
 
-    private static bool AreEffectiveMembersAccessible(
+    private static ImmutableArray<InheritedCallbackAccessibilityModel>
+        FindInaccessibleMemberCallbacks(
         ImmutableArray<MembersConfigurationModel> configurations,
         CSharpCompilation compilation,
         INamedTypeSymbol targetMapperType,
         CancellationToken cancellationToken)
     {
         var overriddenNames = new HashSet<string>(StringComparer.Ordinal);
+        var failures = ImmutableArray.CreateBuilder<
+            InheritedCallbackAccessibilityModel>();
 
         for (var index = configurations.Length - 1;
              index >= 0;
@@ -604,7 +855,12 @@ internal static class PairConfigurationModelBuilder
                 if (!configuration.Expression
                     .IsAccessibleFromTargetMapper)
                 {
-                    return false;
+                    failures.Add(new InheritedCallbackAccessibilityModel(
+                        "Members",
+                        configuration.Invocation,
+                        configuration.Expression.DeclaringLevelOrder,
+                        configuration.Expression
+                            .InaccessibleReferenceLocations));
                 }
 
                 continue;
@@ -628,16 +884,22 @@ internal static class PairConfigurationModelBuilder
                         .Select(static assignment =>
                             (SyntaxNode)assignment.Value));
 
-                if (!IsExpressionAccessibleFromTargetMapper(
-                        configuration.Expression.Syntax,
-                        configuration.Expression.SemanticModel,
-                        compilation,
-                        targetMapperType,
-                        configuration.Expression.DeclaringMapperType,
-                        cancellationToken,
-                        overriddenValues))
+                var references = FindInaccessibleReferenceLocations(
+                    configuration.Expression.Syntax,
+                    configuration.Expression.SemanticModel,
+                    compilation,
+                    targetMapperType,
+                    configuration.Expression.DeclaringMapperType,
+                    cancellationToken,
+                    overriddenValues);
+
+                if (!references.IsEmpty)
                 {
-                    return false;
+                    failures.Add(new InheritedCallbackAccessibilityModel(
+                        "Members",
+                        configuration.Invocation,
+                        configuration.Expression.DeclaringLevelOrder,
+                        references));
                 }
             }
 
@@ -646,7 +908,7 @@ internal static class PairConfigurationModelBuilder
                     assignment.MemberName));
         }
 
-        return true;
+        return failures.ToImmutable();
     }
 
     private static IEnumerable<DeclarativeMemberAssignmentSyntax>
@@ -729,6 +991,68 @@ internal static class PairConfigurationModelBuilder
         return settings;
     }
 
+    private static MappingPairRegistrationModel FindDeclaredRegistration(
+        MapperMappingRegistrationModel registrations,
+        InvocationExpressionSyntax invocation)
+    {
+        foreach (var registration in registrations.Registrations)
+        {
+            if (registration.Syntax.SyntaxTree == invocation.SyntaxTree &&
+                registration.Syntax.Span == invocation.Span)
+            {
+                return registration;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "The declared mapping registration was not found.");
+    }
+
+    private static ImmutableArray<PairConfigurationCandidateModel>
+        BuildCandidates(
+            MapperMappingPairModel model,
+            IEnumerable<PairConfigurationModel> configurations)
+    {
+        var configurationByKey = configurations.ToDictionary(
+            static configuration =>
+                MappingPairKey.Create(configuration.Pair));
+        var result = ImmutableArray.CreateBuilder<
+            PairConfigurationCandidateModel>(
+            model.Pairs.Length +
+            model.UnsupportedPairs.Length +
+            model.UnavailablePairs.Length);
+
+        foreach (var pair in model.Pairs)
+        {
+            var key = MappingPairKey.Create(pair.SourceType, pair.DestinationType);
+
+            result.Add(new PairConfigurationCandidateModel(
+                key,
+                configurationByKey[key],
+                pair.HasUnifiableConflict));
+        }
+
+        foreach (var pair in model.UnsupportedPairs)
+        {
+            result.Add(new PairConfigurationCandidateModel(
+                MappingPairKey.Create(pair.SourceType, pair.DestinationType),
+                Configuration: null,
+                IsCategory3Invalid: true));
+        }
+
+        foreach (var pair in model.UnavailablePairs)
+        {
+            result.Add(new PairConfigurationCandidateModel(
+                MappingPairKey.Create(
+                    pair.Registration.SourceType,
+                    pair.Registration.DestinationType),
+                Configuration: null,
+                IsCategory3Invalid: true));
+        }
+
+        return result.ToImmutable();
+    }
+
     private static PairConfigurationInvocationChain FindRegistrationChain(
         ImmutableArray<PairConfigurationInvocationChain> chains,
         InvocationExpressionSyntax registration)
@@ -752,6 +1076,7 @@ internal static class PairConfigurationModelBuilder
 
     private static PairConfigurationModel BuildPair(
         MappingPairModel pair,
+        MappingPairRegistrationModel declaredRegistration,
         PairConfigurationInvocationChain chain,
         SemanticModel semanticModel,
         SemanticModel sourceSemanticModel,
@@ -761,6 +1086,8 @@ internal static class PairConfigurationModelBuilder
         CSharpCompilation compilation,
         INamedTypeSymbol targetMapperType,
         INamedTypeSymbol declaringMapperType,
+        INamedTypeSymbol constructedMapperType,
+        int levelOrder,
         CancellationToken cancellationToken)
     {
         var settings = BuildMapMappingMode(
@@ -837,6 +1164,7 @@ internal static class PairConfigurationModelBuilder
                 compilation,
                 targetMapperType,
                 declaringMapperType,
+                levelOrder,
                 cancellationToken);
 
             if (expression is null)
@@ -969,6 +1297,12 @@ internal static class PairConfigurationModelBuilder
 
         return new PairConfigurationModel(
             pair,
+            new PairConfigurationOriginModel(
+                declaringMapperType,
+                constructedMapperType,
+                pair.Registration,
+                declaredRegistration,
+                levelOrder),
             localPlanSlots.ToImmutable(),
             settings,
             new DeclarativePairConfigurationModel(
@@ -977,6 +1311,8 @@ internal static class PairConfigurationModelBuilder
             new ManualPairConfigurationModel(immutableConversions),
             new PairConfigurationCompositionModel(
                 includeBaseCalls.ToImmutable(),
+                [],
+                [],
                 []),
             conflicts);
     }
@@ -1182,11 +1518,12 @@ internal static class PairConfigurationModelBuilder
         TryBindConfigurationExpression(
             InvocationExpressionSyntax invocation,
             IMethodSymbol method,
-            SemanticModel semanticModel,
-            CSharpCompilation compilation,
-            INamedTypeSymbol targetMapperType,
-            INamedTypeSymbol declaringMapperType,
-            CancellationToken cancellationToken)
+        SemanticModel semanticModel,
+        CSharpCompilation compilation,
+        INamedTypeSymbol targetMapperType,
+        INamedTypeSymbol declaringMapperType,
+        int declaringLevelOrder,
+        CancellationToken cancellationToken)
     {
         if (invocation.ArgumentList.Arguments.Count != 1 ||
             method.Parameters.LastOrDefault()?.Type is not
@@ -1205,7 +1542,8 @@ internal static class PairConfigurationModelBuilder
             delegateType,
             delegateInvokeMethod,
             declaringMapperType,
-            IsExpressionAccessibleFromTargetMapper(
+            declaringLevelOrder,
+            FindInaccessibleReferenceLocations(
                 syntax,
                 semanticModel,
                 compilation,
@@ -1227,7 +1565,8 @@ internal static class PairConfigurationModelBuilder
                    "Morphant.MapperBuilder`2");
     }
 
-    private static bool IsExpressionAccessibleFromTargetMapper(
+    private static ImmutableArray<Location>
+        FindInaccessibleReferenceLocations(
         ExpressionSyntax expression,
         SemanticModel semanticModel,
         CSharpCompilation compilation,
@@ -1240,21 +1579,26 @@ internal static class PairConfigurationModelBuilder
                 targetMapperType,
                 declaringMapperType))
         {
-            return true;
+            return [];
         }
 
         bool DescendInto(SyntaxNode node) =>
             excludedSubtrees is null ||
             !excludedSubtrees.Contains(node);
 
-        if (expression.DescendantNodesAndSelf(DescendInto)
-            .Any(static node => node is BaseExpressionSyntax))
+        var nodes = expression.DescendantNodesAndSelf(DescendInto)
+            .Where(node =>
+                excludedSubtrees is null ||
+                !excludedSubtrees.Contains(node))
+            .ToImmutableArray();
+        var locations = ImmutableArray.CreateBuilder<Location>();
+
+        foreach (var baseExpression in nodes.OfType<BaseExpressionSyntax>())
         {
-            return false;
+            locations.Add(baseExpression.GetLocation());
         }
 
-        foreach (var name in expression.DescendantNodesAndSelf(DescendInto)
-                     .OfType<SimpleNameSyntax>())
+        foreach (var name in nodes.OfType<SimpleNameSyntax>())
         {
             cancellationToken.ThrowIfCancellationRequested();
             var symbol = semanticModel.GetSymbolInfo(
@@ -1277,11 +1621,18 @@ internal static class PairConfigurationModelBuilder
                     symbol,
                     targetMapperType))
             {
-                return false;
+                locations.Add(name.GetLocation());
             }
         }
 
-        return true;
+        return locations
+            .OrderBy(static location => location.SourceSpan.Start)
+            .GroupBy(static location =>
+                (location.SourceTree,
+                    location.SourceSpan.Start,
+                    location.SourceSpan.Length))
+            .Select(static group => group.First())
+            .ToImmutableArray();
     }
 
     private static bool IsMapperHierarchyMember(
@@ -1456,9 +1807,46 @@ internal static class PairConfigurationModelBuilder
         where TValue : struct, Enum;
 
     private readonly record struct LocalMapperConfigurationLevel(
+        INamedTypeSymbol DeclaringMapperType,
         PairConfigurationSettings RootSettings,
         ImmutableArray<PairConfigurationModel> Pairs,
+        ImmutableArray<PairConfigurationCandidateModel> Candidates,
         ImmutableArray<InvocationExpressionSyntax> BaseConfigureCalls);
+
+    private readonly record struct PairConfigurationCandidateModel(
+        MappingPairKey Key,
+        PairConfigurationModel? Configuration,
+        bool IsCategory3Invalid);
+
+    private enum IncludeBaseLookupStatus
+    {
+        None,
+        Missing,
+        Unknown,
+        Invalid,
+        Found
+    }
+
+    private readonly record struct IncludeBaseLookupResult(
+        IncludeBaseLookupStatus Status,
+        PairConfigurationModel? Configuration)
+    {
+        public static IncludeBaseLookupResult None =>
+            new(IncludeBaseLookupStatus.None, null);
+
+        public static IncludeBaseLookupResult Missing =>
+            new(IncludeBaseLookupStatus.Missing, null);
+
+        public static IncludeBaseLookupResult Unknown =>
+            new(IncludeBaseLookupStatus.Unknown, null);
+
+        public static IncludeBaseLookupResult Invalid =>
+            new(IncludeBaseLookupStatus.Invalid, null);
+
+        public static IncludeBaseLookupResult Found(
+            PairConfigurationModel? configuration) =>
+            new(IncludeBaseLookupStatus.Found, configuration);
+    }
 
     private readonly record struct MappingPairKey(
         string Source,

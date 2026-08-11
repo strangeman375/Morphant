@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperInheritanceTests/GenericAndAccessibilityTests::Treats_inaccessible_inherited_expressions_as_unsupported_plans
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0028
 
 using Morphant;
 using System;

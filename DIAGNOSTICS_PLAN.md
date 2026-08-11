@@ -2,13 +2,13 @@
 
 Дата составления: 7 августа 2026 года.
 
-Последнее обновление: 11 августа 2026 года.
+Последнее обновление: 12 августа 2026 года.
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Vertical slices категорий 1–5 реализованы и приняты пользователем. Vertical
-slice категории 6 реализован и ожидает пользовательского ревью; следующий
-slice после его принятия — категория 7.
+Vertical slices категорий 1–6 реализованы и приняты пользователем. Vertical
+slice категории 7 реализован и ожидает пользовательского ревью; следующий
+slice после его принятия — категория 8.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -81,7 +81,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–5 приняты, категория 6 реализована и ожидает ревью |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–6 приняты, категория 7 реализована и ожидает ревью |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -4984,8 +4984,33 @@ precedence, ownership, deduplication/order, полную applicability/recovery
 matrix, exact generated result и actualization одного driver-а. Обычные C# 9
 consumers исполняют все шесть recovery families, pair-wide `MORPH0023` и
 независимую pair; package/MSBuild fixture проверяет реальные `.globalconfig`
-overrides всех трёх IDs. Срез реализован и ожидает пользовательского ревью;
-следующий — категория 7.
+overrides всех трёх IDs. Срез принят пользователем.
+
+Седьмой vertical slice категории 7 реализует configurable `MORPH0024`–
+`MORPH0028`: повторный прямой `base.Configure`, повторный `IncludeBase`,
+отсутствующую requested pair, отдельную несовместимость source/destination и
+недоступность каждого effective inherited callback-а. Lookup исключает только
+current composition node, выбирает current-level candidate перед connected
+levels и проходит последние nearest-first; category-3-invalid candidate
+сохраняет origin ownership без зависимых inheritance diagnostics.
+
+Exact same-pair продолжает переносить полный effective plan, cross-pair —
+только effective `Members`; local model precedence применяется до
+accessibility. `MORPH0024` использует mapper-wide throwing recovery, остальные
+IDs — pair-wide recovery с распространением только retained effective slice.
+Suppression и severity override не меняют lookup, composition, artifacts либо
+runtime behavior.
+
+Самостоятельная unit-категория фиксирует exact descriptors/messages/locations,
+generic origin/context deduplication, current/nearest/same-pair lookup,
+identity/reference/interface/boxing compatibility и rejection numeric/
+user-defined conversions, все шесть inaccessible callback families, полный
+generated recovery, suppression/severity и actualization одного driver-а.
+Обычные C# 9 consumers исполняют mapper-/pair-wide и transitive recovery,
+проверяют обе operations независимо от `MappingMode`, все шесть callback
+families и независимые pairs; package/MSBuild fixture проверяет реальные
+`.editorconfig` overrides всех пяти IDs. Срез реализован и ожидает
+пользовательского ревью; следующий — категория 8.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

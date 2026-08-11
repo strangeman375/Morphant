@@ -1240,6 +1240,11 @@ internal static class TypeMapperPipeline
         AddConflictReason(
             reasons,
             conflicts,
+            PairConfigurationConflict.InvalidBasePair,
+            "the included mapping pair is invalid");
+        AddConflictReason(
+            reasons,
+            conflicts,
             PairConfigurationConflict.InaccessibleInheritedPlan,
             "an inherited callback is inaccessible from the generated mapper");
 
