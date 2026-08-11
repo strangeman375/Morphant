@@ -125,9 +125,9 @@ coverage.
 
 Диагностики и observable failures вынесены в отдельные поздние этапы.
 Observable failures детализированы и приняты этапом 24. Diagnostics ведутся в
-отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): категории 1–8
-синхронизированы с принятым callback API и готовы, категории 9–12 остаются
-следующей незавершённой частью каталога.
+отдельном [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md): категории 1–9
+синхронизированы с принятым API и готовы, категории 10–12 остаются следующей
+незавершённой частью каталога.
 
 Automatic collection semantics, projection и остальные post-v0 возможности в
 текущую реализацию не входят. Collection/tuple/deferred и связанные root-типы
@@ -550,12 +550,39 @@ tests фиксируют локальную гранулярность `unsafe`,
 4. заменить boolean/string failure states structured observations с origin,
    reason, locations, target mapper и affected operations/path.
 
+## Согласованная diagnostic-категория 9
+
+Статус: принята пользователем 11 августа 2026 года; нормативный каталог
+обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+
+Категория «Корректность construction plan» получила пять последовательных IDs:
+
+- `MORPH0035` — отсутствующая construction policy на reachable no-previous
+  path pair без structured construction capability;
+- `MORPH0036` — неудача implicit/`ByConvention` constructor selection;
+- `MORPH0037` — неприменимая explicit constructor-parameter rule;
+- `MORPH0038` — terminal previous leaf, достижимый с `Option.None`;
+- `MORPH0039` — terminal `null` / `default` structured construction plan.
+
+`MORPH0036` объединяет `Explicit`, отсутствие требуемой constructor shape,
+ambiguity/tie и неприменимость selected convention constructor-а с точной
+reason в message. Shape и applicability не получают отдельные IDs, поскольку
+имеют один origin и recovery. Required/init member blockers остаются
+категорией 10; когда exact member observation полностью объясняет
+неприменимость, производная `MORPH0036` подавляется.
+
+Все diagnostics path-sensitive. Suppression меняет только presentation:
+affected leaf бросает `MappingConfigurationException`, а existing Update,
+независимые branches/operations/pairs и C#-legal fluent surfaces сохраняются.
+Runtime `ConstructUsing` / `ResolveUsing` null остаётся авторитетным destination
+result; `MORPH0039` относится только к отсутствующему structured DSL plan.
+
 ## Следующий этап
 
-**Diagnostics: категория 9 — корректность construction plan.**
+**Diagnostics: категория 10 — корректность member plan.**
 
-Статус: не начат. Категории 1–8 приняты; перед production-реализацией всего
-каталога остаются категории 9–12 и предварительный срез, перечисленный выше.
+Статус: не начат. Категории 1–9 приняты; перед production-реализацией всего
+каталога остаются категории 10–12 и предварительный срез, перечисленный выше.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -1984,7 +2011,7 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: в работе на уровне каталога. Категории 1–8 приняты; категории 9–12 не
+Статус: в работе на уровне каталога. Категории 1–9 приняты; категории 10–12 не
 начаты; production-реализация diagnostics ещё не начата.
 
 Работа ведётся по отдельному
@@ -1992,11 +2019,11 @@ baseline проходят `3/3`. Остальная документационн
 таксономия v0, затем по одной категории составляется полный каталог с IDs,
 сообщениями, locations, severity, suppression и recovery. Реализация и тесты
 начинаются только после согласования каталога; завершает этап двусторонний
-аудит плана и production-кода. Таксономия и категории 1–8 с
-`MORPH0001`–`MORPH0034` приняты и синхронизированы с текущим API; новый
-`MORPH0034` относится к категории 2, а номера `MORPH0029`–`MORPH0033`
-сохранены за category-8 transfer contract. Следующая каталожная работа —
-категория 9.
+аудит плана и production-кода. Таксономия и категории 1–9 с
+`MORPH0001`–`MORPH0039` приняты и синхронизированы с текущим API;
+`MORPH0034` относится к категории 2, `MORPH0029`–`MORPH0033` сохранены за
+category-8 transfer contract, а `MORPH0035`–`MORPH0039` описывают
+category-9 construction contract. Следующая каталожная работа — категория 10.
 
 Перед первым implementation slice выполняется согласованный preflight:
 exact-same-pair `IncludeBase`, callback ownership builder discovery, различие

@@ -2,9 +2,9 @@
 
 Дата составления: 7 августа 2026 года.
 
-Последнее обновление: 10 августа 2026 года.
+Последнее обновление: 11 августа 2026 года.
 
-Статус: таксономия и полный контракт категорий 1–8 приняты. Категории 9–12
+Статус: таксономия и полный контракт категорий 1–9 приняты. Категории 10–12
 ещё не проработаны; реализация diagnostics заблокирована завершением каталога
 и перечисленными в разделе 7 предварительными выравниваниями production-model.
 
@@ -31,6 +31,12 @@ compile-time markers и fail-closed compiler preflight. IDs
 а новый mapper-level конфликт generated `Supports` получил следующий ID
 `MORPH0034` без перенумерации уже согласованного диапазона.
 
+Ревизия от 11 августа 2026 года зафиксировала category-9 construction contract
+с `MORPH0035`–`MORPH0039`: отсутствие construction policy, convention
+selection, explicit constructor-parameter rules, unavailable previous и
+`null` / `default` structured plan. Category 10 остаётся владельцем точных
+required/init member blockers.
+
 План можно уточнять по мере детализации diagnostics. Изменение публичной
 семантики, severity, diagnostic ownership, recovery либо границы v0 сначала
 согласуется с пользователем, затем фиксируется здесь и в нормативном дизайне.
@@ -56,7 +62,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 | Этап | Результат | Статус |
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
-| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | В работе: категории 1–8 приняты; категории 9–12 не начаты |
+| 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | В работе: категории 1–9 приняты; категории 10–12 не начаты |
 | 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Заблокирован этапом 2 и предварительными выравниваниями раздела 7 |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
@@ -259,6 +265,12 @@ diagnostics, поэтому коллизией не считаются.
 публичных .NET/Roslyn diagnostics с этим ID не найдено. ID назначен после
 диапазона категории 8: принятые номера не сдвигаются и не переиспользуются
 даже до первой package-публикации каталога.
+
+Перед назначением девятой группы 11 августа 2026 года тем же способом
+проверены `MORPH0035`–`MORPH0039`. Внешних публичных .NET/Roslyn diagnostics с
+этими ID не найдено. Case-insensitive совпадение `Morph0035` является specimen
+identifier из биологического каталога, а не analyzer diagnostic, поэтому
+коллизией не считается.
 
 ### 6.2. Категория 1: общий contract
 
@@ -2966,6 +2978,459 @@ Package-like integration-категория независимо проверя�
 - реальное `.editorconfig`/MSBuild suppression или severity override для всех
   пяти IDs без изменения generated artifact set и effective recovery.
 
+### 6.72. Категория 9: общий contract
+
+Категория «Корректность construction plan» содержит ровно пять diagnostics:
+
+| ID | Title | Message format |
+|---|---|---|
+| `MORPH0035` | `Destination construction is not configured` | `Destination construction for contract '{0}' is not configured for reachable paths: {1}.` |
+| `MORPH0036` | `Convention construction is unavailable` | `Convention construction for contract '{0}' is unavailable with ConstructorSelection.{1}: {2}.` |
+| `MORPH0037` | `Constructor parameter rule is invalid` | `Constructor parameter rule for '{0}' in contract '{1}' is invalid: {2}.` |
+| `MORPH0038` | `Previous destination is unavailable` | `Previous destination is unavailable for contract '{0}' on reachable paths: {1}.` |
+| `MORPH0039` | `Structured construction plan is null` | `Structured construction plan for contract '{0}' cannot be null on reachable paths: {1}.` |
+
+Для всех пяти diagnostics действует общий descriptor contract:
+
+- category — `Morphant.Construction`;
+- default severity — `Error`;
+- diagnostic включена по умолчанию и не имеет `NotConfigurable`;
+- description и help link отсутствуют, custom tags пусты;
+- анализируется только оставшийся effective declarative construction plan
+  после категорий 1–8;
+- `MappingMode`, null handling, специализация `Option.None` /
+  `Option.Some`, structured conditions и model precedence определяют
+  достижимые paths; хотя бы один достижимый invalid path сохраняет diagnostic;
+- manual `Convert` категорией 9 не анализируется, а runtime
+  `ConstructUsing` / `ResolveUsing` являются атомарными producers настоящего
+  destination и не превращаются в constructor plan;
+- `UnmappedMemberValidation` не скрывает construction error и не превращает
+  его в warning;
+- suppression либо изменение severity меняет только compiler presentation и
+  не включает fallback, не делает invalid branch исполнимой и не меняет
+  generated recovery.
+
+Mapping contract передаётся в `{0}` у `MORPH0035`, `MORPH0036`, `MORPH0038`
+и `MORPH0039`, а у `MORPH0037` — в `{1}`; он форматируется по canonical
+identity категории 3. `ConstructorSelection` в `MORPH0036` — resolved
+non-`Default` public enum member. Имя parameter-а в `MORPH0037` сохраняет
+точное destination spelling без case normalization. Constructor display в
+reason использует
+fully-qualified nullable-aware containing type и ordered parameter
+types/names; aliases и syntactic nullable differences canonical identity не
+меняют.
+
+Affected paths имеют три стабильных пользовательских имени:
+
+1. `Create`;
+2. `Update without a previous destination`;
+3. `Update with a previous destination`.
+
+Если один origin затрагивает несколько path-ов, message перечисляет их в этом
+порядке через `, `. Третий path нужен для replacement/null leaves structured
+`Resolve`; `MORPH0035` и `MORPH0038` по своей природе используют только первые
+два.
+
+### 6.73. Construction origins, reachability и selection model
+
+Category-9 observation всегда принадлежит конкретному effective construction
+origin:
+
+- implicit convention construction authoritative pair без result policy;
+- каждый terminal `ByConvention` leaf structured `Construct` / `Resolve`;
+- каждый terminal explicit constructor leaf и его parameter rules;
+- каждый terminal previous leaf structured `Resolve`;
+- каждый terminal `null` / `default` leaf structured `Construct` /
+  `Resolve`.
+
+Одна callback lambda не является атомарной construction operation. После
+category-8 lowering generator строит path-sensitive control-flow plan,
+специализирует его отдельно для known no-previous / existing-previous state и
+анализирует только leaves, оставшиеся достижимыми. Constant/`HasValue`
+branches, short-circuit, statement `if` / `switch`, conditional/switch
+expressions, local aliases и `throw` сохраняют принятую semantics. Полностью
+overridden result policy, discarded inherited slice и недостижимый leaf
+category-9 diagnostic не получают.
+
+Reachable no-previous path существует:
+
+- для enabled `Create` после non-terminal `NullSourceHandling`;
+- для enabled `Update` только когда destination может стать `Option.None` и
+  effective `NullDestinationHandling.Create` продолжает mapping;
+- не существует для `Update` path-а, завершённого
+  `NullDestinationHandling.Throw`, и для non-nullable value destination,
+  который всегда образует `Option.Some`.
+
+Enabled `Update` с non-null destination независимо образует existing-previous
+path. Structured `Resolve` может выбрать на нём previous либо construction
+replacement; поэтому constructor и null-plan diagnostics не ограничиваются
+no-previous state.
+
+Фактический runtime argument не участвует в статическом решении: reference либо
+nullable-value `Update` с `Create` policy имеет no-previous path, даже если
+обычно вызывается с non-null destination. `NullSourceHandling`, возвращающий
+result либо бросающий на null source, не удаляет path для non-null source.
+
+Если result policy отсутствует, pair со structured construction capability
+использует implicit convention origin; pair без capability получает
+`MORPH0035`. Structured `Construct` заменяет только no-previous origin,
+structured `Resolve` задаёт leaves всех своих reachable paths. Runtime
+`ConstructUsing` и `ResolveUsing` закрывают соответствующие paths настоящим
+destination result. Explicit constructor leaf не использует
+`ConstructorSelection`; только implicit convention и `ByConvention` выполняют
+selection.
+
+Supported constructor set совпадает с capability model: только доступные из
+общего generated assembly-context instance constructors, которыми реально
+можно создать non-opaque, non-abstract destination. Стратегии применяются
+точно так:
+
+- `Unambiguous` выбирает единственный parameterized constructor, а при
+  отсутствии parameterized — parameterless; несколько parameterized
+  constructors дают ambiguity независимо от parameterless;
+- `Explicit` запрещает implicit convention и `ByConvention`;
+- `Parameterless` требует supported parameterless constructor;
+- `Single` требует ровно один supported constructor;
+- `Greediest` строит warning-free applicable plans, сравнивает число реально
+  emitted arguments и требует unique maximum;
+- `Largest` сначала требует unique maximum declared parameter count и только
+  затем проверяет применимость выбранного constructor-а.
+
+`Default` до category 9 уже разрешён к effective strategy, library default —
+`Unambiguous`. Optional/`params` omission, written `ByConvention` rules,
+automatic warning-free conversions и actual invocation binding входят в
+applicability. Shape strategies не откатываются к другому constructor-у после
+выбора. `Greediest` не считает inapplicable candidate. Required/init member
+readiness участвует в applicability computation, но точные member-plan blockers
+принадлежат категории 10 по разделу 6.79.
+
+### 6.74. `MORPH0035`: destination construction не настроена
+
+`MORPH0035` публикуется, когда authoritative declarative pair не имеет
+structured construction capability, effective `ConstructUsing` /
+`ResolveUsing` отсутствует и остаётся хотя бы один reachable no-previous path.
+Сюда входят opaque/scalar destination, interface, abstract либо factory-only
+class и другая eligible pair без callable constructor surface.
+
+Pair со structured capability и недоступным convention constructor получает
+`MORPH0036`, а не `MORPH0035`. Configured result policy, уже invalid по
+категориям 5, 7 либо 8, также не считается «отсутствующей»: её собственная
+diagnostic и recovery являются первичной причиной. `Convert` не является
+construction fallback; manual model целиком исключает category-9 analysis.
+
+Primary location — identifier `Map` authoritative registration. Additional
+locations отсутствуют. Diagnostic identity — mapper и canonical pair; affected
+path names агрегируются в одно сообщение. Generic substitutions, both paths и
+derived consumers не размножают diagnostic origin.
+
+Recovery заменяет только отсутствующий no-previous result typed
+`MappingConfigurationException` stub-ом. `Create` целиком бросает, если это его
+единственный reachable result path. `Update without a previous destination`
+бросает только после соответствующего null handling; existing-destination
+reuse и применимый `Members` plan сохраняются. Generator не выбирает
+`default`, runtime conversion, `Convert` либо service lookup.
+
+### 6.75. `MORPH0036`: convention construction недоступна
+
+`MORPH0036` публикуется на каждый reachable implicit-convention либо
+`ByConvention` origin, для которого valid effective
+`ConstructorSelection` не даёт единственный применимый constructor plan.
+Стабильный `{2}` reason имеет одну из форм:
+
+- `automatic constructor selection is disabled`;
+- `no supported parameterless constructor is available`;
+- `exactly one supported constructor is required, but {count} were found`;
+- `more than one supported parameterized constructor is available`;
+- `no supported constructor has an applicable convention plan`;
+- `multiple applicable constructors have the greatest mapped argument count`;
+- `multiple supported constructors have the largest declared parameter count`;
+- `selected constructor '{constructor}' has no warning-free convention value for required parameter '{parameter}'`;
+- `selected constructor '{constructor}' cannot be invoked without changing C# binding`.
+
+Reason выбирается по реальному этапу алгоритма: strategy gate, shape selection,
+applicability первого blocking required parameter в declaration order, затем
+invocation probe. Он не сообщает внутренний planner kind и не перечисляет
+отброшенные candidates. Один construction origin получает одну
+`MORPH0036`; исправление причины полностью actualizes selection и может
+открыть следующую независимую observation.
+
+Primary location explicit origin-а — identifier terminal `ByConvention`
+marker-а. Для implicit convention primary — identifier `Map` authoritative
+registration. Если effective `ConstructorSelection` имеет distinct
+source-backed C# origin, его final argument expression является первой
+additional location. Для уже выбранного, но неприменимого constructor-а его
+source declaration является следующей additional location, если доступна.
+MSBuild/library default и metadata constructor additional span не создают.
+
+Diagnostic identity включает mapper, canonical pair, construction origin и
+reason kind. Один origin, достигнутый обоими operations, generic substitutions
+либо inherited consumers, публикуется один раз с агрегированными paths.
+Отдельные `ByConvention` leaves одной lambda диагностируются независимо.
+
+Automatic required parameter без source candidate либо warning-free implicit
+conversion принадлежит `MORPH0036`. Явная parameter rule принадлежит более
+точной `MORPH0037` и подавляет общий selection failure, когда полностью
+объясняет недоступность origin-а. Если unique constructor уже выбран, но
+единственный blocker — required/init member plan, `MORPH0036` не публикуется:
+категория 10 указывает точный member и phase. При shape ambiguity constructor
+ещё не выбран, поэтому downstream parameter/member diagnostics подавляются.
+
+Recovery заменяет только affected convention leaf typed
+`MappingConfigurationException` stub-ом. Другой constructor не выбирается,
+`ByConvention` не превращается в explicit/default construction, а
+independent explicit constructor, previous и runtime result leaves
+сохраняются.
+
+### 6.76. `MORPH0037`: constructor parameter rule invalid
+
+`MORPH0037` публикуется для explicit parameter rule terminal explicit
+constructor либо `ByConvention` leaf-а, когда C# binding callback surface
+успешен, но правило неприменимо к фактически выбранному constructor plan.
+Причины:
+
+- `Auto` не разрешает unique readable source member с warning-free implicit
+  conversion;
+- `Ignore` пытается опустить required non-optional, non-`params` parameter;
+- written `ByConvention` rule именует parameter, которого нет у selected
+  constructor-а;
+- typed `Auto` / `Ignore` / `Value<T>` marker утверждает target type, не
+  совпадающий точно с конечным parameter type;
+- rule проходит generated wrapper surface, но actual selected constructor
+  нельзя вызвать с ним без изменения compiler binding.
+
+Для exact explicit constructor overload selected constructor известен из
+исходного compiler binding. Для shape strategies `ByConvention` rule
+проверяется после unique selection. Для `Greediest` precise rule diagnostic
+публикуется только когда один и тот же rule является доказанным blocker-ом
+каждого оставшегося candidate; mixed candidate rejection, отсутствие
+applicable plan либо tie остаются одной `MORPH0036`.
+
+`{2}` использует соответственно одну из стабильных reason-форм:
+
+- `Auto does not resolve a unique readable source member with a warning-free implicit conversion`;
+- `Ignore can only omit an optional or params parameter`;
+- `selected constructor '{constructor}' does not declare this parameter`;
+- `marker target type '{actualType}' does not exactly match parameter type '{parameterType}'`;
+- `the rule cannot be applied to selected constructor '{constructor}' without changing C# binding`.
+
+Primary location — marker name `Auto` / `Ignore` / `Value` для marker reason,
+parameter designator `DestinationConstructorParameters` initializer-а для
+missing parameter либо наименьшее rule value expression для binding fallback.
+Source declaration selected constructor-а является единственной additional
+location, если доступна. `{0}` — точное parameter name selected/declared
+rule-а.
+
+Diagnostic identity — mapper, canonical pair, construction origin, rule origin
+и reason kind. Независимые invalid rules дают независимые diagnostics; один
+rule не размножается по paths или inherited consumers. Automatic unwritten
+parameter failure остаётся `MORPH0036`. Invalid nested `Map` / `Create` /
+`Update` marker принадлежит категории 11; unsupported terminal-marker use —
+категории 8. Обычная C# type/binding error explicit expression остаётся
+compiler-owned.
+
+Invalid становится только construction leaf, зависящий от rule. Его expression
+не вычисляется; leaf бросает `MappingConfigurationException`. Другие leaves и
+existing-destination paths сохраняются, hidden `Auto`/omission/fallback не
+подставляется.
+
+### 6.77. `MORPH0038`: previous destination недоступен
+
+`MORPH0038` публикуется, когда terminal previous leaf structured `Resolve`
+остаётся достижимым после специализации с `Option.None`. Это implicit
+`Option<TDestination> -> DestinationConstruction` result selection, а не любое
+чтение `previous`.
+
+Защищённый `previous.HasValue` branch, удалённый для no-previous state, не
+диагностируется. Existing-destination `Update` может выбрать previous.
+`ResolveUsing` является обычным runtime C# и в эту diagnostic не входит.
+Обычное чтение `previous.Value` внутри пользовательского expression также не
+переопределяется этой diagnostic: его observable runtime behavior остаётся
+частью написанного C#, если более ранняя категория не признала expression
+непереносимым.
+
+Primary location — terminal expression, нормализованное к previous result.
+Для local alias primary указывает terminal alias use, а declaration/reference,
+связавшая alias с `previous`, является additional location. Diagnostic identity
+— callback и terminal previous origin; affected no-previous paths агрегируются
+в порядке раздела 6.72 и не создают fan-out по operations либо consumers.
+
+Recovery сохраняет control-flow conditions и side effects до invalid leaf, а
+сам leaf бросает `MappingConfigurationException`. Morphant не создаёт новый
+destination, не возвращает `default` и не выбирает соседнюю `Resolve` branch.
+
+### 6.78. `MORPH0039`: structured construction plan равен null
+
+`MORPH0039` публикуется, когда reachable terminal leaf structured
+`Construct` / `Resolve` статически является `null`, target-typed `default`,
+`default(DestinationConstruction)` либо тем же значением через поддерживаемые
+transparent wrappers и single-value structured local alias.
+
+Primary location — наименьшее `null` / `default`-producing expression. Terminal
+alias uses того же producer-а являются additional locations в source order.
+Diagnostic identity — callback и null-producing origin; повторное достижение
+producer-а из нескольких paths дедуплицируется, независимые null/default
+producers диагностируются отдельно.
+
+`null!`, nullable-disabled context, explicit cast и suppression C# nullable
+warning не делают plan допустимым. Compiler warning остаётся независимой
+compiler diagnostic; `MORPH0039` сообщает Morphant-specific отсутствие DSL
+plan. Явный `throw` является terminal control flow, а не null plan.
+
+Настоящий `null`, возвращённый `ConstructUsing` / `ResolveUsing`, является
+авторитетным destination result и завершает member stage без diagnostic.
+`null` из `Convert` также полностью принадлежит manual callback. `null` вместо
+`DestinationMembers` относится к категории 10, а не дублируется здесь.
+
+Recovery заменяет только null-plan leaf typed
+`MappingConfigurationException` stub-ом. Никакого convention, previous,
+runtime callback либо default-destination fallback не выполняется.
+
+### 6.79. Recovery, precedence, порядок и suppression
+
+Все пять diagnostics сохраняют C#-legal `ITypeMapper<,>` contract,
+capability-specific fluent surfaces и независимые operations/pairs. Invalid
+leaf/path бросает `MappingConfigurationException`; independently valid leaves
+исполняются с исходным evaluation order.
+
+Recovery granularity:
+
+- `MORPH0035` блокирует только reachable no-previous paths отсутствующей
+  policy;
+- `MORPH0036` блокирует конкретный implicit/`ByConvention` origin;
+- `MORPH0037` блокирует leaf, использующий invalid explicit parameter rule;
+- `MORPH0038` блокирует только reachable no-previous previous leaf;
+- `MORPH0039` блокирует только reachable null/default plan leaf.
+
+Если control-flow attribution невозможна после valid category-8 lowering,
+весь structured result callback считается атомарно invalid и primary ownership
+возвращается к `MORPH0030`; category 9 не строит эвристический pair-wide
+fallback. Runtime result callback category 9 никогда не разбирает внутри.
+
+Precedence действует так:
+
+- gates категорий 1–4, invalid local composition/settings/inheritance
+  категорий 5–7 и invalid callback transfer/grammar категории 8 подавляют
+  category-9 analysis соответствующей области;
+- invalid effective `MappingMode` / null handling не позволяют доказать paths;
+  валидные settings сначала определяют reachability;
+- `MORPH0035` и `MORPH0036` взаимоисключаются для одного implicit origin:
+  первая означает отсутствие structured capability, вторая — неудачу
+  доступной convention model;
+- exact `MORPH0037` подавляет производную `MORPH0036` того же
+  `ByConvention` origin-а; unrelated selection/rule failures публикуются
+  совместно;
+- `MORPH0038` и `MORPH0039` являются самостоятельными terminal leaves и могут
+  публиковаться рядом с construction diagnostic другой reachable branch;
+- selected constructor member blockers, включая unmapped required/init phase,
+  принадлежат категории 10 и подавляют общий `MORPH0036`, когда полностью
+  объясняют неприменимость; при selection ambiguity member plan ещё
+  недостоверен и category-10 cascade подавляется;
+- nested result correctness категории 11 анализируется только после valid
+  constructor/rule leaf; category-12 warning-анализ исключает invalid affected
+  path, но сохраняется для независимого plan;
+- точная source C# binding/type error не дублируется Morphant diagnostic-ой.
+
+Origin diagnostic не размножается по exact/cross-pair inheritance consumers.
+Retained invalid origin переносит recovery; local override/model precedence,
+удалившие origin, удаляют и зависимость. Publication order — по ID. Внутри ID:
+ordinal mapper identity, canonical pair, construction callback/origin, primary
+source location, reason/parameter и affected paths. Additional locations
+сохраняют описанный source order.
+
+Suppression либо severity override не меняет selection, reachability, recovery
+или artifact set. Изменение destination capability/constructors, result policy,
+`ConstructorSelection`, parameter rule/marker type, `Members` blocker,
+control-flow branch, `MappingMode`, null handling, override либо inheritance
+полностью actualizes category-9 observations и affected stubs при одном
+сохранённом incremental driver-е.
+
+### 6.80. Самостоятельная тестовая матрица категории 9
+
+Unit-категория construction diagnostics независимо фиксирует:
+
+- exact descriptors `MORPH0035`–`MORPH0039`: ID, title, category, default
+  severity, enabled/configurable flags, message formats и все parameters;
+- canonical contract/constructor/type/parameter/path formatting,
+  deterministic ordering и exact primary/additional locations;
+- `MORPH0035` для opaque/scalar, interface, abstract и factory-only
+  destinations при enabled `Create` и nullable `Update` no-previous paths;
+- отсутствие `MORPH0035` для runtime `ConstructUsing` / `ResolveUsing`,
+  manual `Convert`, structured capability и Update-only existing non-nullable
+  value destination;
+- `MORPH0035` reachability matrix для every `MappingMode`,
+  `NullDestinationHandling.Create` / `Throw`, reference/non-nullable/nullable
+  value destination и source null policies;
+- все `ConstructorSelection` strategies для implicit convention и terminal
+  `ByConvention`: default `Unambiguous`, `Explicit`, parameterless/single
+  shape, parameterized ambiguity, greediest no-plan/tie и largest tie/
+  selected-inapplicable;
+- optional/`params` argument scoring, warning-free conversion, invocation
+  binding, no-fallback after shape selection и exact stable `MORPH0036`
+  reasons;
+- one `MORPH0036` per construction origin across all reachable Create/Update
+  paths, generic substitutions and inherited consumers; distinct diagnostics
+  for independent `ByConvention` leaves and setting/constructor additional
+  locations;
+- `MORPH0037` for explicit-constructor and `ByConvention` `Auto` without a
+  unique compatible source, required `Ignore`, rule absent from selected
+  constructor, typed `Auto` / `Ignore` / `Value<T>` mismatch and final binding
+  incompatibility;
+- greediest uniform-rule attribution to `MORPH0037` versus mixed/no-plan
+  `MORPH0036`, exact per-rule cardinality/locations and absence for successful
+  explicit rules;
+- compiler-owned explicit expression errors, category-8 marker/transfer
+  failures and category-11 nested markers without duplicate `MORPH0037`;
+- `MORPH0038` for direct, conditional, switch, block-return and local-alias
+  previous leaves on `Create` / nullable `Update` no-previous paths;
+- guarded `previous.HasValue`, existing-only Update, disabled operations,
+  runtime `ResolveUsing` and ordinary `previous.Value` expressions without
+  `MORPH0038`;
+- `MORPH0039` for `null`, `null!`, target-typed/typed `default`, transparent
+  casts/wrappers, conditional/switch leaves, local aliases и all three
+  Create/Update path forms; producer deduplication and exact use additional
+  locations;
+- valid terminal `throw`, runtime result-policy null, manual null and
+  category-10 `DestinationMembers` null without `MORPH0039`;
+- category-10 ownership for required/init blockers and suppression of
+  derivative `MORPH0036`; selection ambiguity suppresses unavailable
+  downstream member analysis;
+- path-sensitive full generated result for every ID: legal interfaces and
+  fluent surfaces, typed throwing leaf, preserved existing Update,
+  independent branches/operations/pairs/mapper-ы, no hidden fallback and no
+  downstream cascade;
+- local/exact/cross-pair inheritance origin laws, retained versus discarded
+  invalid slices and independent local overrides;
+- real suppression/severity override for all five IDs without changing
+  recovery/artifacts;
+- actualization destination constructors/capability, strategy origin,
+  parameter rule/marker type, callback control flow, settings, member blocker,
+  override и inheritance при одном incremental driver-е.
+
+Package-like integration-категория независимо проверяет:
+
+- suppressed `MORPH0035` for Create and null-Update: invalid no-previous path
+  throws, existing Update instance and its members remain executable;
+- suppressed `MORPH0036` for each strategy family and both implicit/
+  `ByConvention` origins on Create, null-Update and existing-Update replacement
+  paths, without fallback to another constructor;
+- suppressed `MORPH0037` representative explicit and convention rules:
+  invalid value is not evaluated, valid sibling branch constructs the exact
+  destination;
+- suppressed `MORPH0038` in `Resolve`: no-previous branch throws while guarded
+  previous reuse and independent replacement execute normally;
+- suppressed `MORPH0039` for null/default leaves on Create, null-Update and
+  existing-Update replacement paths while non-null constructor, previous and
+  explicit throw branches preserve control flow/side effects;
+- legal runtime `ConstructUsing` / `ResolveUsing` null remains terminal and
+  skips `Members`, proving it is not `MORPH0039`;
+- Update-only factory/interface mapping with non-null previous remains
+  executable without configured creation, while enabling a no-previous path
+  deterministically adds `MORPH0035` recovery;
+- exact/inherited origin recovery, independent pair isolation and no category
+  10–12 cascade from invalid construction leaf;
+- real `.editorconfig` / MSBuild suppression or severity override for all five
+  IDs without changing generated artifact set and effective recovery.
+
 ## 7. Реализация и тесты
 
 До первого vertical diagnostic slice production-model выравнивается с уже
@@ -2986,8 +3451,12 @@ Package-like integration-категория независимо проверя�
 4. Внутренние boolean/string failure flags заменяются structured observations,
    достаточными для точного public contract: diagnostic reason, callback/
    setting/edge origin, offending symbol/node, primary/additional locations,
-   source и target mapper, canonical pair и affected operations/path. Recovery
-   строится из тех же observations, а не из повторного эвристического анализа.
+   source и target mapper, canonical pair и affected operations/path. В
+   частности, convention/structured construction planners сохраняют strategy,
+   candidate rejection, selected constructor, parameter-rule и terminal
+   previous/null origins вместо неразличимых `null`/unsupported states.
+   Recovery строится из тех же observations, а не из повторного эвристического
+   анализа.
 
 Эти выравнивания не вводят новую diagnostic semantics и могут быть выполнены
 одним предварительным coherent change с самостоятельными focused regression

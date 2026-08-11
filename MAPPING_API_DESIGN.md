@@ -3360,8 +3360,8 @@ warning/nullable context, async/unsafe transfer и compiler preflight.
 
 Observable runtime failures и generated exception-stub boundary реализованы и
 зафиксированы разделом 14.2. Compile-time diagnostics остаются отдельным
-поздним планом: категории 1–8 приняты и синхронизированы с текущим API,
-категории 9–12 ещё не проработаны.
+поздним планом: категории 1–9 приняты и синхронизированы с текущим API,
+категории 10–12 ещё не проработаны.
 Automatic collection semantics, projection, polymorphism, reference handling и
 остальные перечисленные выше возможности остаются post-v0 направлениями и не
 расширяют текущий mapping semantics неявно. До отдельного продуктового решения
