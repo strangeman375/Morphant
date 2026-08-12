@@ -21,10 +21,18 @@ UnmappedMemberValidation.None
 | `Destination` | Validate supported destination members |
 | `Strict` | Validate supported source and destination members |
 
-The source/destination completeness warnings selected by this setting belong
-to the later diagnostics slice and are not emitted yet. Validation of the
-setting value and its applicability is implemented now; changing a valid
-effective value still does not change generated runtime behavior.
+The selected policy publishes pair-wide completeness warnings after Morphant
+has resolved settings, inheritance, construction, members, and nested mapping:
+
+- `MORPH0047` reports a supported source member that is neither used nor
+  explicitly discarded by the effective plan.
+- `MORPH0048` reports a supported destination member that is not occupied by
+  the effective plan.
+
+Both diagnostics are configurable warnings in the
+`Morphant.MappingCompleteness` category. They do not change generated code,
+runtime behavior, or error recovery. Suppressing a warning or promoting it to
+an error changes only compiler presentation.
 
 ## Configure an assembly default
 
@@ -102,6 +110,32 @@ Morphant:
 - a `ConstructUsing` or `ResolveUsing` body is ordinary runtime C# and is not
   analyzed as an implicit set of member mappings.
 
+Source participation is semantic. A direct member read, convention or `Auto()`
+selection, constructor/member value, condition, or inline runtime callback
+read participates. Passing the whole source to opaque code conservatively
+counts all supported source members as potentially used. `nameof` and a
+type-only test do not read a member; a property pattern reads its referenced
+root member normally.
+
+A structured `Construct`, `Resolve`, or `Members` block can explicitly remove
+one member from source validation without adding a runtime read:
+
+```csharp
+_ = source.LegacyValue;
+```
+
+This must be a direct top-level statement for an exact source property or
+field. Morphant removes it during lowering, so its getter is not invoked. The
+same statement inside `ConstructUsing` or `ResolveUsing` remains ordinary C#
+and executes at runtime.
+
+Destination occupancy includes valid convention/explicit member rules,
+member-level `Ignore()`, and a passed constructor argument associated with the
+member. An omitted optional or `params` argument, constructor-parameter
+`Ignore()`, default initialization, `[SetsRequiredMembers]`, reuse of an
+existing result, a read-only nested proxy, or a runtime result callback does
+not imply occupancy.
+
 `Convert` owns a manual algorithm, so this validation does not apply. An
 inherited mapper/root setting is inactive for a manual pair and may still
 serve declarative pairs. Writing `UnmappedMemberValidation` explicitly on the
@@ -115,7 +149,7 @@ C# setting expressions must be compile-time constants defined by
 values above. Morphant reports `MORPH0021` for an effective invalid C#
 argument and `MORPH0022` for an effective invalid MSBuild property when at
 least one declarative operation is enabled. Runtime mapping remains unchanged;
-the affected pair is omitted only from the later completeness analysis. A
+the affected pair is omitted from completeness analysis. A
 valid more-specific value overrides an invalid outer value, and a value used
 only by disabled or manual operations is inactive.
 

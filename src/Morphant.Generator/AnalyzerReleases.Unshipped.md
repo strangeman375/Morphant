@@ -50,3 +50,5 @@ MORPH0043 | Morphant.Members | Error | Structured member plan is null
 MORPH0044 | Morphant.NestedMapping | Error | Nested mapping pair cannot be determined
 MORPH0045 | Morphant.NestedMapping | Error | Nested mapping result is incompatible
 MORPH0046 | Morphant.NestedMapping | Error | Nested Update destination is invalid
+MORPH0047 | Morphant.MappingCompleteness | Warning | Source member is not used
+MORPH0048 | Morphant.MappingCompleteness | Warning | Destination member is not mapped

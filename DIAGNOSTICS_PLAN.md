@@ -6,9 +6,8 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Vertical slices категорий 1–10 реализованы и приняты пользователем. Vertical
-slice категории 11 реализован и ожидает пользовательского ревью; следующий
-slice после его принятия — категория 12.
+Vertical slices категорий 1–11 реализованы и приняты пользователем. Vertical
+slice категории 12 реализован и ожидает пользовательского ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -5087,8 +5086,24 @@ descriptors/messages/locations, все восемь marker forms, inference,
 result/update conversion matrices, inheritance, precedence, suppression/
 severity и actualization. Обычный C# 9 consumer исполняет branch-atomic
 suppressed recovery, а package/MSBuild fixture проверяет реальные
-`.editorconfig` overrides всех трёх IDs. Срез реализован и ожидает
-пользовательского ревью; следующий — категория 12.
+`.editorconfig` overrides всех трёх IDs. Срез принят пользователем.
+
+Двенадцатый vertical slice категории 12 реализует configurable warning-и
+`MORPH0047`–`MORPH0048` для pair-wide source use и destination occupancy.
+Анализ выполняется над final non-manual effective model после categories
+8–11, использует supported member surfaces, semantic/potential source uses,
+точные compile-time source discards, constructor/member occupancy и локальную
+error-derived uncertainty.
+
+Warning-и не имеют recovery и не меняют generated artifact независимо от
+suppression либо severity override. Самостоятельная unit-категория фиксирует
+exact descriptors/messages/locations, setting precedence, supported member
+universes, semantic reads и opaque handoff, structured discard, constructor и
+member occupancy, reachability, precedence и actualization. C# 9 consumer
+исполняет Create/Update при подавленных warnings без diagnostic-driven reads
+или assignments, а package/MSBuild fixture проверяет обе diagnostics через
+реальные MSBuild setting и `.editorconfig`. Срез реализован и ожидает
+пользовательского ревью.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

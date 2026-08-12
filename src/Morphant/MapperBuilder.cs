@@ -134,6 +134,15 @@ public abstract class MapperBuilderBase<T>
     /// defined by <see cref="Morphant.UnmappedMemberValidation"/>.
     /// </param>
     /// <remarks>
+    /// <see cref="Morphant.UnmappedMemberValidation.Source"/> and
+    /// <see cref="Morphant.UnmappedMemberValidation.Strict"/> report
+    /// <c>MORPH0047</c> for each supported source member that does not
+    /// participate in the effective plan.
+    /// <see cref="Morphant.UnmappedMemberValidation.Destination"/> and
+    /// <see cref="Morphant.UnmappedMemberValidation.Strict"/> report
+    /// <c>MORPH0048</c> for each supported destination member not occupied by
+    /// that plan. These warnings do not change generated mapping behavior.
+    ///
     /// An effective invalid C# argument reports <c>MORPH0021</c>; an invalid
     /// assembly property reports <c>MORPH0022</c>. Invalid effective values
     /// do not change runtime mapping and disable only the affected unmapped

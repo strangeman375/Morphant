@@ -100,6 +100,10 @@ not change the runtime exception contract for generated code that can still
 compile and execute; suppression or severity overrides also leave generated
 recovery unchanged.
 
+Mapping-completeness diagnostics `MORPH0047`–`MORPH0048` are warnings only.
+They do not add exception stubs, reads, assignments, or other generated
+behavior, even when suppressed or promoted to errors by compiler settings.
+
 ## User and dependency exceptions
 
 Morphant does not wrap exceptions thrown by user result-policy, `Members`, or

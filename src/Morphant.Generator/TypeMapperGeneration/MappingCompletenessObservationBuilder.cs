@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
+using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -13,6 +14,7 @@ internal static class MappingCompletenessObservationBuilder
     public static TypeMapperMappingModel Attach(
         TypeMapperMappingModel mapping,
         PairConfigurationModel configuration,
+        EffectiveMappingSettings effectiveSettings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
@@ -31,29 +33,33 @@ internal static class MappingCompletenessObservationBuilder
             .Select(static slice => slice.MemberObservation)
             .OfType<MemberPlanningObservation>()
             .ToImmutableArray();
-        var supportedSourceMembers = memberObservations.IsEmpty
-            ? ConventionMemberMappingPlanner.BuildReadableMembers(
-                    MappingTypeNormalization.NormalizeDeclarativeSource(
-                        configuration.Pair.SourceType,
-                        compilation),
-                    compilation,
-                    mapperType,
-                    cancellationToken)
-                .Select(static member => member.Symbol)
-                .ToImmutableArray()
-            : DistinctSymbols(memberObservations.SelectMany(
-                static observation => observation.SupportedSourceMembers));
-        var supportedDestinationMembers = memberObservations.IsEmpty
-            ? ConventionMemberMappingPlanner.BuildWritableMembers(
+        var memberRules = memberObservations
+            .SelectMany(static observation => observation.Rules)
+            .ToImmutableArray();
+        var declarativeSourceType =
+            MappingTypeNormalization.NormalizeDeclarativeSource(
+                configuration.Pair.SourceType,
+                compilation);
+        var supportedSourceMembers =
+            DestinationCapabilityPolicy.IsOpaque(
+                declarativeSourceType,
+                compilation)
+                ? []
+                : ConventionMemberMappingPlanner.BuildReadableMembers(
+                        declarativeSourceType,
+                        compilation,
+                        mapperType,
+                        cancellationToken)
+                    .Select(static member => member.Symbol)
+                    .ToImmutableArray();
+        var supportedDestinationMembers =
+            ConventionMemberMappingPlanner.BuildWritableMembers(
                     configuration.Pair.DestinationType,
                     configuration.Pair.Capabilities,
                     compilation,
                     cancellationToken)
                 .Select(static member => member.Symbol)
-                .ToImmutableArray()
-            : DistinctSymbols(memberObservations.SelectMany(
-                static observation =>
-                    observation.SupportedDestinationMembers));
+                .ToImmutableArray();
 
         void AddSupportedDestinationMember(ISymbol member)
         {
@@ -73,32 +79,65 @@ internal static class MappingCompletenessObservationBuilder
         var occupancy =
             ImmutableArray.CreateBuilder<
                 DestinationOccupancyObservation>();
+        var reachablePaths = GetReachablePaths(
+            mapping,
+            effectiveSettings);
 
-        foreach (var memberObservation in memberObservations)
+        var reachableRuleOrigins = memberRules
+            .Where(rule =>
+                rule.InvalidReason == MemberRuleInvalidReason.None &&
+                IsRuleReachable(rule, reachablePaths))
+            .Select(static rule => rule.OriginNode)
+            .OfType<SyntaxNode>()
+            .ToImmutableArray();
+        var unreachableRuleOrigins = new HashSet<SyntaxNode>();
+
+        foreach (var rule in memberRules)
         {
-            foreach (var rule in memberObservation.Rules)
+            if (rule.InvalidReason != MemberRuleInvalidReason.None ||
+                IsRuleReachable(rule, reachablePaths))
             {
-                AddOccupancy(
-                    occupancy,
-                    rule.DestinationMember,
-                    rule.Origin,
-                    rule.OriginNode);
+                continue;
+            }
 
-                if (rule.SourceMember is { } sourceMember)
-                {
-                    AddSourceUse(
-                        sourceUses,
-                        sourceMember,
-                        SourceUseKind.Semantic,
-                        rule.OriginNode ??
-                        mapping.AnalysisContext.Registration.Syntax);
-                }
+            if (rule.OriginNode is { } origin &&
+                !reachableRuleOrigins.Any(candidate =>
+                    IsSameSyntax(candidate, origin)))
+            {
+                unreachableRuleOrigins.Add(origin);
+            }
+        }
+
+        foreach (var rule in memberRules)
+        {
+            if (rule.InvalidReason != MemberRuleInvalidReason.None ||
+                !IsRuleReachable(rule, reachablePaths))
+            {
+                continue;
+            }
+
+            AddOccupancy(
+                occupancy,
+                rule.DestinationMember,
+                rule.Origin,
+                rule.OriginNode);
+
+            if (rule.SourceMember is { } sourceMember)
+            {
+                AddSourceUse(
+                    sourceUses,
+                    sourceMember,
+                    SourceUseKind.Semantic,
+                    rule.OriginNode ??
+                    mapping.AnalysisContext.Registration.Syntax);
             }
         }
 
         foreach (var slice in mappingSlices)
         {
-            if (slice.CreateFailure is not null ||
+            if ((reachablePaths & MappingExecutionPathSet.NoPrevious) ==
+                    MappingExecutionPathSet.None ||
+                slice.CreateFailure is not null ||
                 slice.ConstructorObservation?.SelectedConstructor is null)
             {
                 continue;
@@ -123,7 +162,8 @@ internal static class MappingCompletenessObservationBuilder
                     if (rule is
                         {
                             IsApplicable: true,
-                            Origin: not ConstructorParameterRuleOrigin.Omitted,
+                            Origin: not ConstructorParameterRuleOrigin.Omitted
+                                and not ConstructorParameterRuleOrigin.Ignore,
                             DestinationMember: { } destinationMember
                         })
                     {
@@ -148,6 +188,12 @@ internal static class MappingCompletenessObservationBuilder
         }
 
         var callbacks = configuration.Declarative.ResultPolicies
+            .Where(policy =>
+                policy.Kind is
+                    ResultPolicyKind.Resolve or
+                    ResultPolicyKind.ResolveUsing ||
+                (reachablePaths & MappingExecutionPathSet.NoPrevious) !=
+                    MappingExecutionPathSet.None)
             .Select(policy =>
                 (
                     policy.Expression,
@@ -170,6 +216,7 @@ internal static class MappingCompletenessObservationBuilder
                 supportedSourceMembers,
                 sourceUses,
                 sourceDiscards,
+                unreachableRuleOrigins,
                 cancellationToken);
         }
 
@@ -198,6 +245,12 @@ internal static class MappingCompletenessObservationBuilder
                 return;
             }
 
+            if ((failure.AffectedPath.Paths & reachablePaths) ==
+                MappingExecutionPathSet.None)
+            {
+                return;
+            }
+
             var supportedMembers = supportedSourceMembers
                 .AddRange(supportedDestinationMembers);
 
@@ -210,11 +263,42 @@ internal static class MappingCompletenessObservationBuilder
                 AddUncertain(offendingSymbol);
             }
 
+            foreach (var nested in failure.NestedObservations)
+            {
+                if (nested.TargetSymbol is { } targetSymbol)
+                {
+                    AddUncertain(targetSymbol);
+                }
+
+                if (nested.CurrentDestinationSymbol is
+                    { } currentDestinationSymbol)
+                {
+                    AddUncertain(currentDestinationSymbol);
+                }
+            }
+
+            if (failure.AffectedPath.Phase == MappingPlanPhase.Members)
+            {
+                foreach (var rule in memberObservations
+                             .SelectMany(static observation =>
+                                 observation.Rules)
+                             .Where(rule => IsFailureRule(
+                                 failure,
+                                 rule)))
+                {
+                    AddUncertain(rule.DestinationMember);
+
+                    if (rule.SourceMember is { } sourceMember)
+                    {
+                        AddUncertain(sourceMember);
+                    }
+                }
+            }
+
             if (failure.AffectedPath.Phase is
                 MappingPlanPhase.Configuration or
                 MappingPlanPhase.Transfer or
-                MappingPlanPhase.ResultSelection or
-                MappingPlanPhase.NestedMapping ||
+                MappingPlanPhase.ResultSelection ||
                 failure.OriginKind is
                     MappingObservationOriginKind.Callback or
                     MappingObservationOriginKind.CompilerPreflight)
@@ -250,6 +334,22 @@ internal static class MappingCompletenessObservationBuilder
                         AddUncertain(destinationMember);
                     }
                 }
+
+                if (failure.Reason is
+                        MappingFailureReason.ConstructorSelectionFailed or
+                        MappingFailureReason.RequiredMemberUninitialized &&
+                    candidates.Any(static candidate =>
+                        candidate.RejectionReason ==
+                            ConstructorCandidateRejectionReason
+                                .RequiredMember))
+                {
+                    foreach (var required in memberObservations
+                                 .SelectMany(static observation =>
+                                     observation.RequiredObligations))
+                    {
+                        AddUncertain(required);
+                    }
+                }
             }
         }
 
@@ -274,6 +374,81 @@ internal static class MappingCompletenessObservationBuilder
                 occupancy.ToImmutable(),
                 errorDerivedUncertainty.ToImmutable())
         };
+    }
+
+    private static bool IsFailureRule(
+        MappingFailureObservation failure,
+        MemberRuleObservation rule)
+    {
+        return IsSameSyntax(failure.OriginNode, rule.OriginNode) ||
+               IsSameSyntax(
+                   failure.AffectedPath.BranchOrigin,
+                   rule.OriginNode) ||
+               IsSameSyntax(failure.OriginNode, rule.DesignatorNode) ||
+               IsSameSyntax(
+                   failure.AffectedPath.BranchOrigin,
+                   rule.DesignatorNode) ||
+               IsSameSyntax(
+                   failure.OriginNode,
+                   rule.ResultDependencyOrigin);
+    }
+
+    private static bool IsRuleReachable(
+        MemberRuleObservation rule,
+        MappingExecutionPathSet reachablePaths)
+    {
+        if (rule.Lifecycle == MemberLifecycleDependency.None)
+        {
+            return reachablePaths != MappingExecutionPathSet.None;
+        }
+
+        var creationReachable =
+            (reachablePaths & MappingExecutionPathSet.NoPrevious) !=
+                MappingExecutionPathSet.None &&
+            rule.Lifecycle.HasFlag(
+                MemberLifecycleDependency.Creation);
+        var existingUpdateReachable = reachablePaths.HasFlag(
+                MappingExecutionPathSet.UpdateWithPrevious) &&
+            rule.Lifecycle.HasFlag(
+                MemberLifecycleDependency.ExistingDestination);
+
+        return creationReachable || existingUpdateReachable;
+    }
+
+    private static bool IsSameSyntax(SyntaxNode? left, SyntaxNode? right)
+    {
+        return left is not null &&
+               right is not null &&
+               ReferenceEquals(left.SyntaxTree, right.SyntaxTree) &&
+               left.Span == right.Span;
+    }
+
+    private static MappingExecutionPathSet GetReachablePaths(
+        TypeMapperMappingModel mapping,
+        EffectiveMappingSettings settings)
+    {
+        var result = MappingExecutionPathSet.None;
+
+        if (settings.SupportsCreate &&
+            mapping.CreateOperationFailure is null)
+        {
+            result |= MappingExecutionPathSet.Create;
+        }
+
+        if (settings.SupportsUpdate &&
+            mapping.UpdateOperationFailure is null)
+        {
+            result |= MappingExecutionPathSet.UpdateWithPrevious;
+
+            if (mapping.DestinationCanBeNull &&
+                settings.NullDestinationHandling ==
+                    NullDestinationHandlingValue.Create)
+            {
+                result |= MappingExecutionPathSet.UpdateWithoutPrevious;
+            }
+        }
+
+        return result;
     }
 
     private static IEnumerable<TypeMapperMappingModel>
@@ -355,25 +530,6 @@ internal static class MappingCompletenessObservationBuilder
         }
     }
 
-    private static ImmutableArray<ISymbol> DistinctSymbols(
-        IEnumerable<ISymbol> symbols)
-    {
-        var result = ImmutableArray.CreateBuilder<ISymbol>();
-
-        foreach (var symbol in symbols)
-        {
-            if (!result.Any(candidate =>
-                    SymbolEqualityComparer.Default.Equals(
-                        candidate,
-                        symbol)))
-            {
-                result.Add(symbol);
-            }
-        }
-
-        return result.ToImmutable();
-    }
-
     private static void AddOccupancy(
         ImmutableArray<DestinationOccupancyObservation>.Builder observations,
         ISymbol member,
@@ -403,6 +559,7 @@ internal static class MappingCompletenessObservationBuilder
         ImmutableArray<ISymbol> supportedSourceMembers,
         ImmutableArray<SourceUseObservation>.Builder sourceUses,
         ImmutableArray<SourceDiscardObservation>.Builder sourceDiscards,
+        HashSet<SyntaxNode> unreachableRuleOrigins,
         CancellationToken cancellationToken)
     {
         if (callback.Syntax is not LambdaExpressionSyntax lambda)
@@ -481,6 +638,13 @@ internal static class MappingCompletenessObservationBuilder
                 continue;
             }
 
+            if (identifier.AncestorsAndSelf().Any(node =>
+                    unreachableRuleOrigins.Any(origin =>
+                        IsSameSyntax(node, origin))))
+            {
+                continue;
+            }
+
             if (identifier.Ancestors().Any(ancestor =>
                     callback.SemanticModel.GetOperation(
                         ancestor,
@@ -511,6 +675,33 @@ internal static class MappingCompletenessObservationBuilder
                 }
             }
 
+            else if (identifier.Parent is IsPatternExpressionSyntax
+                     {
+                         Expression: var typeTestExpression
+                     } isPattern &&
+                     ReferenceEquals(typeTestExpression, identifier))
+            {
+                ObservePatternSourceUses(
+                    isPattern,
+                    callback,
+                    supportedSourceMembers,
+                    sourceUses,
+                    cancellationToken);
+                continue;
+            }
+
+            else if (identifier.Parent is BinaryExpressionSyntax
+                      {
+                          RawKind: (int)SyntaxKind.IsExpression,
+                          Left: var legacyTypeTestExpression
+                      } &&
+                      ReferenceEquals(
+                          legacyTypeTestExpression,
+                          identifier))
+            {
+                continue;
+            }
+
             foreach (var member in supportedSourceMembers)
             {
                 AddSourceUse(
@@ -518,6 +709,55 @@ internal static class MappingCompletenessObservationBuilder
                     member,
                     SourceUseKind.Potential,
                     identifier);
+            }
+        }
+    }
+
+    private static void ObservePatternSourceUses(
+        IsPatternExpressionSyntax isPattern,
+        BoundConfigurationExpression callback,
+        ImmutableArray<ISymbol> supportedSourceMembers,
+        ImmutableArray<SourceUseObservation>.Builder sourceUses,
+        CancellationToken cancellationToken)
+    {
+        if (isPattern.Pattern.DescendantNodesAndSelf()
+            .OfType<RecursivePatternSyntax>()
+            .Any(static pattern =>
+                pattern.PositionalPatternClause is not null))
+        {
+            foreach (var member in supportedSourceMembers)
+            {
+                AddSourceUse(
+                    sourceUses,
+                    member,
+                    SourceUseKind.Potential,
+                    isPattern);
+            }
+
+            return;
+        }
+
+        var operation = callback.SemanticModel.GetOperation(
+            isPattern,
+            cancellationToken);
+
+        if (operation is null)
+        {
+            return;
+        }
+
+        foreach (var reference in operation.DescendantsAndSelf()
+                     .OfType<IMemberReferenceOperation>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (reference.Member is IPropertySymbol or IFieldSymbol)
+            {
+                AddSourceUse(
+                    sourceUses,
+                    reference.Member,
+                    SourceUseKind.Semantic,
+                    isPattern);
             }
         }
     }
