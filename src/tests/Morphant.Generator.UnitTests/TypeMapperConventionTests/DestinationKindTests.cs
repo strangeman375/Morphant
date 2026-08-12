@@ -437,6 +437,7 @@ namespace TestCase
 """
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0035
 
 using Morphant;
 using Morphant.Context;
@@ -595,7 +596,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(int),
-                "Convention construction is not available for this destination.");
+                "Destination construction is not configured.");
         }
 
         private int __Update(
@@ -647,7 +648,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.IInterfaceDestination),
-                "Convention construction is not available for this destination.");
+                "Destination construction is not configured.");
         }
 
         private global::TestCase.IInterfaceDestination __Update1(
@@ -701,7 +702,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.AbstractDestination),
-                "Convention construction is not available for this destination.");
+                "Destination construction is not configured.");
         }
 
         private global::TestCase.AbstractDestination __Update2(

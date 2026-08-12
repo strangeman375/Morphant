@@ -256,7 +256,7 @@ internal sealed class ReferenceAndSettingsTests
                 "BuildTypeMapperModels",
                 Expected(
                     ExternalMapper,
-                    IncrementalStepRunReason.Modified),
+                    IncrementalStepRunReason.Cached),
                 Expected(
                     StableMapper,
                     IncrementalStepRunReason.Cached)),
@@ -264,7 +264,7 @@ internal sealed class ReferenceAndSettingsTests
                 "BuildTypeMapperRequests",
                 Expected(
                     ExternalMapper,
-                    IncrementalStepRunReason.Modified),
+                    IncrementalStepRunReason.Cached),
                 Expected(
                     StableMapper,
                     IncrementalStepRunReason.Cached))
@@ -355,7 +355,7 @@ namespace TestCase
 {
     public sealed class ExternalSource
     {
-        public long Value { get; init; }
+        public int Value { get; init; }
     }
 
     [MorphantMapper]

@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperStructuredConstructTests/LifecycleTests::Keeps_an_unguarded_previous_selection_unsupported_for_Create
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0038
 
 using Morphant;
 using Morphant.Context;

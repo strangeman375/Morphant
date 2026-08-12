@@ -1517,7 +1517,13 @@ internal static class DeclarativeControlFlowPlanner
             }
 
             resolvingLocals.Remove(localSymbol);
-            return localResult;
+            return localResult is null
+                ? null
+                : AddTerminalAlias(
+                    localResult,
+                    new DeclarativeTerminalAliasSyntax(
+                        identifier,
+                        localInitializer));
         }
 
         if (expression is ConditionalExpressionSyntax conditionalExpression)
@@ -1797,6 +1803,48 @@ internal static class DeclarativeControlFlowPlanner
         return leaf with
         {
             MemberAssignments = result.ToImmutableArray()
+        };
+    }
+
+    private static DeclarativeControlFlowSyntaxNode AddTerminalAlias(
+        DeclarativeControlFlowSyntaxNode node,
+        DeclarativeTerminalAliasSyntax alias)
+    {
+        return node switch
+        {
+            DeclarativeLocalDeclarationsSyntaxNode locals => locals with
+            {
+                Next = AddTerminalAlias(locals.Next, alias)
+            },
+            DeclarativeEvaluationSyntaxNode evaluation => evaluation with
+            {
+                Next = AddTerminalAlias(evaluation.Next, alias)
+            },
+            DeclarativeConditionalSyntaxNode conditional => conditional with
+            {
+                WhenTrue = AddTerminalAlias(conditional.WhenTrue, alias),
+                WhenFalse = AddTerminalAlias(conditional.WhenFalse, alias)
+            },
+            DeclarativeSwitchSyntaxNode switchNode => switchNode with
+            {
+                Sections = switchNode.Sections.Select(section =>
+                        section with
+                        {
+                            Branch = AddTerminalAlias(section.Branch, alias)
+                        })
+                    .ToImmutableArray(),
+                Continuation = switchNode.Continuation is { } continuation
+                    ? AddTerminalAlias(continuation, alias)
+                    : null
+            },
+            DeclarativeLeafSyntaxNode leaf => leaf with
+            {
+                TerminalAliases = (leaf.TerminalAliases.IsDefault
+                        ? ImmutableArray<DeclarativeTerminalAliasSyntax>.Empty
+                        : leaf.TerminalAliases)
+                    .Add(alias)
+            },
+            _ => node
         };
     }
 
@@ -2575,7 +2623,8 @@ internal static class DeclarativeControlFlowPlanner
             result.Add(
                 new DeclarativeMemberAssignmentSyntax(
                     memberName.Identifier.ValueText,
-                    assignment.Right));
+                    assignment.Right,
+                    memberName));
         }
 
         assignments = result.ToImmutable();
@@ -2699,6 +2748,19 @@ internal static class DeclarativeControlFlowPlanner
                     cancellationToken)
                 .Symbol is { } symbol &&
             dslLocals.Contains(symbol))
+        {
+            return true;
+        }
+
+        if (declarativeResultType is not null &&
+            semanticModel.ClassifyConversion(
+                    expression,
+                    declarativeResultType)
+                is
+                {
+                    IsImplicit: true,
+                    IsUserDefined: true
+                })
         {
             return true;
         }
@@ -3042,7 +3104,8 @@ internal sealed record DeclarativeLeafSyntaxNode(
     ExpressionSyntax? DirectExpression,
     BaseObjectCreationExpressionSyntax? ObjectCreation,
     ImmutableArray<DeclarativeObjectArgumentSyntax> Arguments,
-    ImmutableArray<DeclarativeMemberAssignmentSyntax> MemberAssignments)
+    ImmutableArray<DeclarativeMemberAssignmentSyntax> MemberAssignments,
+    ImmutableArray<DeclarativeTerminalAliasSyntax> TerminalAliases = default)
     : DeclarativeControlFlowSyntaxNode;
 
 internal sealed record DeclarativeThrowSyntaxNode(
@@ -3056,7 +3119,12 @@ internal readonly record struct DeclarativeObjectArgumentSyntax(
 
 internal readonly record struct DeclarativeMemberAssignmentSyntax(
     string MemberName,
-    ExpressionSyntax Value);
+    ExpressionSyntax Value,
+    SyntaxNode? DesignatorNode = null);
+
+internal readonly record struct DeclarativeTerminalAliasSyntax(
+    ExpressionSyntax Use,
+    ExpressionSyntax Initializer);
 
 internal abstract record DeclarativeMemberValueSyntaxNode;
 

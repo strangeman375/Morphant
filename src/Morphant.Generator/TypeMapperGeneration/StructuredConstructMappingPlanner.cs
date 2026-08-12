@@ -212,7 +212,8 @@ internal static class StructuredConstructMappingPlanner
             }
 
             StructuredConstructPlanNode? BuildExpression(
-                ExpressionSyntax expression) =>
+                ExpressionSyntax expression,
+                ImmutableArray<DeclarativeTerminalAliasSyntax> aliases) =>
                 BuildPlanNode(
                     expression,
                     sourceType,
@@ -236,6 +237,7 @@ internal static class StructuredConstructMappingPlanner
                     previousAvailable == true
                         ? MappingExecutionPathSet.UpdateWithPrevious
                         : MappingExecutionPathSet.NoPrevious,
+                    aliases,
                     cancellationToken);
 
             TypeMapperControlFlowNode? BuildLeaf(
@@ -249,7 +251,9 @@ internal static class StructuredConstructMappingPlanner
                     plannedLeaf = leaf.ObjectCreation is null &&
                                   leaf.Arguments.IsEmpty &&
                                   leaf.MemberAssignments.IsEmpty
-                        ? BuildExpression(directExpression)
+                        ? BuildExpression(
+                            directExpression,
+                            leaf.TerminalAliases)
                         : null;
                 }
                 else if (leaf.ObjectCreation is not null &&
@@ -815,6 +819,7 @@ internal static class StructuredConstructMappingPlanner
         TypeMapperMappingModel mapping,
         INamedTypeSymbol sourceMapper,
         MappingExecutionPathSet paths,
+        ImmutableArray<DeclarativeTerminalAliasSyntax> aliases,
         CancellationToken cancellationToken)
     {
         expression = UnwrapParentheses(expression);
@@ -839,6 +844,7 @@ internal static class StructuredConstructMappingPlanner
                 mapping,
                 sourceMapper,
                 paths,
+                aliases,
                 cancellationToken);
             var whenFalse = BuildPlanNode(
                 conditional.WhenFalse,
@@ -858,6 +864,7 @@ internal static class StructuredConstructMappingPlanner
                 mapping,
                 sourceMapper,
                 paths,
+                aliases,
                 cancellationToken);
 
             return whenTrue is null || whenFalse is null
@@ -886,17 +893,19 @@ internal static class StructuredConstructMappingPlanner
                     new MappingAffectedPath(
                         paths,
                         MappingPlanPhase.Construction,
-                        expression)));
+                        expression),
+                    aliases));
         }
 
-        if (IsOmitted(expression))
+        if (TryGetOmittedProducer(expression, out var omittedProducer))
         {
             return BuildUnsupportedPlanLeaf(
                 mapping,
                 sourceMapper,
-                expression,
+                omittedProducer,
                 paths,
-                MappingFailureReason.TerminalNullConstruction);
+                MappingFailureReason.TerminalNullConstruction,
+                terminalAliases: aliases);
         }
 
         if (expression is not BaseObjectCreationExpressionSyntax creation ||
@@ -1262,7 +1271,8 @@ internal static class StructuredConstructMappingPlanner
                         SourceMember: null,
                         DestinationMember: null,
                         IsApplicable: false,
-                        ConstructorCandidateRejectionReason.ExplicitRule));
+                        ConstructorCandidateRejectionReason.ExplicitRule,
+                        rule.DesignatorNode));
                 continue;
             }
 
@@ -1284,7 +1294,8 @@ internal static class StructuredConstructMappingPlanner
                         SourceMember: null,
                         destinationMember,
                         IsApplicable: false,
-                        ConstructorCandidateRejectionReason.ExplicitRule));
+                        ConstructorCandidateRejectionReason.ExplicitRule,
+                        rule.DesignatorNode));
                 continue;
             }
 
@@ -1322,7 +1333,8 @@ internal static class StructuredConstructMappingPlanner
                             canOmit
                                 ? ConstructorCandidateRejectionReason.None
                                 : ConstructorCandidateRejectionReason
-                                    .ExplicitRule));
+                                    .ExplicitRule,
+                            rule.DesignatorNode));
 
                     if (!canOmit)
                     {
@@ -1363,7 +1375,8 @@ internal static class StructuredConstructMappingPlanner
                             sourceMember?.Symbol,
                             destinationMember,
                             compatible,
-                            ruleRejection));
+                            ruleRejection,
+                            rule.DesignatorNode));
 
                     if (!compatible || sourceMember is null)
                     {
@@ -1400,7 +1413,8 @@ internal static class StructuredConstructMappingPlanner
                         SourceMember: null,
                         destinationMember,
                         IsApplicable: false,
-                        ConstructorCandidateRejectionReason.ExplicitRule));
+                        ConstructorCandidateRejectionReason.ExplicitRule,
+                        rule.DesignatorNode));
                 continue;
             }
 
@@ -1413,7 +1427,8 @@ internal static class StructuredConstructMappingPlanner
                     SourceMember: null,
                     destinationMember,
                     IsApplicable: true,
-                    ConstructorCandidateRejectionReason.None));
+                    ConstructorCandidateRejectionReason.None,
+                    rule.DesignatorNode));
 
             mappedArguments.Add(
                 new TypeMapperConstructorArgumentMappingModel(
@@ -1683,7 +1698,8 @@ internal static class StructuredConstructMappingPlanner
                 result.Add(
                     new StructuredConstructorParameterRule(
                         parameterName,
-                        assignment.Value));
+                        assignment.Value,
+                        assignment.DesignatorNode ?? assignment.Value));
             }
 
             rules = result.ToImmutable();
@@ -1709,7 +1725,8 @@ internal static class StructuredConstructMappingPlanner
             result.Add(
                 new StructuredConstructorParameterRule(
                     parameterName,
-                    assignment.Right));
+                    assignment.Right,
+                    memberName));
         }
 
         rules = result.ToImmutable();
@@ -1880,9 +1897,11 @@ internal static class StructuredConstructMappingPlanner
         return TypeMapperRuntimeEquality.AreEquivalent(
                    leftConstructor.Constructor,
                    rightConstructor.Constructor) &&
-               leftConstructor.CreateMemberMappings.SequenceEqual(
+               TypeMapperRuntimeEquality.AreEquivalent(
+                   leftConstructor.CreateMemberMappings,
                    rightConstructor.CreateMemberMappings) &&
-               leftConstructor.CreatePostMemberMappings.SequenceEqual(
+               TypeMapperRuntimeEquality.AreEquivalent(
+                   leftConstructor.CreatePostMemberMappings,
                    rightConstructor.CreatePostMemberMappings);
     }
 
@@ -1942,7 +1961,9 @@ internal static class StructuredConstructMappingPlanner
         SyntaxNode? originNode,
         MappingExecutionPathSet paths,
         MappingFailureReason reason,
-        ConstructorPlanningObservation? constructorObservation = null)
+        ConstructorPlanningObservation? constructorObservation = null,
+        ImmutableArray<DeclarativeTerminalAliasSyntax> terminalAliases =
+            default)
     {
         var origin = originNode ??
             mapping.AnalysisContext.Registration.Syntax;
@@ -1955,7 +1976,8 @@ internal static class StructuredConstructMappingPlanner
                 ? new StructuredTerminalObservation(
                     StructuredTerminalKind.NullConstruction,
                     origin,
-                    affectedPath)
+                    affectedPath,
+                    terminalAliases)
                 : null;
 
         return new StructuredConstructLeafNode(
@@ -2221,14 +2243,36 @@ internal static class StructuredConstructMappingPlanner
 
     private static bool IsOmitted(ExpressionSyntax expression)
     {
-        return UnwrapParentheses(expression) is
+        return TryGetOmittedProducer(expression, out _);
+    }
+
+    private static bool TryGetOmittedProducer(
+        ExpressionSyntax expression,
+        out ExpressionSyntax producer)
+    {
+        expression = DeclarativeIntrinsic.UnwrapTransparentSyntax(expression);
+
+        if (expression is CastExpressionSyntax cast &&
+            TryGetOmittedProducer(cast.Expression, out producer))
+        {
+            return true;
+        }
+
+        if (expression is
             LiteralExpressionSyntax
             {
                 RawKind:
                     (int)SyntaxKind.NullLiteralExpression or
                     (int)SyntaxKind.DefaultLiteralExpression
             } or
-            DefaultExpressionSyntax;
+            DefaultExpressionSyntax)
+        {
+            producer = expression;
+            return true;
+        }
+
+        producer = null!;
+        return false;
     }
 
     private static ExpressionSyntax UnwrapParentheses(
@@ -2251,7 +2295,8 @@ internal readonly record struct StructuredObjectArgument(
 
 internal readonly record struct StructuredConstructorParameterRule(
     string ParameterName,
-    ExpressionSyntax Value);
+    ExpressionSyntax Value,
+    SyntaxNode DesignatorNode);
 
 internal readonly record struct StructuredConstructorCandidatePlanningResult(
     IMethodSymbol Constructor,

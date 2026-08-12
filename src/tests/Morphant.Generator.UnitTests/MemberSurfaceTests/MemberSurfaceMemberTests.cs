@@ -67,7 +67,8 @@ namespace TestCase
 
         public string ReadOnlyOpaque { get; } = string.Empty;
 
-        public IReadOnlyList<int> ReadOnlyCollection { get; } = [];
+        public IReadOnlyList<int> ReadOnlyCollection { get; } =
+            new List<int>();
 
         public int this[int index]
         {
@@ -155,21 +156,19 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.Destination.ReadOnlyProxy"/>.
+        /// Selects <see cref="global::TestCase.Destination.ReadOnlyProxy"/>.
         /// </summary>
         public global::Morphant.Members.Member<global::TestCase.NestedDestination> ReadOnlyProxy
         {
             get => null!;
-            set { }
         }
 
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.Destination.ReadOnlyProxyField"/>.
+        /// Selects <see cref="global::TestCase.Destination.ReadOnlyProxyField"/>.
         /// </summary>
         public global::Morphant.Members.Member<global::TestCase.NestedDestination> ReadOnlyProxyField
         {
             get => null!;
-            set { }
         }
 
         public bool Equals(DestinationMembers? other) => false;

@@ -71,3 +71,9 @@ stubs where the offending branch can be identified; an invalid runtime
 callable is atomic within its callback family. Suppression and analyzer
 severity configuration never re-enable transferred source or leave a
 compile-time marker in generated C#.
+
+Construction diagnostics `MORPH0035`–`MORPH0039` are decided from the final
+validated, specialized mapping model. Recovery replaces only the affected
+missing, unavailable, invalid-parameter, previous, or null/default leaf. It
+does not choose another constructor or alter the artifact set, even when the
+diagnostic is suppressed or configured as a warning.

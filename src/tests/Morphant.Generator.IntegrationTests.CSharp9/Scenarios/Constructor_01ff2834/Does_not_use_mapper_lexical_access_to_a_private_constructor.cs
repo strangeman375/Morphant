@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConventionTests/ConstructorTests::Does_not_use_mapper_lexical_access_to_a_private_constructor
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0035
 
 using Morphant;
 using Morphant.Context;

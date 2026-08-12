@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConstructorSelectionTests/ByConventionTests::Rejects_warning_producing_automatic_ByConvention_arguments
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0037
 
 using Morphant;
 using Morphant.Context;

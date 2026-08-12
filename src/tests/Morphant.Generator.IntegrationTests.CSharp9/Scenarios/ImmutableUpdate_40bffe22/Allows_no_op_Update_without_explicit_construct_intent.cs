@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperMemberTests/ImmutableUpdateTests::Allows_no_op_Update_without_explicit_construct_intent
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0035
 
 using Morphant;
 using Morphant.Context;

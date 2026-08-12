@@ -196,11 +196,11 @@ internal sealed class DependencyIsolationTests
                         IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildTypeMapperModels",
-                    Expected(MapperA, IncrementalStepRunReason.Modified),
+                    Expected(MapperA, IncrementalStepRunReason.Cached),
                     Expected(MapperB, IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildTypeMapperRequests",
-                    Expected(MapperA, IncrementalStepRunReason.Modified),
+                    Expected(MapperA, IncrementalStepRunReason.Cached),
                     Expected(MapperB, IncrementalStepRunReason.Cached))));
     }
 
@@ -227,7 +227,7 @@ namespace TestCase
 {
     public sealed class SourceA
     {
-        public long Value { get; init; }
+        public int Value { get; init; }
     }
 
     [MorphantMapper]

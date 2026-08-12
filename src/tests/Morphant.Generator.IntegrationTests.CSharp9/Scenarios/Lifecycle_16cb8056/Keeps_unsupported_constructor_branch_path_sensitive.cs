@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperStructuredConstructTests/LifecycleTests::Keeps_unsupported_constructor_branch_path_sensitive
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0037
 
 using Morphant;
 using Morphant.Context;

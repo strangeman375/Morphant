@@ -716,6 +716,7 @@ namespace TestCase.Morphant.Generated
 """
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0038
 
 using Morphant;
 

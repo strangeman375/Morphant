@@ -25,6 +25,9 @@ internal static class TypeMapperPipeline
     private const string ConventionConstructionUnavailableMessage =
         "Convention construction is not available for this destination.";
 
+    private const string MissingConstructionPolicyMessage =
+        "Destination construction is not configured.";
+
     private const string InvalidConstructorSelectionMessage =
         "The effective ConstructorSelection is invalid.";
 
@@ -72,9 +75,25 @@ internal static class TypeMapperPipeline
                     inputs.SelectMany(static input =>
                         input.CallbackDiagnostics),
                     cancellationToken));
+        var constructionDiagnostics = models
+            .Collect()
+            .Select(static (inputs, cancellationToken) =>
+                ConstructionDiagnosticPipeline.BuildDiagnostics(
+                    inputs.SelectMany(static input =>
+                        input.ConstructionDiagnostics),
+                    cancellationToken));
 
         context.RegisterSourceOutput(
             callbackDiagnostics,
+            static (productionContext, diagnostics) =>
+            {
+                foreach (var diagnostic in diagnostics)
+                {
+                    productionContext.ReportDiagnostic(diagnostic);
+                }
+            });
+        context.RegisterSourceOutput(
+            constructionDiagnostics,
             static (productionContext, diagnostics) =>
             {
                 foreach (var diagnostic in diagnostics)
@@ -171,11 +190,17 @@ internal static class TypeMapperPipeline
             model,
             validation.Failures,
             cancellationToken);
+        var constructionDiagnostics = ConstructionDiagnosticAnalyzer.Build(
+            analysis,
+            model,
+            callbackDiagnostics,
+            cancellationToken);
 
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),
             TypeMapperEmitter.Emit(model).ToString(),
-            callbackDiagnostics);
+            callbackDiagnostics,
+            constructionDiagnostics);
     }
 
     private static TypeMapperRequest BuildRequest(
@@ -826,17 +851,26 @@ internal static class TypeMapperPipeline
 
             if (constructorMapping is null)
             {
+                var missingConstructionPolicy =
+                    constructorSelection is not null &&
+                    !pair.Capabilities.StructuredConstruction;
                 createFailure = MappingFailureObservation.Create(
                     observedMapping.AnalysisContext,
                     constructorSelection is null
                         ? MappingFailureReason.InvalidSetting
-                        : MappingFailureReason.ConstructorSelectionFailed,
+                        : missingConstructionPolicy
+                            ? MappingFailureReason.MissingConstructionPolicy
+                            : MappingFailureReason.ConstructorSelectionFailed,
                     constructorSelection is null
                         ? InvalidConstructorSelectionMessage
-                        : ConventionConstructionUnavailableMessage,
+                        : missingConstructionPolicy
+                            ? MissingConstructionPolicyMessage
+                            : ConventionConstructionUnavailableMessage,
                     constructorSelection is null
                         ? MappingObservationOriginKind.Setting
-                        : MappingObservationOriginKind.Convention,
+                        : missingConstructionPolicy
+                            ? MappingObservationOriginKind.Registration
+                            : MappingObservationOriginKind.Convention,
                     MappingAffectedPath.NoPrevious(
                         MappingPlanPhase.Construction),
                     configuration.Settings.ConstructorSelection.Syntax);
@@ -1480,7 +1514,9 @@ internal static class TypeMapperPipeline
     private readonly record struct TypeMapperGenerationInput(
         string StableIdentity,
         string Source,
-        ImmutableArray<CallbackDiagnosticCandidate> CallbackDiagnostics)
+        ImmutableArray<CallbackDiagnosticCandidate> CallbackDiagnostics,
+        ImmutableArray<ConstructionDiagnosticCandidate>
+            ConstructionDiagnostics)
     {
         public string HintName => GeneratedSourceHintName.Create(
             "TypeMapper",

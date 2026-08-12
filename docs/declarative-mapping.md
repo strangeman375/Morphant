@@ -166,6 +166,31 @@ does not change the mapping plan. The affected reachable path keeps a typed
 `MappingConfigurationException` recovery stub; independent paths and pairs
 remain executable.
 
+## Construction plan diagnostics
+
+After a structured callback passes transfer and grammar validation, Morphant
+checks the effective construction plan on each reachable Create and Update
+path:
+
+| ID | Condition |
+|---|---|
+| `MORPH0035` | A reachable no-previous path has no configured or conventional construction policy. |
+| `MORPH0036` | The effective `ConstructorSelection` cannot select one applicable convention constructor. |
+| `MORPH0037` | An explicit constructor parameter rule is invalid for the constructor that was actually selected. |
+| `MORPH0038` | A `Resolve` terminal selects `previous` on a path where no previous destination exists. |
+| `MORPH0039` | A structured `Construct` or `Resolve` terminal is statically `null` or `default`. |
+
+These diagnostics are errors by default and support normal
+`dotnet_diagnostic.<ID>.severity` configuration. They are path-sensitive: an
+invalid leaf becomes a typed `MappingConfigurationException` stub without
+changing conditions, evaluating its constructor rule, selecting a fallback
+constructor, or disabling an independent existing-destination path.
+
+Ordinary C# binding errors remain compiler-owned. A guarded
+`previous.HasValue` branch is valid, and a real `null` returned by runtime
+`ConstructUsing`, `ResolveUsing`, or manual `Convert` is authoritative rather
+than `MORPH0039`; it also ends the mapping before `Members` runs.
+
 ## Members
 
 `Members` returns a generated destination-specific record whose assignments

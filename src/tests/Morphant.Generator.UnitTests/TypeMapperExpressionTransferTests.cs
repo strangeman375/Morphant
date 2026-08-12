@@ -18,6 +18,25 @@ internal sealed class TypeMapperExpressionTransferTests
 using System;
 using Morphant;
 
+namespace Morphant
+{
+    internal static partial class MorphantGeneratedMappingExtensions
+    {
+        public static global::Morphant.MapperBuilder<
+            global::TestCase.Source,
+            global::TestCase.Destination> Convert(
+                this global::Morphant.MapperBuilder<
+                    global::TestCase.Source,
+                    global::TestCase.Destination> builder,
+                global::Morphant.Delegates.Convert<
+                    global::TestCase.Source?,
+                    global::TestCase.Destination> mapping,
+                int testOnly = 0) =>
+            throw new global::Morphant.Exceptions
+                .RuntimeInvocationNotSupportedException();
+    }
+}
+
 namespace TestCase
 {
     public sealed class Source
@@ -37,7 +56,8 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Convert(source => new Destination({|CS0618:Read|}(source)));
+                .Convert(source => new Destination(
+                    {|CS0618:Read(source)|}));
 
         [Obsolete("intentional transfer warning")]
         private static int Read(Source? source) => source?.Value ?? 0;

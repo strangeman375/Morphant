@@ -518,8 +518,9 @@ tests фиксируют локальную гранулярность `unsafe`,
 
 ## Согласованная ревизия diagnostic-категорий 1–8
 
-Статус: принята пользователем 10 августа 2026 года; нормативный каталог
-обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+Статус: нормативный каталог принят пользователем 10 августа 2026 года;
+production vertical slices категорий 1–8 реализованы и приняты пользователем
+12 августа 2026 года.
 
 Ревизия сохранила `MORPH0001`–`MORPH0033`, не сдвигая согласованные IDs, и
 добавила один следующий ID `MORPH0034` для собственного mapper member-а,
@@ -565,8 +566,9 @@ semantics.
 
 ## Согласованная diagnostic-категория 9
 
-Статус: принята пользователем 11 августа 2026 года; нормативный каталог
-обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+Статус: нормативный каталог принят пользователем 11 августа 2026 года;
+production vertical slice реализован 12 августа 2026 года и ожидает
+пользовательского ревью.
 
 Категория «Корректность construction plan» получила пять последовательных IDs:
 
@@ -704,29 +706,29 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 8.**
+**Diagnostics: vertical slice категории 9.**
 
 Статус: реализован, ожидает пользовательского ревью. Vertical slices
-категорий 1–7 приняты пользователем. Категория 8 добавляет configurable
-`MORPH0029`–`MORPH0033`: inline-lambda boundary structured callbacks,
-semantic transfer/preflight failures, structured grammar, read-only
-destination inputs и terminal compile-time markers.
+категорий 1–8 приняты пользователем. Категория 9 добавляет configurable
+`MORPH0035`–`MORPH0039`: отсутствующую construction policy, недоступную
+convention selection, invalid constructor parameter rule, недоступный
+terminal `previous` и null/default structured construction plan.
 
-Анализ использует effective plan после composition/settings/inheritance,
-exact symbol binding и статическую достижимость. Structured `Construct`,
-`Resolve` и `Members` не декомпилируют method groups; runtime
-`ConstructUsing`, `ResolveUsing` и `Convert` сохраняют обычный C# callable.
-Configure-local/deferred/file-local lifetimes и непереносимый extension/query
-binding fail closed до emission, source-owned warnings остаются compiler-owned.
+Анализ использует final validated model после
+composition/settings/inheritance и category-8 callback gates, специализирует
+Create/Update paths по наличию previous destination и сохраняет точные
+constructor/rule/terminal origins. Compiler-owned binding errors и runtime
+`ConstructUsing` / `ResolveUsing` / `Convert` остаются вне category 9.
 
-Recovery сохраняет независимые operations, branches, pairs и mapper-ы;
-invalid `Construct` не ломает Update с существующим destination. Suppression
-и severity override не меняют callback classification, artifacts или runtime
-behavior. Самостоятельные unit-, C# 9 runtime- и package/MSBuild-тесты
-фиксируют exact diagnostics, terminal grammar, mutation/marker boundaries,
-compiler ownership, actualization и реальные `.editorconfig` overrides всех
-пяти IDs. Следующий vertical slice — категория 9 после принятия категории 8
-пользователем.
+Recovery заменяет только affected construction leaf typed
+`MappingConfigurationException` stub-ом: другой constructor не выбирается,
+invalid rule не вычисляется, а existing Update и независимые branches,
+operations, pairs и mapper-ы сохраняются. Suppression и severity override не
+меняют reachability, artifacts или runtime behavior. Самостоятельные unit-,
+C# 9 runtime- и package/MSBuild-тесты фиксируют exact diagnostics, selection
+reasons, parameter rules, terminal aliases, compiler/category precedence,
+actualization и реальные `.editorconfig` overrides всех пяти IDs. Следующий
+vertical slice — категория 10 после принятия категории 9 пользователем.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2156,8 +2158,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slices категорий 1–7 приняты пользователем;
-vertical slice категории 8 реализован и ожидает пользовательского ревью.
+production model и vertical slices категорий 1–8 приняты пользователем;
+vertical slice категории 9 реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2207,9 +2209,12 @@ callback families с самостоятельными unit-, C# 9 runtime- и pa
 diagnostics `MORPH0029`–`MORPH0033`, effective callback ownership,
 transfer/compiler preflight, structured grammar, read-only destination inputs,
 terminal marker boundary и path-sensitive/atomic recovery с самостоятельными
-unit-, C# 9 runtime- и package/MSBuild-тестами; slice ожидает
-пользовательского ревью. Следующий vertical slice — категория 9 после принятия
-категории 8.
+unit-, C# 9 runtime- и package/MSBuild-тестами; slice принят пользователем.
+Девятый slice реализует construction diagnostics `MORPH0035`–`MORPH0039`,
+final-model reachability, constructor selection/rule attribution, terminal
+previous/null ownership и leaf-local recovery с самостоятельными unit-, C# 9
+runtime- и package/MSBuild-тестами; slice ожидает пользовательского ревью.
+Следующий vertical slice — категория 10 после принятия категории 9.
 
 ### Этап 24. Observable failures
 

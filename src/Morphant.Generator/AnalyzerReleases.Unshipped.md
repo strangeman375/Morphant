@@ -38,3 +38,8 @@ MORPH0031 | Morphant.Callbacks | Error | Unsupported structured callback syntax
 MORPH0032 | Morphant.Callbacks | Error | Structured destination input is read-only
 MORPH0033 | Morphant.Callbacks | Error | Invalid compile-time marker use
 MORPH0034 | Morphant.Declaration | Error | Mapper member conflicts with generated Supports
+MORPH0035 | Morphant.Construction | Error | Destination construction is not configured
+MORPH0036 | Morphant.Construction | Error | Convention construction is unavailable
+MORPH0037 | Morphant.Construction | Error | Constructor parameter rule is invalid
+MORPH0038 | Morphant.Construction | Error | Previous destination is unavailable
+MORPH0039 | Morphant.Construction | Error | Structured construction plan is null

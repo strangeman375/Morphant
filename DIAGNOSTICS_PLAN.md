@@ -5028,8 +5028,26 @@ override не меняют artifacts или recovery. Самостоятельн
 mutation/marker boundaries, precedence, suppression и actualization. Обычный
 C# 9 consumer исполняет suppressed recovery и независимые paths/pairs;
 package/MSBuild fixture проверяет реальные `.editorconfig` overrides всех
-пяти IDs. Срез реализован и ожидает пользовательского ревью; следующий —
-категория 9.
+пяти IDs. Срез принят пользователем.
+
+Девятый vertical slice категории 9 реализует configurable `MORPH0035`–
+`MORPH0039`: отсутствующую destination construction policy, недоступную
+convention construction, invalid constructor parameter rule, недоступный
+terminal previous и null/default structured construction plan. Анализ
+выполняется над final validated mapping model после category-8 gates,
+специализирует operation paths по previous presence и сохраняет точные
+strategy, constructor, rule, terminal и alias origins.
+
+Recovery заменяет только affected leaf typed
+`MappingConfigurationException` stub-ом без constructor fallback и без
+вычисления invalid rule; existing Update и независимые branches/operations/
+pairs сохраняются. Runtime result-policy null остаётся авторитетным terminal.
+Самостоятельная unit-категория фиксирует exact descriptors, reachability,
+selection reasons, parameter rules, locations/deduplication, terminal aliases,
+precedence, suppression/severity и actualization. Обычный C# 9 consumer
+исполняет path-sensitive suppressed recovery, а package/MSBuild fixture
+проверяет реальные `.editorconfig` overrides всех пяти IDs. Срез реализован и
+ожидает пользовательского ревью; следующий — категория 10.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

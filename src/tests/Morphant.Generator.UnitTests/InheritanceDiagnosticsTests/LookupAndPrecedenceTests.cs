@@ -194,7 +194,14 @@ namespace TestCase
 """;
 
         var result = InheritanceDiagnosticsGeneratorTest.Run(source);
-        var diagnostics = result.EffectiveDiagnostics;
+        var diagnostics = result.EffectiveDiagnostics
+            .Where(static diagnostic => diagnostic.Id is
+                "MORPH0024" or
+                "MORPH0025" or
+                "MORPH0026" or
+                "MORPH0027" or
+                "MORPH0028")
+            .ToArray();
 
         Assert.Multiple(() =>
         {

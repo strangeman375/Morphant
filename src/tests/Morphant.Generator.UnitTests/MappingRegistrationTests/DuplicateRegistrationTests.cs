@@ -105,11 +105,18 @@ public partial class TestMapper : TypeMapper
 """;
 
         var result = MappingRegistrationGeneratorTest.Run(source);
+        var diagnostics = result.Diagnostics
+            .Where(static diagnostic => diagnostic.Id is
+                "MORPH0011" or
+                "MORPH0012" or
+                "MORPH0013" or
+                "MORPH0014")
+            .ToArray();
 
         Assert.Multiple(() =>
         {
             Assert.That(
-                result.Diagnostics.Select(static diagnostic => diagnostic.Id),
+                diagnostics.Select(static diagnostic => diagnostic.Id),
                 Is.EqualTo(new[]
                 {
                     "MORPH0013",
@@ -117,7 +124,7 @@ public partial class TestMapper : TypeMapper
                     "MORPH0013"
                 }));
             Assert.That(
-                result.Diagnostics.Select(static diagnostic =>
+                diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {

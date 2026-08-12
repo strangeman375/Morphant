@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConventionTests/DestinationKindTests::Updates_direct_abstract_and_interface_destinations_without_a_create_fallback
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0035
 
 using Morphant;
 using Morphant.Context;

@@ -58,7 +58,10 @@ public sealed class OtherBuilder
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Diagnostics, Is.Empty);
+            Assert.That(
+                result.Diagnostics.Select(static diagnostic =>
+                    diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0030" }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

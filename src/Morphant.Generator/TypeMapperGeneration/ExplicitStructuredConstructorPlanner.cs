@@ -284,7 +284,9 @@ internal static class ExplicitStructuredConstructorPlanner
                             canOmit
                                 ? ConstructorCandidateRejectionReason.None
                                 : ConstructorCandidateRejectionReason
-                                    .ExplicitRule);
+                                    .ExplicitRule,
+                            planArgument.Syntax.NameColon?.Name ??
+                            planArgument.Value);
 
                     if (!canOmit)
                     {
@@ -327,7 +329,9 @@ internal static class ExplicitStructuredConstructorPlanner
                             sourceMember?.Symbol,
                             destinationMember,
                             compatible,
-                            rejection);
+                            rejection,
+                            planArgument.Syntax.NameColon?.Name ??
+                            planArgument.Value);
 
                     if (!compatible || sourceMember is null)
                     {
@@ -373,7 +377,9 @@ internal static class ExplicitStructuredConstructorPlanner
                         SourceMember: null,
                         destinationMember,
                         IsApplicable: false,
-                        ConstructorCandidateRejectionReason.ExplicitRule);
+                        ConstructorCandidateRejectionReason.ExplicitRule,
+                        planArgument.Syntax.NameColon?.Name ??
+                        planArgument.Value);
 
                 return Unsupported(
                     ConstructorCandidateRejectionReason.ExplicitRule,
@@ -390,7 +396,9 @@ internal static class ExplicitStructuredConstructorPlanner
                     SourceMember: null,
                     destinationMember,
                     IsApplicable: true,
-                    ConstructorCandidateRejectionReason.None);
+                    ConstructorCandidateRejectionReason.None,
+                    planArgument.Syntax.NameColon?.Name ??
+                    planArgument.Value);
 
             arguments.Add(
                 new TypeMapperConstructorArgumentMappingModel(

@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConstructorSelectionTests/GreediestAndLargestTests::Largest_uses_declared_size_and_never_falls_back
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0036
 
 using Morphant;
 using Morphant.Context;

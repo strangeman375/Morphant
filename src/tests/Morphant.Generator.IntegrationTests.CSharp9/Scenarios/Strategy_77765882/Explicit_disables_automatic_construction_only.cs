@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConstructorSelectionTests/StrategyTests::Explicit_disables_automatic_construction_only
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0036
 
 using Morphant;
 using Morphant.Context;

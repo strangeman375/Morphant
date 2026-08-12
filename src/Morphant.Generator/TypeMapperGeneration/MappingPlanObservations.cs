@@ -204,7 +204,8 @@ internal sealed record ConstructorParameterRuleObservation(
     ISymbol? SourceMember,
     ISymbol? DestinationMember,
     bool IsApplicable,
-    ConstructorCandidateRejectionReason RejectionReason);
+    ConstructorCandidateRejectionReason RejectionReason,
+    SyntaxNode? DesignatorNode = null);
 
 internal sealed record ConstructorCandidateObservation(
     IMethodSymbol Constructor,
@@ -228,7 +229,8 @@ internal enum StructuredTerminalKind
 internal sealed record StructuredTerminalObservation(
     StructuredTerminalKind Kind,
     SyntaxNode OriginNode,
-    MappingAffectedPath AffectedPath);
+    MappingAffectedPath AffectedPath,
+    ImmutableArray<DeclarativeTerminalAliasSyntax> Aliases = default);
 
 internal enum MemberRuleOrigin
 {

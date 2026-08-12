@@ -153,6 +153,7 @@ namespace TestCase
 """
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0035
 
 using Morphant;
 using Morphant.Context;
@@ -283,7 +284,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.TestMapper.Destination),
-                "Convention construction is not available for this destination.");
+                "Destination construction is not configured.");
         }
 
         private global::TestCase.TestMapper.Destination __Update(
@@ -758,6 +759,7 @@ namespace TestCase
 """
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0036
 
 using Morphant;
 using Morphant.Context;

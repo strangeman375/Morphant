@@ -87,10 +87,17 @@ public partial class TestMapper : TypeMapper
 """;
 
         var result = MapperConfigurationGeneratorTest.Run(source);
+        var diagnostics = result.Diagnostics
+            .Where(static diagnostic => diagnostic.Id is
+                "MORPH0015" or
+                "MORPH0016" or
+                "MORPH0017" or
+                "MORPH0018")
+            .ToArray();
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.Diagnostics, Is.Empty);
+            Assert.That(diagnostics, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

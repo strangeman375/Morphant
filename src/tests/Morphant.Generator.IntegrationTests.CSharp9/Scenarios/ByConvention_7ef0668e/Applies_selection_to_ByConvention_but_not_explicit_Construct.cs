@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConstructorSelectionTests/ByConventionTests::Applies_selection_to_ByConvention_but_not_explicit_Construct
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0036
 
 using Morphant;
 using Morphant.Context;

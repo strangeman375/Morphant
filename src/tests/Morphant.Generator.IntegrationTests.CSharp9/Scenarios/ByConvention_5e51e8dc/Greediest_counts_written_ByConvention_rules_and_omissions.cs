@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConstructorSelectionTests/ByConventionTests::Greediest_counts_written_ByConvention_rules_and_omissions
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0036
 
 using Morphant;
 using Morphant.Context;

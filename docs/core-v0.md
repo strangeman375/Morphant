@@ -91,12 +91,12 @@ explicit code or `Convert` for a supported synchronous special case, or wait
 for the separately designed post-v0 capability.
 
 Compile-time diagnostics are being delivered by the separate diagnostics
-roadmap. Its first eight categories are implemented through `MORPH0033`
-(plus `MORPH0034`), including configuration, registration, composition,
-settings, inheritance, callback transfer, structured grammar, read-only
-destination inputs, and compile-time marker boundaries. Categories that
-remain pending still have deterministic executable recovery: every C#-legal
-invalid path throws a typed Morphant exception instead of leaving the mapper
-partial implementation incomplete, while deferred roots are executable opaque
-pairs. Only contracts that cannot be declared in C# are omitted. See
+roadmap. Its first nine categories are implemented through `MORPH0039`,
+including configuration, registration, composition, settings, inheritance,
+callback transfer, structured grammar, compile-time marker boundaries, and
+path-sensitive construction-plan correctness. Categories that remain pending
+still have deterministic executable recovery: every C#-legal invalid path
+throws a typed Morphant exception instead of leaving the mapper partial
+implementation incomplete, while deferred roots are executable opaque pairs.
+Only contracts that cannot be declared in C# are omitted. See
 [Observable failures](observable-failures.md).

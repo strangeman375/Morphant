@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConventionTests/ConstructorTests::Does_not_fallback_from_an_ambiguous_constructor_selection
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0036
 
 using Morphant;
 using Morphant.Context;
