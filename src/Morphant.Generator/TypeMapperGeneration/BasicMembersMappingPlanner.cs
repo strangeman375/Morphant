@@ -445,11 +445,14 @@ internal static class BasicMembersMappingPlanner
         var observedRules =
             ImmutableArray.CreateBuilder<MemberRuleObservation>();
         var createNestedMapUsages =
-            new DeclarativeNestedMapUsageRegistry();
+            new DeclarativeNestedMapUsageRegistry(
+                MappingExecutionPathSet.NoPrevious);
         var mapReplacementNestedMapUsages =
-            new DeclarativeNestedMapUsageRegistry();
+            new DeclarativeNestedMapUsageRegistry(
+                MappingExecutionPathSet.UpdateWithPrevious);
         var updateNestedMapUsages =
-            new DeclarativeNestedMapUsageRegistry();
+            new DeclarativeNestedMapUsageRegistry(
+                MappingExecutionPathSet.UpdateWithPrevious);
 
         foreach (var assignment in assignments)
         {
@@ -647,6 +650,7 @@ internal static class BasicMembersMappingPlanner
 
             if (!TryBuildExplicitMapping(
                     assignment.Value,
+                    assignment.DesignatorNode,
                     destinationMember,
                     mapping,
                     semanticModel,
@@ -908,6 +912,30 @@ internal static class BasicMembersMappingPlanner
                     StringComparer.Ordinal)));
         }
 
+        var nestedMappings = new List<NestedMappingObservation>();
+
+        foreach (var plan in immutablePlans)
+        {
+            var overriddenNames = plan.ConfiguredMemberNames.IsDefault
+                ? []
+                : plan.ConfiguredMemberNames;
+
+            nestedMappings.RemoveAll(observation =>
+                observation.TargetName is { } targetName &&
+                overriddenNames.Contains(
+                    targetName,
+                    StringComparer.Ordinal));
+            nestedMappings.AddRange(
+                (plan.Observation.NestedMappings.IsDefault
+                    ? []
+                    : plan.Observation.NestedMappings)
+                .Where(observation =>
+                    observation.TargetName is null ||
+                    overriddenNames.Contains(
+                        observation.TargetName,
+                        StringComparer.Ordinal)));
+        }
+
         return new ConventionMemberMappingPlan(
             create,
             createPost,
@@ -935,11 +963,7 @@ internal static class BasicMembersMappingPlanner
                             ? []
                             : plan.Observation.Terminals)
                     .ToImmutableArray(),
-                NestedMappings = immutablePlans.SelectMany(plan =>
-                        plan.Observation.NestedMappings.IsDefault
-                            ? []
-                            : plan.Observation.NestedMappings)
-                    .ToImmutableArray(),
+                NestedMappings = nestedMappings.ToImmutableArray(),
                 SourceDiscards = immutablePlans.SelectMany(plan =>
                         plan.Observation.SourceDiscards.IsDefault
                             ? []
@@ -956,6 +980,7 @@ internal static class BasicMembersMappingPlanner
 
     private static bool TryBuildExplicitMapping(
         ExpressionSyntax expression,
+        SyntaxNode? targetDesignator,
         ConventionWritableMember destinationMember,
         TypeMapperMappingModel mapping,
         SemanticModel semanticModel,
@@ -974,8 +999,8 @@ internal static class BasicMembersMappingPlanner
         CancellationToken cancellationToken,
         out ExplicitMemberMappingPlan plan)
     {
-        if (!DeclarativeDependencyExpressionBuilder
-                .TryRewriteWithContext(
+        var createSucceeded = DeclarativeDependencyExpressionBuilder
+            .TryRewriteWithContext(
                 expression,
                 semanticModel,
                 mapperType,
@@ -994,13 +1019,18 @@ internal static class BasicMembersMappingPlanner
                     targetType,
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Create,
-                    CurrentDestinationExpression: null),
+                    CurrentDestinationExpression: null,
+                    CurrentDestinationType: null,
+                    destinationMember.Symbol,
+                    targetDesignator,
+                    CurrentDestinationSymbol: null,
+                    MappingExecutionPathSet.NoPrevious),
                 createNestedMapUsages,
                 cancellationToken,
                 out var createExpression,
-                out var createDependency) ||
-            !DeclarativeDependencyExpressionBuilder
-                .TryRewriteWithContext(
+                out var createDependency);
+        var mapReplacementSucceeded = DeclarativeDependencyExpressionBuilder
+            .TryRewriteWithContext(
                 expression,
                 semanticModel,
                 mapperType,
@@ -1020,13 +1050,18 @@ internal static class BasicMembersMappingPlanner
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Update,
                     mapping.ResultLocalName + "." +
-                    Identifier(destinationMember.Name)),
+                    Identifier(destinationMember.Name),
+                    destinationMember.Type,
+                    destinationMember.Symbol,
+                    targetDesignator,
+                    destinationMember.Symbol,
+                    MappingExecutionPathSet.UpdateWithPrevious),
                 mapReplacementNestedMapUsages,
                 cancellationToken,
                 out var mapReplacementExpression,
-                out var mapReplacementDependency) ||
-            !DeclarativeDependencyExpressionBuilder
-                .TryRewriteWithContext(
+                out var mapReplacementDependency);
+        var updateSucceeded = DeclarativeDependencyExpressionBuilder
+            .TryRewriteWithContext(
                 expression,
                 semanticModel,
                 mapperType,
@@ -1046,11 +1081,23 @@ internal static class BasicMembersMappingPlanner
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Update,
                     "destination." +
-                    Identifier(destinationMember.Name)),
+                    Identifier(destinationMember.Name),
+                    destinationMember.Type,
+                    destinationMember.Symbol,
+                    targetDesignator,
+                    destinationMember.Symbol,
+                    MappingExecutionPathSet.UpdateWithPrevious),
                 updateNestedMapUsages,
                 cancellationToken,
                 out var updateExpression,
-                out var updateDependency))
+                out var updateDependency);
+
+        if (!createSucceeded &&
+            !HasNestedFailure(createNestedMapUsages) ||
+            !mapReplacementSucceeded &&
+            !HasNestedFailure(mapReplacementNestedMapUsages) ||
+            !updateSucceeded &&
+            !HasNestedFailure(updateNestedMapUsages))
         {
             plan = default;
             return false;
@@ -1082,41 +1129,55 @@ internal static class BasicMembersMappingPlanner
                 IsResultDependent: resultDependent,
                 DependencyExpression: dependencyExpression);
 
-        var create = BuildMapping(
-            createExpression,
-            createDependency,
-            isResultDependent);
+        var create = createSucceeded
+            ? BuildMapping(
+                createExpression,
+                createDependency,
+                isResultDependent)
+            : (TypeMapperMemberMappingModel?)null;
         var replacementIsResultDependent =
             isResultDependent ||
-            ReferencesIdentifier(
+            mapReplacementSucceeded && ReferencesIdentifier(
                 mapReplacementExpression,
                 mapping.ResultLocalName);
-        var mapReplacement = BuildMapping(
-            mapReplacementExpression,
-            mapReplacementDependency,
-            replacementIsResultDependent);
-        var update = BuildMapping(
-            updateExpression,
-            updateDependency,
-            isResultDependent);
+        var mapReplacement = mapReplacementSucceeded
+            ? BuildMapping(
+                mapReplacementExpression,
+                mapReplacementDependency,
+                replacementIsResultDependent)
+            : (TypeMapperMemberMappingModel?)null;
+        var update = updateSucceeded
+            ? BuildMapping(
+                updateExpression,
+                updateDependency,
+                isResultDependent)
+            : (TypeMapperMemberMappingModel?)null;
 
         plan = new ExplicitMemberMappingPlan(
             Create: isResultDependent ? null : create,
-            CreatePost: destinationMember.CanAssign
+            CreatePost: destinationMember.CanAssign && createSucceeded
                 ? create
                 : null,
             MapReplacement: replacementIsResultDependent
                 ? null
                 : mapReplacement,
-            MapReplacementPost: destinationMember.CanAssign
+            MapReplacementPost:
+                destinationMember.CanAssign && mapReplacementSucceeded
                 ? mapReplacement
                 : null,
-            Update: destinationMember.CanAssign
+            Update: destinationMember.CanAssign && updateSucceeded
                 ? update
                 : null,
             IsCreationOnly: !destinationMember.CanAssign,
             IsResultDependent: isResultDependent);
         return true;
+    }
+
+    private static bool HasNestedFailure(
+        DeclarativeNestedMapUsageRegistry registry)
+    {
+        return registry.Observations.Any(static observation =>
+            observation.FailureKind != NestedMappingFailureKind.None);
     }
 
     private static bool ReferencesParameterAtRuntime(
@@ -1911,7 +1972,8 @@ internal static class BasicMembersMappingPlanner
     {
         var nestedObservation = nestedObservations.IsDefaultOrEmpty
             ? null
-            : nestedObservations[0];
+            : nestedObservations.FirstOrDefault(static observation =>
+                observation.FailureKind != NestedMappingFailureKind.None);
 
         if (nestedObservation is not null)
         {
@@ -1945,23 +2007,23 @@ internal static class BasicMembersMappingPlanner
         NestedMappingObservation observation,
         MappingFailureReason fallback)
     {
-        if (observation.InferredSourceType is null ||
-            observation.InferredDestinationType is null)
+        return observation.FailureKind switch
         {
-            return MappingFailureReason.NestedPairUnknown;
-        }
-
-        if (observation.ResultConversion ==
-            NestedConversionStatus.Incompatible)
-        {
-            return MappingFailureReason.NestedResultIncompatible;
-        }
-
-        return observation.Operation ==
-                   DeclarativeNestedMapOperation.Update &&
-               observation.DestinationOrigin != NestedDestinationOrigin.None
-            ? MappingFailureReason.NestedUpdateDestinationInvalid
-            : fallback;
+            NestedMappingFailureKind.SourceTypeUnknown or
+            NestedMappingFailureKind.ParameterlessSourceUnavailable or
+            NestedMappingFailureKind.DestinationTypeUnknown =>
+                MappingFailureReason.NestedPairUnknown,
+            NestedMappingFailureKind.ResultIncompatible =>
+                MappingFailureReason.NestedResultIncompatible,
+            NestedMappingFailureKind.ExplicitDestinationIncompatible or
+            NestedMappingFailureKind.ExplicitNullForNonNullableValue or
+            NestedMappingFailureKind.AdaptiveCurrentUnavailable or
+            NestedMappingFailureKind.AdaptiveCurrentIncompatible or
+            NestedMappingFailureKind.AdaptiveCurrentAmbiguous or
+            NestedMappingFailureKind.ReadOnlyProxyInvalid =>
+                MappingFailureReason.NestedUpdateDestinationInvalid,
+            _ => fallback
+        };
     }
 }
 

@@ -300,6 +300,21 @@ internal enum NestedConversionStatus
     Incompatible
 }
 
+internal enum NestedMappingFailureKind
+{
+    None,
+    SourceTypeUnknown,
+    ParameterlessSourceUnavailable,
+    DestinationTypeUnknown,
+    ResultIncompatible,
+    ExplicitDestinationIncompatible,
+    ExplicitNullForNonNullableValue,
+    AdaptiveCurrentUnavailable,
+    AdaptiveCurrentIncompatible,
+    AdaptiveCurrentAmbiguous,
+    ReadOnlyProxyInvalid
+}
+
 internal sealed record NestedMappingObservation(
     InvocationExpressionSyntax Producer,
     IMethodSymbol ProducerSymbol,
@@ -310,9 +325,21 @@ internal sealed record NestedMappingObservation(
     NestedConversionStatus ResultConversion,
     NestedDestinationOrigin DestinationOrigin,
     SyntaxNode? ExplicitDestination,
+    ITypeSymbol? ExplicitDestinationType,
     string? GeneratedCurrentDestination,
     ISymbol? ReadOnlyProxy,
-    ImmutableArray<string> AdaptiveLocalTargets);
+    ImmutableArray<string> AdaptiveLocalTargets,
+    ImmutableArray<SyntaxNode> AdaptiveTargetDesignators,
+    NestedMappingFailureKind FailureKind,
+    ExpressionSyntax? SourceExpression,
+    ITypeSymbol? TargetType,
+    string? TargetName,
+    ISymbol? TargetSymbol,
+    SyntaxNode? TargetDesignator,
+    ITypeSymbol? CurrentDestinationType,
+    ISymbol? CurrentDestinationSymbol,
+    INamedTypeSymbol SourceMapper,
+    MappingExecutionPathSet Paths);
 
 internal enum SourceUseKind
 {

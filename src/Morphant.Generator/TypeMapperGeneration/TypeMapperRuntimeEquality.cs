@@ -194,6 +194,12 @@ internal static class TypeMapperRuntimeEquality
                AreEquivalent(
                    leftMapping.Failure,
                    rightMapping.Failure) &&
+               AreEquivalentNestedObservations(
+                   leftMapping.NestedObservations,
+                   rightMapping.NestedObservations) &&
+               AreEquivalentNestedObservations(
+                   leftMapping.MemberObservation?.NestedMappings ?? [],
+                   rightMapping.MemberObservation?.NestedMappings ?? []) &&
                AreEquivalent(
                    leftMapping.PostMemberControlFlow,
                    rightMapping.PostMemberControlFlow) &&
@@ -330,7 +336,77 @@ internal static class TypeMapperRuntimeEquality
                    left.EvaluationDependency,
                    right.EvaluationDependency) &&
                left.ThrowUsesCurrentMappingOperation ==
-                   right.ThrowUsesCurrentMappingOperation;
+                   right.ThrowUsesCurrentMappingOperation &&
+               AreEquivalentNestedObservations(
+                   left.MemberObservation?.NestedMappings ?? [],
+                   right.MemberObservation?.NestedMappings ?? []);
+    }
+
+    private static bool AreEquivalentNestedObservations(
+        ImmutableArray<NestedMappingObservation> left,
+        ImmutableArray<NestedMappingObservation> right)
+    {
+        var leftInvalid = InvalidNestedObservations(left);
+        var rightInvalid = InvalidNestedObservations(right);
+
+        if (leftInvalid.Length != rightInvalid.Length)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < leftInvalid.Length; index++)
+        {
+            var leftObservation = leftInvalid[index];
+            var rightObservation = rightInvalid[index];
+
+            if (leftObservation.FailureKind !=
+                    rightObservation.FailureKind ||
+                leftObservation.Paths != rightObservation.Paths ||
+                !SameSyntax(
+                    leftObservation.Producer,
+                    rightObservation.Producer) ||
+                !SameSyntax(
+                    leftObservation.TargetDesignator,
+                    rightObservation.TargetDesignator) ||
+                !StringComparer.Ordinal.Equals(
+                    leftObservation.TargetName,
+                    rightObservation.TargetName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftObservation.GeneratedCurrentDestination,
+                    rightObservation.GeneratedCurrentDestination))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static ImmutableArray<NestedMappingObservation>
+        InvalidNestedObservations(
+            ImmutableArray<NestedMappingObservation> observations)
+    {
+        return observations.IsDefaultOrEmpty
+            ? []
+            : observations.Where(static observation =>
+                    observation.FailureKind !=
+                        NestedMappingFailureKind.None)
+                .ToImmutableArray();
+    }
+
+    private static bool SameSyntax(
+        Microsoft.CodeAnalysis.SyntaxNode? left,
+        Microsoft.CodeAnalysis.SyntaxNode? right)
+    {
+        if (ReferenceEquals(left, right))
+        {
+            return true;
+        }
+
+        return left is not null &&
+               right is not null &&
+               ReferenceEquals(left.SyntaxTree, right.SyntaxTree) &&
+               left.Span == right.Span;
     }
 
     private static bool AreEquivalent(

@@ -97,7 +97,10 @@ internal static class StructuredConstructMappingPlanner
             bool? previousAvailable)
         {
             var nestedMapUsages =
-                new DeclarativeNestedMapUsageRegistry();
+                new DeclarativeNestedMapUsageRegistry(
+                    previousAvailable == true
+                        ? MappingExecutionPathSet.UpdateWithPrevious
+                        : MappingExecutionPathSet.NoPrevious);
             var replacement = previousAvailable == true;
             var constructorMembers =
                 memberMappings.BuildConstructorInitializationPlan(replacement);
@@ -208,7 +211,14 @@ internal static class StructuredConstructMappingPlanner
                         previousAvailable == true
                             ? DeclarativeNestedMapOperation.Update
                             : DeclarativeNestedMapOperation.Create,
-                        currentDestination));
+                        currentDestination,
+                        destinationMember?.Type,
+                        parameter,
+                        TargetDesignator: null,
+                        destinationMember?.Symbol,
+                        previousAvailable == true
+                            ? MappingExecutionPathSet.UpdateWithPrevious
+                            : MappingExecutionPathSet.NoPrevious));
             }
 
             StructuredConstructPlanNode? BuildExpression(
@@ -426,6 +436,9 @@ internal static class StructuredConstructMappingPlanner
                             previousAvailable,
                             configuration.Expression.SemanticModel,
                             cancellationToken),
+                    previousAvailable == true
+                        ? MappingExecutionPathSet.UpdateWithPrevious
+                        : MappingExecutionPathSet.NoPrevious,
                     cancellationToken,
                     out var lowered)
                 ? DeclarativeControlFlowLowerer.PreserveLocalNames(
@@ -2019,7 +2032,19 @@ internal static class StructuredConstructMappingPlanner
         if (leaf.Failure is { } leafFailure &&
             !nestedObservations.IsDefaultOrEmpty)
         {
-            var nestedObservation = nestedObservations[0];
+            var nestedObservation = nestedObservations.FirstOrDefault(
+                static observation => observation.FailureKind !=
+                    NestedMappingFailureKind.None);
+
+            if (nestedObservation is null)
+            {
+                return BuildRuntimeNodeWithoutNestedFailure(
+                    leaf,
+                    mapping,
+                    memberMappings,
+                    create);
+            }
+
             var nestedReason = ClassifyNestedFailure(
                 nestedObservation,
                 leafFailure.Reason);
@@ -2049,6 +2074,20 @@ internal static class StructuredConstructMappingPlanner
             };
         }
 
+        return BuildRuntimeNodeWithoutNestedFailure(
+            leaf,
+            mapping,
+            memberMappings,
+            create);
+    }
+
+    private static TypeMapperControlFlowNode
+        BuildRuntimeNodeWithoutNestedFailure(
+            StructuredConstructLeafNode leaf,
+            TypeMapperMappingModel mapping,
+            ConventionMemberMappingPlan memberMappings,
+            bool create)
+    {
         return leaf.Kind switch
         {
             StructuredConstructLeafKind.Constructor
@@ -2111,23 +2150,23 @@ internal static class StructuredConstructMappingPlanner
         NestedMappingObservation observation,
         MappingFailureReason fallback)
     {
-        if (observation.InferredSourceType is null ||
-            observation.InferredDestinationType is null)
+        return observation.FailureKind switch
         {
-            return MappingFailureReason.NestedPairUnknown;
-        }
-
-        if (observation.ResultConversion ==
-            NestedConversionStatus.Incompatible)
-        {
-            return MappingFailureReason.NestedResultIncompatible;
-        }
-
-        return observation.Operation ==
-                   DeclarativeNestedMapOperation.Update &&
-               observation.DestinationOrigin != NestedDestinationOrigin.None
-            ? MappingFailureReason.NestedUpdateDestinationInvalid
-            : fallback;
+            NestedMappingFailureKind.SourceTypeUnknown or
+            NestedMappingFailureKind.ParameterlessSourceUnavailable or
+            NestedMappingFailureKind.DestinationTypeUnknown =>
+                MappingFailureReason.NestedPairUnknown,
+            NestedMappingFailureKind.ResultIncompatible =>
+                MappingFailureReason.NestedResultIncompatible,
+            NestedMappingFailureKind.ExplicitDestinationIncompatible or
+            NestedMappingFailureKind.ExplicitNullForNonNullableValue or
+            NestedMappingFailureKind.AdaptiveCurrentUnavailable or
+            NestedMappingFailureKind.AdaptiveCurrentIncompatible or
+            NestedMappingFailureKind.AdaptiveCurrentAmbiguous or
+            NestedMappingFailureKind.ReadOnlyProxyInvalid =>
+                MappingFailureReason.NestedUpdateDestinationInvalid,
+            _ => fallback
+        };
     }
 
     private static TypeMapperControlFlowNode BuildPreviousLeaf(

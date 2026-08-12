@@ -6,9 +6,9 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Vertical slices категорий 1–9 реализованы и приняты пользователем. Vertical
-slice категории 10 реализован и ожидает пользовательского ревью; следующий
-slice после его принятия — категория 11.
+Vertical slices категорий 1–10 реализованы и приняты пользователем. Vertical
+slice категории 11 реализован и ожидает пользовательского ревью; следующий
+slice после его принятия — категория 12.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -5067,8 +5067,28 @@ descriptors/messages/locations, required/lifecycle/terminal ownership,
 cross-pair hiding, suppression/severity, actualization и control-flow
 specialization. C# 11 consumer исполняет branch-atomic suppressed recovery, а
 package/MSBuild fixture проверяет реальные `.editorconfig` overrides всех
-четырёх IDs. Срез реализован и ожидает пользовательского ревью; следующий —
-категория 11.
+четырёх IDs. Срез принят пользователем.
+
+Одиннадцатый vertical slice категории 11 реализует configurable `MORPH0044`–
+`MORPH0046`: статически неопределимую nested pair terminal marker-а,
+несовместимый nested result и недопустимый explicit либо generated destination
+nested Update. Анализ выполняется над final construction/member leaves после
+category-8 gates, сохраняет producer и target identity, source/destination
+inference, result conversion, explicit/actual current destination, read-only
+proxy и adaptive-local use set.
+
+Recovery блокирует только affected nested leaf/path до marker arguments,
+constructor/member side effects и in-place update. Adaptive no-previous Create,
+existing Update без затронутого marker-а, compatible wide runtime slot, local
+override, independent branches и pairs остаются исполнимыми; application-wide
+lookup и фактическая runtime-совместимость wide slot-а сохраняют runtime
+ownership. Самостоятельная unit-категория из 33 тестов фиксирует exact
+descriptors/messages/locations, все восемь marker forms, inference,
+result/update conversion matrices, inheritance, precedence, suppression/
+severity и actualization. Обычный C# 9 consumer исполняет branch-atomic
+suppressed recovery, а package/MSBuild fixture проверяет реальные
+`.editorconfig` overrides всех трёх IDs. Срез реализован и ожидает
+пользовательского ревью; следующий — категория 12.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

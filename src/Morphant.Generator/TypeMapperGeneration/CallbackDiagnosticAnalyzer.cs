@@ -1407,7 +1407,7 @@ internal static class CallbackDiagnosticAnalyzer
         }
 
         if (markerExpression.Parent is ExpressionStatementSyntax &&
-            DeclarativeNestedMapExpression.IsReadOnlyMemberUpdateStatement(
+            DeclarativeNestedMapExpression.IsNestedUpdateStatement(
                 markerExpression,
                 semanticModel,
                 cancellationToken))
@@ -2015,7 +2015,7 @@ internal static class CallbackDiagnosticAnalyzer
                                 cancellationToken,
                                 out _) ||
                         DeclarativeNestedMapExpression
-                            .IsReadOnlyMemberUpdateStatement(
+                            .IsNestedUpdateStatement(
                                 expressionStatement.Expression,
                                 semanticModel,
                                 cancellationToken))

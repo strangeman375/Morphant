@@ -4,6 +4,7 @@
 #pragma warning disable CS8619
 #pragma warning disable MORPH0031, MORPH0033
 #pragma warning disable MORPH0040
+#pragma warning disable MORPH0045, MORPH0046
 
 using System;
 using Morphant;

@@ -107,6 +107,30 @@ The nested result is authoritative for writable targets. A nested Update may
 reuse its destination or return a replacement, and the returned value is
 assigned to the outer target.
 
+## Compile-time diagnostics
+
+Morphant validates terminal nested markers after the effective construction
+and member plan has been composed:
+
+| Diagnostic | Condition |
+|---|---|
+| `MORPH0044` | The static nested source/destination pair cannot be inferred. |
+| `MORPH0045` | The nested result has no warning-free implicit conversion to its final target. |
+| `MORPH0046` | An explicit or generated Update destination cannot validly provide the current nested destination. |
+
+These checks are path-sensitive. An invalid reachable leaf is replaced with a
+`MappingConfigurationException` path without evaluating marker arguments,
+constructor/member side effects, or the invalid in-place update. Independent
+branches, operations, and pairs remain executable; diagnostic suppression or
+severity overrides do not change that recovery.
+
+The diagnostics check static pair, result, and destination compatibility. They
+do not predict application-wide registration or the operation supported by the
+mapper found at runtime. A broad adaptive current slot such as `object`, a base
+class, or an interface remains valid when it could contain the requested
+destination type; its actual value is checked by the runtime guard described
+above.
+
 ## Read-only members
 
 A generated `DestinationMembers` surface exposes a readable non-writable

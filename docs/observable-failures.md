@@ -94,8 +94,8 @@ contracts are omitted and are candidates for compile-time diagnostics. A
 structural problem in one pair does not suppress independent legal pairs in
 the same mapper.
 
-Compile-time diagnostics are a separate compatibility surface. Categories
-implemented through construction-plan diagnostics `MORPH0035`–`MORPH0039` do
+Compile-time diagnostics are a separate compatibility surface. Implemented
+construction, member, and nested-plan diagnostics `MORPH0035`–`MORPH0046` do
 not change the runtime exception contract for generated code that can still
 compile and execute; suppression or severity overrides also leave generated
 recovery unchanged.

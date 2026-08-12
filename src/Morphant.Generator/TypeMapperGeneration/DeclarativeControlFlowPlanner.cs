@@ -509,7 +509,7 @@ internal static class DeclarativeControlFlowPlanner
             cancellationToken.ThrowIfCancellationRequested();
 
             if (!DeclarativeNestedMapExpression
-                    .IsReadOnlyMemberUpdateStatement(
+                    .IsNestedUpdateStatement(
                         statement.Expression,
                         semanticModel,
                         cancellationToken) &&

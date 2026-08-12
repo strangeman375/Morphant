@@ -599,8 +599,8 @@ result; `MORPH0039` относится только к отсутствующе�
 
 ## Согласованная diagnostic-категория 10
 
-Статус: принята пользователем 11 августа 2026 года; нормативный каталог
-обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+Статус: нормативный контракт принят 11 августа 2026 года; production vertical
+slice реализован и принят пользователем 12 августа 2026 года.
 
 Категория «Корректность member plan» получила четыре последовательных ID:
 
@@ -629,8 +629,8 @@ branches/operations/pairs сохраняются. Required/init blocker кате
 
 ## Согласованная diagnostic-категория 11
 
-Статус: принята пользователем 11 августа 2026 года; нормативный каталог
-обновлён в `DIAGNOSTICS_PLAN.md`, production diagnostics ещё не реализуются.
+Статус: нормативный контракт принят 11 августа 2026 года; production vertical
+slice реализован 12 августа 2026 года и ожидает пользовательского ревью.
 
 Категория «Корректность nested mapping» получила три последовательных ID:
 
@@ -706,32 +706,31 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 10.**
+**Diagnostics: vertical slice категории 11.**
 
 Статус: реализован, ожидает пользовательского ревью. Vertical slices
-категорий 1–9 приняты пользователем. Категория 10 добавляет configurable
-`MORPH0040`–`MORPH0043`: invalid effective explicit member rule,
-неудовлетворённый `required` member, valid rule с недоступной lifecycle-фазой
-и null/default structured member plan.
+категорий 1–10 приняты пользователем. Категория 11 добавляет configurable
+`MORPH0044`–`MORPH0046`: статически неопределимую nested pair, несовместимый
+nested result и недопустимый explicit/generated destination nested Update.
 
-Анализ использует final member leaves после
-composition/settings/inheritance, callback и construction gates,
-специализирует Create/Update paths по previous/runtime result и сохраняет
-точные member/rule/terminal/import origins. Exact marker type учитывает
-generated input nullability, generic substitutions и cross-compilation symbol
-identity; dependency на `result` отслеживается в value и member control flow.
+Анализ использует terminal nested markers в final construction/member leaves
+после composition/settings/inheritance и callback gates. Он сохраняет
+producer/target identity, source и destination inference, result conversion,
+explicit либо actual current destination, read-only proxy и все adaptive-local
+uses. Inherited observation дедуплицируется по исходному origin, а local
+same-member override удаляет imported nested slice до анализа.
 
-Recovery заменяет только affected member leaf typed
-`MappingConfigurationException` stub-ом до constructor/member side effects.
-Runtime result callback выполняется один раз, non-null result бросает перед
-member assignments, а null завершает mapping до recovery. Existing previous,
-valid sibling branches, local override и independent pairs сохраняются.
-Suppression и severity override не меняют artifacts или runtime behavior.
-Самостоятельные unit-, C# 11 runtime- и package/MSBuild-тесты фиксируют exact
-diagnostics, required/lifecycle/terminal ownership, branch atomicity,
-compiler/category precedence, actualization и реальные `.editorconfig`
-overrides всех четырёх IDs. Следующий vertical slice — категория 11 после
-принятия категории 10 пользователем.
+Recovery заменяет только affected leaf/path typed
+`MappingConfigurationException` stub-ом до marker arguments, constructor/
+member side effects и in-place update. Adaptive Create, existing Update без
+затронутого marker-а, compatible wide runtime slot, valid sibling branches и
+independent pairs сохраняются. Runtime lookup и фактическая совместимость
+wide slot-а остаются runtime contract-ом. Suppression и severity override не
+меняют artifacts или recovery. Самостоятельные unit-, C# 9 runtime- и
+package/MSBuild-тесты фиксируют exact diagnostics, marker forms, conversion и
+destination matrices, precedence, branch atomicity, actualization и реальные
+`.editorconfig` overrides всех трёх IDs. Следующий vertical slice — категория
+12 после принятия категории 11 пользователем.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2161,8 +2160,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slices категорий 1–9 приняты пользователем;
-vertical slice категории 10 реализован и ожидает пользовательского ревью.
+production model и vertical slices категорий 1–10 приняты пользователем;
+vertical slice категории 11 реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2220,8 +2219,12 @@ runtime- и package/MSBuild-тестами; slice принят пользова�
 реализует member diagnostics `MORPH0040`–`MORPH0043`, effective explicit rule
 и required/lifecycle/terminal ownership, final member-leaf specialization и
 branch-atomic recovery с самостоятельными unit-, C# 11 runtime- и
-package/MSBuild-тестами; slice ожидает пользовательского ревью. Следующий
-vertical slice — категория 11 после принятия категории 10.
+package/MSBuild-тестами; slice принят пользователем. Одиннадцатый slice
+реализует nested mapping diagnostics `MORPH0044`–`MORPH0046`, terminal-marker
+pair/result/update-destination analysis и path-sensitive atomic recovery с
+самостоятельными unit-, C# 9 runtime- и package/MSBuild-тестами; slice ожидает
+пользовательского ревью. Следующий vertical slice — категория 12 после
+принятия категории 11.
 
 ### Этап 24. Observable failures
 

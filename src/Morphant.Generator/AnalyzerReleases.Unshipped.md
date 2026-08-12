@@ -47,3 +47,6 @@ MORPH0040 | Morphant.Members | Error | Member rule is invalid
 MORPH0041 | Morphant.Members | Error | Required destination member is not initialized
 MORPH0042 | Morphant.Members | Error | Member rule cannot be applied
 MORPH0043 | Morphant.Members | Error | Structured member plan is null
+MORPH0044 | Morphant.NestedMapping | Error | Nested mapping pair cannot be determined
+MORPH0045 | Morphant.NestedMapping | Error | Nested mapping result is incompatible
+MORPH0046 | Morphant.NestedMapping | Error | Nested Update destination is invalid

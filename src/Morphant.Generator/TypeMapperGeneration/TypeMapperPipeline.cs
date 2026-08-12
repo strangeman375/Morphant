@@ -89,6 +89,13 @@ internal static class TypeMapperPipeline
                     inputs.SelectMany(static input =>
                         input.MemberDiagnostics),
                     cancellationToken));
+        var nestedMappingDiagnostics = models
+            .Collect()
+            .Select(static (inputs, cancellationToken) =>
+                NestedMappingDiagnosticPipeline.BuildDiagnostics(
+                    inputs.SelectMany(static input =>
+                        input.NestedMappingDiagnostics),
+                    cancellationToken));
 
         context.RegisterSourceOutput(
             callbackDiagnostics,
@@ -110,6 +117,15 @@ internal static class TypeMapperPipeline
             });
         context.RegisterSourceOutput(
             memberDiagnostics,
+            static (productionContext, diagnostics) =>
+            {
+                foreach (var diagnostic in diagnostics)
+                {
+                    productionContext.ReportDiagnostic(diagnostic);
+                }
+            });
+        context.RegisterSourceOutput(
+            nestedMappingDiagnostics,
             static (productionContext, diagnostics) =>
             {
                 foreach (var diagnostic in diagnostics)
@@ -216,13 +232,17 @@ internal static class TypeMapperPipeline
             model,
             callbackDiagnostics,
             cancellationToken);
+        var nestedMappingDiagnostics = NestedMappingDiagnosticAnalyzer.Build(
+            model,
+            cancellationToken);
 
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),
             TypeMapperEmitter.Emit(model).ToString(),
             callbackDiagnostics,
             constructionDiagnostics,
-            memberDiagnostics);
+            memberDiagnostics,
+            nestedMappingDiagnostics);
     }
 
     private static TypeMapperRequest BuildRequest(
@@ -311,6 +331,10 @@ internal static class TypeMapperPipeline
                 mapperType,
                 usedGeneratedMethodNames,
                 cancellationToken);
+
+            mapping = NestedMappingRecoveryPlanner.Apply(
+                mapping,
+                mapperType);
 
             mapping = MappingCompletenessObservationBuilder.Attach(
                 mapping,
@@ -1555,7 +1579,9 @@ internal static class TypeMapperPipeline
         ImmutableArray<CallbackDiagnosticCandidate> CallbackDiagnostics,
         ImmutableArray<ConstructionDiagnosticCandidate>
             ConstructionDiagnostics,
-        ImmutableArray<MemberDiagnosticCandidate> MemberDiagnostics)
+        ImmutableArray<MemberDiagnosticCandidate> MemberDiagnostics,
+        ImmutableArray<NestedMappingDiagnosticCandidate>
+            NestedMappingDiagnostics)
     {
         public string HintName => GeneratedSourceHintName.Create(
             "TypeMapper",

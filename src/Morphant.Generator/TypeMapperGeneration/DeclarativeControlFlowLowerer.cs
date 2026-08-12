@@ -72,6 +72,7 @@ internal static class DeclarativeControlFlowLowerer
         TypeMapperMappingModel mapping,
         Func<DeclarativeLeafSyntaxNode,
             TypeMapperMemberControlFlowLeafModel> buildLeaf,
+        MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
         out TypeMapperMemberControlFlowNode root)
     {
@@ -121,6 +122,7 @@ internal static class DeclarativeControlFlowLowerer
                 transferScope,
                 mapping,
                 BuildLeaf,
+                paths,
                 cancellationToken,
                 out var lowered))
         {
@@ -149,6 +151,7 @@ internal static class DeclarativeControlFlowLowerer
         TypeMapperMappingModel mapping,
         Func<DeclarativeLeafSyntaxNode, TypeMapperControlFlowNode?>
             buildLeaf,
+        MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
         out TypeMapperControlFlowNode root)
     {
@@ -169,6 +172,7 @@ internal static class DeclarativeControlFlowLowerer
             mapping,
             buildLeaf,
             buildCondition: null,
+            paths,
             cancellationToken,
             out root);
     }
@@ -195,11 +199,12 @@ internal static class DeclarativeControlFlowLowerer
             TypeMapperControlFlowNode,
             TypeMapperControlFlowNode,
             TypeMapperControlFlowNode?>? buildCondition,
+        MappingExecutionPathSet paths,
         CancellationToken cancellationToken,
         out TypeMapperControlFlowNode root)
     {
         var nestedMapUsages =
-            new DeclarativeNestedMapUsageRegistry();
+            new DeclarativeNestedMapUsageRegistry(paths);
 
         TypeMapperRewrittenDependencyExpression?
             RewriteDependency(ExpressionSyntax expression)
@@ -509,7 +514,7 @@ internal static class DeclarativeControlFlowLowerer
             if (node is DeclarativeEvaluationSyntaxNode evaluation)
             {
                 if (!DeclarativeNestedMapExpression
-                        .IsReadOnlyMemberUpdateStatement(
+                        .IsNestedUpdateStatement(
                             evaluation.Expression,
                             semanticModel,
                             cancellationToken))
@@ -520,6 +525,34 @@ internal static class DeclarativeControlFlowLowerer
                 var expression = RewriteDependency(
                     evaluation.Expression);
                 var evaluationContinuation = BuildNode(evaluation.Next);
+
+                if (evaluationContinuation is not null)
+                {
+                    var observations = nestedMapUsages.Observations
+                        .Where(observation =>
+                            evaluation.Expression.Span.Contains(
+                                observation.Producer.Span))
+                        .ToImmutableArray();
+
+                    if (!observations.IsEmpty)
+                    {
+                        evaluationContinuation =
+                            AttachNestedObservations(
+                                evaluationContinuation,
+                                observations);
+                    }
+                }
+
+                if (expression is null &&
+                    evaluationContinuation is not null &&
+                    nestedMapUsages.Observations.Any(observation =>
+                        evaluation.Expression.Span.Contains(
+                            observation.Producer.Span) &&
+                        observation.FailureKind !=
+                            NestedMappingFailureKind.None))
+                {
+                    return evaluationContinuation;
+                }
 
                 return expression is null || evaluationContinuation is null
                     ? null
@@ -701,6 +734,82 @@ internal static class DeclarativeControlFlowLowerer
 
         root = RenameControlFlow(pruned, names);
         return true;
+    }
+
+    private static TypeMapperControlFlowNode AttachNestedObservations(
+        TypeMapperControlFlowNode node,
+        ImmutableArray<NestedMappingObservation> observations)
+    {
+        if (node.Leaf is { } leaf)
+        {
+            var retained = leaf.NestedObservations.IsDefault
+                ? ImmutableArray<NestedMappingObservation>.Empty
+                : leaf.NestedObservations;
+            var memberObservation = leaf.MemberObservation;
+
+            if (memberObservation is not null)
+            {
+                var nested = memberObservation.NestedMappings.IsDefault
+                    ? ImmutableArray<NestedMappingObservation>.Empty
+                    : memberObservation.NestedMappings;
+                memberObservation = memberObservation with
+                {
+                    NestedMappings = nested.AddRange(observations)
+                };
+            }
+
+            return node with
+            {
+                Leaf = leaf with
+                {
+                    NestedObservations = retained.AddRange(observations),
+                    MemberObservation = memberObservation
+                }
+            };
+        }
+
+        if (node.EvaluationContinuation is { } evaluationContinuation)
+        {
+            return node with
+            {
+                EvaluationContinuation = AttachNestedObservations(
+                    evaluationContinuation,
+                    observations)
+            };
+        }
+
+        if (node.SwitchExpression is not null)
+        {
+            return node with
+            {
+                SwitchSections = node.SwitchSections.Select(section =>
+                        section with
+                        {
+                            Branch = AttachNestedObservations(
+                                section.Branch,
+                                observations)
+                        })
+                    .ToImmutableArray(),
+                SwitchContinuation = node.SwitchContinuation is
+                    { } continuation
+                        ? AttachNestedObservations(
+                            continuation,
+                            observations)
+                        : null
+            };
+        }
+
+        return node.Condition is null
+            ? node
+            : node with
+            {
+                WhenTrue = AttachNestedObservations(
+                    node.WhenTrue!,
+                    observations),
+                WhenFalse = AttachNestedObservations(
+                    node.WhenFalse!,
+                    observations)
+            };
     }
 
     private static TypeMapperControlFlowNode MaterializeSwitchFallback(

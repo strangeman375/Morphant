@@ -153,6 +153,7 @@ internal static class MembersControlFlowMappingPlanner
                 members.TransferScope,
                 mapping,
                 BuildCreateLeaf,
+                MappingExecutionPathSet.NoPrevious,
                 cancellationToken,
                 out var createRoot) ||
             !DeclarativeControlFlowLowerer.TryBuild(
@@ -171,6 +172,7 @@ internal static class MembersControlFlowMappingPlanner
                 members.TransferScope,
                 mapping,
                 BuildUpdateLeaf,
+                MappingExecutionPathSet.UpdateWithPrevious,
                 cancellationToken,
                 out var updateRoot))
         {
@@ -511,6 +513,7 @@ internal static class MembersControlFlowMappingPlanner
                             Failure: null,
                             MemberObservation: plan.Observation);
                     },
+                    paths,
                     currentCancellationToken,
                     out root);
         }
@@ -1034,7 +1037,7 @@ internal static class MembersControlFlowMappingPlanner
         {
             DeclarativeEvaluationSyntaxNode evaluation =>
                 DeclarativeNestedMapExpression
-                    .IsReadOnlyMemberUpdateStatement(
+                    .IsNestedUpdateStatement(
                         evaluation.Expression,
                         semanticModel,
                         cancellationToken) ||

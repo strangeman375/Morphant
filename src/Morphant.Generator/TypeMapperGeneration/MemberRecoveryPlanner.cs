@@ -364,7 +364,7 @@ internal static class MemberRecoveryPlanner
             sourceMapper);
     }
 
-    private static TypeMapperMappingModel ApplyPostResultFailure(
+    internal static TypeMapperMappingModel ApplyPostResultFailure(
         TypeMapperMappingModel mapping,
         MappingFailureObservation failure,
         INamedTypeSymbol mapperType)
