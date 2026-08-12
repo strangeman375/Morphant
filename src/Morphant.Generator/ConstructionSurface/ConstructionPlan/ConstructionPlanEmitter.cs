@@ -37,7 +37,7 @@ internal static class ConstructionPlanEmitter
 
         WriteSummary(
             writer,
-            "Contains mappings for constructor arguments of " +
+            "Maps constructor arguments for " +
             $"<see cref=\"{destinationCref}\"/>.");
         WriteTypeDeclaration(
             writer,
@@ -59,9 +59,9 @@ internal static class ConstructionPlanEmitter
 
             WriteSummary(
                 writer,
-                "Configures the " +
+                "Maps the " +
                 $"<c>{XmlText(field.ParameterName)}</c> " +
-                "constructor argument.");
+                "argument.");
             writer.Line(
                 "public global::Morphant.Members.ConstructorParameter<" +
                 field.TypeName +
@@ -151,11 +151,11 @@ internal static class ConstructionPlanEmitter
     {
         WriteSummary(
             writer,
-            "Creates a destination instance using convention-based mapping.");
+            "Uses convention-based construction.");
         WriteParameterDocumentation(
             writer,
             "marker",
-            "Selects convention-based construction.");
+            "The convention marker.");
 
         if (model.ConstructorParameterFields.IsEmpty)
         {
@@ -172,7 +172,7 @@ internal static class ConstructionPlanEmitter
         WriteParameterDocumentation(
             writer,
             "parameters",
-            "Specifies optional mappings for constructor arguments.");
+            "Optional argument mappings.");
         WriteConstructor(
             writer,
             typeName,
@@ -193,11 +193,11 @@ internal static class ConstructionPlanEmitter
     {
         WriteSummary(
             writer,
-            "Selects an existing destination as the mapping result.");
+            "Uses the existing destination as the result.");
         WriteParameterDocumentation(
             writer,
             "previous",
-            "The existing destination to select.");
+            "The existing destination.");
         writer.Line(
             $"public static implicit operator {typeReference}(");
         writer.Line(
@@ -224,7 +224,7 @@ internal static class ConstructionPlanEmitter
 
         WriteSummary(
             writer,
-            "Describes construction of " +
+            "Defines construction of " +
             $"<see cref=\"{cref}\"/>.");
     }
 
@@ -243,7 +243,7 @@ internal static class ConstructionPlanEmitter
 
         WriteSummary(
             writer,
-            "Creates a destination instance using a corresponding constructor.");
+            "Uses the corresponding destination constructor.");
 
         foreach (var parameter in constructor.Parameters)
         {
@@ -258,15 +258,14 @@ internal static class ConstructionPlanEmitter
         ConstructionConstructorParameterModel parameter)
     {
         var description =
-            "Configures the " +
+            "Maps the " +
             $"<c>{XmlText(parameter.Name)}</c> " +
-            "constructor argument.";
+            "argument.";
 
         return parameter.DefaultValueDisplay is not { } defaultValue
             ? description
             : description +
-              " If omitted, the destination constructor default value " +
-              $"<c>{XmlText(defaultValue)}</c> is used.";
+              $" If omitted, uses <c>{XmlText(defaultValue)}</c>.";
     }
 
     private static string FormatParameter(

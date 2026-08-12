@@ -81,13 +81,13 @@ namespace TestCase
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes member mappings for <see cref="global::TestCase.Destination&lt;T&gt;"/>.
+    /// Maps members of <see cref="global::TestCase.Destination&lt;T&gt;"/>.
     /// </summary>
     internal sealed record DestinationMembers<T>
         where T : class
     {
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.Destination&lt;T&gt;.Value"/>.
+        /// Maps <see cref="global::TestCase.Destination&lt;T&gt;.Value"/>.
         /// </summary>
         public global::Morphant.Members.Member<T> Value
         {
@@ -115,13 +115,13 @@ namespace TestCase.Morphant.Generated
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes member mappings for <see cref="global::TestCase.Destination&lt;T&gt;"/>.
+    /// Maps members of <see cref="global::TestCase.Destination&lt;T&gt;"/>.
     /// </summary>
     internal sealed record DestinationMembers<T>
         where T : struct
     {
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.Destination&lt;T&gt;.Value"/>.
+        /// Maps <see cref="global::TestCase.Destination&lt;T&gt;.Value"/>.
         /// </summary>
         public global::Morphant.Members.Member<T> Value
         {
@@ -151,12 +151,12 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures destination member mappings from the source.
+        /// Defines destination member mappings.
         /// </summary>
-        /// <typeparam name="T">A type used by the mapping pair.</typeparam>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Morphant.Generated.DestinationMembers<T>> members)
@@ -164,12 +164,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings from the source and an optional existing destination.
+        /// Defines member mappings using the optional existing destination.
         /// </summary>
-        /// <typeparam name="T">A type used by the mapping pair.</typeparam>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and the optional existing destination and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Morphant.Generated.DestinationMembers<T>> members)
@@ -177,12 +177,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected mapping result.
+        /// Defines member mappings using the selected result.
         /// </summary>
-        /// <typeparam name="T">A type used by the mapping pair.</typeparam>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, and the non-null selected result and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::TestCase.Morphant.Generated.DestinationMembers<T>> members)
@@ -190,12 +190,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected result and declarative operation context.
+        /// Defines member mappings using the selected result and context.
         /// </summary>
-        /// <typeparam name="T">A type used by the mapping pair.</typeparam>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, the non-null selected result, and declarative mapping context and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationMembers<T>> members)
@@ -216,12 +216,12 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures destination member mappings from the source.
+        /// Defines destination member mappings.
         /// </summary>
-        /// <typeparam name="T">A type used by the mapping pair.</typeparam>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Morphant.Generated.DestinationMembers<T>> members)
@@ -229,12 +229,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings from the source and an optional existing destination.
+        /// Defines member mappings using the optional existing destination.
         /// </summary>
-        /// <typeparam name="T">A type used by the mapping pair.</typeparam>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and the optional existing destination and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Morphant.Generated.DestinationMembers<T>> members)
@@ -242,12 +242,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected mapping result.
+        /// Defines member mappings using the selected result.
         /// </summary>
-        /// <typeparam name="T">A type used by the mapping pair.</typeparam>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, and the non-null selected result and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::TestCase.Morphant.Generated.DestinationMembers<T>> members)
@@ -255,12 +255,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected result and declarative operation context.
+        /// Defines member mappings using the selected result and context.
         /// </summary>
-        /// <typeparam name="T">A type used by the mapping pair.</typeparam>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, the non-null selected result, and declarative mapping context and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> Members<T>(
             this global::Morphant.MapperBuilder<global::TestCase.Source<T>, global::TestCase.Destination<T>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source<T>, global::TestCase.Destination<T>, global::TestCase.Destination<T>, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationMembers<T>> members)

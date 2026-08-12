@@ -21,9 +21,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Configures destination member mappings from the source.",
-            "A lambda expression that receives the non-null source and " +
-            "describes destination member mappings.",
+            "Defines destination member mappings.",
+            "The member plan.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.MembersPlanTypeName + ">");
@@ -31,11 +30,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Configures destination member mappings from the source and an " +
-            "optional existing destination.",
-            "A lambda expression that receives the non-null source and the " +
-            "optional existing destination and describes destination member " +
-            "mappings.",
+            "Defines member mappings using the optional existing destination.",
+            "The member plan.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -44,11 +40,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Configures destination member mappings with access to the " +
-            "selected mapping result.",
-            "A lambda expression that receives the non-null source, the " +
-            "optional existing destination, and the non-null selected result " +
-            "and describes destination member mappings.",
+            "Defines member mappings using the selected result.",
+            "The member plan.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -58,12 +51,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Configures destination member mappings with access to the " +
-            "selected result and declarative operation context.",
-            "A lambda expression that receives the non-null source, the " +
-            "optional existing destination, the non-null selected result, " +
-            "and declarative mapping context and describes destination " +
-            "member mappings.",
+            "Defines member mappings using the selected result and context.",
+            "The member plan.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -89,13 +78,13 @@ internal static class MemberConfigurationEmitter
         WriteParameterDocumentation(
             writer,
             "builder",
-            "The mapping builder to configure.");
+            "The mapping to configure.");
         WriteParameterDocumentation(
             writer,
             "members",
             callbackDescription);
         writer.Line(
-            "/// <returns>The <paramref name=\"builder\"/> instance.</returns>");
+            "/// <returns>The same mapping builder.</returns>");
 
         writer.Line(
             "public static " +
@@ -173,7 +162,7 @@ internal static class MemberConfigurationEmitter
             writer.Line(
                 "/// <typeparam name=\"" +
                 XmlAttribute(typeParameter.Name) +
-                "\">A type used by the mapping pair.</typeparam>");
+                "\">A type parameter from the mapping declaration.</typeparam>");
         }
     }
 

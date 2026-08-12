@@ -37,10 +37,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Construct",
                 "construct",
-                "Configures structured destination construction when no " +
-                "existing destination is used.",
-                "A lambda expression that receives the non-null source and " +
-                "describes destination construction.",
+                "Defines destination construction when none exists.",
+                "The construction plan.",
                 "global::Morphant.Delegates.Construct<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.ConstructionResultTypeName + ">");
@@ -50,11 +48,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Construct",
                 "construct",
-                "Configures structured destination construction with " +
-                "declarative operation context.",
-                "A lambda expression that receives the non-null source and " +
-                "declarative mapping context and describes destination " +
-                "construction.",
+                "Defines destination construction with operation context.",
+                "The construction plan.",
                 "global::Morphant.Delegates.Construct<" +
                 model.DeclarativeSourceTypeName + ", " +
                 "global::Morphant.Context.MappingContextMarker, " +
@@ -65,11 +60,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Resolve",
                 "resolve",
-                "Configures structured destination resolution from the " +
-                "source and an optional existing destination.",
-                "A lambda expression that receives the non-null source and " +
-                "the optional existing destination and describes destination " +
-                "resolution.",
+                "Defines how to select or construct the destination.",
+                "The result plan.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.PreviousDestinationTypeName + ", " +
@@ -80,11 +72,9 @@ internal static class PairConfigurationEmitter
                 model,
                 "Resolve",
                 "resolve",
-                "Configures structured destination resolution with " +
-                "declarative operation context.",
-                "A lambda expression that receives the non-null source, the " +
-                "optional existing destination, and declarative mapping " +
-                "context and describes destination resolution.",
+                "Defines how to select or construct the destination with " +
+                "context.",
+                "The result plan.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.PreviousDestinationTypeName + ", " +
@@ -98,10 +88,8 @@ internal static class PairConfigurationEmitter
             model,
             "ConstructUsing",
             "construct",
-            "Configures runtime destination construction when no existing " +
-            "destination is used.",
-            "A callback that receives the non-null source and returns the " +
-            "destination.",
+            "Uses a callback to construct a destination when none exists.",
+            "The construction callback.",
             "global::Morphant.Delegates.ConstructUsing<" +
             model.DeclarativeSourceTypeName + ", " +
             model.DestinationTypeName + ">");
@@ -111,10 +99,8 @@ internal static class PairConfigurationEmitter
             model,
             "ConstructUsing",
             "construct",
-            "Configures runtime destination construction with mapping " +
-            "context.",
-            "A callback that receives the non-null source and current mapping " +
-            "context and returns the destination.",
+            "Uses a callback with context to construct a destination.",
+            "The construction callback.",
             "global::Morphant.Delegates.ConstructUsing<" +
             model.DeclarativeSourceTypeName + ", " +
             "global::Morphant.Context.MappingContext, " +
@@ -125,10 +111,8 @@ internal static class PairConfigurationEmitter
             model,
             "ResolveUsing",
             "resolve",
-            "Configures runtime destination resolution from the source and " +
-            "an optional existing destination.",
-            "A callback that receives the non-null source and optional " +
-            "existing destination and returns the destination.",
+            "Uses a callback to select or construct the destination.",
+            "The result callback.",
             "global::Morphant.Delegates.ResolveUsing<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -139,10 +123,9 @@ internal static class PairConfigurationEmitter
             model,
             "ResolveUsing",
             "resolve",
-            "Configures runtime destination resolution with mapping context.",
-            "A callback that receives the non-null source, optional existing " +
-            "destination, and current mapping context and returns the " +
+            "Uses a callback with context to select or construct the " +
             "destination.",
+            "The result callback.",
             "global::Morphant.Delegates.ResolveUsing<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -154,10 +137,8 @@ internal static class PairConfigurationEmitter
             model,
             "Convert",
             "mapping",
-            "Configures a fully manual mapping algorithm from the original " +
-            "source.",
-            "A callback that receives the original source and returns the " +
-            "destination.",
+            "Uses a callback as the complete mapping algorithm.",
+            "The mapping callback.",
             "global::Morphant.Delegates.Convert<" +
             model.ManualSourceTypeName + ", " +
             model.DestinationTypeName + ">");
@@ -167,10 +148,9 @@ internal static class PairConfigurationEmitter
             model,
             "Convert",
             "mapping",
-            "Configures a fully manual mapping algorithm with access to an " +
-            "optional existing destination.",
-            "A callback that receives the original source and optional " +
-            "existing destination and returns the destination.",
+            "Uses a callback with the optional existing destination as the " +
+            "complete mapping algorithm.",
+            "The mapping callback.",
             "global::Morphant.Delegates.Convert<" +
             model.ManualSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -181,11 +161,9 @@ internal static class PairConfigurationEmitter
             model,
             "Convert",
             "mapping",
-            "Configures a fully manual mapping algorithm with mapping " +
-            "context.",
-            "A callback that receives the original source, optional existing " +
-            "destination, and current mapping context and returns the " +
-            "destination.",
+            "Uses a callback with the optional existing destination and " +
+            "context as the complete mapping algorithm.",
+            "The mapping callback.",
             "global::Morphant.Delegates.Convert<" +
             model.ManualSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -212,13 +190,13 @@ internal static class PairConfigurationEmitter
         WriteParameterDocumentation(
             writer,
             "builder",
-            "The mapping builder to configure.");
+            "The mapping to configure.");
         WriteParameterDocumentation(
             writer,
             callbackName,
             callbackDescription);
         writer.Line(
-            "/// <returns>The <paramref name=\"builder\"/> instance.</returns>");
+            "/// <returns>The same mapping builder.</returns>");
 
         writer.Line(
             "public static " +
@@ -297,7 +275,7 @@ internal static class PairConfigurationEmitter
             writer.Line(
                 "/// <typeparam name=\"" +
                 XmlAttribute(typeParameter.Name) +
-                "\">A type used by the mapping pair.</typeparam>");
+                "\">A type parameter from the mapping declaration.</typeparam>");
         }
     }
 

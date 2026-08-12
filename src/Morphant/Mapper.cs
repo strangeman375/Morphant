@@ -3,7 +3,7 @@ using Morphant.Context;
 namespace Morphant;
 
 /// <summary>
-/// Represents application-wide mapping operations.
+/// Maps objects through application-wide registrations.
 /// </summary>
 public interface IMapper
 {
@@ -23,30 +23,27 @@ public interface IMapper
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="source">The source to map.</param>
     /// <param name="destination">The supplied destination.</param>
-    /// <returns>The mapped destination.</returns>
+    /// <returns>The mapped destination, which may replace
+    /// <paramref name="destination"/>.</returns>
     TDestination Map<TSource, TDestination>(
         TSource? source,
         TDestination? destination);
 }
 
+/// <summary>
+/// Maps objects using registrations from an <see cref="IServiceProvider"/>.
+/// </summary>
 public sealed class Mapper : IMapper
 {
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
-    /// Initializes a root mapper that resolves manually registered
-    /// <see cref="ITypeMapper{TSource, TDestination}"/> implementations from
-    /// the specified service provider.
+    /// Initializes a mapper backed by the specified service provider.
     /// </summary>
-    /// <param name="serviceProvider">
-    /// The service provider for the current application scope. For every
-    /// mapping pair it must expose the corresponding
-    /// <see cref="IEnumerable{T}"/> of
-    /// <see cref="ITypeMapper{TSource, TDestination}"/> implementations.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="serviceProvider"/> is <see langword="null"/>.
-    /// </exception>
+    /// <param name="serviceProvider">The provider used to resolve type
+    /// mappers.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="serviceProvider"/>
+    /// is <see langword="null"/>.</exception>
     public Mapper(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider ??

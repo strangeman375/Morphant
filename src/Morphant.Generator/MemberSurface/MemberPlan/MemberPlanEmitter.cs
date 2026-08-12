@@ -116,7 +116,7 @@ internal static class MemberPlanEmitter
 
         WriteSummary(
             writer,
-            "Describes member mappings for " +
+            "Maps members of " +
             $"<see cref=\"{cref}\"/>.");
     }
 
@@ -136,7 +136,7 @@ internal static class MemberPlanEmitter
         WriteSummary(
             writer,
             member.CanWrite
-                ? $"Configures mapping for <see cref=\"{cref}\"/>."
+                ? $"Maps <see cref=\"{cref}\"/>."
                 : $"Selects <see cref=\"{cref}\"/>.");
     }
 

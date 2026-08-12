@@ -51,13 +51,13 @@ namespace TestCase
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes member mappings for <see cref="global::TestCase.Destination"/>.
+    /// Maps members of <see cref="global::TestCase.Destination"/>.
     /// </summary>
     [global::System.ObsoleteAttribute("Use CurrentDestination instead.")]
     internal sealed record DestinationMembers
     {
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.Destination.Current"/>.
+        /// Maps <see cref="global::TestCase.Destination.Current"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> Current
         {
@@ -66,7 +66,7 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.Destination.Legacy"/>.
+        /// Maps <see cref="global::TestCase.Destination.Legacy"/>.
         /// </summary>
         [global::System.ObsoleteAttribute("Legacy was removed.", true)]
         public global::Morphant.Members.Member<int> Legacy
@@ -97,44 +97,44 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures destination member mappings from the source.
+        /// Defines destination member mappings.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, {|CS0618:global::TestCase.Morphant.Generated.DestinationMembers|}> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings from the source and an optional existing destination.
+        /// Defines member mappings using the optional existing destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and the optional existing destination and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}, {|CS0618:global::TestCase.Morphant.Generated.DestinationMembers|}> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected mapping result.
+        /// Defines member mappings using the selected result.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, and the non-null selected result and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}, {|CS0618:global::TestCase.Destination|}, {|CS0618:global::TestCase.Morphant.Generated.DestinationMembers|}> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected result and declarative operation context.
+        /// Defines member mappings using the selected result and context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, the non-null selected result, and declarative mapping context and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, {|CS0618:global::TestCase.Destination|}, {|CS0618:global::TestCase.Destination|}, global::Morphant.Context.MappingContextMarker, {|CS0618:global::TestCase.Morphant.Generated.DestinationMembers|}> members)

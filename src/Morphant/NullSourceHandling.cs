@@ -8,8 +8,7 @@ namespace Morphant;
 public enum NullSourceHandling
 {
     /// <summary>
-    /// Inherits the next less specific setting. If no level specifies a
-    /// value, Morphant uses <see cref="ReturnNull"/>.
+    /// Inherits the setting. The fallback is <see cref="ReturnNull"/>.
     /// </summary>
     Default = 0,
 
@@ -17,9 +16,8 @@ public enum NullSourceHandling
     /// Returns <see langword="default"/> for the destination type.
     /// </summary>
     /// <remarks>
-    /// The result is <see langword="null"/> for a reference or nullable value
-    /// destination and <see langword="default"/> for a non-nullable value
-    /// destination.
+    /// The result is <see langword="null"/> when the destination type permits
+    /// it.
     /// </remarks>
     ReturnNull,
 

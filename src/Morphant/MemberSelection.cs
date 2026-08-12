@@ -6,8 +6,7 @@ namespace Morphant;
 public enum MemberSelection
 {
     /// <summary>
-    /// Inherits the next less specific setting. If no level specifies a
-    /// value, Morphant uses <see cref="Auto"/>.
+    /// Inherits the setting. The fallback is <see cref="Auto"/>.
     /// </summary>
     Default = 0,
 

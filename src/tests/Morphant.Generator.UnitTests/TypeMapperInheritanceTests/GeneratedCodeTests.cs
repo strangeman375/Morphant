@@ -74,29 +74,29 @@ namespace TestCase
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes construction of <see cref="global::TestCase.AnimalDto"/>.
+    /// Defines construction of <see cref="global::TestCase.AnimalDto"/>.
     /// </summary>
     internal sealed class AnimalDtoConstruction
     {
         /// <summary>
-        /// Creates a destination instance using convention-based mapping.
+        /// Uses convention-based construction.
         /// </summary>
-        /// <param name="marker">Selects convention-based construction.</param>
+        /// <param name="marker">The convention marker.</param>
         public AnimalDtoConstruction(global::Morphant.Markers.ByConventionMarker marker)
         {
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
         public AnimalDtoConstruction()
         {
         }
 
         /// <summary>
-        /// Selects an existing destination as the mapping result.
+        /// Uses the existing destination as the result.
         /// </summary>
-        /// <param name="previous">The existing destination to select.</param>
+        /// <param name="previous">The existing destination.</param>
         public static implicit operator AnimalDtoConstruction(
             global::Morphant.Option<global::TestCase.AnimalDto> previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -113,29 +113,29 @@ namespace TestCase.Morphant.Generated
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes construction of <see cref="global::TestCase.DogDto"/>.
+    /// Defines construction of <see cref="global::TestCase.DogDto"/>.
     /// </summary>
     internal sealed class DogDtoConstruction
     {
         /// <summary>
-        /// Creates a destination instance using convention-based mapping.
+        /// Uses convention-based construction.
         /// </summary>
-        /// <param name="marker">Selects convention-based construction.</param>
+        /// <param name="marker">The convention marker.</param>
         public DogDtoConstruction(global::Morphant.Markers.ByConventionMarker marker)
         {
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
         public DogDtoConstruction()
         {
         }
 
         /// <summary>
-        /// Selects an existing destination as the mapping result.
+        /// Uses the existing destination as the result.
         /// </summary>
-        /// <param name="previous">The existing destination to select.</param>
+        /// <param name="previous">The existing destination.</param>
         public static implicit operator DogDtoConstruction(
             global::Morphant.Option<global::TestCase.DogDto> previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -154,121 +154,121 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures structured destination construction when no existing destination is used.
+        /// Defines destination construction when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Animal, global::TestCase.Morphant.Generated.AnimalDtoConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination construction with declarative operation context.
+        /// Defines destination construction with operation context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and declarative mapping context and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Animal, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.AnimalDtoConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution from the source and an optional existing destination.
+        /// Defines how to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source and the optional existing destination and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.Morphant.Generated.AnimalDtoConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution with declarative operation context.
+        /// Defines how to select or construct the destination with context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source, the optional existing destination, and declarative mapping context and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.AnimalDtoConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Animal, global::TestCase.AnimalDto> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Animal, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Animal, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::TestCase.AnimalDto> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Animal?, global::TestCase.AnimalDto, global::Morphant.Context.MappingContext, global::TestCase.AnimalDto> mapping)
@@ -288,121 +288,121 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures structured destination construction when no existing destination is used.
+        /// Defines destination construction when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Dog, global::TestCase.Morphant.Generated.DogDtoConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination construction with declarative operation context.
+        /// Defines destination construction with operation context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and declarative mapping context and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Dog, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DogDtoConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution from the source and an optional existing destination.
+        /// Defines how to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source and the optional existing destination and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.Morphant.Generated.DogDtoConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution with declarative operation context.
+        /// Defines how to select or construct the destination with context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source, the optional existing destination, and declarative mapping context and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DogDtoConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Dog, global::TestCase.DogDto> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Dog, global::Morphant.Context.MappingContext, global::TestCase.DogDto> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Dog, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::TestCase.DogDto> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Dog?, global::TestCase.DogDto, global::Morphant.Context.MappingContext, global::TestCase.DogDto> mapping)
@@ -420,12 +420,12 @@ namespace Morphant
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes member mappings for <see cref="global::TestCase.AnimalDto"/>.
+    /// Maps members of <see cref="global::TestCase.AnimalDto"/>.
     /// </summary>
     internal sealed record AnimalDtoMembers
     {
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.AnimalDto.Value"/>.
+        /// Maps <see cref="global::TestCase.AnimalDto.Value"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> Value
         {
@@ -453,12 +453,12 @@ namespace TestCase.Morphant.Generated
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes member mappings for <see cref="global::TestCase.DogDto"/>.
+    /// Maps members of <see cref="global::TestCase.DogDto"/>.
     /// </summary>
     internal sealed record DogDtoMembers
     {
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.AnimalDto.Value"/>.
+        /// Maps <see cref="global::TestCase.AnimalDto.Value"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> Value
         {
@@ -468,7 +468,7 @@ namespace TestCase.Morphant.Generated
 
         #nullable disable annotations
         /// <summary>
-        /// Configures mapping for <see cref="global::TestCase.DogDto.Breed"/>.
+        /// Maps <see cref="global::TestCase.DogDto.Breed"/>.
         /// </summary>
         public global::Morphant.Members.Member<string> Breed
         {
@@ -499,44 +499,44 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures destination member mappings from the source.
+        /// Defines destination member mappings.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.Morphant.Generated.AnimalDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings from the source and an optional existing destination.
+        /// Defines member mappings using the optional existing destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and the optional existing destination and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.Morphant.Generated.AnimalDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected mapping result.
+        /// Defines member mappings using the selected result.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, and the non-null selected result and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto, global::TestCase.Morphant.Generated.AnimalDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected result and declarative operation context.
+        /// Defines member mappings using the selected result and context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, the non-null selected result, and declarative mapping context and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Animal, global::TestCase.AnimalDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Animal, global::TestCase.AnimalDto, global::TestCase.AnimalDto, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.AnimalDtoMembers> members)
@@ -556,44 +556,44 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures destination member mappings from the source.
+        /// Defines destination member mappings.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.Morphant.Generated.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings from the source and an optional existing destination.
+        /// Defines member mappings using the optional existing destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and the optional existing destination and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.Morphant.Generated.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected mapping result.
+        /// Defines member mappings using the selected result.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, and the non-null selected result and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto, global::TestCase.Morphant.Generated.DogDtoMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected result and declarative operation context.
+        /// Defines member mappings using the selected result and context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, the non-null selected result, and declarative mapping context and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Dog, global::TestCase.DogDto> builder,
             global::Morphant.Delegates.Members<global::TestCase.Dog, global::TestCase.DogDto, global::TestCase.DogDto, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DogDtoMembers> members)

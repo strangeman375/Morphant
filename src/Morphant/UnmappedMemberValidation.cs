@@ -6,14 +6,12 @@ namespace Morphant;
 public enum UnmappedMemberValidation
 {
     /// <summary>
-    /// Inherits the next less specific setting. If no level specifies a
-    /// value, Morphant uses <see cref="None"/>.
+    /// Inherits the setting. The fallback is <see cref="None"/>.
     /// </summary>
     Default = 0,
 
     /// <summary>
-    /// Does not require every source or destination member to participate in
-    /// the mapping plan.
+    /// Disables unmapped-member validation.
     /// </summary>
     None,
 
@@ -30,8 +28,7 @@ public enum UnmappedMemberValidation
     Destination,
 
     /// <summary>
-    /// Requires every supported source and destination member to participate
-    /// in the mapping plan.
+    /// Validates both source and destination members.
     /// </summary>
     Strict
 }

@@ -3,11 +3,20 @@ using Morphant.Context;
 namespace Morphant.Exceptions;
 
 /// <summary>
-/// Represents a current nested destination whose runtime type is incompatible
-/// with the explicitly requested nested destination type.
+/// Thrown when a nested destination has an incompatible runtime type.
 /// </summary>
 public sealed class NestedDestinationTypeMismatchException : MappingException
 {
+    /// <summary>
+    /// Initializes the exception for the specified nested mapping.
+    /// </summary>
+    /// <param name="operation">The requested operation.</param>
+    /// <param name="sourceType">The source type.</param>
+    /// <param name="destinationType">The destination type.</param>
+    /// <param name="expectedDestinationType">The required nested destination
+    /// type.</param>
+    /// <param name="actualDestinationType">The actual runtime type, or
+    /// <see langword="null"/>.</param>
     public NestedDestinationTypeMismatchException(
         MappingOperation operation,
         Type sourceType,
@@ -37,8 +46,7 @@ public sealed class NestedDestinationTypeMismatchException : MappingException
     public Type ExpectedDestinationType { get; }
 
     /// <summary>
-    /// Gets the incompatible runtime type, or <see langword="null"/> when the
-    /// current nested destination was null.
+    /// Gets the incompatible runtime type, or <see langword="null"/>.
     /// </summary>
     public Type? ActualDestinationType { get; }
 }

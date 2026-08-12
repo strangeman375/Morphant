@@ -10,21 +10,17 @@ namespace Morphant;
 public enum NullDestinationHandling
 {
     /// <summary>
-    /// Inherits the next less specific setting. If no level specifies a
-    /// value, Morphant uses <see cref="Create"/>.
+    /// Inherits the setting. The fallback is <see cref="Create"/>.
     /// </summary>
     Default = 0,
 
     /// <summary>
-    /// Treats the <see langword="null"/> destination as absent and runs the
-    /// no-previous construction branch.
+    /// Creates a destination when the supplied destination is
+    /// <see langword="null"/>.
     /// </summary>
     /// <remarks>
-    /// Morphant runs the no-previous construction branch while preserving the
-    /// current <see cref="MappingOperation.Update"/> operation. The effective
-    /// <see cref="MappingMode"/> only needs to include
-    /// <see cref="MappingMode.Update"/>; <see cref="MappingMode.Create"/> is
-    /// not required.
+    /// The operation remains <see cref="MappingOperation.Update"/> and does
+    /// not require <see cref="MappingMode.Create"/>.
     /// </remarks>
     Create,
 

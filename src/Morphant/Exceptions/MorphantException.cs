@@ -1,7 +1,7 @@
 namespace Morphant.Exceptions;
 
 /// <summary>
-/// Represents a failure reported by Morphant.
+/// Base class for exceptions reported by Morphant.
 /// </summary>
 public abstract class MorphantException : Exception
 {

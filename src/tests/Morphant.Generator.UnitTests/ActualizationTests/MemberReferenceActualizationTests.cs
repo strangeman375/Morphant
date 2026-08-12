@@ -78,12 +78,12 @@ namespace TestCase
 namespace ExternalModels.Morphant.Generated
 {
     /// <summary>
-    /// Describes member mappings for <see cref="global::ExternalModels.Destination"/>.
+    /// Maps members of <see cref="global::ExternalModels.Destination"/>.
     /// </summary>
     internal sealed record DestinationMembers
     {
         /// <summary>
-        /// Configures mapping for <see cref="global::ExternalModels.Destination.Value"/>.
+        /// Maps <see cref="global::ExternalModels.Destination.Value"/>.
         /// </summary>
         public global::Morphant.Members.Member<int> Value
         {
@@ -113,44 +113,44 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures destination member mappings from the source.
+        /// Defines destination member mappings.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::ExternalModels.Destination> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::ExternalModels.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::ExternalModels.Morphant.Generated.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings from the source and an optional existing destination.
+        /// Defines member mappings using the optional existing destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source and the optional existing destination and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::ExternalModels.Destination> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::ExternalModels.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::ExternalModels.Destination, global::ExternalModels.Morphant.Generated.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected mapping result.
+        /// Defines member mappings using the selected result.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, and the non-null selected result and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::ExternalModels.Destination> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::ExternalModels.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::ExternalModels.Destination, global::ExternalModels.Destination, global::ExternalModels.Morphant.Generated.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures destination member mappings with access to the selected result and declarative operation context.
+        /// Defines member mappings using the selected result and context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="members">A lambda expression that receives the non-null source, the optional existing destination, the non-null selected result, and declarative mapping context and describes destination member mappings.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="members">The member plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::ExternalModels.Destination> Members(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::ExternalModels.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::ExternalModels.Destination, global::ExternalModels.Destination, global::Morphant.Context.MappingContextMarker, global::ExternalModels.Morphant.Generated.DestinationMembers> members)

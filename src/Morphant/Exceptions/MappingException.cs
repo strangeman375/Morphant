@@ -3,8 +3,7 @@ using Morphant.Context;
 namespace Morphant.Exceptions;
 
 /// <summary>
-/// Represents a failure associated with a concrete mapping operation and
-/// exact source/destination pair.
+/// Base class for failures tied to a mapping operation and type pair.
 /// </summary>
 public abstract class MappingException : MorphantException
 {

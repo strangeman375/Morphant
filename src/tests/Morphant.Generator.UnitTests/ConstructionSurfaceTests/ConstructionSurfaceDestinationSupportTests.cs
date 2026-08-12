@@ -57,29 +57,29 @@ namespace TestCase
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes construction of <see cref="global::TestCase.CustomStruct"/>.
+    /// Defines construction of <see cref="global::TestCase.CustomStruct"/>.
     /// </summary>
     internal sealed class CustomStructConstruction
     {
         /// <summary>
-        /// Creates a destination instance using convention-based mapping.
+        /// Uses convention-based construction.
         /// </summary>
-        /// <param name="marker">Selects convention-based construction.</param>
+        /// <param name="marker">The convention marker.</param>
         public CustomStructConstruction(global::Morphant.Markers.ByConventionMarker marker)
         {
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
         public CustomStructConstruction()
         {
         }
 
         /// <summary>
-        /// Selects an existing destination as the mapping result.
+        /// Uses the existing destination as the result.
         /// </summary>
-        /// <param name="previous">The existing destination to select.</param>
+        /// <param name="previous">The existing destination.</param>
         public static implicit operator CustomStructConstruction(
             global::Morphant.Option<global::TestCase.CustomStruct> previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -96,29 +96,29 @@ namespace TestCase.Morphant.Generated
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Describes construction of <see cref="global::TestCase.EmptyClass"/>.
+    /// Defines construction of <see cref="global::TestCase.EmptyClass"/>.
     /// </summary>
     internal sealed class EmptyClassConstruction
     {
         /// <summary>
-        /// Creates a destination instance using convention-based mapping.
+        /// Uses convention-based construction.
         /// </summary>
-        /// <param name="marker">Selects convention-based construction.</param>
+        /// <param name="marker">The convention marker.</param>
         public EmptyClassConstruction(global::Morphant.Markers.ByConventionMarker marker)
         {
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
         public EmptyClassConstruction()
         {
         }
 
         /// <summary>
-        /// Selects an existing destination as the mapping result.
+        /// Uses the existing destination as the result.
         /// </summary>
-        /// <param name="previous">The existing destination to select.</param>
+        /// <param name="previous">The existing destination.</param>
         public static implicit operator EmptyClassConstruction(
             global::Morphant.Option<global::TestCase.EmptyClass> previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -137,77 +137,77 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, int, global::Morphant.Context.MappingContext, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, int> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, int> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, int, global::Morphant.Context.MappingContext, int> mapping)
@@ -227,77 +227,77 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.AbstractDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.AbstractDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.AbstractDestination, global::TestCase.AbstractDestination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.AbstractDestination, global::Morphant.Context.MappingContext, global::TestCase.AbstractDestination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.AbstractDestination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.AbstractDestination, global::TestCase.AbstractDestination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.AbstractDestination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.AbstractDestination, global::Morphant.Context.MappingContext, global::TestCase.AbstractDestination> mapping)
@@ -317,121 +317,121 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures structured destination construction when no existing destination is used.
+        /// Defines destination construction when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.CustomStructConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination construction with declarative operation context.
+        /// Defines destination construction with operation context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and declarative mapping context and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.CustomStructConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution from the source and an optional existing destination.
+        /// Defines how to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source and the optional existing destination and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.CustomStruct, global::TestCase.Morphant.Generated.CustomStructConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution with declarative operation context.
+        /// Defines how to select or construct the destination with context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source, the optional existing destination, and declarative mapping context and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.CustomStruct, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.CustomStructConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.CustomStruct> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.CustomStruct> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.CustomStruct, global::TestCase.CustomStruct> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.CustomStruct, global::Morphant.Context.MappingContext, global::TestCase.CustomStruct> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.CustomStruct> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.CustomStruct, global::TestCase.CustomStruct> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.CustomStruct> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.CustomStruct, global::Morphant.Context.MappingContext, global::TestCase.CustomStruct> mapping)
@@ -451,121 +451,121 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures structured destination construction when no existing destination is used.
+        /// Defines destination construction when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.EmptyClassConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination construction with declarative operation context.
+        /// Defines destination construction with operation context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and declarative mapping context and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.EmptyClassConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution from the source and an optional existing destination.
+        /// Defines how to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source and the optional existing destination and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.EmptyClass, global::TestCase.Morphant.Generated.EmptyClassConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution with declarative operation context.
+        /// Defines how to select or construct the destination with context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source, the optional existing destination, and declarative mapping context and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.EmptyClass, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.EmptyClassConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.EmptyClass> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.EmptyClass> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.EmptyClass, global::TestCase.EmptyClass> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.EmptyClass, global::Morphant.Context.MappingContext, global::TestCase.EmptyClass> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.EmptyClass> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.EmptyClass, global::TestCase.EmptyClass> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.EmptyClass> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.EmptyClass, global::Morphant.Context.MappingContext, global::TestCase.EmptyClass> mapping)
@@ -585,77 +585,77 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.FactoryOnly> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.FactoryOnly> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.FactoryOnly, global::TestCase.FactoryOnly> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.FactoryOnly, global::Morphant.Context.MappingContext, global::TestCase.FactoryOnly> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.FactoryOnly> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.FactoryOnly, global::TestCase.FactoryOnly> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.FactoryOnly> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.FactoryOnly, global::Morphant.Context.MappingContext, global::TestCase.FactoryOnly> mapping)
@@ -675,77 +675,77 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.IDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.IDestination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.IDestination, global::TestCase.IDestination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.IDestination, global::Morphant.Context.MappingContext, global::TestCase.IDestination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.IDestination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.IDestination, global::TestCase.IDestination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.IDestination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.IDestination, global::Morphant.Context.MappingContext, global::TestCase.IDestination> mapping)
@@ -765,77 +765,77 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::System.Collections.Generic.List<int>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::System.Collections.Generic.List<int>> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::System.Collections.Generic.List<int>, global::System.Collections.Generic.List<int>> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::System.Collections.Generic.List<int>, global::Morphant.Context.MappingContext, global::System.Collections.Generic.List<int>> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Collections.Generic.List<int>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Collections.Generic.List<int>, global::System.Collections.Generic.List<int>> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::System.Collections.Generic.List<int>> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::System.Collections.Generic.List<int>, global::Morphant.Context.MappingContext, global::System.Collections.Generic.List<int>> mapping)
@@ -928,36 +928,36 @@ namespace TestCase
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// Maps constructor arguments for <see cref="global::TestCase.Destination"/>.
     /// </summary>
     internal sealed class DestinationConstructorParameters
     {
         /// <summary>
-        /// Configures the <c>value</c> constructor argument.
+        /// Maps the <c>value</c> argument.
         /// </summary>
         public global::Morphant.Members.ConstructorParameter<int> valueInt = null!;
 
         /// <summary>
-        /// Configures the <c>value</c> constructor argument.
+        /// Maps the <c>value</c> argument.
         /// </summary>
         public global::Morphant.Members.ConstructorParameter<uint> valueUint = null!;
 
         /// <summary>
-        /// Configures the <c>value</c> constructor argument.
+        /// Maps the <c>value</c> argument.
         /// </summary>
         public global::Morphant.Members.ConstructorParameter<string> valueString = null!;
     }
 
     /// <summary>
-    /// Describes construction of <see cref="global::TestCase.Destination"/>.
+    /// Defines construction of <see cref="global::TestCase.Destination"/>.
     /// </summary>
     internal sealed class DestinationConstruction
     {
         /// <summary>
-        /// Creates a destination instance using convention-based mapping.
+        /// Uses convention-based construction.
         /// </summary>
-        /// <param name="marker">Selects convention-based construction.</param>
-        /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
+        /// <param name="marker">The convention marker.</param>
+        /// <param name="parameters">Optional argument mappings.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
             DestinationConstructorParameters? parameters = null)
@@ -965,33 +965,33 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
-        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        /// <param name="value">Maps the <c>value</c> argument.</param>
         public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> value)
         {
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
-        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        /// <param name="value">Maps the <c>value</c> argument.</param>
         public DestinationConstruction(global::Morphant.Members.ConstructorParameter<uint> value)
         {
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
-        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        /// <param name="value">Maps the <c>value</c> argument.</param>
         public DestinationConstruction(global::Morphant.Members.ConstructorParameter<string> value)
         {
         }
 
         /// <summary>
-        /// Selects an existing destination as the mapping result.
+        /// Uses the existing destination as the result.
         /// </summary>
-        /// <param name="previous">The existing destination to select.</param>
+        /// <param name="previous">The existing destination.</param>
         public static implicit operator DestinationConstruction(
             global::Morphant.Option<global::TestCase.Destination> previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1010,121 +1010,121 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures structured destination construction when no existing destination is used.
+        /// Defines destination construction when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination construction with declarative operation context.
+        /// Defines destination construction with operation context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and declarative mapping context and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution from the source and an optional existing destination.
+        /// Defines how to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source and the optional existing destination and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution with declarative operation context.
+        /// Defines how to select or construct the destination with context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source, the optional existing destination, and declarative mapping context and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.Destination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.Destination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination> mapping)
@@ -1186,26 +1186,26 @@ namespace TestCase
 namespace TestCase.Morphant.Generated
 {
     /// <summary>
-    /// Contains mappings for constructor arguments of <see cref="global::TestCase.Destination"/>.
+    /// Maps constructor arguments for <see cref="global::TestCase.Destination"/>.
     /// </summary>
     internal sealed class DestinationConstructorParameters
     {
         /// <summary>
-        /// Configures the <c>value</c> constructor argument.
+        /// Maps the <c>value</c> argument.
         /// </summary>
         public global::Morphant.Members.ConstructorParameter<int> value = null!;
     }
 
     /// <summary>
-    /// Describes construction of <see cref="global::TestCase.Destination"/>.
+    /// Defines construction of <see cref="global::TestCase.Destination"/>.
     /// </summary>
     internal sealed class DestinationConstruction
     {
         /// <summary>
-        /// Creates a destination instance using convention-based mapping.
+        /// Uses convention-based construction.
         /// </summary>
-        /// <param name="marker">Selects convention-based construction.</param>
-        /// <param name="parameters">Specifies optional mappings for constructor arguments.</param>
+        /// <param name="marker">The convention marker.</param>
+        /// <param name="parameters">Optional argument mappings.</param>
         public DestinationConstruction(
             global::Morphant.Markers.ByConventionMarker marker,
             DestinationConstructorParameters? parameters = null)
@@ -1213,24 +1213,24 @@ namespace TestCase.Morphant.Generated
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
-        /// <param name="value">Configures the <c>value</c> constructor argument.</param>
+        /// <param name="value">Maps the <c>value</c> argument.</param>
         public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> value)
         {
         }
 
         /// <summary>
-        /// Creates a destination instance using a corresponding constructor.
+        /// Uses the corresponding destination constructor.
         /// </summary>
         public DestinationConstruction()
         {
         }
 
         /// <summary>
-        /// Selects an existing destination as the mapping result.
+        /// Uses the existing destination as the result.
         /// </summary>
-        /// <param name="previous">The existing destination to select.</param>
+        /// <param name="previous">The existing destination.</param>
         public static implicit operator DestinationConstruction(
             global::Morphant.Option<global::TestCase.Destination> previous) =>
             throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -1249,121 +1249,121 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures structured destination construction when no existing destination is used.
+        /// Defines destination construction when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination construction with declarative operation context.
+        /// Defines destination construction with operation context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and declarative mapping context and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution from the source and an optional existing destination.
+        /// Defines how to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source and the optional existing destination and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution with declarative operation context.
+        /// Defines how to select or construct the destination with context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source, the optional existing destination, and declarative mapping context and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.Destination?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.Destination?> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination?> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination?> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination?> mapping)
@@ -1383,121 +1383,121 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Configures structured destination construction when no existing destination is used.
+        /// Defines destination construction when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination construction with declarative operation context.
+        /// Defines destination construction with operation context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A lambda expression that receives the non-null source and declarative mapping context and describes destination construction.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Construct(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationConstruction> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution from the source and an optional existing destination.
+        /// Defines how to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source and the optional existing destination and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures structured destination resolution with declarative operation context.
+        /// Defines how to select or construct the destination with context.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A lambda expression that receives the non-null source, the optional existing destination, and declarative mapping context and describes destination resolution.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result plan.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Resolve(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationConstruction> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction when no existing destination is used.
+        /// Uses a callback to construct a destination when none exists.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.Destination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination construction with mapping context.
+        /// Uses a callback with context to construct a destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="construct">A callback that receives the non-null source and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="construct">The construction callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> ConstructUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.Destination> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution from the source and an optional existing destination.
+        /// Uses a callback to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures runtime destination resolution with mapping context.
+        /// Uses a callback with context to select or construct the destination.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="resolve">A callback that receives the non-null source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="resolve">The result callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> ResolveUsing(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm from the original source.
+        /// Uses a callback as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with access to an optional existing destination.
+        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source and optional existing destination and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Configures a fully manual mapping algorithm with mapping context.
+        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
         /// </summary>
-        /// <param name="builder">The mapping builder to configure.</param>
-        /// <param name="mapping">A callback that receives the original source, optional existing destination, and current mapping context and returns the destination.</param>
-        /// <returns>The <paramref name="builder"/> instance.</returns>
+        /// <param name="builder">The mapping to configure.</param>
+        /// <param name="mapping">The mapping callback.</param>
+        /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> Convert(
             this global::Morphant.MapperBuilder<global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination> mapping)

@@ -5,18 +5,14 @@ using Morphant.Markers;
 namespace Morphant;
 
 /// <summary>
-/// Represents mapping operations from <typeparamref name="TSource"/> to
+/// Maps <typeparamref name="TSource"/> to
 /// <typeparamref name="TDestination"/>.
 /// </summary>
 /// <typeparam name="TSource">The source type.</typeparam>
 /// <typeparam name="TDestination">The destination type.</typeparam>
 /// <remarks>
-/// Morphant generates an implementation of this interface for each configured
-/// mapping. Application code normally invokes it through
-/// <see cref="IMapper"/> or the context-free
-/// <see cref="TypeMapperExtensions.Create{TSource, TDestination}(ITypeMapper{TSource, TDestination}, TSource)"/>
-/// and <see cref="TypeMapperExtensions.Update{TSource, TDestination}(ITypeMapper{TSource, TDestination}, TSource, TDestination)"/>
-/// extensions, which create a valid root mapping scope.
+/// Morphant generates one implementation per configured mapping. Prefer
+/// <see cref="IMapper"/> or the context-free extension methods for direct use.
 /// </remarks>
 public interface ITypeMapper<in TSource, TDestination>
 {
@@ -24,28 +20,20 @@ public interface ITypeMapper<in TSource, TDestination>
     /// Maps the specified source without a supplied destination.
     /// </summary>
     /// <param name="source">
-    /// The source to map. May be <see langword="null"/>. Declarative mappings
-    /// apply the effective <see cref="NullSourceHandling"/> setting; a manual
-    /// <c>Convert</c> receives the original value instead.
+    /// The source to map, which may be <see langword="null"/>.
     /// </param>
     /// <param name="context">
-    /// The context for the mapping operation. A default-initialized value is
-    /// usable only when the selected mapping does not read context data.
+    /// The current mapping context.
     /// </param>
     /// <returns>The mapped destination.</returns>
     /// <exception cref="MappingConfigurationException">
-    /// The effective configuration is invalid or the selected mapping plan
-    /// cannot be represented in generated code.
+    /// The mapping configuration is invalid.
     /// </exception>
     /// <exception cref="MappingOperationNotSupportedException">
-    /// The effective <see cref="MappingMode"/> does not include
-    /// <see cref="MappingMode.Create"/>.
+    /// The mapping does not support <see cref="MappingMode.Create"/>.
     /// </exception>
     /// <exception cref="NullSourceException">
-    /// A declarative mapping is selected, <paramref name="source"/> is
-    /// <see langword="null"/>, and the effective
-    /// <see cref="NullSourceHandling"/> is
-    /// <see cref="Morphant.NullSourceHandling.Throw"/>.
+    /// The null-source policy rejects <paramref name="source"/>.
     /// </exception>
     TDestination Create(TSource? source, MappingContext context);
 
@@ -53,43 +41,29 @@ public interface ITypeMapper<in TSource, TDestination>
     /// Maps the specified source with a supplied destination.
     /// </summary>
     /// <param name="source">
-    /// The source to map. May be <see langword="null"/>. Declarative mappings
-    /// apply the effective <see cref="NullSourceHandling"/> setting; a manual
-    /// <c>Convert</c> receives the original value instead.
+    /// The source to map, which may be <see langword="null"/>.
     /// </param>
     /// <param name="destination">
-    /// The destination to map to. May be <see langword="null"/>. Declarative
-    /// mappings apply the effective <see cref="NullDestinationHandling"/>
-    /// setting; a manual <c>Convert</c> receives
-    /// <see cref="Option{TDestination}.None"/> instead.
+    /// The existing destination, which may be <see langword="null"/>.
     /// </param>
     /// <param name="context">
-    /// The context for the mapping operation. A default-initialized value is
-    /// usable only when the selected mapping does not read context data.
+    /// The current mapping context.
     /// </param>
     /// <returns>
-    /// The authoritative mapped destination. It may be a replacement for
+    /// The mapped destination. It may replace
     /// <paramref name="destination"/>.
     /// </returns>
     /// <exception cref="MappingConfigurationException">
-    /// The effective configuration is invalid or the selected mapping plan
-    /// cannot be represented in generated code.
+    /// The mapping configuration is invalid.
     /// </exception>
     /// <exception cref="MappingOperationNotSupportedException">
-    /// The effective <see cref="MappingMode"/> does not include
-    /// <see cref="MappingMode.Update"/>.
+    /// The mapping does not support <see cref="MappingMode.Update"/>.
     /// </exception>
     /// <exception cref="NullSourceException">
-    /// A declarative mapping is selected, <paramref name="source"/> is
-    /// <see langword="null"/>, and the effective
-    /// <see cref="NullSourceHandling"/> is
-    /// <see cref="Morphant.NullSourceHandling.Throw"/>.
+    /// The null-source policy rejects <paramref name="source"/>.
     /// </exception>
     /// <exception cref="NullDestinationException">
-    /// A declarative mapping is selected,
-    /// <paramref name="destination"/> is <see langword="null"/> and the
-    /// effective <see cref="NullDestinationHandling"/> is
-    /// <see cref="Morphant.NullDestinationHandling.Throw"/>.
+    /// The null-destination policy rejects <paramref name="destination"/>.
     /// </exception>
     TDestination Update(
         TSource? source,
@@ -97,89 +71,96 @@ public interface ITypeMapper<in TSource, TDestination>
         MappingContext context);
 }
 
+/// <summary>
+/// Base class for compile-time mapper declarations.
+/// </summary>
 public abstract class TypeMapper
 {
     /// <summary>
-    /// Determines whether this mapper declares the specified exact mapping
-    /// pair.
+    /// Checks whether this mapper declares an exact mapping pair.
     /// </summary>
     /// <param name="sourceType">The exact source type.</param>
     /// <param name="destinationType">The exact destination type.</param>
-    /// <returns>
-    /// <see langword="true"/> when the mapping pair is declared; otherwise,
-    /// <see langword="false"/>.
-    /// </returns>
-    /// <remarks>
-    /// This infrastructure member describes pair declarations independently
-    /// of the operations enabled by their effective configuration.
-    /// </remarks>
+    /// <returns>Whether the pair is declared.</returns>
     protected internal virtual bool Supports(
         global::System.Type sourceType,
         global::System.Type destinationType) =>
         false;
 
+    /// <summary>
+    /// Declares mappings for this mapper.
+    /// </summary>
+    /// <param name="builder">The mapper builder.</param>
     protected abstract void Configure(MapperBuilder builder);
 
+    /// <summary>
+    /// Selects convention-based construction.
+    /// </summary>
     protected static ByConventionMarker ByConvention() =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Selects convention-based mapping for the current target.
+    /// </summary>
     protected static AutoMarker Auto() =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Selects convention-based mapping to <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The target type.</typeparam>
     protected static AutoMarker<T> Auto<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Skips the current member or constructor argument.
+    /// </summary>
     protected static IgnoreMarker Ignore() =>
         throw new RuntimeInvocationNotSupportedException();
 
+    /// <summary>
+    /// Skips a target of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The target type.</typeparam>
     protected static IgnoreMarker<T> Ignore<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures an explicit declarative value whose final target type is
-    /// <typeparamref name="T"/>.
+    /// Uses an explicit value in a declarative plan.
     /// </summary>
-    /// <typeparam name="T">The exact final value type.</typeparam>
-    /// <param name="value">
-    /// The value expression. The expression is evaluated by the generated
-    /// mapper and is never passed to this method at runtime.
-    /// </param>
-    /// <returns>A compile-time marker for the configured value.</returns>
+    /// <typeparam name="T">The target value type.</typeparam>
+    /// <param name="value">The value expression.</param>
+    /// <returns>The value marker.</returns>
     /// <remarks>
-    /// Use only inside a supported declarative
-    /// <c>Construct</c>, <c>Resolve</c>, or <c>Members</c> plan.
-    /// Runtime callbacks and <c>Convert</c> use ordinary C# values.
+    /// Use only inside <c>Construct</c>, <c>Resolve</c>, or <c>Members</c>.
     /// </remarks>
     protected static ValueMarker<T> Value<T>(T value) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures a declarative nested mapping whose source is inferred from
-    /// the target name and whose operation follows the outer mapping.
+    /// Maps a value inferred by name, following the outer operation.
     /// </summary>
     protected static MapMarker Map() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures a declarative nested mapping whose operation follows the
-    /// outer mapping.
+    /// Maps a supplied value, following the outer operation.
     /// </summary>
     /// <param name="source">The source passed to the nested mapping.</param>
     protected static MapMarker Map(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures a declarative nested mapping to <typeparamref name="T"/>
-    /// whose source is inferred from the target name and whose operation
-    /// follows the outer mapping.
+    /// Maps a value inferred by name to <typeparamref name="T"/>, following
+    /// the outer operation.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     protected static MapMarker<T> Map<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures a declarative nested mapping to <typeparamref name="T"/>
-    /// whose operation follows the outer mapping.
+    /// Maps a supplied value to <typeparamref name="T"/>, following the outer
+    /// operation.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     /// <param name="source">The source passed to the nested mapping.</param>
@@ -187,16 +168,14 @@ public abstract class TypeMapper
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures a declarative nested Create mapping whose destination type
-    /// is inferred from the target member or constructor parameter.
+    /// Creates a nested destination whose type is inferred from the target.
     /// </summary>
     /// <param name="source">The source passed to the nested mapping.</param>
     protected static MapMarker Create(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures a declarative nested Create mapping to
-    /// <typeparamref name="T"/>.
+    /// Creates a nested destination of type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     /// <param name="source">The source passed to the nested mapping.</param>
@@ -204,13 +183,11 @@ public abstract class TypeMapper
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures a declarative nested Update mapping whose destination type
-    /// is inferred from the target member or constructor parameter.
+    /// Updates a nested destination whose type is inferred from the target.
     /// </summary>
     /// <param name="source">The source passed to the nested mapping.</param>
     /// <param name="destination">
-    /// The destination passed to the nested mapping, including an explicit
-    /// <see langword="null"/> destination.
+    /// The existing destination, which may be <see langword="null"/>.
     /// </param>
     protected static MapMarker Update(
         object? source,
@@ -218,14 +195,12 @@ public abstract class TypeMapper
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures a declarative nested Update mapping to
-    /// <typeparamref name="T"/>.
+    /// Updates a nested destination of type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     /// <param name="source">The source passed to the nested mapping.</param>
     /// <param name="destination">
-    /// The destination passed to the nested mapping, including an explicit
-    /// <see langword="null"/> destination.
+    /// The existing destination, which may be <see langword="null"/>.
     /// </param>
     protected static MapMarker<T> Update<T>(
         object? source,

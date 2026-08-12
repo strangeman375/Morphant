@@ -1,10 +1,13 @@
 namespace Morphant.Exceptions;
 
 /// <summary>
-/// Represents an attempt to read a default-initialized mapping context.
+/// Thrown when a default-initialized mapping context is read.
 /// </summary>
 public sealed class InvalidMappingContextException : MorphantException
 {
+    /// <summary>
+    /// Initializes the exception.
+    /// </summary>
     public InvalidMappingContextException()
         : base(
             "The mapping context is not initialized. Invoke the mapper " +

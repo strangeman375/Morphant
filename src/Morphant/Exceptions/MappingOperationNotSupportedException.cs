@@ -3,10 +3,17 @@ using Morphant.Context;
 namespace Morphant.Exceptions;
 
 /// <summary>
-/// Represents a mapping operation disabled by the effective mapping mode.
+/// Thrown when the mapping mode disables the requested operation.
 /// </summary>
 public sealed class MappingOperationNotSupportedException : MappingException
 {
+    /// <summary>
+    /// Initializes the exception for the specified mapping.
+    /// </summary>
+    /// <param name="operation">The requested operation.</param>
+    /// <param name="sourceType">The source type.</param>
+    /// <param name="destinationType">The destination type.</param>
+    /// <param name="effectiveMappingMode">The effective mapping mode.</param>
     public MappingOperationNotSupportedException(
         MappingOperation operation,
         Type sourceType,
