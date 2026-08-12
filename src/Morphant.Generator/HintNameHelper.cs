@@ -3,19 +3,11 @@ using System.Text;
 
 namespace Morphant.Generator;
 
-/// <summary>
-/// Creates safe parts for source-generator hint names.
-/// </summary>
-public static class HintNameHelper
+internal static class HintNameHelper
 {
     private const ulong Fnv1A64OffsetBasis = 14695981039346656037UL;
     private const ulong Fnv1A64Prime = 1099511628211UL;
 
-    /// <summary>
-    /// Replaces non-alphanumeric characters with underscores.
-    /// </summary>
-    /// <param name="value">The value to convert.</param>
-    /// <returns>The safe hint-name part.</returns>
     public static string ToHintNamePart(string value)
     {
         var builder = new StringBuilder(value.Length);

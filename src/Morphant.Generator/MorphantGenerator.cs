@@ -10,13 +10,9 @@ using Morphant.Generator.TypeMapperConfigure;
 
 namespace Morphant.Generator;
 
-/// <summary>
-/// Generates Morphant mapper implementations.
-/// </summary>
 [Generator]
-public sealed class MorphantGenerator : IIncrementalGenerator
+internal sealed class MorphantGenerator : IIncrementalGenerator
 {
-    /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var compilationContext = CompilationContextPipeline.Build(context);

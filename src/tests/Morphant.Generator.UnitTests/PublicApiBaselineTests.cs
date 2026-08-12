@@ -10,6 +10,14 @@ namespace Morphant.Generator.UnitTests;
 internal sealed class PublicApiBaselineTests
 {
     [Test]
+    public void Generator_assembly_does_not_expose_public_API()
+    {
+        Assert.That(
+            typeof(MorphantGenerator).Assembly.GetExportedTypes(),
+            Is.Empty);
+    }
+
+    [Test]
     public void Runtime_public_API_preserves_modifiers_inheritance_and_metadata()
     {
         var sealedDslTypes = new[]
