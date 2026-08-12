@@ -242,15 +242,17 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
 
     private static string GetBuildConfiguration()
     {
-        var targetFrameworkDirectory = Directory.GetParent(
-            typeof(TypeMapper).Assembly.Location) ??
-            throw new InvalidOperationException(
-                "Could not locate the Morphant target framework directory.");
-        var configurationDirectory = targetFrameworkDirectory.Parent ??
-            throw new InvalidOperationException(
-                "Could not locate the Morphant configuration directory.");
+        const string configurationAttributeName =
+            "System.Reflection.AssemblyConfigurationAttribute";
+        var configuration = typeof(CompatibilityTestWorkspace).Assembly
+            .GetCustomAttributesData()
+            .Single(attribute =>
+                attribute.AttributeType.FullName ==
+                    configurationAttributeName)
+            .ConstructorArguments.Single().Value as string;
 
-        return configurationDirectory.Name;
+        return configuration ?? throw new InvalidOperationException(
+            "Could not determine the integration-test build configuration.");
     }
 
     private static string GetDotNetHostPath()

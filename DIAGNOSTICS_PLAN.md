@@ -6,8 +6,8 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Vertical slices категорий 1–11 реализованы и приняты пользователем. Vertical
-slice категории 12 реализован и ожидает пользовательского ревью.
+Vertical slices категорий 1–12 реализованы и приняты пользователем. Финальный
+двусторонний аудит реализован и ожидает пользовательского ревью.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -80,8 +80,8 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–9 приняты, категория 10 реализована и ожидает ревью |
-| 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | Принят: категории 1–12 реализованы и приняты |
+| 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Реализован, ожидает ревью |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
 граница категории, работа возвращается к этапу 1. Изменение таксономии
@@ -5102,8 +5102,8 @@ universes, semantic reads и opaque handoff, structured discard, constructor и
 member occupancy, reachability, precedence и actualization. C# 9 consumer
 исполняет Create/Update при подавленных warnings без diagnostic-driven reads
 или assignments, а package/MSBuild fixture проверяет обе diagnostics через
-реальные MSBuild setting и `.editorconfig`. Срез реализован и ожидает
-пользовательского ревью.
+реальные MSBuild setting и `.editorconfig`. Срез реализован и принят
+пользователем.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,
@@ -5111,6 +5111,8 @@ diagnostics, точные ID/severity/message/location, подавление к�
 recovery-кода. Тесты одной категории не считаются доказательством другой.
 
 ## 8. Финальный аудит
+
+Статус: реализован 12 августа 2026 года, ожидает пользовательского ревью.
 
 Этап 4 проверяет план и реализацию в обе стороны:
 
@@ -5124,6 +5126,39 @@ recovery-кода. Тесты одной категории не считают�
 - IDs, categories, severity, terminology, locations и recovery согласованы;
 - generated contracts, public XML, conceptual docs, roadmap и tests описывают
   одну семантику.
+
+Результат двусторонней сверки:
+
+- descriptor inventory, нормативный каталог и
+  `AnalyzerReleases.Unshipped.md` содержат один и тот же непрерывный набор
+  `MORPH0001`–`MORPH0048`: 46 errors и 2 warnings, без duplicate IDs либо
+  production diagnostics вне каталога;
+- каждый descriptor достигается production emission path-ом и имеет
+  самостоятельный unit scenario; все 48 IDs присутствуют в unit tests и
+  package-like integration matrix;
+- общий reflection-based catalog test теперь fail closed обнаруживает новый,
+  пропущенный либо дублирующий descriptor, неверную category/default severity
+  и `NotConfigurable`;
+- precedence проверена по последовательным compilation/mapper/pair,
+  composition/settings/inheritance, callback, construction, member, nested и
+  completeness gates: первичная причина подавляет только недостоверный
+  downstream slice, независимые pairs/paths/warnings сохраняются;
+- точные C# binding/declaration failures сохраняют compiler ownership;
+  generated-only compiler preflight принадлежит `MORPH0030`. Project-specific
+  prefix `MORPH` не пересекается со стандартными `CS`, `CA` и `IDE` families и
+  соответствует Roslyn `<PREFIX><number>` policy;
+- application-wide registration lookup, фактическая wide-slot совместимость,
+  завершённый scope и analyzer-host load failures остаются явно отнесены к
+  runtime либо host ownership, а не скрыты отсутствующей diagnostic;
+- stale неформируемые значения structured failure model удалены, conceptual
+  documentation получила полный пользовательский каталог и больше не
+  утверждает, что после категории 9 остаются pending diagnostics.
+- сфокусированный финальный прогон прошёл `369/369` самостоятельных unit tests
+  и `48/48` integration tests; C# 9 и C# 11 diagnostic consumers перед
+  интеграционным прогоном пересобраны текущим generator-ом.
+
+Отдельных изменений публичной diagnostic semantics, severity, locations,
+recovery либо границы core v0 аудит не потребовал.
 
 Usage analyzers над вызывающим кодом, включая warning об игнорировании
 авторитетного результата `Update`, остаются post-v0 и в этот финальный аудит

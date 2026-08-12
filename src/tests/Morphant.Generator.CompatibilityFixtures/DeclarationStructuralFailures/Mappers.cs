@@ -1,4 +1,5 @@
 using Morphant;
+using Morphant.Context;
 
 namespace Morphant.DeclarationStructuralFailures;
 
@@ -40,4 +41,22 @@ file partial class FileMapper : TypeMapper
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, FileDestination>();
+}
+
+[MorphantMapper]
+public abstract partial class UnifiableContractMapper<T> :
+    TypeMapper,
+    ITypeMapper<T, NestedDestination>
+{
+    public abstract NestedDestination Create(
+        T? source,
+        MappingContext context);
+
+    public abstract NestedDestination Update(
+        T? source,
+        NestedDestination? destination,
+        MappingContext context);
+
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Source, NestedDestination>();
 }

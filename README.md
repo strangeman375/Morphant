@@ -117,6 +117,7 @@ expression evaluation order or side effects.
 - [Manual mapping with `Convert`](docs/manual-mapping.md)
 - [Nested mapping](docs/nested-mapping.md)
 - [Runtime dispatch and DI](docs/runtime-dispatch.md)
+- [Compile-time diagnostics](docs/diagnostics.md)
 - [Observable failures](docs/observable-failures.md)
 - [Configuration inheritance](docs/configuration-inheritance.md)
 - [Generated artifacts](docs/generated-code.md)

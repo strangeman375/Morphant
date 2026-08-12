@@ -49,7 +49,7 @@ internal sealed class DeclarationDiagnosticsTests
     }
 
     [Test]
-    public async Task Structural_failures_keep_DSL_surfaces_without_cascades()
+    public async Task Structural_and_unifiable_failures_keep_DSL_surfaces_without_cascades()
     {
         var build = await _workspace.BuildConsumer(
             "DeclarationStructuralFailures");
@@ -58,14 +58,15 @@ internal sealed class DeclarationDiagnosticsTests
         Assert.Multiple(() =>
         {
             Assert.That(build.Process.ExitCode, Is.Not.EqualTo(0));
-            Assert.That(diagnostics, Has.Length.EqualTo(3), build.Process.Output);
+            Assert.That(diagnostics, Has.Length.EqualTo(4), build.Process.Output);
             Assert.That(
                 diagnostics.Select(GetDiagnosticId),
                 Is.EquivalentTo(new[]
                 {
                     "MORPH0006",
                     "MORPH0007",
-                    "MORPH0008"
+                    "MORPH0008",
+                    "MORPH0010"
                 }));
             Assert.That(GeneratedFiles(build), Is.Not.Empty);
             Assert.That(

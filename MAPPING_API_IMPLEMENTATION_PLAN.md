@@ -567,8 +567,8 @@ semantics.
 ## Согласованная diagnostic-категория 9
 
 Статус: нормативный каталог принят пользователем 11 августа 2026 года;
-production vertical slice реализован 12 августа 2026 года и ожидает
-пользовательского ревью.
+production vertical slice реализован 12 августа 2026 года и принят
+пользователем.
 
 Категория «Корректность construction plan» получила пять последовательных IDs:
 
@@ -664,7 +664,7 @@ rule/path.
 ## Согласованная diagnostic-категория 12
 
 Статус: принята пользователем 11 августа 2026 года; production vertical slice
-реализован 12 августа 2026 года и ожидает пользовательского ревью.
+реализован 12 августа 2026 года и принят пользователем.
 
 Категория «Полнота mapping-а через `UnmappedMemberValidation`» завершает
 каталог двумя последовательными warning IDs:
@@ -706,31 +706,20 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 12.**
+**Diagnostics: финальный двусторонний аудит.**
 
 Статус: реализован, ожидает пользовательского ревью. Vertical slices
-категорий 1–11 приняты пользователем. Категория 12 добавляет configurable
-warning-и `MORPH0047`–`MORPH0048`: неиспользуемый supported source member и
-незанятый supported destination member effective pair.
+категорий 1–12 приняты пользователем. Финальный аудит сверяет каталог,
+production descriptors и emission paths, release tracking, самостоятельные
+unit-/integration-категории, compiler/runtime ownership, precedence и
+пользовательскую документацию в обе стороны.
 
-Анализ выполняется над final non-manual mapping model после
-composition/settings/inheritance и категорий 8–11. Он строит supported
-source/destination universes, semantic и potential source uses, retained
-compile-time source discards, constructor/member occupancy и локальную
-error-derived uncertainty. Participation pair-wide и не размножается по
-Create/Update либо conditional branches.
-
-Warnings recovery не имеют: generated code и runtime behavior совпадают с
-`UnmappedMemberValidation.None`, включая suppression и повышение severity до
-`Error`. Exact category-8–11 error скрывает только производный completeness
-warning своего uncertain slot-а; independent warnings сохраняются.
-
-Самостоятельные unit-тесты фиксируют descriptors, messages/locations,
-setting precedence, supported member universes, semantic reads, opaque
-handoff, structured discard, occupancy, reachability, precedence и
-actualization. C# 9 consumer проверяет неизменность Create/Update и отсутствие
-getter read, а package/MSBuild fixture — обе diagnostics через реальный
-MSBuild setting и `.editorconfig`.
+Аудит закрепляет exact gapless inventory `MORPH0001`–`MORPH0048` отдельным
+reflection-based test-ом, добавляет отсутствовавший package-like
+`MORPH0010` scenario, устраняет stale internal failure states и синхронизирует
+conceptual diagnostics reference, release manifest и roadmap. Итоговый
+сфокусированный прогон охватывает все двенадцать diagnostic categories и
+проходит `369/369` unit- и `48/48` integration tests.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2159,9 +2148,9 @@ baseline проходят `3/3`. Остальная документационн
 
 ### Этап 23. Diagnostics
 
-Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slices категорий 1–11 приняты пользователем;
-vertical slice категории 12 реализован и ожидает пользовательского ревью.
+Статус: полный каталог, предварительное выравнивание production model и
+vertical slices категорий 1–12 приняты пользователем; финальный двусторонний
+аудит реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2226,7 +2215,9 @@ pair/result/update-destination analysis и path-sensitive atomic recovery с
 пользователем. Двенадцатый slice реализует pair-wide mapping completeness
 warnings `MORPH0047`–`MORPH0048`, semantic source use/discard, destination
 occupancy и локальную uncertainty с самостоятельными unit-, C# 9 runtime- и
-package/MSBuild-тестами; slice ожидает пользовательского ревью.
+package/MSBuild-тестами; slice принят пользователем. Финальный audit
+подтверждает точный двусторонний catalog/production/release/test inventory,
+compiler/runtime ownership и отсутствие пересекающихся descriptor IDs.
 
 ### Этап 24. Observable failures
 

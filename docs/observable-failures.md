@@ -94,11 +94,11 @@ contracts are omitted and are candidates for compile-time diagnostics. A
 structural problem in one pair does not suppress independent legal pairs in
 the same mapper.
 
-Compile-time diagnostics are a separate compatibility surface. Implemented
-construction, member, and nested-plan diagnostics `MORPH0035`–`MORPH0046` do
-not change the runtime exception contract for generated code that can still
-compile and execute; suppression or severity overrides also leave generated
-recovery unchanged.
+Compile-time diagnostics are a separate compatibility surface. The complete
+core v0 catalog is documented in [Compile-time diagnostics](diagnostics.md).
+Error diagnostics `MORPH0001`–`MORPH0046` do not change the runtime exception
+contract for generated code that can still compile and execute; suppression
+or severity overrides also leave generation gates and recovery unchanged.
 
 Mapping-completeness diagnostics `MORPH0047`–`MORPH0048` are warnings only.
 They do not add exception stubs, reads, assignments, or other generated

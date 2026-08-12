@@ -2856,42 +2856,30 @@ source, factory/derived behavior и точный evaluation order будут с�
 
 ### 14.1. Compile-time diagnostics
 
-В целевом дизайне diagnostics должны покрыть как минимум:
+Каталог compile-time diagnostics core v0 реализован как двенадцать
+последовательных категорий `MORPH0001`–`MORPH0048`. Полный точный contract IDs,
+messages, locations, precedence, deduplication и recovery задаёт
+[`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Категории охватывают:
 
-- несовместимое compilation environment или отсутствие однозначного
-  совместимого обязательного contract Morphant;
-- собственный mapper member `Supports(System.Type, System.Type)`, который
-  конфликтует с обязательным generated infrastructure override;
-- использование Morphant builder-а вне поддерживаемого прямого линейного
-  `Configure` flow;
-- повторную регистрацию одной canonical pair внутри одного mapper-а;
-- любую вторую result policy `Construct` / `Resolve` / `ConstructUsing` /
-  `ResolveUsing`, включая повтор одной family и смешение разных имён;
-- любой второй локальный `Members`; форма перегрузки значения не имеет;
-- повторный `Convert`;
-- смешивание `Convert` с любой result policy или `Members`;
-- pair-specific constructor/member settings, несовместимые с manual mapping;
-- callback либо compile-time marker, который нельзя перенести в generated
-  mapper с сохранением C# binding, lexical context, lifetime и terminal DSL
-  semantics; такая форма должна fail closed до emission, а не оставлять ошибку
-  compiler-а в `.g.cs`;
-- достижимый explicit `init`-rule либо creation-time `required`-rule structured
-  surface, который невозможно применить в конкретной creation branch: result
-  уже создан runtime callback-ом либо value/условие rule транзитивно зависит от ещё
-  не созданного result; previous-result сохраняет такой member без вычисления
-  неприменимого expression;
-- reachable no-previous branch destination без convention construction и без
-  configured `ConstructUsing` / `ResolveUsing`;
-- `null` вместо generated `DestinationConstruction` или `DestinationMembers`
-  plan;
-- невозможный explicit constructor/member marker;
-- nested marker без статически определимой source/destination pair, с
-  несовместимым result type либо без допустимого explicit/generated destination
-  для nested Update; широкое adaptive current value проверяется runtime и не
-  требует видимой generator-у registration;
-- две registrations одного generic mapper-а, чьи pair shapes могут
-  унифицироваться при подстановке type parameters и породить одинаковый
-  generated `ITypeMapper` contract.
+- compilation environment и однозначность обязательного runtime contract-а;
+- допустимость mapper declaration и формируемость generated
+  `ITypeMapper<,>` / `Supports(Type, Type)` contract-а;
+- eligibility, canonical duplicates и унификацию зарегистрированных pair;
+- поддерживаемый прямой линейный `Configure` builder flow;
+- локальную композицию result policy, `Members` и `Convert` slots;
+- значения, precedence и применимость effective settings;
+- direct base configuration, typed `IncludeBase` и доступность перенесённых
+  inherited callbacks;
+- переносимость callbacks, structured grammar, read-only destination inputs и
+  terminal boundary compile-time markers;
+- достижимый construction plan, constructor selection, parameter rules,
+  previous и `null` / `default` terminals;
+- effective member rules, `required`, lifecycle и `null` / `default` member
+  terminals;
+- static nested pair, result conversion и допустимость destination nested
+  Update;
+- pair-wide source/destination completeness согласно
+  `UnmappedMemberValidation`.
 
 Одинаковая canonical pair в разных mapper types и assemblies разрешена.
 Отсутствие кандидата, несколько registrations, registration, разрешившаяся в
@@ -2899,8 +2887,9 @@ source, factory/derived behavior и точный evaluation order будут с�
 не являются compile-time diagnostics: generator не видит application-wide
 `IServiceProvider`.
 
-Diagnostics остаются отдельной реализационной фазой, но отсутствие готового
-diagnostic не должно вводить скрытый fallback на другой mapping algorithm.
+Любая Morphant diagnostic сообщает только project-specific причину. Точная и
+достаточная C# binding/declaration error остаётся compiler-owned, а diagnostic
+никогда не вводит скрытый fallback на другой mapping algorithm.
 
 ### 14.2. Observable runtime failures
 

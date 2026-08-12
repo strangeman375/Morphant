@@ -45,8 +45,7 @@ internal enum MappingPlanPhase
     ResultSelection,
     Construction,
     Members,
-    NestedMapping,
-    Completeness
+    NestedMapping
 }
 
 internal readonly record struct MappingAffectedPath(
@@ -85,7 +84,6 @@ internal enum MappingObservationOriginKind
     Registration,
     MapperConfiguration,
     Setting,
-    IncludeBaseEdge,
     Callback,
     CompilerPreflight,
     Convention,
@@ -116,7 +114,6 @@ internal enum MappingFailureReason
     TerminalPreviousWithoutValue,
     TerminalNullConstruction,
     MemberRuleInvalid,
-    RequiredMemberUninitialized,
     MemberLifecycleInvalid,
     TerminalNullMembers,
     NestedPairUnknown,
@@ -183,7 +180,6 @@ internal enum ConstructorCandidateRejectionReason
     MissingSourceMember,
     IncompatibleArgument,
     InvocationBinding,
-    NullableInvocation,
     ExplicitRule
 }
 

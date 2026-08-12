@@ -41,6 +41,23 @@ internal sealed class DescriptorTests
                     "Invalid compile-time marker use"
                 }));
             Assert.That(
+                descriptors.Select(static descriptor =>
+                    descriptor.MessageFormat.ToString()),
+                Is.EqualTo(new[]
+                {
+                    "Structured {0} callback for contract '{1}' must be " +
+                    "an inline lambda.",
+                    "{0} callback for contract '{1}' cannot be transferred " +
+                    "to generated mapper '{2}': {3}.",
+                    "Structured {0} callback for contract '{1}' contains " +
+                    "unsupported syntax '{2}'.",
+                    "Structured destination input '{0}' for contract '{1}' " +
+                    "is read-only and cannot be mutated.",
+                    "Compile-time marker '{0}' cannot be used as a runtime " +
+                    "value or outside a supported terminal DSL position in " +
+                    "{1} callback for contract '{2}'."
+                }));
+            Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),
                 Is.All.EqualTo("Morphant.Callbacks"));
             Assert.That(

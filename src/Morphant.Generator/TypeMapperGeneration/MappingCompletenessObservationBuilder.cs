@@ -335,9 +335,8 @@ internal static class MappingCompletenessObservationBuilder
                     }
                 }
 
-                if (failure.Reason is
-                        MappingFailureReason.ConstructorSelectionFailed or
-                        MappingFailureReason.RequiredMemberUninitialized &&
+                if (failure.Reason ==
+                        MappingFailureReason.ConstructorSelectionFailed &&
                     candidates.Any(static candidate =>
                         candidate.RejectionReason ==
                             ConstructorCandidateRejectionReason

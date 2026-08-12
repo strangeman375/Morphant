@@ -77,3 +77,13 @@ validated, specialized mapping model. Recovery replaces only the affected
 missing, unavailable, invalid-parameter, previous, or null/default leaf. It
 does not choose another constructor or alter the artifact set, even when the
 diagnostic is suppressed or configured as a warning.
+
+Member diagnostics `MORPH0040`–`MORPH0043` and nested mapping diagnostics
+`MORPH0044`–`MORPH0046` use the same branch-atomic rule. Recovery blocks only
+the affected member or nested leaf before its arguments and side effects;
+independent branches, operations, and pairs keep their generated behavior.
+
+Mapping-completeness diagnostics `MORPH0047`–`MORPH0048` run last and have no
+recovery. They never add reads, assignments, exception stubs, or artifacts,
+including when suppressed or promoted to errors. See the complete
+[diagnostic catalog](diagnostics.md).

@@ -90,13 +90,13 @@ different runtime mapping algorithm when a capability is unavailable. Use
 explicit code or `Convert` for a supported synchronous special case, or wait
 for the separately designed post-v0 capability.
 
-Compile-time diagnostics are being delivered by the separate diagnostics
-roadmap. Its first nine categories are implemented through `MORPH0039`,
-including configuration, registration, composition, settings, inheritance,
-callback transfer, structured grammar, compile-time marker boundaries, and
-path-sensitive construction-plan correctness. Categories that remain pending
-still have deterministic executable recovery: every C#-legal invalid path
-throws a typed Morphant exception instead of leaving the mapper partial
-implementation incomplete, while deferred roots are executable opaque pairs.
-Only contracts that cannot be declared in C# are omitted. See
+The core v0 compile-time diagnostic catalog is implemented through
+`MORPH0048`. Its twelve categories cover compilation compatibility, mapper
+declarations, registration, configuration flow, plan composition, settings,
+inheritance, callback transfer and grammar, construction, members, nested
+mapping, and mapping completeness. Every C#-legal invalid path keeps
+deterministic typed recovery instead of leaving a partial mapper contract
+incomplete; the final two completeness rules are warnings and never alter
+generated behavior. Only contracts that cannot be declared in C# are omitted.
+See [Compile-time diagnostics](diagnostics.md) and
 [Observable failures](observable-failures.md).

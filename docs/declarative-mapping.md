@@ -225,6 +225,21 @@ An eligible readable non-writable reference member may appear only as a
 get-only proxy for standalone nested `Update`; it is not an ordinary member
 rule or convention candidate. See [Nested mapping](nested-mapping.md).
 
+After construction succeeds, Morphant validates the effective member plan:
+
+| ID | Condition |
+|---|---|
+| `MORPH0040` | An explicit `Auto`, typed marker, or inherited destination slot is invalid after binding. |
+| `MORPH0041` | A reachable creation or replacement leaf leaves a `required` member uninitialized. |
+| `MORPH0042` | A valid rule requires an unavailable lifecycle phase, such as `init` after a runtime-created result. |
+| `MORPH0043` | A structured `Members` terminal is statically `null` or `default`. |
+
+These errors are path-sensitive and branch-atomic. An affected leaf throws
+`MappingConfigurationException` before its member values or side effects are
+evaluated; independent paths remain executable. Suppression or a severity
+override does not make an invalid rule applicable and does not change
+generated code.
+
 The result-aware overload can read the actual selected result:
 
 ```csharp
