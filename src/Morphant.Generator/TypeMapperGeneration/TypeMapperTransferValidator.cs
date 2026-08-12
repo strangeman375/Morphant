@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Morphant.Generator.PairConfiguration;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -12,7 +13,7 @@ internal static class TypeMapperTransferValidator
         "The configured mapping contains code that cannot be transferred " +
         "into the generated mapper.";
 
-    public static TypeMapperModel Validate(
+    public static TypeMapperTransferValidationResult Validate(
         TypeMapperModel model,
         ImmutableArray<TransferredCodePolicy> policies,
         CSharpCompilation compilation,
@@ -21,8 +22,12 @@ internal static class TypeMapperTransferValidator
     {
         if (!policies.Any(static policy => policy.HasTransferredCode))
         {
-            return model;
+            return new TypeMapperTransferValidationResult(model, []);
         }
+
+        var transferFailures = ImmutableArray.CreateBuilder<
+            CallbackTransferFailureObservation>();
+        var seenTransferFailures = new HashSet<string>(StringComparer.Ordinal);
 
         var diagnostics = GetDiagnostics(
             model,
@@ -32,7 +37,7 @@ internal static class TypeMapperTransferValidator
 
         if (diagnostics.IsEmpty)
         {
-            return model;
+            return new TypeMapperTransferValidationResult(model, []);
         }
 
         var mappings = model.Mappings.ToArray();
@@ -76,6 +81,11 @@ internal static class TypeMapperTransferValidator
                     mappings[mappingIndex],
                     policies[mappingIndex],
                     preflightDiagnostic);
+                AddTransferFailure(
+                    policies[mappingIndex],
+                    diagnostic.Id,
+                    transferFailures,
+                    seenTransferFailures);
             }
         }
 
@@ -89,6 +99,11 @@ internal static class TypeMapperTransferValidator
                         mappings[index],
                         policies[index],
                         unmappedDiagnostics[0]);
+                    AddTransferFailure(
+                        policies[index],
+                        unmappedDiagnostics[0].Diagnostic.Id,
+                        transferFailures,
+                        seenTransferFailures);
                 }
             }
         }
@@ -110,7 +125,9 @@ internal static class TypeMapperTransferValidator
 
         if (diagnostics.IsEmpty)
         {
-            return model;
+            return new TypeMapperTransferValidationResult(
+                model,
+                transferFailures.ToImmutable());
         }
 
         foreach (var preflightDiagnostic in diagnostics)
@@ -131,6 +148,11 @@ internal static class TypeMapperTransferValidator
                         mappings[mappingIndex],
                         policies[mappingIndex],
                         preflightDiagnostic));
+                AddTransferFailure(
+                    policies[mappingIndex],
+                    diagnostic.Id,
+                    transferFailures,
+                    seenTransferFailures);
                 continue;
             }
 
@@ -144,14 +166,44 @@ internal static class TypeMapperTransferValidator
                             mappings[index],
                             policies[index],
                             preflightDiagnostic));
+                    AddTransferFailure(
+                        policies[index],
+                        diagnostic.Id,
+                        transferFailures,
+                        seenTransferFailures);
                 }
             }
         }
 
-        return model with
+        return new TypeMapperTransferValidationResult(
+            model with
+            {
+                Mappings = mappings.ToImmutableArray()
+            },
+            transferFailures.ToImmutable());
+    }
+
+    private static void AddTransferFailure(
+        TransferredCodePolicy policy,
+        string diagnosticId,
+        ImmutableArray<CallbackTransferFailureObservation>.Builder result,
+        ISet<string> seen)
+    {
+        if (policy.PrimaryExpression is not { } expression)
         {
-            Mappings = mappings.ToImmutableArray()
-        };
+            return;
+        }
+
+        var key = expression.Syntax.SyntaxTree.FilePath + "|" +
+                  expression.Syntax.SpanStart + "|" +
+                  expression.Syntax.Span.Length + "|" + diagnosticId;
+
+        if (seen.Add(key))
+        {
+            result.Add(new CallbackTransferFailureObservation(
+                expression,
+                diagnosticId));
+        }
     }
 
     private static void ApplyDecisions(
@@ -293,3 +345,11 @@ internal static class TypeMapperTransferValidator
         SyntaxNode Node,
         ISymbol? Symbol);
 }
+
+internal readonly record struct TypeMapperTransferValidationResult(
+    TypeMapperModel Model,
+    ImmutableArray<CallbackTransferFailureObservation> Failures);
+
+internal sealed record CallbackTransferFailureObservation(
+    BoundConfigurationExpression Expression,
+    string DiagnosticId);

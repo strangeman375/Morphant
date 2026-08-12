@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperDeclarativeControlFlowTests/CaptureTests::Rejects_deferred_previous_and_result_captures_but_allows_snapshots
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0030
 
 using System;
 using Morphant;

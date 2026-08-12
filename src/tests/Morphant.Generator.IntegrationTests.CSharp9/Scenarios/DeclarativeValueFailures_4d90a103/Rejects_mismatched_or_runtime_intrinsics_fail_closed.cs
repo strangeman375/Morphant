@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperDeclarativeValueTests::Rejects_mismatched_and_runtime_intrinsics_fail_closed
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0033
 
 using System;
 using Morphant;

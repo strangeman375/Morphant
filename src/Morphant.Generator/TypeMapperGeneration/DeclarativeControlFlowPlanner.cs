@@ -558,11 +558,12 @@ internal static class DeclarativeControlFlowPlanner
                 {
                     Identifier.ValueText: "_"
                 } discardIdentifier,
-                Right: MemberAccessExpressionSyntax
-                {
-                    Expression: IdentifierNameSyntax receiver
-                } memberAccess
+                Right: var right
             } ||
+            UnwrapParentheses(right) is not MemberAccessExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax receiver
+            } memberAccess ||
             !SymbolEqualityComparer.Default.Equals(
                 semanticModel.GetSymbolInfo(
                         receiver,

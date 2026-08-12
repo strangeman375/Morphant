@@ -49,6 +49,16 @@ multiple returns, record `with`, method calls, and exceptions keep their normal
 C# semantics. Configure-local runtime values and Configure-local functions
 cannot be captured; reusable state or behavior belongs on the mapper type.
 
+`Convert` is a runtime callback, so the structured statement restriction
+`MORPH0031` and read-only-input rule `MORPH0032` do not apply. Its C# binding
+must still be reproducible in the generated mapper: unavailable
+Configure-local/file-local values or an unsafe extension binding report
+`MORPH0030`. `Value`, `Auto`, `Ignore`, `Map`, `Create`, `Update`, and
+`ByConvention` are compile-time DSL markers; using one inside `Convert`
+reports `MORPH0033`. Use `context.Mapper.Map(...)` for runtime nested mapping.
+Suppressing either diagnostic keeps the callback invalid and emits typed
+throwing recovery for every enabled operation of that manual pair.
+
 Collection, tuple, delegate, expression-tree, task/deferred, buffer, and
 observable roots are eligible opaque values. Their pairs receive
 `ConstructUsing`, `ResolveUsing`, and `Convert`, but no `Construct`, `Resolve`,

@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperDeclarativeControlFlowTests/UnsupportedFormsTests::Keeps_standalone_side_effect_as_invalid
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0031
 
 using Morphant;
 using Morphant.Context;

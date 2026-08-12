@@ -541,11 +541,11 @@ internal static class DeclarativeIntrinsic
 
     internal static bool HasSupportedTerminalPlacement(
         ExpressionSyntax root,
-        InvocationExpressionSyntax invocation,
+        ExpressionSyntax expression,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        SyntaxNode current = invocation;
+        SyntaxNode current = expression;
 
         while (!ReferenceEquals(current, root))
         {

@@ -32,4 +32,9 @@ MORPH0025 | Morphant.Inheritance | Error | Duplicate IncludeBase call
 MORPH0026 | Morphant.Inheritance | Error | Included mapping pair not found
 MORPH0027 | Morphant.Inheritance | Error | Included mapping type is incompatible
 MORPH0028 | Morphant.Inheritance | Error | Inherited mapping callback is inaccessible
+MORPH0029 | Morphant.Callbacks | Error | Structured callback must be a lambda
+MORPH0030 | Morphant.Callbacks | Error | Callback cannot be transferred
+MORPH0031 | Morphant.Callbacks | Error | Unsupported structured callback syntax
+MORPH0032 | Morphant.Callbacks | Error | Structured destination input is read-only
+MORPH0033 | Morphant.Callbacks | Error | Invalid compile-time marker use
 MORPH0034 | Morphant.Declaration | Error | Mapper member conflicts with generated Supports

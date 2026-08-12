@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperNestedMapTests/UnsupportedTests::Rejects_non_terminal_nested_markers_in_all_structured_surfaces
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0033
 
 using System;
 using Morphant;

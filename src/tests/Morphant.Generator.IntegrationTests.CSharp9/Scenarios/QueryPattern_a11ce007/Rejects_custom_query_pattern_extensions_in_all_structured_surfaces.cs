@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperDeclarativeControlFlowTests/TransferredExpressionsTests::Rejects_custom_query_pattern_extensions_in_all_structured_surfaces
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0030
 
 using System;
 using Morphant;

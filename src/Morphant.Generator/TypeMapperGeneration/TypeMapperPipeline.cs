@@ -65,6 +65,23 @@ internal static class TypeMapperPipeline
             .WhereHasValue()
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildTypeMapperModels);
+        var callbackDiagnostics = models
+            .Collect()
+            .Select(static (inputs, cancellationToken) =>
+                CallbackDiagnosticPipeline.BuildDiagnostics(
+                    inputs.SelectMany(static input =>
+                        input.CallbackDiagnostics),
+                    cancellationToken));
+
+        context.RegisterSourceOutput(
+            callbackDiagnostics,
+            static (productionContext, diagnostics) =>
+            {
+                foreach (var diagnostic in diagnostics)
+                {
+                    productionContext.ReportDiagnostic(diagnostic);
+                }
+            });
         var hintNameAllocations = models
             .Select(static (model, _) =>
                 new HintNameIdentity(
@@ -142,16 +159,23 @@ internal static class TypeMapperPipeline
             configureSyntax.DescendantNodes()
                 .OfType<QueryExpressionSyntax>()
                 .Any());
-        model = TypeMapperTransferValidator.Validate(
+        var validation = TypeMapperTransferValidator.Validate(
             model,
             mappings.Policies,
             compilation,
             configureSyntax.SyntaxTree.Options as CSharpParseOptions,
             cancellationToken);
+        model = validation.Model;
+        var callbackDiagnostics = CallbackDiagnosticAnalyzer.Build(
+            analysis,
+            model,
+            validation.Failures,
+            cancellationToken);
 
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),
-            TypeMapperEmitter.Emit(model).ToString());
+            TypeMapperEmitter.Emit(model).ToString(),
+            callbackDiagnostics);
     }
 
     private static TypeMapperRequest BuildRequest(
@@ -709,22 +733,29 @@ internal static class TypeMapperPipeline
                         usedGeneratedMethodNames,
                         cancellationToken);
 
-                    return observedMapping with
+                    var runtimeMapping = observedMapping with
                     {
                         ControlFlow = runtimeResult.ControlFlow,
                         HelperMethodDeclarations =
-                            runtimeResult.HelperMethodDeclarations,
-                        Failure = runtimeResult.Failure
+                            runtimeResult.HelperMethodDeclarations
                     };
+
+                    return ApplyResultPolicyFailure(
+                        runtimeMapping,
+                        memberMappings,
+                        configuredResultPolicy.Kind,
+                        runtimeResult.Failure);
                 }
 
                 if (!pair.Capabilities.StructuredConstruction ||
                     destinationPlan.MemberType is not
                     INamedTypeSymbol structuredDestination)
                 {
-                    return observedMapping with
-                    {
-                        Failure = MappingFailureObservation.Create(
+                    return ApplyResultPolicyFailure(
+                        observedMapping,
+                        memberMappings,
+                        configuredResultPolicy.Kind,
+                        MappingFailureObservation.Create(
                             observedMapping.AnalysisContext,
                             MappingFailureReason
                                 .StructuredResultRequiresDestination,
@@ -739,8 +770,7 @@ internal static class TypeMapperPipeline
                                 MappingPlanPhase.ResultSelection),
                             configuredResultPolicy.Invocation,
                             configuredResultPolicy.Expression
-                                .DeclaringMapperType)
-                    };
+                                .DeclaringMapperType));
                 }
 
                 var structuredConstruct =
@@ -757,13 +787,18 @@ internal static class TypeMapperPipeline
                         usedGeneratedMethodNames,
                         cancellationToken);
 
-                return observedMapping with
+                var structuredMapping = observedMapping with
                 {
                     ControlFlow = structuredConstruct.ControlFlow,
                     HelperMethodDeclarations =
-                        structuredConstruct.HelperMethodDeclarations,
-                    Failure = structuredConstruct.Failure
+                        structuredConstruct.HelperMethodDeclarations
                 };
+
+                return ApplyResultPolicyFailure(
+                    structuredMapping,
+                    memberMappings,
+                    configuredResultPolicy.Kind,
+                    structuredConstruct.Failure);
             }
 
             ConventionConstructorMappingPlan? constructorMapping = null;
@@ -841,6 +876,35 @@ internal static class TypeMapperPipeline
                 BuildFlatMapping,
                 cancellationToken),
             mapperType);
+    }
+
+    private static TypeMapperMappingModel ApplyResultPolicyFailure(
+        TypeMapperMappingModel mapping,
+        ConventionMemberMappingPlan memberMappings,
+        ResultPolicyKind kind,
+        MappingFailureObservation? failure)
+    {
+        if (failure is null)
+        {
+            return mapping;
+        }
+
+        if (kind is not
+            (ResultPolicyKind.Construct or
+             ResultPolicyKind.ConstructUsing))
+        {
+            return mapping with
+            {
+                Failure = failure
+            };
+        }
+
+        return mapping with
+        {
+            UpdateMemberMappings = memberMappings.Update,
+            CreateFailure = failure,
+            Failure = null
+        };
     }
 
     private static TypeMapperMappingModel BuildEmptyMapping(
@@ -1415,7 +1479,8 @@ internal static class TypeMapperPipeline
 
     private readonly record struct TypeMapperGenerationInput(
         string StableIdentity,
-        string Source)
+        string Source,
+        ImmutableArray<CallbackDiagnosticCandidate> CallbackDiagnostics)
     {
         public string HintName => GeneratedSourceHintName.Create(
             "TypeMapper",

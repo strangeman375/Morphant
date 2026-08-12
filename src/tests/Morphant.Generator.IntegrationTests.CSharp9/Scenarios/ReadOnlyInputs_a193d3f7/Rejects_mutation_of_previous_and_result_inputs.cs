@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperNestedMapTests/ReadOnlyInputsTests::Rejects_mutation_of_previous_and_result_inputs
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0032
 
 using System;
 using Morphant;

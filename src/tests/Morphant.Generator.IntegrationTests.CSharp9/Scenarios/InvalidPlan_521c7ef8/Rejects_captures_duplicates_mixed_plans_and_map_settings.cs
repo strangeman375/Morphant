@@ -3,6 +3,7 @@
 #pragma warning disable CS1591
 #pragma warning disable MORPH0023
 #pragma warning disable MORPH0019, MORPH0020
+#pragma warning disable MORPH0030
 
 using System;
 using Morphant;

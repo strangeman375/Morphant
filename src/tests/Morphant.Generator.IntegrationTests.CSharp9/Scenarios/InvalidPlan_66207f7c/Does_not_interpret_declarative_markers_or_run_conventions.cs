@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConvertTests/InvalidPlanTests::Does_not_interpret_declarative_markers_or_run_conventions
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0033
 
 using System;
 using Morphant;

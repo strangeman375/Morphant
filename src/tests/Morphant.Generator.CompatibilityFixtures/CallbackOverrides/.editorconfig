@@ -1,0 +1,8 @@
+root = true
+
+[*.cs]
+dotnet_diagnostic.MORPH0029.severity = warning
+dotnet_diagnostic.MORPH0030.severity = warning
+dotnet_diagnostic.MORPH0031.severity = warning
+dotnet_diagnostic.MORPH0032.severity = warning
+dotnet_diagnostic.MORPH0033.severity = warning

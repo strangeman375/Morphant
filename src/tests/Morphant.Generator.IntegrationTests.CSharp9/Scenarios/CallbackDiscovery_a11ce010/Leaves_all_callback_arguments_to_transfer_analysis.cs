@@ -1,6 +1,7 @@
 // Compiled integration scenario: PairConfigurationTests/CallbackDiscoveryTests::Leaves_all_callback_arguments_to_transfer_analysis
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0030, MORPH0031
 
 using System;
 using Morphant;

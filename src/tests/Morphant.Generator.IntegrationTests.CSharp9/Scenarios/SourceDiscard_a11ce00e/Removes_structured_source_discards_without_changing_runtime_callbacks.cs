@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperDeclarativeControlFlowTests/SourceDiscardTests::Removes_structured_source_discards_without_changing_runtime_callbacks
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0031
 
 using System;
 using Morphant;

@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperDeclarativeControlFlowTests/UnsupportedFormsTests::Keeps_uninitialized_local_and_assignment_as_invalid
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0031
 
 using Morphant;
 using Morphant.Context;

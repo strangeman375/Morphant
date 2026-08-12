@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperCallbackTests/ContextMarkerTests::Rejects_runtime_use_of_declarative_context
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0033
 
 using System;
 using Morphant;

@@ -704,30 +704,28 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 7.**
+**Diagnostics: vertical slice категории 8.**
 
 Статус: реализован, ожидает пользовательского ревью. Vertical slices
-категорий 1–6 приняты пользователем. Категория 7 добавляет configurable
-`MORPH0024`–`MORPH0028`: duplicate `base.Configure`, duplicate `IncludeBase`,
-missing requested pair, отдельную несовместимость source/destination и
-недоступный effective inherited callback.
+категорий 1–7 приняты пользователем. Категория 8 добавляет configurable
+`MORPH0029`–`MORPH0033`: inline-lambda boundary structured callbacks,
+semantic transfer/preflight failures, structured grammar, read-only
+destination inputs и terminal compile-time markers.
 
-Level-aware lookup исключает только current composition node, выбирает
-authoritative current-level candidate перед connected levels и проходит base
-chain nearest-first. Registered category-3-invalid candidate считается
-найденным origin-ом и не получает dependent lookup/compatibility diagnostic.
-Exact same-pair переносит полный effective plan, cross-pair — только
-`Members`; local model precedence отбрасывает заменённые callbacks до проверки
-accessibility.
+Анализ использует effective plan после composition/settings/inheritance,
+exact symbol binding и статическую достижимость. Structured `Construct`,
+`Resolve` и `Members` не декомпилируют method groups; runtime
+`ConstructUsing`, `ResolveUsing` и `Convert` сохраняют обычный C# callable.
+Configure-local/deferred/file-local lifetimes и непереносимый extension/query
+binding fail closed до emission, source-owned warnings остаются compiler-owned.
 
-`MORPH0024` использует mapper-wide recovery, `MORPH0025`–`MORPH0028` —
-pair-wide recovery, распространяющийся только на consumers retained slice.
-Обе операции бросают независимо от `MappingMode`; suppression и severity
-override не меняют lookup, artifacts или runtime behavior. Самостоятельные
-unit-, C# 9 runtime- и package/MSBuild-тесты фиксируют exact diagnostics,
-generic/context deduplication, compatibility, все шесть callback families,
-полный generated result, actualization и реальные `.editorconfig` overrides.
-Следующий vertical slice — категория 8 после принятия категории 7
+Recovery сохраняет независимые operations, branches, pairs и mapper-ы;
+invalid `Construct` не ломает Update с существующим destination. Suppression
+и severity override не меняют callback classification, artifacts или runtime
+behavior. Самостоятельные unit-, C# 9 runtime- и package/MSBuild-тесты
+фиксируют exact diagnostics, terminal grammar, mutation/marker boundaries,
+compiler ownership, actualization и реальные `.editorconfig` overrides всех
+пяти IDs. Следующий vertical slice — категория 9 после принятия категории 8
 пользователем.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
@@ -2158,8 +2156,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slices категорий 1–6 приняты пользователем;
-vertical slice категории 7 реализован и ожидает пользовательского ревью.
+production model и vertical slices категорий 1–7 приняты пользователем;
+vertical slice категории 8 реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2205,8 +2203,13 @@ runtime- и package/MSBuild-тестами; slice принят пользова�
 реализует inheritance diagnostics `MORPH0024`–`MORPH0028`, level-aware
 `IncludeBase` lookup, retained-slice propagation и accessibility всех шести
 callback families с самостоятельными unit-, C# 9 runtime- и package/MSBuild-
-тестами; slice ожидает пользовательского ревью. Следующий vertical slice —
-категория 8 после принятия категории 7.
+тестами; slice принят пользователем. Восьмой slice реализует callback
+diagnostics `MORPH0029`–`MORPH0033`, effective callback ownership,
+transfer/compiler preflight, structured grammar, read-only destination inputs,
+terminal marker boundary и path-sensitive/atomic recovery с самостоятельными
+unit-, C# 9 runtime- и package/MSBuild-тестами; slice ожидает
+пользовательского ревью. Следующий vertical slice — категория 9 после принятия
+категории 8.
 
 ### Этап 24. Observable failures
 

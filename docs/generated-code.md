@@ -64,3 +64,10 @@ contract is omitted only when C# cannot declare it, such as a structurally
 invalid mapper declaration or generic interfaces that can unify. Other pairs
 in the same mapper remain independent. See
 [Observable failures](observable-failures.md).
+
+Callback diagnostics `MORPH0029`–`MORPH0033` are decided before emission and
+before compiler preflight. Invalid structured slices keep path-sensitive
+stubs where the offending branch can be identified; an invalid runtime
+callable is atomic within its callback family. Suppression and analyzer
+severity configuration never re-enable transferred source or leave a
+compile-time marker in generated C#.

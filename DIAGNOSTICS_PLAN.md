@@ -7,8 +7,9 @@
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
 Vertical slices категорий 1–6 реализованы и приняты пользователем. Vertical
-slice категории 7 реализован и ожидает пользовательского ревью; следующий
-slice после его принятия — категория 8.
+slice категории 7 реализован и принят пользователем. Vertical slice
+категории 8 реализован и ожидает пользовательского ревью; следующий slice
+после его принятия — категория 9.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -81,7 +82,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–6 приняты, категория 7 реализована и ожидает ревью |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–7 приняты, категория 8 реализована и ожидает ревью |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -5009,8 +5010,26 @@ generated recovery, suppression/severity и actualization одного driver-а
 Обычные C# 9 consumers исполняют mapper-/pair-wide и transitive recovery,
 проверяют обе operations независимо от `MappingMode`, все шесть callback
 families и независимые pairs; package/MSBuild fixture проверяет реальные
-`.editorconfig` overrides всех пяти IDs. Срез реализован и ожидает
-пользовательского ревью; следующий — категория 8.
+`.editorconfig` overrides всех пяти IDs. Срез принят пользователем.
+
+Восьмой vertical slice категории 8 реализует configurable `MORPH0029`–
+`MORPH0033`: обязательную inline lambda для structured callbacks, semantic
+transfer/lifetime и compiler-preflight failures, границу structured grammar,
+read-only `previous` / `result` и terminal boundary compile-time markers.
+Анализ выполняется после effective composition/settings/inheritance,
+дедуплицирует inherited origin и пропускает compiler-owned binding errors,
+overridden либо статически недостижимые slices.
+
+Structured recovery сохраняет доступную operation/branch, включая existing
+Update при invalid `Construct`; runtime callback остаётся атомарным в своей
+family, а неатрибутируемый preflight fail closed. Suppression и severity
+override не меняют artifacts или recovery. Самостоятельная unit-категория
+фиксирует exact descriptors, callback classes, transfer reasons, grammar,
+mutation/marker boundaries, precedence, suppression и actualization. Обычный
+C# 9 consumer исполняет suppressed recovery и независимые paths/pairs;
+package/MSBuild fixture проверяет реальные `.editorconfig` overrides всех
+пяти IDs. Срез реализован и ожидает пользовательского ревью; следующий —
+категория 9.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

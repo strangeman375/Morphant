@@ -131,6 +131,41 @@ carried by the pair builder, including root nullability. For example, a
 `Destination?`. This split is why the methods cannot be ordinary generic
 members of `MapperBuilder<TSource, TDestination>`.
 
+## Callback transfer and structured grammar
+
+Structured `Construct`, `Resolve`, and `Members` arguments must be inline
+lambdas. A method group or materialized delegate reports `MORPH0029`, because
+Morphant cannot inspect it as a declarative plan. Runtime `ConstructUsing` and
+`ResolveUsing` callbacks may use lambdas, method groups, or materialized
+delegates.
+
+All callbacks must remain transferable to the generated mapper. Mapper
+instance/static members and compile-time constants are available, but a
+runtime local declared in `Configure`, `builder` itself, an external local
+function/delegate, a file-local symbol, or binding that cannot be preserved
+reports `MORPH0030`. `previous`, `result`, and
+`MappingContextMarker.Operation` may be read directly in structured code, but
+cannot be captured by deferred code; take an ordinary snapshot first.
+
+The outer block of a structured lambda supports initialized locals, nested
+blocks, complete `if`/`switch` flow, return/throw paths, expressions, and the
+documented terminal DSL markers. Loops, standalone side-effect statements,
+subsequent local mutation, outer local functions, `try`/`using`/`lock`,
+labels, and similar imperative syntax report `MORPH0031`. The sole standalone
+assignment is a direct source discard such as `_ = source.LegacyField;`;
+Morphant removes it without evaluating the getter.
+
+Normalized destination inputs are read-only descriptions, not imperative
+update handles. Assigning through `previous`, `result`, or a traced alias,
+including `ref`/`out` and increment/decrement, reports `MORPH0032`. A
+compile-time marker that escapes a terminal constructor/member/result
+position, or appears in a runtime callback, reports `MORPH0033`.
+
+These diagnostics are configurable, but suppression or a severity override
+does not change the mapping plan. The affected reachable path keeps a typed
+`MappingConfigurationException` recovery stub; independent paths and pairs
+remain executable.
+
 ## Members
 
 `Members` returns a generated destination-specific record whose assignments

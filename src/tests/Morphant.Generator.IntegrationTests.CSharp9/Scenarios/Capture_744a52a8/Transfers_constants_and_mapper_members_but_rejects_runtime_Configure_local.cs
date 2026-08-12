@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperDeclarativeControlFlowTests/CaptureTests::Transfers_constants_and_mapper_members_but_rejects_runtime_Configure_local
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0030
 
 using Morphant;
 using Morphant.Context;

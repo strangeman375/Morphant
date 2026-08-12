@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperCreationResultTests/CaptureTests::Rejects_runtime_Configure_locals_for_runtime_callbacks
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0030
 
 using Morphant;
 using Morphant.Context;

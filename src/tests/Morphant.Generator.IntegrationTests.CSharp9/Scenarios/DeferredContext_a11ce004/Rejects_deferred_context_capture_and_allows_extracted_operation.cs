@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperCallbackTests/ContextMarkerTests::Rejects_deferred_context_capture_and_allows_extracted_operation
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0030
 
 using System;
 using Morphant;
