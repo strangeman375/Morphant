@@ -706,29 +706,32 @@ warning своего uncertain slice; independent completeness продолжа�
 
 ## Текущий этап
 
-**Diagnostics: vertical slice категории 9.**
+**Diagnostics: vertical slice категории 10.**
 
 Статус: реализован, ожидает пользовательского ревью. Vertical slices
-категорий 1–8 приняты пользователем. Категория 9 добавляет configurable
-`MORPH0035`–`MORPH0039`: отсутствующую construction policy, недоступную
-convention selection, invalid constructor parameter rule, недоступный
-terminal `previous` и null/default structured construction plan.
+категорий 1–9 приняты пользователем. Категория 10 добавляет configurable
+`MORPH0040`–`MORPH0043`: invalid effective explicit member rule,
+неудовлетворённый `required` member, valid rule с недоступной lifecycle-фазой
+и null/default structured member plan.
 
-Анализ использует final validated model после
-composition/settings/inheritance и category-8 callback gates, специализирует
-Create/Update paths по наличию previous destination и сохраняет точные
-constructor/rule/terminal origins. Compiler-owned binding errors и runtime
-`ConstructUsing` / `ResolveUsing` / `Convert` остаются вне category 9.
+Анализ использует final member leaves после
+composition/settings/inheritance, callback и construction gates,
+специализирует Create/Update paths по previous/runtime result и сохраняет
+точные member/rule/terminal/import origins. Exact marker type учитывает
+generated input nullability, generic substitutions и cross-compilation symbol
+identity; dependency на `result` отслеживается в value и member control flow.
 
-Recovery заменяет только affected construction leaf typed
-`MappingConfigurationException` stub-ом: другой constructor не выбирается,
-invalid rule не вычисляется, а existing Update и независимые branches,
-operations, pairs и mapper-ы сохраняются. Suppression и severity override не
-меняют reachability, artifacts или runtime behavior. Самостоятельные unit-,
-C# 9 runtime- и package/MSBuild-тесты фиксируют exact diagnostics, selection
-reasons, parameter rules, terminal aliases, compiler/category precedence,
-actualization и реальные `.editorconfig` overrides всех пяти IDs. Следующий
-vertical slice — категория 10 после принятия категории 9 пользователем.
+Recovery заменяет только affected member leaf typed
+`MappingConfigurationException` stub-ом до constructor/member side effects.
+Runtime result callback выполняется один раз, non-null result бросает перед
+member assignments, а null завершает mapping до recovery. Existing previous,
+valid sibling branches, local override и independent pairs сохраняются.
+Suppression и severity override не меняют artifacts или runtime behavior.
+Самостоятельные unit-, C# 11 runtime- и package/MSBuild-тесты фиксируют exact
+diagnostics, required/lifecycle/terminal ownership, branch atomicity,
+compiler/category precedence, actualization и реальные `.editorconfig`
+overrides всех четырёх IDs. Следующий vertical slice — категория 11 после
+принятия категории 10 пользователем.
 
 Записи принятых этапов 1–22 ниже описывают фактически реализованный surface до
 этой ревизии. Их упоминания previous-aware/direct `Construct`, вложенного
@@ -2158,8 +2161,8 @@ baseline проходят `3/3`. Остальная документационн
 ### Этап 23. Diagnostics
 
 Статус: полный каталог категорий 1–12 принят; предварительное выравнивание
-production model и vertical slices категорий 1–8 приняты пользователем;
-vertical slice категории 9 реализован и ожидает пользовательского ревью.
+production model и vertical slices категорий 1–9 приняты пользователем;
+vertical slice категории 10 реализован и ожидает пользовательского ревью.
 
 Работа ведётся по отдельному
 [`DIAGNOSTICS_PLAN.md`](DIAGNOSTICS_PLAN.md). Сначала согласуется полная
@@ -2213,8 +2216,12 @@ unit-, C# 9 runtime- и package/MSBuild-тестами; slice принят по�
 Девятый slice реализует construction diagnostics `MORPH0035`–`MORPH0039`,
 final-model reachability, constructor selection/rule attribution, terminal
 previous/null ownership и leaf-local recovery с самостоятельными unit-, C# 9
-runtime- и package/MSBuild-тестами; slice ожидает пользовательского ревью.
-Следующий vertical slice — категория 10 после принятия категории 9.
+runtime- и package/MSBuild-тестами; slice принят пользователем. Десятый slice
+реализует member diagnostics `MORPH0040`–`MORPH0043`, effective explicit rule
+и required/lifecycle/terminal ownership, final member-leaf specialization и
+branch-atomic recovery с самостоятельными unit-, C# 11 runtime- и
+package/MSBuild-тестами; slice ожидает пользовательского ревью. Следующий
+vertical slice — категория 11 после принятия категории 10.
 
 ### Этап 24. Observable failures
 

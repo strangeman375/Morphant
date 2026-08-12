@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperConventionTests/MemberTests::Rejects_creation_when_a_required_member_has_no_convention_value
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0041
 
 using Morphant;
 using Morphant.Context;

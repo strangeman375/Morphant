@@ -6,10 +6,9 @@
 
 Статус: таксономия и полный контракт категорий 1–12 приняты. Перечисленные в
 разделе 7 предварительные выравнивания production-model приняты пользователем.
-Vertical slices категорий 1–6 реализованы и приняты пользователем. Vertical
-slice категории 7 реализован и принят пользователем. Vertical slice
-категории 8 реализован и ожидает пользовательского ревью; следующий slice
-после его принятия — категория 9.
+Vertical slices категорий 1–9 реализованы и приняты пользователем. Vertical
+slice категории 10 реализован и ожидает пользовательского ревью; следующий
+slice после его принятия — категория 11.
 
 Этот документ является отдельным рабочим планом этапа 23 из
 [`MAPPING_API_IMPLEMENTATION_PLAN.md`](MAPPING_API_IMPLEMENTATION_PLAN.md).
@@ -82,7 +81,7 @@ ambiguous и invalid registrations сохраняют утверждённые r
 |---:|---|---|
 | 1 | Полная таксономия категорий и общие границы diagnostics | Принят |
 | 2 | Полный каталог и точный контракт каждой diagnostic по одной категории за раз | Принят: категории 1–12 полностью специфицированы |
-| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–7 приняты, категория 8 реализована и ожидает ревью |
+| 3 | Реализация, recovery, самостоятельные unit- и integration-тесты вертикальными срезами | В работе: категории 1–9 приняты, категория 10 реализована и ожидает ревью |
 | 4 | Двусторонний финальный аудит каталога, реализации, тестов и документации | Заблокирован этапом 3 |
 
 Если при составлении каталога обнаружится пересечение, пропуск либо неверная
@@ -5046,8 +5045,30 @@ pairs сохраняются. Runtime result-policy null остаётся авт
 selection reasons, parameter rules, locations/deduplication, terminal aliases,
 precedence, suppression/severity и actualization. Обычный C# 9 consumer
 исполняет path-sensitive suppressed recovery, а package/MSBuild fixture
-проверяет реальные `.editorconfig` overrides всех пяти IDs. Срез реализован и
-ожидает пользовательского ревью; следующий — категория 10.
+проверяет реальные `.editorconfig` overrides всех пяти IDs. Срез принят
+пользователем.
+
+Десятый vertical slice категории 10 реализует configurable `MORPH0040`–
+`MORPH0043`: invalid effective explicit member rule, неудовлетворённый
+`required` member, недоступную lifecycle-фазу valid rule и terminal
+null/default structured member plan. Анализ выполняется над final member
+leaves после result/construction specialization, сохраняет exact member и
+imported-slot identity, effective input nullability, terminal aliases и
+прямую либо транзитивную dependency на `result` в value и control-flow
+condition.
+
+Recovery блокирует только affected member leaf/path до вычисления его values
+и assignments. Structured creation бросает до constructor-а; non-null runtime
+result получается один раз и бросает перед member stage, а runtime null
+сохраняет terminal short circuit. Existing previous, local override,
+independent branches и pairs остаются исполнимыми; category-9 failure и C#
+binding сохраняют precedence. Самостоятельная unit-категория фиксирует exact
+descriptors/messages/locations, required/lifecycle/terminal ownership,
+cross-pair hiding, suppression/severity, actualization и control-flow
+specialization. C# 11 consumer исполняет branch-atomic suppressed recovery, а
+package/MSBuild fixture проверяет реальные `.editorconfig` overrides всех
+четырёх IDs. Срез реализован и ожидает пользовательского ревью; следующий —
+категория 11.
 
 Каждая тестовая категория должна независимо проверять наличие и отсутствие
 diagnostics, точные ID/severity/message/location, подавление каскадов,

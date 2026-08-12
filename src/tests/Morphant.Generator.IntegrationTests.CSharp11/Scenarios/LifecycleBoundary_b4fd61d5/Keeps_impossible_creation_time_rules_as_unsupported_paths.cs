@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperMemberTests/LifecycleBoundaryTests::Keeps_impossible_creation_time_rules_as_unsupported_paths
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0042
 
 using Morphant;
 using Morphant.Context;

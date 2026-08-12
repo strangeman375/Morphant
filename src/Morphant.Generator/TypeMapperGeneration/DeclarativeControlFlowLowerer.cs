@@ -71,13 +71,14 @@ internal static class DeclarativeControlFlowLowerer
         SyntaxNode transferScope,
         TypeMapperMappingModel mapping,
         Func<DeclarativeLeafSyntaxNode,
-            ImmutableArray<TypeMapperMemberMappingModel>> buildLeaf,
+            TypeMapperMemberControlFlowLeafModel> buildLeaf,
         CancellationToken cancellationToken,
         out TypeMapperMemberControlFlowNode root)
     {
         TypeMapperControlFlowNode BuildLeaf(
             DeclarativeLeafSyntaxNode leaf)
         {
+            var memberLeaf = buildLeaf(leaf);
             var leafMapping = mapping with
             {
                 CreateDirectExpression = null,
@@ -86,11 +87,12 @@ internal static class DeclarativeControlFlowLowerer
                 CreateConstructor = null,
                 CreateMemberMappings = [],
                 CreatePostMemberMappings = [],
-                UpdateMemberMappings = buildLeaf(leaf),
+                UpdateMemberMappings = memberLeaf.MemberMappings,
                 ControlFlow = null,
                 CreateFailure = null,
                 UpdateFailure = null,
-                Failure = null,
+                Failure = memberLeaf.Failure,
+                MemberObservation = memberLeaf.MemberObservation,
                 PostMemberControlFlow = null
             };
 
@@ -777,7 +779,8 @@ internal static class DeclarativeControlFlowLowerer
             node.ThrowDependency,
             node.SwitchDependency,
             node.EvaluationDependency,
-            node.ThrowUsesCurrentMappingOperation);
+            node.ThrowUsesCurrentMappingOperation,
+            node.Leaf?.MemberObservation);
     }
 
     private static string BuildUnmatchedSwitchException(

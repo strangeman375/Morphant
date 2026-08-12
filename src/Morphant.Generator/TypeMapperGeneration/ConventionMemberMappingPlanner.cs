@@ -7,6 +7,12 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class ConventionMemberMappingPlanner
 {
+    private const string AllowNullAttributeMetadataName =
+        "System.Diagnostics.CodeAnalysis.AllowNullAttribute";
+
+    private const string DisallowNullAttributeMetadataName =
+        "System.Diagnostics.CodeAnalysis.DisallowNullAttribute";
+
     public static ConventionMemberMappingPlan Build(
         ITypeSymbol sourceType,
         ITypeSymbol? destination,
@@ -305,6 +311,28 @@ internal static class ConventionMemberMappingPlanner
         }
 
         return result.ToImmutable();
+    }
+
+    internal static ISymbol? FindEffectiveInstanceMember(
+        ITypeSymbol type,
+        string memberName,
+        CancellationToken cancellationToken)
+    {
+        var group = BuildEffectiveMemberGroups(type, cancellationToken)
+            .FirstOrDefault(candidate => StringComparer.Ordinal.Equals(
+                candidate.Name,
+                memberName));
+
+        if (group.Members.IsDefaultOrEmpty)
+        {
+            return null;
+        }
+
+        return group.Members.FirstOrDefault(static member =>
+            !member.IsStatic &&
+            member is IPropertySymbol or IFieldSymbol) ??
+               group.Members.FirstOrDefault(static member =>
+                   !member.IsStatic);
     }
 
     internal static ImmutableArray<ISymbol> FindUnmappedRequiredMembers(
@@ -846,7 +874,12 @@ internal static class ConventionMemberMappingPlanner
 
                 return new WritableMember(
                     property.Name,
-                    property.Type,
+                    GetInputType(
+                        property.Type,
+                        setter.Parameters[setter.Parameters.Length - 1]
+                            .NullableAnnotation,
+                        property,
+                        setter.Parameters[setter.Parameters.Length - 1]),
                     CanAssign: !setter.IsInitOnly,
                     property);
             }
@@ -865,13 +898,60 @@ internal static class ConventionMemberMappingPlanner
             {
                 return new WritableMember(
                     field.Name,
-                    field.Type,
+                    GetInputType(
+                        field.Type,
+                        field.NullableAnnotation,
+                        field,
+                        inputSymbol: null),
                     CanAssign: true,
                     field);
             }
         }
 
         return null;
+    }
+
+    private static ITypeSymbol GetInputType(
+        ITypeSymbol type,
+        NullableAnnotation nullableAnnotation,
+        ISymbol member,
+        ISymbol? inputSymbol)
+    {
+        if (type.IsReferenceType ||
+            type.TypeKind == TypeKind.TypeParameter)
+        {
+            if (HasAttribute(
+                    member,
+                    DisallowNullAttributeMetadataName) ||
+                HasAttribute(
+                    inputSymbol,
+                    DisallowNullAttributeMetadataName))
+            {
+                nullableAnnotation = NullableAnnotation.NotAnnotated;
+            }
+            else if (HasAttribute(
+                         member,
+                         AllowNullAttributeMetadataName) ||
+                     HasAttribute(
+                         inputSymbol,
+                         AllowNullAttributeMetadataName))
+            {
+                nullableAnnotation = NullableAnnotation.Annotated;
+            }
+        }
+
+        return type.WithNullableAnnotation(nullableAnnotation);
+    }
+
+    private static bool HasAttribute(
+        ISymbol? symbol,
+        string metadataName)
+    {
+        return symbol?.GetAttributes().Any(attribute =>
+                   attribute.AttributeClass is { } attributeType &&
+                   StringComparer.Ordinal.Equals(
+                       SymbolNameHelper.GetFullMetadataName(attributeType),
+                       metadataName)) == true;
     }
 
     private static bool IsAccessible(
@@ -946,7 +1026,8 @@ internal readonly record struct ConventionMemberMappingPlan(
     ImmutableArray<TypeMapperMemberMappingModel> MapReplacementPost,
     ImmutableArray<TypeMapperMemberMappingModel> Update,
     MemberPlanningObservation Observation,
-    ImmutableArray<string> ConfiguredMemberNames = default)
+    ImmutableArray<string> ConfiguredMemberNames = default,
+    MappingFailureObservation? Failure = null)
 {
     public ConstructorInitializationMappingPlan BuildConstructorInitializationPlan(
         bool replacement)
@@ -965,12 +1046,14 @@ internal readonly record struct ConventionMemberMappingPlan(
             postMappings,
             Observation.RequiredObligations,
             Observation.Rules.Where(static rule =>
+                    rule.InvalidReason == MemberRuleInvalidReason.None &&
                     rule.Lifecycle.HasFlag(
                         MemberLifecycleDependency.Creation) &&
                     rule.Lifecycle.HasFlag(
                         MemberLifecycleDependency.Result) &&
-                    !rule.Lifecycle.HasFlag(
-                        MemberLifecycleDependency.ExistingDestination))
+                    (rule.IsRequired ||
+                     !rule.Lifecycle.HasFlag(
+                         MemberLifecycleDependency.ExistingDestination)))
                 .ToImmutableArray(),
             Observation);
     }

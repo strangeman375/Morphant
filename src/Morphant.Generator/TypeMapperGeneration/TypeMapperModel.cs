@@ -175,6 +175,11 @@ internal sealed record TypeMapperControlFlowNode
     bool ThrowUsesCurrentMappingOperation = false
 );
 
+internal readonly record struct TypeMapperMemberControlFlowLeafModel(
+    ImmutableArray<TypeMapperMemberMappingModel> MemberMappings,
+    MappingFailureObservation? Failure,
+    MemberPlanningObservation? MemberObservation);
+
 internal readonly record struct TypeMapperSwitchSectionModel
 (
     ImmutableArray<string> Labels,
@@ -202,7 +207,8 @@ internal sealed record TypeMapperMemberControlFlowNode
     TypeMapperDependencyExpressionModel? ThrowDependency = null,
     TypeMapperDependencyExpressionModel? SwitchDependency = null,
     TypeMapperDependencyExpressionModel? EvaluationDependency = null,
-    bool ThrowUsesCurrentMappingOperation = false
+    bool ThrowUsesCurrentMappingOperation = false,
+    MemberPlanningObservation? MemberObservation = null
 );
 
 internal readonly record struct TypeMapperMemberSwitchSectionModel

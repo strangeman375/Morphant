@@ -242,6 +242,14 @@ internal enum MemberRuleOrigin
     ConstructorArgument
 }
 
+internal enum MemberRuleInvalidReason
+{
+    None,
+    AutoUnavailable,
+    MarkerTargetMismatch,
+    ImportedSlotHidden
+}
+
 [Flags]
 internal enum MemberLifecycleDependency
 {
@@ -259,7 +267,13 @@ internal sealed record MemberRuleObservation(
     SyntaxNode? OriginNode,
     bool IsRequired,
     MemberLifecycleDependency Lifecycle,
-    ISymbol? HiddenImportedSlot);
+    ISymbol? HiddenImportedSlot,
+    MemberRuleInvalidReason InvalidReason = MemberRuleInvalidReason.None,
+    ITypeSymbol? AssertedType = null,
+    SyntaxNode? DesignatorNode = null,
+    SyntaxNode? ResultDependencyOrigin = null,
+    INamedTypeSymbol? SourceMapper = null,
+    ITypeSymbol? TargetType = null);
 
 internal sealed record MemberPlanningObservation(
     ImmutableArray<ISymbol> SupportedSourceMembers,
@@ -268,7 +282,8 @@ internal sealed record MemberPlanningObservation(
     ImmutableArray<ISymbol> RequiredObligations,
     ImmutableArray<StructuredTerminalObservation> Terminals,
     ImmutableArray<NestedMappingObservation> NestedMappings = default,
-    ImmutableArray<SourceDiscardObservation> SourceDiscards = default);
+    ImmutableArray<SourceDiscardObservation> SourceDiscards = default,
+    SyntaxNode? PlanOrigin = null);
 
 internal enum NestedDestinationOrigin
 {

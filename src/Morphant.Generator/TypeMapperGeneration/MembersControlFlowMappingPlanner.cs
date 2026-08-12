@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.PairConfiguration;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -17,7 +18,8 @@ internal static class MembersControlFlowMappingPlanner
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         bool reuseFlatMapping,
-        Func<ConventionMemberMappingPlan, TypeMapperMappingModel>
+        ResultPolicyKind? resultPolicy,
+        Func<ConventionMemberMappingPlan, bool, TypeMapperMappingModel>
             buildFlatMapping,
         CancellationToken cancellationToken)
     {
@@ -53,7 +55,19 @@ internal static class MembersControlFlowMappingPlanner
                     reusableMapping,
                     leaf.Value,
                     mapperType)
-                : buildFlatMapping(leaf.Value);
+                : buildFlatMapping(
+                    leaf.Value,
+                    !reuseFlatMapping);
+
+            if (reuseFlatMapping)
+            {
+                sharedMapping ??= flat;
+                flat = MemberRecoveryPlanner.Apply(
+                    flat,
+                    leaf.Value,
+                    resultPolicy,
+                    mapperType);
+            }
 
             if (flat.Failure is { } unsupported)
             {
@@ -64,13 +78,6 @@ internal static class MembersControlFlowMappingPlanner
             }
 
             flatMappings.Add(leaf.Key, flat);
-
-            if (reuseFlatMapping &&
-                sharedMapping is null &&
-                flat.ControlFlow is not null)
-            {
-                sharedMapping = flat;
-            }
 
             foreach (var declaration in
                      flat.HelperMethodDeclarations.IsDefault
@@ -92,6 +99,7 @@ internal static class MembersControlFlowMappingPlanner
                     flatMappings,
                     compilation,
                     mapperType,
+                    resultPolicy,
                     cancellationToken,
                     out var resultDependentControlFlow))
             {
@@ -272,13 +280,23 @@ internal static class MembersControlFlowMappingPlanner
                     CreatePostMemberMappings = postMappings,
                     UpdateMemberMappings = create || replacement
                         ? []
-                        : memberPlan.Update
+                        : memberPlan.Update,
+                    MemberObservation = memberPlan.Observation,
+                    NestedObservations = memberPlan.Observation
+                        .NestedMappings.IsDefault
+                            ? []
+                            : memberPlan.Observation.NestedMappings
                 }
             };
         }
 
         return template with
         {
+            MemberObservation = memberPlan.Observation,
+            NestedObservations = memberPlan.Observation.NestedMappings
+                .IsDefault
+                    ? []
+                    : memberPlan.Observation.NestedMappings,
             ControlFlow = new TypeMapperControlFlowMappingModel(
                 Apply(controlFlow.CreateRoot, create: true),
                 Apply(controlFlow.UpdateRoot, create: false))
@@ -293,6 +311,7 @@ internal static class MembersControlFlowMappingPlanner
             TypeMapperMappingModel> flatMappings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
+        ResultPolicyKind? resultPolicy,
         CancellationToken cancellationToken,
         out TypeMapperControlFlowMappingModel controlFlow)
     {
@@ -306,6 +325,11 @@ internal static class MembersControlFlowMappingPlanner
                 BuildPreviousSubstitution(mapping, hasPrevious: false),
                 mapping.ResultLocalName,
                 static plan => plan.CreatePost,
+                MappingExecutionPathSet.NoPrevious,
+                existingDestination: false,
+                runtimeResult: resultPolicy is
+                    ResultPolicyKind.ConstructUsing or
+                    ResultPolicyKind.ResolveUsing,
                 cancellationToken,
                 out var createPost) ||
             !TryBuildPostControlFlow(
@@ -316,6 +340,10 @@ internal static class MembersControlFlowMappingPlanner
                 BuildPreviousSubstitution(mapping, hasPrevious: true),
                 mapping.ResultLocalName,
                 static plan => plan.MapReplacementPost,
+                MappingExecutionPathSet.UpdateWithPrevious,
+                existingDestination: false,
+                runtimeResult: resultPolicy ==
+                    ResultPolicyKind.ResolveUsing,
                 cancellationToken,
                 out var replacementPost) ||
             !TryBuildPostControlFlow(
@@ -326,6 +354,9 @@ internal static class MembersControlFlowMappingPlanner
                 BuildPreviousSubstitution(mapping, hasPrevious: true),
                 "destination",
                 static plan => plan.Update,
+                MappingExecutionPathSet.UpdateWithPrevious,
+                existingDestination: true,
+                runtimeResult: false,
                 cancellationToken,
                 out var existingPost))
         {
@@ -347,6 +378,29 @@ internal static class MembersControlFlowMappingPlanner
             StringComparer.Ordinal);
         TypeMapperControlFlowNode? selectedCreate = null;
         TypeMapperControlFlowNode? selectedUpdate = null;
+        var preCreationBlocker = resultPolicy is not
+                (ResultPolicyKind.ConstructUsing or
+                 ResultPolicyKind.ResolveUsing)
+            ? members.Leaves.FirstOrDefault(pair =>
+                HasPreCreationResultDependency(
+                    pair.Value,
+                    flatMappings[pair.Key]))
+            : default;
+
+        if (preCreationBlocker.Key is not null)
+        {
+            selectedCreate = PrepareConstructionRoot(
+                SelectRoot(
+                    flatMappings[preCreationBlocker.Key],
+                    create: true),
+                create: true,
+                createPost,
+                replacementPost,
+                existingPost,
+                createAssignableNames,
+                replacementAssignableNames,
+                mapperType);
+        }
 
         foreach (var flat in flatMappings.Values)
         {
@@ -371,16 +425,17 @@ internal static class MembersControlFlowMappingPlanner
                 replacementAssignableNames,
                 mapperType);
 
-            if (selectedCreate is null)
+            if (selectedUpdate is null)
             {
-                selectedCreate = preparedCreate;
+                selectedCreate ??= preparedCreate;
                 selectedUpdate = preparedUpdate;
                 continue;
             }
 
-            if (!AreEquivalentConstruction(
-                    selectedCreate,
-                    preparedCreate) ||
+            if ((preCreationBlocker.Key is null &&
+                 !AreEquivalentConstruction(
+                     selectedCreate!,
+                     preparedCreate)) ||
                 !AreEquivalentConstruction(
                     selectedUpdate!,
                     preparedUpdate))
@@ -410,6 +465,9 @@ internal static class MembersControlFlowMappingPlanner
             string resultName,
             Func<ConventionMemberMappingPlan,
                 ImmutableArray<TypeMapperMemberMappingModel>> selectMembers,
+            MappingExecutionPathSet paths,
+            bool existingDestination,
+            bool runtimeResult,
             CancellationToken currentCancellationToken,
             out TypeMapperMemberControlFlowNode root)
         {
@@ -429,11 +487,50 @@ internal static class MembersControlFlowMappingPlanner
                     contextName: "context",
                     configuredMembers.TransferScope,
                     baseMapping,
-                    leaf => selectMembers(
-                        configuredMembers.Leaves[leaf]),
+                    leaf =>
+                    {
+                        var plan = configuredMembers.Leaves[leaf];
+
+                        if (MemberRecoveryPlanner.TryBuildFailure(
+                                baseMapping,
+                                plan,
+                                resultPolicy,
+                                paths,
+                                existingDestination,
+                                runtimeResult,
+                                out var failure))
+                        {
+                            return new TypeMapperMemberControlFlowLeafModel(
+                                [],
+                                failure,
+                                plan.Observation);
+                        }
+
+                        return new TypeMapperMemberControlFlowLeafModel(
+                            selectMembers(plan),
+                            Failure: null,
+                            MemberObservation: plan.Observation);
+                    },
                     currentCancellationToken,
                     out root);
         }
+    }
+
+    private static bool HasPreCreationResultDependency(
+        ConventionMemberMappingPlan plan,
+        TypeMapperMappingModel mapping)
+    {
+        return plan.Observation.Rules.Any(rule =>
+            rule.InvalidReason == MemberRuleInvalidReason.None &&
+            rule.Origin is not
+                (MemberRuleOrigin.Convention or MemberRuleOrigin.Ignore) &&
+            rule.Lifecycle.HasFlag(MemberLifecycleDependency.Creation) &&
+            rule.Lifecycle.HasFlag(MemberLifecycleDependency.Result) &&
+            (rule.Lifecycle.HasFlag(
+                 MemberLifecycleDependency.InitOnly) ||
+             rule.IsRequired &&
+             mapping.CreateFailure?.Reason ==
+                 MappingFailureReason.ConstructorSelectionFailed));
     }
 
     private static TypeMapperControlFlowNode PrepareConstructionRoot(
@@ -790,7 +887,8 @@ internal static class MembersControlFlowMappingPlanner
             : mapping with
             {
                 CreateFactory = null,
-                CreateConstructor = null
+                CreateConstructor = null,
+                CreateFailure = null
             };
 
         return new TypeMapperControlFlowNode(

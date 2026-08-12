@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -395,8 +396,52 @@ internal static class DeclarativeIntrinsic
             semanticModel.Compilation);
 
         return SymbolEqualityComparer.IncludeNullability.Equals(
-            assertedType,
-            targetType);
+                   assertedType,
+                   targetType) ||
+               StringComparer.Ordinal.Equals(
+                   MappingTypeIdentityPolicy.Create(assertedType).Key,
+                   MappingTypeIdentityPolicy.Create(targetType).Key) &&
+               HasSameNullability(assertedType, targetType);
+    }
+
+    private static bool HasSameNullability(
+        ITypeSymbol left,
+        ITypeSymbol right)
+    {
+        if (left.NullableAnnotation != right.NullableAnnotation)
+        {
+            return false;
+        }
+
+        if (left is IArrayTypeSymbol leftArray &&
+            right is IArrayTypeSymbol rightArray)
+        {
+            return HasSameNullability(
+                leftArray.ElementType,
+                rightArray.ElementType);
+        }
+
+        if (left is not INamedTypeSymbol leftNamed ||
+            right is not INamedTypeSymbol rightNamed ||
+            leftNamed.TypeArguments.Length !=
+                rightNamed.TypeArguments.Length)
+        {
+            return true;
+        }
+
+        for (var index = 0;
+             index < leftNamed.TypeArguments.Length;
+             index++)
+        {
+            if (!HasSameNullability(
+                    leftNamed.TypeArguments[index],
+                    rightNamed.TypeArguments[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static bool ValidateValueTargets(
@@ -565,6 +610,11 @@ internal static class DeclarativeIntrinsic
                              SyntaxKind.SuppressNullableWarningExpression) &&
                          ReferenceEquals(postfix.Operand, current):
                     current = postfix;
+                    continue;
+
+                case CastExpressionSyntax cast
+                    when ReferenceEquals(cast.Expression, current):
+                    current = cast;
                     continue;
 
                 case ConditionalExpressionSyntax conditional

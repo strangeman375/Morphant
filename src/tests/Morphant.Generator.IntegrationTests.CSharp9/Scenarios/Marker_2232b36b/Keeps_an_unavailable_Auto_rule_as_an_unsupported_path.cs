@@ -1,6 +1,7 @@
 // Compiled integration scenario: TypeMapperMemberTests/MarkerTests::Keeps_an_unavailable_Auto_rule_as_an_unsupported_path
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0040
 
 using Morphant;
 using Morphant.Context;
@@ -44,9 +45,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Marker_2232b36b
                 throw new InvalidOperationException(
                     "An unavailable Auto rule was silently ignored.");
             }
-            catch (global::Morphant.Exceptions.MappingConfigurationException exception)
+            catch (global::Morphant.Exceptions
+                .MappingConfigurationException exception)
                 when (exception.Message.EndsWith(
-                    "A configured Auto member cannot be mapped by convention."))
+                    "The configured member rule is invalid."))
             {
             }
         }

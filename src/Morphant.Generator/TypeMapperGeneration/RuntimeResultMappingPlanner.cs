@@ -10,10 +10,6 @@ internal static class RuntimeResultMappingPlanner
         "The configured runtime result callback cannot be transferred into " +
         "generated code.";
 
-    private const string CreationOnlyMembersMessage =
-        "The configured Members plan contains a creation-only rule that " +
-        "cannot be applied to a runtime callback result.";
-
     public static RuntimeResultMappingResult Build(
         ResultPolicyConfigurationModel configuration,
         TypeMapperMappingModel mapping,
@@ -61,17 +57,6 @@ internal static class RuntimeResultMappingPlanner
 
         TypeMapperControlFlowNode BuildCallbackLeaf(bool previousAvailable)
         {
-            if (memberMappings.Observation.Rules.Any(static rule =>
-                    rule.Origin != MemberRuleOrigin.Convention &&
-                    rule.Lifecycle.HasFlag(
-                        MemberLifecycleDependency.InitOnly)))
-            {
-                return BuildUnsupportedLeaf(
-                    mapping,
-                    create: !previousAvailable,
-                    CreationOnlyMembersMessage);
-            }
-
             var postMembers = previousAvailable
                 ? memberMappings.MapReplacementPost
                 : memberMappings.CreatePost;
@@ -177,31 +162,6 @@ internal static class RuntimeResultMappingPlanner
                 ControlFlow = null,
                 CreateFailure = null,
                 UpdateFailure = null,
-                Failure = null
-            });
-    }
-
-    private static TypeMapperControlFlowNode BuildUnsupportedLeaf(
-        TypeMapperMappingModel mapping,
-        bool create,
-        string message)
-    {
-        var failure = MappingFailureObservation.Create(
-            mapping.AnalysisContext,
-            MappingFailureReason.MemberLifecycleInvalid,
-            message,
-            MappingObservationOriginKind.Member,
-            create
-                ? MappingAffectedPath.NoPrevious(MappingPlanPhase.Members)
-                : MappingAffectedPath.ExistingDestination(
-                    MappingPlanPhase.Members));
-
-        return Leaf(
-            mapping with
-            {
-                ControlFlow = null,
-                CreateFailure = create ? failure : null,
-                UpdateFailure = create ? null : failure,
                 Failure = null
             });
     }

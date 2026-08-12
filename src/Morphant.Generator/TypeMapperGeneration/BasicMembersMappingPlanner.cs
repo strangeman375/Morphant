@@ -223,6 +223,9 @@ internal static class BasicMembersMappingPlanner
                     .Key,
                 static local => local.Initializer,
                 SymbolEqualityComparer.Default);
+        var configuredDestination = TryGetConfiguredDestinationType(
+            configured,
+            cancellationToken);
         var leaves =
             new Dictionary<
                 DeclarativeLeafSyntaxNode,
@@ -232,15 +235,46 @@ internal static class BasicMembersMappingPlanner
         bool BuildLeaf(DeclarativeLeafSyntaxNode leaf)
         {
             if (leaf.DirectExpression is { } directExpression &&
-                IsOmitted(directExpression))
+                TryGetOmittedProducer(
+                    directExpression,
+                    out var omittedProducer))
             {
-                leafFailure = BuildFailure(
+                var failure = BuildFailure(
                     mapping,
                     configured,
                     MappingFailureReason.TerminalNullMembers,
                     UnsupportedMembersMessage,
-                    directExpression);
-                return false;
+                    omittedProducer);
+                var terminal = new StructuredTerminalObservation(
+                    StructuredTerminalKind.NullMembers,
+                    omittedProducer,
+                    MappingAffectedPath.All(
+                        MappingPlanPhase.Members) with
+                    {
+                        BranchOrigin = directExpression
+                    },
+                    leaf.TerminalAliases.IsDefault
+                        ? []
+                        : leaf.TerminalAliases);
+
+                leaves.Add(
+                    leaf,
+                    new ConventionMemberMappingPlan(
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        convention.Observation with
+                        {
+                            Rules = [],
+                            RequiredObligations = [],
+                            Terminals = [terminal],
+                            PlanOrigin = directExpression
+                        },
+                        ConfiguredMemberNames: [],
+                        Failure: failure));
+                return true;
             }
 
             if (leaf.ObjectCreation is null ||
@@ -263,6 +297,7 @@ internal static class BasicMembersMappingPlanner
                     contextParameter,
                     lambda,
                     configured.Expression.DeclaringMapperType,
+                    configuredDestination,
                     controlFlow.RuntimeLocalPlaceholders,
                     runtimeLocalInitializers,
                     cancellationToken,
@@ -282,9 +317,48 @@ internal static class BasicMembersMappingPlanner
                                 discard.Member,
                                 discard.Statement,
                                 configured.Expression))
-                        .ToImmutableArray()
+                        .ToImmutableArray(),
+                    PlanOrigin = leaf.ObjectCreation
                 }
             };
+
+            if (resultParameter is not null &&
+                FindResultDependentPathOrigin(
+                    controlFlow.Root,
+                    leaf,
+                    resultParameter,
+                    configured.Expression.SemanticModel,
+                    runtimeLocalInitializers,
+                    cancellationToken) is { } pathDependency)
+            {
+                plan = plan with
+                {
+                    Observation = plan.Observation with
+                    {
+                        Rules = plan.Observation.Rules.Select(rule =>
+                                rule.InvalidReason ==
+                                    MemberRuleInvalidReason.None &&
+                                rule.Origin is not
+                                    (MemberRuleOrigin.Convention or
+                                     MemberRuleOrigin.Ignore) &&
+                                rule.Lifecycle.HasFlag(
+                                    MemberLifecycleDependency.Creation) &&
+                                (rule.IsRequired ||
+                                 rule.Lifecycle.HasFlag(
+                                     MemberLifecycleDependency.InitOnly))
+                                    ? rule with
+                                    {
+                                        Lifecycle = rule.Lifecycle |
+                                            MemberLifecycleDependency.Result,
+                                        ResultDependencyOrigin =
+                                            rule.ResultDependencyOrigin ??
+                                            pathDependency
+                                    }
+                                    : rule)
+                            .ToImmutableArray()
+                    }
+                };
+            }
 
             leaves.Add(leaf, plan);
             return true;
@@ -350,6 +424,7 @@ internal static class BasicMembersMappingPlanner
         IParameterSymbol? contextParameter,
         LambdaExpressionSyntax transferScope,
         INamedTypeSymbol sourceMapper,
+        ITypeSymbol? configuredDestination,
         IReadOnlyDictionary<ISymbol, string> localSubstitutions,
         IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
         CancellationToken cancellationToken,
@@ -380,8 +455,55 @@ internal static class BasicMembersMappingPlanner
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!occupiedNames.Add(assignment.MemberName) ||
-                !writableMembersByName.TryGetValue(
+            if (!occupiedNames.Add(assignment.MemberName))
+            {
+                plan = default;
+                failure = BuildFailure(
+                    mapping,
+                    sourceMapper,
+                    MappingFailureReason.MemberRuleInvalid,
+                    UnsupportedMembersMessage,
+                    transferScope,
+                    assignment.Value,
+                    createNestedMapUsages.Observations
+                        .AddRange(
+                            mapReplacementNestedMapUsages.Observations)
+                        .AddRange(updateNestedMapUsages.Observations));
+                return false;
+            }
+
+            if (TryGetHiddenImportedSlot(
+                    configuredDestination,
+                    destination,
+                    assignment.MemberName,
+                    cancellationToken,
+                    out var importedMember,
+                    out var hidingMember))
+            {
+                observedRules.Add(
+                    new MemberRuleObservation(
+                        importedMember,
+                        SourceMember: null,
+                        Origin: GetRuleOrigin(
+                            assignment.Value,
+                            semanticModel,
+                            cancellationToken),
+                        OriginNode: assignment.Value,
+                        IsRequired: IsRequired(importedMember),
+                        Lifecycle: GetLifecycle(
+                            importedMember,
+                            requiresAssignment: true),
+                        HiddenImportedSlot: hidingMember,
+                        InvalidReason:
+                            MemberRuleInvalidReason.ImportedSlotHidden,
+                        AssertedType: null,
+                        DesignatorNode: assignment.DesignatorNode,
+                        ResultDependencyOrigin: null,
+                        SourceMapper: sourceMapper));
+                continue;
+            }
+
+            if (!writableMembersByName.TryGetValue(
                     assignment.MemberName,
                     out var destinationMember))
             {
@@ -410,6 +532,37 @@ internal static class BasicMembersMappingPlanner
                 ? contextualTargetType
                 : destinationMember.Type;
 
+            if (DeclarativeMemberMarker.TryGetTypedMismatch(
+                    assignment.Value,
+                    destinationMember.Type,
+                    semanticModel,
+                    mapperType,
+                    cancellationToken,
+                    out var mismatchedMarker,
+                    out var assertedType,
+                    out var markerInvocation))
+            {
+                observedRules.Add(
+                    BuildMemberRuleObservation(
+                        convention,
+                        destinationMember,
+                        sourceMember: null,
+                        ToMemberRuleOrigin(mismatchedMarker),
+                        markerInvocation,
+                        GetLifecycle(
+                            destinationMember.Symbol,
+                            requiresAssignment:
+                                mismatchedMarker !=
+                                DeclarativeIntrinsicKind.Ignore),
+                        designatorNode: assignment.DesignatorNode,
+                        invalidReason:
+                            MemberRuleInvalidReason.MarkerTargetMismatch,
+                        assertedType: assertedType,
+                        resultDependencyOrigin: null,
+                        sourceMapper: sourceMapper));
+                continue;
+            }
+
             if (DeclarativeMemberMarker.TryGetKind(
                     assignment.Value,
                     targetType,
@@ -427,7 +580,9 @@ internal static class BasicMembersMappingPlanner
                             sourceMember: null,
                             MemberRuleOrigin.Ignore,
                             assignment.Value,
-                            MemberLifecycleDependency.None));
+                            MemberLifecycleDependency.None,
+                            assignment.DesignatorNode,
+                            sourceMapper: sourceMapper));
                     continue;
                 }
 
@@ -435,15 +590,20 @@ internal static class BasicMembersMappingPlanner
                         destinationMember.Name,
                         out var automaticCreate))
                 {
-                    plan = default;
-                    failure = BuildFailure(
-                        mapping,
-                        sourceMapper,
-                        MappingFailureReason.MemberRuleInvalid,
-                        AutomaticMemberUnavailableMessage,
-                        transferScope,
-                        assignment.Value);
-                    return false;
+                    observedRules.Add(
+                        BuildMemberRuleObservation(
+                            convention,
+                            destinationMember,
+                            sourceMember: null,
+                            MemberRuleOrigin.Auto,
+                            assignment.Value,
+                            GetLifecycle(
+                                destinationMember.Symbol,
+                                requiresAssignment: true),
+                            assignment.DesignatorNode,
+                            MemberRuleInvalidReason.AutoUnavailable,
+                            sourceMapper: sourceMapper));
+                    continue;
                 }
 
                 create.Add(automaticCreate);
@@ -479,7 +639,9 @@ internal static class BasicMembersMappingPlanner
                         (destinationMember.CanAssign
                             ? MemberLifecycleDependency
                                 .ExistingDestination
-                            : MemberLifecycleDependency.InitOnly)));
+                            : MemberLifecycleDependency.InitOnly),
+                        assignment.DesignatorNode,
+                        sourceMapper: sourceMapper));
                 continue;
             }
 
@@ -573,7 +735,19 @@ internal static class BasicMembersMappingPlanner
                         cancellationToken),
                     MemberRuleOrigin.ExplicitValue,
                     assignment.Value,
-                    lifecycle));
+                    lifecycle,
+                    designatorNode: assignment.DesignatorNode,
+                    resultDependencyOrigin:
+                        resultParameter is null ||
+                        !explicitPlan.IsResultDependent
+                            ? null
+                            : FindResultDependencyOrigin(
+                                assignment.Value,
+                                resultParameter,
+                                semanticModel,
+                                localInitializers,
+                                cancellationToken),
+                    sourceMapper: sourceMapper));
         }
 
         if (memberSelection == MemberSelectionValue.Auto)
@@ -606,6 +780,11 @@ internal static class BasicMembersMappingPlanner
         }
 
         var immutableCreate = create.ToImmutable();
+        var invalidMembers = observedRules
+            .Where(static rule =>
+                rule.InvalidReason != MemberRuleInvalidReason.None)
+            .Select(static rule => rule.DestinationMember)
+            .ToImmutableArray();
 
         plan = new ConventionMemberMappingPlan(
             immutableCreate,
@@ -627,6 +806,18 @@ internal static class BasicMembersMappingPlanner
                     .AddRange(updateNestedMapUsages.Observations)
             },
             occupiedNames.ToImmutableArray());
+        plan = plan with
+        {
+            Observation = plan.Observation with
+            {
+                RequiredObligations = plan.Observation.RequiredObligations
+                    .Where(required => !invalidMembers.Any(invalid =>
+                        SymbolEqualityComparer.Default.Equals(
+                            required,
+                            invalid)))
+                    .ToImmutableArray()
+            }
+        };
         failure = null;
         return true;
     }
@@ -731,7 +922,19 @@ internal static class BasicMembersMappingPlanner
                         .FindUnmappedRequiredMembers(
                             destination,
                             create,
-                            cancellationToken),
+                            cancellationToken)
+                        .Where(required => !rules.Any(rule =>
+                            rule.InvalidReason !=
+                                MemberRuleInvalidReason.None &&
+                            SymbolEqualityComparer.Default.Equals(
+                                rule.DestinationMember,
+                                required)))
+                        .ToImmutableArray(),
+                Terminals = immutablePlans.SelectMany(plan =>
+                        plan.Observation.Terminals.IsDefault
+                            ? []
+                            : plan.Observation.Terminals)
+                    .ToImmutableArray(),
                 NestedMappings = immutablePlans.SelectMany(plan =>
                         plan.Observation.NestedMappings.IsDefault
                             ? []
@@ -741,9 +944,14 @@ internal static class BasicMembersMappingPlanner
                         plan.Observation.SourceDiscards.IsDefault
                             ? []
                             : plan.Observation.SourceDiscards)
-                    .ToImmutableArray()
+                    .ToImmutableArray(),
+                PlanOrigin = immutablePlans
+                    .Select(static plan => plan.Observation.PlanOrigin)
+                    .LastOrDefault(static origin => origin is not null)
             },
-            occupiedNames.ToImmutableArray());
+            occupiedNames.ToImmutableArray(),
+            immutablePlans.Select(static plan => plan.Failure)
+                .FirstOrDefault(static failure => failure is not null));
     }
 
     private static bool TryBuildExplicitMapping(
@@ -1194,18 +1402,427 @@ internal static class BasicMembersMappingPlanner
         return true;
     }
 
-    private static bool IsOmitted(ExpressionSyntax expression)
+    private static ITypeSymbol? TryGetConfiguredDestinationType(
+        MembersConfigurationModel configuration,
+        CancellationToken cancellationToken)
     {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        if (configuration.Invocation.Expression is not
+                MemberAccessExpressionSyntax memberAccess ||
+            configuration.Expression.SemanticModel.GetTypeInfo(
+                    memberAccess.Expression,
+                    cancellationToken)
+                .Type is not INamedTypeSymbol
+                {
+                    TypeArguments.Length: 2
+                } builderType ||
+            !StringComparer.Ordinal.Equals(
+                SymbolNameHelper.GetFullMetadataName(
+                    builderType.OriginalDefinition),
+                "Morphant.MapperBuilder`2"))
         {
-            expression = parenthesized.Expression;
+            return null;
         }
 
-        return expression is LiteralExpressionSyntax
+        return MappingTypeNormalization.NormalizePreviousDestination(
+            builderType.TypeArguments[1],
+            configuration.Expression.SemanticModel.Compilation);
+    }
+
+    private static bool TryGetHiddenImportedSlot(
+        ITypeSymbol? configuredDestination,
+        ITypeSymbol currentDestination,
+        string memberName,
+        CancellationToken cancellationToken,
+        out ISymbol importedMember,
+        out ISymbol hidingMember)
+    {
+        if (configuredDestination is null ||
+            StringComparer.Ordinal.Equals(
+                MappingTypeIdentityPolicy.Create(configuredDestination).Key,
+                MappingTypeIdentityPolicy.Create(currentDestination).Key) ||
+            ConventionMemberMappingPlanner.FindEffectiveInstanceMember(
+                configuredDestination,
+                memberName,
+                cancellationToken) is not { } imported ||
+            imported is not (IPropertySymbol or IFieldSymbol) ||
+            ConventionMemberMappingPlanner.FindEffectiveInstanceMember(
+                currentDestination,
+                memberName,
+                cancellationToken) is not { } current ||
+            IsSameMemberIdentity(imported, current))
+        {
+            importedMember = null!;
+            hidingMember = null!;
+            return false;
+        }
+
+        importedMember = imported;
+        hidingMember = current;
+        return true;
+    }
+
+    private static bool IsSameMemberIdentity(
+        ISymbol imported,
+        ISymbol current)
+    {
+        if (SymbolEqualityComparer.Default.Equals(imported, current) ||
+            SymbolEqualityComparer.Default.Equals(
+                imported.OriginalDefinition,
+                current.OriginalDefinition) ||
+            StringComparer.Ordinal.Equals(
+                imported.GetDocumentationCommentId(),
+                current.GetDocumentationCommentId()))
+        {
+            return true;
+        }
+
+        if (IsSameDeclaredSlot(imported, current))
+        {
+            return true;
+        }
+
+        if (imported.ContainingType?.TypeKind == TypeKind.Interface &&
+            current.ContainingType is { } currentType &&
+            FindInterfaceImplementation(
+                currentType,
+                imported) is
+                { } implementation &&
+            IsSameDeclaredSlot(implementation, current))
+        {
+            return true;
+        }
+
+        if (current is not IPropertySymbol property)
+        {
+            return false;
+        }
+
+        for (var overridden = property.OverriddenProperty;
+             overridden is not null;
+             overridden = overridden.OverriddenProperty)
+        {
+            if (SymbolEqualityComparer.Default.Equals(
+                    imported.OriginalDefinition,
+                    overridden.OriginalDefinition) ||
+                StringComparer.Ordinal.Equals(
+                    imported.GetDocumentationCommentId(),
+                    overridden.GetDocumentationCommentId()))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static ISymbol? FindInterfaceImplementation(
+        INamedTypeSymbol currentType,
+        ISymbol imported)
+    {
+        if (currentType.FindImplementationForInterfaceMember(imported) is
+            { } direct)
+        {
+            return direct;
+        }
+
+        if (imported.ContainingType is not { } importedInterface)
+        {
+            return null;
+        }
+
+        var importedKey = MappingTypeIdentityPolicy.Create(
+                importedInterface)
+            .Key;
+        var equivalentInterface = currentType.AllInterfaces.FirstOrDefault(
+            candidate => StringComparer.Ordinal.Equals(
+                MappingTypeIdentityPolicy.Create(candidate).Key,
+                importedKey));
+        var equivalentMember = equivalentInterface?.GetMembers(imported.Name)
+            .FirstOrDefault(candidate => candidate.Kind == imported.Kind);
+
+        return equivalentMember is null
+            ? null
+            : currentType.FindImplementationForInterfaceMember(
+                equivalentMember);
+    }
+
+    private static bool IsSameDeclaredSlot(
+        ISymbol left,
+        ISymbol right)
+    {
+        if (left.Kind != right.Kind ||
+            !StringComparer.Ordinal.Equals(
+                left.MetadataName,
+                right.MetadataName) ||
+            left.ContainingType is not { } leftType ||
+            right.ContainingType is not { } rightType)
+        {
+            return false;
+        }
+
+        return StringComparer.Ordinal.Equals(
+                   leftType.ContainingAssembly.Identity.ToString(),
+                   rightType.ContainingAssembly.Identity.ToString()) &&
+               StringComparer.Ordinal.Equals(
+                   SymbolNameHelper.GetFullMetadataName(
+                       leftType.OriginalDefinition),
+                   SymbolNameHelper.GetFullMetadataName(
+                       rightType.OriginalDefinition));
+    }
+
+    private static bool IsRequired(ISymbol member) =>
+        member is IPropertySymbol { IsRequired: true } or
+            IFieldSymbol { IsRequired: true };
+
+    private static MemberLifecycleDependency GetLifecycle(
+        ISymbol member,
+        bool requiresAssignment)
+    {
+        if (!requiresAssignment)
+        {
+            return MemberLifecycleDependency.Creation |
+                   MemberLifecycleDependency.ExistingDestination;
+        }
+
+        var canAssign = member switch
+        {
+            IPropertySymbol
+            {
+                SetMethod: { IsInitOnly: false }
+            } => true,
+            IFieldSymbol { IsReadOnly: false } => true,
+            _ => false
+        };
+
+        return MemberLifecycleDependency.Creation |
+               (canAssign
+                   ? MemberLifecycleDependency.ExistingDestination
+                   : MemberLifecycleDependency.InitOnly);
+    }
+
+    private static MemberRuleOrigin GetRuleOrigin(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        foreach (var invocation in expression.DescendantNodesAndSelf()
+                     .OfType<InvocationExpressionSyntax>())
+        {
+            if (!DeclarativeIntrinsic.TryGetKind(
+                    invocation,
+                    semanticModel,
+                    cancellationToken,
+                    out var kind,
+                    out _))
+            {
+                continue;
+            }
+
+            return ToMemberRuleOrigin(kind);
+        }
+
+        return MemberRuleOrigin.ExplicitValue;
+    }
+
+    private static MemberRuleOrigin ToMemberRuleOrigin(
+        DeclarativeIntrinsicKind kind) => kind switch
+    {
+        DeclarativeIntrinsicKind.Auto => MemberRuleOrigin.Auto,
+        DeclarativeIntrinsicKind.Ignore => MemberRuleOrigin.Ignore,
+        _ => MemberRuleOrigin.ExplicitValue
+    };
+
+    private static SyntaxNode? FindResultDependencyOrigin(
+        ExpressionSyntax expression,
+        IParameterSymbol resultParameter,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
+        CancellationToken cancellationToken)
+    {
+        var visited = new HashSet<ISymbol>(
+            SymbolEqualityComparer.Default);
+
+        SyntaxNode? Find(ExpressionSyntax candidate)
+        {
+            foreach (var identifier in candidate.DescendantNodesAndSelf()
+                         .OfType<IdentifierNameSyntax>())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var symbol = semanticModel.GetSymbolInfo(
+                        identifier,
+                        cancellationToken)
+                    .Symbol;
+
+                if (SymbolEqualityComparer.Default.Equals(
+                        symbol,
+                        resultParameter))
+                {
+                    return identifier;
+                }
+
+                if (symbol is not null &&
+                    visited.Add(symbol) &&
+                    localInitializers.TryGetValue(
+                        symbol,
+                        out var initializer) &&
+                    Find(initializer) is { } dependency)
+                {
+                    return dependency;
+                }
+            }
+
+            return null;
+        }
+
+        return Find(expression);
+    }
+
+    private static SyntaxNode? FindResultDependentPathOrigin(
+        DeclarativeControlFlowSyntaxNode root,
+        DeclarativeLeafSyntaxNode target,
+        IParameterSymbol resultParameter,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
+        CancellationToken cancellationToken)
+    {
+        bool TryFind(
+            DeclarativeControlFlowSyntaxNode node,
+            SyntaxNode? inheritedDependency,
+            out SyntaxNode? dependency)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            switch (node)
+            {
+                case DeclarativeLeafSyntaxNode leaf:
+                    dependency = inheritedDependency;
+                    return ReferenceEquals(leaf, target);
+
+                case DeclarativeLocalDeclarationsSyntaxNode locals:
+                    return TryFind(
+                        locals.Next,
+                        inheritedDependency,
+                        out dependency);
+
+                case DeclarativeEvaluationSyntaxNode evaluation:
+                    return TryFind(
+                        evaluation.Next,
+                        inheritedDependency,
+                        out dependency);
+
+                case DeclarativeConditionalSyntaxNode conditional:
+                {
+                    var conditionDependency = inheritedDependency ??
+                        FindResultDependencyOrigin(
+                            conditional.Condition,
+                            resultParameter,
+                            semanticModel,
+                            localInitializers,
+                            cancellationToken);
+
+                    return TryFind(
+                               conditional.WhenTrue,
+                               conditionDependency,
+                               out dependency) ||
+                           TryFind(
+                               conditional.WhenFalse,
+                               conditionDependency,
+                               out dependency);
+                }
+
+                case DeclarativeSwitchSyntaxNode switchNode:
+                {
+                    var switchDependency = inheritedDependency ??
+                        FindResultDependencyOrigin(
+                            switchNode.GoverningExpression,
+                            resultParameter,
+                            semanticModel,
+                            localInitializers,
+                            cancellationToken);
+
+                    foreach (var section in switchNode.Sections)
+                    {
+                        var sectionDependency = switchDependency;
+
+                        if (sectionDependency is null)
+                        {
+                            foreach (var label in section.Labels)
+                            {
+                                var labelExpression =
+                                    label.WhenCondition ?? label.Value;
+
+                                if (labelExpression is not null &&
+                                    FindResultDependencyOrigin(
+                                        labelExpression,
+                                        resultParameter,
+                                        semanticModel,
+                                        localInitializers,
+                                        cancellationToken) is
+                                        { } labelDependency)
+                                {
+                                    sectionDependency = labelDependency;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (TryFind(
+                                section.Branch,
+                                sectionDependency,
+                                out dependency))
+                        {
+                            return true;
+                        }
+                    }
+
+                    if (switchNode.Continuation is { } continuation)
+                    {
+                        return TryFind(
+                            continuation,
+                            switchDependency,
+                            out dependency);
+                    }
+
+                    dependency = null;
+                    return false;
+                }
+
+                default:
+                    dependency = null;
+                    return false;
+            }
+        }
+
+        return TryFind(root, inheritedDependency: null, out var dependency)
+            ? dependency
+            : null;
+    }
+
+    private static bool TryGetOmittedProducer(
+        ExpressionSyntax expression,
+        out ExpressionSyntax producer)
+    {
+        expression = DeclarativeIntrinsic.UnwrapTransparentSyntax(expression);
+
+        if (expression is CastExpressionSyntax cast &&
+            TryGetOmittedProducer(cast.Expression, out producer))
+        {
+            return true;
+        }
+
+        if (expression is LiteralExpressionSyntax
         {
             RawKind: (int)SyntaxKind.NullLiteralExpression or
                 (int)SyntaxKind.DefaultLiteralExpression
-        } or DefaultExpressionSyntax;
+        } or DefaultExpressionSyntax)
+        {
+            producer = expression;
+            return true;
+        }
+
+        producer = null!;
+        return false;
     }
 
     private static MappingFailureObservation BuildFailure(
@@ -1230,14 +1847,14 @@ internal static class BasicMembersMappingPlanner
         ISymbol? sourceMember,
         MemberRuleOrigin origin,
         SyntaxNode originNode,
-        MemberLifecycleDependency lifecycle)
+        MemberLifecycleDependency lifecycle,
+        SyntaxNode? designatorNode = null,
+        MemberRuleInvalidReason invalidReason =
+            MemberRuleInvalidReason.None,
+        ITypeSymbol? assertedType = null,
+        SyntaxNode? resultDependencyOrigin = null,
+        INamedTypeSymbol? sourceMapper = null)
     {
-        var hiddenImportedRule = convention.Observation.Rules
-            .FirstOrDefault(rule =>
-                SymbolEqualityComparer.Default.Equals(
-                    rule.DestinationMember,
-                    destinationMember.Symbol));
-
         return new MemberRuleObservation(
             destinationMember.Symbol,
             sourceMember,
@@ -1245,7 +1862,13 @@ internal static class BasicMembersMappingPlanner
             originNode,
             destinationMember.IsRequired,
             lifecycle,
-            hiddenImportedRule?.DestinationMember);
+            HiddenImportedSlot: null,
+            invalidReason,
+            assertedType,
+            designatorNode,
+            resultDependencyOrigin,
+            sourceMapper,
+            destinationMember.Type);
     }
 
     private static ISymbol? TryGetDirectSourceMember(

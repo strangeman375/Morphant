@@ -82,6 +82,13 @@ internal static class TypeMapperPipeline
                     inputs.SelectMany(static input =>
                         input.ConstructionDiagnostics),
                     cancellationToken));
+        var memberDiagnostics = models
+            .Collect()
+            .Select(static (inputs, cancellationToken) =>
+                MemberDiagnosticPipeline.BuildDiagnostics(
+                    inputs.SelectMany(static input =>
+                        input.MemberDiagnostics),
+                    cancellationToken));
 
         context.RegisterSourceOutput(
             callbackDiagnostics,
@@ -94,6 +101,15 @@ internal static class TypeMapperPipeline
             });
         context.RegisterSourceOutput(
             constructionDiagnostics,
+            static (productionContext, diagnostics) =>
+            {
+                foreach (var diagnostic in diagnostics)
+                {
+                    productionContext.ReportDiagnostic(diagnostic);
+                }
+            });
+        context.RegisterSourceOutput(
+            memberDiagnostics,
             static (productionContext, diagnostics) =>
             {
                 foreach (var diagnostic in diagnostics)
@@ -195,12 +211,18 @@ internal static class TypeMapperPipeline
             model,
             callbackDiagnostics,
             cancellationToken);
+        var memberDiagnostics = MemberDiagnosticAnalyzer.Build(
+            analysis,
+            model,
+            callbackDiagnostics,
+            cancellationToken);
 
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),
             TypeMapperEmitter.Emit(model).ToString(),
             callbackDiagnostics,
-            constructionDiagnostics);
+            constructionDiagnostics,
+            memberDiagnostics);
     }
 
     private static TypeMapperRequest BuildRequest(
@@ -733,7 +755,8 @@ internal static class TypeMapperPipeline
             : configuration.Declarative.ResultPolicies[0];
 
         TypeMapperMappingModel BuildFlatMapping(
-            ConventionMemberMappingPlan memberMappings)
+            ConventionMemberMappingPlan memberMappings,
+            bool applyMemberRecovery = true)
         {
             var observedMapping = mapping with
             {
@@ -743,6 +766,16 @@ internal static class TypeMapperPipeline
                         ? []
                         : memberMappings.Observation.NestedMappings
             };
+
+            TypeMapperMappingModel Finish(
+                TypeMapperMappingModel candidate) =>
+                applyMemberRecovery
+                    ? MemberRecoveryPlanner.Apply(
+                        candidate,
+                        memberMappings,
+                        resultPolicy?.Kind,
+                        mapperType)
+                    : candidate;
 
             if (resultPolicy is { } configuredResultPolicy)
             {
@@ -765,22 +798,24 @@ internal static class TypeMapperPipeline
                             runtimeResult.HelperMethodDeclarations
                     };
 
-                    return ApplyResultPolicyFailure(
-                        runtimeMapping,
-                        memberMappings,
-                        configuredResultPolicy.Kind,
-                        runtimeResult.Failure);
+                    return Finish(
+                        ApplyResultPolicyFailure(
+                            runtimeMapping,
+                            memberMappings,
+                            configuredResultPolicy.Kind,
+                            runtimeResult.Failure));
                 }
 
                 if (!pair.Capabilities.StructuredConstruction ||
                     destinationPlan.MemberType is not
                     INamedTypeSymbol structuredDestination)
                 {
-                    return ApplyResultPolicyFailure(
-                        observedMapping,
-                        memberMappings,
-                        configuredResultPolicy.Kind,
-                        MappingFailureObservation.Create(
+                    return Finish(
+                        ApplyResultPolicyFailure(
+                            observedMapping,
+                            memberMappings,
+                            configuredResultPolicy.Kind,
+                            MappingFailureObservation.Create(
                             observedMapping.AnalysisContext,
                             MappingFailureReason
                                 .StructuredResultRequiresDestination,
@@ -795,7 +830,7 @@ internal static class TypeMapperPipeline
                                 MappingPlanPhase.ResultSelection),
                             configuredResultPolicy.Invocation,
                             configuredResultPolicy.Expression
-                                .DeclaringMapperType));
+                                .DeclaringMapperType)));
                 }
 
                 var structuredConstruct =
@@ -819,11 +854,12 @@ internal static class TypeMapperPipeline
                         structuredConstruct.HelperMethodDeclarations
                 };
 
-                return ApplyResultPolicyFailure(
-                    structuredMapping,
-                    memberMappings,
-                    configuredResultPolicy.Kind,
-                    structuredConstruct.Failure);
+                return Finish(
+                    ApplyResultPolicyFailure(
+                        structuredMapping,
+                        memberMappings,
+                        configuredResultPolicy.Kind,
+                        structuredConstruct.Failure));
             }
 
             ConventionConstructorMappingPlan? constructorMapping = null;
@@ -876,19 +912,20 @@ internal static class TypeMapperPipeline
                     configuration.Settings.ConstructorSelection.Syntax);
             }
 
-            return observedMapping with
-            {
-                CreateConstructor = constructorMapping?.Constructor,
-                CreateMemberMappings =
-                    constructorMapping?.CreateMemberMappings ??
-                    memberMappings.Create,
-                CreatePostMemberMappings =
-                    constructorMapping?.CreatePostMemberMappings ??
-                    [],
-                UpdateMemberMappings = memberMappings.Update,
-                CreateFailure = createFailure,
-                ConstructorObservation = constructorObservation
-            };
+            return Finish(
+                observedMapping with
+                {
+                    CreateConstructor = constructorMapping?.Constructor,
+                    CreateMemberMappings =
+                        constructorMapping?.CreateMemberMappings ??
+                        memberMappings.Create,
+                    CreatePostMemberMappings =
+                        constructorMapping?.CreatePostMemberMappings ??
+                        [],
+                    UpdateMemberMappings = memberMappings.Update,
+                    CreateFailure = createFailure,
+                    ConstructorObservation = constructorObservation
+                });
         }
 
         if (members.ControlFlow is not { } membersControlFlow)
@@ -907,7 +944,8 @@ internal static class TypeMapperPipeline
                 resultPolicy?.Kind is
                     ResultPolicyKind.ConstructUsing or
                     ResultPolicyKind.ResolveUsing,
-                BuildFlatMapping,
+                resultPolicy?.Kind,
+                (plan, recovery) => BuildFlatMapping(plan, recovery),
                 cancellationToken),
             mapperType);
     }
@@ -1516,7 +1554,8 @@ internal static class TypeMapperPipeline
         string Source,
         ImmutableArray<CallbackDiagnosticCandidate> CallbackDiagnostics,
         ImmutableArray<ConstructionDiagnosticCandidate>
-            ConstructionDiagnostics)
+            ConstructionDiagnostics,
+        ImmutableArray<MemberDiagnosticCandidate> MemberDiagnostics)
     {
         public string HintName => GeneratedSourceHintName.Create(
             "TypeMapper",

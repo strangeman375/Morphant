@@ -6,6 +6,75 @@ namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class DeclarativeMemberMarker
 {
+    public static bool TryGetTypedMismatch(
+        ExpressionSyntax expression,
+        ITypeSymbol targetType,
+        SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken,
+        out DeclarativeIntrinsicKind kind,
+        out ITypeSymbol assertedType,
+        out InvocationExpressionSyntax invocation)
+    {
+        if (DeclarativeIntrinsic.TryGetWrapperCast(
+                expression,
+                MetadataNames.Member,
+                semanticModel,
+                cancellationToken,
+                out var wrapperCast,
+                out _))
+        {
+            expression = wrapperCast.Expression;
+        }
+
+        expression = DeclarativeIntrinsic.UnwrapTransparentSyntax(
+            expression);
+
+        while (expression is CastExpressionSyntax cast)
+        {
+            expression = DeclarativeIntrinsic.UnwrapTransparentSyntax(
+                cast.Expression);
+        }
+
+        if (expression is not InvocationExpressionSyntax candidate ||
+            !DeclarativeIntrinsic.TryGetKind(
+                candidate,
+                semanticModel,
+                cancellationToken,
+                out kind,
+                out _) ||
+            kind is not (DeclarativeIntrinsicKind.Auto or
+                DeclarativeIntrinsicKind.Ignore or
+                DeclarativeIntrinsicKind.Value) ||
+            semanticModel.GetOperation(
+                candidate,
+                cancellationToken) is not IInvocationOperation
+            {
+                TargetMethod:
+                {
+                    IsGenericMethod: true,
+                    TypeArguments.Length: 1
+                } markerMethod
+            })
+        {
+            kind = default;
+            assertedType = null!;
+            invocation = null!;
+            return false;
+        }
+
+        assertedType = markerMethod.TypeArguments[0]
+            .WithNullableAnnotation(
+                markerMethod.TypeArgumentNullableAnnotations[0]);
+        invocation = candidate;
+
+        return !DeclarativeIntrinsic.HasExactTargetType(
+            assertedType,
+            targetType,
+            semanticModel,
+            mapperType);
+    }
+
     public static bool TryGetKind(
         ExpressionSyntax expression,
         ITypeSymbol targetType,

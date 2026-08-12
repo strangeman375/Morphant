@@ -43,3 +43,7 @@ MORPH0036 | Morphant.Construction | Error | Convention construction is unavailab
 MORPH0037 | Morphant.Construction | Error | Constructor parameter rule is invalid
 MORPH0038 | Morphant.Construction | Error | Previous destination is unavailable
 MORPH0039 | Morphant.Construction | Error | Structured construction plan is null
+MORPH0040 | Morphant.Members | Error | Member rule is invalid
+MORPH0041 | Morphant.Members | Error | Required destination member is not initialized
+MORPH0042 | Morphant.Members | Error | Member rule cannot be applied
+MORPH0043 | Morphant.Members | Error | Structured member plan is null
