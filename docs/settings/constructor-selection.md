@@ -50,9 +50,7 @@ builder.Map<OrderDto, Order>()
 
 The configured `ConstructorSelection` chooses the constructor used by
 `ByConvention()`. Rules in the second argument override convention for the
-named parameters; the remaining parameters are matched automatically. This
-precedence remains the same when automatic flattening is added: an explicit
-`tenantId` rule still overrides the automatic match from `source.Tenant.Id`.
+named parameters; the remaining parameters are matched automatically.
 
 An explicitly named constructor is unaffected by the setting.
 `ConstructUsing`, `ResolveUsing` and `Convert` do not use constructor
