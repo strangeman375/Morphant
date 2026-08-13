@@ -1,12 +1,12 @@
-# Runtime dispatch and DI
+# Dependency injection and `IMapper`
 
-`IMapper` is Morphant's main application entry point. It resolves an exact
-`TSource -> TDestination` mapping from the current `IServiceProvider`.
+`IMapper` is Morphant's main application entry point. It gets the requested
+`ITypeMapper<TSource, TDestination>` from the current `IServiceProvider`.
 
 ## Register mappings
 
-Register the generated mapper, each pair it implements, and `IMapper`. With
-`Microsoft.Extensions.DependencyInjection`:
+Register the generated mapper, each source/destination mapping it implements,
+and `IMapper`. With `Microsoft.Extensions.DependencyInjection`:
 
 ```csharp
 services.AddScoped<ApplicationMapper>();
@@ -19,15 +19,16 @@ services.AddScoped<ITypeMapper<CustomerDto, Customer>>(
 services.AddScoped<IMapper, Mapper>();
 ```
 
-All pair registrations for one generated mapper should resolve the same
-concrete scoped instance. The mapper can use ordinary constructor injection.
+All registrations for one generated mapper should resolve the same concrete
+scoped instance. The mapper can use ordinary constructor injection.
 
 Mappings from several assemblies are registered in the same way. Core v0 does
 not include assembly scanning or automatic registration.
 
-## Exact-pair lookup
+## How a mapping is found
 
-Lookup uses the exact closed `ITypeMapper<TSource, TDestination>` pair:
+Morphant looks only for the exact
+`ITypeMapper<TSource, TDestination>` service:
 
 | Registrations | Result |
 |---:|---|
@@ -35,47 +36,47 @@ Lookup uses the exact closed `ITypeMapper<TSource, TDestination>` pair:
 | `1` | The mapping runs |
 | `2+` | `AmbiguousMappingException` |
 
-Registration order does not select a winner, and Morphant does not fall back
-to assignable or open-generic pairs.
+Registration order does not select a winner. Morphant does not substitute a
+mapping for base classes or an open generic type.
 
-The source-only facade calls Create. Supplying a destination calls Update,
-including when the destination argument is explicitly `null`.
+`Map(source)` calls Create. `Map(source, destination)` calls Update, including
+when `destination` is explicitly `null`.
 
-## Mapping scope
+## Mapping context
 
-Every root `IMapper.Map` call creates a mapping scope. Nested declarative calls
-and `context.Mapper.Map(...)` use the same registrations while receiving their
-own Create or Update `MappingContext`.
+Context-aware mapping code receives a `MappingContext` for its current Create
+or Update operation.
 
 `MappingContext` exposes:
 
 - `Operation`, the current Create or Update operation;
-- `Mapper`, the scoped facade for nested calls.
+- `Mapper`, the `IMapper` used for nested calls.
 
-Do not retain `context.Mapper` after the root call completes.
+Do not retain `context.Mapper` after the top-level `IMapper.Map` call returns.
 
 ## Returned result
 
-Both facade overloads return the authoritative mapping result. Update may
-reuse the supplied destination or replace it:
+Both `IMapper` overloads return the mapping result. Update may reuse the
+supplied destination or replace it:
 
 ```csharp
 destination = mapper.Map(source, destination);
 ```
 
-## Calling an exact pair directly
+## Calling without DI
 
-An exact generated pair can also be called without DI when application-wide
-dispatch is deliberately unnecessary:
+A generated mapper can also be used through an exact
+`ITypeMapper<TSource, TDestination>` when application-wide lookup is not
+needed:
 
 ```csharp
-ITypeMapper<OrderDto, Order> pair = new ApplicationMapper();
+ITypeMapper<OrderDto, Order> typeMapper = new ApplicationMapper();
 
-var created = pair.Create(orderDto);
-var updated = pair.Update(orderDto, order);
+var created = typeMapper.Create(orderDto);
+var updated = typeMapper.Update(orderDto, order);
 ```
 
-This is an additional capability. The standard application path remains DI
+This is an additional option. The standard application path remains DI
 registration and `IMapper`.
 
 See [Nested mapping](nested-mapping.md) for nested operations and

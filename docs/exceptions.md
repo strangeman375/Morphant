@@ -15,15 +15,15 @@ code does not need to parse exception messages.
 | Create or Update disabled by `MappingMode` | `MappingOperationNotSupportedException` |
 | Null source rejected | `NullSourceException` |
 | Null destination rejected | `NullDestinationException` |
-| No exact DI registration | `MappingNotFoundException` |
-| More than one exact DI registration | `AmbiguousMappingException` |
+| No DI registration for the requested source/destination mapping | `MappingNotFoundException` |
+| More than one DI registration for the requested mapping | `AmbiguousMappingException` |
 | The only registration resolves to null | `InvalidMappingRegistrationException` |
-| Scoped mapper used after the root call | `MappingScopeCompletedException` |
+| `context.Mapper` used after the top-level `Map` call returned | `MappingScopeCompletedException` |
 | Property read from a default `MappingContext` | `InvalidMappingContextException` |
 | Current nested value has an incompatible type | `NestedDestinationTypeMismatchException` |
-| No declarative switch branch matches | `UnmatchedMappingSwitchException` |
+| No branch of a mapping `switch` matches | `UnmatchedMappingSwitchException` |
 | `Option<T>.Value` read while empty | `OptionValueMissingException` |
-| Compile-time DSL marker invoked as runtime code | `RuntimeInvocationNotSupportedException` |
+| `Auto`, `Ignore`, `Map`, or another configuration method is executed as normal code | `RuntimeInvocationNotSupportedException` |
 
 Catch a specific exception when the application can handle it, or catch
 `MorphantException` at an application boundary:

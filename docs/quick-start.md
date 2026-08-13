@@ -38,8 +38,9 @@ mapped when C# provides a warning-free implicit conversion.
 
 ## Register it with DI
 
-Register the concrete mapper, every pair it implements, and the application
-`IMapper` facade. With `Microsoft.Extensions.DependencyInjection`:
+Register the concrete mapper, every source/destination mapping it implements,
+and the application `IMapper`. With
+`Microsoft.Extensions.DependencyInjection`:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -50,7 +51,7 @@ services.AddScoped<ITypeMapper<Customer, CustomerDto>>(
 services.AddScoped<IMapper, Mapper>();
 ```
 
-If one mapper implements several pairs, register every
+If one mapper implements several mappings, register every
 `ITypeMapper<TSource, TDestination>` against the same scoped mapper instance.
 
 ## Create and update
@@ -67,8 +68,8 @@ existing = mapper.Map(customer, existing);
 The source-only overload performs Create. Supplying a destination performs
 Update, even when that destination is `null`.
 
-The returned value is authoritative. Update may mutate and reuse `existing`,
-or return a replacement, so always keep its result.
+Always keep the returned value. Update may mutate and reuse `existing`, or
+return a replacement.
 
 ## Add explicit rules
 
@@ -95,19 +96,20 @@ builder.Map<string, Uri>()
 
 Continue with [Declarative mapping](declarative-mapping.md),
 [Manual mapping](manual-mapping.md), or
-[Runtime dispatch and DI](runtime-dispatch.md).
+[Dependency injection and `IMapper`](runtime-dispatch.md).
 
-## Calling a pair without DI
+## Calling without DI
 
-Morphant also allows an exact generated pair to be called directly when
-application-wide dispatch is deliberately not used:
+Morphant also allows a generated mapper to be used through an exact
+`ITypeMapper<TSource, TDestination>` when application-wide lookup is not
+needed:
 
 ```csharp
-ITypeMapper<Customer, CustomerDto> pair = new ApplicationMapper();
+ITypeMapper<Customer, CustomerDto> typeMapper = new ApplicationMapper();
 
-var created = pair.Create(customer);
-var updated = pair.Update(customer, existing);
+var created = typeMapper.Create(customer);
+var updated = typeMapper.Update(customer, existing);
 ```
 
-This is an additional capability; the main application setup uses DI and
-`IMapper` as shown above.
+This is an additional option; the main application setup uses DI and `IMapper`
+as shown above.

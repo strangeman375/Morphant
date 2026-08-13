@@ -1,7 +1,7 @@
 # Unmapped member validation
 
 `UnmappedMemberValidation` reports supported members omitted from the final
-declarative mapping plan. Its default is `None`.
+declarative mapping. Its default is `None`.
 
 | Value | Validation |
 |---|---|
@@ -15,15 +15,15 @@ builder.Map<OrderDto, Order>()
     .UnmappedMemberValidation(UnmappedMemberValidation.Strict);
 ```
 
-Unused source members produce `MORPH0047`; unoccupied destination members
-produce `MORPH0048`. Both are warnings and do not change runtime mapping.
+Unused source members produce `MORPH0047`; destination members that are not
+mapped produce `MORPH0048`. Both are warnings and do not change the mapping.
 
 Explicit expressions, conventions, `Auto()`, constructor arguments and nested
 rules count according to their actual use. `Ignore()` deliberately occupies a
 destination member.
 
-A structured callback can acknowledge an intentionally unused source member
-without reading it at runtime:
+A `Construct`, `Resolve` or `Members` lambda can acknowledge an intentionally
+unused source member without reading it when the mapping runs:
 
 ```csharp
 .Members((source, _) =>
@@ -37,8 +37,8 @@ without reading it at runtime:
 });
 ```
 
-The discard must be a direct top-level statement for a source property or
-field. It is a declarative acknowledgement; the getter is not invoked.
+The discard must appear as a statement on its own in the lambda body and refer
+to one source property or field. The getter is not invoked.
 
 `Convert` is a manual algorithm, so unmapped-member validation does not apply
 to it.

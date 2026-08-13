@@ -1,12 +1,22 @@
 # Morphant
 
-Morphant is a compile-time object mapper for C#. It generates strongly typed
-mapping code from an explicit configuration and uses `IMapper` as the main
+Morphant is a compile-time object mapper for C#. It turns explicit
+configuration into strongly typed mapping code and uses `IMapper` as the main
 application entry point.
 
 > Morphant 0.1 is a core v0 preview. Automatic collection mapping, projection
 > and several other general-purpose mapper features are not included yet. See
 > [Current limitations](https://github.com/strangeman375/Morphant/blob/main/docs/limitations.md).
+
+## Why Morphant
+
+- Mapping code is generated during the build; Morphant does not use runtime
+  reflection to discover or execute mappings.
+- Invalid configurations are reported by compiler diagnostics.
+- Create and Update behavior is explicit, including destination reuse and
+  replacement.
+- Conventions can be combined with constructor, member and nested-mapping
+  rules.
 
 ## Install
 
@@ -44,7 +54,8 @@ public sealed partial class ApplicationMapper : TypeMapper
 
 ## Register with DI
 
-Register the generated mapper and each mapping pair it implements:
+Register the generated mapper and each source/destination mapping it
+implements:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;

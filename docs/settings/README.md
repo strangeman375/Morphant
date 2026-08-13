@@ -1,7 +1,7 @@
 # Settings
 
-Morphant settings can be configured for an assembly, a mapper, or one mapping
-pair.
+Morphant settings can be configured for an assembly, a mapper, or one
+source/destination mapping.
 
 | Setting | Default | MSBuild property |
 |---|---|---|
@@ -39,10 +39,11 @@ protected override void Configure(MapperBuilder builder)
 }
 ```
 
-Mapper settings apply to every local pair regardless of call order. If a
-setting is written more than once at one level, the last value wins.
+Mapper settings apply to every mapping declared in that mapper regardless of
+call order. If a setting is written more than once at one level, the last
+value wins.
 
-## Pair overrides
+## Mapping overrides
 
 ```csharp
 builder.Map<OrderDto, Order>(MappingMode.Create)
@@ -54,17 +55,17 @@ builder.Map<OrderDto, Order>(MappingMode.Create)
 
 Each setting is resolved independently:
 
-1. Current pair.
-2. Included base pairs, nearest first.
+1. Current mapping.
+2. Included mappings, nearest first.
 3. Current mapper.
 4. Connected base mappers, nearest first.
 5. MSBuild property.
 6. Morphant default.
 
 `Default` means “continue”, not a separate runtime behavior. Base mapper and
-pair values participate only through explicit
+included-mapping values participate only through
 [`base.Configure` and `IncludeBase`](../configuration-inheritance.md).
 
 Setting arguments must be compile-time constants. Invalid values or settings
-that do not apply to a pair produce a compile-time diagnostic; suppressing the
-diagnostic does not make the configuration valid.
+that do not apply to the mapping produce a compile-time diagnostic;
+suppressing the diagnostic does not make the configuration valid.

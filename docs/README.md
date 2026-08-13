@@ -5,15 +5,15 @@ mapper declaration, DI registration, Create, Update and a first explicit rule.
 
 ## Mapping guides
 
-- [Declarative mapping](declarative-mapping.md) — construction, result
-  selection and destination members.
+- [Declarative mapping](declarative-mapping.md) — creating a destination and
+  mapping its members.
 - [Manual mapping](manual-mapping.md) — use `Convert` for an ordinary C#
   algorithm.
 - [Nested mapping](nested-mapping.md) — call another registered mapping.
-- [Runtime dispatch and DI](runtime-dispatch.md) — registrations, lookup and
-  mapping scopes.
+- [Dependency injection and `IMapper`](runtime-dispatch.md) — registration,
+  mapping selection and `MappingContext`.
 - [Configuration inheritance](configuration-inheritance.md) — reuse mapper
-  defaults and mapping-pair rules.
+  defaults and mapping rules.
 
 ## Settings
 

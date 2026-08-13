@@ -3,9 +3,9 @@
 Morphant has two explicit reuse mechanisms:
 
 - `base.Configure(builder)` connects mapper-level defaults and makes base
-  pairs available for inclusion;
+  mappings available for inclusion;
 - `IncludeBase<TSource, TDestination>()` imports rules from one named mapping
-  pair.
+  configuration.
 
 ## Connect a base mapper
 
@@ -30,14 +30,14 @@ public partial class ApplicationMapper : CommonMapper
 }
 ```
 
-`ApplicationMapper` inherits the mapper-level null policy. The base mapping is
-available for `IncludeBase`, but is not automatically registered as a pair on
-the derived mapper.
+`ApplicationMapper` inherits the mapper-level null setting. The base mapping
+is available for `IncludeBase`, but does not automatically become a mapping
+implemented by `ApplicationMapper`.
 
-Without the direct `base.Configure(builder)` call, base configuration is not
+If `base.Configure(builder)` is not called, base configuration is not
 included.
 
-## Include a mapping pair
+## Include mapping rules
 
 ```csharp
 public abstract class AnimalMapper : TypeMapper
@@ -67,20 +67,25 @@ public partial class DogMapper : AnimalMapper
 }
 ```
 
-`Dog` must be assignable to `Animal`, and `DogDto` to `AnimalDto`. The base
-pair may also be declared in the same mapper; declaration order does not
+`Dog` must be assignable to `Animal`, and `DogDto` to `AnimalDto`. The included
+mapping may also be declared in the same mapper; declaration order does not
 matter.
 
 Local member rules replace inherited rules for the same destination member.
-Other inherited member rules remain. Construction and manual `Convert` rules
-are selected independently for a different source/destination pair.
+Other inherited member rules remain.
+
+When the current and included mappings use different source or destination
+types, `IncludeBase` reuses member rules and mapping settings, but not
+`Construct`, `Resolve`, `ConstructUsing`, `ResolveUsing` or `Convert`. For the
+same source and destination types, those rules can also be inherited from a
+base mapper.
 
 ## Settings precedence
 
 Each setting is resolved independently in this order:
 
-1. Current mapping pair.
-2. Included base pairs, nearest first.
+1. Current mapping.
+2. Included mappings, nearest first.
 3. Current mapper.
 4. Connected base mappers, nearest first.
 5. MSBuild property.
@@ -92,7 +97,7 @@ Each setting is resolved independently in this order:
 ## Boundaries
 
 - Include base configuration only once at each level.
-- Reused members and callbacks must be accessible from the derived mapper.
+- Reused rules may only reference members accessible from the derived mapper.
 - Cross-assembly configuration inheritance is not supported in core v0;
   mappings from another assembly can still be registered independently with
   DI.

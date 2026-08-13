@@ -31,8 +31,11 @@ builder.Map<OrderDto, Order>()
     .ConstructorSelection(ConstructorSelection.Greediest);
 ```
 
-The effective setting is also used by `ByConvention()` inside `Construct` or
-`Resolve`:
+`ByConvention()` is useful when Morphant should select and populate a
+constructor automatically, but some parameters need explicit rules. For
+example, if `Order` has a constructor with `id`, `name` and `tenantId`
+parameters, and `OrderDto` exposes `Id`, `Name` and `Tenant.Id`, the first two
+can be matched by convention while `tenantId` is configured explicitly:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -41,12 +44,17 @@ builder.Map<OrderDto, Order>()
         ByConvention(),
         new()
         {
-            tenantId = source.TenantId
+            tenantId = source.Tenant.Id
         }));
 ```
 
-An explicitly selected constructor is unaffected by the setting. Runtime
-result policies and manual `Convert` do not use constructor selection.
+The configured `ConstructorSelection` chooses the constructor used by
+`ByConvention()`. Rules in the second argument override convention for the
+named parameters; the remaining parameters are matched automatically.
+
+An explicitly named constructor is unaffected by the setting.
+`ConstructUsing`, `ResolveUsing` and `Convert` do not use constructor
+selection.
 
 Configure an assembly default with `MorphantConstructorSelection`. See the
 [settings overview](README.md) for levels and precedence.

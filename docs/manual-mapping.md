@@ -32,7 +32,7 @@ without an actual destination, and `Some(destination)` otherwise.
 
 The callback owns the whole mapping. Morphant does not apply null handling,
 constructor selection, member conventions or `Members` afterward. The
-effective [`MappingMode`](settings/mapping-mode.md) still controls whether
+configured [`MappingMode`](settings/mapping-mode.md) still controls whether
 Create and Update are available.
 
 The returned value is final: it may be `null`, the existing destination or a
@@ -48,11 +48,11 @@ var address = previous.TryGetValue(out var destination)
     : context.Mapper.Map<AddressDto, Address>(source.Address);
 ```
 
-Declarative markers such as `Auto`, `Ignore`, `Value`, `Map`, `Create` and
+Configuration methods such as `Auto`, `Ignore`, `Value`, `Map`, `Create` and
 `Update` are not used inside `Convert`; its body is normal C#.
 
-Collections, tuples, delegates and similar roots can be mapped explicitly as
-single values:
+Collections, tuples and delegates can be mapped as whole values with custom
+code:
 
 ```csharp
 builder.Map<IReadOnlyList<OrderDto>, List<Order>>()
@@ -62,6 +62,6 @@ builder.Map<IReadOnlyList<OrderDto>, List<Order>>()
             : source.Select(context.Mapper.Map<OrderDto, Order>).ToList());
 ```
 
-A mapping uses either `Convert` or a declarative result/member plan, not both.
-See [Runtime dispatch and DI](runtime-dispatch.md) for nested lookup and scope
-lifetime.
+A mapping uses either `Convert` or `Construct` / `Resolve` / `Members`, not
+both. See [Dependency injection and `IMapper`](runtime-dispatch.md) for nested
+lookup and the lifetime of `context.Mapper`.

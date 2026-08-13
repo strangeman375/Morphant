@@ -13,11 +13,10 @@ builder.Map<OrderDto, Order>(MappingMode.Create);
 | `Update` | Throws `MappingOperationNotSupportedException` | Available |
 | `CreateAndUpdate` | Available | Available |
 
-`Default` inherits the setting. Every generated pair still implements both
-`ITypeMapper.Create` and `ITypeMapper.Update`; calling a disabled operation
-throws immediately.
+`Default` inherits the setting. Every generated `ITypeMapper` still implements
+both `Create` and `Update`; calling a disabled operation throws immediately.
 
-The same gate applies to a manual `Convert` mapping.
+`MappingMode` also controls manual `Convert` mappings.
 
 Configure a mapper default with:
 

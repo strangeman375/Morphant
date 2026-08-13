@@ -16,8 +16,9 @@ destination.
 For a non-nullable value destination, `ReturnNull` returns its zero-initialized
 default value.
 
-The source policy runs before destination handling or mapping expressions. If
-mapping continues, declarative callbacks receive the non-null source value.
+`NullSourceHandling` is applied before destination handling or mapping
+expressions. If mapping continues, mapping lambdas receive the non-null source
+value.
 
 ## Null Update destination
 
@@ -25,15 +26,16 @@ mapping continues, declarative callbacks receive the non-null source value.
 
 | Value | Behavior |
 |---|---|
-| `Create` | Run the branch used when no destination is available |
+| `Create` | Use the same creation rules as when no destination is available |
 | `Throw` | Throw `NullDestinationException` |
 
 With `Create`, the public operation remains Update; `MappingMode.Update` must
 be enabled, while `MappingMode.Create` is not required.
 
-When both source and destination are null, the source policy wins.
+When both source and destination are null, `NullSourceHandling` is applied
+first.
 
-## Configure the policies
+## Configure null handling
 
 ```csharp
 builder.Map<OrderDto?, Order?>()
@@ -44,7 +46,8 @@ builder.Map<OrderDto?, Order?>()
 The assembly properties are `MorphantNullSourceHandling` and
 `MorphantNullDestinationHandling`.
 
-Manual `Convert` mappings bypass both policies and receive the original source
-and actual destination presence. See [Manual mapping](../manual-mapping.md).
+Manual `Convert` mappings bypass both settings. They receive the original
+source and an `Option<TDestination>` that indicates whether an existing
+destination is available. See [Manual mapping](../manual-mapping.md).
 
 See the [settings overview](README.md) for levels and precedence.
