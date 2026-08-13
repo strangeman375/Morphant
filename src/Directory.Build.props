@@ -5,6 +5,12 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
 
+        <!--
+          Keep the shipped generator compiled against the minimum supported
+          Roslyn host. Override this property when validating newer hosts.
+        -->
+        <MorphantRoslynVersion Condition="'$(MorphantRoslynVersion)' == ''">4.9.2</MorphantRoslynVersion>
+
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 

@@ -134,6 +134,11 @@
   enclosing workspace instructions when available. For the dedicated stage-22
   integration slice, run its test project directly; it is one focused category
   and is not included by the unit-test helper.
+- `MorphantRoslynVersion` defaults to the minimum supported Roslyn host and is
+  shared by the generator and its unit-test host. When changing Roslyn-facing
+  code or dependencies, run the affected categories with the default version
+  and again with the newest Roslyn version being validated by overriding this
+  property.
 
 ## Settings documentation
 

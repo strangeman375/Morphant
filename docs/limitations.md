@@ -15,7 +15,7 @@ listed below, but not every feature expected from a general-purpose mapper.
 - compile-time diagnostics and typed runtime exceptions;
 - nullable, value, record, interface, abstract and closed generic destination
   types when Morphant can create them by convention or an explicit rule;
-- C# 9 and newer consumers.
+- C# 9 and newer consumers running Roslyn 4.9.2 or later.
 
 ## Not included in core v0
 

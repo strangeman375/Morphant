@@ -80,6 +80,7 @@ or browse the
 ## Requirements
 
 - C# 9 or newer;
+- a compiler host compatible with Roslyn 4.9.2 or newer;
 - a runtime compatible with `netstandard2.0`.
 
 ## License
