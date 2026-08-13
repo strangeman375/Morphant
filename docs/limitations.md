@@ -26,6 +26,9 @@ listed below, but not every feature expected from a general-purpose mapper.
   `IncludeMembers`;
 - distinguishing missing, null and default values for patch/merge mappings;
 - automatic immutable Update reconstruction;
+- first-class multi-source mappings or per-call user data; combine values into
+  one source type, such as a tuple, handle it with `Convert`, and pass state to
+  nested mappings explicitly;
 - keyed mappings or generated dispatch for explicitly configured derived
   types;
 - preserving shared object references or mapping cycles;

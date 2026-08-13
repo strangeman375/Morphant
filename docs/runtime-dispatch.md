@@ -52,7 +52,9 @@ or Update operation.
 - `Operation`, the current Create or Update operation;
 - `Mapper`, the `IMapper` used for nested calls.
 
-Do not retain `context.Mapper` after the top-level `IMapper.Map` call returns.
+`context.Mapper` belongs to one top-level mapping call. Do not retain it after
+that call returns or use it concurrently within the same call. Parallel calls
+through the application `IMapper` use independent mapping scopes.
 
 ## Returned result
 

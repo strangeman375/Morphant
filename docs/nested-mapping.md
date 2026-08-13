@@ -66,16 +66,18 @@ setter when its current value can be passed to a nested Update:
 
 `Update(..., members.Member)` must appear as a statement on its own. If the
 current member value is `null`, the nested call is skipped because a
-replacement could not be assigned back.
+replacement could not be assigned back. Otherwise, nested Update runs in
+place and its returned value is discarded because the member cannot be
+reassigned.
 
 ## Registration and result
 
 When using the application `IMapper`, every nested source/destination mapping
 must also be registered with DI.
 
-Always use the nested result. A nested Update may reuse its destination or
-return a replacement; writable destination members receive the returned
-value.
+Except for the standalone read-only form above, always use the nested result.
+A nested Update may reuse its destination or return a replacement; writable
+destination members receive the returned value.
 
 See [Dependency injection and `IMapper`](runtime-dispatch.md) for registration
 and [Exceptions](exceptions.md) for lookup or destination-type failures.

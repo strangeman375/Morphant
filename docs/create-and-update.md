@@ -36,8 +36,10 @@ reuse the existing destination:
 ## Applying member rules
 
 Create can assign constructor arguments, `init` properties, settable
-properties and mutable fields. Update applies rules that are valid for the
-selected destination; creation-only members keep their existing values.
+properties and mutable fields. During Update, a replacement constructed by
+`Resolve` also receives applicable creation-only rules. Reusing an existing
+destination applies only post-construction rules, so its creation-only
+members keep their values.
 
 `Members` may use `previous` to read the supplied destination and `result` to
 read the destination selected for the current operation.

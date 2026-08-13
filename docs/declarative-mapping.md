@@ -51,6 +51,9 @@ builder.Map<OrderDto, IOrder>()
 Their context-aware overloads receive `MappingContext`, whose `Mapper` can
 invoke another registered mapping.
 
+If `ConstructUsing` or `ResolveUsing` returns `null`, that is the final mapping
+result. `Members` is skipped, and null handling is not applied again.
+
 ## Map destination members
 
 ```csharp
@@ -117,9 +120,11 @@ Code passed to `Construct`, `Resolve` and `Members` follows these rules:
 - do not capture local variables declared inside `Configure`;
 - do not rely on the order of independent member expressions or side effects.
 
-A local can express a dependency and is evaluated once where needed. Use
-[`Convert`](manual-mapping.md) when loops, mutation, `try`, strict statement
-order or another ordinary C# algorithm would be clearer.
+Only the selected branch is evaluated. Each expression needed by that branch
+is evaluated at most once; expressions used only by unselected branches or
+inapplicable rules are not evaluated. A local can express an explicit
+dependency. Use [`Convert`](manual-mapping.md) when loops, mutation, `try`,
+strict statement order or another ordinary C# algorithm would be clearer.
 
 See [Nested mapping](nested-mapping.md) for `Map`, `Create` and `Update` rules,
 and [Constructor selection](settings/constructor-selection.md) for convention

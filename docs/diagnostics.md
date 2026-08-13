@@ -4,6 +4,9 @@ Morphant reports configuration problems while the consumer project is being
 compiled. `MORPH0047` and `MORPH0048` are warnings; every other Morphant rule
 is an error by default.
 
+Published diagnostic IDs are never renumbered or reused. Changing an ID would
+break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
+
 ## Catalog
 
 | ID | Category | Default | Meaning |
