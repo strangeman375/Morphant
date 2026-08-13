@@ -33,10 +33,9 @@ internal sealed class DescriptorTests
                     descriptor.MessageFormat.ToString()),
                 Is.EqualTo(new[]
                 {
-                    "Source member '{0}' in contract '{1}' does not " +
-                    "participate in the effective mapping plan.",
-                    "Destination member '{0}' in contract '{1}' is not " +
-                    "mapped by the effective mapping plan."
+                    "Source member '{0}' is not used by mapping '{1}'.",
+                    "Destination member '{0}' is not mapped by mapping " +
+                    "'{1}'."
                 }));
             Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),

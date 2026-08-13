@@ -596,7 +596,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.InvalidDestination),
-                "The effective MappingMode is invalid.");
+                "MappingMode has an invalid value.");
 
         /// <inheritdoc/>
         global::TestCase.InvalidDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InvalidDestination>.Update(
@@ -607,7 +607,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.InvalidDestination),
-                "The effective MappingMode is invalid.");
+                "MappingMode has an invalid value.");
 
         /// <inheritdoc/>
         global::TestCase.OverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.OverrideDestination>.Create(

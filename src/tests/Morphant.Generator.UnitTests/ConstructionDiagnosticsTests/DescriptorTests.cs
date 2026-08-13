@@ -36,26 +36,26 @@ internal sealed class DescriptorTests
                 Is.EqualTo(new[]
                 {
                     "Destination construction is not configured",
-                    "Convention construction is unavailable",
+                    "Constructor cannot be selected",
                     "Constructor parameter rule is invalid",
                     "Previous destination is unavailable",
-                    "Structured construction plan is null"
+                    "Construct or Resolve returned no destination"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
                     descriptor.MessageFormat.ToString()),
                 Is.EqualTo(new[]
                 {
-                    "Destination construction for contract '{0}' is not " +
-                    "configured for reachable paths: {1}.",
-                    "Convention construction for contract '{0}' is " +
-                    "unavailable with ConstructorSelection.{1}: {2}.",
-                    "Constructor parameter rule for '{0}' in contract '{1}' " +
-                    "is invalid: {2}.",
-                    "Previous destination is unavailable for contract '{0}' " +
-                    "on reachable paths: {1}.",
-                    "Structured construction plan for contract '{0}' cannot " +
-                    "be null on reachable paths: {1}."
+                    "Mapping '{0}' cannot create a destination. Affected " +
+                    "cases: {1}.",
+                    "ConstructorSelection.{1} cannot select a constructor " +
+                    "for mapping '{0}': {2}.",
+                    "Rule for constructor parameter '{0}' is invalid in " +
+                    "mapping '{1}': {2}.",
+                    "'previous' is unavailable in mapping '{0}'. Affected " +
+                    "cases: {1}.",
+                    "Construct or Resolve returned null or default for " +
+                    "mapping '{0}'. Affected cases: {1}."
                 }));
             Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),

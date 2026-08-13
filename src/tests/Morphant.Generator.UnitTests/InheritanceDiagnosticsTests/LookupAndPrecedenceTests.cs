@@ -131,13 +131,9 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Included mapping contract " +
-                    "'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' was not found for " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' in mapper " +
+                    "Included mapping 'TestCase.Source -> " +
+                    "TestCase.Destination' was not found for mapping " +
+                    "'TestCase.Source -> TestCase.Destination' in mapper " +
                     "'global::TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -348,12 +344,12 @@ namespace TestCase
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Some.Contains(
-                    "global::Morphant.ITypeMapper<int, int>"));
+                    "int -> int"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Some.Contains(
-                    "global::Morphant.ITypeMapper<string, string>"));
+                    "string -> string"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

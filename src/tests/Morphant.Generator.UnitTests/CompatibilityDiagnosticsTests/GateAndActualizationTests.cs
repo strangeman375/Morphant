@@ -82,7 +82,7 @@ internal sealed class GateAndActualizationTests
             missing,
             new ExpectedCompatibilityDiagnostic(
                 "MORPH0002",
-                "Morphant generator requires a reference to a compatible Morphant runtime library."));
+                "Morphant requires a reference to a compatible runtime library."));
 
         var incompatibleReference =
             RuntimeContractFixture.Compatible()
@@ -96,9 +96,8 @@ internal sealed class GateAndActualizationTests
             incompatible,
             new ExpectedCompatibilityDiagnostic(
                 "MORPH0004",
-                "The referenced Morphant runtime contract is incompatible " +
-                "with this generator: contract revision '2' is not " +
-                "supported; expected '1'."));
+                "The Morphant runtime is incompatible with this generator: " +
+                "the runtime and generator versions do not match."));
 
         var restored = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,

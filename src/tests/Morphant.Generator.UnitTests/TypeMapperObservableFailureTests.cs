@@ -19,8 +19,8 @@ internal sealed class TypeMapperObservableFailureTests
                     typeof(string),
                     typeof(int),
                     "The plan is invalid."),
-                "Mapping from 'System.String' to 'System.Int32' could not " +
-                "be generated. The plan is invalid."
+                "Mapping 'System.String' -> 'System.Int32' could not be " +
+                "generated. The plan is invalid."
             ),
             (
                 new MappingOperationNotSupportedException(
@@ -28,34 +28,31 @@ internal sealed class TypeMapperObservableFailureTests
                     typeof(string),
                     typeof(int),
                     MappingMode.Create),
-                "The Update operation is disabled by the effective " +
-                "MappingMode for mapping from 'System.String' to " +
-                "'System.Int32'."
+                "MappingMode.Create does not support Update for mapping " +
+                "'System.String' -> 'System.Int32'."
             ),
             (
                 new NullSourceException(
                     MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
-                "The source is null for mapping from 'System.String' to " +
-                "'System.Int32', while the effective NullSourceHandling " +
-                "is Throw."
+                "NullSourceHandling.Throw does not allow a null source for " +
+                "mapping 'System.String' -> 'System.Int32'."
             ),
             (
                 new NullDestinationException(
                     MappingOperation.Update,
                     typeof(string),
                     typeof(int)),
-                "The destination is null for mapping from 'System.String' " +
-                "to 'System.Int32', while the effective " +
-                "NullDestinationHandling is Throw."
+                "NullDestinationHandling.Throw does not allow a null " +
+                "destination for mapping 'System.String' -> 'System.Int32'."
             ),
             (
                 new MappingNotFoundException(
                     MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
-                "No mapping is registered from 'System.String' to " +
+                "No mapping is registered for 'System.String' -> " +
                 "'System.Int32'."
             ),
             (
@@ -63,15 +60,15 @@ internal sealed class TypeMapperObservableFailureTests
                     MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
-                "Multiple mappings are registered from 'System.String' to " +
-                "'System.Int32'. Exactly one mapping is required."
+                "Multiple mappings are registered for 'System.String' -> " +
+                "'System.Int32'. Exactly one is required."
             ),
             (
                 new InvalidMappingRegistrationException(
                     MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
-                "The registered mapping from 'System.String' to " +
+                "The mapping registered for 'System.String' -> " +
                 "'System.Int32' resolved to null."
             ),
             (
@@ -79,8 +76,8 @@ internal sealed class TypeMapperObservableFailureTests
                     MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
-                "The mapping scope has already completed; mapping from " +
-                "'System.String' to 'System.Int32' cannot start."
+                "context.Mapper cannot be used after the outer mapping " +
+                "call has completed."
             ),
             (
                 new NestedDestinationTypeMismatchException(
@@ -89,8 +86,8 @@ internal sealed class TypeMapperObservableFailureTests
                     typeof(string),
                     typeof(string),
                     typeof(int)),
-                "The current nested destination has runtime type " +
-                "'System.Int32', which cannot be used as 'System.String'."
+                "Current destination type 'System.Int32' cannot be used " +
+                "as 'System.String'."
             ),
             (
                 new NestedDestinationTypeMismatchException(
@@ -99,8 +96,8 @@ internal sealed class TypeMapperObservableFailureTests
                     typeof(string),
                     typeof(string),
                     null),
-                "The current nested destination is null and cannot be " +
-                "used as 'System.String'."
+                "The current destination is null and cannot be used as " +
+                "'System.String'."
             ),
             (
                 new OptionValueMissingException(),
@@ -108,22 +105,20 @@ internal sealed class TypeMapperObservableFailureTests
             ),
             (
                 new RuntimeInvocationNotSupportedException(),
-                "This API is intended for use by source generators only " +
-                "and must not be invoked at runtime."
+                "This Morphant configuration method cannot be called at " +
+                "runtime. Use it only inside Configure."
             ),
             (
                 new InvalidMappingContextException(),
-                "The mapping context is not initialized. Invoke the mapper " +
-                "through IMapper or the context-free ITypeMapper " +
-                "Create/Update extension methods before reading context data."
+                "MappingContext is not initialized. Use IMapper or the " +
+                "ITypeMapper Create/Update extension methods."
             ),
             (
                 new UnmatchedMappingSwitchException(
                     MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
-                "No branch of the declarative mapping switch matched the " +
-                "runtime value."
+                "No switch branch matched the current value."
             )
         };
 
@@ -220,7 +215,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The effective MappingMode is invalid.");
+                "MappingMode has an invalid value.");
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -231,7 +226,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The effective MappingMode is invalid.");
+                "MappingMode has an invalid value.");
     }
 }
 """;

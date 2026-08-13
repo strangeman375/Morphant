@@ -69,16 +69,12 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Source member 'global::TestCase.Source.SymbolOnly' in " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' does not participate " +
-                    "in the effective mapping plan.",
-                    "Source member 'global::TestCase.Source.Unused' in " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' does not participate " +
-                    "in the effective mapping plan."
+                    "Source member 'global::TestCase.Source.SymbolOnly' is " +
+                    "not used by mapping 'TestCase.Source -> " +
+                    "TestCase.Destination'.",
+                    "Source member 'global::TestCase.Source.Unused' is not " +
+                    "used by mapping 'TestCase.Source -> " +
+                    "TestCase.Destination'."
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });

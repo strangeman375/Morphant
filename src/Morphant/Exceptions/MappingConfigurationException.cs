@@ -20,8 +20,8 @@ public sealed class MappingConfigurationException : MappingException
         Type destinationType,
         string reason)
         : base(
-            $"Mapping from '{sourceType}' to '{destinationType}' could not " +
-            $"be generated. {reason}",
+            $"Mapping '{sourceType}' -> '{destinationType}' could not be " +
+            $"generated. {reason}",
             operation,
             sourceType,
             destinationType)

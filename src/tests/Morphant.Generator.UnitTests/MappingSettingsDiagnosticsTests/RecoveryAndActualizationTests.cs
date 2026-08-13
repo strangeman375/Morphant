@@ -125,7 +125,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(int),
-                "The configured map-level ConstructorSelection is not applicable to direct construction.");
+                "ConstructorSelection does not apply to this destination type.");
 
         /// <inheritdoc/>
         int global::Morphant.ITypeMapper<global::TestCase.Source, int>.Update(
@@ -136,7 +136,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(int),
-                "The configured map-level ConstructorSelection is not applicable to direct construction.");
+                "ConstructorSelection does not apply to this destination type.");
     }
 }
 """;

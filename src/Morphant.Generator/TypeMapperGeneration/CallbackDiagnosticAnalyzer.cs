@@ -88,7 +88,7 @@ internal static class CallbackDiagnosticAnalyzer
             }
 
             var reason =
-                $"transferred code introduces compiler diagnostic " +
+                $"the generated mapping reports compiler diagnostic " +
                 $"'{failure.DiagnosticId}'";
 
             candidates.Add(CreateCandidate(
@@ -249,8 +249,7 @@ internal static class CallbackDiagnosticAnalyzer
                 .ToImmutableArray();
             var symbolName = DisplaySymbol(pair.Key);
             var reason =
-                $"configuration-time value '{symbolName}' is unavailable " +
-                "during mapping";
+                $"value '{symbolName}' is only available while Configure runs";
 
             candidates.Add(CreateCandidate(
                 context,
@@ -345,8 +344,8 @@ internal static class CallbackDiagnosticAnalyzer
             context.Name,
             context.Contract,
             context.MapperDisplay,
-            "MappingContextMarker.Operation cannot be evaluated by " +
-            "deferred code"));
+            "'context.Operation' cannot be used inside a nested lambda or " +
+            "local function"));
     }
 
     private static void AddDeferredParameterDiagnostic(
@@ -391,8 +390,8 @@ internal static class CallbackDiagnosticAnalyzer
             .ThenBy(static location => location.SourceSpan.Start)
             .ToImmutableArray();
         var reason =
-            $"destination input '{parameterName}' cannot be captured by " +
-            "deferred code";
+            $"'{parameterName}' cannot be used inside a nested lambda or " +
+            "local function";
 
         candidates.Add(CreateCandidate(
             context,
@@ -453,9 +452,7 @@ internal static class CallbackDiagnosticAnalyzer
             }
 
             var display = DisplaySymbol(symbol);
-            var reason =
-                $"file-local symbol '{display}' is unavailable to generated " +
-                "code";
+            var reason = $"file-local symbol '{display}' is inaccessible";
 
             candidates.Add(CreateCandidate(
                 context,
@@ -579,8 +576,7 @@ internal static class CallbackDiagnosticAnalyzer
         Location location,
         string construct)
     {
-        var reason =
-            $"extension binding for '{construct}' cannot be preserved";
+        var reason = $"{construct} is not supported";
 
         return CreateCandidate(
             context,
@@ -689,7 +685,7 @@ internal static class CallbackDiagnosticAnalyzer
                 additionalLocations: [],
                 detail: "marker:MappingContextMarker:" +
                     reference.SpanStart,
-                "MappingContextMarker",
+                "context",
                 context.Name,
                 context.Contract));
         }

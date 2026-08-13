@@ -232,7 +232,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The configured mapping plan is invalid: more than one result callback is configured.");
+                "The mapping configuration is invalid: Construct or Resolve is configured more than once.");
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -243,7 +243,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The configured mapping plan is invalid: more than one result callback is configured.");
+                "The mapping configuration is invalid: Construct or Resolve is configured more than once.");
     }
 }
 """;
@@ -428,25 +428,19 @@ public partial class AMapper : TypeMapper
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Mapping plan slot 'Convert' is configured more than " +
-                    "once for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.DestinationA>' in mapper " +
+                    "'Convert' is configured more than once for mapping " +
+                    "'TestCase.Source -> TestCase.DestinationA' in mapper " +
                     "'global::TestCase.AMapper'.",
-                    "Mapping plan slot 'Members' is configured more than " +
-                    "once for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.DestinationB>' in mapper " +
+                    "'Members' is configured more than once for mapping " +
+                    "'TestCase.Source -> TestCase.DestinationB' in mapper " +
                     "'global::TestCase.AMapper'.",
-                    "Convert cannot be combined with a result policy or " +
-                    "Members for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.DestinationA>' in mapper " +
+                    "Convert cannot be combined with Construct, Resolve, or " +
+                    "Members for mapping 'TestCase.Source -> " +
+                    "TestCase.DestinationA' in mapper " +
                     "'global::TestCase.AMapper'.",
-                    "Convert cannot be combined with a result policy or " +
-                    "Members for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.DestinationZ>' in mapper " +
+                    "Convert cannot be combined with Construct, Resolve, or " +
+                    "Members for mapping 'TestCase.Source -> " +
+                    "TestCase.DestinationZ' in mapper " +
                     "'global::TestCase.ZMapper'."
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);

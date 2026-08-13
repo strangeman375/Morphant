@@ -6,7 +6,7 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class NestedMappingRecoveryPlanner
 {
     private const string RecoveryMessage =
-        "The configured nested mapping is invalid.";
+        "This nested mapping is invalid.";
 
     public static TypeMapperMappingModel Apply(
         TypeMapperMappingModel mapping,

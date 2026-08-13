@@ -34,28 +34,25 @@ internal sealed class DescriptorTests
                 descriptors.Select(static descriptor => descriptor.Title.ToString()),
                 Is.EqualTo(new[]
                 {
-                    "Structured callback must be a lambda",
-                    "Callback cannot be transferred",
-                    "Unsupported structured callback syntax",
-                    "Structured destination input is read-only",
-                    "Invalid compile-time marker use"
+                    "Mapping expression must be an inline lambda",
+                    "Mapping expression is unavailable",
+                    "Unsupported mapping expression",
+                    "Destination input is read-only",
+                    "Invalid mapping method use"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
                     descriptor.MessageFormat.ToString()),
                 Is.EqualTo(new[]
                 {
-                    "Structured {0} callback for contract '{1}' must be " +
-                    "an inline lambda.",
-                    "{0} callback for contract '{1}' cannot be transferred " +
-                    "to generated mapper '{2}': {3}.",
-                    "Structured {0} callback for contract '{1}' contains " +
-                    "unsupported syntax '{2}'.",
-                    "Structured destination input '{0}' for contract '{1}' " +
-                    "is read-only and cannot be mutated.",
-                    "Compile-time marker '{0}' cannot be used as a runtime " +
-                    "value or outside a supported terminal DSL position in " +
-                    "{1} callback for contract '{2}'."
+                    "{0} for mapping '{1}' must use an inline lambda.",
+                    "{0} for mapping '{1}' cannot be used by mapper '{2}': " +
+                    "{3}.",
+                    "{0} for mapping '{1}' contains unsupported syntax " +
+                    "'{2}'.",
+                    "'{0}' is read-only in mapping '{1}'.",
+                    "'{0}' must be used directly inside Construct, Resolve, " +
+                    "or Members for mapping '{2}'."
                 }));
             Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),

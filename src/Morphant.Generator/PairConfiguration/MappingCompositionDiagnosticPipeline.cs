@@ -280,7 +280,7 @@ internal static class MappingCompositionDiagnosticPipeline
     {
         return kind switch
         {
-            MappingPlanSlotKind.ResultPolicy => "result policy",
+            MappingPlanSlotKind.ResultPolicy => "Construct or Resolve",
             MappingPlanSlotKind.Members => "Members",
             MappingPlanSlotKind.Convert => "Convert",
             _ => throw new ArgumentOutOfRangeException(nameof(kind))

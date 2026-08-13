@@ -57,11 +57,10 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Member rule for 'Value' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is invalid: Auto does " +
-                    "not resolve a unique readable source member with a " +
-                    "warning-free implicit conversion."));
+                    "Rule for destination member 'Value' is invalid in " +
+                    "mapping 'TestCase.Source -> TestCase.Destination': " +
+                    "Auto could not find exactly one compatible source " +
+                    "member."));
             Assert.That(diagnostic.AdditionalLocations, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -112,10 +111,9 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Required destination member 'Value' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is not initialized on " +
-                    "reachable paths: Create, Update without a previous " +
+                    "Required destination member 'Value' is not initialized " +
+                    "in mapping 'TestCase.Source -> TestCase.Destination'. " +
+                    "Affected cases: Create; Update without an existing " +
                     "destination."));
             Assert.That(
                 diagnostic.AdditionalLocations.Select(
@@ -183,12 +181,11 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Member rule for 'Value' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' cannot be applied: " +
-                    "init-only member cannot be assigned after a runtime " +
-                    "result policy has returned the result. Reachable " +
-                    "paths: Create, Update without a previous destination."));
+                    "Rule for destination member 'Value' cannot be applied " +
+                    "in mapping 'TestCase.Source -> TestCase.Destination': " +
+                    "init-only member cannot be assigned after " +
+                    "ConstructUsing or ResolveUsing returns. Affected " +
+                    "cases: Create; Update without an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -245,11 +242,10 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Structured member plan for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' cannot be null on " +
-                    "reachable paths: Create, Update without a previous " +
-                    "destination, Update with a previous destination."));
+                    "Members returned null or default for mapping " +
+                    "'TestCase.Source -> TestCase.Destination'. Affected " +
+                    "cases: Create; Update without an existing destination; " +
+                    "Update with an existing destination."));
             Assert.That(diagnostic.AdditionalLocations, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });

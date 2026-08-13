@@ -7,8 +7,7 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class RuntimeResultMappingPlanner
 {
     private const string UnsupportedCallbackMessage =
-        "The configured runtime result callback cannot be transferred into " +
-        "generated code.";
+        "This ConstructUsing or ResolveUsing function is not supported.";
 
     public static RuntimeResultMappingResult Build(
         ResultPolicyConfigurationModel configuration,

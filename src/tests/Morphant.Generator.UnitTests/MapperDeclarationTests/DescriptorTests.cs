@@ -17,38 +17,35 @@ internal sealed class DescriptorTests
             MapperDeclarationDiagnosticDescriptors.MapperMustBePartial,
             "MORPH0006",
             "Mapper must be partial",
-            "Mapper '{0}' must be declared partial so Morphant can " +
-            "generate its mapping contract.");
+            "Mapper '{0}' must be declared partial.");
         yield return Case(
             MapperDeclarationDiagnosticDescriptors.ContainingTypeMustBePartial,
             "MORPH0007",
             "Containing type must be partial",
-            "Containing type '{0}' must be declared partial so Morphant " +
-            "can generate nested mapper contracts.");
+            "Containing type '{0}' must be declared partial.");
         yield return Case(
             MapperDeclarationDiagnosticDescriptors.FileLocalType,
             "MORPH0008",
             "File-local mapper declaration is not supported",
-            "File-local type '{0}' cannot declare or contain a generated " +
-            "Morphant mapper contract.");
+            "File-local type '{0}' cannot declare or contain a Morphant mapper.");
         yield return Case(
             MapperDeclarationDiagnosticDescriptors.ExactContract,
             "MORPH0009",
-            "Mapping contract is already declared",
-            "Mapping contract '{0}' is already declared by mapper '{1}'. " +
+            "Mapping is already implemented",
+            "Mapping '{0}' is already implemented by mapper '{1}'. " +
             "Remove the interface declaration or the Map registration.");
         yield return Case(
             MapperDeclarationDiagnosticDescriptors.UnifiableContract,
             "MORPH0010",
-            "Mapping contract conflicts with a declared interface",
-            "Mapping contract '{0}' can unify with an interface contract " +
-            "declared by mapper '{1}'.");
+            "Mapping may conflict with a declared interface",
+            "Mapper '{1}' declares an interface that may conflict with " +
+            "generated mapping '{0}'.");
         yield return Case(
             MapperDeclarationDiagnosticDescriptors.SupportsConflict,
             "MORPH0034",
             "Mapper member conflicts with generated Supports",
             "Mapper '{0}' declares 'Supports(System.Type, System.Type)', " +
-            "which conflicts with the Morphant-generated mapping contract.");
+            "which conflicts with the generated mapper.");
     }
 
     [TestCaseSource(nameof(Descriptors))]

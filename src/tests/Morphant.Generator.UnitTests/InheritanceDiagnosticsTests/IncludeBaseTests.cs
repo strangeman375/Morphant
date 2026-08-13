@@ -59,9 +59,8 @@ namespace TestCase
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.All.EqualTo(
-                    "IncludeBase is configured more than once for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Dog, " +
-                    "global::TestCase.DogDto>' in mapper " +
+                    "IncludeBase is configured more than once for mapping " +
+                    "'TestCase.Dog -> TestCase.DogDto' in mapper " +
                     "'global::TestCase.TestMapper'."));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
@@ -165,16 +164,16 @@ namespace TestCase
             Assert.That(
                 diagnostics[1].GetMessage(),
                 Does.StartWith(
-                    "Current source type 'global::TestCase.UnrelatedSource' " +
-                    "is not assignable to included source type " +
-                    "'global::TestCase.Animal'"));
+                    "The source type 'TestCase.UnrelatedSource' is not " +
+                    "compatible with included source type " +
+                    "'TestCase.Animal'"));
             Assert.That(
                 diagnostics[2].GetMessage(),
                 Does.StartWith(
-                    "Current destination type " +
-                    "'global::TestCase.UnrelatedDestination' is not " +
-                    "assignable to included destination type " +
-                    "'global::TestCase.AnimalDto'"));
+                    "The destination type " +
+                    "'TestCase.UnrelatedDestination' is not compatible " +
+                    "with included destination type " +
+                    "'TestCase.AnimalDto'"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

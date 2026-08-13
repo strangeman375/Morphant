@@ -151,17 +151,17 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Mapping setting 'MappingMode' must be a supported " +
+                    "Setting 'MappingMode' must be a supported " +
                     "compile-time constant.",
-                    "Mapping setting 'NullSourceHandling' must be a " +
+                    "Setting 'NullSourceHandling' must be a " +
                     "supported compile-time constant.",
-                    "Mapping setting 'NullDestinationHandling' must be a " +
+                    "Setting 'NullDestinationHandling' must be a " +
                     "supported compile-time constant.",
-                    "Mapping setting 'ConstructorSelection' must be a " +
+                    "Setting 'ConstructorSelection' must be a " +
                     "supported compile-time constant.",
-                    "Mapping setting 'MemberSelection' must be a supported " +
+                    "Setting 'MemberSelection' must be a supported " +
                     "compile-time constant.",
-                    "Mapping setting 'UnmappedMemberValidation' must be a " +
+                    "Setting 'UnmappedMemberValidation' must be a " +
                     "supported compile-time constant."
                 }));
             Assert.That(diagnostics, Has.All.Property("AdditionalLocations").Empty);

@@ -102,7 +102,7 @@ public partial class TestMapper : TypeMapper
         {
             var diagnostic = result.Diagnostics.Single(candidate =>
                 candidate.GetMessage().Contains(
-                    "global::TestCase." + destination,
+                    "TestCase." + destination,
                     StringComparison.Ordinal));
 
             return MappingCompositionGeneratorTest.SourceText(
@@ -196,7 +196,7 @@ public partial class TestMapper : TypeMapper
         {
             var diagnostic = result.Diagnostics.Single(candidate =>
                 candidate.GetMessage().Contains(
-                    "global::TestCase." + destination,
+                    "TestCase." + destination,
                     StringComparison.Ordinal));
 
             return MappingCompositionGeneratorTest.SourceText(
@@ -251,10 +251,9 @@ public partial class TestMapper : TypeMapper
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Convert cannot be combined with a result policy or " +
-                    "Members for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' in mapper " +
+                    "Convert cannot be combined with Construct, Resolve, or " +
+                    "Members for mapping 'TestCase.Source -> " +
+                    "TestCase.Destination' in mapper " +
                     "'global::TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });

@@ -38,20 +38,18 @@ internal sealed class DescriptorTests
             MappingSettingsDiagnosticDescriptors.InvalidSettingValue,
             "MORPH0021",
             "Invalid mapping setting value",
-            "Mapping setting '{0}' must be a supported compile-time " +
-            "constant.");
+            "Setting '{0}' must be a supported compile-time constant.");
         yield return new DescriptorCase(
             MappingSettingsDiagnosticDescriptors.InvalidMsBuildSettingValue,
             "MORPH0022",
             "Invalid MSBuild mapping setting value",
-            "MSBuild property '{0}' must name a supported mapping setting " +
-            "value.");
+            "MSBuild property '{0}' must use a supported value.");
         yield return new DescriptorCase(
             MappingSettingsDiagnosticDescriptors.InapplicableSetting,
             "MORPH0023",
             "Mapping setting is not applicable",
-            "Mapping setting '{0}' is not applicable to {1} for contract " +
-            "'{2}' in mapper '{3}'.");
+            "Setting '{0}' does not apply to {1} for mapping '{2}' in " +
+            "mapper '{3}'.");
     }
 
     internal sealed record DescriptorCase(

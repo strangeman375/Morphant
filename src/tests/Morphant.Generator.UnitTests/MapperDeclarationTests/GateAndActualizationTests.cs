@@ -306,10 +306,8 @@ namespace Second
             result.Diagnostics.Select(diagnostic => diagnostic.GetMessage()),
             Is.EqualTo(new[]
             {
-                "Mapper 'global::First.TestMapper' must be declared partial " +
-                "so Morphant can generate its mapping contract.",
-                "Mapper 'global::Second.TestMapper' must be declared partial " +
-                "so Morphant can generate its mapping contract."
+                "Mapper 'global::First.TestMapper' must be declared partial.",
+                "Mapper 'global::Second.TestMapper' must be declared partial."
             }));
     }
 }

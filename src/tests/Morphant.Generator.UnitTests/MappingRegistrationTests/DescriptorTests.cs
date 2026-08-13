@@ -12,26 +12,26 @@ internal sealed class DescriptorTests
             MappingRegistrationDiagnosticDescriptors
                 .UnavailableMappingType,
             "MORPH0011",
-            "Mapping type is unavailable to generated code",
-            "The {0} type '{1}' is unavailable to Morphant-generated code.");
+            "Mapping type is inaccessible",
+            "The {0} type '{1}' is not accessible to the generated mapper.");
         yield return Case(
             MappingRegistrationDiagnosticDescriptors
                 .UnsupportedMappingRoot,
             "MORPH0012",
-            "Unsupported mapping root type",
-            "The {0} type '{1}' is not supported as a mapping root because " +
-            "it is {2}.");
+            "Unsupported mapping type",
+            "The {0} type '{1}' cannot be used in Map because it is {2}.");
         yield return Case(
             MappingRegistrationDiagnosticDescriptors.DuplicateRegistration,
             "MORPH0013",
             "Duplicate mapping registration",
-            "Mapping contract '{0}' is registered more than once in mapper " +
+            "Mapping '{0}' is registered more than once in mapper " +
             "'{1}'.");
         yield return Case(
             MappingRegistrationDiagnosticDescriptors.UnifiableContracts,
             "MORPH0014",
-            "Mapping contracts can unify",
-            "Mapping contracts '{0}' and '{1}' can unify in mapper '{2}'.");
+            "Mappings may become identical",
+            "Mappings '{0}' and '{1}' may become identical for some generic " +
+            "type arguments in mapper '{2}'.");
     }
 
     [TestCaseSource(nameof(Descriptors))]

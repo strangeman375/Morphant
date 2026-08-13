@@ -62,13 +62,12 @@ namespace TestCase
             Assert.That(
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
-                Has.All.Contain("manual Convert"));
+                Has.All.Contain("a Convert mapping"));
             Assert.That(
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.All.Contain(
-                    "global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>"));
+                    "TestCase.Source -> TestCase.Destination"));
             Assert.That(
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
@@ -119,11 +118,9 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapping setting 'ConstructorSelection' is not " +
-                    "applicable to mapping without structured construction " +
-                    "capability for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "int>' in mapper 'global::TestCase.TestMapper'."));
+                    "Setting 'ConstructorSelection' does not apply to this " +
+                    "destination type for mapping 'TestCase.Source -> int' " +
+                    "in mapper 'global::TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -282,9 +279,9 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Mapping setting 'MemberSelection' must be a supported " +
+                    "Setting 'MemberSelection' must be a supported " +
                     "compile-time constant.",
-                    "Mapping setting 'NullDestinationHandling' must be a " +
+                    "Setting 'NullDestinationHandling' must be a " +
                     "supported compile-time constant."
                 }));
             Assert.That(

@@ -39,7 +39,7 @@ internal sealed class DescriptorTests
                     "Duplicate IncludeBase call",
                     "Included mapping pair not found",
                     "Included mapping type is incompatible",
-                    "Inherited mapping callback is inaccessible"
+                    "Inherited mapping expression is inaccessible"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
@@ -48,14 +48,14 @@ internal sealed class DescriptorTests
                 {
                     "Base configuration is included more than once in " +
                     "Configure of mapper '{0}'.",
-                    "IncludeBase is configured more than once for contract " +
+                    "IncludeBase is configured more than once for mapping " +
                     "'{0}' in mapper '{1}'.",
-                    "Included mapping contract '{0}' was not found for " +
-                    "contract '{1}' in mapper '{2}'.",
-                    "Current {0} type '{1}' is not assignable to included " +
-                    "{0} type '{2}' for contract '{3}' in mapper '{4}'.",
-                    "Inherited {0} callback for contract '{1}' cannot be " +
-                    "accessed from mapper '{2}'."
+                    "Included mapping '{0}' was not found for mapping " +
+                    "'{1}' in mapper '{2}'.",
+                    "The {0} type '{1}' is not compatible with included " +
+                    "{0} type '{2}' for mapping '{3}' in mapper '{4}'.",
+                    "The inherited {0} expression for mapping '{1}' is " +
+                    "inaccessible from mapper '{2}'."
                 }));
             Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),

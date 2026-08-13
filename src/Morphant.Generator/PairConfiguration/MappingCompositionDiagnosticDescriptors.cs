@@ -10,16 +10,16 @@ internal static class MappingCompositionDiagnosticDescriptors
 
     public static readonly DiagnosticDescriptor DuplicatePlanSlot = Create(
         "MORPH0019",
-        "Duplicate mapping plan slot",
-        "Mapping plan slot '{0}' is configured more than once for contract " +
+        "Mapping part is configured more than once",
+        "'{0}' is configured more than once for mapping " +
         "'{1}' in mapper '{2}'.");
 
     public static readonly DiagnosticDescriptor MixedConvertAndDeclarative =
         Create(
             "MORPH0020",
-            "Convert cannot be combined with result policy or Members",
-            "Convert cannot be combined with a result policy or Members " +
-            "for contract '{0}' in mapper '{1}'.");
+            "Convert cannot be combined with other mapping rules",
+            "Convert cannot be combined with Construct, Resolve, or Members " +
+            "for mapping '{0}' in mapper '{1}'.");
 
     private static DiagnosticDescriptor Create(
         string id,

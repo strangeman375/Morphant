@@ -18,7 +18,7 @@ public sealed class InvalidMappingRegistrationException : MappingException
         Type sourceType,
         Type destinationType)
         : base(
-            $"The registered mapping from '{sourceType}' to " +
+            $"The mapping registered for '{sourceType}' -> " +
             $"'{destinationType}' resolved to null.",
             operation,
             sourceType,

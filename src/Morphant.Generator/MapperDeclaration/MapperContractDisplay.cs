@@ -12,20 +12,21 @@ internal static class MapperContractDisplay
     {
         var result = new StringBuilder();
 
-        result.Append("global::Morphant.ITypeMapper<");
         AppendType(sourceType, result);
-        result.Append(", ");
+        result.Append(" -> ");
         AppendType(destinationType, result);
-        result.Append('>');
 
-        return result.ToString();
+        return RemoveGlobalPrefixes(result.ToString());
     }
 
     public static string CreateType(ITypeSymbol type)
     {
-        return type.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable);
+        return RemoveGlobalPrefixes(type.ToDisplayString(
+            SymbolDisplayFormats.FullyQualifiedNullable));
     }
+
+    private static string RemoveGlobalPrefixes(string value) =>
+        value.Replace("global::", string.Empty);
 
     private static void AppendType(
         ITypeSymbol type,

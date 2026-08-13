@@ -88,18 +88,14 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Structured Construct callback for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.ConstructDestination>' " +
-                    "must be an inline lambda.",
-                    "Structured Members callback for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.MembersDestination>' " +
-                    "must be an inline lambda.",
-                    "Structured Resolve callback for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.ResolveDestination>' " +
-                    "must be an inline lambda."
+                    "Construct for mapping 'TestCase.Source -> " +
+                    "TestCase.ConstructDestination' must use an inline " +
+                    "lambda.",
+                    "Members for mapping 'TestCase.Source -> " +
+                    "TestCase.MembersDestination' must use an inline " +
+                    "lambda.",
+                    "Resolve for mapping 'TestCase.Source -> " +
+                    "TestCase.ResolveDestination' must use an inline lambda."
                 }));
             Assert.That(
                 diagnostics.SelectMany(static diagnostic =>

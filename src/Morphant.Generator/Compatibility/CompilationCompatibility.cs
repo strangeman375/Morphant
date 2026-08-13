@@ -53,7 +53,7 @@ internal sealed record CompilationCompatibility(
 
             default:
                 throw new InvalidOperationException(
-                    $"Unknown runtime contract compatibility kind '{RuntimeContract.Kind}'.");
+                    "The runtime compatibility result is invalid.");
         }
 
         return diagnostics.ToImmutable();

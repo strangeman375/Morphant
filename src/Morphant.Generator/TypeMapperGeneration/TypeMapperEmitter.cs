@@ -13,13 +13,13 @@ internal static class TypeMapperEmitter
         "Morphant.TransferProbe.Mapping.";
 
     private const string InvalidMappingModeExceptionMessage =
-        "The effective MappingMode is invalid.";
+        "MappingMode has an invalid value.";
 
     private const string InvalidNullSourceHandlingExceptionMessage =
-        "The effective NullSourceHandling is invalid.";
+        "NullSourceHandling has an invalid value.";
 
     private const string InvalidNullDestinationHandlingExceptionMessage =
-        "The effective NullDestinationHandling is invalid.";
+        "NullDestinationHandling has an invalid value.";
 
     public static SourceText Emit(TypeMapperModel model)
     {
@@ -581,8 +581,7 @@ internal static class TypeMapperEmitter
         WriteMappingConfigurationFailureStatement(
             writer,
             mapping,
-            "Morphant could not generate the Create operation from the " +
-            "configured mapping plan.",
+            "Morphant could not generate Create for this mapping.",
             operationExpression);
     }
 
@@ -1138,7 +1137,7 @@ internal static class TypeMapperEmitter
 
             default:
                 throw new InvalidOperationException(
-                    "A valid effective NullSourceHandling value is required.");
+                    "NullSourceHandling has an invalid value.");
         }
 
         writer.Unindent();
@@ -1184,7 +1183,7 @@ internal static class TypeMapperEmitter
 
             default:
                 throw new InvalidOperationException(
-                    "A valid effective NullDestinationHandling value is required.");
+                    "NullDestinationHandling has an invalid value.");
         }
 
         writer.Unindent();
@@ -1476,8 +1475,7 @@ internal static class TypeMapperEmitter
             WriteMappingConfigurationFailureStatement(
                 writer,
                 mapping,
-                "Morphant could not generate the Update operation from the " +
-                "configured mapping plan.",
+                "Morphant could not generate Update for this mapping.",
                 update: true);
             return;
         }

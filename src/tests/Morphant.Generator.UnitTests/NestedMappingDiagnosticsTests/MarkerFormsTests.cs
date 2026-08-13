@@ -127,8 +127,7 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "source expression does not have a statically " +
-                    "determined type"));
+                    "source expression has no compile-time type"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

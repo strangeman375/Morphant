@@ -80,15 +80,15 @@ internal sealed class MsBuildValueTests
                 Is.EqualTo(new[]
                 {
                     "MSBuild property 'MorphantConstructorSelection' must " +
-                    "name a supported mapping setting value.",
-                    "MSBuild property 'MorphantMemberSelection' must name a " +
-                    "supported mapping setting value.",
+                    "use a supported value.",
+                    "MSBuild property 'MorphantMemberSelection' must use a " +
+                    "supported value.",
                     "MSBuild property 'MorphantNullDestinationHandling' must " +
-                    "name a supported mapping setting value.",
-                    "MSBuild property 'MorphantNullSourceHandling' must name " +
-                    "a supported mapping setting value.",
+                    "use a supported value.",
+                    "MSBuild property 'MorphantNullSourceHandling' must use " +
+                    "a supported value.",
                     "MSBuild property 'MorphantUnmappedMemberValidation' " +
-                    "must name a supported mapping setting value."
+                    "must use a supported value."
                 }));
             Assert.That(
                 result.Diagnostics,

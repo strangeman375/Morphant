@@ -55,13 +55,11 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Nested mapping pair for marker 'Map' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' cannot be determined: " +
-                    "source expression does not have a statically " +
-                    "determined type. Reachable paths: Create, Update " +
-                    "without a previous destination, Update with a " +
-                    "previous destination."));
+                    "Cannot determine source or destination type for 'Map' " +
+                    "in mapping 'TestCase.Source -> TestCase.Destination': " +
+                    "source expression has no compile-time type. Affected " +
+                    "cases: Create; Update without an existing destination; " +
+                    "Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -123,12 +121,11 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Nested mapping result type 'int' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' cannot be converted " +
-                    "warning-free to target type 'string'. Reachable " +
-                    "paths: Create, Update without a previous destination, " +
-                    "Update with a previous destination."));
+                    "Nested mapping result type 'int' cannot be assigned to " +
+                    "'string' in mapping 'TestCase.Source -> " +
+                    "TestCase.Destination'. Affected cases: Create; Update " +
+                    "without an existing destination; Update with an " +
+                    "existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -200,15 +197,12 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Nested Update destination for marker 'Update' in " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is invalid: explicit " +
-                    "destination expression of type 'object' does not have " +
-                    "a warning-free implicit conversion to nested " +
-                    "destination type 'global::TestCase.ChildDestination'. " +
-                    "Reachable paths: Create, Update without a previous " +
-                    "destination, Update with a previous destination."));
+                    "Destination for nested 'Update' is invalid in mapping " +
+                    "'TestCase.Source -> TestCase.Destination': destination " +
+                    "type 'object' cannot be assigned to " +
+                    "'TestCase.ChildDestination'. Affected cases: Create; " +
+                    "Update without an existing destination; Update with an " +
+                    "existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

@@ -8,15 +8,13 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class DeclarativeControlFlowPlanner
 {
     private const string UnsupportedBlockMessage =
-        "Declarative plan contains a statement that is not supported.";
+        "This statement is not supported in Construct, Resolve, or Members.";
 
     private const string UnsupportedCaptureMessage =
-        "Declarative plan contains a capture that cannot be transferred " +
-        "to the generated mapper.";
+        "This value cannot be captured by Construct, Resolve, or Members.";
 
     private const string ReadOnlyInputMutationMessage =
-        "The previous and result inputs are read-only in declarative " +
-        "Construct and Members plans.";
+        "'previous' and 'result' cannot be modified.";
 
     private const string MemberMetadataName =
         "Morphant.Members.Member`1";

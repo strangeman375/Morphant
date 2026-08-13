@@ -61,7 +61,7 @@ namespace TestCase
                     MissingMessage("ACreate", "Create"),
                     MissingMessage(
                         "BUpdateCreate",
-                        "Update without a previous destination"),
+                        "Update without an existing destination"),
                     MissingMessage("DBothThrow", "Create")
                 }));
             Assert.That(
@@ -129,9 +129,7 @@ namespace TestCase
         string destination,
         string paths)
     {
-        return "Destination construction for contract " +
-            "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-            $"global::TestCase.{destination}>' is not configured for " +
-            $"reachable paths: {paths}.";
+        return $"Mapping 'TestCase.Source -> TestCase.{destination}' " +
+            $"cannot create a destination. Affected cases: {paths}.";
     }
 }

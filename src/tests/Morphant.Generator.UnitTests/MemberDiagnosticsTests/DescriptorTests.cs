@@ -36,20 +36,21 @@ internal sealed class DescriptorTests
                     "Member rule is invalid",
                     "Required destination member is not initialized",
                     "Member rule cannot be applied",
-                    "Structured member plan is null"
+                    "Members returned no rules"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
                     descriptor.MessageFormat.ToString()),
                 Is.EqualTo(new[]
                 {
-                    "Member rule for '{0}' in contract '{1}' is invalid: {2}.",
-                    "Required destination member '{0}' in contract '{1}' is " +
-                    "not initialized on reachable paths: {2}.",
-                    "Member rule for '{0}' in contract '{1}' cannot be " +
-                    "applied: {2}. Reachable paths: {3}.",
-                    "Structured member plan for contract '{0}' cannot be " +
-                    "null on reachable paths: {1}."
+                    "Rule for destination member '{0}' is invalid in " +
+                    "mapping '{1}': {2}.",
+                    "Required destination member '{0}' is not initialized " +
+                    "in mapping '{1}'. Affected cases: {2}.",
+                    "Rule for destination member '{0}' cannot be applied in " +
+                    "mapping '{1}': {2}. Affected cases: {3}.",
+                    "Members returned null or default for mapping '{0}'. " +
+                    "Affected cases: {1}."
                 }));
             Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),

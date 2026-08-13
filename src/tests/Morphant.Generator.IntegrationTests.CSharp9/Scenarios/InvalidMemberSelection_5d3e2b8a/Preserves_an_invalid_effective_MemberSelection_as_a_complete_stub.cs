@@ -52,7 +52,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidMemberSel
             catch (global::Morphant.Exceptions.MappingConfigurationException
                    exception)
                 when (exception.Message.Contains(
-                    "The effective MemberSelection is invalid.",
+                    "MemberSelection has an invalid value.",
                     StringComparison.Ordinal))
             {
                 return;

@@ -819,7 +819,7 @@ namespace TestCase
                     operation,
                     typeof(global::TestCase.Source),
                     typeof(global::TestCase.Destination),
-                    "The configured structured result callback selected an unavailable previous destination.");
+                    "'previous' is not available in this case.");
             }
             else
             {

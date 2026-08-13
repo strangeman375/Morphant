@@ -55,10 +55,9 @@ public partial class TestMapper : TypeMapper
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.All.EqualTo(
-                    "Mapping plan slot 'result policy' is configured more " +
-                    "than once for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' in mapper " +
+                    "'Construct or Resolve' is configured more than once " +
+                    "for mapping 'TestCase.Source -> TestCase.Destination' " +
+                    "in mapper " +
                     "'global::TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });

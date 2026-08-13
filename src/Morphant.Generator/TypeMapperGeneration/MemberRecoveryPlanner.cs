@@ -7,14 +7,13 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class MemberRecoveryPlanner
 {
     private const string InvalidMemberRuleMessage =
-        "The configured member rule is invalid.";
+        "This member rule is invalid.";
 
     private const string NullMembersMessage =
-        "The configured Members plan cannot be null.";
+        "Members returned null or default.";
 
     private const string MemberLifecycleMessage =
-        "The configured member rule cannot be applied in the selected " +
-        "destination lifecycle phase.";
+        "This member cannot be assigned in this Create or Update case.";
 
     public static TypeMapperMappingModel Apply(
         TypeMapperMappingModel mapping,

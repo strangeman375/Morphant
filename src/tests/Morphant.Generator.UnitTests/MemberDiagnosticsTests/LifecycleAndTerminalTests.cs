@@ -53,8 +53,8 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "creation-time member rule depends on result before it " +
-                    "is created"));
+                    "member rule uses 'result' before the destination is " +
+                    "created"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -233,8 +233,8 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Create, Update without a previous destination, Update " +
-                    "with a previous destination."));
+                    "Create; Update without an existing destination; Update " +
+                    "with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

@@ -18,8 +18,7 @@ public sealed class UnmatchedMappingSwitchException : MappingException
         Type sourceType,
         Type destinationType)
         : base(
-            "No branch of the declarative mapping switch matched the " +
-            "runtime value.",
+            "No switch branch matched the current value.",
             operation,
             sourceType,
             destinationType)

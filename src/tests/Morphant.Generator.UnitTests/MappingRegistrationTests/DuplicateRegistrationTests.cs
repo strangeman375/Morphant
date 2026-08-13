@@ -43,10 +43,9 @@ public partial class TestMapper : TypeMapper
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Is.All.EqualTo(
-                    "Mapping contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is registered more than " +
-                    "once in mapper 'global::TestCase.TestMapper'."));
+                    "Mapping 'TestCase.Source -> TestCase.Destination' is " +
+                    "registered more than once in mapper " +
+                    "'global::TestCase.TestMapper'."));
             Assert.That(
                 result.Diagnostics.Select(diagnostic =>
                     MappingRegistrationGeneratorTest.SourceText(
@@ -128,17 +127,15 @@ public partial class TestMapper : TypeMapper
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Mapping contract 'global::Morphant.ITypeMapper<" +
-                    "global::System.IntPtr, " +
-                    "global::TestCase.Destination>' is registered more than " +
-                    "once in mapper 'global::TestCase.TestMapper'.",
-                    "Mapping contract 'global::Morphant.ITypeMapper<" +
-                    "global::System.ValueTuple<int, string>, " +
-                    "global::TestCase.Destination>' is registered more than " +
-                    "once in mapper 'global::TestCase.TestMapper'.",
-                    "Mapping contract 'global::Morphant.ITypeMapper<object, " +
-                    "global::TestCase.Destination>' is registered more than " +
-                    "once in mapper 'global::TestCase.TestMapper'."
+                    "Mapping 'System.IntPtr -> TestCase.Destination' is " +
+                    "registered more than once in mapper " +
+                    "'global::TestCase.TestMapper'.",
+                    "Mapping 'System.ValueTuple<int, string> -> " +
+                    "TestCase.Destination' is registered more than once in " +
+                    "mapper 'global::TestCase.TestMapper'.",
+                    "Mapping 'object -> TestCase.Destination' is registered " +
+                    "more than once in mapper " +
+                    "'global::TestCase.TestMapper'."
                 }));
         });
     }

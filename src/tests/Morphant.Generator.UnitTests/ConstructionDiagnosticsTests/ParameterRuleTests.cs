@@ -87,8 +87,8 @@ namespace TestCase
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
-                    "Auto does not resolve a unique readable source member " +
-                    "with a warning-free implicit conversion"));
+                    "Auto could not find exactly one compatible source " +
+                    "member"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
@@ -99,13 +99,13 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
                     "selected constructor " +
-                    "'global::TestCase.CMissingParameter()' does not declare " +
+                    "'TestCase.CMissingParameter()' does not declare " +
                     "this parameter"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
-                    "marker target type 'string' does not exactly match " +
+                    "specified type 'string' does not match " +
                     "parameter type 'object'"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>

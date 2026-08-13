@@ -38,12 +38,10 @@ public partial class TestMapper<T> : TypeMapper
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapping contracts 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Envelope<T>, " +
-                    "global::TestCase.Destination>' and " +
-                    "'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Envelope<int>, " +
-                    "global::TestCase.Destination>' can unify in mapper " +
+                    "Mappings 'TestCase.Envelope<T> -> " +
+                    "TestCase.Destination' and 'TestCase.Envelope<int> -> " +
+                    "TestCase.Destination' may become identical for some " +
+                    "generic type arguments in mapper " +
                     "'global::TestCase.TestMapper<T>'."));
             Assert.That(
                 MappingRegistrationGeneratorTest.SourceText(

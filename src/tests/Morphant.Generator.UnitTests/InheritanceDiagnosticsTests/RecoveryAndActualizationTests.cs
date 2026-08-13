@@ -240,7 +240,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The configured mapping plan is invalid: the selected base mapper does not configure the requested pair.");
+                "The mapping configuration is invalid: the base mapper does not configure this mapping.");
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -251,7 +251,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The configured mapping plan is invalid: the selected base mapper does not configure the requested pair.");
+                "The mapping configuration is invalid: the base mapper does not configure this mapping.");
     }
 }
 """;

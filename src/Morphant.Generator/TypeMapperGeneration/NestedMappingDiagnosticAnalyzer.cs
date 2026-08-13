@@ -383,52 +383,47 @@ internal static class NestedMappingDiagnosticAnalyzer
         {
             case NestedMappingFailureKind.SourceTypeUnknown:
                 return observation.InferredDestinationType is null
-                    ? "source expression does not have a statically " +
-                      "determined type; non-generic marker has no final " +
-                      "target from which to infer the destination type"
-                    : "source expression does not have a statically " +
-                      "determined type";
+                    ? "source expression has no compile-time type and the " +
+                      "destination type is not specified"
+                    : "source expression has no compile-time type";
 
             case NestedMappingFailureKind.ParameterlessSourceUnavailable:
-                return "parameterless Map does not resolve a unique " +
+                return "Map() could not find exactly one " +
                        "readable source member named '" +
                        (observation.TargetName ?? string.Empty) + "'" +
                        (observation.InferredDestinationType is null
-                           ? "; non-generic marker has no final target from " +
-                             "which to infer the destination type"
+                           ? "; the destination type is not specified"
                            : string.Empty);
 
             case NestedMappingFailureKind.DestinationTypeUnknown:
-                return "non-generic marker has no final target from which " +
-                       "to infer the destination type";
+                return "use Map<TDestination>(...) to specify the " +
+                       "destination type";
 
             case NestedMappingFailureKind.ExplicitDestinationIncompatible:
-                return "explicit destination expression of type '" +
+                return "destination type '" +
                        Display(observation.ExplicitDestinationType) +
-                       "' does not have a warning-free implicit conversion " +
-                       "to nested destination type '" +
+                       "' cannot be assigned to '" +
                        Display(observation.InferredDestinationType) + "'";
 
             case NestedMappingFailureKind
                 .ExplicitNullForNonNullableValue:
-                return "explicit null destination cannot represent " +
-                       "non-nullable value destination type '" +
+                return "null cannot be used for non-nullable destination " +
+                       "type '" +
                        Display(observation.InferredDestinationType) + "'";
 
             case NestedMappingFailureKind.AdaptiveCurrentUnavailable:
-                return "adaptive Map has no readable current destination " +
-                       "for target '" +
+                return "Map could not find the current destination for '" +
                        (observation.TargetName ?? string.Empty) + "'";
 
             case NestedMappingFailureKind.AdaptiveCurrentIncompatible:
-                return "current destination slot of type '" +
+                return "current destination of type '" +
                        Display(observation.CurrentDestinationType) +
-                       "' cannot contain nested destination type '" +
+                       "' cannot be used as '" +
                        Display(observation.InferredDestinationType) + "'";
 
             case NestedMappingFailureKind.AdaptiveCurrentAmbiguous:
-                return "adaptive Map local is associated with multiple " +
-                       "current destinations: " +
+                return "this Map call matches more than one current " +
+                       "destination: " +
                        string.Join(
                            ", ",
                            observation.AdaptiveLocalTargets
@@ -436,8 +431,8 @@ internal static class NestedMappingDiagnosticAnalyzer
                                .Distinct(StringComparer.Ordinal));
 
             case NestedMappingFailureKind.ReadOnlyProxyInvalid:
-                return "standalone Update destination is not an eligible " +
-                       "get-only DestinationMembers proxy";
+                return "Update requires a readable reference-type " +
+                       "destination member here";
 
             default:
                 return string.Empty;
@@ -605,7 +600,7 @@ internal static class NestedMappingDiagnosticAnalyzer
     {
         return type is null
             ? string.Empty
-            : TypeMapperMappingTypePolicy.GetGeneratedTypeName(type);
+            : MapperContractDisplay.CreateType(type);
     }
 
     private static string NormalizeAdaptiveTarget(string target)

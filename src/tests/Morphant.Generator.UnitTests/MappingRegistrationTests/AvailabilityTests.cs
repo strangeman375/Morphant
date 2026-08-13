@@ -46,11 +46,11 @@ public partial class Container
                 Is.EqualTo(new[]
                 {
                     "The source type " +
-                    "'global::TestCase.Container.PrivateSource?' is " +
-                    "unavailable to Morphant-generated code.",
+                    "'TestCase.Container.PrivateSource?' is not accessible " +
+                    "to the generated mapper.",
                     "The destination type " +
-                    "'global::TestCase.Container.PrivateDestination?' is " +
-                    "unavailable to Morphant-generated code."
+                    "'TestCase.Container.PrivateDestination?' is not " +
+                    "accessible to the generated mapper."
                 }));
             Assert.That(
                 result.Diagnostics.Select(diagnostic =>

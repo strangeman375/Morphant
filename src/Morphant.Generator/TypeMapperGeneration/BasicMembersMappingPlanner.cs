@@ -11,11 +11,10 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class BasicMembersMappingPlanner
 {
     private const string UnsupportedMembersMessage =
-        "The configured Members callback cannot be represented by the " +
-        "supported declarative grammar.";
+        "This Members expression is not supported.";
 
     private const string AutomaticMemberUnavailableMessage =
-        "A configured Auto member cannot be mapped by convention.";
+        "Auto could not find exactly one compatible source member.";
 
     public static BasicMembersMappingResult Build(
         ImmutableArray<MembersConfigurationModel> configurations,

@@ -39,9 +39,8 @@ public abstract partial class TestMapper :
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapping contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, global::TestCase.Destination>' " +
-                    "is already declared by mapper " +
+                    "Mapping 'TestCase.Source -> TestCase.Destination' is " +
+                    "already implemented by mapper " +
                     "'global::TestCase.TestMapper'. Remove the interface " +
                     "declaration or the Map registration."));
             Assert.That(
@@ -224,10 +223,9 @@ public abstract partial class TestMapper<T> :
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapping contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, global::TestCase.Destination>' " +
-                    "can unify with an interface contract declared by mapper " +
-                    "'global::TestCase.TestMapper<T>'."));
+                    "Mapper 'global::TestCase.TestMapper<T>' declares an " +
+                    "interface that may conflict with generated mapping " +
+                    "'TestCase.Source -> TestCase.Destination'."));
             Assert.That(
                 MapperDeclarationGeneratorTest.SourceText(
                     diagnostic.AdditionalLocations.Single()),
@@ -470,8 +468,7 @@ public abstract partial class TestMapper :
         Assert.That(
             diagnostic.GetMessage(),
             Does.Contain(
-                "global::Morphant.ITypeMapper<object, " +
-                "global::System.ValueTuple<int, string>>"));
+                "object -> System.ValueTuple<int, string>"));
     }
 
     [Test]
@@ -505,8 +502,7 @@ public abstract partial class TestMapper :
         Assert.That(
             diagnostic.GetMessage(),
             Does.Contain(
-                "global::Morphant.ITypeMapper<global::@class.@event, " +
-                "global::@class.@struct>"));
+                "@class.@event -> @class.@struct"));
     }
 
     [Test]

@@ -46,7 +46,7 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "parameterless Map does not resolve a unique readable " +
+                    "Map() could not find exactly one readable " +
                     "source member named 'Missing'"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -142,8 +142,8 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "explicit null destination cannot represent " +
-                    "non-nullable value destination type 'int'"));
+                    "null cannot be used for non-nullable destination type " +
+                    "'int'"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -204,12 +204,12 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "adaptive Map has no readable current destination for " +
-                    "target 'value'"));
+                    "Map could not find the current destination for " +
+                    "'value'"));
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Reachable paths: Update with a previous destination."));
+                    "Affected cases: Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -261,12 +261,12 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "adaptive Map has no readable current destination for " +
-                    "target 'value'"));
+                    "Map could not find the current destination for " +
+                    "'value'"));
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Reachable paths: Update with a previous destination."));
+                    "Affected cases: Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -386,9 +386,8 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "current destination slot of type 'string' cannot " +
-                    "contain nested destination type " +
-                    "'global::TestCase.ChildDestination'"));
+                    "current destination of type 'string' cannot be used as " +
+                    "'TestCase.ChildDestination'"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -438,12 +437,12 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "current destination slot of type 'long' cannot " +
-                    "contain nested destination type 'int'"));
+                    "current destination of type 'long' cannot be used as " +
+                    "'int'"));
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Reachable paths: Update with a previous destination."));
+                    "Affected cases: Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -504,13 +503,12 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "current destination slot of type " +
-                    "'global::TestCase.RuntimeSlot' cannot contain nested " +
-                    "destination type 'global::TestCase.ChildDestination'"));
+                    "current destination of type 'TestCase.RuntimeSlot' " +
+                    "cannot be used as 'TestCase.ChildDestination'"));
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Reachable paths: Update with a previous destination."));
+                    "Affected cases: Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -579,8 +577,8 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "adaptive Map local is associated with multiple " +
-                    "current destinations: First, Second"));
+                    "this Map call matches more than one current " +
+                    "destination: First, Second"));
             Assert.That(
                 diagnostic.AdditionalLocations.Take(2).Select(
                     NestedMappingDiagnosticsGeneratorTest.SourceText),
@@ -588,7 +586,7 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Reachable paths: Update with a previous destination."));
+                    "Affected cases: Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -650,8 +648,8 @@ namespace TestCase
             Assert.That(
                 result.NestedMappingDiagnostics.Single().GetMessage(),
                 Does.Contain(
-                    "standalone Update destination is not an eligible " +
-                    "get-only DestinationMembers proxy"));
+                    "Update requires a readable reference-type destination " +
+                    "member here"));
             Assert.That(
                 result.NestedMappingDiagnostics.Single()
                     .AdditionalLocations.Select(

@@ -11,15 +11,14 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class MemberDiagnosticAnalyzer
 {
     private const string AutoUnavailableReason =
-        "Auto does not resolve a unique readable source member with a " +
-        "warning-free implicit conversion";
+        "Auto could not find exactly one compatible source member";
 
     private const string RuntimeResultReason =
-        "init-only member cannot be assigned after a runtime result policy " +
-        "has returned the result";
+        "init-only member cannot be assigned after ConstructUsing or " +
+        "ResolveUsing returns";
 
     private const string ResultDependencyReason =
-        "creation-time member rule depends on result before it is created";
+        "member rule uses 'result' before the destination is created";
 
     public static ImmutableArray<MemberDiagnosticCandidate> Build(
         MapperContractAnalysis analysis,
@@ -472,9 +471,9 @@ internal static class MemberDiagnosticAnalyzer
                             MemberRuleOrigin.Ignore => "Ignore",
                             _ => "Value"
                         });
-                    reason = "marker target type '" +
+                    reason = "specified type '" +
                         DisplayType(rule.AssertedType!) +
-                        "' does not exactly match member type '" +
+                        "' does not match member type '" +
                         DisplayType(
                             rule.TargetType ??
                             GetMemberType(rule.DestinationMember)) +
@@ -490,7 +489,7 @@ internal static class MemberDiagnosticAnalyzer
                         rule.OriginNode?.GetLocation() ??
                         mapping.AnalysisContext.Registration.Syntax
                             .GetLocation();
-                    reason = "imported rule targets destination member '" +
+                    reason = "IncludeBase rule for destination member '" +
                         DisplayMember(rule.DestinationMember) +
                         "', which is hidden by '" +
                         DisplayMember(rule.HiddenImportedSlot!) +
@@ -1027,12 +1026,13 @@ internal static class MemberDiagnosticAnalyzer
     };
 
     private static string DisplayType(ITypeSymbol type) =>
-        type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable);
+        MapperContractDisplay.CreateType(type);
 
     private static string DisplayMember(ISymbol member)
     {
-        var containing = member.ContainingType?.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable) ?? string.Empty;
+        var containing = member.ContainingType is { } containingType
+            ? MapperContractDisplay.CreateType(containingType)
+            : string.Empty;
 
         return containing + "." + member.Name;
     }

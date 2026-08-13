@@ -18,9 +18,9 @@ public sealed class NullDestinationException : MappingException
         Type sourceType,
         Type destinationType)
         : base(
-            $"The destination is null for mapping from '{sourceType}' to " +
-            $"'{destinationType}', while the effective " +
-            "NullDestinationHandling is Throw.",
+            $"NullDestinationHandling.Throw does not allow a null " +
+            $"destination for mapping '{sourceType}' -> " +
+            $"'{destinationType}'.",
             operation,
             sourceType,
             destinationType)

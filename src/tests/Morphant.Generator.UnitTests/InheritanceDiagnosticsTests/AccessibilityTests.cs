@@ -118,7 +118,7 @@ namespace TestCase
                 Is.EqualTo(Enumerable.Repeat("MORPH0028", 6)));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
-                    diagnostic.GetMessage().Split(' ')[1]),
+                    diagnostic.GetMessage().Split(' ')[2]),
                 Is.EqualTo(new[]
                 {
                     "Construct",

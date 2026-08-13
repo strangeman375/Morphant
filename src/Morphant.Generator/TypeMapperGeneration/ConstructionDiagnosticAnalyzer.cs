@@ -705,7 +705,7 @@ internal static class ConstructionDiagnosticAnalyzer
                 parameterName,
                 markerLocation,
                 "marker-type",
-                $"marker target type '{actualType}' does not exactly match " +
+                $"specified type '{actualType}' does not match " +
                 $"parameter type '{parameterType}'");
             return true;
         }
@@ -727,8 +727,7 @@ internal static class ConstructionDiagnosticAnalyzer
                 parameterName,
                 GetMarkerNameLocation(origin, "Auto"),
                 "auto",
-                "Auto does not resolve a unique readable source member with " +
-                "a warning-free implicit conversion");
+                "Auto could not find exactly one compatible source member");
             return true;
         }
 
@@ -756,9 +755,8 @@ internal static class ConstructionDiagnosticAnalyzer
                 parameterName,
                 GetInvocationNameLocation(markerInvocation),
                 "binding",
-                $"the rule cannot be applied to selected constructor " +
-                $"'{DisplayConstructor(constructor)}' without changing C# " +
-                "binding");
+                $"this rule cannot be used with constructor " +
+                $"'{DisplayConstructor(constructor)}'");
             return true;
         }
 
@@ -766,9 +764,8 @@ internal static class ConstructionDiagnosticAnalyzer
             parameterName,
             origin.GetLocation(),
             "binding",
-            $"the rule cannot be applied to selected constructor " +
-            $"'{DisplayConstructor(constructor)}' without changing C# " +
-            "binding");
+            $"this rule cannot be used with constructor " +
+            $"'{DisplayConstructor(constructor)}'");
         return true;
     }
 
@@ -874,7 +871,8 @@ internal static class ConstructionDiagnosticAnalyzer
         switch (strategy)
         {
             case ConstructorSelectionValue.Explicit:
-                reason = "automatic constructor selection is disabled";
+                reason = "ConstructorSelection.Explicit disables automatic " +
+                    "selection";
                 reasonKind = "explicit";
                 return true;
 
@@ -920,15 +918,15 @@ internal static class ConstructionDiagnosticAnalyzer
 
                 if (applicable.IsEmpty)
                 {
-                    reason = "no supported constructor has an applicable " +
-                        "convention plan";
+                    reason = "no constructor can be called with " +
+                        "automatically mapped arguments";
                     reasonKind = "greediest-no-plan";
                     selectedConstructor = null;
                     return true;
                 }
 
-                reason = "multiple applicable constructors have the greatest " +
-                    "mapped argument count";
+                reason = "multiple constructors accept the same highest " +
+                    "number of mapped arguments";
                 reasonKind = "greediest-tie";
                 selectedConstructor = null;
                 return true;
@@ -937,8 +935,8 @@ internal static class ConstructionDiagnosticAnalyzer
 
         if (selectedConstructor is null)
         {
-            reason = "no supported constructor has an applicable convention " +
-                "plan";
+            reason = "no constructor can be called with automatically " +
+                "mapped arguments";
             reasonKind = "no-plan";
             return true;
         }
@@ -970,17 +968,17 @@ internal static class ConstructionDiagnosticAnalyzer
                 ConstructorCandidateRejectionReason.MissingSourceMember or
                 ConstructorCandidateRejectionReason.IncompatibleArgument)
         {
-            reason = $"selected constructor " +
+            reason = $"constructor " +
                 $"'{DisplayConstructor(selectedConstructor)}' has no " +
-                "warning-free convention value for required parameter " +
+                "compatible source member for required parameter " +
                 $"'{blockingParameter.ParameterName}'";
             reasonKind = "parameter";
             return true;
         }
 
-        reason = $"selected constructor " +
-            $"'{DisplayConstructor(selectedConstructor)}' cannot be invoked " +
-            "without changing C# binding";
+        reason = $"constructor " +
+            $"'{DisplayConstructor(selectedConstructor)}' cannot be called " +
+            "with the mapped arguments";
         reasonKind = "binding";
         return true;
     }
@@ -1399,12 +1397,12 @@ internal static class ConstructionDiagnosticAnalyzer
 
     private static string DisplayConstructor(IMethodSymbol constructor)
     {
-        var containingType = constructor.ContainingType.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable);
+        var containingType = MapperContractDisplay.CreateType(
+            constructor.ContainingType);
         var parameters = constructor.Parameters.Select(parameter =>
-            parameter.Type.WithNullableAnnotation(
-                    parameter.NullableAnnotation)
-                .ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable) +
+            MapperContractDisplay.CreateType(
+                parameter.Type.WithNullableAnnotation(
+                    parameter.NullableAnnotation)) +
             " " + parameter.Name);
 
         return containingType + "(" + string.Join(", ", parameters) + ")";
@@ -1483,15 +1481,15 @@ internal static class ConstructionDiagnosticAnalyzer
 
         if (paths.HasFlag(MappingExecutionPathSet.UpdateWithoutPrevious))
         {
-            names.Add("Update without a previous destination");
+            names.Add("Update without an existing destination");
         }
 
         if (paths.HasFlag(MappingExecutionPathSet.UpdateWithPrevious))
         {
-            names.Add("Update with a previous destination");
+            names.Add("Update with an existing destination");
         }
 
-        return string.Join(", ", names);
+        return string.Join("; ", names);
     }
 
     private readonly record struct ConstructionAnalysisContext(

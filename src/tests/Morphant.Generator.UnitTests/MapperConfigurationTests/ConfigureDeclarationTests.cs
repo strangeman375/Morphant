@@ -82,9 +82,9 @@ public abstract partial class MissingMapper : TypeMapper
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapper 'global::TestCase.MissingMapper' must declare " +
-                    "a source-bodied override of " +
-                    "'Configure(Morphant.MapperBuilder)'."));
+                    "Mapper 'global::TestCase.MissingMapper' must override " +
+                    "'Configure(Morphant.MapperBuilder)' with a readable " +
+                    "method body."));
             Assert.That(
                 MapperConfigurationGeneratorTest.SourceText(
                     diagnostic.Location),

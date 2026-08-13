@@ -249,8 +249,8 @@ namespace TestCase
             Assert.That(
                 result.NestedMappingDiagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
-                Has.Exactly(1).Contains("target type 'string'") &
-                Has.Exactly(1).Contains("target type 'bool'"));
+                Has.Exactly(1).Contains("assigned to 'string'") &
+                Has.Exactly(1).Contains("assigned to 'bool'"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

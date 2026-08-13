@@ -13,30 +13,28 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class TypeMapperPipeline
 {
     private const string InvalidBaseConfigurationMessage =
-        "The mapper inheritance chain contains a base mapper whose " +
-        "configuration cannot be composed.";
+        "A base mapper configuration is invalid.";
 
     private const string UnsupportedMapperBuilderFlowMessage =
-        "The mapper builder flow cannot be analyzed.";
+        "Morphant cannot analyze this Configure method.";
 
     private const string UnsupportedMappingBuilderFlowMessage =
-        "The mapping builder flow cannot be analyzed.";
+        "Morphant cannot analyze this mapping configuration.";
 
     private const string ConventionConstructionUnavailableMessage =
-        "Convention construction is not available for this destination.";
+        "Morphant cannot select a constructor for this destination.";
 
     private const string MissingConstructionPolicyMessage =
-        "Destination construction is not configured.";
+        "No destination construction is configured.";
 
     private const string InvalidConstructorSelectionMessage =
-        "The effective ConstructorSelection is invalid.";
+        "ConstructorSelection has an invalid value.";
 
     private const string DirectConstructorSelectionConflictMessage =
-        "The configured map-level ConstructorSelection is not applicable " +
-        "to direct construction.";
+        "ConstructorSelection does not apply to this destination type.";
 
     private const string InvalidMemberSelectionMessage =
-        "The effective MemberSelection is invalid.";
+        "MemberSelection has an invalid value.";
 
     public static void Register(
         IncrementalGeneratorInitializationContext context,
@@ -865,8 +863,8 @@ internal static class TypeMapperPipeline
                             observedMapping.AnalysisContext,
                             MappingFailureReason
                                 .StructuredResultRequiresDestination,
-                            "The configured structured result callback " +
-                            "requires a structured destination type.",
+                            "Construct or Resolve does not support this " +
+                            "destination type.",
                             MappingObservationOriginKind.Callback,
                             new MappingAffectedPath(
                                 configuredResultPolicy.Kind ==
@@ -1358,8 +1356,8 @@ internal static class TypeMapperPipeline
             settings.UnmappedMemberValidation,
             nameof(settings.UnmappedMemberValidation));
 
-        return "The following map-level settings are not applicable to " +
-               "Convert: " + string.Join(", ", names) + ".";
+        return "These settings do not apply to Convert: " +
+               string.Join(", ", names) + ".";
     }
 
     private static void AddExplicitSetting<TValue>(
@@ -1383,22 +1381,22 @@ internal static class TypeMapperPipeline
             reasons,
             conflicts,
             PairConfigurationConflict.DuplicateResultPolicy,
-            "more than one result callback is configured");
+            "Construct or Resolve is configured more than once");
         AddConflictReason(
             reasons,
             conflicts,
             PairConfigurationConflict.DuplicateMembers,
-            "more than one Members callback is configured");
+            "Members is configured more than once");
         AddConflictReason(
             reasons,
             conflicts,
             PairConfigurationConflict.DuplicateConvert,
-            "more than one Convert callback is configured");
+            "Convert is configured more than once");
         AddConflictReason(
             reasons,
             conflicts,
             PairConfigurationConflict.MixedManualAndDeclarative,
-            "Convert is combined with a result callback or Members");
+            "Convert is combined with Construct, Resolve, or Members");
         AddConflictReason(
             reasons,
             conflicts,
@@ -1413,24 +1411,24 @@ internal static class TypeMapperPipeline
             reasons,
             conflicts,
             PairConfigurationConflict.MissingBasePair,
-            "the selected base mapper does not configure the requested pair");
+            "the base mapper does not configure this mapping");
         AddConflictReason(
             reasons,
             conflicts,
             PairConfigurationConflict.IncompatibleBasePair,
-            "the IncludeBase pair is incompatible with the current pair");
+            "the IncludeBase mapping is incompatible with this mapping");
         AddConflictReason(
             reasons,
             conflicts,
             PairConfigurationConflict.InvalidBasePair,
-            "the included mapping pair is invalid");
+            "the included mapping is invalid");
         AddConflictReason(
             reasons,
             conflicts,
             PairConfigurationConflict.InaccessibleInheritedPlan,
-            "an inherited callback is inaccessible from the generated mapper");
+            "an inherited mapping expression is inaccessible");
 
-        return "The configured mapping plan is invalid: " +
+        return "The mapping configuration is invalid: " +
                string.Join("; ", reasons) + ".";
     }
 

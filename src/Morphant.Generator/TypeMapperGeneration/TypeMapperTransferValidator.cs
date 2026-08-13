@@ -10,8 +10,7 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class TypeMapperTransferValidator
 {
     private const string UnsupportedTransferMessage =
-        "The configured mapping contains code that cannot be transferred " +
-        "into the generated mapper.";
+        "This mapping contains code that Morphant cannot generate.";
 
     public static TypeMapperTransferValidationResult Validate(
         TypeMapperModel model,

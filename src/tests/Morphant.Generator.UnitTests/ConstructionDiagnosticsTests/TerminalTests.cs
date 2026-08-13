@@ -117,12 +117,12 @@ namespace TestCase
             Assert.That(
                 diagnostics[0].GetMessage(),
                 Does.EndWith(
-                    "Create, Update without a previous destination."));
+                    "Create; Update without an existing destination."));
             Assert.That(
                 diagnostics[1].GetMessage(),
                 Does.EndWith(
-                    "Create, Update without a previous destination, Update " +
-                    "with a previous destination."));
+                    "Create; Update without an existing destination; Update " +
+                    "with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

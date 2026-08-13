@@ -12,36 +12,35 @@ internal static class ConstructionDiagnosticDescriptors
         Create(
             "MORPH0035",
             "Destination construction is not configured",
-            "Destination construction for contract '{0}' is not configured " +
-            "for reachable paths: {1}.");
+            "Mapping '{0}' cannot create a destination. Affected cases: {1}.");
 
     public static readonly DiagnosticDescriptor ConventionUnavailable =
         Create(
             "MORPH0036",
-            "Convention construction is unavailable",
-            "Convention construction for contract '{0}' is unavailable with " +
-            "ConstructorSelection.{1}: {2}.");
+            "Constructor cannot be selected",
+            "ConstructorSelection.{1} cannot select a constructor for " +
+            "mapping '{0}': {2}.");
 
     public static readonly DiagnosticDescriptor InvalidParameterRule =
         Create(
             "MORPH0037",
             "Constructor parameter rule is invalid",
-            "Constructor parameter rule for '{0}' in contract '{1}' is " +
-            "invalid: {2}.");
+            "Rule for constructor parameter '{0}' is invalid in mapping " +
+            "'{1}': {2}.");
 
     public static readonly DiagnosticDescriptor PreviousUnavailable =
         Create(
             "MORPH0038",
             "Previous destination is unavailable",
-            "Previous destination is unavailable for contract '{0}' on " +
-            "reachable paths: {1}.");
+            "'previous' is unavailable in mapping '{0}'. Affected cases: " +
+            "{1}.");
 
     public static readonly DiagnosticDescriptor NullConstructionPlan =
         Create(
             "MORPH0039",
-            "Structured construction plan is null",
-            "Structured construction plan for contract '{0}' cannot be null " +
-            "on reachable paths: {1}.");
+            "Construct or Resolve returned no destination",
+            "Construct or Resolve returned null or default for mapping " +
+            "'{0}'. Affected cases: {1}.");
 
     private static DiagnosticDescriptor Create(
         string id,

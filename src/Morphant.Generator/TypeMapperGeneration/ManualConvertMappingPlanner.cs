@@ -6,7 +6,7 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class ManualConvertMappingPlanner
 {
     private const string UnsupportedConvertMessage =
-        "The configured Convert is not supported.";
+        "This Convert function is not supported.";
 
     public static ManualConvertMappingResult Build(
         ConvertConfigurationModel configuration,

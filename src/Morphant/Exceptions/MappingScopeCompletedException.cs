@@ -18,8 +18,8 @@ public sealed class MappingScopeCompletedException : MappingException
         Type sourceType,
         Type destinationType)
         : base(
-            "The mapping scope has already completed; mapping from " +
-            $"'{sourceType}' to '{destinationType}' cannot start.",
+            "context.Mapper cannot be used after the outer mapping call " +
+            "has completed.",
             operation,
             sourceType,
             destinationType)

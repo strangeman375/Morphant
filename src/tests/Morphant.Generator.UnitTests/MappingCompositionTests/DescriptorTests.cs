@@ -37,16 +37,16 @@ internal sealed class DescriptorTests
         yield return new DescriptorCase(
             MappingCompositionDiagnosticDescriptors.DuplicatePlanSlot,
             "MORPH0019",
-            "Duplicate mapping plan slot",
-            "Mapping plan slot '{0}' is configured more than once for " +
-            "contract '{1}' in mapper '{2}'.");
+            "Mapping part is configured more than once",
+            "'{0}' is configured more than once for mapping '{1}' in " +
+            "mapper '{2}'.");
         yield return new DescriptorCase(
             MappingCompositionDiagnosticDescriptors
                 .MixedConvertAndDeclarative,
             "MORPH0020",
-            "Convert cannot be combined with result policy or Members",
-            "Convert cannot be combined with a result policy or Members " +
-            "for contract '{0}' in mapper '{1}'.");
+            "Convert cannot be combined with other mapping rules",
+            "Convert cannot be combined with Construct, Resolve, or Members " +
+            "for mapping '{0}' in mapper '{1}'.");
     }
 
     internal sealed record DescriptorCase(

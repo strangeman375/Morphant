@@ -210,7 +210,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The effective ConstructorSelection is invalid.");
+                "ConstructorSelection has an invalid value.");
         }
 
         private global::TestCase.Destination __Update(

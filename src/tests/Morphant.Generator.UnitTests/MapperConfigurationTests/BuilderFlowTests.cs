@@ -384,12 +384,9 @@ public partial class TestMapper : TypeMapper
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapping builder flow for contract " +
-                    "'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' in mapper " +
-                    "'global::TestCase.TestMapper' cannot be analyzed by " +
-                    "Morphant."));
+                    "Morphant cannot analyze configuration for mapping " +
+                    "'TestCase.Source -> TestCase.Destination' in mapper " +
+                    "'global::TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

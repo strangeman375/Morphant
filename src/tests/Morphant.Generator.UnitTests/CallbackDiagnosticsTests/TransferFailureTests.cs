@@ -190,8 +190,7 @@ namespace TestCase
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Is.All.Contains(
-                    "configuration-time value 'runtime' is unavailable " +
-                    "during mapping"));
+                    "value 'runtime' is only available while Configure runs"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.AdditionalLocations.Count),
@@ -292,17 +291,20 @@ namespace TestCase
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
-                    "destination input 'previous' cannot be captured"));
+                    "'previous' cannot be used inside a nested lambda or " +
+                    "local function"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
-                    "destination input 'result' cannot be captured"));
+                    "'result' cannot be used inside a nested lambda or " +
+                    "local function"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
-                    "MappingContextMarker.Operation cannot be evaluated"));
+                    "'context.Operation' cannot be used inside a nested " +
+                    "lambda or local function"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

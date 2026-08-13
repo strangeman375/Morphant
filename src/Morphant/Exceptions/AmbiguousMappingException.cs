@@ -18,8 +18,8 @@ public sealed class AmbiguousMappingException : MappingException
         Type sourceType,
         Type destinationType)
         : base(
-            $"Multiple mappings are registered from '{sourceType}' to " +
-            $"'{destinationType}'. Exactly one mapping is required.",
+            $"Multiple mappings are registered for '{sourceType}' -> " +
+            $"'{destinationType}'. Exactly one is required.",
             operation,
             sourceType,
             destinationType)

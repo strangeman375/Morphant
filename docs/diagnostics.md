@@ -24,9 +24,9 @@ is an error by default.
 | `MORPH0014` | Registration | Error | Two mapping declarations could generate the same `ITypeMapper` for some generic type arguments. |
 | `MORPH0015` | Configuration | Error | The mapper has no `Configure` override with readable source code. |
 | `MORPH0016` | Configuration | Error | A called `base.Configure(builder)` method has no readable source code. |
-| `MORPH0017` | Configuration | Error | Mapper settings use a control-flow pattern Morphant cannot analyze. |
-| `MORPH0018` | Configuration | Error | A mapping uses a builder pattern Morphant cannot analyze. |
-| `MORPH0019` | Composition | Error | Destination selection, `Members`, or `Convert` is configured more than once for one mapping. |
+| `MORPH0017` | Configuration | Error | Morphant cannot analyze the mapper's `Configure` method. |
+| `MORPH0018` | Configuration | Error | Morphant cannot analyze a mapping configuration. |
+| `MORPH0019` | Composition | Error | `Construct` or `Resolve`, `Members`, or `Convert` is configured more than once for one mapping. |
 | `MORPH0020` | Composition | Error | `Convert` is combined with `Construct`, `Resolve`, or `Members`. |
 | `MORPH0021` | Settings | Error | A setting argument is not a supported compile-time constant. |
 | `MORPH0022` | Settings | Error | A Morphant MSBuild property has an invalid value. |
@@ -40,7 +40,7 @@ is an error by default.
 | `MORPH0030` | Callbacks | Error | A mapping lambda captures or references code unavailable to the generated mapper. |
 | `MORPH0031` | Callbacks | Error | A `Construct`, `Resolve`, or `Members` lambda uses an unsupported statement. |
 | `MORPH0032` | Callbacks | Error | A `Construct`, `Resolve`, or `Members` lambda modifies `previous` or `result`. |
-| `MORPH0033` | Callbacks | Error | `Auto`, `Ignore`, `Map`, or another configuration method is used outside a supported mapping expression. |
+| `MORPH0033` | Callbacks | Error | A configuration method such as `Auto`, `Ignore`, or `Map` is not used directly inside `Construct`, `Resolve`, or `Members`. |
 | `MORPH0034` | Declaration | Error | A mapper member conflicts with generated `Supports(Type, Type)`. |
 | `MORPH0035` | Construction | Error | Create or Update without an existing destination has no way to create one. |
 | `MORPH0036` | Construction | Error | `ConstructorSelection` cannot select one usable constructor. |

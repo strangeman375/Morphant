@@ -1087,7 +1087,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.InvalidDestination),
-                "The effective NullSourceHandling is invalid.");
+                "NullSourceHandling has an invalid value.");
 
         /// <inheritdoc/>
         global::TestCase.InvalidDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.InvalidDestination>.Update(
@@ -1098,7 +1098,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.InvalidDestination),
-                "The effective NullSourceHandling is invalid.");
+                "NullSourceHandling has an invalid value.");
 
         /// <inheritdoc/>
         global::TestCase.SourceOverrideDestination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.SourceOverrideDestination>.Create(
@@ -1115,7 +1115,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.SourceOverrideDestination),
-                "The effective NullDestinationHandling is invalid.");
+                "NullDestinationHandling has an invalid value.");
 
         private global::TestCase.SourceOverrideDestination __Create(
             global::TestCase.Source source,

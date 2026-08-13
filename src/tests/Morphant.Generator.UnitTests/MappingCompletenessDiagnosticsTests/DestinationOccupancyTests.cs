@@ -155,27 +155,21 @@ namespace TestCase
                 Is.EqualTo(new[]
                 {
                     "Destination member " +
-                    "'global::TestCase.IgnoredDestination.Optional' in " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.IgnoredDestination>' is not mapped by " +
-                    "the effective mapping plan.",
+                    "'global::TestCase.IgnoredDestination.Optional' is not " +
+                    "mapped by mapping 'TestCase.Source -> " +
+                    "TestCase.IgnoredDestination'.",
                     "Destination member " +
-                    "'global::TestCase.IgnoredDestination.Rest' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.IgnoredDestination>' is not mapped by " +
-                    "the effective mapping plan.",
+                    "'global::TestCase.IgnoredDestination.Rest' is not " +
+                    "mapped by mapping 'TestCase.Source -> " +
+                    "TestCase.IgnoredDestination'.",
                     "Destination member " +
-                    "'global::TestCase.OmittedDestination.Optional' in " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.OmittedDestination>' is not mapped by " +
-                    "the effective mapping plan.",
+                    "'global::TestCase.OmittedDestination.Optional' is not " +
+                    "mapped by mapping 'TestCase.Source -> " +
+                    "TestCase.OmittedDestination'.",
                     "Destination member " +
-                    "'global::TestCase.OmittedDestination.Rest' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.OmittedDestination>' is not mapped by " +
-                    "the effective mapping plan."
+                    "'global::TestCase.OmittedDestination.Rest' is not " +
+                    "mapped by mapping 'TestCase.Source -> " +
+                    "TestCase.OmittedDestination'."
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });

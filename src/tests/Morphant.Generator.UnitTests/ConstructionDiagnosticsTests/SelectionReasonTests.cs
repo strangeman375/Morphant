@@ -113,13 +113,13 @@ namespace TestCase
                     SelectionMessage(
                         "EGreediestNoPlan",
                         "Greediest",
-                        "no supported constructor has an applicable " +
-                        "convention plan"),
+                        "no constructor can be called with automatically " +
+                        "mapped arguments"),
                     SelectionMessage(
                         "FGreediestTie",
                         "Greediest",
-                        "multiple applicable constructors have the greatest " +
-                        "mapped argument count")
+                        "multiple constructors accept the same highest " +
+                        "number of mapped arguments")
                 }));
             Assert.That(
                 diagnostics.Select(diagnostic =>
@@ -201,16 +201,14 @@ namespace TestCase
             Assert.That(
                 diagnostics[0].GetMessage(),
                 Does.EndWith(
-                    "selected constructor " +
-                    "'global::TestCase.ARequired(int missing)' has no " +
-                    "warning-free convention value for required parameter " +
+                    "constructor 'TestCase.ARequired(int missing)' has no " +
+                    "compatible source member for required parameter " +
                     "'missing'."));
             Assert.That(
                 diagnostics[1].GetMessage(),
                 Does.EndWith(
-                    "selected constructor " +
-                    "'global::TestCase.BBinding(int value, string label)' " +
-                    "cannot be invoked without changing C# binding."));
+                    "constructor 'TestCase.BBinding(int value, string " +
+                    "label)' cannot be called with the mapped arguments."));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.AdditionalLocations.Count),
@@ -229,9 +227,8 @@ namespace TestCase
         string strategy,
         string reason)
     {
-        return "Convention construction for contract " +
-            "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-            $"global::TestCase.{destination}>' is unavailable with " +
-            $"ConstructorSelection.{strategy}: {reason}.";
+        return $"ConstructorSelection.{strategy} cannot select a " +
+            $"constructor for mapping 'TestCase.Source -> " +
+            $"TestCase.{destination}': {reason}.";
     }
 }

@@ -113,9 +113,8 @@ public partial class DerivedMapper : ExternalBase<int>
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "The Configure body for base mapper " +
-                    "'global::Shared.ExternalBase<int>' is unavailable " +
-                    "while analyzing mapper " +
+                    "Morphant cannot read Configure for base mapper " +
+                    "'global::Shared.ExternalBase<int>' while analyzing mapper " +
                     "'global::TestCase.DerivedMapper'."));
             Assert.That(
                 MapperConfigurationGeneratorTest.SourceText(

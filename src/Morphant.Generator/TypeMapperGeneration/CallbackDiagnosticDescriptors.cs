@@ -11,37 +11,33 @@ internal static class CallbackDiagnosticDescriptors
     public static readonly DiagnosticDescriptor StructuredCallbackMustBeLambda =
         Create(
             "MORPH0029",
-            "Structured callback must be a lambda",
-            "Structured {0} callback for contract '{1}' must be an inline lambda.");
+            "Mapping expression must be an inline lambda",
+            "{0} for mapping '{1}' must use an inline lambda.");
 
     public static readonly DiagnosticDescriptor CallbackCannotBeTransferred =
         Create(
             "MORPH0030",
-            "Callback cannot be transferred",
-            "{0} callback for contract '{1}' cannot be transferred to " +
-            "generated mapper '{2}': {3}.");
+            "Mapping expression is unavailable",
+            "{0} for mapping '{1}' cannot be used by mapper '{2}': {3}.");
 
     public static readonly DiagnosticDescriptor UnsupportedStructuredSyntax =
         Create(
             "MORPH0031",
-            "Unsupported structured callback syntax",
-            "Structured {0} callback for contract '{1}' contains " +
-            "unsupported syntax '{2}'.");
+            "Unsupported mapping expression",
+            "{0} for mapping '{1}' contains unsupported syntax '{2}'.");
 
     public static readonly DiagnosticDescriptor StructuredInputIsReadOnly =
         Create(
             "MORPH0032",
-            "Structured destination input is read-only",
-            "Structured destination input '{0}' for contract '{1}' is " +
-            "read-only and cannot be mutated.");
+            "Destination input is read-only",
+            "'{0}' is read-only in mapping '{1}'.");
 
     public static readonly DiagnosticDescriptor InvalidCompileTimeMarkerUse =
         Create(
             "MORPH0033",
-            "Invalid compile-time marker use",
-            "Compile-time marker '{0}' cannot be used as a runtime value or " +
-            "outside a supported terminal DSL position in {1} callback for " +
-            "contract '{2}'.");
+            "Invalid mapping method use",
+            "'{0}' must be used directly inside Construct, Resolve, or " +
+            "Members for mapping '{2}'.");
 
     private static DiagnosticDescriptor Create(
         string id,

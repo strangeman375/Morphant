@@ -34,7 +34,7 @@ internal static class CompilationCompatibilityDetector
             knownSymbols is null)
         {
             runtimeContract = Incompatible(
-                "required symbol 'Morphant.TypeMapper' has an incompatible shape");
+                "the runtime API does not match this generator");
         }
 
         return new CompilationCompatibility(
@@ -71,13 +71,13 @@ internal static class CompilationCompatibilityDetector
         if (revisions.IsEmpty)
         {
             return Incompatible(
-                "contract revision metadata 'Morphant.GeneratorContractVersion' is missing");
+                "the runtime does not provide compatibility information");
         }
 
         if (revisions.Length != 1)
         {
             return Incompatible(
-                "contract revision metadata 'Morphant.GeneratorContractVersion' is duplicated");
+                "the runtime contains duplicate compatibility information");
         }
 
         var revisionValue = revisions[0];
@@ -85,20 +85,21 @@ internal static class CompilationCompatibilityDetector
         if (!TryParseCanonicalRevision(revisionValue, out var revision))
         {
             return Incompatible(
-                "contract revision metadata 'Morphant.GeneratorContractVersion' is invalid");
+                "the runtime contains invalid compatibility information");
         }
 
         if (revision != SupportedContractRevision)
         {
             return Incompatible(
-                $"contract revision '{revisionValue}' is not supported; expected '{SupportedContractRevision}'");
+                "the runtime and generator versions do not match");
         }
 
         var shapeFailure = RuntimeContractManifest.FindFirstFailure(candidate);
 
         if (shapeFailure is not null)
         {
-            return Incompatible(shapeFailure);
+            return Incompatible(
+                "the runtime API does not match this generator");
         }
 
         compatibleAssembly = candidate;

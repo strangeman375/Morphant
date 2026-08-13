@@ -25,10 +25,10 @@ public sealed class NestedDestinationTypeMismatchException : MappingException
         Type? actualDestinationType)
         : base(
             actualDestinationType is null
-                ? $"The current nested destination is null and cannot be " +
-                  $"used as '{expectedDestinationType}'."
-                : $"The current nested destination has runtime type " +
-                  $"'{actualDestinationType}', which cannot be used as " +
+                ? $"The current destination is null and cannot be used as " +
+                  $"'{expectedDestinationType}'."
+                : $"Current destination type '{actualDestinationType}' " +
+                  $"cannot be used as " +
                   $"'{expectedDestinationType}'.",
             operation,
             sourceType,

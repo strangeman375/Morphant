@@ -10,8 +10,8 @@ public sealed class RuntimeInvocationNotSupportedException : MorphantException
     /// </summary>
     public RuntimeInvocationNotSupportedException()
         : base(
-            "This API is intended for use by source generators only and must " +
-            "not be invoked at runtime.")
+            "This Morphant configuration method cannot be called at " +
+            "runtime. Use it only inside Configure.")
     {
     }
 }

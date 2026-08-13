@@ -62,11 +62,9 @@ namespace TestCase
             Assert.That(
                 sourceDiagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Source member 'global::TestCase.Source.Unused' in " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' does not participate " +
-                    "in the effective mapping plan."));
+                    "Source member 'global::TestCase.Source.Unused' is not " +
+                    "used by mapping 'TestCase.Source -> " +
+                    "TestCase.Destination'."));
 
             Assert.That(destinationDiagnostic.Id, Is.EqualTo("MORPH0048"));
             Assert.That(
@@ -81,10 +79,8 @@ namespace TestCase
                 destinationDiagnostic.GetMessage(),
                 Is.EqualTo(
                     "Destination member " +
-                    "'global::TestCase.Destination.Unmapped' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is not mapped by the " +
-                    "effective mapping plan."));
+                    "'global::TestCase.Destination.Unmapped' is not mapped " +
+                    "by mapping 'TestCase.Source -> TestCase.Destination'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

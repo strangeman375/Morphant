@@ -74,8 +74,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ObservableFailur
                       exception.SourceType == typeof(Source) &&
                       exception.DestinationType == typeof(Destination) &&
                       exception.Reason ==
-                      "The configured mapping plan is invalid: more than " +
-                      "one result callback is configured.")
+                      "The mapping configuration is invalid: Construct or " +
+                      "Resolve is configured more than once.")
             {
                 return;
             }

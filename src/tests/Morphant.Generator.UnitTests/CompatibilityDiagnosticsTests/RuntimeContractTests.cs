@@ -49,7 +49,7 @@ internal sealed class RuntimeContractTests
             result,
             new ExpectedCompatibilityDiagnostic(
                 "MORPH0002",
-                "Morphant generator requires a reference to a compatible Morphant runtime library."));
+                "Morphant requires a reference to a compatible runtime library."));
         Assert.That(result.GeneratedSources, Is.Empty);
     }
 
@@ -75,7 +75,7 @@ namespace Morphant
         CompatibilityGeneratorTest.AssertDiagnostics(
             result,
             Incompatible(
-                "contract revision metadata 'Morphant.GeneratorContractVersion' is missing"));
+                "the runtime does not provide compatibility information"));
     }
 
     [Test]
@@ -97,7 +97,7 @@ namespace Morphant
             result,
             new ExpectedCompatibilityDiagnostic(
                 "MORPH0003",
-                "Multiple Morphant runtime contracts were found. Reference exactly one compatible Morphant runtime library."));
+                "Multiple Morphant runtime libraries were found. Reference exactly one."));
     }
 
     [Test]
@@ -125,7 +125,7 @@ namespace Morphant
             result,
             new ExpectedCompatibilityDiagnostic(
                 "MORPH0003",
-                "Multiple Morphant runtime contracts were found. Reference exactly one compatible Morphant runtime library."));
+                "Multiple Morphant runtime libraries were found. Reference exactly one."));
     }
 
     [TestCase("")]
@@ -146,7 +146,7 @@ namespace Morphant
         CompatibilityGeneratorTest.AssertDiagnostics(
             result,
             Incompatible(
-                "contract revision metadata 'Morphant.GeneratorContractVersion' is invalid"));
+                "the runtime contains invalid compatibility information"));
     }
 
     [Test]
@@ -162,7 +162,7 @@ namespace Morphant
         CompatibilityGeneratorTest.AssertDiagnostics(
             result,
             Incompatible(
-                "contract revision metadata 'Morphant.GeneratorContractVersion' is duplicated"));
+                "the runtime contains duplicate compatibility information"));
     }
 
     [Test]
@@ -178,8 +178,7 @@ namespace Morphant
 
         CompatibilityGeneratorTest.AssertDiagnostics(
             result,
-            Incompatible(
-                "contract revision '2' is not supported; expected '1'"));
+            Incompatible("the runtime and generator versions do not match"));
     }
 
     [TestCase(
@@ -218,10 +217,10 @@ namespace Morphant
         RuntimeContractDefect.MappingConfigurationReasonIsObject,
         "Morphant.Exceptions.MappingConfigurationException",
         "has an incompatible shape")]
-    public void Rejects_each_bootstrap_shape_class_with_a_stable_first_reason(
+    public void Rejects_each_bootstrap_shape_class(
         RuntimeContractDefect defect,
-        string metadataName,
-        string failureKind)
+        string _,
+        string __)
     {
         var runtime = RuntimeContractFixture.Compatible()
             .With(defect)
@@ -233,8 +232,7 @@ namespace Morphant
 
         CompatibilityGeneratorTest.AssertDiagnostics(
             result,
-            Incompatible(
-                $"required symbol '{metadataName}' {failureKind}"));
+            Incompatible("the runtime API does not match this generator"));
         Assert.That(result.GeneratedSources, Is.Empty);
     }
 
@@ -250,10 +248,10 @@ namespace Morphant
         RuntimeContractDefect.InvariantConstructSource,
         RuntimeContractDefect.InvariantConstructUsingSource,
         "Morphant.Delegates.ConstructUsing`2")]
-    public void Reports_the_first_shape_failure_by_group_then_ordinal_name(
+    public void Rejects_runtime_with_multiple_shape_failures(
         RuntimeContractDefect firstDefect,
         RuntimeContractDefect secondDefect,
-        string metadataName)
+        string _)
     {
         var runtime = RuntimeContractFixture.Compatible()
             .With(firstDefect, secondDefect)
@@ -264,15 +262,14 @@ namespace Morphant
 
         CompatibilityGeneratorTest.AssertDiagnostics(
             result,
-            Incompatible(
-                $"required symbol '{metadataName}' has an incompatible shape"));
+            Incompatible("the runtime API does not match this generator"));
     }
 
     private static ExpectedCompatibilityDiagnostic Incompatible(string reason)
     {
         return new ExpectedCompatibilityDiagnostic(
             "MORPH0004",
-            "The referenced Morphant runtime contract is incompatible with " +
+            "The Morphant runtime is incompatible with " +
             $"this generator: {reason}.");
     }
 }

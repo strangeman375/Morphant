@@ -33,7 +33,7 @@ public sealed class MappingNotFoundException : MappingException
         string prefix,
         string guidance)
         : base(
-            $"{prefix} from '{sourceType}' to '{destinationType}'." +
+            $"{prefix} for '{sourceType}' -> '{destinationType}'." +
             guidance,
             operation,
             sourceType,
@@ -49,7 +49,6 @@ public sealed class MappingNotFoundException : MappingException
             operation,
             sourceType,
             destinationType,
-            "The standalone mapper instance does not implement a mapping",
-            " Use IMapper when a nested mapping belongs to another mapper " +
-            "instance.");
+            "This mapper does not implement a mapping",
+            " Use IMapper to access mappings from other mapper classes.");
 }

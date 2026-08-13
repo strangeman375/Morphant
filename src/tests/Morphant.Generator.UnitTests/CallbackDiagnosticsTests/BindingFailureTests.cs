@@ -104,7 +104,7 @@ namespace TestCase
                 Does.Contain("file-local symbol"));
             Assert.That(
                 diagnostic.GetMessage(),
-                Does.EndWith("is unavailable to generated code."));
+                Does.EndWith("is inaccessible."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -194,14 +194,12 @@ namespace TestCase
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
-                    "extension binding for 'extension method group' " +
-                    "cannot be preserved"));
+                    "extension method group is not supported"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
-                    "extension binding for 'custom query pattern' " +
-                    "cannot be preserved"));
+                    "custom query pattern is not supported"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

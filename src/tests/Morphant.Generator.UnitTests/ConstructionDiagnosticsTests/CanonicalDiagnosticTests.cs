@@ -42,11 +42,9 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Destination construction for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.IDestination>' is not " +
-                    "configured for reachable paths: Create, Update without " +
-                    "a previous destination."));
+                    "Mapping 'TestCase.Source -> TestCase.IDestination' " +
+                    "cannot create a destination. Affected cases: Create; " +
+                    "Update without an existing destination."));
             Assert.That(diagnostic.AdditionalLocations, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -99,11 +97,10 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Convention construction for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is unavailable " +
-                    "with ConstructorSelection.Explicit: automatic constructor " +
-                    "selection is disabled."));
+                    "ConstructorSelection.Explicit cannot select a " +
+                    "constructor for mapping 'TestCase.Source -> " +
+                    "TestCase.Destination': ConstructorSelection.Explicit " +
+                    "disables automatic selection."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -155,11 +152,10 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Constructor parameter rule for 'value' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is invalid: " +
-                    "Auto does not resolve a unique readable source member " +
-                    "with a warning-free implicit conversion."));
+                    "Rule for constructor parameter 'value' is invalid in " +
+                    "mapping 'TestCase.Source -> TestCase.Destination': " +
+                    "Auto could not find exactly one compatible source " +
+                    "member."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -204,10 +200,9 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Previous destination is unavailable for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' on reachable " +
-                    "paths: Create, Update without a previous destination."));
+                    "'previous' is unavailable in mapping 'TestCase.Source " +
+                    "-> TestCase.Destination'. Affected cases: Create; " +
+                    "Update without an existing destination."));
             Assert.That(diagnostic.AdditionalLocations, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -253,10 +248,9 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Structured construction plan for contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' cannot be null " +
-                    "on reachable paths: Create, Update without a previous " +
+                    "Construct or Resolve returned null or default for " +
+                    "mapping 'TestCase.Source -> TestCase.Destination'. " +
+                    "Affected cases: Create; Update without an existing " +
                     "destination."));
             Assert.That(diagnostic.AdditionalLocations, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);

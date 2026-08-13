@@ -85,7 +85,7 @@ public sealed class MapperRuntimeTests
             Assert.That(exception.DestinationType, Is.EqualTo(typeof(Destination)));
             Assert.That(
                 exception.Message,
-                Does.Contain("standalone mapper instance"));
+                Does.Contain("Use IMapper"));
             Assert.That(
                 () => mapper.CapturedMapper!
                     .Map<Source, Destination>(new Source(1)),

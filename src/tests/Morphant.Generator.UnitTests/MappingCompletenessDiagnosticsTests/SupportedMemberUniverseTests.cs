@@ -51,21 +51,15 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Source member 'global::TestCase.Source.Property' in " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' does not participate " +
-                    "in the effective mapping plan.",
+                    "Source member 'global::TestCase.Source.Property' is " +
+                    "not used by mapping 'TestCase.Source -> " +
+                    "TestCase.Destination'.",
                     "Source member 'global::TestCase.Source.MutableField' " +
-                    "in contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' does not participate " +
-                    "in the effective mapping plan.",
+                    "is not used by mapping 'TestCase.Source -> " +
+                    "TestCase.Destination'.",
                     "Source member 'global::TestCase.Source.ReadonlyField' " +
-                    "in contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' does not participate " +
-                    "in the effective mapping plan."
+                    "is not used by mapping 'TestCase.Source -> " +
+                    "TestCase.Destination'."
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -124,21 +118,15 @@ namespace TestCase
                 Is.EqualTo(new[]
                 {
                     "Destination member " +
-                    "'global::TestCase.Destination.Property' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is not mapped by the " +
-                    "effective mapping plan.",
+                    "'global::TestCase.Destination.Property' is not mapped " +
+                    "by mapping 'TestCase.Source -> TestCase.Destination'.",
                     "Destination member " +
-                    "'global::TestCase.Destination.InitOnly' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is not mapped by the " +
-                    "effective mapping plan.",
+                    "'global::TestCase.Destination.InitOnly' is not mapped " +
+                    "by mapping 'TestCase.Source -> TestCase.Destination'.",
                     "Destination member " +
-                    "'global::TestCase.Destination.MutableField' in " +
-                    "contract 'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is not mapped by the " +
-                    "effective mapping plan."
+                    "'global::TestCase.Destination.MutableField' is not " +
+                    "mapped by mapping 'TestCase.Source -> " +
+                    "TestCase.Destination'."
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });

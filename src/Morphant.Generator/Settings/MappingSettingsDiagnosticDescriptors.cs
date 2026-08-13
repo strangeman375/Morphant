@@ -11,19 +11,18 @@ internal static class MappingSettingsDiagnosticDescriptors
     public static readonly DiagnosticDescriptor InvalidSettingValue = Create(
         "MORPH0021",
         "Invalid mapping setting value",
-        "Mapping setting '{0}' must be a supported compile-time constant.");
+        "Setting '{0}' must be a supported compile-time constant.");
 
     public static readonly DiagnosticDescriptor InvalidMsBuildSettingValue =
         Create(
             "MORPH0022",
             "Invalid MSBuild mapping setting value",
-            "MSBuild property '{0}' must name a supported mapping setting " +
-            "value.");
+            "MSBuild property '{0}' must use a supported value.");
 
     public static readonly DiagnosticDescriptor InapplicableSetting = Create(
         "MORPH0023",
         "Mapping setting is not applicable",
-        "Mapping setting '{0}' is not applicable to {1} for contract '{2}' " +
+        "Setting '{0}' does not apply to {1} for mapping '{2}' " +
         "in mapper '{3}'.");
 
     private static DiagnosticDescriptor Create(

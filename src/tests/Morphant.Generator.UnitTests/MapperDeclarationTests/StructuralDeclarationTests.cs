@@ -248,8 +248,7 @@ public class Outer
                 diagnostic.GetMessage(),
                 Is.EqualTo(
                     "Containing type 'global::TestCase.Outer' must be " +
-                    "declared partial so Morphant can generate nested " +
-                    "mapper contracts."));
+                    "declared partial."));
             Assert.That(
                 MapperDeclarationGeneratorTest.SourceText(
                     diagnostic.Location),

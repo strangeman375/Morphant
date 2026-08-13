@@ -388,7 +388,7 @@ namespace TestCase
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, object>()
-                .Convert(source => (object)Value<int>(source!.Value));
+                .Convert(source => (object)Auto<int>());
             builder.Map<Source, ANonTerminal>()
                 .Construct(source => new(
                     Consume(Value<int>(source.Value))));
@@ -419,16 +419,20 @@ namespace TestCase
                 diagnostics.Select(diagnostic =>
                     CallbackDiagnosticsGeneratorTest.SourceText(
                         diagnostic.Location)),
-                Is.EqualTo(new[] { "Value", "context", "Value" }));
+                Is.EqualTo(new[] { "Value", "context", "Auto" }));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
-                Has.Exactly(2).Contains("Compile-time marker 'Value'"));
+                Has.Exactly(1).Contains("'Auto' must be used directly"));
+            Assert.That(
+                diagnostics.Select(static diagnostic =>
+                    diagnostic.GetMessage()),
+                Has.Exactly(1).Contains("'Value' must be used directly"));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
                 Has.Exactly(1).Contains(
-                    "Compile-time marker 'MappingContextMarker'"));
+                    "'context' must be used directly"));
             Assert.That(
                 diagnostics.Any(static diagnostic =>
                     diagnostic.GetMessage().Contains(
@@ -440,16 +444,12 @@ namespace TestCase
     }
 
     private static string Message(string syntax) =>
-        "Structured Members callback for contract " +
-        "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-        "global::TestCase.Destination>' contains unsupported syntax '" +
-        syntax + "'.";
+        "Members for mapping 'TestCase.Source -> TestCase.Destination' " +
+        "contains unsupported syntax '" + syntax + "'.";
 
     private static string ReadOnlyMessage(
         string input,
         string destination) =>
-        "Structured destination input '" + input + "' for contract " +
-        "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-        "global::TestCase." + destination + ">' is read-only and cannot " +
-        "be mutated.";
+        "'" + input + "' is read-only in mapping 'TestCase.Source -> " +
+        "TestCase." + destination + "'.";
 }

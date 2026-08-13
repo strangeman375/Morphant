@@ -185,7 +185,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Create,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The effective MemberSelection is invalid.");
+                "MemberSelection has an invalid value.");
 
         /// <inheritdoc/>
         global::TestCase.Destination global::Morphant.ITypeMapper<global::TestCase.Source, global::TestCase.Destination>.Update(
@@ -196,7 +196,7 @@ namespace TestCase
                 global::Morphant.Context.MappingOperation.Update,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "The effective MemberSelection is invalid.");
+                "MemberSelection has an invalid value.");
     }
 }
 """;

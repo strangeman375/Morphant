@@ -12,12 +12,10 @@ namespace Morphant.Generator.TypeMapperGeneration;
 internal static class StructuredConstructMappingPlanner
 {
     private const string UnsupportedConstructMessage =
-        "The configured structured result callback cannot be represented " +
-        "by the supported declarative grammar.";
+        "This Construct or Resolve expression is not supported.";
 
     private const string UnavailablePreviousMessage =
-        "The configured structured result callback selected an unavailable " +
-        "previous destination.";
+        "'previous' is not available in this case.";
 
     private const string ByConventionMarkerMetadataName =
         "Morphant.Markers.ByConventionMarker";

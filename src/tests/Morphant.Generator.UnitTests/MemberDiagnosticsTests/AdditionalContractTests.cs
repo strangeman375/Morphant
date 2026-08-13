@@ -157,7 +157,7 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Create, Update without a previous destination."));
+                    "Create; Update without an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -198,8 +198,8 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
-                    "Create, Update without a previous destination, " +
-                    "Update with a previous destination."));
+                    "Create; Update without an existing destination; " +
+                    "Update with an existing destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

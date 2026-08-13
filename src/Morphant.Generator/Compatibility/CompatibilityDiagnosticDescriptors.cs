@@ -17,20 +17,20 @@ internal static class CompatibilityDiagnosticDescriptors
     public static readonly DiagnosticDescriptor RuntimeContractNotFound =
         Create(
             "MORPH0002",
-            "Morphant runtime contract not found",
-            "Morphant generator requires a reference to a compatible Morphant runtime library.");
+            "Morphant runtime not found",
+            "Morphant requires a reference to a compatible runtime library.");
 
     public static readonly DiagnosticDescriptor AmbiguousRuntimeContract =
         Create(
             "MORPH0003",
-            "Ambiguous Morphant runtime contract",
-            "Multiple Morphant runtime contracts were found. Reference exactly one compatible Morphant runtime library.");
+            "Multiple Morphant runtimes found",
+            "Multiple Morphant runtime libraries were found. Reference exactly one.");
 
     public static readonly DiagnosticDescriptor IncompatibleRuntimeContract =
         Create(
             "MORPH0004",
-            "Incompatible Morphant runtime contract",
-            "The referenced Morphant runtime contract is incompatible with this generator: {0}.");
+            "Incompatible Morphant runtime",
+            "The Morphant runtime is incompatible with this generator: {0}.");
 
     private static DiagnosticDescriptor Create(
         string id,

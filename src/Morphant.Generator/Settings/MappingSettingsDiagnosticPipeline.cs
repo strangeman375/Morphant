@@ -11,10 +11,10 @@ namespace Morphant.Generator.Settings;
 
 internal static class MappingSettingsDiagnosticPipeline
 {
-    private const string ManualModelName = "manual Convert";
+    private const string ManualModelName = "a Convert mapping";
 
     private const string MissingConstructionModelName =
-        "mapping without structured construction capability";
+        "this destination type";
 
     private const PairConfigurationConflict LocalModelConflict =
         PairConfigurationConflict.MixedManualAndDeclarative;

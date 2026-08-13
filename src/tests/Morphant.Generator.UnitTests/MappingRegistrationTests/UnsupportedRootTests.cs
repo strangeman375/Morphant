@@ -37,10 +37,10 @@ public partial class TestMapper<TSource, TDestination> : TypeMapper
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "The source type 'TSource' is not supported as a " +
-                    "mapping root because it is a root type parameter.",
-                    "The destination type 'TDestination' is not supported " +
-                    "as a mapping root because it is a root type parameter."
+                    "The source type 'TSource' cannot be used in Map because " +
+                    "it is a root type parameter.",
+                    "The destination type 'TDestination' cannot be used in " +
+                    "Map because it is a root type parameter."
                 }));
             Assert.That(
                 result.Diagnostics.Select(diagnostic =>

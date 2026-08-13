@@ -41,7 +41,7 @@ public partial class TestMapper : TypeMapper
                 Is.EqualTo(
                     "Mapper 'global::TestCase.TestMapper' declares " +
                     "'Supports(System.Type, System.Type)', which conflicts " +
-                    "with the Morphant-generated mapping contract."));
+                    "with the generated mapper."));
             Assert.That(
                 MapperDeclarationGeneratorTest.SourceText(
                     diagnostic.Location),

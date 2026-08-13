@@ -43,7 +43,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidConstruct
             catch (global::Morphant.Exceptions.MappingConfigurationException
                    exception)
                 when (exception.Message.Contains(
-                    "The effective ConstructorSelection is invalid.",
+                    "ConstructorSelection has an invalid value.",
                     StringComparison.Ordinal))
             {
                 var updated = mapper.Update(

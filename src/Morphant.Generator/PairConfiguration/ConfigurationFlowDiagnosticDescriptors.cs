@@ -11,29 +11,28 @@ internal static class ConfigurationFlowDiagnosticDescriptors
     public static readonly DiagnosticDescriptor MissingConfigure = Create(
         "MORPH0015",
         "Mapper must declare Configure",
-        "Mapper '{0}' must declare a source-bodied override of " +
-        "'Configure(Morphant.MapperBuilder)'.");
+        "Mapper '{0}' must override 'Configure(Morphant.MapperBuilder)' " +
+        "with a readable method body.");
 
     public static readonly DiagnosticDescriptor UnavailableBaseConfigure =
         Create(
             "MORPH0016",
             "Base mapper configuration is unavailable",
-            "The Configure body for base mapper '{0}' is unavailable while " +
+            "Morphant cannot read Configure for base mapper '{0}' while " +
             "analyzing mapper '{1}'.");
 
     public static readonly DiagnosticDescriptor UnsupportedMapperFlow =
         Create(
             "MORPH0017",
-            "Unsupported mapper builder flow",
-            "Mapper builder flow in Configure of mapper '{0}' cannot be " +
-            "analyzed by Morphant.");
+            "Configure cannot be analyzed",
+            "Morphant cannot analyze Configure in mapper '{0}'.");
 
     public static readonly DiagnosticDescriptor UnsupportedMappingFlow =
         Create(
             "MORPH0018",
-            "Unsupported mapping builder flow",
-            "Mapping builder flow for contract '{0}' in mapper '{1}' " +
-            "cannot be analyzed by Morphant.");
+            "Mapping configuration cannot be analyzed",
+            "Morphant cannot analyze configuration for mapping '{0}' in " +
+            "mapper '{1}'.");
 
     private static DiagnosticDescriptor Create(
         string id,

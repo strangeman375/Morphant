@@ -20,8 +20,8 @@ public sealed class MappingOperationNotSupportedException : MappingException
         Type destinationType,
         MappingMode effectiveMappingMode)
         : base(
-            $"The {operation} operation is disabled by the effective " +
-            $"MappingMode for mapping from '{sourceType}' to " +
+            $"MappingMode.{effectiveMappingMode} does not support " +
+            $"{operation} for mapping '{sourceType}' -> " +
             $"'{destinationType}'.",
             operation,
             sourceType,

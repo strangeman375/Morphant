@@ -91,16 +91,16 @@ namespace TestCase
             Assert.That(
                 visible.TypeMapperSource,
                 Does.Contain(
-                    "Destination construction is not configured."));
+                    "No destination construction is configured."));
             Assert.That(
                 visible.TypeMapperSource,
                 Does.Contain(
-                    "Convention construction is not available for this " +
+                    "Morphant cannot select a constructor for this " +
                     "destination."));
             Assert.That(
                 visible.TypeMapperSource,
                 Does.Contain(
-                    "selected an unavailable previous destination."));
+                    "'previous' is not available in this case."));
             Assert.That(visible.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(suppressed.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(warning.CompilerWarningsAndErrors, Is.Empty);
@@ -302,7 +302,7 @@ namespace TestCase
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
-                Has.All.Contains("global::TestCase.Source<T>"));
+                Has.All.Contains("TestCase.Source<T>"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

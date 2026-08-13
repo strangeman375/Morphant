@@ -11,25 +11,26 @@ internal static class MemberDiagnosticDescriptors
     public static readonly DiagnosticDescriptor InvalidRule = Create(
         "MORPH0040",
         "Member rule is invalid",
-        "Member rule for '{0}' in contract '{1}' is invalid: {2}.");
+        "Rule for destination member '{0}' is invalid in mapping '{1}': " +
+        "{2}.");
 
     public static readonly DiagnosticDescriptor RequiredMember = Create(
         "MORPH0041",
         "Required destination member is not initialized",
-        "Required destination member '{0}' in contract '{1}' is not " +
-        "initialized on reachable paths: {2}.");
+        "Required destination member '{0}' is not initialized in mapping " +
+        "'{1}'. Affected cases: {2}.");
 
     public static readonly DiagnosticDescriptor UnavailableLifecycle = Create(
         "MORPH0042",
         "Member rule cannot be applied",
-        "Member rule for '{0}' in contract '{1}' cannot be applied: {2}. " +
-        "Reachable paths: {3}.");
+        "Rule for destination member '{0}' cannot be applied in mapping " +
+        "'{1}': {2}. Affected cases: {3}.");
 
     public static readonly DiagnosticDescriptor NullMembersPlan = Create(
         "MORPH0043",
-        "Structured member plan is null",
-        "Structured member plan for contract '{0}' cannot be null on " +
-        "reachable paths: {1}.");
+        "Members returned no rules",
+        "Members returned null or default for mapping '{0}'. Affected " +
+        "cases: {1}.");
 
     private static DiagnosticDescriptor Create(
         string id,

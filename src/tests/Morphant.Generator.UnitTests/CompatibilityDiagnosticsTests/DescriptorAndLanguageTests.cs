@@ -41,16 +41,16 @@ using System.Reflection;
                 Message: "Morphant requires C# 9.0 or later, but this compilation uses C# {0}."),
             (
                 Id: "MORPH0002",
-                Title: "Morphant runtime contract not found",
-                Message: "Morphant generator requires a reference to a compatible Morphant runtime library."),
+                Title: "Morphant runtime not found",
+                Message: "Morphant requires a reference to a compatible runtime library."),
             (
                 Id: "MORPH0003",
-                Title: "Ambiguous Morphant runtime contract",
-                Message: "Multiple Morphant runtime contracts were found. Reference exactly one compatible Morphant runtime library."),
+                Title: "Multiple Morphant runtimes found",
+                Message: "Multiple Morphant runtime libraries were found. Reference exactly one."),
             (
                 Id: "MORPH0004",
-                Title: "Incompatible Morphant runtime contract",
-                Message: "The referenced Morphant runtime contract is incompatible with this generator: {0}.")
+                Title: "Incompatible Morphant runtime",
+                Message: "The Morphant runtime is incompatible with this generator: {0}.")
         };
 
         for (var index = 0; index < expected.Length; index++)
@@ -134,7 +134,7 @@ using System.Reflection;
                 "Morphant requires C# 9.0 or later, but this compilation uses C# 8.0."),
             new ExpectedCompatibilityDiagnostic(
                 "MORPH0002",
-                "Morphant generator requires a reference to a compatible Morphant runtime library."));
+                "Morphant requires a reference to a compatible runtime library."));
         Assert.That(result.GeneratedSources, Is.Empty);
     }
 }

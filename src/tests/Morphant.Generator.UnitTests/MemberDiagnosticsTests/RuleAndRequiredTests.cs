@@ -51,10 +51,9 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Member rule for 'Value' in contract " +
-                    "'global::Morphant.ITypeMapper<global::TestCase.Source, " +
-                    "global::TestCase.Destination>' is invalid: marker " +
-                    "target type 'int' does not exactly match member type " +
+                    "Rule for destination member 'Value' is invalid in " +
+                    "mapping 'TestCase.Source -> TestCase.Destination': " +
+                    "specified type 'int' does not match member type " +
                     "'object'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -214,13 +213,12 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Member rule for 'Value' in contract " +
-                    "'global::Morphant.ITypeMapper<" +
-                    "global::TestCase.DerivedSource, " +
-                    "global::TestCase.DerivedDestination>' is invalid: " +
-                    "imported rule targets destination member " +
-                    "'global::TestCase.BaseDestination.Value', which is " +
-                    "hidden by 'global::TestCase.DerivedDestination.Value' " +
+                    "Rule for destination member 'Value' is invalid in " +
+                    "mapping 'TestCase.DerivedSource -> " +
+                    "TestCase.DerivedDestination': IncludeBase rule for " +
+                    "destination member 'TestCase.BaseDestination.Value', " +
+                    "which is hidden by " +
+                    "'TestCase.DerivedDestination.Value' " +
                     "in the current destination."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
