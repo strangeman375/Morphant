@@ -1051,9 +1051,8 @@ internal readonly record struct ConventionMemberMappingPlan(
                         MemberLifecycleDependency.Creation) &&
                     rule.Lifecycle.HasFlag(
                         MemberLifecycleDependency.Result) &&
-                    (rule.IsRequired ||
-                     !rule.Lifecycle.HasFlag(
-                         MemberLifecycleDependency.ExistingDestination)))
+                    !rule.Lifecycle.HasFlag(
+                        MemberLifecycleDependency.ExistingDestination))
                 .ToImmutableArray(),
             Observation);
     }

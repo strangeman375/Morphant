@@ -1426,6 +1426,11 @@ rule переводит конфигурацию в детерминирован
 скрытого fallback; `[SetsRequiredMembers]` остаётся единственным C#-основанием
 допустить constructor до последующих required assignments.
 
+Дополнительно закреплено, что result-dependent `required` rule с обычным
+setter-ом выполняется после structured constructor, помеченного
+`[SetsRequiredMembers]`. Такой rule не смешивается с настоящими `init`-only
+rules и поэтому не блокирует constructor replacement в `Update`.
+
 Статически пустой immutable `Update` является корректным no-op: existing-
 ветка возвращает тот же destination, не выполняя source-only `Construct` и
 не вычисляя неприменимые creation-time member expressions. Previous-aware

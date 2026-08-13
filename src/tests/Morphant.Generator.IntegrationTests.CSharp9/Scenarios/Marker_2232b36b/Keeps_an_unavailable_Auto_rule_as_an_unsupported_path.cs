@@ -48,7 +48,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Marker_2232b36b
             catch (global::Morphant.Exceptions
                 .MappingConfigurationException exception)
                 when (exception.Message.EndsWith(
-                    "The configured member rule is invalid."))
+                    "This member rule is invalid."))
             {
             }
         }
