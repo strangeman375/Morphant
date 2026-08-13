@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Morphant.Generator.Diagnostics;
 
 #pragma warning disable RS1032 // Messages are fixed by the public diagnostics catalog.
 
@@ -55,7 +56,7 @@ internal static class ConstructionDiagnosticDescriptors
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
             description: null,
-            helpLinkUri: null,
+            helpLinkUri: DiagnosticHelpLink.For(id),
             customTags: []);
     }
 }

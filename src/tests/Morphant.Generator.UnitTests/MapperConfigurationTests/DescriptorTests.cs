@@ -6,6 +6,9 @@ namespace Morphant.Generator.UnitTests.MapperConfigurationTests;
 [TestFixture]
 internal sealed class DescriptorTests
 {
+    private const string HelpLinkBase =
+        "https://github.com/strangeman375/Morphant/blob/main/docs/diagnostics/";
+
     [TestCaseSource(nameof(Cases))]
     public void Descriptor_matches_the_public_contract(DescriptorCase value)
     {
@@ -24,7 +27,9 @@ internal sealed class DescriptorTests
                 Is.EqualTo(DiagnosticSeverity.Error));
             Assert.That(descriptor.IsEnabledByDefault, Is.True);
             Assert.That(descriptor.Description.ToString(), Is.Empty);
-            Assert.That(descriptor.HelpLinkUri, Is.Empty);
+            Assert.That(
+                descriptor.HelpLinkUri,
+                Is.EqualTo(HelpLinkBase + value.Id + ".md"));
             Assert.That(descriptor.CustomTags, Is.Empty);
             Assert.That(
                 descriptor.CustomTags,

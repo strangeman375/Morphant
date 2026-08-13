@@ -6,6 +6,9 @@ namespace Morphant.Generator.UnitTests.CompatibilityDiagnosticsTests;
 [TestFixture]
 internal sealed class DescriptorAndLanguageTests
 {
+    private const string HelpLinkBase =
+        "https://github.com/strangeman375/Morphant/blob/main/docs/diagnostics/";
+
     [Test]
     public void Publishes_the_exact_four_descriptor_contracts()
     {
@@ -75,7 +78,9 @@ using System.Reflection;
                     Is.EqualTo(DiagnosticSeverity.Error));
                 Assert.That(descriptor.IsEnabledByDefault, Is.True);
                 Assert.That(descriptor.Description.ToString(), Is.Empty);
-                Assert.That(descriptor.HelpLinkUri, Is.Empty);
+                Assert.That(
+                    descriptor.HelpLinkUri,
+                    Is.EqualTo(HelpLinkBase + contract.Id + ".md"));
                 Assert.That(descriptor.CustomTags, Is.Empty);
                 Assert.That(
                     descriptor.CustomTags,

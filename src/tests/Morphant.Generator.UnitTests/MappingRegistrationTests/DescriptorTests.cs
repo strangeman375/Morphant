@@ -6,6 +6,9 @@ namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 [TestFixture]
 internal sealed class DescriptorTests
 {
+    private const string HelpLinkBase =
+        "https://github.com/strangeman375/Morphant/blob/main/docs/diagnostics/";
+
     public static IEnumerable<TestCaseData> Descriptors()
     {
         yield return Case(
@@ -56,7 +59,9 @@ internal sealed class DescriptorTests
                 Is.EqualTo(DiagnosticSeverity.Error));
             Assert.That(descriptor.IsEnabledByDefault, Is.True);
             Assert.That(descriptor.Description.ToString(), Is.Empty);
-            Assert.That(descriptor.HelpLinkUri, Is.Empty);
+            Assert.That(
+                descriptor.HelpLinkUri,
+                Is.EqualTo(HelpLinkBase + id + ".md"));
             Assert.That(descriptor.CustomTags, Is.Empty);
             Assert.That(
                 descriptor.CustomTags,

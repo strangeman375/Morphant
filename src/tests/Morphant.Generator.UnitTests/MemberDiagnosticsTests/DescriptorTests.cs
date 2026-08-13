@@ -6,6 +6,9 @@ namespace Morphant.Generator.UnitTests.MemberDiagnosticsTests;
 [TestFixture]
 internal sealed class DescriptorTests
 {
+    private const string HelpLinkBase =
+        "https://github.com/strangeman375/Morphant/blob/main/docs/diagnostics/";
+
     [Test]
     public void Exposes_the_exact_member_diagnostic_contract()
     {
@@ -70,7 +73,8 @@ internal sealed class DescriptorTests
             Assert.That(
                 descriptors.Select(static descriptor =>
                     descriptor.HelpLinkUri),
-                Is.All.Empty);
+                Is.EqualTo(descriptors.Select(static descriptor =>
+                    HelpLinkBase + descriptor.Id + ".md")));
             Assert.That(
                 descriptors.SelectMany(static descriptor =>
                     descriptor.CustomTags),

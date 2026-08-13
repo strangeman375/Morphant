@@ -7,6 +7,9 @@ namespace Morphant.Generator.UnitTests;
 [TestFixture]
 internal sealed class DiagnosticCatalogAuditTests
 {
+    private const string HelpLinkBase =
+        "https://github.com/strangeman375/Morphant/blob/main/docs/diagnostics/";
+
     private static readonly CatalogEntry[] ExpectedCatalog =
     {
         new("MORPH0001", "Morphant.Compatibility", DiagnosticSeverity.Error),
@@ -113,8 +116,85 @@ internal sealed class DiagnosticCatalogAuditTests
                 descriptors.Select(static descriptor =>
                     descriptor.MessageFormat.ToString()),
                 Is.All.Not.Empty);
+            Assert.That(
+                descriptors.Select(static descriptor =>
+                    descriptor.HelpLinkUri),
+                Is.EqualTo(descriptors.Select(static descriptor =>
+                    HelpLinkBase + descriptor.Id + ".md")));
             Assert.That(actual, Is.EqualTo(ExpectedCatalog));
         });
+    }
+
+    [Test]
+    public void Every_diagnostic_has_one_documentation_page_and_catalog_link()
+    {
+        var ids = ExpectedCatalog
+            .Select(static entry => entry.Id)
+            .ToArray();
+        var repositoryRoot = FindRepositoryRoot();
+        var documentationDirectory = Path.Combine(
+            repositoryRoot,
+            "docs",
+            "diagnostics");
+        var documentedIds = Directory
+            .GetFiles(documentationDirectory, "MORPH*.md")
+            .Select(Path.GetFileNameWithoutExtension)
+            .OrderBy(static id => id, StringComparer.Ordinal)
+            .ToArray();
+        var catalog = File.ReadAllText(Path.Combine(
+            repositoryRoot,
+            "docs",
+            "diagnostics.md"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(documentedIds, Is.EqualTo(ids));
+
+            foreach (var id in ids)
+            {
+                var page = File.ReadAllText(Path.Combine(
+                    documentationDirectory,
+                    id + ".md"));
+
+                Assert.That(
+                    page,
+                    Does.StartWith("# " + id + ": "),
+                    id + " must start with its ID and title.");
+                Assert.That(
+                    page,
+                    Does.Contain("## Cause"),
+                    id + " must explain why it is reported.");
+                Assert.That(
+                    page,
+                    Does.Contain("## Fix"),
+                    id + " must explain how to fix it.");
+                Assert.That(
+                    catalog,
+                    Does.Contain(
+                        "[" + id + "](diagnostics/" + id + ".md)"),
+                    id + " must be linked from the catalog.");
+            }
+        });
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(
+                TestContext.CurrentContext.TestDirectory);
+            directory is not null;
+            directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(
+                    directory.FullName,
+                    "docs",
+                    "diagnostics.md")))
+            {
+                return directory.FullName;
+            }
+        }
+
+        throw new DirectoryNotFoundException(
+            "Could not find the Morphant repository root.");
     }
 
     private sealed record CatalogEntry(
