@@ -3,21 +3,30 @@
 Morphant generates source files while the consumer project is built. They
 contain the fluent mapping API and mapper implementation.
 
-## Inspect generated files
+## Store generated files in Git
 
-Enable compiler-generated file output in the consumer project:
+Write generated files to a stable directory in the consumer project:
 
 ```xml
 <PropertyGroup>
   <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+  <CompilerGeneratedFilesOutputPath>Generated/Morphant</CompilerGeneratedFilesOutputPath>
 </PropertyGroup>
+
+<ItemGroup>
+  <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
+</ItemGroup>
 ```
 
-After a build, Morphant files appear below the configured intermediate output
-directory. Keep that directory under `obj`. The compiler regenerates these
-files, so edits would be overwritten and committed copies would only duplicate
-build output that can change between Morphant versions.
+Commit this directory together with the mapping configuration. Generated code
+then participates in code review and Git history, making mapping changes easy
+to inspect and revert.
+
+The `Compile Remove` entry prevents the committed copies from being compiled a
+second time: Morphant already adds the freshly generated versions to the
+current compilation. Do not edit generated files directly. Change the mapping
+configuration or mapped types, rebuild, and commit both the source change and
+the updated generated files.
 
 ## File kinds
 
