@@ -1,11 +1,8 @@
 # Compile-time diagnostics
 
-Morphant's core v0 source generator publishes the following project-owned
-diagnostics. Every rule is enabled and configurable through the standard
-`dotnet_diagnostic.<ID>.severity` setting. Changing or suppressing a diagnostic
-changes compiler presentation only: generation gates and typed recovery remain
-the same. The two mapping-completeness rules are warnings; every other rule is
-an error by default.
+Morphant reports configuration problems while the consumer project is being
+compiled. `MORPH0047` and `MORPH0048` are warnings; every other Morphant rule
+is an error by default.
 
 ## Catalog
 
@@ -60,42 +57,23 @@ an error by default.
 | `MORPH0047` | MappingCompleteness | Warning | A supported source member does not participate in the effective plan. |
 | `MORPH0048` | MappingCompleteness | Warning | A supported destination member is not occupied by the effective plan. |
 
-## Ownership and precedence
+## Configure severity
 
-Morphant reports the earliest project-specific reason after which downstream
-analysis would be unreliable. A mapper, pair, callback, or path gate suppresses
-only diagnostics derived from the unavailable information; independent legal
-pairs and independently provable warnings remain. Within a category,
-diagnostics have deterministic ID and source order.
+Use the standard `.editorconfig` syntax:
 
-Ordinary C# binding and declaration errors remain compiler-owned. Morphant
-does not repeat them merely to attach a `MORPH` ID. Compiler preflight can turn
-a failure introduced only by transferred generated code into `MORPH0030`,
-while preserving a source-owned compiler warning and suppressing only its
-generated duplicate.
+```ini
+[*.cs]
+dotnet_diagnostic.MORPH0047.severity = none
+dotnet_diagnostic.MORPH0048.severity = error
+```
 
-The `MORPH` prefix is specific to this project and follows Roslyn's
-`<PREFIX><number>` guidance. The published IDs form the exact, gapless range
-`MORPH0001` through `MORPH0048`; they do not use the C# compiler's `CS` prefix
-or .NET analyzer `CA`/`IDE` families.
+Supported severities include `none`, `silent`, `suggestion`, `warning` and
+`error`.
 
-## Recovery and runtime boundary
+Changing severity affects compiler presentation only. In particular,
+suppressing an error does not turn an invalid mapping into a valid one.
 
-When C# can declare a mapping contract, an error keeps the complete generated
-`ITypeMapper<TSource, TDestination>` surface and replaces only the unavailable
-mapper, pair, operation, branch, or leaf with typed recovery. Suppression and
-severity overrides never select a fallback mapping algorithm. Structurally
-impossible contracts are omitted while independent legal contracts remain.
-
-Application-wide service lookup cannot be proven by a source generator.
-Missing, ambiguous, or `null` registrations and a completed mapping scope are
-therefore runtime failures, not compile-time diagnostics. Failures that stop
-the analyzer host before Morphant loads are host diagnostics. Usage analyzers,
-including a warning for ignoring an authoritative Update result, are outside
-the core v0 source-generator catalog.
-
-See [Observable failures](observable-failures.md) for typed runtime exceptions,
-[Unmapped member validation](settings/unmapped-member-validation.md) for the
-warning policy, and the
-[diagnostics contract](../DIAGNOSTICS_PLAN.md) for exact messages, locations,
-deduplication, and recovery rules.
+Service registration cannot be checked at compile time. Missing, duplicate or
+invalid DI registrations are described under [Exceptions](exceptions.md).
+See [Unmapped member validation](settings/unmapped-member-validation.md) for
+the two completeness warnings.

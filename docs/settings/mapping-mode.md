@@ -1,139 +1,29 @@
 # Mapping modes
 
-This page documents the implemented core v0 API. Current review status and
-remaining boundaries are tracked in the
-[mapping API roadmap](../../MAPPING_API_IMPLEMENTATION_PLAN.md).
-
-`MappingMode` controls whether a generated mapping can create a new
-destination, update an existing destination, or do both.
-
-## Configure an assembly default
-
-Set `MorphantMappingMode` in `Directory.Build.props` to configure all projects
-under a directory:
-
-```xml
-<Project>
-  <PropertyGroup>
-    <MorphantMappingMode>Create</MorphantMappingMode>
-  </PropertyGroup>
-</Project>
-```
-
-The same property can be set in a project file:
-
-```xml
-<PropertyGroup>
-  <MorphantMappingMode>Update</MorphantMappingMode>
-</PropertyGroup>
-```
-
-MSBuild resolves imports before Morphant runs. A value in a `.csproj`
-therefore normally overrides a value imported earlier from
-`Directory.Build.props`, and the generator receives only the final value.
-
-Supported values are `Default`, `Create`, `Update`, and
-`CreateAndUpdate`. Names are case-insensitive. An empty or missing property
-has the same behavior as `Default`.
-
-## Configure a mapper default
-
-Set the mapper-level mode when most registrations use the same behavior:
+`MappingMode` controls which operations a mapping supports. Its default is
+`CreateAndUpdate`.
 
 ```csharp
-protected override void Configure(MapperBuilder builder)
-{
-    builder.MappingMode(MappingMode.Create);
-
-    builder.Map<Order, OrderDto>();
-    builder.Map<Customer, CustomerDto>();
-}
+builder.Map<OrderDto, Order>(MappingMode.Create);
 ```
 
-Both registrations inherit `Create`.
-
-## Override one mapping
-
-Pass a mode to `Map<TSource, TDestination>()` to override the mapper-level
-value:
-
-```csharp
-protected override void Configure(MapperBuilder builder)
-{
-    builder.MappingMode(MappingMode.Create);
-
-    builder.Map<Order, OrderDto>();
-    builder.Map<Customer, CustomerDto>(MappingMode.Update);
-    builder.Map<Product, ProductDto>(MappingMode.CreateAndUpdate);
-}
-```
-
-The effective value is selected in this order:
-
-1. A non-`Default` value passed to `Map<TSource, TDestination>()`.
-2. A non-`Default` value from a pair imported with
-   `IncludeBase<TBaseSource, TBaseDestination>()`, nearest first.
-3. A non-`Default` mapper-level value passed to `builder.MappingMode(...)`.
-4. Non-`Default` root values from connected base mappers, nearest first.
-5. A non-`Default` `MorphantMappingMode` MSBuild property.
-6. `MappingMode.CreateAndUpdate`.
-
-`Default` continues to the next level. Mapper-level settings apply to the
-whole mapper, regardless of whether the setting call appears before or after
-its mapping registrations. If `builder.MappingMode(...)` is called more than
-once, the last call wins, including a last call with `Default`.
-
-Base roots participate only after an explicit `base.Configure(builder)` call,
-and base pair values participate only after a typed `IncludeBase` call. See
-[Configuration inheritance](../configuration-inheritance.md).
-
-## Mode behavior
-
-| Effective mode | `Create(source, context)` | `Update(source, destination, context)` |
+| Value | Create | Update |
 |---|---|---|
-| `Create` | Maps to a new destination | Throws `MappingOperationNotSupportedException` |
-| `Update` | Throws `MappingOperationNotSupportedException` | Maps to the supplied destination |
-| `CreateAndUpdate` | Maps to a new destination | Maps to the supplied destination |
+| `Create` | Available | Throws `MappingOperationNotSupportedException` |
+| `Update` | Throws `MappingOperationNotSupportedException` | Available |
+| `CreateAndUpdate` | Available | Available |
 
-`Default` means inheritance; it is not an operation by itself.
+`Default` inherits the setting. Every generated pair still implements both
+`ITypeMapper.Create` and `ITypeMapper.Update`; calling a disabled operation
+throws immediately.
 
-Every generated mapping continues to implement the single
-`ITypeMapper<TSource, TDestination>` interface with both methods. This keeps
-runtime resolution uniform. Invoking a method excluded by the effective mode
-fails immediately in the generated mapper.
+The same gate applies to a manual `Convert` mapping.
 
-The same gate applies to a manual `Convert`. `MappingMode` is the only
-effective setting used by a manual mapping; once the selected operation is
-enabled, the lambda itself owns the complete mapping lifecycle.
+Configure a mapper default with:
 
-Mapping mode expressions must be compile-time constants composed only from
-the defined `Create` and `Update` flags. The MSBuild property must use one
-of the named values listed above.
+```csharp
+builder.MappingMode(MappingMode.Create);
+```
 
-## Invalid values
-
-If a C# mode is not a compile-time constant, contains undefined flags, or an
-inherited `MorphantMappingMode` value is not recognized, Morphant reports
-`MORPH0021` for the effective C# argument or `MORPH0022` for the effective
-MSBuild property. Morphant still generates the
-`ITypeMapper<TSource, TDestination>` implementation for the registered pair;
-both mapping methods throw `MappingConfigurationException` when invoked.
-
-An explicit valid mapping-level mode still overrides an invalid mapper-level
-value. A mapping that uses `Default` inherits the invalid mapper-level value
-and therefore has two throwing methods.
-
-The same rule applies to the assembly level: a valid mapper-level or
-mapping-level value overrides an invalid `MorphantMappingMode`, while a
-mapping that inherits the invalid property has two throwing methods.
-
-An invalid value that is overridden before it becomes effective does not
-produce a diagnostic. A C# expression whose binding failure is already
-reported by the compiler does not receive a duplicate `MORPH0021`.
-Suppressing either diagnostic or changing its severity changes only compiler
-presentation, not the generated recovery.
-
-See [Configuration inheritance](../configuration-inheritance.md) for the full
-settings chain and [Runtime dispatch and DI](../runtime-dispatch.md) for how a
-selected pair is resolved before the operation gate runs. The exception types
-are summarized in [Observable failures](../observable-failures.md).
+Configure an assembly default with `MorphantMappingMode`. See the
+[settings overview](README.md) for levels and precedence.

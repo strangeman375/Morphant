@@ -1,109 +1,18 @@
 # Member selection
 
-This page documents the implemented core v0 API. Current review status and
-remaining boundaries are tracked in the
-[mapping API roadmap](../../MAPPING_API_IMPLEMENTATION_PLAN.md).
+`MemberSelection` controls destination members that have no explicit
+`Members` rule. Its default is `Auto`.
 
-`MemberSelection` controls destination members that are not mentioned in an
-explicit `Members` plan. It does not change the meaning of an explicit value,
-`Auto()`, or `Ignore()` rule.
-
-The library default is:
-
-```csharp
-MemberSelection.Auto
-```
-
-## Configure an assembly default
-
-Set `MorphantMemberSelection` in `Directory.Build.props` to configure projects
-under a directory:
-
-```xml
-<Project>
-  <PropertyGroup>
-    <MorphantMemberSelection>Explicit</MorphantMemberSelection>
-  </PropertyGroup>
-</Project>
-```
-
-The same property can be set in a project file. Supported values are
-`Default`, `Auto`, and `Explicit`; names are case-insensitive. A missing,
-empty, or `Default` value continues to the library default.
-
-MSBuild resolves imports before Morphant runs. A value in a `.csproj`
-therefore normally overrides a value imported earlier from
-`Directory.Build.props`, and the generator receives only the final value.
-
-## Configure a mapper default
-
-Use a mapper-level setting when most registrations should use the same
-selection policy:
-
-```csharp
-protected override void Configure(MapperBuilder builder)
-{
-    builder.MemberSelection(MemberSelection.Explicit);
-
-    builder.Map<OrderDto, Order>()
-        .Members((source, _) => new()
-        {
-            Number = source.Number
-        });
-
-    builder.Map<CustomerDto, Customer>()
-        .Members((source, _) => new()
-        {
-            Name = source.Name
-        });
-}
-```
-
-Mapper-level settings apply to the whole mapper, regardless of whether the
-setting call appears before or after its mapping registrations. If the same
-setting is called more than once, the last call wins, including a last call
-with `Default`.
-
-## Override one mapping
-
-Configure the builder returned by `Map<TSource, TDestination>()`:
-
-```csharp
-builder.Map<OrderDto, Order>()
-    .MemberSelection(MemberSelection.Auto)
-    .Members((source, _) => new()
-    {
-        DisplayName = source.Number
-    });
-```
-
-The effective value is selected in this order:
-
-1. A non-`Default` mapping-level value.
-2. A non-`Default` value from a pair imported with
-   `IncludeBase<TBaseSource, TBaseDestination>()`, nearest first.
-3. A non-`Default` mapper-level value.
-4. Non-`Default` root values from connected base mappers, nearest first.
-5. A non-`Default` `MorphantMemberSelection` MSBuild property.
-6. `MemberSelection.Auto`.
-
-`Default` continues to the next level.
-
-Base roots participate only after an explicit `base.Configure(builder)` call,
-and base pair values participate only after a typed `IncludeBase` call. See
-[Configuration inheritance](../configuration-inheritance.md).
-
-## Selection behavior
-
-| Effective value | Member absent from `Members` |
+| Value | Unmentioned destination member |
 |---|---|
-| `Auto` | Maps by convention when an exact-name, warning-free implicit conversion exists |
-| `Explicit` | Preserves the value supplied by construction or the existing destination |
+| `Auto` | Map it by exact-name convention when the conversion is valid |
+| `Explicit` | Leave it unchanged |
 
-An explicit rule always occupies its destination member before conventions:
+Explicit rules always take precedence:
 
 ```csharp
 builder.Map<OrderDto, Order>()
+    .MemberSelection(MemberSelection.Explicit)
     .Members((source, _) => new()
     {
         Name = source.DisplayName,
@@ -112,43 +21,16 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-- `Name` uses the explicit expression even if a source member named `Name`
-  exists.
-- `Revision` must be mappable by the ordinary convention rules, regardless of
-  the effective `MemberSelection`.
-- `LegacyCode` is not assigned and preserves the value of the selected result.
-- Other supported members follow the effective selection policy.
+- `Name` uses the explicit expression.
+- `Revision` explicitly requests convention mapping.
+- `LegacyCode` remains unchanged.
 
-Conventions and `Auto()` require an exact case-sensitive member name and a
-warning-free implicit C# conversion. They never start a nested mapping merely
-because two member names match. Nested mapping uses an explicit `Map(...)`,
-`Create(...)`, or `Update(...)` rule.
+Conventions and `Auto()` require an exact, case-sensitive name and a
+warning-free implicit C# conversion. They never start a nested mapping;
+use an explicit [`Map`, `Create` or `Update`](../nested-mapping.md).
 
-The policy applies after structured or runtime result selection. A result from
-`ConstructUsing` / `ResolveUsing` is already created and therefore accepts
-only post-construction setters and mutable fields on that branch. Structured
-construction can additionally apply `init` and creation-time `required`
-members in its initializer.
+`MemberSelection` applies only to declarative mappings. A manual `Convert`
+owns all member behavior itself.
 
-`MemberSelection` applies only to declarative mappings. An inherited setting
-is harmless on a manual `Convert`, but a pair-local call on that manual
-mapping, including `Default`, reports `MORPH0023`. Both operations of the pair
-then throw `MappingConfigurationException` regardless of `MappingMode`.
-
-## Invalid values
-
-C# setting expressions must be compile-time constants whose values are
-defined by `MemberSelection`. The MSBuild property must use one of the named
-values above. Morphant reports `MORPH0021` for an effective invalid C#
-argument and `MORPH0022` for an effective invalid MSBuild property.
-
-An invalid effective value keeps the generated `ITypeMapper` contract, but
-every enabled declarative operation throws `MappingConfigurationException`
-when invoked. An operation disabled by `MappingMode` remains unsupported. A
-valid value at a more specific level overrides an invalid outer value;
-inactive values do not produce diagnostics. `MORPH0023` takes precedence over
-`MORPH0021` for the same call, and suppression does not alter recovery.
-
-See [Declarative mapping](../declarative-mapping.md) for `Members`, `Auto`,
-`Ignore`, and dependency-graph execution, and
-[Nested mapping](../nested-mapping.md) for explicit complex-member dispatch.
+Configure an assembly default with `MorphantMemberSelection`. See the
+[settings overview](README.md) for levels and precedence.

@@ -1,28 +1,15 @@
 # Quick start
 
-This page documents the implemented core v0 API. Current review status and
-remaining boundaries are tracked in the
-[mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
+## Install Morphant
 
-Morphant generates mapping code in the consumer compilation. The runtime and
-analyzer ship together in the package:
+The package contains both the runtime and the source generator:
 
-```xml
-<PackageReference Include="Morphant" Version="0.1.0" />
-```
-
-The same layout can be used while developing from project references:
-
-```xml
-<ProjectReference Include="..\Morphant\Morphant.csproj" />
-<ProjectReference Include="..\Morphant.Generator\Morphant.Generator.csproj"
-                  OutputItemType="Analyzer"
-                  ReferenceOutputAssembly="false" />
+```shell
+dotnet add package Morphant --version 0.1.0
+dotnet add package Microsoft.Extensions.DependencyInjection
 ```
 
 ## Declare a mapping
-
-The minimal mapping relies on exact-name conventions:
 
 ```csharp
 using Morphant;
@@ -45,62 +32,26 @@ public sealed partial class ApplicationMapper : TypeMapper
 }
 ```
 
-`MorphantMapperAttribute` selects a concrete partial mapper for generation.
-Morphant emits an implementation of
-`ITypeMapper<Customer, CustomerDto>` into the other partial declaration. The
-same generated mapper class may implement several closed mapping pairs.
+The generated `ApplicationMapper` implements
+`ITypeMapper<Customer, CustomerDto>`. Exact, case-sensitive member names are
+mapped when C# provides a warning-free implicit conversion.
 
-Conventions use exact case-sensitive names and warning-free implicit C#
-conversions. A matching complex type does not start another mapping
-automatically; nested mapping is always an explicit `Map(...)`, `Create(...)`,
-or `Update(...)` rule.
+## Register it with DI
 
-## Register the generated pair
-
-Core v0 intentionally has no `AddMorphant`, assembly scanning, or generated
-registration manifest. Register the concrete mapper and each closed pair with
-the application's DI container. With
-`Microsoft.Extensions.DependencyInjection`:
+Register the concrete mapper, every pair it implements, and the application
+`IMapper` facade. With `Microsoft.Extensions.DependencyInjection`:
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+
 services.AddScoped<ApplicationMapper>();
 services.AddScoped<ITypeMapper<Customer, CustomerDto>>(
     provider => provider.GetRequiredService<ApplicationMapper>());
 services.AddScoped<IMapper, Mapper>();
 ```
 
-If `ApplicationMapper` implements more pairs, register each
-`ITypeMapper<TSource, TDestination>` interface against the same scoped
-concrete instance. Mappings generated in other assemblies are registered in
-the same way; assembly identity is not part of the lookup key.
-
-See [Runtime dispatch and DI](runtime-dispatch.md) for the exact zero/one/many
-candidate rule and mapping scope lifecycle.
-
-If application-wide dispatch is unnecessary, no DI registration is required.
-Call the context-free extensions on an exact pair:
-
-```csharp
-ITypeMapper<Customer, CustomerDto> pair = new ApplicationMapper();
-
-var created = pair.Create(customer);
-var updated = pair.Update(customer, existingDto);
-```
-
-A concrete mapper that implements several pairs uses explicit method type
-arguments instead of a separate pair selector:
-
-```csharp
-var applicationMapper = new ApplicationMapper();
-var created =
-    applicationMapper.Create<Customer, CustomerDto>(customer);
-```
-
-Nested `context.Mapper` calls in this mode can resolve every exact closed pair
-declared by the same generated `applicationMapper` instance. The declaration
-checks are generated into the mapper; no runtime interface scan is performed.
-Use application-wide `IMapper` when a nested pair belongs to another mapper
-instance.
+If one mapper implements several pairs, register every
+`ITypeMapper<TSource, TDestination>` against the same scoped mapper instance.
 
 ## Create and update
 
@@ -113,17 +64,15 @@ var existing = new CustomerDto();
 existing = mapper.Map(customer, existing);
 ```
 
-The source-only overload invokes generated `ITypeMapper.Create`. The overload
-with a destination invokes generated `ITypeMapper.Update`, including when the
-destination argument is explicitly `null`.
+The source-only overload performs Create. Supplying a destination performs
+Update, even when that destination is `null`.
 
-The return value is authoritative. Update may reuse `existing`, mutate it and
-return it, or return a replacement chosen by the mapping plan. Always keep the
-returned value.
+The returned value is authoritative. Update may mutate and reuse `existing`,
+or return a replacement, so always keep its result.
 
-## Add explicit behavior
+## Add explicit rules
 
-Use `Construct` and `Members` when conventions are not the complete plan:
+Use `Construct` and `Members` when conventions are not enough:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -136,12 +85,29 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-Use `Convert` when the entire mapping is clearer as normal synchronous C#:
+Use `Convert` when the whole mapping is clearer as ordinary synchronous C#:
 
 ```csharp
 builder.Map<string, Uri>()
-    .Convert((source, _, _) => new Uri(source!, UriKind.RelativeOrAbsolute));
+    .Convert(source =>
+        new Uri(source!, UriKind.RelativeOrAbsolute));
 ```
 
 Continue with [Declarative mapping](declarative-mapping.md),
-[Manual mapping](manual-mapping.md), and [Null handling](settings/null-handling.md).
+[Manual mapping](manual-mapping.md), or
+[Runtime dispatch and DI](runtime-dispatch.md).
+
+## Calling a pair without DI
+
+Morphant also allows an exact generated pair to be called directly when
+application-wide dispatch is deliberately not used:
+
+```csharp
+ITypeMapper<Customer, CustomerDto> pair = new ApplicationMapper();
+
+var created = pair.Create(customer);
+var updated = pair.Update(customer, existing);
+```
+
+This is an additional capability; the main application setup uses DI and
+`IMapper` as shown above.

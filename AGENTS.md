@@ -2,8 +2,8 @@
 
 ## Implementation plan
 
-- `MAPPING_API_IMPLEMENTATION_PLAN.md` is the current agreed roadmap and
-  progress record. Read it before selecting the next work slice.
+- `docs/internal/MAPPING_API_IMPLEMENTATION_PLAN.md` is the current agreed
+  roadmap and progress record. Read it before selecting the next work slice.
 - Superseded designs are not compatibility targets. Remove their obsolete
   production code, tests, documents and excluded snapshots from the active
   tree instead of maintaining parallel historical slices. Git history is the

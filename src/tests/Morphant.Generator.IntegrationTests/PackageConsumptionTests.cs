@@ -79,7 +79,8 @@ internal sealed class PackageConsumptionTests
         {
             if (File.Exists(Path.Combine(
                     directory.FullName,
-                    "MAPPING_API_IMPLEMENTATION_PLAN.md")))
+                    "src",
+                    "Morphant.slnx")))
             {
                 return directory.FullName;
             }

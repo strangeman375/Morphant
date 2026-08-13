@@ -1,11 +1,6 @@
 # Manual mapping
 
-This page documents the implemented core v0 API. Current review status and
-remaining boundaries are tracked in the
-[mapping API roadmap](../MAPPING_API_IMPLEMENTATION_PLAN.md).
-
-Use `Convert` when the whole mapping is easier to express as ordinary
-synchronous C# than as a result policy and `Members` plan:
+Use `Convert` when the complete mapping is clearer as ordinary synchronous C#:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -24,46 +19,40 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-`Convert` has three prefix overloads: `source`; `source, previous`; and
-`source, previous, context`. They implement the same lifecycle and differ only
-in available inputs. The full lambda receives:
+The available overloads receive:
 
-- the original source, before `NullSourceHandling`;
-- the actual existing destination as `Option<TDestination>`;
-- the current immutable `MappingContext` frame.
+| Parameters | Available information |
+|---|---|
+| `source` | Original source value |
+| `source, previous` | Source and existing-destination presence |
+| `source, previous, context` | Source, destination and mapping context |
 
-`Map(source)` supplies `MappingOperation.Create` and `Option.None`.
-`Map(source, null)` supplies `MappingOperation.Update` and `Option.None`.
-`Map(source, destination)` supplies `MappingOperation.Update` and
-`Option.Some(destination)`.
+`previous` is `Option<TDestination>`. It is `None` for Create and for an Update
+without an actual destination, and `Some(destination)` otherwise.
 
-The returned value is authoritative, including `null`, reuse of the previous
-instance, or a replacement instance. Morphant does not run null handling,
-convention construction, member mapping, or declarative markers afterward.
-Only the effective `MappingMode` gates whether Create and Update may call the
-lambda.
+The callback owns the whole mapping. Morphant does not apply null handling,
+constructor selection, member conventions or `Members` afterward. The
+effective [`MappingMode`](settings/mapping-mode.md) still controls whether
+Create and Update are available.
 
-Expression lambdas and arbitrary synchronous block bodies are supported.
-Constructors, factories, mutation, loops, `try` statements, local functions,
-multiple returns, record `with`, method calls, and exceptions keep their normal
-C# semantics. Configure-local runtime values and Configure-local functions
-cannot be captured; reusable state or behavior belongs on the mapper type.
+The returned value is final: it may be `null`, the existing destination or a
+replacement.
 
-`Convert` is a runtime callback, so the structured statement restriction
-`MORPH0031` and read-only-input rule `MORPH0032` do not apply. Its C# binding
-must still be reproducible in the generated mapper: unavailable
-Configure-local/file-local values or an unsafe extension binding report
-`MORPH0030`. `Value`, `Auto`, `Ignore`, `Map`, `Create`, `Update`, and
-`ByConvention` are compile-time DSL markers; using one inside `Convert`
-reports `MORPH0033`. Use `context.Mapper.Map(...)` for runtime nested mapping.
-Suppressing either diagnostic keeps the callback invalid and emits typed
-throwing recovery for every enabled operation of that manual pair.
+## Nested calls
 
-Collection, tuple, delegate, expression-tree, task/deferred, buffer, and
-observable roots are eligible opaque values. Their pairs receive
-`ConstructUsing`, `ResolveUsing`, and `Convert`, but no `Construct`, `Resolve`,
-`Members`, conventions, or special element/await/rebinding behavior. For
-example, collection mapping is an explicit ordinary algorithm in core v0:
+Use the mapper from the current context for another runtime mapping:
+
+```csharp
+var address = previous.TryGetValue(out var destination)
+    ? context.Mapper.Map(source.Address, destination.Address)
+    : context.Mapper.Map<AddressDto, Address>(source.Address);
+```
+
+Declarative markers such as `Auto`, `Ignore`, `Value`, `Map`, `Create` and
+`Update` are not used inside `Convert`; its body is normal C#.
+
+Collections, tuples, delegates and similar roots can be mapped explicitly as
+single values:
 
 ```csharp
 builder.Map<IReadOnlyList<OrderDto>, List<Order>>()
@@ -73,27 +62,6 @@ builder.Map<IReadOnlyList<OrderDto>, List<Order>>()
             : source.Select(context.Mapper.Map<OrderDto, Order>).ToList());
 ```
 
-The opaque boundary prevents the root type from implying a hidden lifecycle;
-the callback is responsible for all container behavior.
-
-For a nested mapping, call the scoped mapper from the current context:
-
-```csharp
-var address = previous.TryGetValue(out var destination)
-    ? context.Mapper.Map(source.Address, destination.Address)
-    : context.Mapper.Map<AddressDto, Address>(source.Address);
-```
-
-The nested overload selects its own Create or Update frame while preserving
-the mapping scope. Declarative `Auto`, `Ignore`, `ByConvention`, and nested
-`Map` / `Create` / `Update` calls are not available as markers inside
-`Convert`.
-
-A pair may contain one `Convert` or a declarative plan made from one of
-`Construct`, `Resolve`, `ConstructUsing`, `ResolveUsing` plus `Members`, but
-not both. Pair-specific null, member, and constructor settings are invalid for
-`Convert`; inherited settings are simply inactive for that pair.
-
-See [Runtime dispatch and DI](runtime-dispatch.md) for service lookup and
-mapping-scope lifetime, and [Declarative mapping](declarative-mapping.md) for
-the lifecycle that `Convert` replaces.
+A mapping uses either `Convert` or a declarative result/member plan, not both.
+See [Runtime dispatch and DI](runtime-dispatch.md) for nested lookup and scope
+lifetime.
