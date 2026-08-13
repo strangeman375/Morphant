@@ -1,0 +1,17 @@
+<Project>
+
+    <PropertyGroup>
+        <Version>0.1.0</Version>
+
+        <Authors>strangeman375</Authors>
+        <Company>strangeman375</Company>
+        <Product>Morphant</Product>
+        <Copyright>Copyright (c) strangeman375 2026</Copyright>
+
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/strangeman375/Morphant</RepositoryUrl>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    </PropertyGroup>
+
+</Project>

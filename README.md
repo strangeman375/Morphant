@@ -13,7 +13,7 @@ configuration into strongly typed mapping code without runtime reflection.
 The runtime package includes the source generator:
 
 ```shell
-dotnet add package Morphant --version 0.1.0
+dotnet add package Morphant
 ```
 
 The DI examples use `Microsoft.Extensions.DependencyInjection`, which is

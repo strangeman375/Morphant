@@ -4,6 +4,7 @@
     <File Path="../logo.png" />
     <File Path="../README.md" />
     <File Path="Directory.Build.props" />
+    <File Path="Morphant.Product.props" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Morphant.Generator.IntegrationTests.CSharp9/Morphant.Generator.IntegrationTests.CSharp9.csproj" />

@@ -1,11 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\Morphant.Product.props" />
+
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
 
         <IsRoslynComponent>true</IsRoslynComponent>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <DebugType>embedded</DebugType>
     </PropertyGroup>
 
     <ItemGroup>
