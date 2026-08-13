@@ -5,6 +5,9 @@ mapper declaration, DI registration, Create, Update and a first explicit rule.
 
 ## Mapping guides
 
+- [Create and Update](create-and-update.md) — destination reuse, replacement
+  and operation-specific behavior.
+- [Conventions](conventions.md) — automatic constructor and member mapping.
 - [Declarative mapping](declarative-mapping.md) — creating a destination and
   mapping its members.
 - [Manual mapping](manual-mapping.md) — use `Convert` for an ordinary C#
@@ -14,6 +17,9 @@ mapper declaration, DI registration, Create, Update and a first explicit rule.
   mapping selection and `MappingContext`.
 - [Configuration inheritance](configuration-inheritance.md) — reuse mapper
   defaults and mapping rules.
+- [Mapping recipes](recipes.md) — short examples for common custom mappings.
+- [Testing mappings](testing.md) — runtime behavior, diagnostics and generated
+  code review.
 
 ## Settings
 

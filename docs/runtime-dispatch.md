@@ -63,6 +63,8 @@ supplied destination or replace it:
 destination = mapper.Map(source, destination);
 ```
 
+See [Create and Update](create-and-update.md) for operation-specific behavior.
+
 ## Calling without DI
 
 A generated mapper can also be used through an exact

@@ -94,7 +94,8 @@ builder.Map<string, Uri>()
         new Uri(source!, UriKind.RelativeOrAbsolute));
 ```
 
-Continue with [Declarative mapping](declarative-mapping.md),
+Continue with [Create and Update](create-and-update.md),
+[Conventions](conventions.md), [Declarative mapping](declarative-mapping.md),
 [Manual mapping](manual-mapping.md), or
 [Dependency injection and `IMapper`](runtime-dispatch.md).
 

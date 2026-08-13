@@ -1,6 +1,6 @@
 # Declarative mapping
 
-A bare mapping uses exact-name conventions:
+A bare mapping uses [automatic conventions](conventions.md):
 
 ```csharp
 builder.Map<Customer, CustomerDto>();

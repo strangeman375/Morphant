@@ -52,3 +52,5 @@ receives an `ITypeMapper<TSource, TDestination>` implementation.
 Generated files enable nullable annotations and are deterministic for the same
 input. Their contents may change between Morphant versions and should not be
 referenced from application code.
+
+See [Testing mappings](testing.md) for behavior and generated-diff checks.
