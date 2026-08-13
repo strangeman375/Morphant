@@ -2367,8 +2367,8 @@ Root `Mapper` получает `IServiceProvider` текущего DI-scope. Д�
 В core v0 нет `AddMorphant(...)`, generated manifests, registration assembly
 attributes и automatic assembly scanning. Пользователь вручную регистрирует
 root `IMapper` и каждую closed `ITypeMapper<TSource, TDestination>` pair.
-Convenience API и manifest wiring проектируются отдельно после v0. Runtime
-reflection для поиска pair не требуется.
+Convenience API и generated manifest wiring проектируются отдельно после v0.
+Runtime reflection и assembly scanning для поиска pair не входят в roadmap.
 
 ### 12.2. Lookup law v0
 
@@ -2591,11 +2591,11 @@ arguments: `Page<string>` и `Page<string?>` являются одной canonic
 `Page<int>` и `Page<int?>` различаются, потому что `Nullable<int>` является
 отдельным CLR-типом.
 
-Type parameter непосредственно в root-позиции, open-generic registration и
-mapping по runtime source/destination `Type` отсутствуют в v0. Их можно
-добавить после v0 отдельными registry capabilities без изменения базового
-generic `IMapper` contract, но текущий lookup не делает runtime inference или
-fallback к generic definition.
+Type parameter непосредственно в root-позиции и open-generic registration,
+требующая runtime-закрытия mapper type, отсутствуют в v0 и не входят в
+roadmap. Если после v0 появится lookup по runtime source/destination `Type`, он
+должен использовать только generated closed-world descriptors известных
+mappings, без reflection, runtime inference и fallback к generic definition.
 
 Tuple/multi-source support также остаётся после v0. Будущая tuple является
 обычным `TSource`, поэтому специальные overloads `IMapper` на два или три
@@ -3151,8 +3151,8 @@ expressions, mapper dependencies и application service provider не
     продолжением через base mapper. Runtime reflection, interface/assembly
     scanning и registry отсутствуют; ручной `ITypeMapper` предоставляет
     выбранную root-пару. `MappingScope` хранит только состояние mapping chain.
-    `AddMorphant(...)`, generated manifests и assembly scanning остаются
-    post-v0.
+    `AddMorphant(...)` и generated manifests остаются post-v0; runtime
+    assembly scanning не добавляется.
 48. Обычный v0 lookup идентифицируется canonical type pair. Ноль кандидатов
     означает missing mapping, один — выполнение, два и более — ambiguity.
 49. Повторные registrations pair допустимы и не являются generator/startup
@@ -3269,8 +3269,10 @@ expressions, mapper dependencies и application service provider не
 72. Generic arguments могут содержать type parameters и отложенные root-
     категории как обычные единые значения, если полный root выразим из общего
     generated assembly-context; reflection-обхода недоступности нет.
-73. Bare root type parameter, open-generic registration и mapping по runtime
-    `Type` отсутствуют в v0 и не получают fallback через application dispatch.
+73. Bare root type parameter и open-generic registration, требующая
+    runtime-закрытия mapper type, не входят в roadmap. Возможный mapping по
+    runtime `Type` ограничивается generated closed-world descriptors и не
+    использует reflection либо generic fallback.
 74. Tuple root уже можно использовать как единый opaque `TSource` без
     специальных overload-ов `IMapper`; identity учитывает типы и порядок
     элементов, но не имена. Будущая structured multi-source semantics требует

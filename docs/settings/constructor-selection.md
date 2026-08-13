@@ -31,11 +31,11 @@ builder.Map<OrderDto, Order>()
     .ConstructorSelection(ConstructorSelection.Greediest);
 ```
 
-`ByConvention()` is useful when Morphant should select and populate a
-constructor automatically, but some parameters need explicit rules. For
-example, if `Order` has a constructor with `id`, `name` and `tenantId`
-parameters, and `OrderDto` exposes `Id`, `Name` and `Tenant.Id`, the first two
-can be matched by convention while `tenantId` is configured explicitly:
+`ByConvention()` combines automatic constructor selection with explicit rules
+for selected parameters. For example, suppose `Order` has `id`, `name` and
+`tenantId` constructor parameters, while `OrderDto` exposes `Id`, `Name`,
+`Tenant.Id` and `Tenant.ExternalId`. `Id` and `Name` can be matched
+automatically, while an explicit rule can deliberately select `ExternalId`:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -44,13 +44,15 @@ builder.Map<OrderDto, Order>()
         ByConvention(),
         new()
         {
-            tenantId = source.Tenant.Id
+            tenantId = source.Tenant.ExternalId
         }));
 ```
 
 The configured `ConstructorSelection` chooses the constructor used by
 `ByConvention()`. Rules in the second argument override convention for the
-named parameters; the remaining parameters are matched automatically.
+named parameters; the remaining parameters are matched automatically. This
+precedence remains the same when automatic flattening is added: an explicit
+`tenantId` rule still overrides the automatic match from `source.Tenant.Id`.
 
 An explicitly named constructor is unaffected by the setting.
 `ConstructUsing`, `ResolveUsing` and `Convert` do not use constructor

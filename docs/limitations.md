@@ -21,17 +21,20 @@ listed below, but not every feature expected from a general-purpose mapper.
 
 - automatic collection, dictionary or buffer element mapping;
 - projection to `IQueryable`;
-- convention flattening or `IncludeMembers`;
+- automatic flattening for constructor parameters and destination members,
+  for example supplying `tenantId` or `TenantId` from `source.Tenant.Id`, or
+  `IncludeMembers`;
 - distinguishing missing, null and default values for patch/merge mappings;
 - automatic immutable Update reconstruction;
-- keyed mappings or selecting derived mappings from runtime types;
+- keyed mappings or generated dispatch for explicitly configured derived
+  types;
 - preserving shared object references or mapping cycles;
-- open-generic mappings or lookup by `System.Type`;
 - cross-assembly configuration inheritance;
-- automatic DI registration or assembly scanning;
+- generated DI registration;
 - configurable enum mapping, reverse mapping, before/after hooks or async
   mapping.
 
 Morphant does not guess behavior for unsupported cases. A synchronous special
 case can still be implemented with `Convert`, including mapping a collection
-as a whole with custom code.
+as a whole with custom code. Features that require runtime reflection to
+discover mappings are outside the roadmap.

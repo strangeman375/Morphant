@@ -2312,14 +2312,15 @@ C# 11 consumer build проходит без warnings и errors. Полная su
 направления аудита, но требуют отдельного проектирования и собственных
 implementation plans:
 
-- composition-root / DI convenience API (`AddMorphant(...)`), generated
-  manifests и автоматическое подключение mappings из выбранных assemblies;
+- composition-root / DI convenience API (`AddMorphant(...)`) и generated
+  manifests для подключения mappings из выбранных assemblies без runtime
+  reflection либо assembly scanning;
 - оптимизация per-call allocations в runtime dispatch и mapping scope без
   изменения lookup/lifecycle semantics;
 - automatic collection/dictionary/buffer element mapping, getter-only
   collections, clear/fill, replacement, key reconciliation и element-path
   flattening; opaque runtime/manual root pairs уже поддерживаются;
-- `IncludeMembers` и convention flattening;
+- automatic name flattening (`TenantId` -> `Tenant.Id`) и `IncludeMembers`;
 - patch/merge presence policy для absent/value/explicit-null/default;
 - automatic immutable Update reconstruction;
 - structured tuple/multi-source mapping и strongly typed per-call state;
@@ -2328,7 +2329,6 @@ implementation plans:
 - reference tracking, shared identity и cycles;
 - `IQueryable` projection с reuse declarative pair plan и без client-side
   fallback;
-- open-generic и runtime-type lookup;
 - cross-assembly configuration composition и reusable fragments;
 - hooks/middleware и result post-processing;
 - first-class enum mapping;
