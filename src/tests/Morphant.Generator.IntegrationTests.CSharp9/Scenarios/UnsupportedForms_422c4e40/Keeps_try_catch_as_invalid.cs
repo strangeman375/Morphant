@@ -57,7 +57,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnsupportedForms
             }
             catch (global::Morphant.Exceptions.MappingConfigurationException exception)
                 when (exception.Message.Contains(
-                    "Declarative plan",
+                    "This statement is not supported in Construct, Resolve, or Members.",
                     StringComparison.Ordinal))
             {
                 return;

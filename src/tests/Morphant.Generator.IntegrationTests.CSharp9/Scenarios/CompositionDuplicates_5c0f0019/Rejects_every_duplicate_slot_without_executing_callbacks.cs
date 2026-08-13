@@ -137,7 +137,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CompositionDupli
             catch (MappingConfigurationException exception)
             {
                 if (!exception.Reason.Contains(
-                        "more than one",
+                        "more than once",
                         StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(

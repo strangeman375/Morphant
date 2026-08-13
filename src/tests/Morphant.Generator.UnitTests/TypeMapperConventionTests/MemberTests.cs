@@ -14,6 +14,7 @@ internal sealed class MemberTests
 """
 #nullable enable
 #pragma warning disable CS1591
+#pragma warning disable MORPH0041
 
 using Morphant;
 using Morphant.Context;
@@ -137,7 +138,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "Convention construction is not available for this destination.");
+                "Morphant cannot select a constructor for this destination.");
         }
 
         private global::TestCase.Destination __Update(

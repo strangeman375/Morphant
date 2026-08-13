@@ -39,8 +39,7 @@ internal sealed class CompatibilityDiagnosticsTests
         AssertFailedWith(
             build.Process,
             "MORPH0002",
-            "Morphant generator requires a reference to a compatible " +
-            "Morphant runtime library.");
+            "Morphant requires a reference to a compatible runtime library.");
         AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
     }
 
@@ -59,9 +58,8 @@ internal sealed class CompatibilityDiagnosticsTests
         AssertFailedWith(
             build.Process,
             "MORPH0004",
-            "The referenced Morphant runtime contract is incompatible " +
-            "with this generator: contract revision '2' is not supported; " +
-            "expected '1'.");
+            "The Morphant runtime is incompatible with this generator: " +
+            "the runtime and generator versions do not match.");
         AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
     }
 
@@ -80,8 +78,8 @@ internal sealed class CompatibilityDiagnosticsTests
         AssertFailedWith(
             build.Process,
             "MORPH0003",
-            "Multiple Morphant runtime contracts were found. Reference " +
-            "exactly one compatible Morphant runtime library.");
+            "Multiple Morphant runtime libraries were found. Reference " +
+            "exactly one.");
         AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
     }
 

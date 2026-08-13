@@ -64,7 +64,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationRoo
             catch (MappingConfigurationException exception)
             {
                 if (!exception.Reason.Contains(
-                        "mapper builder flow",
+                        "cannot analyze this Configure method",
                         StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(

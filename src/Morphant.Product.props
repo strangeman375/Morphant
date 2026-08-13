@@ -12,6 +12,9 @@
         <RepositoryUrl>https://github.com/strangeman375/Morphant</RepositoryUrl>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>$(MorphantStrongNameKeyFile)</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
 </Project>

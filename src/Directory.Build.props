@@ -11,6 +11,10 @@
         -->
         <MorphantRoslynVersion Condition="'$(MorphantRoslynVersion)' == ''">4.9.2</MorphantRoslynVersion>
 
+        <!-- Stable assembly identity shared by the product and its friend test assemblies. -->
+        <MorphantStrongNameKeyFile>$(MSBuildThisFileDirectory)Morphant.snk</MorphantStrongNameKeyFile>
+        <MorphantStrongNamePublicKey>0024000004800000140100000602000000240000525341310008000001000100bd41346dbbf9a87631aef99dc92f252b0beb22c8482954dc8ecfdab27b95034a558e95741b5b67a7f95d68bf8ede7fb3a2533b5e2658a55c670ef0ed0bd34ff59bda76e40d92117db3f50c434b1182128714b8f88fe0e07a7025bf73eea6a8a613171bad180d8b5d123a7d3554b5ade406a0d18dbcaca7cdd141929cd4e75ffd6ddc7694521d53f67e06fe0765ea792ffb91fdb0e7f8eabfb9576dd69fe1af750a18217943cc74fa8b220f03f35224f5842ec714416ff97f609c382b91f88ca60c12e2e77ee29cb31503ea4442006744ddf93935e7ec19cca66d16035017c6d779c2269eab35719d96cfbc1b3e2d4444618dfe996ffab2874f8680510437009b</MorphantStrongNamePublicKey>
+
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 

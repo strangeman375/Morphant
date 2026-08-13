@@ -115,13 +115,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Unsupported_4217
         {
             try
             {
-                ((ITypeMapper<Source, TDestination>)mapper).Create(
-                    source,
-                    default(MappingContext));
+                ((ITypeMapper<Source, TDestination>)mapper).Create(source);
                 throw new InvalidOperationException(
                     "An invalid declarative Map was accepted.");
             }
-            catch (global::Morphant.Exceptions.MappingConfigurationException)
+            catch (global::Morphant.Exceptions.MappingException)
             {
             }
         }

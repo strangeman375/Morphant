@@ -284,7 +284,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.TestMapper.Destination),
-                "Destination construction is not configured.");
+                "No destination construction is configured.");
         }
 
         private global::TestCase.TestMapper.Destination __Update(
@@ -900,7 +900,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.Destination),
-                "Convention construction is not available for this destination.");
+                "Morphant cannot select a constructor for this destination.");
         }
 
         private global::TestCase.Destination __Update(

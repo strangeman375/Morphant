@@ -1,4 +1,8 @@
 using System.Diagnostics;
+using System.IO.Compression;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Security.Cryptography;
 
 namespace Morphant.Generator.IntegrationTests;
 
@@ -43,6 +47,8 @@ internal sealed class PackageConsumptionTests
                 $"-p:PackageVersion={packageVersion}",
                 "-p:NuGetAudit=false");
 
+            AssertPackageStrongNames(packageFeed, packageVersion);
+
             await RunDotNet(
                 repositoryRoot,
                 "run",
@@ -68,6 +74,56 @@ internal sealed class PackageConsumptionTests
                 Directory.Delete(testDirectory, recursive: true);
             }
         }
+    }
+
+    private static void AssertPackageStrongNames(
+        string packageFeed,
+        string packageVersion)
+    {
+        const string expectedPublicKeyToken = "ba27fb6be8f80649";
+        var packagePath = Path.Combine(
+            packageFeed,
+            $"Morphant.{packageVersion}.nupkg");
+
+        using var package = ZipFile.OpenRead(packagePath);
+
+        Assert.Multiple(() =>
+        {
+            AssertStrongName(
+                package,
+                "lib/netstandard2.0/Morphant.dll",
+                expectedPublicKeyToken);
+            AssertStrongName(
+                package,
+                "analyzers/dotnet/cs/Morphant.Generator.dll",
+                expectedPublicKeyToken);
+        });
+    }
+
+    private static void AssertStrongName(
+        ZipArchive package,
+        string entryName,
+        string expectedPublicKeyToken)
+    {
+        var entry = package.GetEntry(entryName);
+
+        Assert.That(entry, Is.Not.Null, $"Missing package entry {entryName}.");
+
+        using var entryStream = entry!.Open();
+        using var stream = new MemoryStream();
+        entryStream.CopyTo(stream);
+        stream.Position = 0;
+        using var peReader = new PEReader(stream);
+        var metadataReader = peReader.GetMetadataReader();
+        var assembly = metadataReader.GetAssemblyDefinition();
+        var publicKey = metadataReader.GetBlobBytes(assembly.PublicKey);
+        var hash = SHA1.HashData(publicKey);
+        var publicKeyToken = Convert.ToHexString(
+                hash[^8..].Reverse().ToArray())
+            .ToLowerInvariant();
+
+        Assert.That(publicKey, Is.Not.Empty, $"{entryName} is not strong-named.");
+        Assert.That(publicKeyToken, Is.EqualTo(expectedPublicKeyToken));
     }
 
     private static string FindRepositoryRoot()

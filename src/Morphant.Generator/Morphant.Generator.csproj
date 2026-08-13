@@ -23,7 +23,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
+        <InternalsVisibleTo Include="$(AssemblyName).UnitTests"
+                            PublicKey="$(MorphantStrongNamePublicKey)" />
     </ItemGroup>
 
 </Project>

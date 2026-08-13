@@ -596,7 +596,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(int),
-                "Destination construction is not configured.");
+                "No destination construction is configured.");
         }
 
         private int __Update(
@@ -648,7 +648,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.IInterfaceDestination),
-                "Destination construction is not configured.");
+                "No destination construction is configured.");
         }
 
         private global::TestCase.IInterfaceDestination __Update1(
@@ -702,7 +702,7 @@ namespace TestCase
                 operation,
                 typeof(global::TestCase.Source),
                 typeof(global::TestCase.AbstractDestination),
-                "Destination construction is not configured.");
+                "No destination construction is configured.");
         }
 
         private global::TestCase.AbstractDestination __Update2(

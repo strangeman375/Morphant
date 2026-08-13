@@ -84,7 +84,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationPai
             catch (MappingConfigurationException exception)
             {
                 if (!exception.Reason.Contains(
-                        "mapping builder flow",
+                        "cannot analyze this mapping configuration",
                         StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(
