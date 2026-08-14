@@ -26,16 +26,16 @@ internal sealed class CallbackDiagnosticsTests
     [Test]
     public void Suppressed_transfer_failures_keep_atomic_and_independent_paths()
     {
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiscovery_a11ce010.Scenario.Verify();
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DeferredContext_a11ce004.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiagnosticsDiscovery_9d7a0201.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiagnosticsDeferredContext_9d7a0202.Scenario.Verify();
     }
 
     [Test]
     public void Suppressed_grammar_mutation_and_marker_failures_do_not_escape()
     {
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.UnsupportedForms_ad6b4b67.Scenario.Verify();
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ReadOnlyInputs_a193d3f7.Scenario.Verify();
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TerminalMarker_a11ce001.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiagnosticsUnsupportedForms_9d7a0205.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiagnosticsReadOnlyInputs_9d7a0203.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiagnosticsTerminalMarker_9d7a0204.Scenario.Verify();
     }
 
     [Test]

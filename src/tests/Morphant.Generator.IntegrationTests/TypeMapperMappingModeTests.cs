@@ -8,8 +8,4 @@ internal sealed class TypeMapperMappingModeTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MappingMode_a9e37137.Scenario.Verify();
     }
-
-
-
-
 }

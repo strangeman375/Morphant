@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/AliasingTests::Shares_an_alias_read_without_contracting_assignment_order
+// Compiled integration scenario: TypeMapperEvaluationTests/AliasingTests::Evaluates_an_aliased_source_value_once_without_reordering_assignments
 #nullable enable
 #pragma warning disable CS1591
 

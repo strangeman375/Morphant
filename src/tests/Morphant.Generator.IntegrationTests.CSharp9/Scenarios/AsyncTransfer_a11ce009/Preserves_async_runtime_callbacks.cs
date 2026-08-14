@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperExpressionTransferTests::Preserves_async_runtime_callbacks
+// Compiled integration scenario: TypeMapperCSharpSemanticsTests::Preserves_async_runtime_callbacks
 #nullable enable
 #pragma warning disable CS1591
 

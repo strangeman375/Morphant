@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/SharedValuesTests::Shares_constructor_member_and_nested_subexpressions
+// Compiled integration scenario: TypeMapperEvaluationTests/SharedValuesTests::Evaluates_repeated_values_once_across_constructor_and_members
 #nullable enable
 #pragma warning disable CS1591
 

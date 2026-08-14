@@ -20,7 +20,7 @@ internal sealed class ConfigurationDiagnosticsTests
     [Test]
     public void Executes_a_source_connected_base_configuration()
     {
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationChain_308ba72c.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationDiagnosticsChain_9d7a0207.Scenario.Verify();
     }
 
     [Test]
@@ -44,7 +44,7 @@ internal sealed class ConfigurationDiagnosticsTests
     [Test]
     public void Leaves_all_callback_arguments_to_transfer_analysis()
     {
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiscovery_a11ce010.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationDiagnosticsCallbackDiscovery_9d7a0206.Scenario.Verify();
     }
 
     [Test]

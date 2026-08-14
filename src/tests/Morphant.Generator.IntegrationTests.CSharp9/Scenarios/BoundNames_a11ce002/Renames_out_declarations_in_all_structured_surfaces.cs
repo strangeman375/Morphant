@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/NameCollisionTests::Renames_out_declarations_in_all_structured_surfaces
+// Compiled integration scenario: TypeMapperEvaluationTests/NameCollisionTests::Accepts_out_variables_in_all_structured_callbacks
 #nullable enable
 #pragma warning disable CS1591
 

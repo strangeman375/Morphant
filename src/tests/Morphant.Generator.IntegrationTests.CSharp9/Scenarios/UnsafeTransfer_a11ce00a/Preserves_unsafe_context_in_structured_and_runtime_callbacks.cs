@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperExpressionTransferTests::Preserves_unsafe_context_in_structured_and_runtime_callbacks
+// Compiled integration scenario: TypeMapperCSharpSemanticsTests::Preserves_unsafe_context_in_structured_and_runtime_callbacks
 #nullable enable
 #pragma warning disable CS1591
 

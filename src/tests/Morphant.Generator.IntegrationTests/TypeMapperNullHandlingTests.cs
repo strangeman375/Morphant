@@ -14,8 +14,4 @@ internal sealed class TypeMapperNullHandlingTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NullHandling_f3d15fd6.Scenario.Verify();
     }
-
-
-
-
 }

@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/RuntimeCallbackFormsTests::Executes_lambda_block_method_group_and_delegate_forms_once
+// Compiled integration scenario: TypeMapperRuntimeConstructionTests/RuntimeCallbackFormsTests::Executes_lambda_block_method_group_and_delegate_forms_once
 #nullable enable
 #pragma warning disable CS1591
 

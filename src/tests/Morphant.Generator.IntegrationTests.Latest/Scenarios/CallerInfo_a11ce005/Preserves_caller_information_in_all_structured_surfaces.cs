@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperExpressionTransferTests::Preserves_caller_information_in_all_structured_surfaces
+// Compiled integration scenario: TypeMapperCSharpSemanticsTests::Preserves_caller_information_in_all_structured_surfaces
 #nullable enable
 #pragma warning disable CS1591
 

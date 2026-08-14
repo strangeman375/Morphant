@@ -5,6 +5,7 @@
 
 using System;
 using Morphant;
+using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StandaloneDispatch_8c2f1a4b
 {
@@ -43,15 +44,20 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StandaloneDispat
     [MorphantMapper]
     public partial class DerivedMapper : BaseMapper
     {
+        public static IMapper? CapturedMapper { get; private set; }
+
         protected override void Configure(MapperBuilder builder)
         {
             base.Configure(builder);
             builder.Map<OuterSource, OuterDestination>()
                 .Convert((source, _, context) =>
-                    new OuterDestination(
+                {
+                    CapturedMapper = context.Mapper;
+                    return new OuterDestination(
                         context.Mapper.Map<
                             ChildSource,
-                            ChildDestination>(source!.Child)));
+                            ChildDestination>(source!.Child));
+                });
         }
     }
 
@@ -60,18 +66,44 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StandaloneDispat
         public static void Verify()
         {
             var mapper = new DerivedMapper();
-            var result = mapper.Create<OuterSource, OuterDestination>(
+            var contract =
+                (ITypeMapper<OuterSource, OuterDestination>)mapper;
+            var created = contract.Create(
                 new OuterSource
                 {
                     Child = new ChildSource { Value = 17 }
                 });
+            var supplied = new OuterDestination(
+                new ChildDestination { Value = -1 });
+            var updated = contract.Update(
+                new OuterSource
+                {
+                    Child = new ChildSource { Value = 18 }
+                },
+                supplied);
 
-            if (result.Child.Value != 17)
+            if (created.Child.Value != 17 ||
+                ReferenceEquals(updated, supplied) ||
+                updated.Child.Value != 18)
             {
                 throw new InvalidOperationException(
                     "The generated standalone dispatch did not include an " +
                     "exact pair inherited from the mapper hierarchy.");
             }
+
+            try
+            {
+                DerivedMapper.CapturedMapper!.Map<
+                    ChildSource,
+                    ChildDestination>(new ChildSource());
+            }
+            catch (MappingScopeCompletedException)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                "The standalone mapping scope remained active.");
         }
     }
 }

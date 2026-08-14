@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/RuntimeCallbackLifecycleTests::Executes_expression_method_group_and_full_block_forms
+// Compiled integration scenario: TypeMapperRuntimeConstructionTests/RuntimeCallbackLifecycleTests::Executes_expression_method_group_and_full_block_forms
 #nullable enable
 #pragma warning disable CS1591
 

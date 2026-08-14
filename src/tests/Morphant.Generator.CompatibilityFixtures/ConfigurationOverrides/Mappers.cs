@@ -2,7 +2,7 @@
 #pragma warning disable CS1591
 
 using Morphant;
-using Morphant.Generator.UnitTests.TestAssets.Configuration;
+using Morphant.Generator.UnitTests.TestAssets.ConfigurationOverridesScenario;
 
 namespace ConfigurationOverrides;
 

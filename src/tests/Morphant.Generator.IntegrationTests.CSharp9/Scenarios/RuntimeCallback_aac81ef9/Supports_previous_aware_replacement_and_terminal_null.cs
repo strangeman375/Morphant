@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/RuntimeCallbackFormsTests::Supports_previous_aware_replacement_and_terminal_null
+// Compiled integration scenario: TypeMapperRuntimeConstructionTests/RuntimeCallbackFormsTests::Supports_previous_aware_replacement_and_terminal_null
 #nullable enable
 #pragma warning disable CS1591
 

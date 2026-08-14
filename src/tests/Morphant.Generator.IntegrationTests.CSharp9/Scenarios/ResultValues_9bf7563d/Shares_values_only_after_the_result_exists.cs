@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/ResultValuesTests::Shares_values_only_after_the_result_exists
+// Compiled integration scenario: TypeMapperEvaluationTests/ResultValuesTests::Reuses_result_dependent_values_only_after_construction
 #nullable enable
 #pragma warning disable CS1591
 

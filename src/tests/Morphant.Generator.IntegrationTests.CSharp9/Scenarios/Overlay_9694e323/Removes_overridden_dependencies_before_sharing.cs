@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/OverlayTests::Removes_overridden_dependencies_before_sharing
+// Compiled integration scenario: TypeMapperEvaluationTests/OverriddenRuleTests::Does_not_evaluate_a_rule_replaced_by_a_with_expression
 #nullable enable
 #pragma warning disable CS1591
 

@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperExpressionTransferTests::Rejects_file_local_helpers_in_all_structured_surfaces
+// Compiled integration scenario: TypeMapperCSharpSemanticsTests::Rejects_file_local_helpers_in_all_structured_surfaces
 #nullable enable
 #pragma warning disable CS1591
 #pragma warning disable MORPH0030

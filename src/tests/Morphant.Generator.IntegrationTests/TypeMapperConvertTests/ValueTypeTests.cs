@@ -8,4 +8,10 @@ internal sealed class ValueTypeTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ValueType_9e9960f1.Scenario.Verify();
     }
+
+    [Test]
+    public void Reports_an_empty_previous_value_when_Create_reads_it()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MissingPreviousValue_9d7a0105.Scenario.Verify();
+    }
 }

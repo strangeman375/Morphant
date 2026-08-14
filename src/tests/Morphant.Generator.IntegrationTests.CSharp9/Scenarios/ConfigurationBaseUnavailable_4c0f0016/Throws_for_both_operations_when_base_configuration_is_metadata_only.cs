@@ -7,7 +7,7 @@ using System;
 using Morphant;
 using Morphant.Context;
 using Morphant.Exceptions;
-using Morphant.Generator.UnitTests.TestAssets.Configuration;
+using Morphant.Generator.UnitTests.TestAssets.ConfigurationBaseUnavailableScenario;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationBaseUnavailable_4c0f0016
 {

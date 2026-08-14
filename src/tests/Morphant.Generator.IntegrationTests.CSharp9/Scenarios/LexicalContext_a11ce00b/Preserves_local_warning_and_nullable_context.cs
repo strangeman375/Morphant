@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperExpressionTransferTests::Preserves_local_warning_and_nullable_context
+// Compiled integration scenario: TypeMapperCSharpSemanticsTests::Preserves_local_warning_and_nullable_context
 #nullable enable
 #pragma warning disable CS1591
 

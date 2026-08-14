@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/DestinationKindTests::Maps_nullable_value_and_constructed_generic_runtime_results
+// Compiled integration scenario: TypeMapperRuntimeConstructionTests/DestinationKindTests::Maps_nullable_value_and_constructed_generic_runtime_results
 #nullable enable
 #pragma warning disable CS1591
 

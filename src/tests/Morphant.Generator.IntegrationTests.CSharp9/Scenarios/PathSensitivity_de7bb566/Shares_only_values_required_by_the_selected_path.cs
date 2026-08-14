@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/PathSensitivityTests::Shares_only_values_required_by_the_selected_path
+// Compiled integration scenario: TypeMapperEvaluationTests/PathSensitivityTests::Evaluates_only_the_selected_branch_and_reuses_its_value
 #nullable enable
 #pragma warning disable CS1591
 

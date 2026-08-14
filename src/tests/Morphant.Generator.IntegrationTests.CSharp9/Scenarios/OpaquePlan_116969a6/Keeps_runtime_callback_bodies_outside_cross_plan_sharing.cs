@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/OpaquePlanTests::Keeps_runtime_callback_bodies_outside_cross_plan_sharing
+// Compiled integration scenario: TypeMapperEvaluationTests/RuntimeCallbackTests::Evaluates_runtime_callbacks_independently_from_declarative_rules
 #nullable enable
 #pragma warning disable CS1591
 

@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperExpressionTransferTests::Rejects_untransferable_extension_binding_before_emission
+// Compiled integration scenario: TypeMapperCSharpSemanticsTests::Rejects_untransferable_extension_binding_before_emission
 #nullable enable
 #pragma warning disable CS1591
 #pragma warning disable MORPH0030

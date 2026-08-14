@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/RuntimeCallbackLifecycleTests::Keeps_ConstructUsing_inactive_for_existing_destination
+// Compiled integration scenario: TypeMapperRuntimeConstructionTests/RuntimeCallbackLifecycleTests::Keeps_ConstructUsing_inactive_for_existing_destination
 #nullable enable
 #pragma warning disable CS1591
 

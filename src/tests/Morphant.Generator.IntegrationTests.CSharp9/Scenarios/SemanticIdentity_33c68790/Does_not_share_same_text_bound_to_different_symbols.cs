@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/SemanticIdentityTests::Does_not_share_same_text_bound_to_different_symbols
+// Compiled integration scenario: TypeMapperEvaluationTests/SemanticIdentityTests::Keeps_identical_text_bound_to_different_members_independent
 #nullable enable
 #pragma warning disable CS1591
 

@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperDependencyGraphTests/NameCollisionTests::Avoids_pattern_variable_names_for_dependency_locals
+// Compiled integration scenario: TypeMapperEvaluationTests/NameCollisionTests::Accepts_user_pattern_names_that_match_generated_temporaries
 #nullable enable
 #pragma warning disable CS1591
 

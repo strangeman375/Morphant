@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperCreationResultTests/CaptureTests::Requires_an_explicit_result_policy_only_for_reachable_creation
+// Compiled integration scenario: TypeMapperRuntimeConstructionTests/CaptureTests::Requires_an_explicit_result_policy_only_for_reachable_creation
 #nullable enable
 #pragma warning disable CS1591
 #pragma warning disable MORPH0035

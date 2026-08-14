@@ -1,4 +1,4 @@
-// Compiled integration scenario: TypeMapperExpressionTransferTests::Preserves_null_conditional_extension_binding
+// Compiled integration scenario: TypeMapperCSharpSemanticsTests::Preserves_null_conditional_extension_binding
 #nullable enable
 #pragma warning disable CS1591
 
