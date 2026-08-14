@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Morphant.Generator.IntegrationTests;
+namespace Morphant.Generator.IntegrationTests.TestUtils;
 
 internal static class DotNetCli
 {

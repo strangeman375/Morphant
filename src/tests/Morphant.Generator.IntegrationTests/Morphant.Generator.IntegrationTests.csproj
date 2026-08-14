@@ -16,6 +16,7 @@
 
     <ItemGroup>
         <Using Include="NUnit.Framework" />
+        <Using Include="Morphant.Generator.IntegrationTests.TestUtils" />
     </ItemGroup>
 
     <ItemGroup>

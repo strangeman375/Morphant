@@ -1,4 +1,4 @@
-namespace Morphant.Generator.IntegrationTests;
+namespace Morphant.Generator.IntegrationTests.TestUtils;
 
 internal sealed class ConsumerBuildWorkspace : IDisposable
 {
