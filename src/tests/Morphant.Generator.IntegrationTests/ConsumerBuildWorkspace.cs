@@ -1,18 +1,18 @@
-using System.Diagnostics;
-
 namespace Morphant.Generator.IntegrationTests;
 
-internal sealed class CompatibilityTestWorkspace : IDisposable
+internal sealed class ConsumerBuildWorkspace : IDisposable
 {
-    private readonly string _repositoryRoot = FindRepositoryRoot();
-    private readonly string _configuration = GetBuildConfiguration();
+    private readonly string _repositoryRoot =
+        IntegrationTestEnvironment.RepositoryRoot;
+    private readonly string _configuration =
+        IntegrationTestEnvironment.BuildConfiguration;
     private readonly string _testDirectory;
 
-    public CompatibilityTestWorkspace()
+    public ConsumerBuildWorkspace()
     {
         _testDirectory = Path.Combine(
             Path.GetTempPath(),
-            "Morphant.CompatibilityDiagnosticsTests",
+            "Morphant.ConsumerBuildWorkspace",
             Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDirectory);
         Directory.CreateDirectory(PackageFeed);
@@ -20,7 +20,7 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
 
     public string PackageFeed => Path.Combine(_testDirectory, "packages");
 
-    public async Task<CompatibilityBuild> BuildConsumer(
+    public async Task<ConsumerBuild> BuildConsumer(
         string fixtureName,
         string? runtimeCandidatePath = null)
     {
@@ -40,8 +40,8 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
             arguments.Add($"-p:RuntimeCandidatePath={runtimeCandidatePath}");
         }
 
-        var process = await RunDotNet(arguments);
-        return new CompatibilityBuild(process, paths.GeneratedDirectory);
+        var process = await DotNetCli.Run(_repositoryRoot, arguments);
+        return new ConsumerBuild(process, paths.GeneratedDirectory);
     }
 
     public async Task<RuntimeCandidateBuild> BuildRuntimeCandidate(
@@ -49,10 +49,12 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
         string assemblyName)
     {
         var paths = CreateBuildPaths(fixtureName);
-        var process = await RunDotNet(BuildArguments(
-            "build",
-            GetFixtureProject(fixtureName),
-            paths));
+        var process = await DotNetCli.Run(
+            _repositoryRoot,
+            BuildArguments(
+                "build",
+                GetFixtureProject(fixtureName),
+                paths));
         var assemblyPath = Path.Combine(
             paths.OutputDirectory,
             _configuration,
@@ -64,23 +66,24 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
 
     public Task<ProcessResult> PackMorphant(string packageVersion)
     {
-        return RunDotNet(
-        [
-            "pack",
-            Path.Combine(
-                _repositoryRoot,
-                "src",
-                "Morphant",
-                "Morphant.csproj"),
-            "--configuration",
-            _configuration,
-            "--no-build",
-            "--no-restore",
-            "--output",
-            PackageFeed,
-            $"-p:PackageVersion={packageVersion}",
-            "-p:NuGetAudit=false"
-        ]);
+        return DotNetCli.Run(
+            _repositoryRoot,
+            [
+                "pack",
+                Path.Combine(
+                    _repositoryRoot,
+                    "src",
+                    "Morphant",
+                    "Morphant.csproj"),
+                "--configuration",
+                _configuration,
+                "--no-build",
+                "--no-restore",
+                "--output",
+                PackageFeed,
+                $"-p:PackageVersion={packageVersion}",
+                "-p:NuGetAudit=false"
+            ]);
     }
 
     public Task<ProcessResult> RunPackageConsumer(string packageVersion)
@@ -94,7 +97,7 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
         arguments.Add($"-p:MorphantTestPackageVersion={packageVersion}");
         arguments.Add($"-p:RestoreSources={PackageFeed}");
 
-        return RunDotNet(arguments);
+        return DotNetCli.Run(_repositoryRoot, arguments);
     }
 
     public void Dispose()
@@ -128,46 +131,6 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
         ]);
 
         return arguments;
-    }
-
-    private async Task<ProcessResult> RunDotNet(
-        IReadOnlyCollection<string> arguments)
-    {
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = GetDotNetHostPath(),
-                WorkingDirectory = _repositoryRoot,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            }
-        };
-
-        foreach (var argument in arguments)
-        {
-            process.StartInfo.ArgumentList.Add(argument);
-        }
-
-        process.StartInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
-        process.StartInfo.Environment["DOTNET_NOLOGO"] = "1";
-
-        if (!process.Start())
-        {
-            throw new InvalidOperationException(
-                "The dotnet process could not be started.");
-        }
-
-        var standardOutput = process.StandardOutput.ReadToEndAsync();
-        var standardError = process.StandardError.ReadToEndAsync();
-
-        await process.WaitForExitAsync();
-
-        return new ProcessResult(
-            process.ExitCode,
-            await standardOutput + await standardError,
-            arguments);
     }
 
     private BuildPaths CreateBuildPaths(string fixtureName)
@@ -221,61 +184,6 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
             "Morphant.Generator.UnitTests.TestAssets.dll");
     }
 
-    private static string FindRepositoryRoot()
-    {
-        for (DirectoryInfo? directory = new(
-                 TestContext.CurrentContext.TestDirectory);
-             directory is not null;
-             directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(
-                    directory.FullName,
-                    "src",
-                    "Morphant.slnx")))
-            {
-                return directory.FullName;
-            }
-        }
-
-        throw new InvalidOperationException(
-            "Could not locate the Morphant repository root.");
-    }
-
-    private static string GetBuildConfiguration()
-    {
-        const string configurationAttributeName =
-            "System.Reflection.AssemblyConfigurationAttribute";
-        var configuration = typeof(CompatibilityTestWorkspace).Assembly
-            .GetCustomAttributesData()
-            .Single(attribute =>
-                attribute.AttributeType.FullName ==
-                    configurationAttributeName)
-            .ConstructorArguments.Single().Value as string;
-
-        return configuration ?? throw new InvalidOperationException(
-            "Could not determine the integration-test build configuration.");
-    }
-
-    private static string GetDotNetHostPath()
-    {
-        var configuredHost =
-            Environment.GetEnvironmentVariable("DOTNET_HOST_PATH");
-
-        if (!string.IsNullOrWhiteSpace(configuredHost))
-        {
-            return configuredHost;
-        }
-
-        var currentProcess = Environment.ProcessPath;
-
-        return currentProcess is not null &&
-               Path.GetFileNameWithoutExtension(currentProcess).Equals(
-                   "dotnet",
-                   StringComparison.OrdinalIgnoreCase)
-            ? currentProcess
-            : "dotnet";
-    }
-
     private static string EnsureTrailingSeparator(string path)
     {
         return path + Path.DirectorySeparatorChar;
@@ -287,15 +195,22 @@ internal sealed class CompatibilityTestWorkspace : IDisposable
         string GeneratedDirectory);
 }
 
-internal sealed record CompatibilityBuild(
+internal sealed record ConsumerBuild(
     ProcessResult Process,
-    string GeneratedDirectory);
+    string GeneratedDirectory)
+{
+    public string[] GetGeneratedFiles(
+        string searchPattern = "Morphant.Generated.*.cs")
+    {
+        return Directory.Exists(GeneratedDirectory)
+            ? Directory.GetFiles(
+                GeneratedDirectory,
+                searchPattern,
+                SearchOption.AllDirectories)
+            : [];
+    }
+}
 
 internal sealed record RuntimeCandidateBuild(
     ProcessResult Process,
     string AssemblyPath);
-
-internal sealed record ProcessResult(
-    int ExitCode,
-    string Output,
-    IReadOnlyCollection<string> Arguments);

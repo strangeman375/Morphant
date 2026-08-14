@@ -12,6 +12,7 @@ internal sealed class ScopeTests
     [Test]
     public async Task Creates_an_independent_scope_for_each_parallel_root_call()
     {
-        await global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationParallelScope_9d7a0104.Scenario.Verify();
+        await global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .ApplicationParallelScope_9d7a0104.Scenario.Verify();
     }
 }

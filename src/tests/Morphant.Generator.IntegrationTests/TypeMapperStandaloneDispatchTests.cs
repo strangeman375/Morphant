@@ -12,6 +12,7 @@ internal sealed class TypeMapperStandaloneDispatchTests
     [Test]
     public void Explains_when_a_nested_pair_requires_the_application_mapper()
     {
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StandaloneDispatchBoundary_9d7a0106.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .StandaloneDispatchBoundary_9d7a0106.Scenario.Verify();
     }
 }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -13,7 +12,7 @@ internal sealed class PackageConsumptionTests
     [Test]
     public async Task Packs_complete_assets_and_imports_buildTransitive_settings()
     {
-        var repositoryRoot = FindRepositoryRoot();
+        var repositoryRoot = IntegrationTestEnvironment.RepositoryRoot;
         var testDirectory = Path.Combine(
             Path.GetTempPath(),
             "Morphant.PackageConsumptionTests",
@@ -25,51 +24,57 @@ internal sealed class PackageConsumptionTests
             Path.DirectorySeparatorChar;
         var packageVersion =
             $"0.0.0-package-consumption.{Guid.NewGuid():N}";
-        var configuration = GetBuildConfiguration();
+        var configuration = IntegrationTestEnvironment.BuildConfiguration;
 
         Directory.CreateDirectory(packageFeed);
 
         try
         {
-            await RunDotNet(
+            var pack = await DotNetCli.Run(
                 repositoryRoot,
-                "pack",
-                Path.Combine(
-                    repositoryRoot,
-                    "src",
-                    "Morphant",
-                    "Morphant.csproj"),
-                "--configuration",
-                configuration,
-                "--no-build",
-                "--no-restore",
-                "--output",
-                packageFeed,
-                $"-p:PackageVersion={packageVersion}",
-                "-p:NuGetAudit=false");
+                [
+                    "pack",
+                    Path.Combine(
+                        repositoryRoot,
+                        "src",
+                        "Morphant",
+                        "Morphant.csproj"),
+                    "--configuration",
+                    configuration,
+                    "--no-build",
+                    "--no-restore",
+                    "--output",
+                    packageFeed,
+                    $"-p:PackageVersion={packageVersion}",
+                    "-p:NuGetAudit=false"
+                ]);
+            AssertSucceeded(pack);
 
             AssertPackageContents(
                 repositoryRoot,
                 packageFeed,
                 packageVersion);
 
-            await RunDotNet(
+            var run = await DotNetCli.Run(
                 repositoryRoot,
-                "run",
-                "--project",
-                Path.Combine(
-                    repositoryRoot,
-                    "src",
-                    "tests",
-                    "Morphant.Generator.PackageTests.Consumer",
-                    "Morphant.Generator.PackageTests.Consumer.csproj"),
-                "--configuration",
-                configuration,
-                $"-p:MorphantTestPackageVersion={packageVersion}",
-                $"-p:RestoreSources={packageFeed}",
-                $"-p:BaseOutputPath={consumerOutput}",
-                $"-p:BaseIntermediateOutputPath={consumerIntermediate}",
-                "-p:NuGetAudit=false");
+                [
+                    "run",
+                    "--project",
+                    Path.Combine(
+                        repositoryRoot,
+                        "src",
+                        "tests",
+                        "Morphant.Generator.PackageTests.Consumer",
+                        "Morphant.Generator.PackageTests.Consumer.csproj"),
+                    "--configuration",
+                    configuration,
+                    $"-p:MorphantTestPackageVersion={packageVersion}",
+                    $"-p:RestoreSources={packageFeed}",
+                    $"-p:BaseOutputPath={consumerOutput}",
+                    $"-p:BaseIntermediateOutputPath={consumerIntermediate}",
+                    "-p:NuGetAudit=false"
+                ]);
+            AssertSucceeded(run);
         }
         finally
         {
@@ -321,101 +326,11 @@ internal sealed class PackageConsumptionTests
         System.Text.Encoding.UTF8.GetString(
             ReadEntryBytes(package, entryName)).TrimStart('\uFEFF');
 
-    private static string FindRepositoryRoot()
+    private static void AssertSucceeded(ProcessResult result)
     {
-        for (DirectoryInfo? directory = new(
-                 TestContext.CurrentContext.TestDirectory);
-             directory is not null;
-             directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(
-                    directory.FullName,
-                    "src",
-                    "Morphant.slnx")))
-            {
-                return directory.FullName;
-            }
-        }
-
-        throw new InvalidOperationException(
-            "Could not locate the Morphant repository root.");
-    }
-
-    private static string GetBuildConfiguration()
-    {
-        var targetFrameworkDirectory = Directory.GetParent(
-            typeof(TypeMapper).Assembly.Location) ??
-            throw new InvalidOperationException(
-                "Could not locate the Morphant target framework directory.");
-        var configurationDirectory = targetFrameworkDirectory.Parent ??
-            throw new InvalidOperationException(
-                "Could not locate the Morphant configuration directory.");
-
-        return configurationDirectory.Name;
-    }
-
-    private static async Task RunDotNet(
-        string workingDirectory,
-        params string[] arguments)
-    {
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = GetDotNetHostPath(),
-                WorkingDirectory = workingDirectory,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            }
-        };
-
-        foreach (var argument in arguments)
-        {
-            process.StartInfo.ArgumentList.Add(argument);
-        }
-
-        process.StartInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
-        process.StartInfo.Environment["DOTNET_NOLOGO"] = "1";
-
-        if (!process.Start())
-        {
-            throw new InvalidOperationException(
-                "The dotnet process could not be started.");
-        }
-
-        var standardOutput = process.StandardOutput.ReadToEndAsync();
-        var standardError = process.StandardError.ReadToEndAsync();
-
-        await process.WaitForExitAsync();
-
-        var output = await standardOutput;
-        var error = await standardError;
-
         Assert.That(
-            process.ExitCode,
+            result.ExitCode,
             Is.EqualTo(0),
-            $"dotnet {string.Join(' ', arguments)} failed.{Environment.NewLine}" +
-            output + error);
-    }
-
-    private static string GetDotNetHostPath()
-    {
-        var configuredHost =
-            Environment.GetEnvironmentVariable("DOTNET_HOST_PATH");
-
-        if (!string.IsNullOrWhiteSpace(configuredHost))
-        {
-            return configuredHost;
-        }
-
-        var currentProcess = Environment.ProcessPath;
-
-        return currentProcess is not null &&
-               Path.GetFileNameWithoutExtension(currentProcess).Equals(
-                   "dotnet",
-                   StringComparison.OrdinalIgnoreCase)
-            ? currentProcess
-            : "dotnet";
+            $"{result.Command} failed.{Environment.NewLine}{result.Output}");
     }
 }

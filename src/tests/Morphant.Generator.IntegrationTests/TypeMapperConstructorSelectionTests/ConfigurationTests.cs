@@ -12,13 +12,15 @@ internal sealed class ConfigurationTests
     [Test]
     public void Rejects_an_invalid_ConstructorSelection_only_when_construction_is_required()
     {
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidConstructorSelection_f71c9a42.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .InvalidConstructorSelection_f71c9a42.Scenario.Verify();
     }
 
     [Test]
     public void Resolves_included_current_and_connected_mapper_precedence()
     {
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorSelectionHierarchy_9d7a0309.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .ConstructorSelectionHierarchy_9d7a0309.Scenario.Verify();
     }
 
     [Test]

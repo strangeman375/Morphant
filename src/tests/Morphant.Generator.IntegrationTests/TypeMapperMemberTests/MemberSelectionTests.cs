@@ -18,7 +18,8 @@ internal sealed class MemberSelectionTests
     [Test]
     public void Resolves_included_current_and_connected_mapper_precedence()
     {
-        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberSelectionHierarchy_9d7a0310.Scenario.Verify();
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .MemberSelectionHierarchy_9d7a0310.Scenario.Verify();
     }
 
     [Test]

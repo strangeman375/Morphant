@@ -1,3 +1,4 @@
+// Compiled integration scenario: TypeMapperConstructorSelectionTests/ConfigurationTests::Uses_the_MSBuild_assembly_default_and_pair_override
 #nullable enable
 #pragma warning disable CS1591
 #pragma warning disable MORPH0036
@@ -50,10 +51,30 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.Constru
             var source = new Source { Value = 53 };
             var configured =
                 (ITypeMapper<Source, Destination>)mapper;
+            var overridden =
+                (ITypeMapper<Source, OverrideDestination>)mapper;
 
+            ExpectAssemblyDefaultToRejectAutomaticConstruction(
+                configured,
+                source);
+
+            var result = overridden.Create(source);
+
+            if (result.Value != 53)
+            {
+                throw new InvalidOperationException(
+                    "The pair ConstructorSelection did not override the " +
+                    "assembly default.");
+            }
+        }
+
+        private static void ExpectAssemblyDefaultToRejectAutomaticConstruction(
+            ITypeMapper<Source, Destination> mapper,
+            Source source)
+        {
             try
             {
-                configured.Create(source);
+                mapper.Create(source);
             }
             catch (MappingConfigurationException exception)
                 when (exception.Operation == MappingOperation.Create &&
@@ -61,18 +82,12 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.Constru
                           "select a constructor",
                           StringComparison.Ordinal))
             {
-                var result = ((ITypeMapper<Source, OverrideDestination>)
-                    mapper).Create(source);
-
-                if (result.Value == 53)
-                {
-                    return;
-                }
+                return;
             }
 
             throw new InvalidOperationException(
-                "The assembly ConstructorSelection or its pair override " +
-                "was ignored.");
+                "The assembly ConstructorSelection did not reject automatic " +
+                "construction.");
         }
     }
 }

@@ -3,35 +3,23 @@ namespace Morphant.Generator.IntegrationTests;
 [TestFixture]
 internal sealed class DeclarationDiagnosticsTests
 {
-    private CompatibilityTestWorkspace _workspace = null!;
-
-    [SetUp]
-    public void SetUp()
-    {
-        _workspace = new CompatibilityTestWorkspace();
-    }
-
-    [TearDown]
-    public void TearDown()
-    {
-        _workspace.Dispose();
-    }
-
     [Test]
     public async Task Missing_TypeMapper_base_produces_no_generated_artifacts()
     {
-        var build = await _workspace.BuildConsumer(
+        using var workspace = new ConsumerBuildWorkspace();
+        var build = await workspace.BuildConsumer(
             "DeclarationMissingBase");
 
         AssertFailedWithOnly(build.Process, "MORPH0005");
-        Assert.That(GeneratedFiles(build), Is.Empty);
+        Assert.That(build.GetGeneratedFiles(), Is.Empty);
     }
 
     [Test]
     public async Task Legal_mapper_forms_compile_as_generated_contracts()
     {
-        var build = await _workspace.BuildConsumer("DeclarationValidForms");
-        var mapperFiles = GeneratedFiles(build)
+        using var workspace = new ConsumerBuildWorkspace();
+        var build = await workspace.BuildConsumer("DeclarationValidForms");
+        var mapperFiles = build.GetGeneratedFiles()
             .Where(file => Path.GetFileName(file).Contains(
                 ".TypeMapper.",
                 StringComparison.Ordinal))
@@ -43,7 +31,9 @@ internal sealed class DeclarationDiagnosticsTests
                 build.Process.ExitCode,
                 Is.EqualTo(0),
                 build.Process.Output);
-            Assert.That(GetCompilerDiagnostics(build.Process.Output), Is.Empty);
+            Assert.That(
+                CompilerDiagnosticOutput.Read(build.Process.Output),
+                Is.Empty);
             Assert.That(mapperFiles, Has.Length.EqualTo(7));
         });
     }
@@ -51,16 +41,18 @@ internal sealed class DeclarationDiagnosticsTests
     [Test]
     public async Task Structural_and_unifiable_failures_keep_DSL_surfaces_without_cascades()
     {
-        var build = await _workspace.BuildConsumer(
+        using var workspace = new ConsumerBuildWorkspace();
+        var build = await workspace.BuildConsumer(
             "DeclarationStructuralFailures");
-        var diagnostics = GetCompilerDiagnostics(build.Process.Output);
+        var diagnostics = CompilerDiagnosticOutput.Read(build.Process.Output);
+        var generatedFiles = build.GetGeneratedFiles();
 
         Assert.Multiple(() =>
         {
             Assert.That(build.Process.ExitCode, Is.Not.EqualTo(0));
             Assert.That(diagnostics, Has.Length.EqualTo(4), build.Process.Output);
             Assert.That(
-                diagnostics.Select(GetDiagnosticId),
+                diagnostics.Select(CompilerDiagnosticOutput.GetId),
                 Is.EquivalentTo(new[]
                 {
                     "MORPH0006",
@@ -68,9 +60,9 @@ internal sealed class DeclarationDiagnosticsTests
                     "MORPH0008",
                     "MORPH0010"
                 }));
-            Assert.That(GeneratedFiles(build), Is.Not.Empty);
+            Assert.That(generatedFiles, Is.Not.Empty);
             Assert.That(
-                GeneratedFiles(build).Any(file =>
+                generatedFiles.Any(file =>
                     Path.GetFileName(file).Contains(
                         ".TypeMapper.",
                         StringComparison.Ordinal)),
@@ -81,12 +73,14 @@ internal sealed class DeclarationDiagnosticsTests
     [Test]
     public async Task Exact_contract_removes_only_the_conflicting_pair()
     {
-        var build = await _workspace.BuildConsumer(
+        using var workspace = new ConsumerBuildWorkspace();
+        var build = await workspace.BuildConsumer(
             "DeclarationPairRecovery");
 
         AssertFailedWithOnly(build.Process, "MORPH0009");
 
-        var mapperFile = GeneratedFiles(build)
+        var generatedFiles = build.GetGeneratedFiles();
+        var mapperFile = generatedFiles
             .Single(file => Path.GetFileName(file).Contains(
                 ".TypeMapper.",
                 StringComparison.Ordinal));
@@ -94,7 +88,7 @@ internal sealed class DeclarationDiagnosticsTests
         var allGeneratedSources = string.Join(
             Environment.NewLine,
             await Task.WhenAll(
-                GeneratedFiles(build).Select(static file =>
+                generatedFiles.Select(static file =>
                     File.ReadAllTextAsync(file))));
 
         Assert.Multiple(() =>
@@ -114,16 +108,20 @@ internal sealed class DeclarationDiagnosticsTests
     [Test]
     public async Task Suppression_hides_MORPH0034_but_keeps_the_gate()
     {
-        var build = await _workspace.BuildConsumer(
+        using var workspace = new ConsumerBuildWorkspace();
+        var build = await workspace.BuildConsumer(
             "DeclarationSuppressedSupports");
+        var generatedFiles = build.GetGeneratedFiles();
 
         Assert.Multiple(() =>
         {
             Assert.That(build.Process.ExitCode, Is.EqualTo(0), build.Process.Output);
-            Assert.That(GetCompilerDiagnostics(build.Process.Output), Is.Empty);
-            Assert.That(GeneratedFiles(build), Is.Not.Empty);
             Assert.That(
-                GeneratedFiles(build).Any(file =>
+                CompilerDiagnosticOutput.Read(build.Process.Output),
+                Is.Empty);
+            Assert.That(generatedFiles, Is.Not.Empty);
+            Assert.That(
+                generatedFiles.Any(file =>
                     Path.GetFileName(file).Contains(
                         ".TypeMapper.",
                         StringComparison.Ordinal)),
@@ -135,7 +133,7 @@ internal sealed class DeclarationDiagnosticsTests
         ProcessResult result,
         string diagnosticId)
     {
-        var diagnostics = GetCompilerDiagnostics(result.Output);
+        var diagnostics = CompilerDiagnosticOutput.Read(result.Output);
 
         Assert.Multiple(() =>
         {
@@ -147,39 +145,4 @@ internal sealed class DeclarationDiagnosticsTests
         });
     }
 
-    private static string[] GeneratedFiles(CompatibilityBuild build)
-    {
-        return Directory.Exists(build.GeneratedDirectory)
-            ? Directory.GetFiles(
-                build.GeneratedDirectory,
-                "Morphant.Generated.*.cs",
-                SearchOption.AllDirectories)
-            : [];
-    }
-
-    private static string[] GetCompilerDiagnostics(string output)
-    {
-        return output
-            .Split('\n')
-            .TakeWhile(static line =>
-                !line.Contains("Build FAILED.", StringComparison.Ordinal) &&
-                !line.Contains("Build succeeded.", StringComparison.Ordinal))
-            .Where(static line =>
-                line.Contains(": error ", StringComparison.Ordinal) ||
-                line.Contains(": warning ", StringComparison.Ordinal))
-            .Select(static line => line.Trim())
-            .ToArray();
-    }
-
-    private static string GetDiagnosticId(string diagnostic)
-    {
-        var marker = diagnostic.Contains(": error ", StringComparison.Ordinal)
-            ? ": error "
-            : ": warning ";
-        var start = diagnostic.IndexOf(marker, StringComparison.Ordinal) +
-                    marker.Length;
-        var end = diagnostic.IndexOf(':', start);
-
-        return diagnostic[start..end];
-    }
 }

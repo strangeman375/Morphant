@@ -1,3 +1,4 @@
+// Compiled integration scenario: TypeMapperMemberTests/MemberSelectionTests::Uses_the_MSBuild_assembly_default_and_pair_override
 #nullable enable
 #pragma warning disable CS1591
 

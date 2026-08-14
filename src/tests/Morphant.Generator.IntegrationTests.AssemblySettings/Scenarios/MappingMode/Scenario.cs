@@ -1,3 +1,4 @@
+// Compiled integration scenario: TypeMapperMappingModeTests::Uses_the_MSBuild_assembly_default_and_pair_override
 #nullable enable
 #pragma warning disable CS1591
 
@@ -56,29 +57,44 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.Mapping
                     "The assembly MappingMode did not enable Update.");
             }
 
+            ExpectCreateToBeDisabled(configured, source);
+
+            var overridden =
+                (ITypeMapper<Source, OverrideDestination>)mapper;
+            var created = overridden.Create(source);
+            var overridePrevious = new OverrideDestination();
+            var overrideUpdated = overridden.Update(
+                source,
+                overridePrevious);
+
+            if (created.Value != 41 ||
+                !ReferenceEquals(overridePrevious, overrideUpdated) ||
+                overrideUpdated.Value != 41)
+            {
+                throw new InvalidOperationException(
+                    "The pair MappingMode did not override the assembly " +
+                    "default.");
+            }
+        }
+
+        private static void ExpectCreateToBeDisabled(
+            ITypeMapper<Source, Destination> mapper,
+            Source source)
+        {
             try
             {
-                configured.Create(source);
+                mapper.Create(source);
             }
             catch (MappingOperationNotSupportedException exception)
                 when (exception.Operation == MappingOperation.Create &&
                       exception.EffectiveMappingMode ==
                       global::Morphant.MappingMode.Update)
             {
-                var overridden =
-                    (ITypeMapper<Source, OverrideDestination>)mapper;
-
-                if (overridden.Create(source).Value == 41 &&
-                    overridden.Update(
-                        source,
-                        new OverrideDestination()).Value == 41)
-                {
-                    return;
-                }
+                return;
             }
 
             throw new InvalidOperationException(
-                "The assembly MappingMode or its pair override was ignored.");
+                "The assembly MappingMode did not disable Create.");
         }
     }
 }

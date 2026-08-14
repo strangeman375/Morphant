@@ -3,30 +3,17 @@ namespace Morphant.Generator.IntegrationTests;
 [TestFixture]
 internal sealed class CompatibilityDiagnosticsTests
 {
-    private CompatibilityTestWorkspace _workspace = null!;
-
-    [SetUp]
-    public void SetUp()
-    {
-        _workspace = new CompatibilityTestWorkspace();
-    }
-
-    [TearDown]
-    public void TearDown()
-    {
-        _workspace.Dispose();
-    }
-
     [Test]
     public async Task Normal_package_builds_and_runs_a_generated_mapper()
     {
+        using var workspace = new ConsumerBuildWorkspace();
         var packageVersion =
             $"0.0.0-compatibility.{Guid.NewGuid():N}";
 
-        var pack = await _workspace.PackMorphant(packageVersion);
+        var pack = await workspace.PackMorphant(packageVersion);
         AssertSucceeded(pack);
 
-        var run = await _workspace.RunPackageConsumer(packageVersion);
+        var run = await workspace.RunPackageConsumer(packageVersion);
         AssertSucceeded(run);
         Assert.That(run.Output, Does.Not.Contain("MORPH000"));
     }
@@ -34,24 +21,26 @@ internal sealed class CompatibilityDiagnosticsTests
     [Test]
     public async Task Analyzer_without_runtime_reports_MORPH0002()
     {
-        var build = await _workspace.BuildConsumer("AnalyzerOnly");
+        using var workspace = new ConsumerBuildWorkspace();
+        var build = await workspace.BuildConsumer("AnalyzerOnly");
 
         AssertFailedWith(
             build.Process,
             "MORPH0002",
             "Morphant requires a reference to a compatible runtime library.");
-        AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
+        AssertNoMorphantGeneratedFiles(build);
     }
 
     [Test]
     public async Task Runtime_revision_2_reports_MORPH0004()
     {
-        var runtime = await _workspace.BuildRuntimeCandidate(
+        using var workspace = new ConsumerBuildWorkspace();
+        var runtime = await workspace.BuildRuntimeCandidate(
             "RuntimeV2",
             "Morphant.TestRuntimeV2");
         AssertSucceeded(runtime.Process);
 
-        var build = await _workspace.BuildConsumer(
+        var build = await workspace.BuildConsumer(
             "MismatchedRuntime",
             runtime.AssemblyPath);
 
@@ -60,18 +49,19 @@ internal sealed class CompatibilityDiagnosticsTests
             "MORPH0004",
             "The Morphant runtime is incompatible with this generator: " +
             "the runtime and generator versions do not match.");
-        AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
+        AssertNoMorphantGeneratedFiles(build);
     }
 
     [Test]
     public async Task Partial_runtime_reports_incompatible_instead_of_missing()
     {
-        var runtime = await _workspace.BuildRuntimeCandidate(
+        using var workspace = new ConsumerBuildWorkspace();
+        var runtime = await workspace.BuildRuntimeCandidate(
             "PartialRuntime",
             "Morphant.TestPartialRuntime");
         AssertSucceeded(runtime.Process);
 
-        var build = await _workspace.BuildConsumer(
+        var build = await workspace.BuildConsumer(
             "MismatchedRuntime",
             runtime.AssemblyPath);
 
@@ -80,18 +70,19 @@ internal sealed class CompatibilityDiagnosticsTests
             "MORPH0004",
             "The Morphant runtime is incompatible with this generator: " +
             "the runtime does not provide compatibility information.");
-        AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
+        AssertNoMorphantGeneratedFiles(build);
     }
 
     [Test]
     public async Task Two_runtime_candidates_report_one_MORPH0003()
     {
-        var runtime = await _workspace.BuildRuntimeCandidate(
+        using var workspace = new ConsumerBuildWorkspace();
+        var runtime = await workspace.BuildRuntimeCandidate(
             "RuntimeV1",
             "Morphant.TestRuntimeV1");
         AssertSucceeded(runtime.Process);
 
-        var build = await _workspace.BuildConsumer(
+        var build = await workspace.BuildConsumer(
             "DuplicateRuntime",
             runtime.AssemblyPath);
 
@@ -100,18 +91,19 @@ internal sealed class CompatibilityDiagnosticsTests
             "MORPH0003",
             "Multiple Morphant runtime libraries were found. Reference " +
             "exactly one.");
-        AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
+        AssertNoMorphantGeneratedFiles(build);
     }
 
     [Test]
     public async Task Ambiguity_precedes_candidate_compatibility()
     {
-        var runtime = await _workspace.BuildRuntimeCandidate(
+        using var workspace = new ConsumerBuildWorkspace();
+        var runtime = await workspace.BuildRuntimeCandidate(
             "RuntimeV2",
             "Morphant.TestRuntimeV2");
         AssertSucceeded(runtime.Process);
 
-        var build = await _workspace.BuildConsumer(
+        var build = await workspace.BuildConsumer(
             "DuplicateRuntime",
             runtime.AssemblyPath);
 
@@ -120,27 +112,29 @@ internal sealed class CompatibilityDiagnosticsTests
             "MORPH0003",
             "Multiple Morphant runtime libraries were found. Reference " +
             "exactly one.");
-        AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
+        AssertNoMorphantGeneratedFiles(build);
     }
 
     [Test]
     public async Task CSharp8_reports_MORPH0001_and_generates_nothing()
     {
-        var build = await _workspace.BuildConsumer("CSharp8");
+        using var workspace = new ConsumerBuildWorkspace();
+        var build = await workspace.BuildConsumer("CSharp8");
 
         AssertFailedWith(
             build.Process,
             "MORPH0001",
             "Morphant requires C# 9.0 or later, but this compilation uses " +
             "C# 8.0.");
-        AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
+        AssertNoMorphantGeneratedFiles(build);
     }
 
     [Test]
     public async Task Configuration_changes_severity_but_not_the_gate()
     {
-        var warning = await _workspace.BuildConsumer("CSharp8Warning");
-        var warningDiagnostics = GetCompilerDiagnostics(
+        using var workspace = new ConsumerBuildWorkspace();
+        var warning = await workspace.BuildConsumer("CSharp8Warning");
+        var warningDiagnostics = CompilerDiagnosticOutput.Read(
             warning.Process.Output);
 
         AssertSucceeded(warning.Process);
@@ -148,16 +142,16 @@ internal sealed class CompatibilityDiagnosticsTests
         Assert.That(
             warningDiagnostics.Single(),
             Does.Contain("warning MORPH0001"));
-        AssertNoMorphantGeneratedFiles(warning.GeneratedDirectory);
+        AssertNoMorphantGeneratedFiles(warning);
 
-        var suppressed = await _workspace.BuildConsumer(
+        var suppressed = await workspace.BuildConsumer(
             "CSharp8Suppressed");
 
         AssertSucceeded(suppressed.Process);
         Assert.That(
-            GetCompilerDiagnostics(suppressed.Process.Output),
+            CompilerDiagnosticOutput.Read(suppressed.Process.Output),
             Is.Empty);
-        AssertNoMorphantGeneratedFiles(suppressed.GeneratedDirectory);
+        AssertNoMorphantGeneratedFiles(suppressed);
     }
 
     private static void AssertSucceeded(ProcessResult result)
@@ -165,9 +159,7 @@ internal sealed class CompatibilityDiagnosticsTests
         Assert.That(
             result.ExitCode,
             Is.EqualTo(0),
-            $"dotnet {string.Join(' ', result.Arguments)} failed." +
-            Environment.NewLine +
-            result.Output);
+            $"{result.Command} failed.{Environment.NewLine}{result.Output}");
     }
 
     private static void AssertFailedWith(
@@ -175,7 +167,7 @@ internal sealed class CompatibilityDiagnosticsTests
         string id,
         string message)
     {
-        var diagnostics = GetCompilerDiagnostics(result.Output);
+        var diagnostics = CompilerDiagnosticOutput.Read(result.Output);
 
         Assert.Multiple(() =>
         {
@@ -186,29 +178,10 @@ internal sealed class CompatibilityDiagnosticsTests
         });
     }
 
-    private static void AssertNoMorphantGeneratedFiles(string directory)
+    private static void AssertNoMorphantGeneratedFiles(ConsumerBuild build)
     {
-        var files = Directory.Exists(directory)
-            ? Directory.GetFiles(
-                directory,
-                "Morphant.Generated.*",
-                SearchOption.AllDirectories)
-            : [];
-
-        Assert.That(files, Is.Empty);
-    }
-
-    private static string[] GetCompilerDiagnostics(string output)
-    {
-        return output
-            .Split('\n')
-            .TakeWhile(static line =>
-                !line.Contains("Build FAILED.", StringComparison.Ordinal) &&
-                !line.Contains("Build succeeded.", StringComparison.Ordinal))
-            .Where(static line =>
-                line.Contains(": error ", StringComparison.Ordinal) ||
-                line.Contains(": warning ", StringComparison.Ordinal))
-            .Select(static line => line.Trim())
-            .ToArray();
+        Assert.That(
+            build.GetGeneratedFiles("Morphant.Generated.*"),
+            Is.Empty);
     }
 }

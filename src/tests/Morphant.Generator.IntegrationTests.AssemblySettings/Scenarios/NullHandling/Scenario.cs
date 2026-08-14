@@ -1,3 +1,4 @@
+// Compiled integration scenario: TypeMapperNullHandlingTests::Uses_MSBuild_assembly_defaults_and_pair_overrides
 #nullable enable
 #pragma warning disable CS1591
 
