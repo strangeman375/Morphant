@@ -41,22 +41,25 @@
   already readable expected source.
 - Create a category subdirectory only when it contains more than one test
   file. Keep single-file categories directly in their parent test directory.
-- Keep exact production-observable generated output, diagnostics and the
-  reflection-based public API inventory in the unit-test project. Do not test
-  intermediate models, emitters, planning observations, incremental tracking
-  stage names or cache-step reasons. Verify the final generated source set,
-  compiler result or reported diagnostics instead. End-to-end runtime
-  scenarios belong in the dedicated integration slice, but their
-  source must be compiled by MSBuild as ordinary consumer code. Define the
-  mapper and scenario in an analyzer-backed consumer assembly, instantiate the
+- Keep exact production-observable generated output, diagnostic contracts,
+  incremental behavior and the reflection-based public API inventory in the
+  unit-test project. Do not snapshot intermediate models, emitter units or
+  planner observations when the same behavior is observable in final generated
+  sources, compiler results or diagnostics. Incremental caching and invalidation
+  are a separate build-time concern and may assert tracked step reasons with one
+  preserved production generator driver. End-to-end runtime scenarios belong
+  in the dedicated integration slice, but their source must be compiled by
+  MSBuild as ordinary consumer code. Define the mapper and scenario in an
+  analyzer-backed consumer assembly, instantiate the
   generated mapper normally, cast it to the exact `ITypeMapper<,>` contract and
   call `Create` / `Update` directly. The integration test host may call the
   already compiled scenario method; it must not create a `CSharpCompilation`,
   run a `GeneratorDriver`, emit/load an assembly, or invoke the scenario through
   reflection. Keep unit-test helpers limited to exact generated output and
-  focused compiler verification; do not reintroduce general user-scenario
-  runtime execution there. The test-owned actualization harness may emit and
-  execute a step only to prove that one preserved `GeneratorDriver` applies the
+  focused compiler/incrementality verification; do not reintroduce general
+  user-scenario runtime execution there. The test-owned actualization harness
+  may emit and execute a step only to prove that one preserved
+  `GeneratorDriver` applies the
   newly generated semantics after an edit; it remains a focused incremental
   test and is not a substitute for integration scenario coverage. Real consumer
   assemblies under `Morphant.Generator.IntegrationTests.CSharp9`,

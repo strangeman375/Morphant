@@ -1,0 +1,403 @@
+using System.Collections.Immutable;
+using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
+
+namespace Morphant.Generator.UnitTests.TestUtils;
+
+internal static class GeneratorIncrementalityTest
+{
+    private static readonly ImmutableArray<MetadataReference>
+        DefaultReferences = BuildDefaultReferences();
+
+    public static GeneratorIncrementalitySourceFile SourceFile(
+        string path,
+        string source)
+    {
+        return new GeneratorIncrementalitySourceFile(path, source);
+    }
+
+    public static ExpectedIncrementalOutput Expected(
+        string hintName,
+        IncrementalStepRunReason reason)
+    {
+        return new ExpectedIncrementalOutput(hintName, reason);
+    }
+
+    public static ExpectedIncrementalStage Stage(
+        string name,
+        params ExpectedIncrementalOutput[] outputs)
+    {
+        return new ExpectedIncrementalStage(
+            name,
+            outputs.ToImmutableArray());
+    }
+
+    public static GeneratorIncrementalityStep Step(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<string> generatedHintNames,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            [],
+            ImmutableDictionary<string, string>.Empty,
+            generatedHintNames.ToImmutableArray(),
+            stages.ToImmutableArray());
+    }
+
+    public static GeneratorIncrementalityStep StepWithReferences(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<MetadataReference> additionalReferences,
+        IReadOnlyCollection<string> generatedHintNames,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            additionalReferences.ToImmutableArray(),
+            ImmutableDictionary<string, string>.Empty,
+            generatedHintNames.ToImmutableArray(),
+            stages.ToImmutableArray());
+    }
+
+    public static GeneratorIncrementalityStep StepWithOptions(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyDictionary<string, string> globalOptions,
+        IReadOnlyCollection<string> generatedHintNames,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            [],
+            globalOptions.ToImmutableDictionary(
+                StringComparer.OrdinalIgnoreCase),
+            generatedHintNames.ToImmutableArray(),
+            stages.ToImmutableArray());
+    }
+
+    public static PortableExecutableReference CreateReference(
+        string assemblyName,
+        string source)
+    {
+        var parseOptions = new CSharpParseOptions(
+            LanguageVersion.CSharp9,
+            DocumentationMode.Diagnose);
+        var compilation = CSharpCompilation.Create(
+            assemblyName,
+            [
+                CSharpSyntaxTree.ParseText(
+                    SourceText.From(source, Encoding.UTF8),
+                    parseOptions,
+                    assemblyName + ".cs")
+            ],
+            DefaultReferences,
+            new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: NullableContextOptions.Enable));
+
+        using var stream = new MemoryStream();
+        var emitResult = compilation.Emit(stream);
+
+        AssertNoWarningsOrErrors(
+            $"Reference '{assemblyName}'",
+            emitResult.Diagnostics);
+
+        return MetadataReference.CreateFromImage(stream.ToArray());
+    }
+
+    public static void RunAndAssert(
+        LanguageVersion languageVersion,
+        IIncrementalGenerator generator,
+        params GeneratorIncrementalityStep[] steps)
+    {
+        Assert.That(steps, Is.Not.Empty);
+
+        var parseOptions = new CSharpParseOptions(
+            languageVersion,
+            DocumentationMode.Diagnose);
+        var compilation = CSharpCompilation.Create(
+            "MorphantIncrementality",
+            references: DefaultReferences,
+            options: new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: NullableContextOptions.Enable));
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator.AsSourceGenerator()],
+            parseOptions: parseOptions,
+            driverOptions: new GeneratorDriverOptions(
+                IncrementalGeneratorOutputKind.None,
+                trackIncrementalGeneratorSteps: true));
+
+        foreach (var step in steps)
+        {
+            driver = driver.WithUpdatedAnalyzerConfigOptions(
+                new TestAnalyzerConfigOptionsProvider(
+                    step.GlobalOptions));
+            compilation = ApplyStep(
+                compilation,
+                step,
+                parseOptions);
+            driver = driver.RunGeneratorsAndUpdateCompilation(
+                compilation,
+                out var outputCompilation,
+                out var generatorDiagnostics);
+
+            AssertNoWarningsOrErrors(
+                $"Step '{step.Name}'",
+                generatorDiagnostics.Concat(
+                    outputCompilation.GetDiagnostics()));
+            AssertIncrementality(step, driver.GetRunResult());
+        }
+    }
+
+    private static CSharpCompilation ApplyStep(
+        CSharpCompilation compilation,
+        GeneratorIncrementalityStep step,
+        CSharpParseOptions parseOptions)
+    {
+        var sourceFilesByPath = step.SourceFiles.ToDictionary(
+            static sourceFile => sourceFile.Path,
+            StringComparer.Ordinal);
+
+        foreach (var previousTree in compilation.SyntaxTrees)
+        {
+            if (!sourceFilesByPath.ContainsKey(previousTree.FilePath))
+            {
+                compilation = compilation.RemoveSyntaxTrees(previousTree);
+            }
+        }
+
+        foreach (var sourceFile in step.SourceFiles)
+        {
+            var previousTree = compilation.SyntaxTrees.SingleOrDefault(
+                tree => tree.FilePath == sourceFile.Path);
+
+            if (previousTree is not null &&
+                previousTree.GetText().ToString() == sourceFile.Source)
+            {
+                continue;
+            }
+
+            var sourceTree = CSharpSyntaxTree.ParseText(
+                SourceText.From(sourceFile.Source, Encoding.UTF8),
+                parseOptions,
+                sourceFile.Path);
+
+            compilation = previousTree is null
+                ? compilation.AddSyntaxTrees(sourceTree)
+                : compilation.ReplaceSyntaxTree(previousTree, sourceTree);
+        }
+
+        return compilation.WithReferences(
+            DefaultReferences.AddRange(step.AdditionalReferences));
+    }
+
+    private static void AssertIncrementality(
+        GeneratorIncrementalityStep step,
+        GeneratorDriverRunResult runResult)
+    {
+        var generatorResult = runResult.Results.Single();
+
+        Assert.That(
+            generatorResult.Exception,
+            Is.Null,
+            $"Step '{step.Name}' must not throw from the generator.");
+
+        foreach (var stage in step.ExpectedStages)
+        {
+            AssertTrackedOutputs(step.Name, stage, generatorResult);
+        }
+
+        var actualHintNames = generatorResult.GeneratedSources
+            .Select(static source => source.HintName)
+            .OrderBy(static hintName => hintName, StringComparer.Ordinal)
+            .ToArray();
+        var expectedHintNames = step.GeneratedHintNames
+            .OrderBy(static hintName => hintName, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.That(
+            actualHintNames,
+            Is.EqualTo(expectedHintNames),
+            $"Step '{step.Name}' generated an unexpected file set.");
+    }
+
+    private static void AssertTrackedOutputs(
+        string stepName,
+        ExpectedIncrementalStage expectedStage,
+        GeneratorRunResult generatorResult)
+    {
+        Assert.That(
+            generatorResult.TrackedSteps.TryGetValue(
+                expectedStage.Name,
+                out var trackedSteps),
+            Is.True,
+            $"Step '{stepName}' did not track stage " +
+            $"'{expectedStage.Name}'.");
+
+        var actualOutputs = trackedSteps
+            .SelectMany(static trackedStep => trackedStep.Outputs)
+            .Select(output =>
+                new TrackedIncrementalOutput(
+                    GetHintName(
+                        output.Value,
+                        stepName,
+                        expectedStage.Name),
+                    output.Reason))
+            .OrderBy(static output => output.HintName, StringComparer.Ordinal)
+            .ThenBy(static output => output.Reason)
+            .ToArray();
+        var expectedOutputs = expectedStage.Outputs
+            .Select(static output =>
+                new TrackedIncrementalOutput(
+                    output.HintName,
+                    output.Reason))
+            .OrderBy(static output => output.HintName, StringComparer.Ordinal)
+            .ThenBy(static output => output.Reason)
+            .ToArray();
+
+        Assert.That(
+            actualOutputs,
+            Is.EqualTo(expectedOutputs),
+            $"Step '{stepName}', stage '{expectedStage.Name}'.");
+    }
+
+    private static string GetHintName(
+        object value,
+        string stepName,
+        string stageName)
+    {
+        var property = value.GetType().GetProperty("HintName");
+
+        Assert.That(
+            property,
+            Is.Not.Null,
+            $"Step '{stepName}', stage '{stageName}' produced an " +
+            "output without a HintName property.");
+
+        var hintName = property!.GetValue(value);
+
+        Assert.That(
+            hintName,
+            Is.TypeOf<string>(),
+            $"Step '{stepName}', stage '{stageName}' produced an " +
+            "output without a string HintName value.");
+
+        return (string)hintName!;
+    }
+
+    private static ImmutableArray<MetadataReference>
+        BuildDefaultReferences()
+    {
+        var trustedPlatformAssemblies =
+            (string?)AppContext.GetData(
+                "TRUSTED_PLATFORM_ASSEMBLIES") ??
+            throw new InvalidOperationException(
+                "Trusted platform assemblies are unavailable.");
+        var referencePaths = trustedPlatformAssemblies
+            .Split(Path.PathSeparator)
+            .Append(typeof(TypeMapper).Assembly.Location)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        return referencePaths
+            .Select(static path =>
+                (MetadataReference)MetadataReference.CreateFromFile(path))
+            .ToImmutableArray();
+    }
+
+    private static void AssertNoWarningsOrErrors(
+        string scope,
+        IEnumerable<Diagnostic> diagnostics)
+    {
+        var failures = diagnostics
+            .Where(static diagnostic =>
+                diagnostic.Severity is
+                    DiagnosticSeverity.Warning or
+                    DiagnosticSeverity.Error)
+            .Select(static diagnostic => diagnostic.ToString())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.That(
+            failures,
+            Is.Empty,
+            scope + " must compile without warnings or errors." +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, failures));
+    }
+}
+
+internal sealed record GeneratorIncrementalityStep(
+    string Name,
+    ImmutableArray<GeneratorIncrementalitySourceFile> SourceFiles,
+    ImmutableArray<MetadataReference> AdditionalReferences,
+    ImmutableDictionary<string, string> GlobalOptions,
+    ImmutableArray<string> GeneratedHintNames,
+    ImmutableArray<ExpectedIncrementalStage> ExpectedStages);
+
+internal sealed record GeneratorIncrementalitySourceFile(
+    string Path,
+    string Source);
+
+internal sealed record ExpectedIncrementalStage(
+    string Name,
+    ImmutableArray<ExpectedIncrementalOutput> Outputs);
+
+internal sealed record ExpectedIncrementalOutput(
+    string HintName,
+    IncrementalStepRunReason Reason);
+
+internal sealed record TrackedIncrementalOutput(
+    string HintName,
+    IncrementalStepRunReason Reason);
+
+internal sealed class TestAnalyzerConfigOptionsProvider :
+    AnalyzerConfigOptionsProvider
+{
+    private static readonly AnalyzerConfigOptions Empty =
+        new TestAnalyzerConfigOptions(
+            ImmutableDictionary<string, string>.Empty);
+
+    public TestAnalyzerConfigOptionsProvider(
+        ImmutableDictionary<string, string> globalOptions)
+    {
+        GlobalOptions = new TestAnalyzerConfigOptions(globalOptions);
+    }
+
+    public override AnalyzerConfigOptions GlobalOptions { get; }
+
+    public override AnalyzerConfigOptions GetOptions(SyntaxTree tree)
+    {
+        return Empty;
+    }
+
+    public override AnalyzerConfigOptions GetOptions(
+        AdditionalText textFile)
+    {
+        return Empty;
+    }
+}
+
+internal sealed class TestAnalyzerConfigOptions : AnalyzerConfigOptions
+{
+    private readonly ImmutableDictionary<string, string> _values;
+
+    public TestAnalyzerConfigOptions(
+        ImmutableDictionary<string, string> values)
+    {
+        _values = values;
+    }
+
+    public override bool TryGetValue(string key, out string value)
+    {
+        return _values.TryGetValue(key, out value!);
+    }
+}
