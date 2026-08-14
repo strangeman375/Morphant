@@ -97,7 +97,7 @@ internal static class PairConfigurationDiscoveryPipeline
 
             if (!TryGetSourceConfigureInfo(
                     baseMethod,
-                    context.Compilation,
+                    context,
                     cancellationToken,
                     out var baseInfo))
             {
@@ -248,7 +248,7 @@ internal static class PairConfigurationDiscoveryPipeline
 
     private static bool TryGetSourceConfigureInfo(
         IMethodSymbol method,
-        Compilation compilation,
+        CompilationContext context,
         CancellationToken cancellationToken,
         out TypeMapperConfigureInfo configureInfo)
     {
@@ -256,8 +256,7 @@ internal static class PairConfigurationDiscoveryPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!compilation.SyntaxTrees.Contains(
-                    syntaxReference.SyntaxTree) ||
+            if (!context.SyntaxTrees.Contains(syntaxReference.SyntaxTree) ||
                 syntaxReference.GetSyntax(cancellationToken) is not
                     MethodDeclarationSyntax syntax ||
                 syntax.Body is null && syntax.ExpressionBody is null)
@@ -265,7 +264,7 @@ internal static class PairConfigurationDiscoveryPipeline
                 continue;
             }
 
-            var semanticModel = compilation.GetSemanticModel(
+            var semanticModel = context.Compilation.GetSemanticModel(
                 syntax.SyntaxTree);
 
             if (syntax.Parent is ClassDeclarationSyntax declaration &&

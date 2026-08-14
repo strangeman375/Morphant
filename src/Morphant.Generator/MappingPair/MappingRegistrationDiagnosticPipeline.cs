@@ -9,22 +9,14 @@ internal static class MappingRegistrationDiagnosticPipeline
 {
     public static void Register(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValuesProvider<MapperContractAnalysis> contractAnalyses)
+        IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
+            contractAnalyses)
     {
         var diagnostics = contractAnalyses
-            .Collect()
             .Select(static (analyses, cancellationToken) =>
                 BuildDiagnostics(analyses, cancellationToken));
 
-        context.RegisterSourceOutput(
-            diagnostics,
-            static (productionContext, values) =>
-            {
-                foreach (var diagnostic in values)
-                {
-                    productionContext.ReportDiagnostic(diagnostic);
-                }
-            });
+        DiagnosticPipeline.Register(context, diagnostics);
     }
 
     private static ImmutableArray<Diagnostic> BuildDiagnostics(

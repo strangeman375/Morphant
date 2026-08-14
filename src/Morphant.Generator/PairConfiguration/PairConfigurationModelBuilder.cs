@@ -51,10 +51,12 @@ internal static class PairConfigurationModelBuilder
             .Where(static model => model.HasValue)
             .Select(static model => model!.Value)
             .ToImmutableArray();
-        var augmentedCompilation = BuildAugmentedCompilation(
-            compilation,
-            bindingMapperModels,
-            cancellationToken);
+        var augmentedCompilation = RequiresAugmentedCompilation(discovery)
+            ? BuildAugmentedCompilation(
+                compilation,
+                bindingMapperModels,
+                cancellationToken)
+            : compilation;
         var knownSymbols = KnownSymbols.TryCreate(augmentedCompilation);
 
         if (knownSymbols is null)
@@ -173,13 +175,16 @@ internal static class PairConfigurationModelBuilder
         ImmutableArray<MapperMappingPairModel> mapperModels,
         CancellationToken cancellationToken)
     {
+        var pairs = CanonicalMappingPairSelector.Select(
+            mapperModels,
+            cancellationToken);
         var constructionRequests =
             ConstructionSurfacePipeline.BuildRequests(
-                mapperModels,
+                pairs,
                 compilation,
                 cancellationToken);
         var memberRequests = MemberSurfacePipeline.BuildRequests(
-            mapperModels,
+            pairs,
             compilation,
             cancellationToken);
         var parseOptions = (mapperModels.IsEmpty
@@ -211,6 +216,14 @@ internal static class PairConfigurationModelBuilder
         }
 
         return compilation.AddSyntaxTrees(syntaxTrees);
+    }
+
+    private static bool RequiresAugmentedCompilation(
+        PairConfigurationDiscoveryModel discovery)
+    {
+        return discovery.Levels.Any(static level =>
+            level.InvocationChains.Any(static chain =>
+                chain.Invocations.Length > 1));
     }
 
     private static SyntaxTree ParseGeneratedSource(

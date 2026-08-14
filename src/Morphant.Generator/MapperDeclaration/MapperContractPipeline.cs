@@ -43,6 +43,7 @@ internal static class MapperContractPipeline
             configuration.Declaration.MapperType,
             knownSymbols.TypeMapperInterface,
             context.Compilation,
+            context.SyntaxTrees,
             cancellationToken);
         var conflicts =
             ImmutableArray.CreateBuilder<MapperContractConflict>();
@@ -102,51 +103,32 @@ internal static class MapperContractPipeline
             declaredConflicts.Select(static conflict => new PairIdentityKey(
                 conflict.PairIdentity.Source.Key,
                 conflict.PairIdentity.Destination.Key)));
-        var pairs = EnumeratePairs(model)
-            .Where(pair => !excluded.Contains(new PairIdentityKey(
-                pair.Identity.Source.Key,
-                pair.Identity.Destination.Key)))
-            .OrderBy(static pair => pair.Registration.Syntax.SpanStart)
-            .ThenBy(static pair => pair.Identity.Source.Key,
-                StringComparer.Ordinal)
-            .ThenBy(static pair => pair.Identity.Destination.Key,
-                StringComparer.Ordinal)
-            .ToImmutableArray();
         var result =
             ImmutableArray.CreateBuilder<GeneratedMapperContractConflict>();
 
-        for (var leftIndex = 0; leftIndex < pairs.Length; leftIndex++)
+        foreach (var conflict in model.UnifiableConflicts)
         {
-            for (var rightIndex = leftIndex + 1;
-                 rightIndex < pairs.Length;
-                 rightIndex++)
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (excluded.Contains(PairIdentityKey.Create(
+                    conflict.EarlierIdentity)) ||
+                excluded.Contains(PairIdentityKey.Create(
+                    conflict.LaterIdentity)))
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var earlier = pairs[leftIndex];
-                var later = pairs[rightIndex];
-
-                if (!MappingTypeIdentityPolicy.CanPairsUnify(
-                        earlier.SourceType,
-                        earlier.DestinationType,
-                        later.SourceType,
-                        later.DestinationType))
-                {
-                    continue;
-                }
-
-                result.Add(new GeneratedMapperContractConflict(
-                    earlier.Registration,
-                    earlier.Identity,
-                    MapperContractDisplay.Create(
-                        earlier.SourceType,
-                        earlier.DestinationType),
-                    later.Registration,
-                    later.Identity,
-                    MapperContractDisplay.Create(
-                        later.SourceType,
-                        later.DestinationType)));
+                continue;
             }
+
+            result.Add(new GeneratedMapperContractConflict(
+                conflict.EarlierRegistration,
+                conflict.EarlierIdentity,
+                MapperContractDisplay.Create(
+                    conflict.EarlierRegistration.SourceType,
+                    conflict.EarlierRegistration.DestinationType),
+                conflict.LaterRegistration,
+                conflict.LaterIdentity,
+                MapperContractDisplay.Create(
+                    conflict.LaterRegistration.SourceType,
+                    conflict.LaterRegistration.DestinationType)));
         }
 
         return result.ToImmutable();
@@ -157,20 +139,17 @@ internal static class MapperContractPipeline
             INamedTypeSymbol mapperType,
             INamedTypeSymbol typeMapperInterface,
             Compilation compilation,
+            SyntaxTreeOrdering syntaxTrees,
             CancellationToken cancellationToken)
     {
-        var syntaxTreeOrder = compilation.SyntaxTrees
-            .Select((tree, index) => (tree, index))
-            .ToDictionary(
-                static item => item.tree,
-                static item => item.index);
         var result = ImmutableArray.CreateBuilder<DirectInterfaceGraph>();
 
         foreach (var declaration in mapperType.DeclaringSyntaxReferences
                      .Select(reference =>
                          reference.GetSyntax(cancellationToken))
                      .OfType<ClassDeclarationSyntax>()
-                     .OrderBy(syntax => syntaxTreeOrder[syntax.SyntaxTree])
+                     .OrderBy(syntax =>
+                         syntaxTrees.GetOrder(syntax.SyntaxTree))
                      .ThenBy(static syntax => syntax.SpanStart))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -298,5 +277,9 @@ internal static class MapperContractPipeline
 
     private readonly record struct PairIdentityKey(
         string Source,
-        string Destination);
+        string Destination)
+    {
+        public static PairIdentityKey Create(MappingPairIdentity identity) =>
+            new(identity.Source.Key, identity.Destination.Key);
+    }
 }

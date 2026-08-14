@@ -13,26 +13,19 @@ internal static class ConfigurationFlowDiagnosticPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<MapperConfigureDeclarationInfo>
             configureDeclarations,
-        IncrementalValuesProvider<MapperContractAnalysis> contractAnalyses)
+        IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
+            contractAnalyses)
     {
         var diagnostics = configureDeclarations
             .Collect()
-            .Combine(contractAnalyses.Collect())
+            .Combine(contractAnalyses)
             .Select(static (source, cancellationToken) =>
                 BuildDiagnostics(
                     source.Left,
                     source.Right,
                     cancellationToken));
 
-        context.RegisterSourceOutput(
-            diagnostics,
-            static (productionContext, values) =>
-            {
-                foreach (var diagnostic in values)
-                {
-                    productionContext.ReportDiagnostic(diagnostic);
-                }
-            });
+        DiagnosticPipeline.Register(context, diagnostics);
     }
 
     private static ImmutableArray<Diagnostic> BuildDiagnostics(

@@ -131,13 +131,10 @@ internal static class MemberSurfacePipeline
     }
 
     internal static ImmutableArray<MemberSurfaceRequest> BuildRequests(
-        ImmutableArray<MapperMappingPairModel> mapperModels,
+        ImmutableArray<MappingPairModel> pairs,
         Compilation compilation,
         CancellationToken cancellationToken)
     {
-        var pairs = CanonicalMappingPairSelector.Select(
-            mapperModels,
-            cancellationToken);
         var requests = ImmutableArray.CreateBuilder<MemberSurfaceRequest>();
 
         AddMemberPlanRequests(

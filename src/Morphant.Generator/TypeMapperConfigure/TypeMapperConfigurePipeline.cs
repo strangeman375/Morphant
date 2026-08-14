@@ -95,7 +95,7 @@ internal static class TypeMapperConfigurePipeline
         {
             var malformedAttempt = FindMalformedConfigureAttempt(
                 mapperType,
-                context.Compilation,
+                context,
                 cancellationToken);
 
             return new MapperConfigureDeclarationInfo(
@@ -113,8 +113,7 @@ internal static class TypeMapperConfigurePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!context.Compilation.SyntaxTrees.Contains(
-                    syntaxReference.SyntaxTree) ||
+            if (!context.SyntaxTrees.Contains(syntaxReference.SyntaxTree) ||
                 syntaxReference.GetSyntax(cancellationToken)
                     is not MethodDeclarationSyntax configureSyntax)
             {
@@ -141,17 +140,11 @@ internal static class TypeMapperConfigurePipeline
 
     private static MethodDeclarationSyntax? FindMalformedConfigureAttempt(
         INamedTypeSymbol mapperType,
-        Compilation compilation,
+        CompilationContext context,
         CancellationToken cancellationToken)
     {
-        var syntaxTreeOrder = compilation.SyntaxTrees
-            .Select((tree, index) => (tree, index))
-            .ToDictionary(
-                static item => item.tree,
-                static item => item.index);
-
         return mapperType.DeclaringSyntaxReferences
-            .Where(reference => compilation.SyntaxTrees.Contains(
+            .Where(reference => context.SyntaxTrees.Contains(
                 reference.SyntaxTree))
             .Select(reference => reference.GetSyntax(cancellationToken))
             .OfType<ClassDeclarationSyntax>()
@@ -160,11 +153,13 @@ internal static class TypeMapperConfigurePipeline
             .Where(static method =>
                 method.Identifier.ValueText == "Configure" &&
                 method.Modifiers.Any(SyntaxKind.OverrideKeyword))
-            .Where(method => compilation.GetSemanticModel(method.SyntaxTree)
+            .Where(method => context.Compilation
+                .GetSemanticModel(method.SyntaxTree)
                 .GetDiagnostics(method.Span, cancellationToken)
                 .Any(static diagnostic =>
                     diagnostic.Severity == DiagnosticSeverity.Error))
-            .OrderBy(method => syntaxTreeOrder[method.SyntaxTree])
+            .OrderBy(method =>
+                context.SyntaxTrees.GetOrder(method.SyntaxTree))
             .ThenBy(static method => method.SpanStart)
             .FirstOrDefault();
     }

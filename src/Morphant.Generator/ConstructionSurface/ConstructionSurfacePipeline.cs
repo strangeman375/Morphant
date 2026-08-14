@@ -133,13 +133,10 @@ internal static class ConstructionSurfacePipeline
     }
 
     internal static ImmutableArray<ConstructionSurfaceRequest> BuildRequests(
-        ImmutableArray<MapperMappingPairModel> mapperModels,
+        ImmutableArray<MappingPairModel> pairs,
         Compilation compilation,
         CancellationToken cancellationToken)
     {
-        var pairs = CanonicalMappingPairSelector.Select(
-            mapperModels,
-            cancellationToken);
         var requests =
             ImmutableArray.CreateBuilder<ConstructionSurfaceRequest>();
 

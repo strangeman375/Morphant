@@ -31,10 +31,10 @@ internal static class MappingSettingsDiagnosticPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValueProvider<MappingSettings> assemblySettings,
-        IncrementalValuesProvider<MapperContractAnalysis> contractAnalyses)
+        IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
+            contractAnalyses)
     {
         var diagnostics = contractAnalyses
-            .Collect()
             .Combine(assemblySettings)
             .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
@@ -44,15 +44,7 @@ internal static class MappingSettingsDiagnosticPipeline
                     source.Right,
                     cancellationToken));
 
-        context.RegisterSourceOutput(
-            diagnostics,
-            static (productionContext, values) =>
-            {
-                foreach (var diagnostic in values)
-                {
-                    productionContext.ReportDiagnostic(diagnostic);
-                }
-            });
+        DiagnosticPipeline.Register(context, diagnostics);
     }
 
     private static ImmutableArray<Diagnostic> BuildDiagnostics(
@@ -68,11 +60,7 @@ internal static class MappingSettingsDiagnosticPipeline
             ImmutableArray.CreateBuilder<InapplicableCandidate>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
-        var syntaxTreeOrder = compilationContext.Compilation.SyntaxTrees
-            .Select((tree, index) => (tree, index))
-            .ToDictionary(
-                static item => item.tree,
-                static item => item.index);
+        var syntaxTreeOrder = compilationContext.SyntaxTrees;
 
         foreach (var analysis in analyses)
         {
@@ -164,7 +152,7 @@ internal static class MappingSettingsDiagnosticPipeline
         PairConfigurationModel pair,
         MapperDeclarationInfo declaration,
         MappingSettings assemblySettings,
-        IReadOnlyDictionary<SyntaxTree, int> syntaxTreeOrder,
+        SyntaxTreeOrdering syntaxTreeOrder,
         IDictionary<CSharpOriginKey, CSharpOriginCandidate> cSharpOrigins,
         ISet<MappingSettingKind> msBuildOrigins,
         ImmutableArray<InapplicableCandidate>.Builder inapplicable,
@@ -503,7 +491,7 @@ internal static class MappingSettingsDiagnosticPipeline
         MappingSettingKind kind,
         ResolvedSetting<TValue> setting,
         ISet<MappingSettingKind> inapplicableKinds,
-        IReadOnlyDictionary<SyntaxTree, int> syntaxTreeOrder,
+        SyntaxTreeOrdering syntaxTreeOrder,
         IDictionary<CSharpOriginKey, CSharpOriginCandidate> cSharpOrigins,
         ISet<MappingSettingKind> msBuildOrigins)
         where TValue : struct, Enum
@@ -522,7 +510,7 @@ internal static class MappingSettingsDiagnosticPipeline
     private static void AddInvalidOrigin<TValue>(
         MappingSettingKind kind,
         ResolvedSetting<TValue> setting,
-        IReadOnlyDictionary<SyntaxTree, int> syntaxTreeOrder,
+        SyntaxTreeOrdering syntaxTreeOrder,
         IDictionary<CSharpOriginKey, CSharpOriginCandidate> cSharpOrigins,
         ISet<MappingSettingKind> msBuildOrigins)
         where TValue : struct, Enum
@@ -552,11 +540,8 @@ internal static class MappingSettingsDiagnosticPipeline
             cSharpOrigins.Add(
                 key,
                 new CSharpOriginCandidate(
-                    syntaxTreeOrder.TryGetValue(
-                        expression.SyntaxTree,
-                        out var treeOrder)
-                            ? treeOrder
-                            : int.MaxValue,
+                    syntaxTreeOrder.GetOrderOrDefault(
+                        expression.SyntaxTree),
                     location.SourceSpan.Start,
                     SettingName(kind),
                     location));

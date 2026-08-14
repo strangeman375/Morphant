@@ -27,7 +27,9 @@ internal static class CompilationContextPipeline
                     compatibility,
                     compatibility.CanGenerate
                         ? compatibility.KnownSymbols
-                        : null);
+                        : null,
+                    new SyntaxTreeOrdering(
+                        cSharpCompilation.SyntaxTrees));
             })
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildCompilationContext);

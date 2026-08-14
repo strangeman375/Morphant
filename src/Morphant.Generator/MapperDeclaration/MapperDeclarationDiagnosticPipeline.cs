@@ -11,11 +11,12 @@ internal static class MapperDeclarationDiagnosticPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValuesProvider<MapperDeclarationInfo> declarations,
-        IncrementalValuesProvider<MapperContractAnalysis> contractAnalyses)
+        IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
+            contractAnalyses)
     {
         var diagnostics = declarations
             .Collect()
-            .Combine(contractAnalyses.Collect())
+            .Combine(contractAnalyses)
             .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
                 BuildDiagnostics(
@@ -24,15 +25,7 @@ internal static class MapperDeclarationDiagnosticPipeline
                     source.Right,
                     cancellationToken));
 
-        context.RegisterSourceOutput(
-            diagnostics,
-            static (productionContext, values) =>
-            {
-                foreach (var diagnostic in values)
-                {
-                    productionContext.ReportDiagnostic(diagnostic);
-                }
-            });
+        DiagnosticPipeline.Register(context, diagnostics);
     }
 
     private static ImmutableArray<Diagnostic> BuildDiagnostics(
@@ -59,7 +52,7 @@ internal static class MapperDeclarationDiagnosticPipeline
 
         foreach (var declaration in OrderDeclarations(
                      declarations,
-                     context.Compilation))
+                     context.SyntaxTrees))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -178,7 +171,7 @@ internal static class MapperDeclarationDiagnosticPipeline
         }
 
         var comparer = new DiagnosticSourceOrderComparer(
-            context.Compilation);
+            context.SyntaxTrees);
         var result = ImmutableArray.CreateBuilder<Diagnostic>(
             missingTypeMapper.Count +
             mapperPartial.Count +
@@ -201,17 +194,12 @@ internal static class MapperDeclarationDiagnosticPipeline
 
     private static IEnumerable<MapperDeclarationInfo> OrderDeclarations(
         ImmutableArray<MapperDeclarationInfo> declarations,
-        Compilation compilation)
+        SyntaxTreeOrdering syntaxTrees)
     {
-        var syntaxTreeOrder = compilation.SyntaxTrees
-            .Select((tree, index) => (tree, index))
-            .ToDictionary(
-                static item => item.tree,
-                static item => item.index);
-
         return declarations
             .OrderBy(declaration =>
-                syntaxTreeOrder[declaration.AttributedDeclaration.SyntaxTree])
+                syntaxTrees.GetOrder(
+                    declaration.AttributedDeclaration.SyntaxTree))
             .ThenBy(static declaration =>
                 declaration.AttributedDeclaration.SpanStart);
     }
@@ -244,16 +232,11 @@ internal static class MapperDeclarationDiagnosticPipeline
 
     private sealed class DiagnosticSourceOrderComparer : IComparer<Diagnostic>
     {
-        private readonly IReadOnlyDictionary<SyntaxTree, int>
-            _syntaxTreeOrder;
+        private readonly SyntaxTreeOrdering _syntaxTrees;
 
-        public DiagnosticSourceOrderComparer(Compilation compilation)
+        public DiagnosticSourceOrderComparer(SyntaxTreeOrdering syntaxTrees)
         {
-            _syntaxTreeOrder = compilation.SyntaxTrees
-                .Select((tree, index) => (tree, index))
-                .ToDictionary(
-                    static item => item.tree,
-                    static item => item.index);
+            _syntaxTrees = syntaxTrees;
         }
 
         public int Compare(Diagnostic? left, Diagnostic? right)
@@ -285,12 +268,7 @@ internal static class MapperDeclarationDiagnosticPipeline
 
         private int GetTreeIndex(SyntaxTree? syntaxTree)
         {
-            return syntaxTree is not null &&
-                   _syntaxTreeOrder.TryGetValue(
-                       syntaxTree,
-                       out var index)
-                ? index
-                : int.MaxValue;
+            return _syntaxTrees.GetOrderOrDefault(syntaxTree);
         }
     }
 }

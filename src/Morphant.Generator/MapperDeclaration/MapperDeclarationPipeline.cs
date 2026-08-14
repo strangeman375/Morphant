@@ -100,7 +100,7 @@ internal static class MapperDeclarationPipeline
 
         var mapperDeclarations = GetDeclarations<ClassDeclarationSyntax>(
             mapperType,
-            context.Compilation,
+            context.SyntaxTrees,
             cancellationToken);
         var allMapperDeclarationsPartial =
             mapperDeclarations.All(IsPartial);
@@ -123,7 +123,7 @@ internal static class MapperDeclarationPipeline
 
             var declarations = GetDeclarations<TypeDeclarationSyntax>(
                 current,
-                context.Compilation,
+                context.SyntaxTrees,
                 cancellationToken);
 
             if (current.IsFileLocal &&
@@ -177,26 +177,20 @@ internal static class MapperDeclarationPipeline
             FindConflictingSupportsMethods(
                 mapperType,
                 knownSymbols.SystemType,
-                context.Compilation,
+                context.SyntaxTrees,
                 cancellationToken));
     }
 
     private static ImmutableArray<TSyntax> GetDeclarations<TSyntax>(
         INamedTypeSymbol type,
-        CSharpCompilation compilation,
+        SyntaxTreeOrdering syntaxTrees,
         CancellationToken cancellationToken)
         where TSyntax : SyntaxNode
     {
-        var syntaxTreeOrder = compilation.SyntaxTrees
-            .Select((tree, index) => (tree, index))
-            .ToDictionary(
-                static item => item.tree,
-                static item => item.index);
-
         return type.DeclaringSyntaxReferences
             .Select(reference => reference.GetSyntax(cancellationToken))
             .OfType<TSyntax>()
-            .OrderBy(syntax => syntaxTreeOrder[syntax.SyntaxTree])
+            .OrderBy(syntax => syntaxTrees.GetOrder(syntax.SyntaxTree))
             .ThenBy(static syntax => syntax.SpanStart)
             .ToImmutableArray();
     }
@@ -259,22 +253,16 @@ internal static class MapperDeclarationPipeline
         FindConflictingSupportsMethods(
             INamedTypeSymbol mapperType,
             INamedTypeSymbol systemType,
-            CSharpCompilation compilation,
+            SyntaxTreeOrdering syntaxTrees,
             CancellationToken cancellationToken)
     {
-        var syntaxTreeOrder = compilation.SyntaxTrees
-            .Select((tree, index) => (tree, index))
-            .ToDictionary(
-                static item => item.tree,
-                static item => item.index);
-
         return mapperType.GetMembers("Supports")
             .OfType<IMethodSymbol>()
             .Where(method => IsConflictingSupports(method, systemType))
             .SelectMany(method => method.DeclaringSyntaxReferences)
             .Select(reference => reference.GetSyntax(cancellationToken))
             .OfType<MethodDeclarationSyntax>()
-            .OrderBy(syntax => syntaxTreeOrder[syntax.SyntaxTree])
+            .OrderBy(syntax => syntaxTrees.GetOrder(syntax.SyntaxTree))
             .ThenBy(static syntax => syntax.SpanStart)
             .ToImmutableArray();
     }

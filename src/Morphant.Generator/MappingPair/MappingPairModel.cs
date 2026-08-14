@@ -21,6 +21,7 @@ internal readonly record struct MapperMappingPairModel(
     ImmutableArray<UnavailableMappingPairModel> UnavailablePairs,
     ImmutableArray<DuplicateMappingPairRegistrationModel>
         DuplicateRegistrations,
+    ImmutableArray<UnifiableMappingPairConflictModel> UnifiableConflicts,
     bool HasUnifiablePairs);
 
 internal readonly record struct MappingPairModel(
@@ -39,8 +40,7 @@ internal readonly record struct MappingPairModel(
 internal readonly record struct UnsupportedMappingPairModel(
     MappingPairRegistrationModel Registration,
     MappingPairIdentity Identity,
-    ImmutableArray<UnsupportedMappingRootModel> UnsupportedRoots,
-    bool HasUnifiableConflict = false)
+    ImmutableArray<UnsupportedMappingRootModel> UnsupportedRoots)
 {
     public ITypeSymbol SourceType => Registration.SourceType;
 
@@ -65,6 +65,12 @@ internal readonly record struct DuplicateMappingPairRegistrationModel(
     MappingPairRegistrationModel Registration,
     MappingPairRegistrationModel AuthoritativeRegistration,
     MappingPairIdentity Identity);
+
+internal readonly record struct UnifiableMappingPairConflictModel(
+    MappingPairRegistrationModel EarlierRegistration,
+    MappingPairIdentity EarlierIdentity,
+    MappingPairRegistrationModel LaterRegistration,
+    MappingPairIdentity LaterIdentity);
 
 internal readonly record struct MappingPairIdentity(
     MappingTypeIdentity Source,

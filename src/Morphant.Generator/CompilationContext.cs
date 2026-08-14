@@ -8,5 +8,6 @@ internal sealed record CompilationContext
     CSharpCompilation Compilation,
     LanguageVersion LanguageVersion,
     CompilationCompatibility Compatibility,
-    KnownSymbols? KnownSymbols
+    KnownSymbols? KnownSymbols,
+    SyntaxTreeOrdering SyntaxTrees
 );

@@ -166,12 +166,6 @@ internal static class MappingPairPipeline
                 HasUnifiableConflict = unifiable.Supported[index]
             })
             .ToImmutableArray();
-        immutableUnsupportedPairs = immutableUnsupportedPairs
-            .Select((pair, index) => pair with
-            {
-                HasUnifiableConflict = unifiable.Unsupported[index]
-            })
-            .ToImmutableArray();
 
         return new MapperMappingPairModel(
             mappingInfo.ConfigureSyntax,
@@ -180,6 +174,7 @@ internal static class MappingPairPipeline
             immutableUnsupportedPairs,
             unavailablePairs.ToImmutable(),
             duplicateRegistrations.ToImmutable(),
+            unifiable.Conflicts,
             unifiable.HasAny);
     }
 
@@ -192,17 +187,27 @@ internal static class MappingPairPipeline
             .Select((pair, index) => new Contract(
                 Supported: true,
                 index,
+                pair.Registration,
+                pair.Identity,
                 pair.SourceType,
                 pair.DestinationType))
             .Concat(unsupportedPairs.Select((pair, index) => new Contract(
                 Supported: false,
                 index,
+                pair.Registration,
+                pair.Identity,
                 pair.SourceType,
                 pair.DestinationType)))
+            .OrderBy(static contract =>
+                contract.Registration.Syntax.SpanStart)
+            .ThenBy(static contract => contract.Identity.Source.Key,
+                StringComparer.Ordinal)
+            .ThenBy(static contract => contract.Identity.Destination.Key,
+                StringComparer.Ordinal)
             .ToArray();
         var supported = new bool[pairs.Length];
-        var unsupported = new bool[unsupportedPairs.Length];
-        var hasAny = false;
+        var conflicts = ImmutableArray.CreateBuilder<
+            UnifiableMappingPairConflictModel>();
 
         for (var leftIndex = 0;
              leftIndex < contracts.Length;
@@ -225,22 +230,24 @@ internal static class MappingPairPipeline
                 {
                     SetConflict(left);
                     SetConflict(right);
-                    hasAny = true;
+                    conflicts.Add(new UnifiableMappingPairConflictModel(
+                        left.Registration,
+                        left.Identity,
+                        right.Registration,
+                        right.Identity));
                 }
             }
         }
 
-        return new UnifiableContracts(supported, unsupported, hasAny);
+        return new UnifiableContracts(
+            supported,
+            conflicts.ToImmutable());
 
         void SetConflict(Contract contract)
         {
             if (contract.Supported)
             {
                 supported[contract.Index] = true;
-            }
-            else
-            {
-                unsupported[contract.Index] = true;
             }
         }
     }
@@ -252,11 +259,15 @@ internal static class MappingPairPipeline
     private readonly record struct Contract(
         bool Supported,
         int Index,
+        MappingPairRegistrationModel Registration,
+        MappingPairIdentity Identity,
         ITypeSymbol SourceType,
         ITypeSymbol DestinationType);
 
     private readonly record struct UnifiableContracts(
         bool[] Supported,
-        bool[] Unsupported,
-        bool HasAny);
+        ImmutableArray<UnifiableMappingPairConflictModel> Conflicts)
+    {
+        public bool HasAny => !Conflicts.IsEmpty;
+    }
 }
