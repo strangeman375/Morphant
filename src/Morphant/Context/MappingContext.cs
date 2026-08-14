@@ -38,6 +38,10 @@ public readonly struct MappingContext
     /// <summary>
     /// Gets the mapper bound to the current mapping scope.
     /// </summary>
+    /// <remarks>
+    /// Use only during the current top-level mapping call. Do not retain it or
+    /// use it concurrently.
+    /// </remarks>
     /// <exception cref="InvalidMappingContextException">
     /// This value is a default-initialized context rather than a mapping
     /// frame created by Morphant.

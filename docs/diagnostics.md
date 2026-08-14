@@ -29,8 +29,8 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0016](diagnostics/MORPH0016.md) | Configuration | Error | A called `base.Configure(builder)` method has no readable source code. |
 | [MORPH0017](diagnostics/MORPH0017.md) | Configuration | Error | Morphant cannot analyze the mapper's `Configure` method. |
 | [MORPH0018](diagnostics/MORPH0018.md) | Configuration | Error | Morphant cannot analyze a mapping configuration. |
-| [MORPH0019](diagnostics/MORPH0019.md) | Composition | Error | `Construct` or `Resolve`, `Members`, or `Convert` is configured more than once for one mapping. |
-| [MORPH0020](diagnostics/MORPH0020.md) | Composition | Error | `Convert` is combined with `Construct`, `Resolve`, or `Members`. |
+| [MORPH0019](diagnostics/MORPH0019.md) | Composition | Error | A destination-selection rule, `Members`, or `Convert` is configured more than once. |
+| [MORPH0020](diagnostics/MORPH0020.md) | Composition | Error | `Convert` is combined with destination-selection or member rules. |
 | [MORPH0021](diagnostics/MORPH0021.md) | Settings | Error | A setting argument is not a supported compile-time constant. |
 | [MORPH0022](diagnostics/MORPH0022.md) | Settings | Error | A Morphant MSBuild property has an invalid value. |
 | [MORPH0023](diagnostics/MORPH0023.md) | Settings | Error | A setting does not apply to this kind of mapping. |

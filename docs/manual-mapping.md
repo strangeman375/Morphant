@@ -62,6 +62,6 @@ builder.Map<IReadOnlyList<OrderDto>, List<Order>>()
             : source.Select(context.Mapper.Map<OrderDto, Order>).ToList());
 ```
 
-A mapping uses either `Convert` or `Construct` / `Resolve` / `Members`, not
+A mapping uses either `Convert` or destination-selection/member rules, not
 both. See [Dependency injection and `IMapper`](runtime-dispatch.md) for nested
 lookup and the lifetime of `context.Mapper`.

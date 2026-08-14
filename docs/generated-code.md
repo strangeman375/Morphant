@@ -34,7 +34,7 @@ the updated generated files.
 |---|---|
 | `Construction` | Destination constructor configuration types |
 | `Member` | Destination member configuration types |
-| `MappingExtension` | Mapping-specific `Construct`, `Resolve` and `Convert` methods |
+| `MappingExtension` | Mapping-specific destination selection and `Convert` methods |
 | `MemberExtension` | Mapping-specific `Members` methods |
 | `TypeMapper` | The generated mapper implementation |
 
@@ -50,7 +50,8 @@ example, a destination without a supported constructor does not receive
 receives an `ITypeMapper<TSource, TDestination>` implementation.
 
 Generated files enable nullable annotations and are deterministic for the same
-input. Their contents may change between Morphant versions and should not be
-referenced from application code.
+input. Their contents may change between Morphant versions. Do not depend on
+file names or implementation details; name a generated plan type only in a
+documented configuration form such as read-only member Update.
 
 See [Testing mappings](testing.md) for behavior and generated-diff checks.

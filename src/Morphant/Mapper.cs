@@ -13,7 +13,10 @@ public interface IMapper
     /// <typeparam name="TSource">The source type.</typeparam>
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="source">The source to map.</param>
-    /// <returns>The mapped destination.</returns>
+    /// <returns>
+    /// The mapping result, which may be <see langword="default"/> when allowed
+    /// by the mapping.
+    /// </returns>
     TDestination Map<TSource, TDestination>(TSource? source);
 
     /// <summary>
@@ -23,8 +26,10 @@ public interface IMapper
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="source">The source to map.</param>
     /// <param name="destination">The supplied destination.</param>
-    /// <returns>The mapped destination, which may replace
-    /// <paramref name="destination"/>.</returns>
+    /// <returns>
+    /// The mapping result. It may replace <paramref name="destination"/> or be
+    /// <see langword="default"/> when allowed by the mapping.
+    /// </returns>
     TDestination Map<TSource, TDestination>(
         TSource? source,
         TDestination? destination);

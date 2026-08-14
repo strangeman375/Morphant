@@ -51,6 +51,9 @@ way.
 A readable reference-type member can be updated in place even without a
 setter when its current value can be passed to a nested Update:
 
+`OrderMembers` below is the generated member-plan type; import the namespace
+shown for it by the IDE.
+
 ```csharp
 .Members((source, _) =>
 {

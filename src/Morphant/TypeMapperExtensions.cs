@@ -18,7 +18,10 @@ public static class TypeMapperExtensions
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="mapper">The mapper to invoke.</param>
     /// <param name="source">The source to map.</param>
-    /// <returns>The mapped destination.</returns>
+    /// <returns>
+    /// The mapping result, which may be <see langword="default"/> when allowed
+    /// by the mapping.
+    /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="mapper"/> is
     /// <see langword="null"/>.</exception>
     public static TDestination Create<TSource, TDestination>(
@@ -55,8 +58,8 @@ public static class TypeMapperExtensions
     /// <param name="source">The source to map.</param>
     /// <param name="destination">The supplied destination.</param>
     /// <returns>
-    /// The mapped destination, which may replace
-    /// <paramref name="destination"/>.
+    /// The mapping result. It may replace <paramref name="destination"/> or be
+    /// <see langword="default"/> when allowed by the mapping.
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="mapper"/> is
     /// <see langword="null"/>.</exception>

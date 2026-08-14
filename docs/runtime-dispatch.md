@@ -25,6 +25,10 @@ scoped instance. The mapper can use ordinary constructor injection.
 Mappings from several assemblies are registered in the same way. Morphant 0.1
 does not include assembly scanning or automatic registration.
 
+A custom service provider must resolve
+`IEnumerable<ITypeMapper<TSource, TDestination>>`; Morphant uses the collection
+to distinguish zero, one and multiple registrations.
+
 ## How a mapping is found
 
 Morphant looks only for the exact

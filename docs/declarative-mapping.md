@@ -9,6 +9,10 @@ builder.Map<Customer, CustomerDto>();
 When conventions are not enough, use `Construct` or `Resolve` to choose the
 destination and `Members` to configure its members.
 
+`Configure` is analyzed at compile time. Keep mapper settings and `Map`
+registrations in an unconditional sequence, and keep each mapping on the
+fluent chain returned by `Map`; do not store or pass either builder.
+
 ## Choose the destination
 
 Each mapping can use at most one of these methods:

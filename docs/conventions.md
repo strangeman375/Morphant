@@ -38,8 +38,8 @@ parameters are matched to readable source members by exact name first, then by
 a unique case-insensitive name. Optional parameters may keep their defaults.
 
 Only accessible constructors with ordinary by-value parameters participate.
-If no constructor can be selected unambiguously, configure `Construct`,
-`ConstructUsing` or `Convert` explicitly.
+If no constructor can be selected unambiguously, configure destination
+selection or `Convert` explicitly.
 
 ## Destination types
 

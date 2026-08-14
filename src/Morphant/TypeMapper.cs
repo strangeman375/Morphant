@@ -25,7 +25,10 @@ public interface ITypeMapper<in TSource, TDestination>
     /// <param name="context">
     /// The current mapping context.
     /// </param>
-    /// <returns>The mapped destination.</returns>
+    /// <returns>
+    /// The mapping result, which may be <see langword="default"/> when allowed
+    /// by the mapping.
+    /// </returns>
     /// <exception cref="MappingConfigurationException">
     /// The mapping configuration is invalid.
     /// </exception>
@@ -50,8 +53,8 @@ public interface ITypeMapper<in TSource, TDestination>
     /// The current mapping context.
     /// </param>
     /// <returns>
-    /// The mapped destination. It may replace
-    /// <paramref name="destination"/>.
+    /// The mapping result. It may replace <paramref name="destination"/> or be
+    /// <see langword="default"/> when allowed by the mapping.
     /// </returns>
     /// <exception cref="MappingConfigurationException">
     /// The mapping configuration is invalid.
@@ -138,29 +141,32 @@ public abstract class TypeMapper
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Maps a value inferred by name, following the outer operation.
+    /// Maps a value inferred by name, selecting nested Create or Update from
+    /// the outer operation and current nested value.
     /// </summary>
     protected static MapMarker Map() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Maps a supplied value, following the outer operation.
+    /// Maps a supplied value, selecting nested Create or Update from the outer
+    /// operation and current nested value.
     /// </summary>
     /// <param name="source">The source passed to the nested mapping.</param>
     protected static MapMarker Map(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Maps a value inferred by name to <typeparamref name="T"/>, following
-    /// the outer operation.
+    /// Maps a value inferred by name to <typeparamref name="T"/>, selecting
+    /// nested Create or Update from the outer operation and current nested
+    /// value.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     protected static MapMarker<T> Map<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Maps a supplied value to <typeparamref name="T"/>, following the outer
-    /// operation.
+    /// Maps a supplied value to <typeparamref name="T"/>, selecting nested
+    /// Create or Update from the outer operation and current nested value.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     /// <param name="source">The source passed to the nested mapping.</param>
