@@ -3,6 +3,9 @@
     <PropertyGroup>
         <Version>0.1.0</Version>
 
+        <!-- Keep patch releases in the 0.1 line binary-compatible. -->
+        <AssemblyVersion>0.1.0.0</AssemblyVersion>
+
         <Authors>strangeman375</Authors>
         <Company>strangeman375</Company>
         <Product>Morphant</Product>

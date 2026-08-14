@@ -60,8 +60,8 @@ Register the `AddressDto -> Address` mapping with DI as well. See
 
 ## Map a collection with custom code
 
-Core v0 has no automatic collection mapping. A `Convert` mapping can map a
-collection as a whole:
+Morphant 0.1 has no automatic collection mapping. A `Convert` mapping can map
+a collection as a whole:
 
 ```csharp
 builder.Map<IReadOnlyList<OrderDto>, List<Order>>()

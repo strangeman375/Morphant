@@ -2,13 +2,14 @@
 
 ## Project state
 
-- Core v0 and its diagnostics are complete. User-facing documentation and
-  tests define the current behavior; Git history is the historical reference.
+- The initial Morphant 0.1 feature set and its diagnostics are complete.
+  User-facing documentation and tests define the current behavior; Git history
+  is the historical reference.
 - Superseded designs are not compatibility targets. Remove obsolete code,
   tests and documents instead of maintaining parallel historical slices.
-- Agree each post-v0 feature and its support boundary with the user before
-  implementation. Unimplemented ideas are not roadmap commitments unless they
-  are explicitly selected and documented as current work.
+- Define each post-0.1 feature and its support boundary before implementation.
+  Unimplemented ideas are not roadmap commitments unless they are explicitly
+  selected and documented as current work.
 
 ## Test design
 
@@ -96,7 +97,7 @@
   kind have an actual case-insensitive hint-name collision after sanitization.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes, or compatibility branches without a concrete user-facing need.
-- Diagnostics are part of core v0. When C# can declare an
+- Diagnostics are part of Morphant 0.1. When C# can declare an
   `ITypeMapper<,>` contract, invalid or unsupported behavior must retain a
   complete generated mapper and use typed Morphant exception stubs for
   unavailable operations. Do not generate construction, member, or extension
@@ -128,12 +129,10 @@
   oblivious input contract, and keep it scoped to that type or member. It
   preserves the distinction between oblivious and non-nullable reference
   types; it is not a way to silence nullable flow warnings.
-- Run only focused tests for the changed category. The user runs the full test
-  suite periodically and reports failures; do not run the full suite, including
-  before committing or pushing. Use the focused-test command supplied by the
-  enclosing workspace instructions when available. For the dedicated stage-22
-  integration slice, run its test project directly; it is one focused category
-  and is not included by the unit-test helper.
+- Run focused tests for the changed category while iterating. Run the full
+  Release build and both test projects before a release or after changes that
+  span multiple categories. For a dedicated integration slice, run its test
+  project directly when it is the affected category.
 - `MorphantRoslynVersion` defaults to the minimum supported Roslyn host and is
   shared by the generator and its unit-test host. When changing Roslyn-facing
   code or dependencies, run the affected categories with the default version
@@ -147,40 +146,15 @@
 - Document the default, inheritance and precedence rules, behavior at each
   supported configuration level, disabled or unsupported operations, and a
   minimal usage example.
-- Treat the documented design as revisable under the implementation-plan
-  rules above. Propose improvements when implementation reveals a clearer
-  contract, and agree user-visible changes before applying them.
+- Treat the documented design as revisable under the project-state rules
+  above. Propose improvements when implementation reveals a clearer contract,
+  and review and document user-visible changes before applying them.
 
 ## Repository workflow
 
-- Preserve unrelated user changes.
-- Standing authorization: when the user asks to implement or change something
-  in this repository, work directly in local `main`, commit each completed
-  coherent change, and publish it to remote `main` without asking again in
-  later turns. This authorization persists across Work sessions.
-- Before publishing, verify the exact committed file set and update remote
-  `main` only by ordinary fast-forward. Never force-push. Stop for direction if
-  the user explicitly requests a branch or pull request, if remote `main` has
-  conflicting concurrent changes, or if fast-forward publication is not
-  possible.
-- Keep publication proportional to the change. The normal direct-to-`main`
-  connector flow is:
-  1. In one local pass, verify the intended file set, create the commit, and
-     record its tree SHA.
-  2. Read the remote `main` head once and use its cached or returned tree as the
-     base tree.
-  3. Create one remote tree. Put changed UTF-8 text content directly in its tree
-     entries; create separate blobs only for binary, oversized, or
-     connector-incompatible files.
-  4. Compare the resulting remote tree SHA with the local commit tree SHA.
-  5. Create one remote commit with the previously read head as its sole parent,
-     then update `main` with `force: false`.
-  6. Update the local publication cache and report the result once.
-- Do not probe known-unavailable `git push` or `gh` transports on every
-  publication, invoke a branch/PR workflow for normal Morphant changes, verify
-  every text blob separately, repeatedly reread an unchanged remote head, or
-  publish per-file progress reports. The final non-force ref update is the
-  concurrency and fast-forward guard.
+- Preserve unrelated changes.
+- Before publishing, verify the exact committed file set and update shared
+  branches only by ordinary fast-forward. Never force-push.
 - Do not rerun tests or repeat a completed diff review merely because
   publication is starting. Run the focused validation once for the final tree;
   if the tree changes afterward, rerun only the affected validation.
@@ -191,6 +165,5 @@
   snapshots mechanically, then review and commit the readable literals; do
   not spend model turns reconstructing boilerplate or fixing one snapshot at
   a time when the same work can be batched without reducing coverage.
-- Do not attach or link repository files in user-facing progress or final
-  messages. The user reviews files only through commits published to `main`;
-  report the concise change summary and remote commit instead.
+- Before a release, run the full Release build and both test projects, then
+  inspect the final NuGet artifacts.

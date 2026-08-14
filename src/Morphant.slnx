@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/.sln/">
     <File Path="../.gitignore" />
+    <File Path="../CHANGELOG.md" />
+    <File Path="../global.json" />
     <File Path="../logo.png" />
     <File Path="../README.md" />
     <File Path="Directory.Build.props" />

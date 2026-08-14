@@ -98,6 +98,6 @@ Each setting is resolved independently in this order:
 
 - Include base configuration only once at each level.
 - Reused rules may only reference members accessible from the derived mapper.
-- Cross-assembly configuration inheritance is not supported in core v0;
+- Cross-assembly configuration inheritance is not supported in Morphant 0.1;
   mappings from another assembly can still be registered independently with
   DI.

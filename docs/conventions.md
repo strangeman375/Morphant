@@ -53,4 +53,5 @@ members are assignable. For a custom whole-value mapping, use
 [`Convert`](manual-mapping.md).
 
 See [Declarative mapping](declarative-mapping.md) for explicit rules and
-[Current limitations](limitations.md) for features not included in core v0.
+[Current limitations](limitations.md) for features not included in Morphant
+0.1.

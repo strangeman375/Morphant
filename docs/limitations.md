@@ -1,7 +1,8 @@
 # Current limitations
 
-Morphant 0.1 is a core v0 preview. It supports the object-mapping features
-listed below, but not every feature expected from a general-purpose mapper.
+Morphant 0.1 is the first stable 0.x release. It supports the object-mapping
+features listed below, but not every feature expected from a general-purpose
+mapper.
 
 ## Included
 
@@ -17,7 +18,7 @@ listed below, but not every feature expected from a general-purpose mapper.
   types when Morphant can create them by convention or an explicit rule;
 - C# 9 and newer consumers running Roslyn 4.9.2 or later.
 
-## Not included in core v0
+## Not included in Morphant 0.1
 
 - automatic collection, dictionary or buffer element mapping;
 - projection to `IQueryable`;

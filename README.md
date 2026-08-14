@@ -4,8 +4,9 @@ Morphant is a compile-time object mapper for C#. It turns explicit
 configuration into strongly typed mapping code without runtime reflection.
 `IMapper` is the main application entry point.
 
-> Morphant 0.1 is a core v0 preview. Automatic collection mapping, projection
-> and several other general-purpose mapper features are not included yet. See
+> Morphant 0.1 is the first stable 0.x release. It focuses on core object
+> mapping; automatic collection mapping, projection and several other
+> general-purpose mapper features are not included yet. See
 > [Current limitations](https://github.com/strangeman375/Morphant/blob/main/docs/limitations.md).
 
 ## Install
@@ -82,6 +83,13 @@ or browse the
 - C# 9 or newer;
 - a compiler host compatible with Roslyn 4.9.2 or newer;
 - a runtime compatible with `netstandard2.0`.
+
+## Versioning
+
+Morphant follows Semantic Versioning. Patch releases within a `0.x` minor
+line preserve compatibility. Until `1.0`, minor releases may contain
+documented breaking changes. See the
+[changelog](https://github.com/strangeman375/Morphant/blob/main/CHANGELOG.md).
 
 ## License
 
