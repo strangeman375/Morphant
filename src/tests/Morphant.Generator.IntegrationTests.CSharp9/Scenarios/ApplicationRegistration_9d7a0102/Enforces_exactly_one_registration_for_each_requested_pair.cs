@@ -124,6 +124,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationRegis
             Expect<InvalidMappingRegistrationException>(
                 () => mapper.Map<Source, Destination>(new Source()),
                 MappingOperation.Create);
+            Expect<InvalidMappingRegistrationException>(
+                () => mapper.Map(new Source(), new Destination()),
+                MappingOperation.Update);
         }
 
         private static void Expect<TException>(

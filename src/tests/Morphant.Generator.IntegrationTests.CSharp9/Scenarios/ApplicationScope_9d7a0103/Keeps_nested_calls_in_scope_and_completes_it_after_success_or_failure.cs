@@ -32,6 +32,16 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationScope
         public int Value { get; init; }
     }
 
+    public sealed class RecoveringSource
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class RecoveringDestination
+    {
+        public int Value { get; init; }
+    }
+
     public sealed class ScenarioException : Exception
     {
     }
@@ -48,6 +58,27 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationScope
                     ? 0
                     : context.Mapper.Map<int, int>(source - 1) + 1);
             builder.Map<ChildSource, ChildDestination>();
+            builder.Map<int, string>()
+                .Convert(source => source < 0
+                    ? throw new ScenarioException()
+                    : source.ToString());
+            builder.Map<RecoveringSource, RecoveringDestination>()
+                .Convert((source, previous, context) =>
+                {
+                    try
+                    {
+                        _ = context.Mapper.Map<int, string>(-1);
+                    }
+                    catch (ScenarioException)
+                    {
+                    }
+
+                    return new RecoveringDestination
+                    {
+                        Value = int.Parse(
+                            context.Mapper.Map<int, string>(source!.Value))
+                    };
+                });
             builder.Map<Source, Destination>()
                 .Convert((source, _, context) =>
                 {
@@ -77,6 +108,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationScope
                     ChildSource,
                     ChildDestination>>(generated)
                 .AddSingleton<ITypeMapper<int, int>>(generated)
+                .AddSingleton<ITypeMapper<int, string>>(generated)
+                .AddSingleton<ITypeMapper<
+                    RecoveringSource,
+                    RecoveringDestination>>(generated)
                 .AddSingleton<IMapper, Mapper>()
                 .BuildServiceProvider();
             var mapper = provider.GetRequiredService<IMapper>();
@@ -93,6 +128,17 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationScope
             {
                 throw new InvalidOperationException(
                     "The nested call did not use the application scope.");
+            }
+
+            var recovered = mapper.Map<
+                RecoveringSource,
+                RecoveringDestination>(new RecoveringSource { Value = 21 });
+
+            if (recovered.Value != 21)
+            {
+                throw new InvalidOperationException(
+                    "A caught nested exception poisoned the active mapping " +
+                    "scope.");
             }
 
             ExpectCompleted(successfulScope);

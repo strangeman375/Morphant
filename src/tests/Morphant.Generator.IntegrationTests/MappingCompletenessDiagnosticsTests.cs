@@ -51,6 +51,87 @@ internal sealed class MappingCompletenessDiagnosticsTests
         });
     }
 
+    [Test]
+    public async Task Resolves_every_validation_value_and_configuration_level()
+    {
+        var build = await _workspace.BuildConsumer(
+            "MappingCompletenessMatrix");
+        var diagnostics = GetCompilerDiagnostics(build.Process.Output);
+        var sourceDiagnostics = diagnostics
+            .Where(static diagnostic =>
+                GetDiagnosticId(diagnostic) == "MORPH0047")
+            .ToArray();
+        var destinationDiagnostics = diagnostics
+            .Where(static diagnostic =>
+                GetDiagnosticId(diagnostic) == "MORPH0048")
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                build.Process.ExitCode,
+                Is.EqualTo(0),
+                build.Process.Output);
+            Assert.That(sourceDiagnostics, Has.Length.EqualTo(3));
+            Assert.That(destinationDiagnostics, Has.Length.EqualTo(4));
+            Assert.That(
+                sourceDiagnostics,
+                Has.Some.Contains("AssemblyUnused"));
+            Assert.That(
+                sourceDiagnostics,
+                Has.Some.Contains("RootUnused"));
+            Assert.That(
+                sourceDiagnostics,
+                Has.Some.Contains("DefaultUnused"));
+            Assert.That(
+                destinationDiagnostics,
+                Has.Some.Contains("AssemblyUnmapped"));
+            Assert.That(
+                destinationDiagnostics,
+                Has.Some.Contains("PairUnmapped"));
+            Assert.That(
+                destinationDiagnostics,
+                Has.Some.Contains("IncludedUnmapped"));
+            Assert.That(
+                destinationDiagnostics,
+                Has.Some.Contains("BaseUnmapped"));
+            Assert.That(diagnostics, Has.All.Contains("warning MORPH"));
+            Assert.That(
+                Directory.GetFiles(
+                    build.GeneratedDirectory,
+                    "*.cs",
+                    SearchOption.AllDirectories),
+                Is.Not.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Library_default_disables_completeness_validation()
+    {
+        var build = await _workspace.BuildConsumer(
+            "MappingCompletenessDefault");
+        var diagnostics = GetCompilerDiagnostics(build.Process.Output);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                build.Process.ExitCode,
+                Is.EqualTo(0),
+                build.Process.Output);
+            Assert.That(
+                diagnostics.Where(static diagnostic =>
+                    GetDiagnosticId(diagnostic) is
+                        "MORPH0047" or "MORPH0048"),
+                Is.Empty);
+            Assert.That(
+                Directory.GetFiles(
+                    build.GeneratedDirectory,
+                    "*.cs",
+                    SearchOption.AllDirectories),
+                Is.Not.Empty);
+        });
+    }
+
     private static string[] GetCompilerDiagnostics(string output)
     {
         return output

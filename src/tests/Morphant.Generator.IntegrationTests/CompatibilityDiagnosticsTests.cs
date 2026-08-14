@@ -64,11 +64,51 @@ internal sealed class CompatibilityDiagnosticsTests
     }
 
     [Test]
+    public async Task Partial_runtime_reports_incompatible_instead_of_missing()
+    {
+        var runtime = await _workspace.BuildRuntimeCandidate(
+            "PartialRuntime",
+            "Morphant.TestPartialRuntime");
+        AssertSucceeded(runtime.Process);
+
+        var build = await _workspace.BuildConsumer(
+            "MismatchedRuntime",
+            runtime.AssemblyPath);
+
+        AssertFailedWith(
+            build.Process,
+            "MORPH0004",
+            "The Morphant runtime is incompatible with this generator: " +
+            "the runtime does not provide compatibility information.");
+        AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
+    }
+
+    [Test]
     public async Task Two_runtime_candidates_report_one_MORPH0003()
     {
         var runtime = await _workspace.BuildRuntimeCandidate(
             "RuntimeV1",
             "Morphant.TestRuntimeV1");
+        AssertSucceeded(runtime.Process);
+
+        var build = await _workspace.BuildConsumer(
+            "DuplicateRuntime",
+            runtime.AssemblyPath);
+
+        AssertFailedWith(
+            build.Process,
+            "MORPH0003",
+            "Multiple Morphant runtime libraries were found. Reference " +
+            "exactly one.");
+        AssertNoMorphantGeneratedFiles(build.GeneratedDirectory);
+    }
+
+    [Test]
+    public async Task Ambiguity_precedes_candidate_compatibility()
+    {
+        var runtime = await _workspace.BuildRuntimeCandidate(
+            "RuntimeV2",
+            "Morphant.TestRuntimeV2");
         AssertSucceeded(runtime.Process);
 
         var build = await _workspace.BuildConsumer(

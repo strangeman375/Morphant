@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using CSharp11Consumer = Morphant.Generator.IntegrationTests.CSharp11;
 using CSharp9Consumer = Morphant.Generator.IntegrationTests.CSharp9;
 using LatestConsumer = Morphant.Generator.IntegrationTests.Latest;
 
@@ -32,6 +33,22 @@ internal sealed class CompiledConsumerTests
             new CSharp9Consumer.Customer { Name = "Ada" });
 
         Assert.That(result.Name, Is.EqualTo("Ada"));
+    }
+
+    [Test]
+    public void CSharp11_required_member_consumer_compiles_and_executes()
+    {
+        var mapper = (ITypeMapper<
+            CSharp11Consumer.CSharp11Customer,
+            CSharp11Consumer.CSharp11CustomerDto>)
+            new CSharp11Consumer.CSharp11Mapper();
+
+        var result = mapper.Create(new CSharp11Consumer.CSharp11Customer
+        {
+            Name = "Grace"
+        });
+
+        Assert.That(result.Name, Is.EqualTo("Grace"));
     }
 
     [Test]

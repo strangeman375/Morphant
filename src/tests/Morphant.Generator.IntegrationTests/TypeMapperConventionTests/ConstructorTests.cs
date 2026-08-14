@@ -38,4 +38,10 @@ internal sealed class ConstructorTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Constructor_dd34c318.Scenario.Verify();
     }
+
+    [Test]
+    public void Matches_exact_then_unique_case_insensitive_constructor_names()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorNames_9d7a0301.Scenario.Verify();
+    }
 }

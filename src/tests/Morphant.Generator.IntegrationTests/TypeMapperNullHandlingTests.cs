@@ -14,4 +14,22 @@ internal sealed class TypeMapperNullHandlingTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NullHandling_f3d15fd6.Scenario.Verify();
     }
+
+    [Test]
+    public void Resolves_pair_included_mapper_base_and_library_precedence()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NullHandlingPrecedence_9d7a0307.Scenario.Verify();
+    }
+
+    [Test]
+    public void Preserves_invalid_policies_independently_and_allows_overrides()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NullHandlingInvalid_9d7a0308.Scenario.Verify();
+    }
+
+    [Test]
+    public void Uses_MSBuild_assembly_defaults_and_pair_overrides()
+    {
+        global::Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.NullHandling.Scenario.Verify();
+    }
 }

@@ -19,6 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Morphant.Generator.IntegrationTests.AssemblySettings\Morphant.Generator.IntegrationTests.AssemblySettings.csproj" />
         <ProjectReference Include="..\Morphant.Generator.IntegrationTests.CSharp9\Morphant.Generator.IntegrationTests.CSharp9.csproj" />
         <ProjectReference Include="..\Morphant.Generator.IntegrationTests.CSharp11\Morphant.Generator.IntegrationTests.CSharp11.csproj" />
         <ProjectReference Include="..\Morphant.Generator.IntegrationTests.Latest\Morphant.Generator.IntegrationTests.Latest.csproj" />

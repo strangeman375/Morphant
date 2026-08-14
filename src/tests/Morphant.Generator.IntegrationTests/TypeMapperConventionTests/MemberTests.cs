@@ -20,4 +20,10 @@ internal sealed class MemberTests
     {
         global::Morphant.Generator.IntegrationTests.CSharp11.Scenarios.Member_36f4c993.Scenario.Verify();
     }
+
+    [Test]
+    public void Matches_members_by_exact_case_sensitive_name_only()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberNames_9d7a0302.Scenario.Verify();
+    }
 }
