@@ -23,7 +23,9 @@ namespace TestCase
     public sealed record ChildDestination(int Value);
     public sealed record Source(
         ChildSource Child,
-        ChildDestination Previous);
+        ChildDestination Previous,
+        ChildSource Inferred,
+        ChildSource Typed);
 
     public sealed class Destination
     {
@@ -33,6 +35,8 @@ namespace TestCase
         public ChildDestination Constructed { get; }
         public ChildDestination Created { get; set; } = new(-1);
         public ChildDestination Updated { get; set; } = new(-1);
+        public ChildDestination Inferred { get; set; } = new(-1);
+        public ChildDestination Typed { get; set; } = new(-1);
     }
 
     [MorphantMapper]
@@ -44,7 +48,9 @@ namespace TestCase
                 .Members((source, _) => new()
                 {
                     Created = Create<ChildDestination>(source.Child),
-                    Updated = Update(source.Child, source.Previous)
+                    Updated = Update(source.Child, source.Previous),
+                    Inferred = Map(),
+                    Typed = Map<ChildDestination>()
                 });
     }
 }
@@ -277,6 +283,24 @@ namespace TestCase.Morphant.Generated
             set { }
         }
 
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Inferred"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Inferred
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Typed"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Typed
+        {
+            get => null!;
+            set { }
+        }
+
         public bool Equals(DestinationMembers? other) => false;
 
         public override int GetHashCode() => 0;
@@ -407,7 +431,9 @@ namespace TestCase
                 constructed: value)
             {
                 Created = value,
-                Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild, source.Previous)
+                Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild, source.Previous),
+                Inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred),
+                Typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed)
             };
         }
 
@@ -420,6 +446,8 @@ namespace TestCase
 
             destination.Created = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild);
             destination.Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild, source.Previous);
+            destination.Inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred, destination: destination.Inferred);
+            destination.Typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed, destination: destination.Typed);
 
             return destination;
         }

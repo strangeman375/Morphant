@@ -1,3 +1,4 @@
+using System.Reflection;
 using Morphant.Context;
 
 namespace Morphant.Generator.UnitTests;
@@ -210,6 +211,88 @@ internal sealed class MappingDelegateTests
             typeof(MappingContext));
     }
 
+    [Test]
+    public void Preserves_callback_variance_contracts()
+    {
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Construct<,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Construct<,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.ConstructUsing<,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.ConstructUsing<,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Resolve<,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Resolve<,,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.ResolveUsing<,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.ResolveUsing<,,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Members<,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Members<,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Members<,,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Members<,,,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Convert<,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Convert<,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Covariant);
+        AssertVariance(
+            typeof(global::Morphant.Delegates.Convert<,,,>),
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.None,
+            GenericParameterAttributes.Contravariant,
+            GenericParameterAttributes.Covariant);
+    }
+
     private static void AssertParameterNames<TDelegate>(
         params string[] expectedNames)
         where TDelegate : Delegate
@@ -238,6 +321,20 @@ internal sealed class MappingDelegateTests
                     .Select(parameter => parameter.ParameterType),
                 Is.EqualTo(parameterTypes));
         });
+    }
+
+    private static void AssertVariance(
+        Type delegateType,
+        params GenericParameterAttributes[] expected)
+    {
+        var actual = delegateType
+            .GetGenericArguments()
+            .Select(parameter =>
+                parameter.GenericParameterAttributes &
+                GenericParameterAttributes.VarianceMask)
+            .ToArray();
+
+        Assert.That(actual, Is.EqualTo(expected));
     }
 
     private sealed class Source;

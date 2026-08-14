@@ -22,6 +22,8 @@ internal sealed class PublicApiBaselineTests
     {
         var sealedDslTypes = new[]
         {
+            typeof(Mapper),
+            typeof(MorphantMapperAttribute),
             typeof(ByConventionMarker),
             typeof(AutoMarker),
             typeof(AutoMarker<>),
@@ -32,13 +34,27 @@ internal sealed class PublicApiBaselineTests
             typeof(Member<>),
             typeof(ConstructorParameter<>),
             typeof(MapperBuilder),
-            typeof(MapperBuilder<,>)
+            typeof(MapperBuilder<,>),
+            typeof(AmbiguousMappingException),
+            typeof(InvalidMappingContextException),
+            typeof(InvalidMappingRegistrationException),
+            typeof(MappingConfigurationException),
+            typeof(MappingNotFoundException),
+            typeof(MappingOperationNotSupportedException),
+            typeof(MappingScopeCompletedException),
+            typeof(NestedDestinationTypeMismatchException),
+            typeof(NullDestinationException),
+            typeof(NullSourceException),
+            typeof(OptionValueMissingException),
+            typeof(RuntimeInvocationNotSupportedException),
+            typeof(UnmatchedMappingSwitchException)
         };
         var abstractInfrastructureTypes = new[]
         {
             typeof(ConstructorMarker),
             typeof(MemberMarker),
             typeof(MapMarker),
+            typeof(global::Morphant.Context.MappingContextMarker),
             typeof(MapperBuilderBase<>),
             typeof(TypeMapper),
             typeof(MorphantException),
@@ -59,6 +75,9 @@ internal sealed class PublicApiBaselineTests
         var supportsMethod = typeof(TypeMapper).GetMethod(
             "Supports",
             BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var mapperAttributeUsage =
+            typeof(MorphantMapperAttribute)
+                .GetCustomAttribute<AttributeUsageAttribute>()!;
 
         Assert.Multiple(() =>
         {
@@ -68,6 +87,13 @@ internal sealed class PublicApiBaselineTests
             Assert.That(
                 abstractInfrastructureTypes.All(static type => type.IsAbstract),
                 Is.True);
+            Assert.That(typeof(TypeMapperExtensions).IsAbstract, Is.True);
+            Assert.That(typeof(TypeMapperExtensions).IsSealed, Is.True);
+            Assert.That(
+                mapperAttributeUsage.ValidOn,
+                Is.EqualTo(AttributeTargets.Class));
+            Assert.That(mapperAttributeUsage.AllowMultiple, Is.False);
+            Assert.That(mapperAttributeUsage.Inherited, Is.False);
             Assert.That(
                 reservedConstructors.Select(type => type.GetConstructors(
                         BindingFlags.NonPublic |
@@ -384,6 +410,54 @@ T Morphant.UnmappedMemberValidation
         Assert.That(actual, Is.EqualTo(expected));
     }
 
+    [Test]
+    public void Runtime_enums_preserve_flags_and_numeric_values()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                typeof(MappingMode).IsDefined(
+                    typeof(FlagsAttribute),
+                    inherit: false),
+                Is.True);
+            AssertEnumValues<ConstructorSelection>(
+                (nameof(ConstructorSelection.Default), 0),
+                (nameof(ConstructorSelection.Explicit), 1),
+                (nameof(ConstructorSelection.Parameterless), 2),
+                (nameof(ConstructorSelection.Single), 3),
+                (nameof(ConstructorSelection.Unambiguous), 4),
+                (nameof(ConstructorSelection.Greediest), 5),
+                (nameof(ConstructorSelection.Largest), 6));
+            AssertEnumValues<MappingMode>(
+                (nameof(MappingMode.Default), 0),
+                (nameof(MappingMode.Create), 1),
+                (nameof(MappingMode.Update), 2),
+                (nameof(MappingMode.CreateAndUpdate), 3));
+            AssertEnumValues<MemberSelection>(
+                (nameof(MemberSelection.Default), 0),
+                (nameof(MemberSelection.Auto), 1),
+                (nameof(MemberSelection.Explicit), 2));
+            AssertEnumValues<NullDestinationHandling>(
+                (nameof(NullDestinationHandling.Default), 0),
+                (nameof(NullDestinationHandling.Create), 1),
+                (nameof(NullDestinationHandling.Throw), 2));
+            AssertEnumValues<NullSourceHandling>(
+                (nameof(NullSourceHandling.Default), 0),
+                (nameof(NullSourceHandling.ReturnNull), 1),
+                (nameof(NullSourceHandling.ReturnDestination), 2),
+                (nameof(NullSourceHandling.Throw), 3));
+            AssertEnumValues<UnmappedMemberValidation>(
+                (nameof(UnmappedMemberValidation.Default), 0),
+                (nameof(UnmappedMemberValidation.None), 1),
+                (nameof(UnmappedMemberValidation.Source), 2),
+                (nameof(UnmappedMemberValidation.Destination), 3),
+                (nameof(UnmappedMemberValidation.Strict), 4));
+            AssertEnumValues<global::Morphant.Context.MappingOperation>(
+                (nameof(global::Morphant.Context.MappingOperation.Create), 1),
+                (nameof(global::Morphant.Context.MappingOperation.Update), 2));
+        });
+    }
+
     private static string DescribePublicApi(Assembly assembly)
     {
         var lines = new List<string>();
@@ -518,6 +592,18 @@ T Morphant.UnmappedMemberValidation
                 BindingFlags.Static |
                 BindingFlags.DeclaredOnly)
             .Count(static method => method.Name == "op_Implicit");
+
+    private static void AssertEnumValues<TEnum>(
+        params (string Name, int Value)[] expected)
+        where TEnum : struct, Enum
+    {
+        var actual = Enum.GetValues<TEnum>()
+            .Select(value =>
+                (value.ToString(), Convert.ToInt32(value)))
+            .ToArray();
+
+        Assert.That(actual, Is.EqualTo(expected));
+    }
 
     private static string[] GetImplicitOperatorSourceTypes(Type type) =>
         type.GetMethods(

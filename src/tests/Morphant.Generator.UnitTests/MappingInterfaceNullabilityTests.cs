@@ -18,6 +18,10 @@ internal sealed class MappingInterfaceNullabilityTests
             .ToArray();
         var typeMapper = compilation
             .GetTypeByMetadataName("Morphant.ITypeMapper`2")!;
+        var option = compilation
+            .GetTypeByMetadataName("Morphant.Option`1")!;
+        var mappingContext = compilation
+            .GetTypeByMetadataName("Morphant.Context.MappingContext")!;
         var createMethod = typeMapper
             .GetMembers(nameof(ITypeMapper<object, object>.Create))
             .OfType<IMethodSymbol>()
@@ -37,6 +41,8 @@ internal sealed class MappingInterfaceNullabilityTests
         Assert.Multiple(() =>
         {
             Assert.That(mapperMethods, Has.Length.EqualTo(2));
+            Assert.That(option.IsReadOnly, Is.True);
+            Assert.That(mappingContext.IsReadOnly, Is.True);
             AssertMethod(
                 mapperMethods[0],
                 nameof(IMapper.Map),
@@ -67,6 +73,52 @@ internal sealed class MappingInterfaceNullabilityTests
                 extensions[1],
                 nameof(TypeMapperExtensions.Update),
                 expectedParameterCount: 3);
+        });
+    }
+
+    [Test]
+    public void Option_flow_annotation_refines_only_the_success_branch()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+
+using Morphant;
+
+internal static class Consumer
+{
+    public static int ReadPresent(Option<string> option)
+    {
+        if (option.TryGetValue(out var value))
+        {
+            return value.Length;
+        }
+
+        return 0;
+    }
+
+    public static int ReadWithoutChecking(Option<string> option)
+    {
+        option.TryGetValue(out var value);
+        return value.Length;
+    }
+}
+""";
+
+        var diagnostics = CreateCompilation(source)
+            .GetDiagnostics()
+            .Where(static diagnostic =>
+                diagnostic.Severity >= DiagnosticSeverity.Warning)
+            .ToArray();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostics, Has.Length.EqualTo(1));
+            Assert.That(diagnostics[0].Id, Is.EqualTo("CS8602"));
+            Assert.That(
+                diagnostics[0].GetMessage(),
+                Is.EqualTo("Dereference of a possibly null reference."));
         });
     }
 
@@ -149,7 +201,7 @@ internal sealed class MappingInterfaceNullabilityTests
         });
     }
 
-    private static CSharpCompilation CreateCompilation()
+    private static CSharpCompilation CreateCompilation(string? source = null)
     {
         var trustedPlatformAssemblies =
             (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ??
@@ -162,8 +214,19 @@ internal sealed class MappingInterfaceNullabilityTests
                 MetadataReference.CreateFromFile(
                     typeof(IMapper).Assembly.Location));
 
+        var syntaxTrees = source is null
+            ? null
+            : new[]
+            {
+                CSharpSyntaxTree.ParseText(
+                    source,
+                    new CSharpParseOptions(LanguageVersion.CSharp9),
+                    path: "Consumer.cs")
+            };
+
         return CSharpCompilation.Create(
             "MappingInterfaceNullabilityProbe",
+            syntaxTrees,
             references: references,
             options: new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,

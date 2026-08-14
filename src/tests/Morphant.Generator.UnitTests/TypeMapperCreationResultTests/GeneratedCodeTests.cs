@@ -278,6 +278,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using Morphant.Context;
 
 namespace TestCase
 {
@@ -645,6 +646,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using Morphant.Context;
 
 namespace TestCase
 {
@@ -669,6 +671,7 @@ namespace TestCase
         private readonly global::Morphant.Delegates.ResolveUsing<
             Source,
             IDestination,
+            MappingContext,
             IDestination> _construct = Create;
 
         protected override void Configure(MapperBuilder builder) =>
@@ -677,10 +680,12 @@ namespace TestCase
 
         private static IDestination Create(
             Source source,
-            Option<IDestination> previous) =>
+            Option<IDestination> previous,
+            MappingContext context) =>
+            context.Operation == MappingOperation.Update &&
             previous.HasValue
                 ? previous.Value
-                : new Destination { Value = -1 };
+                : new Destination { Value = (int)context.Operation };
     }
 }
 """;
@@ -830,7 +835,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.IDestination result = __ResolveUsing(source, global::Morphant.Option<global::TestCase.IDestination>.None);
+            global::TestCase.IDestination result = __ResolveUsing(source, global::Morphant.Option<global::TestCase.IDestination>.None, context);
 
             if (result is null)
             {
@@ -847,7 +852,7 @@ namespace TestCase
             global::TestCase.IDestination destination,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.IDestination result = __ResolveUsing(source, global::Morphant.Option<global::TestCase.IDestination>.Some(destination));
+            global::TestCase.IDestination result = __ResolveUsing(source, global::Morphant.Option<global::TestCase.IDestination>.Some(destination), context);
 
             if (result is null)
             {
@@ -859,10 +864,10 @@ namespace TestCase
             return result;
         }
 
-        private global::TestCase.IDestination __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::TestCase.IDestination> previous)
+        private global::TestCase.IDestination __ResolveUsing(global::TestCase.Source source, global::Morphant.Option<global::TestCase.IDestination> previous, global::Morphant.Context.MappingContext context)
         {
-            global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.IDestination, global::TestCase.IDestination> callback = this._construct;
-            return callback(source, previous);
+            global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.IDestination, global::Morphant.Context.MappingContext, global::TestCase.IDestination> callback = this._construct;
+            return callback(source, previous, context);
         }
     }
 }
@@ -891,6 +896,7 @@ namespace TestCase
 #pragma warning disable CS1591
 
 using Morphant;
+using Morphant.Context;
 using System;
 
 namespace TestCase
@@ -916,7 +922,10 @@ namespace TestCase
 
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .ConstructUsing(source => _factory());
+                .ConstructUsing((source, context) =>
+                    context.Operation == MappingOperation.Create
+                        ? _factory()
+                        : new Destination(2));
 
         private static Destination Create() => new(1);
     }
@@ -1166,7 +1175,7 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.Destination result = __ConstructUsing(source);
+            global::TestCase.Destination result = __ConstructUsing(source, context);
 
             return result;
         }
@@ -1179,7 +1188,7 @@ namespace TestCase
             return destination;
         }
 
-        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source) => this._factory();
+        private global::TestCase.Destination __ConstructUsing(global::TestCase.Source source, global::Morphant.Context.MappingContext context) => context.Operation == global::Morphant.Context.MappingOperation.Create ? this._factory() : new global::TestCase.Destination(2);
     }
 }
 """;
