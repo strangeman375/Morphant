@@ -1,15 +1,12 @@
 using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests.MapperDeclarationTests;
 
 internal static class MapperDeclarationGeneratorTest
 {
-    private static readonly ImmutableArray<MetadataReference>
-        FrameworkReferences = BuildFrameworkReferences();
-
     public static MapperDeclarationGeneratorResult Run(
         string source,
         IReadOnlyDictionary<string, ReportDiagnostic>? diagnosticOptions = null,
@@ -26,87 +23,34 @@ internal static class MapperDeclarationGeneratorTest
         IReadOnlyDictionary<string, ReportDiagnostic>? diagnosticOptions = null,
         GeneratorDriver? driver = null)
     {
-        var parseOptions = new CSharpParseOptions(
-            LanguageVersion.Latest,
-            DocumentationMode.Diagnose);
-        var syntaxTrees = sourceFiles
-            .Select(file => CSharpSyntaxTree.ParseText(
-                Microsoft.CodeAnalysis.Text.SourceText.From(
-                    file.Source,
-                    Encoding.UTF8),
-                parseOptions,
-                file.Name))
-            .ToImmutableArray();
-        var options = new CSharpCompilationOptions(
-            OutputKind.DynamicallyLinkedLibrary,
-            nullableContextOptions: NullableContextOptions.Enable,
-            specificDiagnosticOptions: diagnosticOptions is null
-                ? ImmutableDictionary<string, ReportDiagnostic>.Empty
-                : diagnosticOptions.ToImmutableDictionary(
-                    StringComparer.Ordinal));
-        var compilation = CSharpCompilation.Create(
+        var result = GeneratorTestDriver.Run(
             "MapperDeclarationConsumer",
-            syntaxTrees,
-            FrameworkReferences.Add(
-                MetadataReference.CreateFromFile(
-                    typeof(TypeMapper).Assembly.Location)),
-            options);
+            sourceFiles
+                .Select(static file =>
+                    new GeneratorTestSourceFile(file.Name, file.Source))
+                .ToArray(),
+            LanguageVersion.Latest,
+            diagnosticOptions,
+            driver: driver);
 
-        driver ??= CSharpGeneratorDriver.Create(
-            [new MorphantGenerator().AsSourceGenerator()],
-            parseOptions: parseOptions);
-        driver = driver.RunGeneratorsAndUpdateCompilation(
-            compilation,
-            out var outputCompilation,
-            out _);
-
-        var generatorResult = driver.GetRunResult().Results.Single();
-
-        Assert.That(
-            generatorResult.Exception,
-            Is.Null,
-            "The production generator must not throw.");
-
-        return new MapperDeclarationGeneratorResult(
-            driver,
-            outputCompilation,
-            generatorResult.Diagnostics,
-            generatorResult.GeneratedSources);
+        return new MapperDeclarationGeneratorResult(result);
     }
 
     public static string SourceText(Location location)
     {
-        return location.SourceTree!
-            .GetText()
-            .ToString(location.SourceSpan);
-    }
-
-    private static ImmutableArray<MetadataReference>
-        BuildFrameworkReferences()
-    {
-        var trustedPlatformAssemblies =
-            (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ??
-            throw new InvalidOperationException(
-                "Trusted platform assemblies are unavailable.");
-
-        return trustedPlatformAssemblies
-            .Split(Path.PathSeparator)
-            .Where(path => !Path.GetFileName(path).Equals(
-                "Morphant.dll",
-                StringComparison.OrdinalIgnoreCase))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(static path =>
-                (MetadataReference)MetadataReference.CreateFromFile(path))
-            .ToImmutableArray();
+        return GeneratorTestDriver.GetSourceText(location);
     }
 }
 
-internal sealed record MapperDeclarationGeneratorResult(
-    GeneratorDriver Driver,
-    Compilation OutputCompilation,
-    ImmutableArray<Diagnostic> Diagnostics,
-    ImmutableArray<GeneratedSourceResult> GeneratedSources)
+internal sealed record MapperDeclarationGeneratorResult :
+    GeneratorTestDriverResult
 {
+    public MapperDeclarationGeneratorResult(
+        GeneratorTestDriverResult result)
+        : base(result)
+    {
+    }
+
     public ImmutableArray<Diagnostic> CompilerErrors => OutputCompilation
         .GetDiagnostics()
         .Where(static diagnostic =>

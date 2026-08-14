@@ -11,8 +11,6 @@ internal sealed class MemberSurfaceGeneratorTest :
         TestMemberSurfaceGenerator,
         DefaultVerifier>
 {
-    private const string NewLine = "\r\n";
-
     private readonly LanguageVersion _languageVersion;
 
     private MemberSurfaceGeneratorTest(
@@ -77,22 +75,11 @@ internal sealed class MemberSurfaceGeneratorTest :
             (
                 typeof(TestMemberSurfaceGenerator),
                 expectedSource.FileName,
-                NormalizeGeneratedSource(expectedSource.Content)
+                GeneratedSourceText.Normalize(expectedSource.Content)
             ));
         }
 
         await test.RunAsync();
     }
 
-    private static string NormalizeGeneratedSource(string source)
-    {
-        var normalized = source
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n')
-            .Replace("\n", NewLine);
-
-        return normalized.EndsWith(NewLine, StringComparison.Ordinal)
-            ? normalized
-            : normalized + NewLine;
-    }
 }

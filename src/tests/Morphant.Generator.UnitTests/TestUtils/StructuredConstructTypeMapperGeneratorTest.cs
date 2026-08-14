@@ -11,8 +11,6 @@ internal sealed class StructuredConstructTypeMapperGeneratorTest
         TestStructuredConstructTypeMapperGenerator,
         DefaultVerifier>
 {
-    private const string NewLine = "\r\n";
-
     private readonly LanguageVersion _languageVersion;
 
     private StructuredConstructTypeMapperGeneratorTest(
@@ -48,7 +46,7 @@ internal sealed class StructuredConstructTypeMapperGeneratorTest
             (
                 typeof(TestStructuredConstructTypeMapperGenerator),
                 expectedSource.FileName,
-                NormalizeGeneratedSource(expectedSource.Content)
+                GeneratedSourceText.Normalize(expectedSource.Content)
             ));
         }
 
@@ -122,17 +120,4 @@ internal sealed class StructuredConstructTypeMapperGeneratorTest
         return references;
     }
 
-    private static string NormalizeGeneratedSource(string source)
-    {
-        var normalized = source
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n')
-            .Replace("\n", NewLine);
-
-        return normalized.EndsWith(
-            NewLine,
-            StringComparison.Ordinal)
-            ? normalized
-            : normalized + NewLine;
-    }
 }

@@ -20,6 +20,8 @@ using Morphant;
 
 namespace Morphant
 {
+    // Makes the input compile before generation; the exact generated overload
+    // remains the better candidate after generation.
     internal static partial class MorphantGeneratedMappingExtensions
     {
         public static global::Morphant.MapperBuilder<
@@ -125,6 +127,27 @@ using System.Threading.Tasks;
 using Morphant;
 using TransferExtensions;
 
+namespace Morphant
+{
+    // Makes the input compile before generation; the exact generated overload
+    // remains the better candidate after generation.
+    internal static partial class MorphantGeneratedMappingExtensions
+    {
+        public static global::Morphant.MapperBuilder<
+            global::TestCase.Source,
+            global::System.Threading.Tasks.Task<int>> Convert(
+                this global::Morphant.MapperBuilder<
+                    global::TestCase.Source,
+                    global::System.Threading.Tasks.Task<int>> builder,
+                global::Morphant.Delegates.Convert<
+                    global::TestCase.Source?,
+                    global::System.Threading.Tasks.Task<int>> mapping,
+                int testOnly = 0) =>
+            throw new global::Morphant.Exceptions
+                .RuntimeInvocationNotSupportedException();
+    }
+}
+
 namespace TransferExtensions
 {
     public static class TextExtensions
@@ -206,11 +229,10 @@ namespace TestCase
 }
 """;
 
-        await ConventionTypeMapperGeneratorTest
-            .RunAndAssertIgnoringCompilerDiagnostics(
-                LanguageVersion.CSharp9,
-                source,
-                expected);
+        await ConventionTypeMapperGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
+            source,
+            expected);
     }
 
     [Test]
@@ -224,6 +246,25 @@ namespace TestCase
 
 using System;
 using Morphant;
+
+namespace Morphant
+{
+    internal static partial class MorphantGeneratedMappingExtensions
+    {
+        public static global::Morphant.MapperBuilder<
+            global::TestCase.Source,
+            int> ConstructUsing(
+                this global::Morphant.MapperBuilder<
+                    global::TestCase.Source,
+                    int> builder,
+                global::Morphant.Delegates.ConstructUsing<
+                    global::TestCase.Source,
+                    int> construct,
+                int testOnly = 0) =>
+            throw new global::Morphant.Exceptions
+                .RuntimeInvocationNotSupportedException();
+    }
+}
 
 namespace TestCase
 {
@@ -310,11 +351,9 @@ namespace TestCase
 }
 """;
 
-        await ConventionTypeMapperGeneratorTest
-            .RunAndAssertIgnoringCompilerDiagnostics(
-                LanguageVersion.CSharp9,
-                source,
-                expected,
-                allowUnsafe: true);
+        await ConventionTypeMapperGeneratorTest.RunAndAssertUnsafe(
+            LanguageVersion.CSharp9,
+            source,
+            expected);
     }
 }

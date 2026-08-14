@@ -10,8 +10,6 @@ namespace Morphant.Generator.UnitTests.TestUtils;
 internal static class GeneratorActualizationTest
 {
     private const string SourcePath = "TestCase.cs";
-    private const string NewLine = "\r\n";
-
     private static readonly ImmutableArray<MetadataReference>
         DefaultReferences = BuildDefaultReferences();
 
@@ -159,7 +157,7 @@ internal static class GeneratorActualizationTest
                 .Select(static expectedSource =>
                     new ExpectedActualizedSource(
                         expectedSource.HintName,
-                        NormalizeGeneratedSource(expectedSource.Source)))
+                        GeneratedSourceText.Normalize(expectedSource.Source)))
                 .ToImmutableArray(),
             scenarioTypeName);
     }
@@ -336,17 +334,6 @@ internal static class GeneratorActualizationTest
             string.Join(Environment.NewLine, failures));
     }
 
-    private static string NormalizeGeneratedSource(string source)
-    {
-        var normalized = source
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n')
-            .Replace("\n", NewLine);
-
-        return normalized.EndsWith(NewLine, StringComparison.Ordinal)
-            ? normalized
-            : normalized + NewLine;
-    }
 }
 
 internal sealed record GeneratorActualizationStep(

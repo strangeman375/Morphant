@@ -11,8 +11,6 @@ internal sealed class BasicMembersTypeMapperGeneratorTest
         TestBasicMembersTypeMapperGenerator,
         DefaultVerifier>
 {
-    private const string NewLine = "\r\n";
-
     private readonly LanguageVersion _languageVersion;
 
     private BasicMembersTypeMapperGeneratorTest(
@@ -78,22 +76,9 @@ internal sealed class BasicMembersTypeMapperGeneratorTest
             (
                 typeof(TestBasicMembersTypeMapperGenerator),
                 expectedSource.FileName,
-                NormalizeGeneratedSource(expectedSource.Content)
+                GeneratedSourceText.Normalize(expectedSource.Content)
             ));
         }
     }
 
-    private static string NormalizeGeneratedSource(string source)
-    {
-        var normalized = source
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n')
-            .Replace("\n", NewLine);
-
-        return normalized.EndsWith(
-            NewLine,
-            StringComparison.Ordinal)
-            ? normalized
-            : normalized + NewLine;
-    }
 }

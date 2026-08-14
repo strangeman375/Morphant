@@ -20,7 +20,7 @@ internal sealed class PublicApiBaselineTests
     [Test]
     public void Runtime_public_API_preserves_modifiers_inheritance_and_metadata()
     {
-        var sealedDslTypes = new[]
+        var sealedTypes = new[]
         {
             typeof(Mapper),
             typeof(MorphantMapperAttribute),
@@ -82,7 +82,7 @@ internal sealed class PublicApiBaselineTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                sealedDslTypes.All(static type => type.IsSealed),
+                sealedTypes.All(static type => type.IsSealed),
                 Is.True);
             Assert.That(
                 abstractInfrastructureTypes.All(static type => type.IsAbstract),

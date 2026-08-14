@@ -4,7 +4,7 @@ using Morphant.Generator.UnitTests.TestUtils;
 namespace Morphant.Generator.UnitTests.TypeMapperInheritanceTests;
 
 [TestFixture]
-internal sealed class GeneratedCodeTests
+internal sealed class CrossPairIncludeTests
 {
     [Test]
     public async Task Emits_the_complete_surface_for_a_cross_pair_include()

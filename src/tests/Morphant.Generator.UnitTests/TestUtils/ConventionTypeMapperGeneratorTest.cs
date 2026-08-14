@@ -10,8 +10,6 @@ internal sealed class ConventionTypeMapperGeneratorTest
         TestConventionTypeMapperGenerator,
         DefaultVerifier>
 {
-    private const string NewLine = "\r\n";
-
     private readonly LanguageVersion _languageVersion;
 
     private ConventionTypeMapperGeneratorTest(
@@ -29,36 +27,39 @@ internal sealed class ConventionTypeMapperGeneratorTest
             DocumentationMode.Diagnose);
     }
 
-    public static async Task RunAndAssert(
+    public static Task RunAndAssert(
         LanguageVersion languageVersion,
         string source,
         string expected)
     {
-        var test = new ConventionTypeMapperGeneratorTest(languageVersion)
-        {
-            TestCode = source
-        };
-
-        test.TestState.GeneratedSources.Add(
-        (
-            typeof(TestConventionTypeMapperGenerator),
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
-            NormalizeGeneratedSource(expected)
-        ));
-
-        await test.RunAsync();
+        return RunAndAssert(
+            languageVersion,
+            source,
+            expected,
+            allowUnsafe: false);
     }
 
-    public static async Task RunAndAssertIgnoringCompilerDiagnostics(
+    public static Task RunAndAssertUnsafe(
+        LanguageVersion languageVersion,
+        string source,
+        string expected)
+    {
+        return RunAndAssert(
+            languageVersion,
+            source,
+            expected,
+            allowUnsafe: true);
+    }
+
+    private static async Task RunAndAssert(
         LanguageVersion languageVersion,
         string source,
         string expected,
-        bool allowUnsafe = false)
+        bool allowUnsafe)
     {
         var test = new ConventionTypeMapperGeneratorTest(languageVersion)
         {
-            TestCode = source,
-            CompilerDiagnostics = CompilerDiagnostics.None
+            TestCode = source
         };
 
         if (allowUnsafe)
@@ -83,7 +84,7 @@ internal sealed class ConventionTypeMapperGeneratorTest
         (
             typeof(TestConventionTypeMapperGenerator),
             "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
-            NormalizeGeneratedSource(expected)
+            GeneratedSourceText.Normalize(expected)
         ));
 
         await test.RunAsync();
@@ -120,20 +121,9 @@ internal sealed class ConventionTypeMapperGeneratorTest
             (
                 typeof(TestConventionTypeMapperGenerator),
                 expectedSource.FileName,
-                NormalizeGeneratedSource(expectedSource.Content)
+                GeneratedSourceText.Normalize(expectedSource.Content)
             ));
         }
     }
 
-    private static string NormalizeGeneratedSource(string source)
-    {
-        var normalized = source
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n')
-            .Replace("\n", NewLine);
-
-        return normalized.EndsWith(NewLine, StringComparison.Ordinal)
-            ? normalized
-            : normalized + NewLine;
-    }
 }

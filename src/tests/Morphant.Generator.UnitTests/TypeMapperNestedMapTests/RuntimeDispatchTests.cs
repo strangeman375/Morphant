@@ -1,13 +1,13 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
-namespace Morphant.Generator.UnitTests.TypeMapperDependencyGraphTests;
+namespace Morphant.Generator.UnitTests.TypeMapperNestedMapTests;
 
 [TestFixture]
-internal sealed class GeneratedCodeTests
+internal sealed class RuntimeDispatchTests
 {
     [Test]
-    public async Task Emits_one_shared_local_across_construction_and_members()
+    public async Task Emits_runtime_dispatch_and_graph_sharing()
     {
         // lang=c#
         const string source =
@@ -19,22 +19,24 @@ using Morphant;
 
 namespace TestCase
 {
-    public sealed class Source
-    {
-        public int Value { get; init; }
-
-        public bool High { get; init; }
-    }
+    public sealed record ChildSource(int Value);
+    public sealed record ChildDestination(int Value);
+    public sealed record Source(
+        ChildSource Child,
+        ChildDestination Previous,
+        ChildSource Inferred,
+        ChildSource Typed);
 
     public sealed class Destination
     {
-        public Destination(int seed) => Seed = seed;
+        public Destination(ChildDestination constructed) =>
+            Constructed = constructed;
 
-        public int Seed { get; }
-
-        public int Value { get; set; }
-
-        public int Other { get; set; }
+        public ChildDestination Constructed { get; }
+        public ChildDestination Created { get; set; } = new(-1);
+        public ChildDestination Updated { get; set; } = new(-1);
+        public ChildDestination Inferred { get; set; } = new(-1);
+        public ChildDestination Typed { get; set; } = new(-1);
     }
 
     [MorphantMapper]
@@ -42,14 +44,14 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .Construct(source => new(seed: Share(source.Value)))
+                .Construct(source => new(Create(source.Child)))
                 .Members((source, _) => new()
                 {
-                    Value = Share(source.Value),
-                    Other = Share(source.Value)
+                    Created = Create<ChildDestination>(source.Child),
+                    Updated = Update(source.Child, source.Previous),
+                    Inferred = Map(),
+                    Typed = Map<ChildDestination>()
                 });
-
-        private static int Share(int value) => value;
     }
 }
 """;
@@ -68,9 +70,9 @@ namespace TestCase.Morphant.Generated
     internal sealed class DestinationConstructorParameters
     {
         /// <summary>
-        /// Maps the <c>seed</c> argument.
+        /// Maps the <c>constructed</c> argument.
         /// </summary>
-        public global::Morphant.Members.ConstructorParameter<int> seed = null!;
+        public global::Morphant.Members.ConstructorParameter<global::TestCase.ChildDestination> constructed = null!;
     }
 
     /// <summary>
@@ -92,8 +94,8 @@ namespace TestCase.Morphant.Generated
         /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>
-        /// <param name="seed">Maps the <c>seed</c> argument.</param>
-        public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> seed)
+        /// <param name="constructed">Maps the <c>constructed</c> argument.</param>
+        public DestinationConstruction(global::Morphant.Members.ConstructorParameter<global::TestCase.ChildDestination> constructed)
         {
         }
 
@@ -256,18 +258,44 @@ namespace TestCase.Morphant.Generated
     internal sealed record DestinationMembers
     {
         /// <summary>
-        /// Maps <see cref="global::TestCase.Destination.Value"/>.
+        /// Selects <see cref="global::TestCase.Destination.Constructed"/>.
         /// </summary>
-        public global::Morphant.Members.Member<int> Value
+        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Constructed
+        {
+            get => null!;
+        }
+
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Created"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Created
         {
             get => null!;
             set { }
         }
 
         /// <summary>
-        /// Maps <see cref="global::TestCase.Destination.Other"/>.
+        /// Maps <see cref="global::TestCase.Destination.Updated"/>.
         /// </summary>
-        public global::Morphant.Members.Member<int> Other
+        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Updated
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Inferred"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Inferred
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Typed"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Typed
         {
             get => null!;
             set { }
@@ -396,14 +424,16 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceValue = source.Value;
-            int value = global::TestCase.TestMapper.Share(sourceValue);
+            global::TestCase.ChildSource sourceChild = source.Child;
+            global::TestCase.ChildDestination value = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild);
 
             return new global::TestCase.Destination(
-                seed: value)
+                constructed: value)
             {
-                Value = value,
-                Other = value
+                Created = value,
+                Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild, source.Previous),
+                Inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred),
+                Typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed)
             };
         }
 
@@ -412,11 +442,12 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceValue = source.Value;
-            int value = global::TestCase.TestMapper.Share(sourceValue);
+            global::TestCase.ChildSource sourceChild = source.Child;
 
-            destination.Value = value;
-            destination.Other = value;
+            destination.Created = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild);
+            destination.Updated = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild, source.Previous);
+            destination.Inferred = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Inferred, destination: destination.Inferred);
+            destination.Typed = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Typed, destination: destination.Typed);
 
             return destination;
         }

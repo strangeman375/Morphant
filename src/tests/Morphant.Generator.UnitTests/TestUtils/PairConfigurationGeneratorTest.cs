@@ -10,8 +10,6 @@ internal sealed class PairConfigurationGeneratorTest :
         TestPairConfigurationGenerator,
         DefaultVerifier>
 {
-    private const string NewLine = "\r\n";
-
     // The production pipeline binds against its in-memory generated surface.
     // This test-only fallback keeps the final verification compilation valid
     // without adding unrelated surface snapshots to this model category.
@@ -130,7 +128,7 @@ namespace Morphant
         (
             typeof(TestPairConfigurationGenerator),
             "PairConfigurationModel.g.cs",
-            NormalizeGeneratedSource(expectedSource)
+            GeneratedSourceText.Normalize(expectedSource)
         ));
 
         await test.RunAsync();
@@ -157,21 +155,10 @@ namespace Morphant
         (
             typeof(TestPairConfigurationGenerator),
             "PairConfigurationModel.g.cs",
-            NormalizeGeneratedSource(expectedSource)
+            GeneratedSourceText.Normalize(expectedSource)
         ));
 
         await test.RunAsync();
     }
 
-    private static string NormalizeGeneratedSource(string source)
-    {
-        var normalized = source
-            .Replace("\r\n", "\n")
-            .Replace('\r', '\n')
-            .Replace("\n", NewLine);
-
-        return normalized.EndsWith(NewLine, StringComparison.Ordinal)
-            ? normalized
-            : normalized + NewLine;
-    }
 }

@@ -5,7 +5,7 @@ using Morphant.Exceptions;
 
 namespace Morphant.Generator.UnitTests;
 
-public sealed class MapperRuntimeTests
+internal sealed class MapperRuntimeTests
 {
     [Test]
     public void Rejects_a_null_service_provider_as_an_argument_error()
