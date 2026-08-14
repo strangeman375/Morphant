@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="Morphant logo" width="128" height="128">
+</p>
+
 # Morphant
 
 Morphant is a compile-time object mapper for C#. It turns explicit

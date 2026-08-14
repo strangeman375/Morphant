@@ -47,7 +47,10 @@ internal sealed class PackageConsumptionTests
                 $"-p:PackageVersion={packageVersion}",
                 "-p:NuGetAudit=false");
 
-            AssertPackageStrongNames(packageFeed, packageVersion);
+            AssertPackageContents(
+                repositoryRoot,
+                packageFeed,
+                packageVersion);
 
             await RunDotNet(
                 repositoryRoot,
@@ -76,7 +79,8 @@ internal sealed class PackageConsumptionTests
         }
     }
 
-    private static void AssertPackageStrongNames(
+    private static void AssertPackageContents(
+        string repositoryRoot,
         string packageFeed,
         string packageVersion)
     {
@@ -89,6 +93,7 @@ internal sealed class PackageConsumptionTests
 
         Assert.Multiple(() =>
         {
+            AssertPackagedLogo(package, repositoryRoot);
             AssertStrongName(
                 package,
                 "lib/netstandard2.0/Morphant.dll",
@@ -98,6 +103,24 @@ internal sealed class PackageConsumptionTests
                 "analyzers/dotnet/cs/Morphant.Generator.dll",
                 expectedPublicKeyToken);
         });
+    }
+
+    private static void AssertPackagedLogo(
+        ZipArchive package,
+        string repositoryRoot)
+    {
+        var entry = package.GetEntry("logo.png");
+
+        Assert.That(entry, Is.Not.Null, "Missing package entry logo.png.");
+
+        using var entryStream = entry!.Open();
+        using var stream = new MemoryStream();
+        entryStream.CopyTo(stream);
+        var expectedLogo = File.ReadAllBytes(Path.Combine(
+            repositoryRoot,
+            "logo.png"));
+
+        Assert.That(stream.ToArray(), Is.EqualTo(expectedLogo));
     }
 
     private static void AssertStrongName(
