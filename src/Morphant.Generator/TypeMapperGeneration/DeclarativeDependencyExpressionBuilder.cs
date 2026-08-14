@@ -333,7 +333,7 @@ internal static class DeclarativeDependencyExpressionBuilder
         if (result.Count == 0 ||
             !ReferenceEquals(result[0].Syntax, root))
         {
-            return [];
+            return ImmutableArray<DependencyCandidate>.Empty;
         }
 
         return result.ToImmutable();

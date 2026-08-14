@@ -14,7 +14,7 @@ internal static class RuntimeContractManifest
         Named("System.IServiceProvider");
 
     private static readonly ImmutableArray<TypeRequirement> Requirements =
-    [
+    ImmutableArray.Create<TypeRequirement>(
         // Attribute contract.
         Requirement(
             "Morphant.MorphantMapperAttribute",
@@ -387,7 +387,7 @@ internal static class RuntimeContractManifest
             "Morphant.Exceptions.UnmatchedMappingSwitchException",
             "Morphant.Exceptions.MappingException",
             MappingFailureConstructor())
-    ];
+    );
 
     public static bool DeclaresAnySymbol(IAssemblySymbol assembly)
     {

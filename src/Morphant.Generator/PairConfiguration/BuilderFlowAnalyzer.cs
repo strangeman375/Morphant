@@ -226,7 +226,7 @@ internal static class BuilderFlowAnalyzer
 
         if (root is null)
         {
-            return [];
+            return ImmutableArray<MappingPairRegistrationModel>.Empty;
         }
 
         var result = ImmutableArray.CreateBuilder<

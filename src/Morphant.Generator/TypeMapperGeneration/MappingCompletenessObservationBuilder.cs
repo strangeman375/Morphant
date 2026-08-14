@@ -44,7 +44,7 @@ internal static class MappingCompletenessObservationBuilder
             DestinationCapabilityPolicy.IsOpaque(
                 declarativeSourceType,
                 compilation)
-                ? []
+                ? ImmutableArray<ISymbol>.Empty
                 : ConventionMemberMappingPlanner.BuildReadableMembers(
                         declarativeSourceType,
                         compilation,
@@ -494,7 +494,7 @@ internal static class MappingCompletenessObservationBuilder
         }
 
         foreach (var section in node.SwitchSections.IsDefault
-                     ? []
+                     ? ImmutableArray<TypeMapperSwitchSectionModel>.Empty
                      : node.SwitchSections)
         {
             foreach (var slice in EnumerateMappingSlices(section.Branch))

@@ -539,9 +539,9 @@ internal static class TypeMapperPipeline
             CreateFactory: null,
             CreateConstructor: null,
             UpdateKind: TypeMapperUpdateKind.Unsupported,
-            CreateMemberMappings: [],
-            CreatePostMemberMappings: [],
-            UpdateMemberMappings: [],
+            CreateMemberMappings: ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+            CreatePostMemberMappings: ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+            UpdateMemberMappings: ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             Failure: MappingFailureObservation.Create(
                 new MappingAnalysisContext(
                     registration,
@@ -724,8 +724,8 @@ internal static class TypeMapperPipeline
                     manual.Form),
                 HelperMethodDeclarations = manual.HelperMethodDeclaration is
                     { } helperMethodDeclaration
-                    ? [helperMethodDeclaration]
-                    : [],
+                    ? ImmutableArray.Create<string>(helperMethodDeclaration)
+                    : ImmutableArray<string>.Empty,
                 Failure = manual.Failure
             };
         }
@@ -807,7 +807,7 @@ internal static class TypeMapperPipeline
                 MemberObservation = memberMappings.Observation,
                 NestedObservations = memberMappings.Observation
                     .NestedMappings.IsDefault
-                        ? []
+                        ? ImmutableArray<NestedMappingObservation>.Empty
                         : memberMappings.Observation.NestedMappings
             };
 
@@ -965,7 +965,7 @@ internal static class TypeMapperPipeline
                         memberMappings.Create,
                     CreatePostMemberMappings =
                         constructorMapping?.CreatePostMemberMappings ??
-                        [],
+                        ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                     UpdateMemberMappings = memberMappings.Update,
                     CreateFailure = createFailure,
                     ConstructorObservation = constructorObservation
@@ -1080,9 +1080,9 @@ internal static class TypeMapperPipeline
             CreateFactory: null,
             CreateConstructor: null,
             UpdateKind: destinationPlan.UpdateKind,
-            CreateMemberMappings: [],
-            CreatePostMemberMappings: [],
-            UpdateMemberMappings: []);
+            CreateMemberMappings: ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+            CreatePostMemberMappings: ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+            UpdateMemberMappings: ImmutableArray<TypeMapperMemberMappingModel>.Empty);
     }
 
     private static DestinationPlan BuildDestinationPlan(

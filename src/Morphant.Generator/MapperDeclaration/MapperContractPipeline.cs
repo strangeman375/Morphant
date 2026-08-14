@@ -33,7 +33,10 @@ internal static class MapperContractPipeline
         if (!configuration.Declaration.CanGenerateExecutableArtifact ||
             context.KnownSymbols is not { } knownSymbols)
         {
-            return new MapperContractAnalysis(configuration, [], []);
+            return new MapperContractAnalysis(
+                configuration,
+                ImmutableArray<MapperContractConflict>.Empty,
+                ImmutableArray<GeneratedMapperContractConflict>.Empty);
         }
 
         var interfaceGraphs = FindDirectInterfaceGraphs(

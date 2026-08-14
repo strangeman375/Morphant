@@ -490,7 +490,7 @@ internal static class StructuredConstructMappingPlanner
             new TypeMapperControlFlowMappingModel(
                 createRoot,
                 updateRoot),
-            HelperMethodDeclarations: [],
+            HelperMethodDeclarations: ImmutableArray<string>.Empty,
             Failure: null);
     }
 
@@ -639,7 +639,7 @@ internal static class StructuredConstructMappingPlanner
             whenTrue,
             whenFalse)
             ? new TypeMapperControlFlowNode(
-                Locals: [],
+                Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
                 Condition: null,
                 WhenTrue: null,
                 WhenFalse: null,
@@ -651,7 +651,7 @@ internal static class StructuredConstructMappingPlanner
                 EvaluationDependency:
                     rewrittenCondition.Value.DependencyExpression)
             : new TypeMapperControlFlowNode(
-                Locals: [],
+                Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
                 rewrittenCondition.Value.Expression,
                 whenTrue,
                 whenFalse,
@@ -1090,11 +1090,11 @@ internal static class StructuredConstructMappingPlanner
                     constructors.Select(constructor =>
                             new ConstructorCandidateObservation(
                                 constructor,
-                                ParameterRules: [],
+                                ParameterRules: ImmutableArray<ConstructorParameterRuleObservation>.Empty,
                                 rejection))
                         .ToImmutableArray(),
                     SelectedConstructor: null,
-                    Terminals: [])));
+                    Terminals: ImmutableArray<StructuredTerminalObservation>.Empty)));
 
         if (constructorSelection is null)
         {
@@ -1219,7 +1219,7 @@ internal static class StructuredConstructMappingPlanner
                     candidate.Observation)
                 .ToImmutableArray(),
             selectedConstructor,
-            Terminals: []);
+            Terminals: ImmutableArray<StructuredTerminalObservation>.Empty);
 
         return ObserveStrategy(new ConventionConstructorPlanningResult(
             selectedPlan,
@@ -1665,7 +1665,7 @@ internal static class StructuredConstructMappingPlanner
         if (parametersArgument is not { } parameters ||
             IsOmitted(parameters.Value))
         {
-            rules = [];
+            rules = ImmutableArray<StructuredConstructorParameterRule>.Empty;
             return true;
         }
 
@@ -2126,7 +2126,7 @@ internal static class StructuredConstructMappingPlanner
                 constructor.CreateMemberMappings,
             CreatePostMemberMappings =
                 constructor.CreatePostMemberMappings,
-            UpdateMemberMappings = [],
+            UpdateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             ControlFlow = null,
             CreateFailure = null,
             UpdateFailure = null,
@@ -2136,7 +2136,7 @@ internal static class StructuredConstructMappingPlanner
         };
 
         return new TypeMapperControlFlowNode(
-            Locals: [],
+            Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
             Condition: null,
             WhenTrue: null,
             WhenFalse: null,
@@ -2202,8 +2202,8 @@ internal static class StructuredConstructMappingPlanner
         var leaf = mapping with
         {
             CreateConstructor = null,
-            CreateMemberMappings = [],
-            CreatePostMemberMappings = [],
+            CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+            CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             UpdateMemberMappings = memberMappings.Update,
             ControlFlow = null,
             CreateFailure = null,
@@ -2215,7 +2215,7 @@ internal static class StructuredConstructMappingPlanner
         };
 
         return new TypeMapperControlFlowNode(
-            Locals: [],
+            Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
             Condition: null,
             WhenTrue: null,
             WhenFalse: null,
@@ -2262,7 +2262,7 @@ internal static class StructuredConstructMappingPlanner
         };
 
         return new TypeMapperControlFlowNode(
-            Locals: [],
+            Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
             Condition: null,
             WhenTrue: null,
             WhenFalse: null,
@@ -2349,7 +2349,7 @@ internal readonly record struct StructuredConstructMappingResult(
         MappingFailureObservation failure) =>
         new(
             ControlFlow: null,
-            HelperMethodDeclarations: [],
+            HelperMethodDeclarations: ImmutableArray<string>.Empty,
             Failure: failure);
 }
 

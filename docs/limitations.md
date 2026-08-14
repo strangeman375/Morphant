@@ -16,7 +16,7 @@ mapper.
 - compile-time diagnostics and typed runtime exceptions;
 - nullable, value, record, interface, abstract and closed generic destination
   types when Morphant can create them by convention or an explicit rule;
-- C# 9 and newer consumers running Roslyn 4.9.2 or later.
+- C# 9 and newer consumers running Roslyn 4.4.0 or later.
 
 ## Not included in Morphant 0.1
 

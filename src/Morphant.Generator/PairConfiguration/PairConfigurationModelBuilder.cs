@@ -32,11 +32,11 @@ internal static class PairConfigurationModelBuilder
             return new MapperPairConfigurationModel(
                 mapperDeclaration,
                 mappingPairs,
-                [mappingPairs],
+                ImmutableArray.Create<MapperMappingPairModel>(mappingPairs),
                 PairConfigurationSettings.Empty,
-                [],
-                [],
-                [],
+                ImmutableArray<PairConfigurationSettings>.Empty,
+                ImmutableArray<DuplicateBaseConfigurationCallModel>.Empty,
+                ImmutableArray<PairConfigurationModel>.Empty,
                 HasInvalidBaseConfiguration: false,
                 discovery.UnavailableBaseConfigurations,
                 discovery.FlowBreaks);
@@ -62,11 +62,11 @@ internal static class PairConfigurationModelBuilder
             return new MapperPairConfigurationModel(
                 mapperDeclaration,
                 mappingPairs,
-                [mappingPairs],
+                ImmutableArray.Create<MapperMappingPairModel>(mappingPairs),
                 PairConfigurationSettings.Empty,
-                [],
-                [],
-                [],
+                ImmutableArray<PairConfigurationSettings>.Empty,
+                ImmutableArray<DuplicateBaseConfigurationCallModel>.Empty,
+                ImmutableArray<PairConfigurationModel>.Empty,
                 HasInvalidBaseConfiguration: false,
                 discovery.UnavailableBaseConfigurations,
                 discovery.FlowBreaks);
@@ -149,7 +149,7 @@ internal static class PairConfigurationModelBuilder
                         ? BuildCandidates(
                             candidateModel,
                             localPairs)
-                        : [],
+                        : ImmutableArray<PairConfigurationCandidateModel>.Empty,
                     level.BaseConfigureCalls));
         }
 
@@ -247,9 +247,9 @@ internal static class PairConfigurationModelBuilder
                 mappingPairs,
                 surfaceMappingPairs,
                 PairConfigurationSettings.Empty,
-                [],
-                [],
-                [],
+                ImmutableArray<PairConfigurationSettings>.Empty,
+                ImmutableArray<DuplicateBaseConfigurationCallModel>.Empty,
+                ImmutableArray<PairConfigurationModel>.Empty,
                 hasInvalidBaseConfiguration,
                 unavailableBaseConfigurations,
                 flowBreaks);
@@ -447,9 +447,9 @@ internal static class PairConfigurationModelBuilder
             {
                 Composition = local.Composition with
                 {
-                    IncludedBaseSettings = [],
+                    IncludedBaseSettings = ImmutableArray<PairConfigurationSettings>.Empty,
                     Issues = issues,
-                    InaccessibleCallbacks = []
+                    InaccessibleCallbacks = ImmutableArray<InheritedCallbackAccessibilityModel>.Empty
                 },
                 Conflicts = conflicts |
                     PairConfigurationConflict.DuplicateIncludeBase
@@ -473,16 +473,16 @@ internal static class PairConfigurationModelBuilder
             {
                 Composition = local.Composition with
                 {
-                    IncludedBaseSettings = [],
+                    IncludedBaseSettings = ImmutableArray<PairConfigurationSettings>.Empty,
                     Issues =
-                    [
+                    ImmutableArray.Create<InheritanceCompositionIssueModel>(
                         new InheritanceCompositionIssueModel(
                             InheritanceCompositionIssueKind
                                 .MissingIncludedPair,
                             local.Origin,
                             includeBase)
-                    ],
-                    InaccessibleCallbacks = []
+                    ),
+                    InaccessibleCallbacks = ImmutableArray<InheritedCallbackAccessibilityModel>.Empty
                 },
                 Conflicts = conflicts |
                     PairConfigurationConflict.MissingBasePair
@@ -495,9 +495,9 @@ internal static class PairConfigurationModelBuilder
             {
                 Composition = local.Composition with
                 {
-                    IncludedBaseSettings = [],
-                    Issues = [],
-                    InaccessibleCallbacks = []
+                    IncludedBaseSettings = ImmutableArray<PairConfigurationSettings>.Empty,
+                    Issues = ImmutableArray<InheritanceCompositionIssueModel>.Empty,
+                    InaccessibleCallbacks = ImmutableArray<InheritedCallbackAccessibilityModel>.Empty
                 },
                 Conflicts = conflicts |
                     PairConfigurationConflict.MissingBaseConfiguration
@@ -510,16 +510,16 @@ internal static class PairConfigurationModelBuilder
             {
                 Composition = local.Composition with
                 {
-                    IncludedBaseSettings = [],
+                    IncludedBaseSettings = ImmutableArray<PairConfigurationSettings>.Empty,
                     Issues =
-                    [
+                    ImmutableArray.Create<InheritanceCompositionIssueModel>(
                         new InheritanceCompositionIssueModel(
                             InheritanceCompositionIssueKind
                                 .InvalidIncludedPair,
                             local.Origin,
                             includeBase)
-                    ],
-                    InaccessibleCallbacks = []
+                    ),
+                    InaccessibleCallbacks = ImmutableArray<InheritedCallbackAccessibilityModel>.Empty
                 },
                 Conflicts = conflicts |
                     PairConfigurationConflict.InvalidBasePair
@@ -560,9 +560,9 @@ internal static class PairConfigurationModelBuilder
             {
                 Composition = local.Composition with
                 {
-                    IncludedBaseSettings = [],
+                    IncludedBaseSettings = ImmutableArray<PairConfigurationSettings>.Empty,
                     Issues = issues.ToImmutable(),
-                    InaccessibleCallbacks = []
+                    InaccessibleCallbacks = ImmutableArray<InheritedCallbackAccessibilityModel>.Empty
                 },
                 Conflicts = conflicts |
                     PairConfigurationConflict.IncompatibleBasePair
@@ -644,7 +644,7 @@ internal static class PairConfigurationModelBuilder
             Issues = FilterInheritedIssues(
                 inherited.Composition.Issues,
                 conflicts),
-            InaccessibleCallbacks = []
+            InaccessibleCallbacks = ImmutableArray<InheritedCallbackAccessibilityModel>.Empty
         };
 
         return local with
@@ -1071,7 +1071,7 @@ internal static class PairConfigurationModelBuilder
         // deliberately has no linear invocation chain. Keep the registration
         // model so recovery can emit the pair surface, but do not attempt to
         // lower any pair-level configuration after it.
-        return new PairConfigurationInvocationChain([]);
+        return new PairConfigurationInvocationChain(ImmutableArray<InvocationExpressionSyntax>.Empty);
     }
 
     private static PairConfigurationModel BuildPair(
@@ -1311,9 +1311,9 @@ internal static class PairConfigurationModelBuilder
             new ManualPairConfigurationModel(immutableConversions),
             new PairConfigurationCompositionModel(
                 includeBaseCalls.ToImmutable(),
-                [],
-                [],
-                []),
+                ImmutableArray<PairConfigurationSettings>.Empty,
+                ImmutableArray<InheritanceCompositionIssueModel>.Empty,
+                ImmutableArray<InheritedCallbackAccessibilityModel>.Empty),
             conflicts);
     }
 
@@ -1579,7 +1579,7 @@ internal static class PairConfigurationModelBuilder
                 targetMapperType,
                 declaringMapperType))
         {
-            return [];
+            return ImmutableArray<Location>.Empty;
         }
 
         bool DescendInto(SyntaxNode node) =>

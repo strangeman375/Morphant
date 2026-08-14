@@ -1470,7 +1470,7 @@ internal sealed class DeclarativeNestedMapUsageRegistry
             invocation,
             out var targets)
                 ? targets.ToImmutableArray()
-                : [];
+                : ImmutableArray<string>.Empty;
     }
 
     public ImmutableArray<SyntaxNode> GetAdaptiveTargetDesignators(
@@ -1485,7 +1485,7 @@ internal sealed class DeclarativeNestedMapUsageRegistry
                         StringComparer.Ordinal)
                     .ThenBy(static designator => designator.SpanStart)
                     .ToImmutableArray()
-                : [];
+                : ImmutableArray<SyntaxNode>.Empty;
     }
 
     public bool TryRegisterAdaptiveUpdate(

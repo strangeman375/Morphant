@@ -28,9 +28,9 @@ internal static class ConventionConstructorMappingPlanner
             new(
                 constructorSelection,
                 StrategyOrigin: null,
-                Candidates: [],
+                Candidates: ImmutableArray<ConstructorCandidateObservation>.Empty,
                 SelectedConstructor: null,
-                Terminals: []);
+                Terminals: ImmutableArray<StructuredTerminalObservation>.Empty);
 
         if (!capabilities.StructuredConstruction)
         {
@@ -142,7 +142,7 @@ internal static class ConventionConstructorMappingPlanner
                         compilation))
                 .ToImmutableArray(),
             selectedConstructor,
-            Terminals: []);
+            Terminals: ImmutableArray<StructuredTerminalObservation>.Empty);
 
         return new ConventionConstructorPlanningResult(
             selectedPlan is { } plan
@@ -1293,7 +1293,7 @@ internal static class ConventionConstructorMappingPlanner
                 ConstructorSelectionValue.Explicit,
                 StrategyOrigin: null,
                 Candidates:
-                [
+                ImmutableArray.Create<ConstructorCandidateObservation>(
                     new ConstructorCandidateObservation(
                         constructor,
                         constructor.Parameters.Select(parameter =>
@@ -1327,9 +1327,9 @@ internal static class ConventionConstructorMappingPlanner
                             })
                             .ToImmutableArray(),
                         ConstructorCandidateRejectionReason.None)
-                ],
+                ),
                 constructor,
-                Terminals: []));
+                Terminals: ImmutableArray<StructuredTerminalObservation>.Empty));
     }
 
     internal static string BuildExplicitValueLocalTypeName(

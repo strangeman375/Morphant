@@ -88,6 +88,15 @@ boxing, nullable annotations, lambdas or overloaded constructors:
 });
 ```
 
+On C# 12 and newer, `Value<T>` also supplies the collection target type:
+
+```csharp
+.Members((source, _) => new()
+{
+    Values = Value<int[]>([.. source.Values])
+});
+```
+
 ## Existing destinations
 
 In `Resolve` and the overloads of `Members` that receive `previous`,

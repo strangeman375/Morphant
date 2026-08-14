@@ -145,7 +145,7 @@ internal static class MappingCompletenessDiagnosticAnalyzer
         var additional = declaration is null ||
             IsSameLocation(declaration, primary)
                 ? ImmutableArray<Location>.Empty
-                : [declaration];
+                : ImmutableArray.Create<Location>(declaration);
 
         return new MappingCompletenessDiagnosticCandidate(
             kind,

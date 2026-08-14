@@ -80,7 +80,7 @@ internal static class MembersControlFlowMappingPlanner
 
             foreach (var declaration in
                      flat.HelperMethodDeclarations.IsDefault
-                         ? []
+                         ? ImmutableArray<string>.Empty
                          : flat.HelperMethodDeclarations)
             {
                 if (seenHelpers.Add(declaration))
@@ -260,7 +260,7 @@ internal static class MembersControlFlowMappingPlanner
                 ? memberPlan.CreatePost
                 : replacement
                     ? memberPlan.MapReplacementPost
-                    : [];
+                    : ImmutableArray<TypeMapperMemberMappingModel>.Empty;
             var factory = leaf.CreateFactory;
 
             if (factory is { } factoryValue)
@@ -277,15 +277,15 @@ internal static class MembersControlFlowMappingPlanner
                 Leaf = leaf with
                 {
                     CreateFactory = factory,
-                    CreateMemberMappings = [],
+                    CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                     CreatePostMemberMappings = postMappings,
                     UpdateMemberMappings = create || replacement
-                        ? []
+                        ? ImmutableArray<TypeMapperMemberMappingModel>.Empty
                         : memberPlan.Update,
                     MemberObservation = memberPlan.Observation,
                     NestedObservations = memberPlan.Observation
                         .NestedMappings.IsDefault
-                            ? []
+                            ? ImmutableArray<NestedMappingObservation>.Empty
                             : memberPlan.Observation.NestedMappings
                 }
             };
@@ -296,7 +296,7 @@ internal static class MembersControlFlowMappingPlanner
             MemberObservation = memberPlan.Observation,
             NestedObservations = memberPlan.Observation.NestedMappings
                 .IsDefault
-                    ? []
+                    ? ImmutableArray<NestedMappingObservation>.Empty
                     : memberPlan.Observation.NestedMappings,
             ControlFlow = new TypeMapperControlFlowMappingModel(
                 Apply(controlFlow.CreateRoot, create: true),
@@ -502,7 +502,7 @@ internal static class MembersControlFlowMappingPlanner
                                 out var failure))
                         {
                             return new TypeMapperMemberControlFlowLeafModel(
-                                [],
+                                ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                                 failure,
                                 plan.Observation);
                         }
@@ -641,7 +641,8 @@ internal static class MembersControlFlowMappingPlanner
         {
             factory = UserResultMappingPlanner.BuildFactoryMapping(
                 leaf,
-                [default],
+                ImmutableArray.Create<TypeMapperMemberMappingModel>(
+                    default(TypeMapperMemberMappingModel)),
                 mapperType,
                 factoryValue.ValueExpression);
         }
@@ -656,9 +657,9 @@ internal static class MembersControlFlowMappingPlanner
                             !assignableNames.Contains(
                                 member.DestinationMemberName))
                         .ToImmutableArray()
-                    : [],
-                CreatePostMemberMappings = [],
-                UpdateMemberMappings = [],
+                    : ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                UpdateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 PostMemberControlFlow = post
             }
         };
@@ -894,7 +895,7 @@ internal static class MembersControlFlowMappingPlanner
             };
 
         return new TypeMapperControlFlowNode(
-            Locals: [],
+            Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
             Condition: null,
             WhenTrue: null,
             WhenFalse: null,

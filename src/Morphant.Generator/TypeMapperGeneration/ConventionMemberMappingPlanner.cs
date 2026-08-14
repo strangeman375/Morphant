@@ -66,12 +66,17 @@ internal static class ConventionMemberMappingPlanner
         if (destination is null)
         {
             return new ConventionMemberMappingPlan(
-                [],
-                [],
-                [],
-                [],
-                [],
-                new MemberPlanningObservation([], [], [], [], []));
+                ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                new MemberPlanningObservation(
+                    ImmutableArray<ISymbol>.Empty,
+                    ImmutableArray<ISymbol>.Empty,
+                    ImmutableArray<MemberRuleObservation>.Empty,
+                    ImmutableArray<ISymbol>.Empty,
+                    ImmutableArray<StructuredTerminalObservation>.Empty));
         }
 
         var readableMembers = BuildReadableMembers(
@@ -233,7 +238,7 @@ internal static class ConventionMemberMappingPlanner
                 supportedDestinationMembers.ToImmutable(),
                 rules.ToImmutable(),
                 requiredObligations.ToImmutable(),
-                Terminals: []));
+                Terminals: ImmutableArray<StructuredTerminalObservation>.Empty));
     }
 
     internal static ImmutableArray<ConventionReadableMember>
@@ -275,7 +280,7 @@ internal static class ConventionMemberMappingPlanner
     {
         if (!capabilities.Members)
         {
-            return [];
+            return ImmutableArray<ConventionWritableMember>.Empty;
         }
 
         var result =
@@ -376,7 +381,7 @@ internal static class ConventionMemberMappingPlanner
 
         if (type is not INamedTypeSymbol namedType)
         {
-            return [];
+            return ImmutableArray<EffectiveMemberGroup>.Empty;
         }
 
         return namedType.TypeKind == TypeKind.Interface

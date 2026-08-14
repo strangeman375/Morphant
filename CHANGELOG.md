@@ -20,7 +20,7 @@ Initial stable release.
 - Mapper settings, mapping inheritance and configuration composition.
 - Forty-eight documented compile-time diagnostics and typed runtime
   exceptions.
-- C# 9 and newer consumer support on Roslyn 4.9.2 or later.
+- C# 9 and newer consumer support on Roslyn 4.4.0 or later.
 - Strong-named runtime and generator assemblies with public key token
   `ba27fb6be8f80649`.
 

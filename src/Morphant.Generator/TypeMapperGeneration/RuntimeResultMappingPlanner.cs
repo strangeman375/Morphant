@@ -76,9 +76,9 @@ internal static class RuntimeResultMappingPlanner
                 UpdateDirectExpression = null,
                 CreateFactory = factory,
                 CreateConstructor = null,
-                CreateMemberMappings = [],
+                CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 CreatePostMemberMappings = postMembers,
-                UpdateMemberMappings = [],
+                UpdateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 ControlFlow = null,
                 CreateFailure = null,
                 UpdateFailure = null,
@@ -97,7 +97,7 @@ internal static class RuntimeResultMappingPlanner
             new TypeMapperControlFlowMappingModel(
                 createRoot,
                 updateRoot),
-            [method.Value.HelperMethodDeclaration],
+            ImmutableArray.Create<string>(method.Value.HelperMethodDeclaration),
             Failure: null);
     }
 
@@ -155,8 +155,8 @@ internal static class RuntimeResultMappingPlanner
             {
                 CreateFactory = null,
                 CreateConstructor = null,
-                CreateMemberMappings = [],
-                CreatePostMemberMappings = [],
+                CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 UpdateMemberMappings = memberMappings,
                 ControlFlow = null,
                 CreateFailure = null,
@@ -169,7 +169,7 @@ internal static class RuntimeResultMappingPlanner
         TypeMapperMappingModel mapping)
     {
         return new TypeMapperControlFlowNode(
-            Locals: [],
+            Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
             Condition: null,
             WhenTrue: null,
             WhenFalse: null,
@@ -187,6 +187,6 @@ internal readonly record struct RuntimeResultMappingResult(
         MappingFailureObservation failure) =>
         new(
             ControlFlow: null,
-            HelperMethodDeclarations: [],
+            HelperMethodDeclarations: ImmutableArray<string>.Empty,
             Failure: failure);
 }

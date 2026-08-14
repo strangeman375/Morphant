@@ -21,7 +21,9 @@ internal static class TypeMapperTransferValidator
     {
         if (!policies.Any(static policy => policy.HasTransferredCode))
         {
-            return new TypeMapperTransferValidationResult(model, []);
+            return new TypeMapperTransferValidationResult(
+                model,
+                ImmutableArray<CallbackTransferFailureObservation>.Empty);
         }
 
         var transferFailures = ImmutableArray.CreateBuilder<
@@ -36,7 +38,9 @@ internal static class TypeMapperTransferValidator
 
         if (diagnostics.IsEmpty)
         {
-            return new TypeMapperTransferValidationResult(model, []);
+            return new TypeMapperTransferValidationResult(
+                model,
+                ImmutableArray<CallbackTransferFailureObservation>.Empty);
         }
 
         var mappings = model.Mappings.ToArray();
@@ -271,8 +275,8 @@ internal static class TypeMapperTransferValidator
             CreateImplMethodName = null,
             UpdateImplMethodName = null,
             CreateImplUsesOperation = false,
-            HelperMethodDeclarations = [],
-            TransferredWarningSuppressions = []
+            HelperMethodDeclarations = ImmutableArray<string>.Empty,
+            TransferredWarningSuppressions = ImmutableArray<string>.Empty
         };
     }
 
@@ -294,7 +298,7 @@ internal static class TypeMapperTransferValidator
             diagnostic.Node,
             diagnostic.Symbol,
             sourceExpression?.Syntax.GetLocation(),
-            [diagnostic.Diagnostic.Location]);
+            ImmutableArray.Create<Location>(diagnostic.Diagnostic.Location));
     }
 
     private static ImmutableArray<TransferPreflightDiagnostic> GetDiagnostics(

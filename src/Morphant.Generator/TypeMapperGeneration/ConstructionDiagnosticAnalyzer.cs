@@ -395,7 +395,7 @@ internal static class ConstructionDiagnosticAnalyzer
             context,
             failure,
             primary,
-            additionalLocations: [],
+            additionalLocations: ImmutableArray<Location>.Empty,
             detail: string.Empty,
             contract,
             parameterName: string.Empty,
@@ -581,7 +581,7 @@ internal static class ConstructionDiagnosticAnalyzer
                     ConstructorCandidateRejectionReason
                         .ResultDependentInitializer)
             {
-                return [];
+                return ImmutableArray<InvalidRuleCandidate>.Empty;
             }
 
             var invalid = selected.ParameterRules
@@ -605,7 +605,7 @@ internal static class ConstructionDiagnosticAnalyzer
 
                 if (explicitRules.Length == 1)
                 {
-                    return [new InvalidRuleCandidate(
+                    return ImmutableArray.Create<InvalidRuleCandidate>(new InvalidRuleCandidate(
                         selected.Constructor,
                         explicitRules[0] with
                         {
@@ -613,18 +613,18 @@ internal static class ConstructionDiagnosticAnalyzer
                             RejectionReason =
                                 ConstructorCandidateRejectionReason
                                     .InvocationBinding
-                        })];
+                        }));
                 }
             }
 
-            return [];
+            return ImmutableArray<InvalidRuleCandidate>.Empty;
         }
 
         if (!requireCompleteAttribution ||
             observation.Strategy != ConstructorSelectionValue.Greediest ||
             observation.Candidates.IsEmpty)
         {
-            return [];
+            return ImmutableArray<InvalidRuleCandidate>.Empty;
         }
 
         var groups = observation.Candidates
@@ -1071,7 +1071,7 @@ internal static class ConstructionDiagnosticAnalyzer
                 : mapping.StructuredTerminals)
             .AddRange(mapping.ConstructorObservation?.Terminals.IsDefault == false
                 ? mapping.ConstructorObservation.Terminals
-                : []);
+                : ImmutableArray<StructuredTerminalObservation>.Empty);
 
         return candidates.FirstOrDefault(terminal =>
             terminal.Kind == kind &&

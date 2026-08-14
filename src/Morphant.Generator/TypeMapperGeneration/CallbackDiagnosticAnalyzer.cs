@@ -96,7 +96,7 @@ internal static class CallbackDiagnosticAnalyzer
                 CallbackDiagnosticDescriptors.CallbackCannotBeTransferred,
                 IdOrder: 30,
                 callback.Expression.Syntax.GetLocation(),
-                additionalLocations: [],
+                additionalLocations: ImmutableArray<Location>.Empty,
                 detail: "compiler:" + failure.DiagnosticId,
                 callback.Name,
                 callback.Contract,
@@ -123,7 +123,7 @@ internal static class CallbackDiagnosticAnalyzer
                 CallbackDiagnosticDescriptors.StructuredCallbackMustBeLambda,
                 IdOrder: 29,
                 core.GetLocation(),
-                additionalLocations: [],
+                additionalLocations: ImmutableArray<Location>.Empty,
                 detail: string.Empty,
                 context.Name,
                 context.Contract));
@@ -135,7 +135,7 @@ internal static class CallbackDiagnosticAnalyzer
                 context.Expression.SemanticModel,
                 cancellationToken))
         {
-            return [];
+            return ImmutableArray<CallbackDiagnosticCandidate>.Empty;
         }
 
         AddUnavailableSymbolDiagnostics(
@@ -459,7 +459,7 @@ internal static class CallbackDiagnosticAnalyzer
                 CallbackDiagnosticDescriptors.CallbackCannotBeTransferred,
                 IdOrder: 30,
                 name.Identifier.GetLocation(),
-                additionalLocations: [],
+                additionalLocations: ImmutableArray<Location>.Empty,
                 detail: "file-local:" + display,
                 context.Name,
                 context.Contract,
@@ -583,7 +583,7 @@ internal static class CallbackDiagnosticAnalyzer
             CallbackDiagnosticDescriptors.CallbackCannotBeTransferred,
             IdOrder: 30,
             location,
-            additionalLocations: [],
+            additionalLocations: ImmutableArray<Location>.Empty,
             detail: "extension:" + construct,
             context.Name,
             context.Contract,
@@ -635,7 +635,7 @@ internal static class CallbackDiagnosticAnalyzer
                 CallbackDiagnosticDescriptors.InvalidCompileTimeMarkerUse,
                 IdOrder: 33,
                 name.Identifier.GetLocation(),
-                additionalLocations: [],
+                additionalLocations: ImmutableArray<Location>.Empty,
                 detail: "marker:" + kind,
                 kind.ToString(),
                 context.Name,
@@ -682,7 +682,7 @@ internal static class CallbackDiagnosticAnalyzer
                 CallbackDiagnosticDescriptors.InvalidCompileTimeMarkerUse,
                 IdOrder: 33,
                 reference.Identifier.GetLocation(),
-                additionalLocations: [],
+                additionalLocations: ImmutableArray<Location>.Empty,
                 detail: "marker:MappingContextMarker:" +
                     reference.SpanStart,
                 "context",
@@ -733,7 +733,7 @@ internal static class CallbackDiagnosticAnalyzer
                 CallbackDiagnosticDescriptors.StructuredInputIsReadOnly,
                 IdOrder: 32,
                 mutation.Location,
-                additionalLocations: [],
+                additionalLocations: ImmutableArray<Location>.Empty,
                 detail: inputName + ":" + mutation.Location.SourceSpan.Start,
                 inputName,
                 context.Contract));
@@ -766,7 +766,7 @@ internal static class CallbackDiagnosticAnalyzer
                 CallbackDiagnosticDescriptors.UnsupportedStructuredSyntax,
                 IdOrder: 31,
                 unsupported.Location,
-                additionalLocations: [],
+                additionalLocations: ImmutableArray<Location>.Empty,
                 detail: unsupported.Name + ":" +
                     unsupported.Location.SourceSpan.Start,
                 context.Name,
@@ -785,7 +785,7 @@ internal static class CallbackDiagnosticAnalyzer
                 CallbackDiagnosticDescriptors.UnsupportedStructuredSyntax,
                 IdOrder: 31,
                 mutation.Location,
-                additionalLocations: [],
+                additionalLocations: ImmutableArray<Location>.Empty,
                 detail: mutation.Name + ":" +
                     mutation.Location.SourceSpan.Start,
                 context.Name,
@@ -1628,7 +1628,7 @@ internal static class CallbackDiagnosticAnalyzer
                 ImmutableArray.Create(simple.Parameter),
             ParenthesizedLambdaExpressionSyntax parenthesized =>
                 parenthesized.ParameterList.Parameters.ToImmutableArray(),
-            _ => []
+            _ => ImmutableArray<ParameterSyntax>.Empty
         };
         var parameters = syntaxParameters
             .Select(parameter =>

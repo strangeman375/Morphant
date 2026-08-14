@@ -86,8 +86,8 @@ internal static class DeclarativeControlFlowLowerer
                 UpdateDirectExpression = null,
                 CreateFactory = null,
                 CreateConstructor = null,
-                CreateMemberMappings = [],
-                CreatePostMemberMappings = [],
+                CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 UpdateMemberMappings = memberLeaf.MemberMappings,
                 ControlFlow = null,
                 CreateFailure = null,
@@ -98,7 +98,7 @@ internal static class DeclarativeControlFlowLowerer
             };
 
             return new TypeMapperControlFlowNode(
-                Locals: [],
+                Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
                 Condition: null,
                 WhenTrue: null,
                 WhenFalse: null,
@@ -260,7 +260,7 @@ internal static class DeclarativeControlFlowLowerer
                                     .GetGeneratedTypeName(type),
                                 CanMaterialize: false,
                                 identifier.Identifier.Text,
-                                [])));
+                                ImmutableArray<TypeMapperDependencyExpressionChildModel>.Empty)));
             }
 
             return DeclarativeDependencyExpressionBuilder
@@ -384,7 +384,7 @@ internal static class DeclarativeControlFlowLowerer
                 return throwExpression is null
                     ? null
                     : new TypeMapperControlFlowNode(
-                        Locals: [],
+                        Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
                         Condition: null,
                         WhenTrue: null,
                         WhenFalse: null,
@@ -557,7 +557,7 @@ internal static class DeclarativeControlFlowLowerer
                 return expression is null || evaluationContinuation is null
                     ? null
                     : new TypeMapperControlFlowNode(
-                        Locals: [],
+                        Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
                         Condition: null,
                         WhenTrue: null,
                         WhenFalse: null,
@@ -615,7 +615,7 @@ internal static class DeclarativeControlFlowLowerer
                     whenTrue,
                     whenFalse)
                     ? new TypeMapperControlFlowNode(
-                        Locals: [],
+                        Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
                         Condition: null,
                         WhenTrue: null,
                         WhenFalse: null,
@@ -627,7 +627,7 @@ internal static class DeclarativeControlFlowLowerer
                         EvaluationDependency:
                             condition.Value.DependencyExpression)
                     : new TypeMapperControlFlowNode(
-                        Locals: [],
+                        Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
                         condition.Value.Expression,
                         whenTrue,
                         whenFalse,
@@ -692,7 +692,7 @@ internal static class DeclarativeControlFlowLowerer
             }
 
             var result = new TypeMapperControlFlowNode(
-                Locals: [],
+                Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
                 Condition: null,
                 WhenTrue: null,
                 WhenFalse: null,
@@ -824,7 +824,7 @@ internal static class DeclarativeControlFlowLowerer
             "switchValue",
             usedNames);
         var fallback = new TypeMapperControlFlowNode(
-            Locals: [],
+            Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
             Condition: null,
             WhenTrue: null,
             WhenFalse: null,
@@ -863,7 +863,7 @@ internal static class DeclarativeControlFlowLowerer
             node.WhenFalse is { } whenFalse
                 ? ConvertMemberControlFlow(whenFalse)
                 : null,
-            node.Leaf?.UpdateMemberMappings ?? [],
+            node.Leaf?.UpdateMemberMappings ?? ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             node.ThrowExpression,
             node.Leaf?.Failure,
             node.SwitchExpression,

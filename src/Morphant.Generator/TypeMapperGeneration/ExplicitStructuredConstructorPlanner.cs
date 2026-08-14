@@ -846,7 +846,7 @@ internal static class ExplicitStructuredConstructorPlanner
 
                 return new ConstructorCandidateObservation(
                     constructor,
-                    isSelected ? rules : [],
+                    isSelected ? rules : ImmutableArray<ConstructorParameterRuleObservation>.Empty,
                     isSelected || selectedConstructor is null
                         ? rejection
                         : ConstructorCandidateRejectionReason.StrategyShape);
@@ -858,7 +858,7 @@ internal static class ExplicitStructuredConstructorPlanner
             strategyOrigin,
             candidates,
             selectedConstructor,
-            Terminals: []);
+            Terminals: ImmutableArray<StructuredTerminalObservation>.Empty);
     }
 
     private static HashSet<string> BuildUsedProbeNames(

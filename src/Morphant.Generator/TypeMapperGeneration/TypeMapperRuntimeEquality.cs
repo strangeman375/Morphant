@@ -198,8 +198,8 @@ internal static class TypeMapperRuntimeEquality
                    leftMapping.NestedObservations,
                    rightMapping.NestedObservations) &&
                AreEquivalentNestedObservations(
-                   leftMapping.MemberObservation?.NestedMappings ?? [],
-                   rightMapping.MemberObservation?.NestedMappings ?? []) &&
+                   leftMapping.MemberObservation?.NestedMappings ?? ImmutableArray<NestedMappingObservation>.Empty,
+                   rightMapping.MemberObservation?.NestedMappings ?? ImmutableArray<NestedMappingObservation>.Empty) &&
                AreEquivalent(
                    leftMapping.PostMemberControlFlow,
                    rightMapping.PostMemberControlFlow) &&
@@ -338,8 +338,8 @@ internal static class TypeMapperRuntimeEquality
                left.ThrowUsesCurrentMappingOperation ==
                    right.ThrowUsesCurrentMappingOperation &&
                AreEquivalentNestedObservations(
-                   left.MemberObservation?.NestedMappings ?? [],
-                   right.MemberObservation?.NestedMappings ?? []);
+                   left.MemberObservation?.NestedMappings ?? ImmutableArray<NestedMappingObservation>.Empty,
+                   right.MemberObservation?.NestedMappings ?? ImmutableArray<NestedMappingObservation>.Empty);
     }
 
     private static bool AreEquivalentNestedObservations(
@@ -387,7 +387,7 @@ internal static class TypeMapperRuntimeEquality
             ImmutableArray<NestedMappingObservation> observations)
     {
         return observations.IsDefaultOrEmpty
-            ? []
+            ? ImmutableArray<NestedMappingObservation>.Empty
             : observations.Where(static observation =>
                     observation.FailureKind !=
                         NestedMappingFailureKind.None)

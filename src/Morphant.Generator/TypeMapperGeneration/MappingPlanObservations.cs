@@ -161,11 +161,11 @@ internal sealed record MappingFailureObservation(
             primaryLocation ??
             offendingNode?.GetLocation() ??
             resolvedOrigin.GetLocation(),
-            additionalLocations.IsDefault ? [] : additionalLocations,
+            additionalLocations.IsDefault ? ImmutableArray<Location>.Empty : additionalLocations,
             sourceMapper ?? context.TargetMapper,
             context,
             affectedPath,
-            nestedObservations.IsDefault ? [] : nestedObservations);
+            nestedObservations.IsDefault ? ImmutableArray<NestedMappingObservation>.Empty : nestedObservations);
     }
 }
 

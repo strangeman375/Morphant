@@ -59,7 +59,7 @@ internal static class DeclarativeControlFlowPlanner
         if (lambda.ExpressionBody is
                  { } expressionBody)
         {
-            localDeclarations = [];
+            localDeclarations = ImmutableArray<LocalDeclarationStatementSyntax>.Empty;
             resultExpression = expressionBody;
         }
         else if (lambda.Block is { } block &&
@@ -1607,8 +1607,8 @@ internal static class DeclarativeControlFlowPlanner
             return new DeclarativeLeafSyntaxNode(
                 expression,
                 ObjectCreation: null,
-                Arguments: [],
-                MemberAssignments: []);
+                Arguments: ImmutableArray<DeclarativeObjectArgumentSyntax>.Empty,
+                MemberAssignments: ImmutableArray<DeclarativeMemberAssignmentSyntax>.Empty);
         }
 
         return new DeclarativeLeafSyntaxNode(
@@ -1662,7 +1662,7 @@ internal static class DeclarativeControlFlowPlanner
 
             sections.Add(
                 new DeclarativeSwitchSectionSyntax(
-                    [
+                    ImmutableArray.Create<DeclarativeSwitchLabelSyntax>(
                         catchAll &&
                         arm.Pattern is DiscardPatternSyntax
                             ? new DeclarativeSwitchLabelSyntax(
@@ -1675,7 +1675,7 @@ internal static class DeclarativeControlFlowPlanner
                                 Value: null,
                                 arm.Pattern,
                                 arm.WhenClause?.Condition)
-                    ],
+                    ),
                     branch));
         }
 
@@ -1981,7 +1981,7 @@ internal static class DeclarativeControlFlowPlanner
         return ExpandObjectArguments(
             leaf,
             index: 0,
-            [],
+            ImmutableArray<DeclarativeObjectArgumentSyntax>.Empty,
             localInitializers,
             dslLocals,
             dslConditionPlaceholders,
@@ -2011,7 +2011,7 @@ internal static class DeclarativeControlFlowPlanner
                     Arguments = arguments
                 },
                 index: 0,
-                [],
+                ImmutableArray<DeclarativeMemberAssignmentSyntax>.Empty,
                 localInitializers,
                 dslLocals,
                 dslConditionPlaceholders,
@@ -2030,7 +2030,7 @@ internal static class DeclarativeControlFlowPlanner
                 argument,
                 memberAssignments,
                 memberIndex: 0,
-                [],
+                ImmutableArray<DeclarativeMemberAssignmentSyntax>.Empty,
                 localInitializers,
                 dslLocals,
                 dslConditionPlaceholders,
@@ -2236,7 +2236,7 @@ internal static class DeclarativeControlFlowPlanner
 
                 sections.Add(
                     new DeclarativeSwitchSectionSyntax(
-                        [section.Label],
+                        ImmutableArray.Create<DeclarativeSwitchLabelSyntax>(section.Label),
                         branch));
             }
 

@@ -114,13 +114,13 @@ internal static class BasicMembersMappingPlanner
             return new BasicMembersMappingResult(
                 new ConventionMemberMappingPlan(
                     emptyCreate,
-                    [],
+                    ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                     emptyCreate,
-                    [],
-                    [],
+                    ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                    ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                     convention.Observation with
                     {
-                        Rules = [],
+                        Rules = ImmutableArray<MemberRuleObservation>.Empty,
                         RequiredObligations =
                             ConventionMemberMappingPlanner
                                 .FindUnmappedRequiredMembers(
@@ -253,25 +253,25 @@ internal static class BasicMembersMappingPlanner
                         BranchOrigin = directExpression
                     },
                     leaf.TerminalAliases.IsDefault
-                        ? []
+                        ? ImmutableArray<DeclarativeTerminalAliasSyntax>.Empty
                         : leaf.TerminalAliases);
 
                 leaves.Add(
                     leaf,
                     new ConventionMemberMappingPlan(
-                        [],
-                        [],
-                        [],
-                        [],
-                        [],
+                        ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                        ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                        ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                        ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                        ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                         convention.Observation with
                         {
-                            Rules = [],
-                            RequiredObligations = [],
-                            Terminals = [terminal],
+                            Rules = ImmutableArray<MemberRuleObservation>.Empty,
+                            RequiredObligations = ImmutableArray<ISymbol>.Empty,
+                            Terminals = ImmutableArray.Create<StructuredTerminalObservation>(terminal),
                             PlanOrigin = directExpression
                         },
-                        ConfiguredMemberNames: [],
+                        ConfiguredMemberNames: ImmutableArray<string>.Empty,
                         Failure: failure));
                 return true;
             }
@@ -841,7 +841,7 @@ internal static class BasicMembersMappingPlanner
         {
             occupiedNames.UnionWith(
                 plan.ConfiguredMemberNames.IsDefault
-                    ? []
+                    ? ImmutableArray<string>.Empty
                     : plan.ConfiguredMemberNames);
         }
 
@@ -856,7 +856,7 @@ internal static class BasicMembersMappingPlanner
             foreach (var plan in immutablePlans)
             {
                 var overriddenNames = plan.ConfiguredMemberNames.IsDefault
-                    ? []
+                    ? ImmutableArray<string>.Empty
                     : plan.ConfiguredMemberNames;
 
                 result.RemoveAll(mapping =>
@@ -898,7 +898,7 @@ internal static class BasicMembersMappingPlanner
         foreach (var plan in immutablePlans)
         {
             var overriddenNames = plan.ConfiguredMemberNames.IsDefault
-                ? []
+                ? ImmutableArray<string>.Empty
                 : plan.ConfiguredMemberNames;
 
             rules.RemoveAll(rule =>
@@ -916,7 +916,7 @@ internal static class BasicMembersMappingPlanner
         foreach (var plan in immutablePlans)
         {
             var overriddenNames = plan.ConfiguredMemberNames.IsDefault
-                ? []
+                ? ImmutableArray<string>.Empty
                 : plan.ConfiguredMemberNames;
 
             nestedMappings.RemoveAll(observation =>
@@ -926,7 +926,7 @@ internal static class BasicMembersMappingPlanner
                     StringComparer.Ordinal));
             nestedMappings.AddRange(
                 (plan.Observation.NestedMappings.IsDefault
-                    ? []
+                    ? ImmutableArray<NestedMappingObservation>.Empty
                     : plan.Observation.NestedMappings)
                 .Where(observation =>
                     observation.TargetName is null ||
@@ -959,13 +959,13 @@ internal static class BasicMembersMappingPlanner
                         .ToImmutableArray(),
                 Terminals = immutablePlans.SelectMany(plan =>
                         plan.Observation.Terminals.IsDefault
-                            ? []
+                            ? ImmutableArray<StructuredTerminalObservation>.Empty
                             : plan.Observation.Terminals)
                     .ToImmutableArray(),
                 NestedMappings = nestedMappings.ToImmutableArray(),
                 SourceDiscards = immutablePlans.SelectMany(plan =>
                         plan.Observation.SourceDiscards.IsDefault
-                            ? []
+                            ? ImmutableArray<SourceDiscardObservation>.Empty
                             : plan.Observation.SourceDiscards)
                     .ToImmutableArray(),
                 PlanOrigin = immutablePlans

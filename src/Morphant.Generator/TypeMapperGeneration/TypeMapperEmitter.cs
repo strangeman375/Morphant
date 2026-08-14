@@ -192,7 +192,7 @@ internal static class TypeMapperEmitter
     {
         var warningSuppressions =
             mapping.TransferredWarningSuppressions.IsDefault
-                ? []
+                ? ImmutableArray<string>.Empty
                 : mapping.TransferredWarningSuppressions;
 
         if (!warningSuppressions.IsEmpty)
@@ -596,7 +596,7 @@ internal static class TypeMapperEmitter
         foreach (var argument in constructor.Arguments)
         {
             foreach (var local in argument.EvaluationLocals.IsDefault
-                         ? []
+                         ? ImmutableArray<TypeMapperLocalValueModel>.Empty
                          : argument.EvaluationLocals)
             {
                 hasValueLocals = true;
@@ -620,7 +620,7 @@ internal static class TypeMapperEmitter
         }
 
         foreach (var local in constructor.ValueLocals.IsDefault
-                     ? []
+                     ? ImmutableArray<TypeMapperLocalValueModel>.Empty
                      : constructor.ValueLocals)
         {
             hasValueLocals = true;
@@ -1845,7 +1845,7 @@ internal static class TypeMapperEmitter
         foreach (var mapping in mappings)
         {
             foreach (var local in mapping.EvaluationLocals.IsDefault
-                         ? []
+                         ? ImmutableArray<TypeMapperLocalValueModel>.Empty
                          : mapping.EvaluationLocals)
             {
                 WriteLocalValue(writer, local);

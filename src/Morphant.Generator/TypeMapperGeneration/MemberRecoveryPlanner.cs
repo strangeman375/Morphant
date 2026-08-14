@@ -375,15 +375,16 @@ internal static class MemberRecoveryPlanner
 
         var guardedFactory = UserResultMappingPlanner.BuildFactoryMapping(
             mapping,
-            [default],
+            ImmutableArray.Create<TypeMapperMemberMappingModel>(
+                default(TypeMapperMemberMappingModel)),
             mapperType,
             factory.ValueExpression);
         var postFailure = new TypeMapperMemberControlFlowNode(
-            Locals: [],
+            Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
             Condition: null,
             WhenTrue: null,
             WhenFalse: null,
-            MemberMappings: [],
+            MemberMappings: ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             ThrowExpression: null,
             Failure: failure,
             MemberObservation: mapping.MemberObservation);
@@ -391,8 +392,8 @@ internal static class MemberRecoveryPlanner
         return mapping with
         {
             CreateFactory = guardedFactory,
-            CreatePostMemberMappings = [],
-            UpdateMemberMappings = [],
+            CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+            UpdateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             PostMemberControlFlow = postFailure
         };
     }

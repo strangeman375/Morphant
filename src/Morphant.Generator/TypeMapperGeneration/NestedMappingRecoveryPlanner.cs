@@ -224,7 +224,7 @@ internal static class NestedMappingRecoveryPlanner
         }
 
         var observations = CollectInvalidObservations(
-            node.MemberObservation?.NestedMappings ?? [],
+            node.MemberObservation?.NestedMappings ?? ImmutableArray<NestedMappingObservation>.Empty,
             paths);
 
         if (observations.IsEmpty ||
@@ -236,7 +236,7 @@ internal static class NestedMappingRecoveryPlanner
 
         return node with
         {
-            MemberMappings = [],
+            MemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             Failure = BuildFailure(mapping, observations, paths)
         };
     }
@@ -250,10 +250,10 @@ internal static class NestedMappingRecoveryPlanner
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
         Add(mapping.NestedObservations);
-        Add(mapping.MemberObservation?.NestedMappings ?? []);
-        Add(mapping.CreateFailure?.NestedObservations ?? []);
-        Add(mapping.UpdateFailure?.NestedObservations ?? []);
-        Add(mapping.Failure?.NestedObservations ?? []);
+        Add(mapping.MemberObservation?.NestedMappings ?? ImmutableArray<NestedMappingObservation>.Empty);
+        Add(mapping.CreateFailure?.NestedObservations ?? ImmutableArray<NestedMappingObservation>.Empty);
+        Add(mapping.UpdateFailure?.NestedObservations ?? ImmutableArray<NestedMappingObservation>.Empty);
+        Add(mapping.Failure?.NestedObservations ?? ImmutableArray<NestedMappingObservation>.Empty);
 
         return result.ToImmutable();
 
@@ -291,7 +291,7 @@ internal static class NestedMappingRecoveryPlanner
     {
         if (observations.IsDefaultOrEmpty)
         {
-            return [];
+            return ImmutableArray<NestedMappingObservation>.Empty;
         }
 
         var result = ImmutableArray.CreateBuilder<

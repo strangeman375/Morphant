@@ -26,4 +26,11 @@ internal sealed class TypeMapperDeclarativeValueTests
     {
         global::Morphant.Generator.IntegrationTests.Latest.DeclarativeValueSurface.Scenario.Verify();
     }
+
+    [Test]
+    public void Preserves_collection_expressions_in_all_structured_surfaces()
+    {
+        global::Morphant.Generator.IntegrationTests.Latest
+            .DeclarativeValueSurface.CollectionExpressionScenario.Verify();
+    }
 }

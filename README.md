@@ -81,8 +81,12 @@ or browse the
 ## Requirements
 
 - C# 9 or newer;
-- a compiler host compatible with Roslyn 4.9.2 or newer;
+- a compiler host compatible with Roslyn 4.4.0 or newer;
 - a runtime compatible with `netstandard2.0`.
+
+Roslyn 4.4.0 is the minimum host baseline, not a language-version cap.
+Consumer code can use newer C# features when its compiler and target types
+support them.
 
 ## Versioning
 

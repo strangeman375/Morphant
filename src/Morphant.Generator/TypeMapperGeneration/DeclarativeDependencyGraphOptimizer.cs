@@ -49,8 +49,8 @@ internal static class DeclarativeDependencyGraphOptimizer
                 CreateDirectExpression = null,
                 CreateFactory = null,
                 CreateConstructor = null,
-                CreateMemberMappings = [],
-                CreatePostMemberMappings = []
+                CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty
             });
         var optimizedCreate = OptimizeNode(
             createRoot,
@@ -780,7 +780,7 @@ internal static class DeclarativeDependencyGraphOptimizer
         return dependency is null
             ? new ExpressionOptimizationResult(
                 expression,
-                [],
+                ImmutableArray<TypeMapperLocalValueModel>.Empty,
                 Changed: false)
             : OptimizeExpression(
                 dependency,
@@ -1156,7 +1156,7 @@ internal static class DeclarativeDependencyGraphOptimizer
         TypeMapperMappingModel mapping)
     {
         return new TypeMapperControlFlowNode(
-            Locals: [],
+            Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
             Condition: null,
             WhenTrue: null,
             WhenFalse: null,
@@ -1171,7 +1171,7 @@ internal static class DeclarativeDependencyGraphOptimizer
     private static ImmutableArray<TypeMapperLocalValueModel> Normalize(
         ImmutableArray<TypeMapperLocalValueModel> values) =>
         values.IsDefault
-            ? []
+            ? ImmutableArray<TypeMapperLocalValueModel>.Empty
             : values;
 
     private static string Pascal(string value)
@@ -1280,7 +1280,7 @@ internal static class DeclarativeDependencyGraphOptimizer
         }
 
         foreach (var section in node.SwitchSections.IsDefault
-                     ? []
+                     ? ImmutableArray<TypeMapperSwitchSectionModel>.Empty
                      : node.SwitchSections)
         {
             foreach (var label in section.Labels)
@@ -1301,7 +1301,7 @@ internal static class DeclarativeDependencyGraphOptimizer
         }
 
         foreach (var section in node.SwitchSections.IsDefault
-                     ? []
+                     ? ImmutableArray<TypeMapperSwitchSectionModel>.Empty
                      : node.SwitchSections)
         {
             CollectDeclaredNames(section.Branch, create, names);
@@ -1338,7 +1338,7 @@ internal static class DeclarativeDependencyGraphOptimizer
         }
 
         foreach (var section in node.SwitchSections.IsDefault
-                     ? []
+                     ? ImmutableArray<TypeMapperMemberSwitchSectionModel>.Empty
                      : node.SwitchSections)
         {
             foreach (var label in section.Labels)
@@ -1358,7 +1358,7 @@ internal static class DeclarativeDependencyGraphOptimizer
         }
 
         foreach (var section in node.SwitchSections.IsDefault
-                     ? []
+                     ? ImmutableArray<TypeMapperMemberSwitchSectionModel>.Empty
                      : node.SwitchSections)
         {
             CollectDeclaredNames(section.Branch, names);

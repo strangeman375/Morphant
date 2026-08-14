@@ -112,7 +112,11 @@ internal readonly record struct PairConfigurationCompositionModel(
         InaccessibleCallbacks)
 {
     public static PairConfigurationCompositionModel Empty =>
-        new([], [], [], []);
+        new(
+            ImmutableArray<IncludeBaseConfigurationModel>.Empty,
+            ImmutableArray<PairConfigurationSettings>.Empty,
+            ImmutableArray<InheritanceCompositionIssueModel>.Empty,
+            ImmutableArray<InheritedCallbackAccessibilityModel>.Empty);
 }
 
 internal sealed record InheritanceCompositionIssueModel(

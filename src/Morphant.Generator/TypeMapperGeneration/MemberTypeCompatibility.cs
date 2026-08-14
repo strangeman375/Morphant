@@ -17,7 +17,7 @@ internal static class MemberTypeCompatibility
     {
         if (candidates.IsEmpty)
         {
-            return [];
+            return ImmutableArray<bool>.Empty;
         }
 
         var result = new bool[candidates.Length];

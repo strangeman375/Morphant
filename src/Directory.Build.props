@@ -9,7 +9,7 @@
           Keep the shipped generator compiled against the minimum supported
           Roslyn host. Override this property when validating newer hosts.
         -->
-        <MorphantRoslynVersion Condition="'$(MorphantRoslynVersion)' == ''">4.9.2</MorphantRoslynVersion>
+        <MorphantRoslynVersion Condition="'$(MorphantRoslynVersion)' == ''">4.4.0</MorphantRoslynVersion>
 
         <!-- Stable assembly identity shared by the product and its friend test assemblies. -->
         <MorphantStrongNameKeyFile>$(MSBuildThisFileDirectory)Morphant.snk</MorphantStrongNameKeyFile>

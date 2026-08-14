@@ -20,7 +20,7 @@ internal sealed class TransferredCodePolicy
     }
 
     public static TransferredCodePolicy Empty { get; } =
-        new([]);
+        new(ImmutableArray<BoundConfigurationExpression>.Empty);
 
     public bool HasTransferredCode => !_expressions.IsEmpty;
 

@@ -515,14 +515,89 @@ internal static class RuntimeCallbackMethodPlanner
 
     private static string NormalizeMethod(MethodDeclarationSyntax method)
     {
+        var normalizedMethod = method
+            .WithoutTrivia()
+            .NormalizeWhitespace(
+                indentation: "    ",
+                eol: "\r\n");
+
+        // Roslyn 4.4 and newer hosts choose different layouts for object
+        // initializers. Reapply the public generated-source layout explicitly.
+        var stableMethod = new MultilineObjectInitializerRewriter()
+            .Visit(normalizedMethod)!;
+
         return new NullableSuppressionTriviaRewriter()
-            .Visit(
-                method
-                    .WithoutTrivia()
-                    .NormalizeWhitespace(
-                        indentation: "    ",
-                        eol: "\r\n"))!
+            .Visit(stableMethod)!
             .ToFullString();
+    }
+
+    private sealed class MultilineObjectInitializerRewriter :
+        CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitInitializerExpression(
+            InitializerExpressionSyntax node)
+        {
+            var rewritten =
+                (InitializerExpressionSyntax)
+                base.VisitInitializerExpression(node)!;
+
+            if (!rewritten.IsKind(
+                    SyntaxKind.ObjectInitializerExpression) ||
+                rewritten.Expressions.Count == 0)
+            {
+                return rewritten;
+            }
+
+            var statement = node.FirstAncestorOrSelf<StatementSyntax>();
+            var indentationSize = statement is null
+                ? node.GetLocation()
+                    .GetLineSpan()
+                    .StartLinePosition.Character
+                : statement.GetLocation()
+                    .GetLineSpan()
+                    .StartLinePosition.Character;
+            var indentation = SyntaxFactory.Whitespace(
+                new string(' ', indentationSize));
+            var memberIndentation = SyntaxFactory.Whitespace(
+                new string(' ', indentationSize + 4));
+            var precedingToken = node.OpenBraceToken.GetPreviousToken();
+            var openBraceLeadingTrivia = precedingToken.TrailingTrivia.Any(
+                    trivia => trivia.IsKind(
+                        SyntaxKind.EndOfLineTrivia))
+                ? SyntaxFactory.TriviaList(indentation)
+                : SyntaxFactory.TriviaList(
+                    SyntaxFactory.CarriageReturnLineFeed,
+                    indentation);
+            var expressions = SyntaxFactory.SeparatedList(
+                rewritten.Expressions
+                    .Select(expression => expression
+                        .WithoutLeadingTrivia()
+                        .WithoutTrailingTrivia()),
+                rewritten.Expressions.GetSeparators()
+                    .Select(separator => separator
+                        .WithoutTrivia()
+                        .WithTrailingTrivia(
+                            SyntaxFactory.CarriageReturnLineFeed,
+                            memberIndentation)));
+            var last = expressions[expressions.Count - 1];
+
+            expressions = expressions.Replace(
+                last,
+                last.WithTrailingTrivia(
+                    SyntaxFactory.CarriageReturnLineFeed,
+                    indentation));
+
+            return rewritten
+                .WithOpenBraceToken(
+                    rewritten.OpenBraceToken
+                        .WithLeadingTrivia(openBraceLeadingTrivia)
+                        .WithTrailingTrivia(
+                            SyntaxFactory.CarriageReturnLineFeed,
+                            memberIndentation))
+                .WithExpressions(expressions)
+                .WithCloseBraceToken(
+                    rewritten.CloseBraceToken.WithoutTrivia());
+        }
     }
 
     private sealed class NullableSuppressionTriviaRewriter :
