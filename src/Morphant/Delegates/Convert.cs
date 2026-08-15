@@ -8,8 +8,8 @@ namespace Morphant.Delegates;
 /// <param name="source">The original source.</param>
 /// <returns>The mapping result.</returns>
 /// <remarks>
-/// The callback receives the source before null handling. The returned value
-/// bypasses the declarative mapping pipeline.
+/// The callback receives the original source. Null handling and the
+/// declarative mapping pipeline are bypassed.
 /// </remarks>
 public delegate TResult Convert<in TSource, out TResult>(TSource source);
 
@@ -24,9 +24,9 @@ public delegate TResult Convert<in TSource, out TResult>(TSource source);
 /// <param name="previous">The optional existing destination.</param>
 /// <returns>The mapping result.</returns>
 /// <remarks>
-/// The callback receives the source before null handling. An absent
-/// destination is <see cref="Option{TPrevious}.None"/>. The returned value
-/// bypasses the declarative mapping pipeline.
+/// The callback receives the original source. An absent destination is
+/// <see cref="Option{TPrevious}.None"/>. Null handling and the declarative
+/// mapping pipeline are bypassed.
 /// </remarks>
 public delegate TResult Convert<in TSource, TPrevious, out TResult>(
     TSource source,
@@ -45,9 +45,9 @@ public delegate TResult Convert<in TSource, TPrevious, out TResult>(
 /// <param name="context">The current mapping context.</param>
 /// <returns>The mapping result.</returns>
 /// <remarks>
-/// The callback receives the source before null handling. An absent
-/// destination is <see cref="Option{TPrevious}.None"/>. The returned value
-/// bypasses the declarative mapping pipeline.
+/// The callback receives the original source. An absent destination is
+/// <see cref="Option{TPrevious}.None"/>. Null handling and the declarative
+/// mapping pipeline are bypassed.
 /// </remarks>
 public delegate TResult Convert<
     in TSource,
