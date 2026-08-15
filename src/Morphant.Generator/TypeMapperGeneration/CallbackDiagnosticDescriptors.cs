@@ -36,9 +36,9 @@ internal static class CallbackDiagnosticDescriptors
     public static readonly DiagnosticDescriptor InvalidCompileTimeMarkerUse =
         Create(
             "MORPH0033",
-            "Invalid mapping method use",
-            "'{0}' must be used directly inside Construct, Resolve, or " +
-            "Members for mapping '{2}'.");
+            "Invalid declarative API use",
+            "'{0}' cannot be used in this position within {1} for mapping " +
+            "'{2}'.");
 
     private static DiagnosticDescriptor Create(
         string id,

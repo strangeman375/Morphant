@@ -134,7 +134,7 @@ namespace TestCase
                     "Included mapping 'TestCase.Source -> " +
                     "TestCase.Destination' was not found for mapping " +
                     "'TestCase.Source -> TestCase.Destination' in mapper " +
-                    "'global::TestCase.TestMapper'."));
+                    "'TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

@@ -823,10 +823,8 @@ internal static class ConstructionDiagnosticAnalyzer
             return false;
         }
 
-        actualType = assertedType.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable);
-        parameterType = targetType.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable);
+        actualType = MapperContractDisplay.CreateType(assertedType);
+        parameterType = MapperContractDisplay.CreateType(targetType);
         markerLocation = GetInvocationNameLocation(invocation);
         return true;
     }
@@ -871,8 +869,8 @@ internal static class ConstructionDiagnosticAnalyzer
         switch (strategy)
         {
             case ConstructorSelectionValue.Explicit:
-                reason = "ConstructorSelection.Explicit disables automatic " +
-                    "selection";
+                reason = "destination construction must be configured " +
+                    "explicitly";
                 reasonKind = "explicit";
                 return true;
 

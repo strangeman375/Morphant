@@ -928,8 +928,7 @@ internal static class CallbackDiagnosticAnalyzer
             MappingTypeIdentityPolicy.Create(sourceType).Key + "->" +
                 MappingTypeIdentityPolicy.Create(destinationType).Key,
             SymbolNameHelper.GetFullMetadataName(mapper),
-            mapper.ToDisplayString(
-                SymbolDisplayFormats.FullyQualifiedNullable),
+            MapperContractDisplay.CreateType(mapper),
             callback.Expression.DeclaringLevelOrder,
             callbackOriginIdentity,
             SymbolEqualityComparer.Default.Equals(

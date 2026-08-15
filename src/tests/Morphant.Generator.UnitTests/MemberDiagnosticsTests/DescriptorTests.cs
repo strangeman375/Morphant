@@ -39,7 +39,7 @@ internal sealed class DescriptorTests
                     "Member rule is invalid",
                     "Required destination member is not initialized",
                     "Member rule cannot be applied",
-                    "Members returned no rules"
+                    "Members returned no plan"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>

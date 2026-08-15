@@ -13,8 +13,8 @@ internal static class InheritanceDiagnosticDescriptors
         Create(
             "MORPH0024",
             "Duplicate base configuration call",
-            "Base configuration is included more than once in Configure " +
-            "of mapper '{0}'.");
+            "Base configuration is included more than once in mapper " +
+            "'{0}'.");
 
     public static readonly DiagnosticDescriptor DuplicateIncludeBase = Create(
         "MORPH0025",

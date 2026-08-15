@@ -423,16 +423,17 @@ namespace TestCase
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
-                Has.Exactly(1).Contains("'Auto' must be used directly"));
-            Assert.That(
-                diagnostics.Select(static diagnostic =>
-                    diagnostic.GetMessage()),
-                Has.Exactly(1).Contains("'Value' must be used directly"));
-            Assert.That(
-                diagnostics.Select(static diagnostic =>
-                    diagnostic.GetMessage()),
-                Has.Exactly(1).Contains(
-                    "'context' must be used directly"));
+                Is.EqualTo(new[]
+                {
+                    "'Value' cannot be used in this position within " +
+                    "Construct for mapping 'TestCase.Source -> " +
+                    "TestCase.ANonTerminal'.",
+                    "'context' cannot be used in this position within " +
+                    "Construct for mapping 'TestCase.Source -> " +
+                    "TestCase.BContext'.",
+                    "'Auto' cannot be used in this position within Convert " +
+                    "for mapping 'TestCase.Source -> object'."
+                }));
             Assert.That(
                 diagnostics.Any(static diagnostic =>
                     diagnostic.GetMessage().Contains(

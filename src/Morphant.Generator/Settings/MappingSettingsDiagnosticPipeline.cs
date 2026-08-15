@@ -121,7 +121,8 @@ internal static class MappingSettingsDiagnosticPipeline
                 MappingSettingsDiagnosticDescriptors
                     .InvalidMsBuildSettingValue,
                 Location.None,
-                PropertyName(kind)));
+                PropertyName(kind),
+                InvalidPropertyValue(assemblySettings, kind)));
         }
 
         foreach (var candidate in inapplicable
@@ -733,6 +734,28 @@ internal static class MappingSettingsDiagnosticPipeline
     private static string PropertyName(MappingSettingKind kind)
     {
         return "Morphant" + SettingName(kind);
+    }
+
+    private static string InvalidPropertyValue(
+        MappingSettings settings,
+        MappingSettingKind kind)
+    {
+        var values = settings.InvalidMsBuildValues;
+
+        return kind switch
+        {
+            MappingSettingKind.MappingMode => values.MappingMode,
+            MappingSettingKind.NullSourceHandling =>
+                values.NullSourceHandling,
+            MappingSettingKind.NullDestinationHandling =>
+                values.NullDestinationHandling,
+            MappingSettingKind.ConstructorSelection =>
+                values.ConstructorSelection,
+            MappingSettingKind.MemberSelection => values.MemberSelection,
+            MappingSettingKind.UnmappedMemberValidation =>
+                values.UnmappedMemberValidation,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        } ?? string.Empty;
     }
 
     private static string PairKey(MappingPairIdentity identity)

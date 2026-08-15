@@ -55,7 +55,7 @@ namespace TestCase
                 Is.EqualTo(new[] { "MORPH0045", "MORPH0048" }));
             Assert.That(
                 result.CompletenessDiagnostics.Single().GetMessage(),
-                Does.Contain("global::TestCase.Destination.Independent"));
+                Does.Contain("TestCase.Destination.Independent"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -105,7 +105,7 @@ namespace TestCase
                 Is.EqualTo(new[] { "MORPH0041", "MORPH0048" }));
             Assert.That(
                 result.CompletenessDiagnostics.Single().GetMessage(),
-                Does.Contain("global::TestCase.Destination.Independent"));
+                Does.Contain("TestCase.Destination.Independent"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

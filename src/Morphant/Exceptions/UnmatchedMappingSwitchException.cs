@@ -18,7 +18,8 @@ public sealed class UnmatchedMappingSwitchException : MappingException
         Type sourceType,
         Type destinationType)
         : base(
-            "No switch branch matched the current value.",
+            $"No declarative switch branch matched during {operation} for " +
+            $"mapping '{sourceType}' -> '{destinationType}'.",
             operation,
             sourceType,
             destinationType)

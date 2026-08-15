@@ -306,8 +306,8 @@ namespace Second
             result.Diagnostics.Select(diagnostic => diagnostic.GetMessage()),
             Is.EqualTo(new[]
             {
-                "Mapper 'global::First.TestMapper' must be declared partial.",
-                "Mapper 'global::Second.TestMapper' must be declared partial."
+                "Mapper 'First.TestMapper' must be declared partial.",
+                "Mapper 'Second.TestMapper' must be declared partial."
             }));
     }
 }

@@ -62,7 +62,7 @@ namespace TestCase
             Assert.That(
                 sourceDiagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Source member 'global::TestCase.Source.Unused' is not " +
+                    "Source member 'TestCase.Source.Unused' is not " +
                     "used by mapping 'TestCase.Source -> " +
                     "TestCase.Destination'."));
 
@@ -79,7 +79,7 @@ namespace TestCase
                 destinationDiagnostic.GetMessage(),
                 Is.EqualTo(
                     "Destination member " +
-                    "'global::TestCase.Destination.Unmapped' is not mapped " +
+                    "'TestCase.Destination.Unmapped' is not mapped " +
                     "by mapping 'TestCase.Source -> TestCase.Destination'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });

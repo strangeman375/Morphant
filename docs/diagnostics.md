@@ -43,7 +43,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0030](diagnostics/MORPH0030.md) | Callbacks | Error | A mapping lambda captures or references code unavailable to the generated mapper. |
 | [MORPH0031](diagnostics/MORPH0031.md) | Callbacks | Error | A `Construct`, `Resolve`, or `Members` lambda uses an unsupported statement. |
 | [MORPH0032](diagnostics/MORPH0032.md) | Callbacks | Error | A `Construct`, `Resolve`, or `Members` lambda modifies `previous` or `result`. |
-| [MORPH0033](diagnostics/MORPH0033.md) | Callbacks | Error | A configuration method such as `Auto`, `Ignore`, or `Map` is not used directly inside `Construct`, `Resolve`, or `Members`. |
+| [MORPH0033](diagnostics/MORPH0033.md) | Callbacks | Error | A declarative API such as `Auto`, `Ignore`, or `Map` is used in an unsupported position. |
 | [MORPH0034](diagnostics/MORPH0034.md) | Declaration | Error | A mapper member conflicts with generated `Supports(Type, Type)`. |
 | [MORPH0035](diagnostics/MORPH0035.md) | Construction | Error | Create or Update without an existing destination has no way to create one. |
 | [MORPH0036](diagnostics/MORPH0036.md) | Construction | Error | `ConstructorSelection` cannot select one usable constructor. |

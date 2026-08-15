@@ -27,8 +27,8 @@ internal sealed record MapperDeclarationInfo(
         FileLocalIssues.IsEmpty &&
         ConflictingSupportsMethods.IsEmpty;
 
-    public string MapperDisplayName => MapperType.ToDisplayString(
-        SymbolDisplayFormats.FullyQualifiedNullable);
+    public string MapperDisplayName =>
+        MapperContractDisplay.CreateType(MapperType);
 
     public string MapperIdentity =>
         SymbolNameHelper.GetFullMetadataName(MapperType);
@@ -38,6 +38,5 @@ internal readonly record struct MapperContainingTypeIssue(
     INamedTypeSymbol Type,
     TypeDeclarationSyntax Declaration)
 {
-    public string DisplayName => Type.ToDisplayString(
-        SymbolDisplayFormats.FullyQualifiedNullable);
+    public string DisplayName => MapperContractDisplay.CreateType(Type);
 }

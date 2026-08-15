@@ -76,8 +76,8 @@ internal sealed class TypeMapperObservableFailureTests
                     MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
-                "context.Mapper cannot be used after the outer mapping " +
-                "call has completed."
+                "MappingContext.Mapper cannot be used after the outer " +
+                "mapping call has completed."
             ),
             (
                 new NestedDestinationTypeMismatchException(
@@ -105,20 +105,21 @@ internal sealed class TypeMapperObservableFailureTests
             ),
             (
                 new RuntimeInvocationNotSupportedException(),
-                "This Morphant configuration method cannot be called at " +
-                "runtime. Use it only inside Configure."
+                "This Morphant configuration API is compile-time only. Use " +
+                "it inside Configure."
             ),
             (
                 new InvalidMappingContextException(),
-                "MappingContext is not initialized. Use IMapper or the " +
-                "ITypeMapper Create/Update extension methods."
+                "MappingContext is not initialized. Use IMapper, or call " +
+                "Create/Update through the ITypeMapper extensions."
             ),
             (
                 new UnmatchedMappingSwitchException(
                     MappingOperation.Create,
                     typeof(string),
                     typeof(int)),
-                "No switch branch matched the current value."
+                "No declarative switch branch matched during Create for " +
+                "mapping 'System.String' -> 'System.Int32'."
             )
         };
 

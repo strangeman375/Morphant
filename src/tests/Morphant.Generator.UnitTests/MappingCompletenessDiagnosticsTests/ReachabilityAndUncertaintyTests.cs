@@ -54,7 +54,7 @@ namespace TestCase
                         diagnostic.Id + ": " + diagnostic.GetMessage())));
             Assert.That(
                 result.CompletenessDiagnostics.Single().GetMessage(),
-                Does.Contain("global::TestCase.Source.Value"));
+                Does.Contain("TestCase.Source.Value"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -159,7 +159,7 @@ namespace TestCase
                 Is.EqualTo(new[] { "MORPH0040", "MORPH0048" }));
             Assert.That(
                 result.CompletenessDiagnostics.Single().GetMessage(),
-                Does.Contain("global::TestCase.Destination.Independent"));
+                Does.Contain("TestCase.Destination.Independent"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -214,10 +214,10 @@ namespace TestCase
                 Is.EqualTo(new[] { "MORPH0047", "MORPH0048" }));
             Assert.That(
                 result.CompletenessDiagnostics[0].GetMessage(),
-                Does.Contain("global::TestCase.Source.Unused"));
+                Does.Contain("TestCase.Source.Unused"));
             Assert.That(
                 result.CompletenessDiagnostics[1].GetMessage(),
-                Does.Contain("global::TestCase.Destination.Unmapped"));
+                Does.Contain("TestCase.Destination.Unmapped"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

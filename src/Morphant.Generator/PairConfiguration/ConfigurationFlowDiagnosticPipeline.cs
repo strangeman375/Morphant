@@ -93,8 +93,8 @@ internal static class ConfigurationFlowDiagnosticPipeline
                             .UnavailableBaseConfigure,
                         GetInvocationNameLocation(
                             unavailable.Invocation),
-                        unavailable.BaseMapperType.ToDisplayString(
-                            SymbolDisplayFormats.FullyQualifiedNullable),
+                        MapperContractDisplay.CreateType(
+                            unavailable.BaseMapperType),
                         declaration.MapperDisplayName)));
             }
 

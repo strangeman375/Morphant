@@ -41,7 +41,7 @@ public abstract partial class TestMapper :
                 Is.EqualTo(
                     "Mapping 'TestCase.Source -> TestCase.Destination' is " +
                     "already implemented by mapper " +
-                    "'global::TestCase.TestMapper'. Remove the interface " +
+                    "'TestCase.TestMapper'. Remove the interface " +
                     "declaration or the Map registration."));
             Assert.That(
                 MapperDeclarationGeneratorTest.SourceText(
@@ -223,7 +223,7 @@ public abstract partial class TestMapper<T> :
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapper 'global::TestCase.TestMapper<T>' declares an " +
+                    "Mapper 'TestCase.TestMapper<T>' declares an " +
                     "interface that may conflict with generated mapping " +
                     "'TestCase.Source -> TestCase.Destination'."));
             Assert.That(

@@ -48,7 +48,7 @@ internal sealed class DescriptorTests
             MappingSettingsDiagnosticDescriptors.InvalidMsBuildSettingValue,
             "MORPH0022",
             "Invalid MSBuild mapping setting value",
-            "MSBuild property '{0}' must use a supported value.");
+            "MSBuild property '{0}' has unsupported value '{1}'.");
         yield return new DescriptorCase(
             MappingSettingsDiagnosticDescriptors.InapplicableSetting,
             "MORPH0023",

@@ -51,13 +51,13 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Source member 'global::TestCase.Source.Property' is " +
+                    "Source member 'TestCase.Source.Property' is " +
                     "not used by mapping 'TestCase.Source -> " +
                     "TestCase.Destination'.",
-                    "Source member 'global::TestCase.Source.MutableField' " +
+                    "Source member 'TestCase.Source.MutableField' " +
                     "is not used by mapping 'TestCase.Source -> " +
                     "TestCase.Destination'.",
-                    "Source member 'global::TestCase.Source.ReadonlyField' " +
+                    "Source member 'TestCase.Source.ReadonlyField' " +
                     "is not used by mapping 'TestCase.Source -> " +
                     "TestCase.Destination'."
                 }));
@@ -118,13 +118,13 @@ namespace TestCase
                 Is.EqualTo(new[]
                 {
                     "Destination member " +
-                    "'global::TestCase.Destination.Property' is not mapped " +
+                    "'TestCase.Destination.Property' is not mapped " +
                     "by mapping 'TestCase.Source -> TestCase.Destination'.",
                     "Destination member " +
-                    "'global::TestCase.Destination.InitOnly' is not mapped " +
+                    "'TestCase.Destination.InitOnly' is not mapped " +
                     "by mapping 'TestCase.Source -> TestCase.Destination'.",
                     "Destination member " +
-                    "'global::TestCase.Destination.MutableField' is not " +
+                    "'TestCase.Destination.MutableField' is not " +
                     "mapped by mapping 'TestCase.Source -> " +
                     "TestCase.Destination'."
                 }));

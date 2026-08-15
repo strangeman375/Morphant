@@ -45,7 +45,7 @@ public partial class TestMapper : TypeMapper
                 Is.All.EqualTo(
                     "Mapping 'TestCase.Source -> TestCase.Destination' is " +
                     "registered more than once in mapper " +
-                    "'global::TestCase.TestMapper'."));
+                    "'TestCase.TestMapper'."));
             Assert.That(
                 result.Diagnostics.Select(diagnostic =>
                     MappingRegistrationGeneratorTest.SourceText(
@@ -129,13 +129,13 @@ public partial class TestMapper : TypeMapper
                 {
                     "Mapping 'System.IntPtr -> TestCase.Destination' is " +
                     "registered more than once in mapper " +
-                    "'global::TestCase.TestMapper'.",
+                    "'TestCase.TestMapper'.",
                     "Mapping 'System.ValueTuple<int, string> -> " +
                     "TestCase.Destination' is registered more than once in " +
-                    "mapper 'global::TestCase.TestMapper'.",
+                    "mapper 'TestCase.TestMapper'.",
                     "Mapping 'object -> TestCase.Destination' is registered " +
                     "more than once in mapper " +
-                    "'global::TestCase.TestMapper'."
+                    "'TestCase.TestMapper'."
                 }));
         });
     }

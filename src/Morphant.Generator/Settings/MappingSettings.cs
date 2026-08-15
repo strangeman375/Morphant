@@ -65,7 +65,8 @@ internal readonly record struct MappingSettings(
     NullDestinationHandlingValue? NullDestinationHandling,
     ConstructorSelectionValue? ConstructorSelection,
     MemberSelectionValue? MemberSelection,
-    UnmappedMemberValidationValue? UnmappedMemberValidation)
+    UnmappedMemberValidationValue? UnmappedMemberValidation,
+    InvalidMsBuildSettingValues InvalidMsBuildValues = default)
 {
     public static MappingSettings Default =>
         new(
@@ -76,6 +77,14 @@ internal readonly record struct MappingSettings(
             MemberSelectionValue.Default,
             UnmappedMemberValidationValue.Default);
 }
+
+internal readonly record struct InvalidMsBuildSettingValues(
+    string? MappingMode,
+    string? NullSourceHandling,
+    string? NullDestinationHandling,
+    string? ConstructorSelection,
+    string? MemberSelection,
+    string? UnmappedMemberValidation);
 
 internal readonly record struct EffectiveMappingSettings(
     MappingModeValue? MappingMode,

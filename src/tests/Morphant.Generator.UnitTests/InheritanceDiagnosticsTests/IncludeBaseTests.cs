@@ -61,7 +61,7 @@ namespace TestCase
                 Has.All.EqualTo(
                     "IncludeBase is configured more than once for mapping " +
                     "'TestCase.Dog -> TestCase.DogDto' in mapper " +
-                    "'global::TestCase.TestMapper'."));
+                    "'TestCase.TestMapper'."));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     InheritanceDiagnosticsGeneratorTest.SourceText(

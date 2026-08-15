@@ -126,8 +126,7 @@ internal static class InheritanceDiagnosticPipeline
                     location,
                     [GetInvocationNameLocation(duplicate.FirstInvocation)],
                     properties: null,
-                    mapper.ToDisplayString(
-                        SymbolDisplayFormats.FullyQualifiedNullable))));
+                    MapperContractDisplay.CreateType(mapper))));
         }
     }
 
@@ -213,8 +212,7 @@ internal static class InheritanceDiagnosticPipeline
                 MapperContractDisplay.Create(
                     issue.Origin.DeclaredRegistration.SourceType,
                     issue.Origin.DeclaredRegistration.DestinationType),
-                sourceMapper.ToDisplayString(
-                    SymbolDisplayFormats.FullyQualifiedNullable))));
+                MapperContractDisplay.CreateType(sourceMapper))));
     }
 
     private static void AddMissingPairDiagnostic(

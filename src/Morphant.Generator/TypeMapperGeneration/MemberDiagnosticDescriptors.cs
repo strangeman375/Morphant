@@ -29,7 +29,7 @@ internal static class MemberDiagnosticDescriptors
 
     public static readonly DiagnosticDescriptor NullMembersPlan = Create(
         "MORPH0043",
-        "Members returned no rules",
+        "Members returned no plan",
         "Members returned null or default for mapping '{0}'. Affected " +
         "cases: {1}.");
 

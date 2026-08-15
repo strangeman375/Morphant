@@ -18,12 +18,12 @@ code does not need to parse exception messages.
 | No DI registration for the requested source/destination mapping | `MappingNotFoundException` |
 | More than one DI registration for the requested mapping | `AmbiguousMappingException` |
 | The only registration resolves to null | `InvalidMappingRegistrationException` |
-| `context.Mapper` used after the top-level `Map` call returned | `MappingScopeCompletedException` |
+| `MappingContext.Mapper` used after the top-level `Map` call returned | `MappingScopeCompletedException` |
 | Property read from a default `MappingContext` | `InvalidMappingContextException` |
 | Current nested value has an incompatible type | `NestedDestinationTypeMismatchException` |
 | No branch of a mapping `switch` matches | `UnmatchedMappingSwitchException` |
 | `Option<T>.Value` read while empty | `OptionValueMissingException` |
-| `Auto`, `Ignore`, `Map`, or another configuration method is executed as normal code | `RuntimeInvocationNotSupportedException` |
+| `Auto`, `Ignore`, `Map`, or another compile-time configuration API is executed as normal code | `RuntimeInvocationNotSupportedException` |
 
 Catch a specific exception when the application can handle it, or catch
 `MorphantException` at an application boundary:

@@ -50,7 +50,7 @@ internal sealed class DescriptorTests
                 Is.EqualTo(new[]
                 {
                     "Base configuration is included more than once in " +
-                    "Configure of mapper '{0}'.",
+                    "mapper '{0}'.",
                     "IncludeBase is configured more than once for mapping " +
                     "'{0}' in mapper '{1}'.",
                     "Included mapping '{0}' was not found for mapping " +

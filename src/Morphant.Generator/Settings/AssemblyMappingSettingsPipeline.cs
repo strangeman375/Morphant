@@ -30,32 +30,42 @@ internal static class AssemblyMappingSettingsPipeline
             .Select(static (options, _) =>
             {
                 var globalOptions = options.GlobalOptions;
-
-                return new MappingSettings(
-                    ParseNamedValue<MappingModeValue>(
-                        GetValue(
-                            globalOptions,
-                            MappingModePropertyName)),
-                    ParseNamedValue<NullSourceHandlingValue>(
-                        GetValue(
-                            globalOptions,
-                            NullSourceHandlingPropertyName)),
+                var mappingMode = ParseNamedValue<MappingModeValue>(
+                    GetValue(globalOptions, MappingModePropertyName));
+                var nullSource = ParseNamedValue<NullSourceHandlingValue>(
+                    GetValue(globalOptions, NullSourceHandlingPropertyName));
+                var nullDestination =
                     ParseNamedValue<NullDestinationHandlingValue>(
                         GetValue(
                             globalOptions,
-                            NullDestinationHandlingPropertyName)),
+                            NullDestinationHandlingPropertyName));
+                var constructor =
                     ParseNamedValue<ConstructorSelectionValue>(
                         GetValue(
                             globalOptions,
-                            ConstructorSelectionPropertyName)),
-                    ParseNamedValue<MemberSelectionValue>(
-                        GetValue(
-                            globalOptions,
-                            MemberSelectionPropertyName)),
+                            ConstructorSelectionPropertyName));
+                var member = ParseNamedValue<MemberSelectionValue>(
+                    GetValue(globalOptions, MemberSelectionPropertyName));
+                var validation =
                     ParseNamedValue<UnmappedMemberValidationValue>(
                         GetValue(
                             globalOptions,
-                            UnmappedMemberValidationPropertyName)));
+                            UnmappedMemberValidationPropertyName));
+
+                return new MappingSettings(
+                    mappingMode.Value,
+                    nullSource.Value,
+                    nullDestination.Value,
+                    constructor.Value,
+                    member.Value,
+                    validation.Value,
+                    new InvalidMsBuildSettingValues(
+                        mappingMode.InvalidValue,
+                        nullSource.InvalidValue,
+                        nullDestination.InvalidValue,
+                        constructor.InvalidValue,
+                        member.InvalidValue,
+                        validation.InvalidValue));
             })
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildAssemblyMappingSettings);
@@ -72,20 +82,20 @@ internal static class AssemblyMappingSettingsPipeline
                 : null;
     }
 
-    private static TValue? ParseNamedValue<TValue>(
+    private static ParsedMappingSetting<TValue> ParseNamedValue<TValue>(
         string? value)
         where TValue : struct, Enum
     {
         if (value is null)
         {
-            return default(TValue);
+            return new ParsedMappingSetting<TValue>(default(TValue), null);
         }
 
         var normalizedValue = value.Trim();
 
         if (normalizedValue.Length == 0)
         {
-            return default(TValue);
+            return new ParsedMappingSetting<TValue>(default(TValue), null);
         }
 
         if (!Enum.TryParse<TValue>(
@@ -102,9 +112,14 @@ internal static class AssemblyMappingSettingsPipeline
                 name,
                 StringComparison.OrdinalIgnoreCase))
         {
-            return null;
+            return new ParsedMappingSetting<TValue>(null, normalizedValue);
         }
 
-        return parsedValue;
+        return new ParsedMappingSetting<TValue>(parsedValue, null);
     }
+
+    private readonly record struct ParsedMappingSetting<TValue>(
+        TValue? Value,
+        string? InvalidValue)
+        where TValue : struct, Enum;
 }

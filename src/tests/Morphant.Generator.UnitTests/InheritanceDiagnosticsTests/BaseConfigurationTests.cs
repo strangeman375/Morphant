@@ -76,8 +76,7 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Has.All.EqualTo(
                     "Base configuration is included more than once in " +
-                    "Configure of mapper " +
-                    "'global::TestCase.DuplicateMapper<T>'."));
+                    "mapper 'TestCase.DuplicateMapper<T>'."));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
                     InheritanceDiagnosticsGeneratorTest.SourceText(

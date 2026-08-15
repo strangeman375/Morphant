@@ -231,8 +231,9 @@ internal static class MappingCompletenessDiagnosticAnalyzer
 
     private static string DisplayMember(ISymbol member)
     {
-        var containing = member.ContainingType?.ToDisplayString(
-            SymbolDisplayFormats.FullyQualifiedNullable) ?? string.Empty;
+        var containing = member.ContainingType is { } containingType
+            ? MapperContractDisplay.CreateType(containingType)
+            : string.Empty;
 
         return containing + "." + member.Name;
     }

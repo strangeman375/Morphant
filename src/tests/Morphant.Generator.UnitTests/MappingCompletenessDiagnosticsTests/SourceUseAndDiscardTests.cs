@@ -69,10 +69,10 @@ namespace TestCase
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "Source member 'global::TestCase.Source.SymbolOnly' is " +
+                    "Source member 'TestCase.Source.SymbolOnly' is " +
                     "not used by mapping 'TestCase.Source -> " +
                     "TestCase.Destination'.",
-                    "Source member 'global::TestCase.Source.Unused' is not " +
+                    "Source member 'TestCase.Source.Unused' is not " +
                     "used by mapping 'TestCase.Source -> " +
                     "TestCase.Destination'."
                 }));
@@ -131,7 +131,7 @@ namespace TestCase
                 Is.EqualTo(new[] { "MORPH0048" }));
             Assert.That(
                 result.CompletenessDiagnostics.Single().GetMessage(),
-                Does.Contain("global::TestCase.Destination.RuntimeOnly"));
+                Does.Contain("TestCase.Destination.RuntimeOnly"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -266,7 +266,7 @@ namespace TestCase
                 Is.EqualTo(new[] { "MORPH0047" }));
             Assert.That(
                 result.CompletenessDiagnostics.Single().GetMessage(),
-                Does.Contain("global::TestCase.Source.Unused"));
+                Does.Contain("TestCase.Source.Unused"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

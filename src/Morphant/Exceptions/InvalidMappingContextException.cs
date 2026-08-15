@@ -10,8 +10,8 @@ public sealed class InvalidMappingContextException : MorphantException
     /// </summary>
     public InvalidMappingContextException()
         : base(
-            "MappingContext is not initialized. Use IMapper or the " +
-            "ITypeMapper Create/Update extension methods.")
+            "MappingContext is not initialized. Use IMapper, or call " +
+            "Create/Update through the ITypeMapper extensions.")
     {
     }
 }

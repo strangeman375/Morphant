@@ -61,10 +61,10 @@ namespace TestCase
                 Is.EqualTo(new[] { "MORPH0047", "MORPH0048" }));
             Assert.That(
                 result.CompletenessDiagnostics[0].GetMessage(),
-                Does.Contain("global::TestCase.Source.Unused"));
+                Does.Contain("TestCase.Source.Unused"));
             Assert.That(
                 result.CompletenessDiagnostics[1].GetMessage(),
-                Does.Contain("global::TestCase.Destination.Unmapped"));
+                Does.Contain("TestCase.Destination.Unmapped"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -155,19 +155,19 @@ namespace TestCase
                 Is.EqualTo(new[]
                 {
                     "Destination member " +
-                    "'global::TestCase.IgnoredDestination.Optional' is not " +
+                    "'TestCase.IgnoredDestination.Optional' is not " +
                     "mapped by mapping 'TestCase.Source -> " +
                     "TestCase.IgnoredDestination'.",
                     "Destination member " +
-                    "'global::TestCase.IgnoredDestination.Rest' is not " +
+                    "'TestCase.IgnoredDestination.Rest' is not " +
                     "mapped by mapping 'TestCase.Source -> " +
                     "TestCase.IgnoredDestination'.",
                     "Destination member " +
-                    "'global::TestCase.OmittedDestination.Optional' is not " +
+                    "'TestCase.OmittedDestination.Optional' is not " +
                     "mapped by mapping 'TestCase.Source -> " +
                     "TestCase.OmittedDestination'.",
                     "Destination member " +
-                    "'global::TestCase.OmittedDestination.Rest' is not " +
+                    "'TestCase.OmittedDestination.Rest' is not " +
                     "mapped by mapping 'TestCase.Source -> " +
                     "TestCase.OmittedDestination'."
                 }));
@@ -264,13 +264,13 @@ namespace TestCase
             Assert.That(
                 result.CompletenessDiagnostics.Count(static diagnostic =>
                     diagnostic.GetMessage().Contains(
-                        "global::TestCase.Destination.Required",
+                        "TestCase.Destination.Required",
                         StringComparison.Ordinal)),
                 Is.EqualTo(1));
             Assert.That(
                 result.CompletenessDiagnostics.Count(static diagnostic =>
                     diagnostic.GetMessage().Contains(
-                        "global::TestCase.Destination.Initialized",
+                        "TestCase.Destination.Initialized",
                         StringComparison.Ordinal)),
                 Is.EqualTo(1));
             Assert.That(

@@ -39,7 +39,7 @@ MORPH0029 | Morphant.Callbacks | Error | Mapping expression must be an inline la
 MORPH0030 | Morphant.Callbacks | Error | Mapping expression is unavailable
 MORPH0031 | Morphant.Callbacks | Error | Unsupported mapping expression
 MORPH0032 | Morphant.Callbacks | Error | Destination input is read-only
-MORPH0033 | Morphant.Callbacks | Error | Invalid mapping method use
+MORPH0033 | Morphant.Callbacks | Error | Invalid declarative API use
 MORPH0034 | Morphant.Declaration | Error | Mapper member conflicts with generated Supports
 MORPH0035 | Morphant.Construction | Error | Destination construction is not configured
 MORPH0036 | Morphant.Construction | Error | Constructor cannot be selected
@@ -49,7 +49,7 @@ MORPH0039 | Morphant.Construction | Error | Construct or Resolve returned no des
 MORPH0040 | Morphant.Members | Error | Member rule is invalid
 MORPH0041 | Morphant.Members | Error | Required destination member is not initialized
 MORPH0042 | Morphant.Members | Error | Member rule cannot be applied
-MORPH0043 | Morphant.Members | Error | Members returned no rules
+MORPH0043 | Morphant.Members | Error | Members returned no plan
 MORPH0044 | Morphant.NestedMapping | Error | Nested mapping types cannot be determined
 MORPH0045 | Morphant.NestedMapping | Error | Nested mapping result is incompatible
 MORPH0046 | Morphant.NestedMapping | Error | Nested Update destination is invalid

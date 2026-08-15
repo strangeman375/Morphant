@@ -386,7 +386,7 @@ public partial class TestMapper : TypeMapper
                 Is.EqualTo(
                     "Morphant cannot analyze configuration for mapping " +
                     "'TestCase.Source -> TestCase.Destination' in mapper " +
-                    "'global::TestCase.TestMapper'."));
+                    "'TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

@@ -18,8 +18,8 @@ public sealed class MappingScopeCompletedException : MappingException
         Type sourceType,
         Type destinationType)
         : base(
-            "context.Mapper cannot be used after the outer mapping call " +
-            "has completed.",
+            "MappingContext.Mapper cannot be used after the outer mapping " +
+            "call has completed.",
             operation,
             sourceType,
             destinationType)

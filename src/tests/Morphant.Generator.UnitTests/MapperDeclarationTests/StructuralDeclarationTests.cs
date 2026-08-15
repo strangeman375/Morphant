@@ -36,7 +36,7 @@ public abstract class WrongMapper : ITypeMapper<Source, Destination>
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapper 'global::TestCase.WrongMapper' must derive " +
+                    "Mapper 'TestCase.WrongMapper' must derive " +
                     "from 'Morphant.TypeMapper'."));
             Assert.That(
                 MapperDeclarationGeneratorTest.SourceText(
@@ -247,7 +247,7 @@ public class Outer
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Containing type 'global::TestCase.Outer' must be " +
+                    "Containing type 'TestCase.Outer' must be " +
                     "declared partial."));
             Assert.That(
                 MapperDeclarationGeneratorTest.SourceText(
@@ -456,7 +456,7 @@ file partial class Outer
                 Is.EqualTo("file"));
             Assert.That(
                 diagnostic.GetMessage(),
-                Does.Contain("global::TestCase.Outer"));
+                Does.Contain("TestCase.Outer"));
         });
     }
 

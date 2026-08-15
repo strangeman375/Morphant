@@ -71,7 +71,7 @@ namespace TestCase
             Assert.That(
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
-                Has.All.Contain("global::TestCase.TestMapper"));
+                Has.All.Contain("TestCase.TestMapper"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -120,7 +120,7 @@ namespace TestCase
                 Is.EqualTo(
                     "Setting 'ConstructorSelection' does not apply to this " +
                     "destination type for mapping 'TestCase.Source -> int' " +
-                    "in mapper 'global::TestCase.TestMapper'."));
+                    "in mapper 'TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

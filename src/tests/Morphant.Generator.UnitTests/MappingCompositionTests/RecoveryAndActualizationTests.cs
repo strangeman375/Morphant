@@ -430,18 +430,18 @@ public partial class AMapper : TypeMapper
                 {
                     "'Convert' is configured more than once for mapping " +
                     "'TestCase.Source -> TestCase.DestinationA' in mapper " +
-                    "'global::TestCase.AMapper'.",
+                    "'TestCase.AMapper'.",
                     "'Members' is configured more than once for mapping " +
                     "'TestCase.Source -> TestCase.DestinationB' in mapper " +
-                    "'global::TestCase.AMapper'.",
+                    "'TestCase.AMapper'.",
                     "Convert cannot be combined with Construct, Resolve, or " +
                     "Members for mapping 'TestCase.Source -> " +
                     "TestCase.DestinationA' in mapper " +
-                    "'global::TestCase.AMapper'.",
+                    "'TestCase.AMapper'.",
                     "Convert cannot be combined with Construct, Resolve, or " +
                     "Members for mapping 'TestCase.Source -> " +
                     "TestCase.DestinationZ' in mapper " +
-                    "'global::TestCase.ZMapper'."
+                    "'TestCase.ZMapper'."
                 }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });

@@ -3,7 +3,8 @@
 ## Cause
 
 A `Morphant...` MSBuild property contains a value that is not declared by its
-corresponding setting enum.
+corresponding setting enum. The diagnostic names the property and rejected
+value.
 
 ## Fix
 

@@ -42,7 +42,7 @@ public partial class TestMapper<T> : TypeMapper
                     "TestCase.Destination' and 'TestCase.Envelope<int> -> " +
                     "TestCase.Destination' may become identical for some " +
                     "generic type arguments in mapper " +
-                    "'global::TestCase.TestMapper<T>'."));
+                    "'TestCase.TestMapper<T>'."));
             Assert.That(
                 MappingRegistrationGeneratorTest.SourceText(
                     diagnostic.Location),

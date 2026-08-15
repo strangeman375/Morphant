@@ -99,8 +99,8 @@ namespace TestCase
                 Is.EqualTo(
                     "ConstructorSelection.Explicit cannot select a " +
                     "constructor for mapping 'TestCase.Source -> " +
-                    "TestCase.Destination': ConstructorSelection.Explicit " +
-                    "disables automatic selection."));
+                    "TestCase.Destination': destination construction must be " +
+                    "configured explicitly."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

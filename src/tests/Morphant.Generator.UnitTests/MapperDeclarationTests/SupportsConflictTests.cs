@@ -39,7 +39,7 @@ public partial class TestMapper : TypeMapper
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Mapper 'global::TestCase.TestMapper' declares " +
+                    "Mapper 'TestCase.TestMapper' declares " +
                     "'Supports(System.Type, System.Type)', which conflicts " +
                     "with the generated mapper."));
             Assert.That(

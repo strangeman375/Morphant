@@ -18,7 +18,7 @@ internal static class MappingSettingsDiagnosticDescriptors
         Create(
             "MORPH0022",
             "Invalid MSBuild mapping setting value",
-            "MSBuild property '{0}' must use a supported value.");
+            "MSBuild property '{0}' has unsupported value '{1}'.");
 
     public static readonly DiagnosticDescriptor InapplicableSetting = Create(
         "MORPH0023",

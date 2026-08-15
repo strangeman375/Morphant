@@ -41,7 +41,7 @@ internal sealed class DescriptorTests
                     "Mapping expression is unavailable",
                     "Unsupported mapping expression",
                     "Destination input is read-only",
-                    "Invalid mapping method use"
+                    "Invalid declarative API use"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
@@ -54,8 +54,8 @@ internal sealed class DescriptorTests
                     "{0} for mapping '{1}' contains unsupported syntax " +
                     "'{2}'.",
                     "'{0}' is read-only in mapping '{1}'.",
-                    "'{0}' must be used directly inside Construct, Resolve, " +
-                    "or Members for mapping '{2}'."
+                    "'{0}' cannot be used in this position within {1} for " +
+                    "mapping '{2}'."
                 }));
             Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),

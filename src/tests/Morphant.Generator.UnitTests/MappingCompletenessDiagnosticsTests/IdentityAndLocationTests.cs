@@ -52,7 +52,7 @@ namespace TestCase
             Assert.That(
                 diagnostic.GetMessage(),
                 Does.Contain(
-                    "global::TestCase.Source<string?>.Unused"));
+                    "TestCase.Source<string?>.Unused"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

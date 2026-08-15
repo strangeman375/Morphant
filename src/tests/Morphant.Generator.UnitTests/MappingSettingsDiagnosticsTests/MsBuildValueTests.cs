@@ -61,7 +61,8 @@ internal sealed class MsBuildValueTests
             globalOptions: new Dictionary<string, string>
             {
                 ["build_property.MorphantMappingMode"] = "CreateAndUpdate",
-                ["build_property.MorphantNullSourceHandling"] = "Unexpected",
+                ["build_property.MorphantNullSourceHandling"] =
+                    " Unexpected ",
                 ["build_property.MorphantNullDestinationHandling"] = "2",
                 ["build_property.MorphantConstructorSelection"] =
                     "ConstructorSelection.Greediest",
@@ -79,16 +80,16 @@ internal sealed class MsBuildValueTests
                     diagnostic.GetMessage()),
                 Is.EqualTo(new[]
                 {
-                    "MSBuild property 'MorphantConstructorSelection' must " +
-                    "use a supported value.",
-                    "MSBuild property 'MorphantMemberSelection' must use a " +
-                    "supported value.",
-                    "MSBuild property 'MorphantNullDestinationHandling' must " +
-                    "use a supported value.",
-                    "MSBuild property 'MorphantNullSourceHandling' must use " +
-                    "a supported value.",
+                    "MSBuild property 'MorphantConstructorSelection' has " +
+                    "unsupported value 'ConstructorSelection.Greediest'.",
+                    "MSBuild property 'MorphantMemberSelection' has " +
+                    "unsupported value 'Auto, Explicit'.",
+                    "MSBuild property 'MorphantNullDestinationHandling' " +
+                    "has unsupported value '2'.",
+                    "MSBuild property 'MorphantNullSourceHandling' has " +
+                    "unsupported value 'Unexpected'.",
                     "MSBuild property 'MorphantUnmappedMemberValidation' " +
-                    "must use a supported value."
+                    "has unsupported value '-1'."
                 }));
             Assert.That(
                 result.Diagnostics,

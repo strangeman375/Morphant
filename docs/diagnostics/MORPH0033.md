@@ -1,10 +1,9 @@
-# MORPH0033: Invalid mapping method use
+# MORPH0033: Invalid declarative API use
 
 ## Cause
 
-A configuration-only method such as `Auto`, `Ignore`, `Value`, `Map`, `Create`,
-or `Update` is used outside a supported constructor argument, member rule, or
-standalone read-only member update.
+A declarative API such as `Auto`, `Ignore`, `Value`, `Map`, `Create`, `Update`,
+or `context` is used in an unsupported position within a mapping callback.
 
 ## Fix
 
