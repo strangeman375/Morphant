@@ -172,7 +172,7 @@ internal sealed class RuntimeContractFixture
                 $"Embedded runtime fixture '{resourceName}' was not found.");
         using var reader = new StreamReader(stream);
 
-        return reader.ReadToEnd();
+        return reader.ReadToEnd().ReplaceLineEndings("\n");
     }
 
     private sealed record Replacement(string Original, string Changed);
