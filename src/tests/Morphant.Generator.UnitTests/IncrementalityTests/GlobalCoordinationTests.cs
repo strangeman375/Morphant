@@ -15,6 +15,9 @@ internal sealed class GlobalCoordinationTests
         "Morphant.Generated.Construction." +
         "TestCase_Url__e9fae35bfd70d886.g.cs";
 
+    private const string ReadableTitleConstruction =
+        "Morphant.Generated.Construction.TestCase_Url.g.cs";
+
     private const string StableConstruction =
         "Morphant.Generated.Construction.TestCase_StableDestination.g.cs";
 
@@ -25,6 +28,10 @@ internal sealed class GlobalCoordinationTests
     private const string TitleMapping =
         "Morphant.Generated.MappingExtension." +
         "TestCase_Source__TestCase_Url__df20b2fbed6d104d.g.cs";
+
+    private const string ReadableTitleMapping =
+        "Morphant.Generated.MappingExtension." +
+        "TestCase_Source__TestCase_Url.g.cs";
 
     private const string StableMapping =
         "Morphant.Generated.MappingExtension." +
@@ -37,6 +44,9 @@ internal sealed class GlobalCoordinationTests
         "Morphant.Generated.Member." +
         "TestCase_Url__e9fae35bfd70d886.g.cs";
 
+    private const string ReadableTitleMember =
+        "Morphant.Generated.Member.TestCase_Url.g.cs";
+
     private const string StableMember =
         "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
 
@@ -47,6 +57,10 @@ internal sealed class GlobalCoordinationTests
     private const string TitleMemberExtension =
         "Morphant.Generated.MemberExtension." +
         "TestCase_Source__TestCase_Url__df20b2fbed6d104d.g.cs";
+
+    private const string ReadableTitleMemberExtension =
+        "Morphant.Generated.MemberExtension." +
+        "TestCase_Source__TestCase_Url.g.cs";
 
     private const string StableMemberExtension =
         "Morphant.Generated.MemberExtension." +
@@ -65,10 +79,14 @@ internal sealed class GlobalCoordinationTests
         var stable = SourceFile("StableMapper.cs", StableMapperSource);
         var upper = SourceFile(
             "CollisionMapper.cs",
-            BuildCollisionMapper(includeTitleCase: false));
+            BuildCollisionMapper(
+                includeUpperCase: true,
+                includeTitleCase: false));
         var both = SourceFile(
             "CollisionMapper.cs",
-            BuildCollisionMapper(includeTitleCase: true));
+            BuildCollisionMapper(
+                includeUpperCase: true,
+                includeTitleCase: true));
         var initialHints = new[]
         {
             UpperConstruction,
@@ -91,7 +109,7 @@ internal sealed class GlobalCoordinationTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             Step(
                 "single readable hint",
                 [models, stable, upper],
@@ -114,6 +132,65 @@ internal sealed class GlobalCoordinationTests
                 [models, stable, upper],
                 initialHints,
                 SurfaceCollisionRemovedStages()));
+    }
+
+    [Test]
+    public void Transfers_readable_surface_hints_to_the_remaining_owner()
+    {
+        var models = SourceFile("Models.cs", SurfaceModelsSource);
+        var stable = SourceFile("StableMapper.cs", StableMapperSource);
+        var both = SourceFile(
+            "CollisionMapper.cs",
+            BuildCollisionMapper(
+                includeUpperCase: true,
+                includeTitleCase: true));
+        var title = SourceFile(
+            "CollisionMapper.cs",
+            BuildCollisionMapper(
+                includeUpperCase: false,
+                includeTitleCase: true));
+        var collisionHints = new[]
+        {
+            UpperConstruction,
+            TitleConstruction,
+            StableConstruction,
+            UpperMapping,
+            TitleMapping,
+            StableMapping,
+            UpperMember,
+            TitleMember,
+            StableMember,
+            UpperMemberExtension,
+            TitleMemberExtension,
+            StableMemberExtension,
+            CollisionMapper,
+            StableMapper
+        };
+        var remainingHints = new[]
+        {
+            ReadableTitleConstruction,
+            StableConstruction,
+            ReadableTitleMapping,
+            StableMapping,
+            ReadableTitleMember,
+            StableMember,
+            ReadableTitleMemberExtension,
+            StableMemberExtension,
+            CollisionMapper,
+            StableMapper
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step(
+                "colliding surfaces",
+                [models, stable, both],
+                collisionHints),
+            Step(
+                "original readable owner removed",
+                [models, stable, title],
+                remainingHints));
     }
 
     [Test]
@@ -151,7 +228,7 @@ internal sealed class GlobalCoordinationTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             Step(
                 "single mapper hint",
                 [models, stable, upper],
@@ -196,6 +273,54 @@ internal sealed class GlobalCoordinationTests
                     Expected(
                         stableHint,
                         IncrementalStepRunReason.Unchanged))));
+    }
+
+    [Test]
+    public void Transfers_a_readable_mapper_hint_to_the_remaining_owner()
+    {
+        var models = SourceFile("MapperModels.cs", MapperModelsSource);
+        var stable = SourceFile(
+            "StableMapper.cs",
+            BuildMapper("StableMapper"));
+        var upper = SourceFile("UpperMapper.cs", BuildMapper("URL"));
+        var title = SourceFile("TitleMapper.cs", BuildMapper("Url"));
+        const string upperHint =
+            "Morphant.Generated.TypeMapper.TestCase_URL.g.cs";
+        const string hashedTitleHint =
+            "Morphant.Generated.TypeMapper." +
+            "TestCase_Url__e9fae35bfd70d886.g.cs";
+        const string readableTitleHint =
+            "Morphant.Generated.TypeMapper.TestCase_Url.g.cs";
+        const string stableHint =
+            "Morphant.Generated.TypeMapper.TestCase_StableMapper.g.cs";
+        var surfaceHints = new[]
+        {
+            "Morphant.Generated.Construction.Models_Destination.g.cs",
+            "Morphant.Generated.MappingExtension." +
+            "Models_Source__Models_Destination.g.cs",
+            "Morphant.Generated.Member.Models_Destination.g.cs",
+            "Morphant.Generated.MemberExtension." +
+            "Models_Source__Models_Destination.g.cs"
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step(
+                "colliding mapper hints",
+                [models, stable, upper, title],
+                surfaceHints
+                    .Append(upperHint)
+                    .Append(hashedTitleHint)
+                    .Append(stableHint)
+                    .ToArray()),
+            Step(
+                "original readable mapper removed",
+                [models, stable, title],
+                surfaceHints
+                    .Append(readableTitleHint)
+                    .Append(stableHint)
+                    .ToArray()));
     }
 
     private static ExpectedIncrementalStage[]
@@ -294,13 +419,21 @@ internal sealed class GlobalCoordinationTests
         ];
     }
 
-    private static string BuildCollisionMapper(bool includeTitleCase)
+    private static string BuildCollisionMapper(
+        bool includeUpperCase,
+        bool includeTitleCase)
     {
-        return CollisionMapperSource.Replace(
-            "__TITLE_MAPPING__",
-            includeTitleCase
-                ? "            builder.Map<Source, Url>();"
-                : string.Empty);
+        return CollisionMapperSource
+            .Replace(
+                "__UPPER_MAPPING__",
+                includeUpperCase
+                    ? "            builder.Map<Source, URL>();"
+                    : string.Empty)
+            .Replace(
+                "__TITLE_MAPPING__",
+                includeTitleCase
+                    ? "            builder.Map<Source, Url>();"
+                    : string.Empty);
     }
 
     private static string BuildMapper(string mapperName)
@@ -350,7 +483,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, URL>();
+__UPPER_MAPPING__
 __TITLE_MAPPING__
         }
     }

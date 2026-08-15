@@ -66,7 +66,7 @@ internal sealed class ConfigurationEditTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             Step(
                 "initial callbacks",
                 stableFiles

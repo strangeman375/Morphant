@@ -76,7 +76,7 @@ internal sealed class ReferenceAndSettingsTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             StepWithReferences(
                 "reference v1",
                 files,
@@ -176,7 +176,7 @@ internal sealed class ReferenceAndSettingsTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             StepWithOptions(
                 "create mode",
                 files,

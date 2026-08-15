@@ -49,7 +49,7 @@ internal sealed class CachingTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             Step(
                 "initial",
                 initialFiles,
@@ -151,7 +151,61 @@ internal sealed class CachingTests
                         IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildTypeMapperRequests",
-                    Expected(MapperHint, IncrementalStepRunReason.Cached))));
+                    Expected(MapperHint, IncrementalStepRunReason.Cached))),
+            Step(
+                "identical rerun",
+                updatedFiles,
+                generated,
+                CachedOutputStages()));
+    }
+
+    private static ExpectedIncrementalStage[] CachedOutputStages()
+    {
+        return
+        [
+            Stage(
+                "BuildConstructionPlanModels",
+                Expected(
+                    ConstructionHint,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildConstructionPlanRequests",
+                Expected(
+                    ConstructionHint,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMappingExtensionModels",
+                Expected(
+                    MappingExtensionHint,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMappingExtensionRequests",
+                Expected(
+                    MappingExtensionHint,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberPlanModels",
+                Expected(MemberHint, IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberPlanRequests",
+                Expected(MemberHint, IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberExtensionModels",
+                Expected(
+                    MemberExtensionHint,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberExtensionRequests",
+                Expected(
+                    MemberExtensionHint,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildTypeMapperModels",
+                Expected(MapperHint, IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildTypeMapperRequests",
+                Expected(MapperHint, IncrementalStepRunReason.Cached))
+        ];
     }
 
     private static string BuildUnrelatedSource(int value)

@@ -46,6 +46,28 @@ internal static class GeneratorIncrementalityTest
             sourceFiles.ToImmutableArray(),
             [],
             ImmutableDictionary<string, string>.Empty,
+            NullableContextOptions.Enable,
+            [],
+            null,
+            generatedHintNames.ToImmutableArray(),
+            stages.ToImmutableArray());
+    }
+
+    public static GeneratorIncrementalityStep ExecutableStep(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<string> generatedHintNames,
+        string scenarioTypeName,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            [],
+            ImmutableDictionary<string, string>.Empty,
+            NullableContextOptions.Enable,
+            [],
+            scenarioTypeName,
             generatedHintNames.ToImmutableArray(),
             stages.ToImmutableArray());
     }
@@ -62,6 +84,9 @@ internal static class GeneratorIncrementalityTest
             sourceFiles.ToImmutableArray(),
             additionalReferences.ToImmutableArray(),
             ImmutableDictionary<string, string>.Empty,
+            NullableContextOptions.Enable,
+            [],
+            null,
             generatedHintNames.ToImmutableArray(),
             stages.ToImmutableArray());
     }
@@ -79,6 +104,29 @@ internal static class GeneratorIncrementalityTest
             [],
             globalOptions.ToImmutableDictionary(
                 StringComparer.OrdinalIgnoreCase),
+            NullableContextOptions.Enable,
+            [],
+            null,
+            generatedHintNames.ToImmutableArray(),
+            stages.ToImmutableArray());
+    }
+
+    public static GeneratorIncrementalityStep StepWithCompilerInputs(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<string> generatedHintNames,
+        NullableContextOptions nullableContextOptions,
+        IReadOnlyCollection<string> preprocessorSymbols,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            [],
+            ImmutableDictionary<string, string>.Empty,
+            nullableContextOptions,
+            preprocessorSymbols.ToImmutableArray(),
+            null,
             generatedHintNames.ToImmutableArray(),
             stages.ToImmutableArray());
     }
@@ -115,22 +163,22 @@ internal static class GeneratorIncrementalityTest
 
     public static void RunAndAssert(
         LanguageVersion languageVersion,
-        IIncrementalGenerator generator,
+        Func<IIncrementalGenerator> generatorFactory,
         params GeneratorIncrementalityStep[] steps)
     {
         Assert.That(steps, Is.Not.Empty);
 
-        var parseOptions = new CSharpParseOptions(
-            languageVersion,
-            DocumentationMode.Diagnose);
+        var parseOptions = CreateParseOptions(languageVersion, []);
+        var globalOptions = ImmutableDictionary<string, string>.Empty;
         var compilation = CSharpCompilation.Create(
             "MorphantIncrementality",
             references: DefaultReferences,
-            options: new CSharpCompilationOptions(
-                OutputKind.DynamicallyLinkedLibrary,
-                nullableContextOptions: NullableContextOptions.Enable));
+            options: CreateCompilationOptions(
+                NullableContextOptions.Enable));
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
-            [generator.AsSourceGenerator()],
+            [generatorFactory().AsSourceGenerator()],
+            optionsProvider: new TestAnalyzerConfigOptionsProvider(
+                globalOptions),
             parseOptions: parseOptions,
             driverOptions: new GeneratorDriverOptions(
                 IncrementalGeneratorOutputKind.None,
@@ -138,9 +186,31 @@ internal static class GeneratorIncrementalityTest
 
         foreach (var step in steps)
         {
-            driver = driver.WithUpdatedAnalyzerConfigOptions(
-                new TestAnalyzerConfigOptionsProvider(
-                    step.GlobalOptions));
+            var nextParseOptions = CreateParseOptions(
+                languageVersion,
+                step.PreprocessorSymbols);
+
+            if (!parseOptions.Equals(nextParseOptions))
+            {
+                parseOptions = nextParseOptions;
+                driver = driver.WithUpdatedParseOptions(parseOptions);
+            }
+
+            if (!GlobalOptionsEqual(globalOptions, step.GlobalOptions))
+            {
+                globalOptions = step.GlobalOptions;
+                driver = driver.WithUpdatedAnalyzerConfigOptions(
+                    new TestAnalyzerConfigOptionsProvider(globalOptions));
+            }
+
+            var compilationOptions = CreateCompilationOptions(
+                step.NullableContextOptions);
+
+            if (!compilation.Options.Equals(compilationOptions))
+            {
+                compilation = compilation.WithOptions(compilationOptions);
+            }
+
             compilation = ApplyStep(
                 compilation,
                 step,
@@ -154,7 +224,23 @@ internal static class GeneratorIncrementalityTest
                 $"Step '{step.Name}'",
                 generatorDiagnostics.Concat(
                     outputCompilation.GetDiagnostics()));
-            AssertIncrementality(step, driver.GetRunResult());
+            var runResult = driver.GetRunResult();
+
+            AssertIncrementality(step, runResult);
+            AssertMatchesFreshRun(
+                step,
+                compilation,
+                parseOptions,
+                generatorFactory,
+                runResult);
+
+            if (step.ScenarioTypeName is { } scenarioTypeName)
+            {
+                GeneratedCodeExecution.AssertScenario(
+                    step.Name,
+                    outputCompilation,
+                    scenarioTypeName);
+            }
         }
     }
 
@@ -181,7 +267,8 @@ internal static class GeneratorIncrementalityTest
                 tree => tree.FilePath == sourceFile.Path);
 
             if (previousTree is not null &&
-                previousTree.GetText().ToString() == sourceFile.Source)
+                previousTree.GetText().ToString() == sourceFile.Source &&
+                previousTree.Options.Equals(parseOptions))
             {
                 continue;
             }
@@ -196,8 +283,125 @@ internal static class GeneratorIncrementalityTest
                 : compilation.ReplaceSyntaxTree(previousTree, sourceTree);
         }
 
-        return compilation.WithReferences(
-            DefaultReferences.AddRange(step.AdditionalReferences));
+        var references = DefaultReferences.AddRange(
+            step.AdditionalReferences);
+
+        return ReferencesEqual(compilation.References, references)
+            ? compilation
+            : compilation.WithReferences(references);
+    }
+
+    private static bool GlobalOptionsEqual(
+        ImmutableDictionary<string, string> left,
+        ImmutableDictionary<string, string> right)
+    {
+        return left.Count == right.Count &&
+               left.All(pair =>
+                   right.TryGetValue(pair.Key, out var value) &&
+                   StringComparer.Ordinal.Equals(pair.Value, value));
+    }
+
+    private static bool ReferencesEqual(
+        IEnumerable<MetadataReference> left,
+        IEnumerable<MetadataReference> right)
+    {
+        return left.SequenceEqual(
+            right,
+            MetadataReferenceIdentityComparer.Instance);
+    }
+
+    private static void AssertMatchesFreshRun(
+        GeneratorIncrementalityStep step,
+        CSharpCompilation compilation,
+        CSharpParseOptions parseOptions,
+        Func<IIncrementalGenerator> generatorFactory,
+        GeneratorDriverRunResult warmRunResult)
+    {
+        GeneratorDriver freshDriver = CSharpGeneratorDriver.Create(
+            [generatorFactory().AsSourceGenerator()],
+            parseOptions: parseOptions);
+        freshDriver = freshDriver.WithUpdatedAnalyzerConfigOptions(
+            new TestAnalyzerConfigOptionsProvider(step.GlobalOptions));
+        freshDriver = freshDriver.RunGenerators(compilation);
+
+        var warmResult = warmRunResult.Results.Single();
+        var freshResult = freshDriver.GetRunResult().Results.Single();
+
+        Assert.That(
+            freshResult.Exception,
+            Is.Null,
+            $"Fresh run for step '{step.Name}' must not throw from the " +
+            "generator.");
+        Assert.That(
+            SnapshotGeneratedSources(warmResult),
+            Is.EqualTo(SnapshotGeneratedSources(freshResult)),
+            $"Step '{step.Name}' produced a different result with a warm " +
+            "driver than with a fresh driver.");
+        Assert.That(
+            SnapshotDiagnostics(warmResult),
+            Is.EqualTo(SnapshotDiagnostics(freshResult)),
+            $"Step '{step.Name}' produced different diagnostics with a " +
+            "warm driver than with a fresh driver.");
+    }
+
+    private static IncrementalGeneratedSource[] SnapshotGeneratedSources(
+        GeneratorRunResult result)
+    {
+        return result.GeneratedSources
+            .Select(static source =>
+                new IncrementalGeneratedSource(
+                    source.HintName,
+                    source.SourceText.ToString()))
+            .OrderBy(static source => source.HintName, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static IncrementalDiagnostic[] SnapshotDiagnostics(
+        GeneratorRunResult result)
+    {
+        return result.Diagnostics
+            .Select(static diagnostic =>
+                new IncrementalDiagnostic(
+                    diagnostic.Id,
+                    diagnostic.Severity,
+                    diagnostic.WarningLevel,
+                    diagnostic.GetMessage(),
+                    diagnostic.Location.SourceTree?.FilePath,
+                    diagnostic.Location.IsInSource
+                        ? diagnostic.Location.SourceSpan.Start
+                        : -1,
+                    diagnostic.Location.IsInSource
+                        ? diagnostic.Location.SourceSpan.Length
+                        : 0,
+                    diagnostic.IsSuppressed))
+            .OrderBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
+            .ThenBy(
+                static diagnostic => diagnostic.Path,
+                StringComparer.Ordinal)
+            .ThenBy(static diagnostic => diagnostic.Start)
+            .ThenBy(static diagnostic => diagnostic.Length)
+            .ThenBy(
+                static diagnostic => diagnostic.Message,
+                StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static CSharpParseOptions CreateParseOptions(
+        LanguageVersion languageVersion,
+        IEnumerable<string> preprocessorSymbols)
+    {
+        return new CSharpParseOptions(
+            languageVersion,
+            DocumentationMode.Diagnose,
+            preprocessorSymbols: preprocessorSymbols);
+    }
+
+    private static CSharpCompilationOptions CreateCompilationOptions(
+        NullableContextOptions nullableContextOptions)
+    {
+        return new CSharpCompilationOptions(
+            OutputKind.DynamicallyLinkedLibrary,
+            nullableContextOptions: nullableContextOptions);
     }
 
     private static void AssertIncrementality(
@@ -340,6 +544,9 @@ internal sealed record GeneratorIncrementalityStep(
     ImmutableArray<GeneratorIncrementalitySourceFile> SourceFiles,
     ImmutableArray<MetadataReference> AdditionalReferences,
     ImmutableDictionary<string, string> GlobalOptions,
+    NullableContextOptions NullableContextOptions,
+    ImmutableArray<string> PreprocessorSymbols,
+    string? ScenarioTypeName,
     ImmutableArray<string> GeneratedHintNames,
     ImmutableArray<ExpectedIncrementalStage> ExpectedStages);
 
@@ -358,3 +565,39 @@ internal sealed record ExpectedIncrementalOutput(
 internal sealed record TrackedIncrementalOutput(
     string HintName,
     IncrementalStepRunReason Reason);
+
+internal sealed record IncrementalGeneratedSource(
+    string HintName,
+    string Source);
+
+internal sealed record IncrementalDiagnostic(
+    string Id,
+    DiagnosticSeverity Severity,
+    int WarningLevel,
+    string Message,
+    string? Path,
+    int Start,
+    int Length,
+    bool IsSuppressed);
+
+internal sealed class MetadataReferenceIdentityComparer :
+    IEqualityComparer<MetadataReference>
+{
+    public static MetadataReferenceIdentityComparer Instance { get; } =
+        new();
+
+    private MetadataReferenceIdentityComparer()
+    {
+    }
+
+    public bool Equals(MetadataReference? left, MetadataReference? right)
+    {
+        return ReferenceEquals(left, right);
+    }
+
+    public int GetHashCode(MetadataReference reference)
+    {
+        return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(
+            reference);
+    }
+}

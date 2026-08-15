@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -134,7 +133,7 @@ internal static class GeneratorActualizationTest
 
             if (step.ScenarioTypeName is { } scenarioTypeName)
             {
-                ExecuteScenario(
+                GeneratedCodeExecution.AssertScenario(
                     step.Name,
                     outputCompilation,
                     scenarioTypeName);
@@ -239,39 +238,6 @@ internal static class GeneratorActualizationTest
                 Is.EqualTo(expectedSources[index].Source),
                 $"Step '{step.Name}', file " +
                 $"'{expectedSources[index].HintName}'.");
-        }
-    }
-
-    private static void ExecuteScenario(
-        string stepName,
-        Compilation outputCompilation,
-        string scenarioTypeName)
-    {
-        using var stream = new MemoryStream();
-        var emitResult = outputCompilation.Emit(stream);
-
-        AssertNoWarningsOrErrors(
-            $"Step '{stepName}' emit",
-            emitResult.Diagnostics);
-
-        var assembly = Assembly.Load(stream.ToArray());
-        var verify = assembly
-            .GetType(scenarioTypeName, throwOnError: true)!
-            .GetMethod(
-                "Verify",
-                BindingFlags.Public | BindingFlags.Static) ??
-            throw new InvalidOperationException(
-                $"{scenarioTypeName}.Verify was not found.");
-
-        try
-        {
-            verify.Invoke(null, null);
-        }
-        catch (TargetInvocationException exception)
-        {
-            throw new AssertionException(
-                exception.InnerException?.ToString() ??
-                exception.ToString());
         }
     }
 

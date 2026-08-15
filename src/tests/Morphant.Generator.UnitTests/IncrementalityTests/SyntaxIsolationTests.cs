@@ -40,7 +40,7 @@ internal sealed class SyntaxIsolationTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             Step(
                 "initial syntax",
                 [mapper, SourceFile("Models.cs", BuildModels())],

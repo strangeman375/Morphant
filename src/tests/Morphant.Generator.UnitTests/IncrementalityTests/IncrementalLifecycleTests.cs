@@ -89,7 +89,7 @@ internal sealed class IncrementalLifecycleTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             Step(
                 "first shared usage",
                 [models, stable, first],
@@ -220,6 +220,56 @@ internal sealed class IncrementalLifecycleTests
                     "BuildTypeMapperRequests",
                     Expected(MapperOne, IncrementalStepRunReason.Removed),
                     Expected(StableMapper, IncrementalStepRunReason.Cached))));
+    }
+
+    [Test]
+    public void Preserves_shared_surfaces_when_the_canonical_owner_is_removed()
+    {
+        var models = SourceFile("Models.cs", ModelsSource);
+        var stable = SourceFile("StableMapper.cs", StableMapperSource);
+        var first = SourceFile("MapperOne.cs", MapperOneSource);
+        var second = SourceFile("MapperTwo.cs", MapperTwoSource);
+        var sharedHints = new[]
+        {
+            SharedConstruction,
+            StableConstruction,
+            SharedMember,
+            StableMember,
+            MappingOne,
+            MappingTwo,
+            StableMapping,
+            MemberOne,
+            MemberTwo,
+            StableMemberExtension,
+            MapperOne,
+            MapperTwo,
+            StableMapper
+        };
+        var remainingHints = new[]
+        {
+            SharedConstruction,
+            StableConstruction,
+            SharedMember,
+            StableMember,
+            MappingTwo,
+            StableMapping,
+            MemberTwo,
+            StableMemberExtension,
+            MapperTwo,
+            StableMapper
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step(
+                "two shared surface owners",
+                [models, stable, first, second],
+                sharedHints),
+            Step(
+                "canonical surface owner removed",
+                [models, stable, second],
+                remainingHints));
     }
 
     // lang=c#

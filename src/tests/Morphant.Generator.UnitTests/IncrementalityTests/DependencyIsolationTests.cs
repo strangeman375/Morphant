@@ -72,7 +72,7 @@ internal sealed class DependencyIsolationTests
 
         RunAndAssert(
             LanguageVersion.CSharp9,
-            new MorphantGenerator(),
+            static () => new MorphantGenerator(),
             Step(
                 "initial contracts",
                 initialFiles,
