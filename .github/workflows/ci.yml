@@ -1,0 +1,217 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  validate:
+    name: Validate (Ubuntu, Roslyn 4.4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
+
+      - name: Build
+        run: >-
+          dotnet build src/Morphant.slnx
+          --configuration Release
+          --no-restore
+          -p:ContinuousIntegrationBuild=true
+          -p:MorphantRoslynVersion=4.4.0
+
+      - name: Test generator
+        run: >-
+          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.4.0
+          --collect:"XPlat Code Coverage"
+          --settings eng/coverlet.runsettings
+          --results-directory artifacts/test-results/unit
+          --logger "trx;LogFileName=unit.trx"
+
+      - name: Test integration scenarios
+        run: >-
+          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.4.0
+          --collect:"XPlat Code Coverage"
+          --settings eng/coverlet.runsettings
+          --results-directory artifacts/test-results/integration
+          --logger "trx;LogFileName=integration.trx"
+
+      - name: Restore coverage report tool
+        run: dotnet tool restore
+
+      - name: Create coverage report
+        run: |
+          dotnet reportgenerator \
+            "-reports:artifacts/test-results/*/*/coverage.cobertura.xml" \
+            "-targetdir:artifacts/coverage" \
+            "-reporttypes:Html;Cobertura;MarkdownSummaryGithub" \
+            "-assemblyfilters:+Morphant;+Morphant.Generator"
+
+      - name: Enforce coverage
+        run: |
+          python3 eng/verify_coverage.py \
+            artifacts/coverage/Cobertura.xml Morphant.Generator 85 75
+          python3 eng/verify_coverage.py \
+            artifacts/coverage/Cobertura.xml Morphant 75 75
+
+      - name: Add coverage summary
+        run: cat artifacts/coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-ubuntu
+          path: artifacts/test-results
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload coverage report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage
+          path: artifacts/coverage
+          if-no-files-found: warn
+          retention-days: 30
+
+  roslyn-compatibility:
+    name: Roslyn 4.9.2 compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: >-
+          dotnet restore src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          -p:MorphantRoslynVersion=4.9.2
+
+      - name: Build
+        run: >-
+          dotnet build src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          --configuration Release
+          --no-restore
+          -p:ContinuousIntegrationBuild=true
+          -p:MorphantRoslynVersion=4.9.2
+
+      - name: Test
+        run: >-
+          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.9.2
+          --results-directory artifacts/test-results/roslyn-4.9.2
+          --logger "trx;LogFileName=roslyn-4.9.2.trx"
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-roslyn-4.9.2
+          path: artifacts/test-results
+          if-no-files-found: warn
+          retention-days: 14
+
+  cross-platform:
+    name: Validate (${{ matrix.os }})
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
+
+      - name: Build
+        run: >-
+          dotnet build src/Morphant.slnx
+          --configuration Release
+          --no-restore
+          -p:ContinuousIntegrationBuild=true
+          -p:MorphantRoslynVersion=4.4.0
+
+      - name: Test generator
+        run: >-
+          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.4.0
+          --results-directory artifacts/test-results/unit
+          --logger "trx;LogFileName=unit.trx"
+
+      - name: Test integration scenarios
+        run: >-
+          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.4.0
+          --results-directory artifacts/test-results/integration
+          --logger "trx;LogFileName=integration.trx"
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-${{ matrix.os }}
+          path: artifacts/test-results
+          if-no-files-found: warn
+          retention-days: 14

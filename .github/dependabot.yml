@@ -1,0 +1,30 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: nuget
+    directories:
+      - /
+      - /src
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      test-platform:
+        patterns:
+          - coverlet.collector
+          - Microsoft.NET.Test.Sdk
+          - NUnit
+          - NUnit.Analyzers
+          - NUnit3TestAdapter
+    ignore:
+      - dependency-name: Microsoft.CodeAnalysis.CSharp
+      - dependency-name: Microsoft.CodeAnalysis.CSharp.Workspaces

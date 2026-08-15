@@ -19,6 +19,28 @@
 - Логи, распакованные пакеты и заполненную копию хранить вне tracked-файлов
   репозитория, например в игнорируемой папке `artifacts/manual-release`.
 
+## Автоматизированный release flow
+
+- Workflow `CI` на каждом pull request и push в `main` выполняет Release build,
+  unit- и integration-тесты на Roslyn 4.4.0, проверку unit-тестов на Roslyn
+  4.9.2 и coverage gates. На push в `main` он дополнительно прогоняет полный
+  набор тестов на Windows и macOS.
+- Workflow `Release` запускается вручную из `main` с точной версией из
+  `src/Morphant.Product.props`. Он повторяет release matrix, один раз создаёт
+  package artifact и после ручного разрешения публикует именно эти байты в
+  NuGet, создаёт tag и GitHub release.
+- Перед первым запуском нужно создать GitHub environment `nuget.org`, разрешить
+  deployment только из `main`, назначить required reviewer и добавить
+  environment variable `NUGET_TRUSTED_PUBLISHING_CONFIGURED=true`. Если
+  reviewer только один и это владелец repository, `Prevent self-review`
+  включать нельзя.
+- В NuGet.org нужно создать trusted publishing policy для владельца
+  `strangeman375`, repository `Morphant`, workflow `release.yml` и environment
+  `nuget.org`. Постоянный API key в GitHub не нужен.
+- Dependabot ежемесячно проверяет GitHub Actions и NuGet dependencies. Версии
+  Roslyn исключены: 4.4.0 является минимальным публичным контрактом и меняется
+  только осознанно вместе с compatibility review.
+
 ## Карточка релиз-кандидата
 
 | Поле | Значение |
@@ -26,6 +48,8 @@
 | Версия пакета | `0.1.0` |
 | Commit SHA | |
 | Ветка | `main` |
+| Release workflow run | |
+| Release artifact | `morphant-release-0.1.0` |
 | Дата проверки, UTC | |
 | Проверяющий | |
 | ОС и архитектура | |
@@ -62,8 +86,11 @@
 
 - **RC** — отдельный чистый checkout выбранного commit из `main`. В checkout
   нет локальных изменений, а старые package artifacts не смешаны с новыми.
-- **PACKAGE** — `Morphant.0.1.0.nupkg` и `Morphant.0.1.0.snupkg`, созданные из
-  RC после финальной сборки generator на Roslyn 4.4.0.
+- **PACKAGE** — `Morphant.0.1.0.nupkg` и `Morphant.0.1.0.snupkg`, скачанные из
+  неизменяемого release artifact для RC после финальной сборки generator на
+  Roslyn 4.4.0. Для проверки до запуска workflow допускается локально
+  воспроизведённая пара; перед публикацией все package-проверки выполняются на
+  artifact из workflow.
 - **LOCAL FEED** — новая временная папка только с файлами PACKAGE.
 - **C9** — новый SDK-style consumer без ссылок на исходники Morphant:
   `net10.0`, `LangVersion=9.0`, nullable enabled, warnings as errors, direct
@@ -1147,6 +1174,15 @@ diagnostic, но не делает invalid configuration работоспосо�
     обязательных gates. При `NO-GO` записаны blocking checks и новый candidate
     получает новый полный цикл проверки.
 
+- [ ] **FINAL-06 — Публикация разрешена для проверенного artifact**
+  - Исходное состояние: принято решение `GO`; release workflow ожидает approval
+    environment `nuget.org`; его commit, version, artifact name и hashes
+    совпадают с карточкой.
+  - Действие: проверить summary всех jobs и одобрить deployment.
+  - Ожидаемый результат: workflow публикует тот же `.nupkg`, создаёт annotated
+    tag `v0.1.0` на RC commit и GitHub release с обоими packages и
+    `SHA256SUMS`; повторной сборки после approval нет.
+
 ## Рекомендуемая последовательность CLI-команд
 
 Пути к временной папке и LOCAL FEED нужно подставить явно. Команды не удаляют
@@ -1211,7 +1247,7 @@ source и version, а не только успешный exit code.
 - логи clean consumer restore/build/run;
 - список `N/A` с причинами и итоговое GO/NO-GO.
 
-CI/CD после его настройки должен автоматизировать воспроизводимые пункты этого
-документа. Ручными release gates всё равно остаются package presentation,
-Rider experience, смысл сообщений и документации, а также окончательная
-проверка соответствия artifact конкретному commit.
+CI/CD автоматизирует воспроизводимые пункты этого документа. Ручными release
+gates остаются package presentation, Rider experience, смысл сообщений и
+документации, а также окончательная проверка соответствия artifact конкретному
+commit.

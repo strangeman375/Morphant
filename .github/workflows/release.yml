@@ -1,0 +1,390 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version from Morphant.Product.props
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  preflight:
+    name: Validate release request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      artifact_name: ${{ steps.metadata.outputs.artifact_name }}
+      commit: ${{ steps.metadata.outputs.commit }}
+      version: ${{ steps.metadata.outputs.version }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          global-json-file: global.json
+
+      - name: Validate source and version
+        id: metadata
+        env:
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Releases must be started from main." >&2
+            exit 1
+          fi
+
+          if [[ "$REPOSITORY_VISIBILITY" != "public" ]]; then
+            echo "The repository must be public before publication." >&2
+            exit 1
+          fi
+
+          if [[ ! "$REQUESTED_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid package version: $REQUESTED_VERSION" >&2
+            exit 1
+          fi
+
+          product_version="$(dotnet msbuild src/Morphant/Morphant.csproj -nologo -getProperty:Version)"
+
+          if [[ "$REQUESTED_VERSION" != "$product_version" ]]; then
+            echo "Requested version $REQUESTED_VERSION does not match product version $product_version." >&2
+            exit 1
+          fi
+
+          echo "artifact_name=morphant-release-$product_version" >> "$GITHUB_OUTPUT"
+          echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          echo "version=$product_version" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: Build release candidate
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
+
+      - name: Build
+        run: >-
+          dotnet build src/Morphant.slnx
+          --configuration Release
+          --no-restore
+          -p:ContinuousIntegrationBuild=true
+          -p:MorphantRoslynVersion=4.4.0
+
+      - name: Test generator
+        run: >-
+          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.4.0
+          --results-directory artifacts/test-results/unit
+          --logger "trx;LogFileName=unit.trx"
+
+      - name: Test integration scenarios
+        run: >-
+          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.4.0
+          --results-directory artifacts/test-results/integration
+          --logger "trx;LogFileName=integration.trx"
+
+      - name: Pack release candidate
+        run: >-
+          dotnet pack src/Morphant/Morphant.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          --output artifacts/packages
+          -p:ContinuousIntegrationBuild=true
+          -p:MorphantRoslynVersion=4.4.0
+
+      - name: Record package hashes
+        env:
+          VERSION: ${{ needs.preflight.outputs.version }}
+        shell: bash
+        working-directory: artifacts/packages
+        run: >-
+          sha256sum
+          "Morphant.$VERSION.nupkg"
+          "Morphant.$VERSION.snupkg"
+          > SHA256SUMS
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-test-results-ubuntu
+          path: artifacts/test-results
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ needs.preflight.outputs.artifact_name }}
+          path: |
+            artifacts/packages/Morphant.${{ needs.preflight.outputs.version }}.nupkg
+            artifacts/packages/Morphant.${{ needs.preflight.outputs.version }}.snupkg
+            artifacts/packages/SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+  roslyn-compatibility:
+    name: Validate Roslyn 4.9.2
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: >-
+          dotnet restore src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          -p:MorphantRoslynVersion=4.9.2
+
+      - name: Test
+        run: >-
+          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          --configuration Release
+          --no-restore
+          -p:ContinuousIntegrationBuild=true
+          -p:MorphantRoslynVersion=4.9.2
+
+  cross-platform:
+    name: Validate release (${{ matrix.os }})
+    needs: preflight
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
+
+      - name: Build
+        run: >-
+          dotnet build src/Morphant.slnx
+          --configuration Release
+          --no-restore
+          -p:ContinuousIntegrationBuild=true
+          -p:MorphantRoslynVersion=4.4.0
+
+      - name: Test generator
+        run: >-
+          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.4.0
+
+      - name: Test integration scenarios
+        run: >-
+          dotnet test src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          -p:MorphantRoslynVersion=4.4.0
+
+  publish:
+    name: Publish to NuGet
+    needs:
+      - preflight
+      - package
+      - roslyn-compatibility
+      - cross-platform
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: nuget.org
+      url: https://www.nuget.org/packages/Morphant/${{ needs.preflight.outputs.version }}
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Verify protected environment configuration
+        env:
+          TRUSTED_PUBLISHING_CONFIGURED: ${{ vars.NUGET_TRUSTED_PUBLISHING_CONFIGURED }}
+        shell: bash
+        run: |
+          if [[ "$TRUSTED_PUBLISHING_CONFIGURED" != "true" ]]; then
+            echo "Set NUGET_TRUSTED_PUBLISHING_CONFIGURED=true in the protected nuget.org environment." >&2
+            exit 1
+          fi
+
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.preflight.outputs.commit }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          global-json-file: global.json
+
+      - name: Download release candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.preflight.outputs.artifact_name }}
+          path: artifacts/release-candidate
+
+      - name: Verify package hashes
+        working-directory: artifacts/release-candidate
+        run: sha256sum --check SHA256SUMS
+
+      - name: Log in to NuGet
+        id: nuget
+        uses: NuGet/login@e12aa70ccb4d344b799c19f5ceef68a8fb96164d # v1
+        with:
+          user: strangeman375
+
+      - name: Create release tag
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        shell: bash
+        run: |
+          tag="v$VERSION"
+
+          if git rev-parse --verify "refs/tags/$tag" >/dev/null 2>&1; then
+            existing_commit="$(git rev-list -n 1 "$tag")"
+
+            if [[ "$existing_commit" != "$RELEASE_COMMIT" ]]; then
+              echo "$tag already points to $existing_commit instead of $RELEASE_COMMIT." >&2
+              exit 1
+            fi
+
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "$tag" "$RELEASE_COMMIT" --message "Morphant $VERSION"
+          git push origin "refs/tags/$tag"
+
+      - name: Publish package
+        env:
+          NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        shell: bash
+        run: >-
+          dotnet nuget push
+          "artifacts/release-candidate/Morphant.$VERSION.nupkg"
+          --api-key "$NUGET_API_KEY"
+          --source https://api.nuget.org/v3/index.json
+          --timeout 600
+
+  github-release:
+    name: Create GitHub release
+    needs:
+      - preflight
+      - package
+      - publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.preflight.outputs.commit }}
+
+      - name: Download release candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.preflight.outputs.artifact_name }}
+          path: artifacts/release-candidate
+
+      - name: Prepare release notes
+        env:
+          VERSION: ${{ needs.preflight.outputs.version }}
+        shell: bash
+        run: |
+          awk -v heading="## [$VERSION]" '
+            $0 == heading { capture = 1; next }
+            capture && /^## / { exit }
+            capture && /^\[[^]]+\]:/ { exit }
+            capture { print }
+          ' CHANGELOG.md > artifacts/release-notes.md
+
+          if [[ ! -s artifacts/release-notes.md ]]; then
+            echo "CHANGELOG.md has no release notes for $VERSION." >&2
+            exit 1
+          fi
+
+          tag="v$VERSION"
+          sed -i "s#](docs/#](https://github.com/$GITHUB_REPOSITORY/blob/$tag/docs/#g" artifacts/release-notes.md
+
+      - name: Create release
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        shell: bash
+        run: |
+          tag="v$VERSION"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" artifacts/release-candidate/* --clobber
+            exit 0
+          fi
+
+          gh release create "$tag" \
+            artifacts/release-candidate/* \
+            --verify-tag \
+            --title "Morphant $VERSION" \
+            --notes-file artifacts/release-notes.md
