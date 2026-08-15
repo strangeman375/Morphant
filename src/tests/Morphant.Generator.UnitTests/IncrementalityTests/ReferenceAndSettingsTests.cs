@@ -99,30 +99,34 @@ internal sealed class ReferenceAndSettingsTests
                 files,
                 [referenceV1, unusedReference],
                 GeneratedHints,
-                Stage(
-                    "BuildConstructionPlanRequests",
-                    Expected(
-                        ExternalConstruction,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        StableConstruction,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildMemberPlanRequests",
-                    Expected(
-                        ExternalMember,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        StableMember,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildTypeMapperRequests",
-                    Expected(
-                        ExternalMapper,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        StableMapper,
-                        IncrementalStepRunReason.Cached))),
+                [
+                    .. EarlyPipeline(
+                        Reason(IncrementalStepRunReason.Cached, 2)),
+                    Stage(
+                        "BuildConstructionPlanRequests",
+                        Expected(
+                            ExternalConstruction,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableConstruction,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberPlanRequests",
+                        Expected(
+                            ExternalMember,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableMember,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildTypeMapperRequests",
+                        Expected(
+                            ExternalMapper,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableMapper,
+                            IncrementalStepRunReason.Cached))
+                ]),
             StepWithReferences(
                 "referenced destination changed",
                 files,
@@ -204,6 +208,9 @@ internal sealed class ReferenceAndSettingsTests
     {
         return
         [
+            .. EarlyPipeline(
+                Reason(IncrementalStepRunReason.Modified, 1),
+                Reason(IncrementalStepRunReason.Cached, 1)),
             Stage(
                 "BuildConstructionPlanModels",
                 Expected(
@@ -277,6 +284,8 @@ internal sealed class ReferenceAndSettingsTests
     {
         return
         [
+            .. EarlyPipeline(
+                Reason(IncrementalStepRunReason.Cached, 2)),
             Stage(
                 "BuildConstructionPlanRequests",
                 Expected(

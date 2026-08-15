@@ -15,7 +15,8 @@ internal sealed record MapperDeclarationInfo(
     ImmutableArray<MapperContainingTypeIssue> ContainingPartialIssues,
     bool AllContainingDeclarationsPartial,
     ImmutableArray<MapperContainingTypeIssue> FileLocalIssues,
-    ImmutableArray<MethodDeclarationSyntax> ConflictingSupportsMethods)
+    ImmutableArray<MethodDeclarationSyntax> ConflictingSupportsMethods,
+    CompilationContext Context)
 {
     public bool HasMissingTypeMapperDiagnostic =>
         !DerivesFromTypeMapper && !HasMalformedBaseDeclaration;

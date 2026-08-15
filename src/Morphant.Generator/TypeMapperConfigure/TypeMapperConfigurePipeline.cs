@@ -14,34 +14,22 @@ internal static class TypeMapperConfigurePipeline
         return Build(BuildDeclarations(context, compilationContext));
     }
 
-    public static IncrementalValuesProvider<TypeMapperConfigureInfo> Build(
-        IncrementalValuesProvider<MapperDeclarationInfo> mapperDeclarations,
-        IncrementalValueProvider<CompilationContext> compilationContext)
-    {
-        return Build(BuildDeclarations(
-            mapperDeclarations,
-            compilationContext));
-    }
-
     public static IncrementalValuesProvider<MapperConfigureDeclarationInfo>
         BuildDeclarations(
         IncrementalGeneratorInitializationContext context,
         IncrementalValueProvider<CompilationContext> compilationContext)
     {
         return BuildDeclarations(
-            MapperDeclarationPipeline.Build(context, compilationContext),
-            compilationContext);
+            MapperDeclarationPipeline.Build(context, compilationContext));
     }
 
     public static IncrementalValuesProvider<MapperConfigureDeclarationInfo>
         BuildDeclarations(
-        IncrementalValuesProvider<MapperDeclarationInfo> mapperDeclarations,
-        IncrementalValueProvider<CompilationContext> compilationContext)
+        IncrementalValuesProvider<MapperDeclarationInfo> mapperDeclarations)
     {
         return mapperDeclarations
-            .Combine(compilationContext)
-            .Select(static (source, cancellationToken) =>
-                TryBuildDeclaration(source, cancellationToken))
+            .Select(static (declaration, cancellationToken) =>
+                TryBuildDeclaration(declaration, cancellationToken))
             .Where(static declaration => declaration is not null)
             .Select(static (declaration, _) => declaration!)
             .WithTrackingName(
@@ -60,19 +48,17 @@ internal static class TypeMapperConfigurePipeline
                 new TypeMapperConfigureInfo(
                     declaration.Syntax!,
                     declaration.Declaration.MapperType,
-                    declaration.Declaration));
+                    declaration.Declaration,
+                    declaration.Declaration.Context));
     }
 
     private static MapperConfigureDeclarationInfo? TryBuildDeclaration(
-        (
-            MapperDeclarationInfo Declaration,
-            CompilationContext Context
-        ) source,
+        MapperDeclarationInfo declaration,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var (declaration, context) = source;
+        var context = declaration.Context;
 
         if (context.KnownSymbols is not { } knownSymbols)
         {

@@ -18,7 +18,6 @@ internal sealed class TestConstructionSurfaceGenerator :
             context,
             compilationContext);
         var pairConfigurations = PairConfigurationPipeline.Build(
-            compilationContext,
             configureInfos);
         var canonicalPairs = CanonicalMappingPairPipeline.Build(
             pairConfigurations);

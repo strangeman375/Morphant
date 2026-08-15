@@ -10,13 +10,11 @@ internal static class PairConfigurationDiscoveryPipeline
 {
     public static IncrementalValuesProvider<PairConfigurationDiscoveryModel>
         Build(
-            IncrementalValueProvider<CompilationContext> compilationContext,
             IncrementalValuesProvider<TypeMapperConfigureInfo> configureInfos)
     {
         return configureInfos
-            .Combine(compilationContext)
-            .Select(static (source, cancellationToken) =>
-                TryBuild(source, cancellationToken))
+            .Select(static (configureInfo, cancellationToken) =>
+                TryBuild(configureInfo, cancellationToken))
             .WhereHasValue()
             .WithTrackingName(
                 MorphantGeneratorStageNames
@@ -24,15 +22,12 @@ internal static class PairConfigurationDiscoveryPipeline
     }
 
     private static PairConfigurationDiscoveryModel? TryBuild(
-        (
-            TypeMapperConfigureInfo ConfigureInfo,
-            CompilationContext Context
-        ) source,
+        TypeMapperConfigureInfo configureInfo,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var (configureInfo, context) = source;
+        var context = configureInfo.Context;
 
         if (context.KnownSymbols is not { } knownSymbols)
         {
@@ -275,7 +270,8 @@ internal static class PairConfigurationDiscoveryPipeline
                 configureInfo = new TypeMapperConfigureInfo(
                     syntax,
                     mapperType,
-                    Declaration: null);
+                    Declaration: null,
+                    Context: context);
                 return true;
             }
         }

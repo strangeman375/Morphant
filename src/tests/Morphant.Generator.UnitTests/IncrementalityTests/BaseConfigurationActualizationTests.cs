@@ -69,6 +69,9 @@ internal sealed class BaseConfigurationActualizationTests
     {
         return
         [
+            .. EarlyPipeline(
+                Reason(IncrementalStepRunReason.Modified, 1),
+                Reason(IncrementalStepRunReason.Cached, 1)),
             Stage(
                 "BuildTypeMapperModels",
                 Expected(DerivedMapper, IncrementalStepRunReason.Modified),

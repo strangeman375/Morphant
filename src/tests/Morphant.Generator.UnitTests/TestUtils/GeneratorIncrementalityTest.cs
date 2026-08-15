@@ -32,7 +32,40 @@ internal static class GeneratorIncrementalityTest
     {
         return new ExpectedIncrementalStage(
             name,
-            outputs.ToImmutableArray());
+            outputs.ToImmutableArray(),
+            []);
+    }
+
+    public static ExpectedIncrementalStage StageReasons(
+        string name,
+        params ExpectedIncrementalReasonCount[] reasons)
+    {
+        return new ExpectedIncrementalStage(
+            name,
+            [],
+            reasons.ToImmutableArray());
+    }
+
+    public static ExpectedIncrementalReasonCount Reason(
+        IncrementalStepRunReason reason,
+        int count)
+    {
+        return new ExpectedIncrementalReasonCount(reason, count);
+    }
+
+    public static ExpectedIncrementalStage[] EarlyPipeline(
+        params ExpectedIncrementalReasonCount[] reasons)
+    {
+        return
+        [
+            StageReasons("BuildMapperDeclarationInfos", reasons),
+            StageReasons("BuildTypeMapperConfigureInfos", reasons),
+            StageReasons(
+                "BuildPairConfigurationDiscoveryModels",
+                reasons),
+            StageReasons("BuildPairConfigurationModels", reasons),
+            StageReasons("BuildMapperContractAnalyses", reasons)
+        ];
     }
 
     public static GeneratorIncrementalityStep Step(
@@ -447,6 +480,15 @@ internal static class GeneratorIncrementalityTest
             $"Step '{stepName}' did not track stage " +
             $"'{expectedStage.Name}'.");
 
+        if (!expectedStage.ReasonCounts.IsEmpty)
+        {
+            AssertTrackedReasons(
+                stepName,
+                expectedStage,
+                trackedSteps);
+            return;
+        }
+
         var actualOutputs = trackedSteps
             .SelectMany(static trackedStep => trackedStep.Outputs)
             .Select(output =>
@@ -471,6 +513,30 @@ internal static class GeneratorIncrementalityTest
         Assert.That(
             actualOutputs,
             Is.EqualTo(expectedOutputs),
+            $"Step '{stepName}', stage '{expectedStage.Name}'.");
+    }
+
+    private static void AssertTrackedReasons(
+        string stepName,
+        ExpectedIncrementalStage expectedStage,
+        ImmutableArray<IncrementalGeneratorRunStep> trackedSteps)
+    {
+        var actual = trackedSteps
+            .SelectMany(static trackedStep => trackedStep.Outputs)
+            .GroupBy(static output => output.Reason)
+            .Select(static group =>
+                new ExpectedIncrementalReasonCount(
+                    group.Key,
+                    group.Count()))
+            .OrderBy(static count => count.Reason)
+            .ToArray();
+        var expected = expectedStage.ReasonCounts
+            .OrderBy(static count => count.Reason)
+            .ToArray();
+
+        Assert.That(
+            actual,
+            Is.EqualTo(expected),
             $"Step '{stepName}', stage '{expectedStage.Name}'.");
     }
 
@@ -556,7 +622,12 @@ internal sealed record GeneratorIncrementalitySourceFile(
 
 internal sealed record ExpectedIncrementalStage(
     string Name,
-    ImmutableArray<ExpectedIncrementalOutput> Outputs);
+    ImmutableArray<ExpectedIncrementalOutput> Outputs,
+    ImmutableArray<ExpectedIncrementalReasonCount> ReasonCounts);
+
+internal sealed record ExpectedIncrementalReasonCount(
+    IncrementalStepRunReason Reason,
+    int Count);
 
 internal sealed record ExpectedIncrementalOutput(
     string HintName,

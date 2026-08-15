@@ -113,6 +113,8 @@ internal sealed class CompilerInputTests
     {
         return
         [
+            .. EarlyPipeline(
+                Reason(IncrementalStepRunReason.Modified, 1)),
             Stage(
                 "BuildMemberPlanModels",
                 Expected(member, IncrementalStepRunReason.Modified)),
@@ -128,6 +130,8 @@ internal sealed class CompilerInputTests
     {
         return
         [
+            .. EarlyPipeline(
+                Reason(IncrementalStepRunReason.Modified, 1)),
             Stage(
                 "BuildConstructionPlanModels",
                 Expected(
@@ -190,20 +194,20 @@ using Morphant;
 namespace TestCase
 {
     public sealed class Source<T>
-        where T : class
+        where T : class, System.IComparable<T>
     {
         public T Value { get; init; } = default!;
     }
 
     public sealed class Destination<T>
-        where T : class
+        where T : class, System.IComparable<T>
     {
         public T Value { get; set; } = default!;
     }
 
     [MorphantMapper]
     public partial class TestMapper<T> : TypeMapper
-        where T : class
+        where T : class, System.IComparable<T>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source<T>, Destination<T>>();

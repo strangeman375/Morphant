@@ -17,12 +17,10 @@ internal sealed class TestConventionTypeMapperGenerator : IIncrementalGenerator
             context,
             compilationContext);
         var pairConfigurations = PairConfigurationPipeline.Build(
-            compilationContext,
             configureInfos);
 
         TypeMapperPipeline.Register(
             context,
-            compilationContext,
             assemblySettings,
             pairConfigurations);
     }

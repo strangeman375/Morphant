@@ -104,59 +104,69 @@ internal sealed class CachingTests
                 "unrelated edit",
                 updatedFiles,
                 generated,
-                Stage(
-                    "BuildConstructionPlanModels",
-                    Expected(
-                        ConstructionHint,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildConstructionPlanRequests",
-                    Expected(
-                        ConstructionHint,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildMappingExtensionModels",
-                    Expected(
-                        MappingExtensionHint,
-                        IncrementalStepRunReason.Unchanged)),
-                Stage(
-                    "BuildMappingExtensionRequests",
-                    Expected(
-                        MappingExtensionHint,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildMemberPlanModels",
-                    Expected(
-                        MemberHint,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildMemberPlanRequests",
-                    Expected(
-                        MemberHint,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildMemberExtensionModels",
-                    Expected(
-                        MemberExtensionHint,
-                        IncrementalStepRunReason.Unchanged)),
-                Stage(
-                    "BuildMemberExtensionRequests",
-                    Expected(
-                        MemberExtensionHint,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildTypeMapperModels",
-                    Expected(
-                        MapperHint,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildTypeMapperRequests",
-                    Expected(MapperHint, IncrementalStepRunReason.Cached))),
+                [
+                    .. EarlyPipeline(
+                        Reason(IncrementalStepRunReason.Cached, 1)),
+                    Stage(
+                        "BuildConstructionPlanModels",
+                        Expected(
+                            ConstructionHint,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildConstructionPlanRequests",
+                        Expected(
+                            ConstructionHint,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMappingExtensionModels",
+                        Expected(
+                            MappingExtensionHint,
+                            IncrementalStepRunReason.Unchanged)),
+                    Stage(
+                        "BuildMappingExtensionRequests",
+                        Expected(
+                            MappingExtensionHint,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberPlanModels",
+                        Expected(
+                            MemberHint,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberPlanRequests",
+                        Expected(
+                            MemberHint,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberExtensionModels",
+                        Expected(
+                            MemberExtensionHint,
+                            IncrementalStepRunReason.Unchanged)),
+                    Stage(
+                        "BuildMemberExtensionRequests",
+                        Expected(
+                            MemberExtensionHint,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildTypeMapperModels",
+                        Expected(
+                            MapperHint,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildTypeMapperRequests",
+                        Expected(
+                            MapperHint,
+                            IncrementalStepRunReason.Cached))
+                ]),
             Step(
                 "identical rerun",
                 updatedFiles,
                 generated,
-                CachedOutputStages()));
+                [
+                    .. EarlyPipeline(
+                        Reason(IncrementalStepRunReason.Cached, 1)),
+                    .. CachedOutputStages()
+                ]));
     }
 
     private static ExpectedIncrementalStage[] CachedOutputStages()

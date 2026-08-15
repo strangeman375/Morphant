@@ -23,7 +23,6 @@ internal sealed class TestBasicMembersTypeMapperGenerator
             context,
             compilationContext);
         var pairConfigurations = PairConfigurationPipeline.Build(
-            compilationContext,
             configureInfos);
         var canonicalPairs = CanonicalMappingPairPipeline.Build(
             pairConfigurations);
@@ -38,7 +37,6 @@ internal sealed class TestBasicMembersTypeMapperGenerator
             canonicalPairs);
         TypeMapperPipeline.Register(
             context,
-            compilationContext,
             assemblySettings,
             pairConfigurations);
     }

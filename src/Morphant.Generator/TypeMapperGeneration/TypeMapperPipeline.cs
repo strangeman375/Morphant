@@ -11,32 +11,32 @@ internal static class TypeMapperPipeline
 {
     public static void Register(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValueProvider<MappingSettings> assemblySettings,
         IncrementalValuesProvider<MapperPairConfigurationModel>
             mapperConfigurations)
     {
         Register(
             context,
-            compilationContext,
             assemblySettings,
-            MapperContractPipeline.Build(
-                mapperConfigurations,
-                compilationContext));
+            MapperContractPipeline.Build(mapperConfigurations));
     }
 
     public static void Register(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValueProvider<MappingSettings> assemblySettings,
         IncrementalValuesProvider<MapperContractAnalysis> contractAnalyses)
     {
         var models = contractAnalyses
-            .Combine(compilationContext)
             .Combine(assemblySettings)
             .Select(static (source, cancellationToken) =>
                 TypeMapperModelBuilder.TryBuild(
-                    source,
+                    (
+                        (
+                            source.Left,
+                            source.Left.Configuration.Declaration.Context
+                        ),
+                        source.Right
+                    ),
                     cancellationToken))
             .WhereHasValue()
             .WithTrackingName(

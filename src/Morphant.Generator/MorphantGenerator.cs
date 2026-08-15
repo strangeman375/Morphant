@@ -34,16 +34,13 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
             compilationContext);
         var configureDeclarations =
             TypeMapperConfigurePipeline.BuildDeclarations(
-            mapperDeclarations,
-            compilationContext);
+                mapperDeclarations);
         var configureInfos = TypeMapperConfigurePipeline.Build(
             configureDeclarations);
-        var pairConfigurations = PairConfigurationPipeline.Build(
-            compilationContext,
-            configureInfos);
-        var contractAnalyses = MapperContractPipeline.Build(
-            pairConfigurations,
-            compilationContext);
+        var pairConfigurations =
+            PairConfigurationPipeline.Build(configureInfos);
+        var contractAnalyses =
+            MapperContractPipeline.Build(pairConfigurations);
         var contractAnalysisCollection = contractAnalyses.Collect();
 
         MapperDeclarationDiagnosticPipeline.Register(
@@ -82,7 +79,6 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
 
         TypeMapperPipeline.Register(
             context,
-            compilationContext,
             assemblySettings,
             contractAnalyses);
     }

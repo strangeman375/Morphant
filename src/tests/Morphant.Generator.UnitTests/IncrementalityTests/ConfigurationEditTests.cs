@@ -91,30 +91,43 @@ internal sealed class ConfigurationEditTests
                     .Append(SourceFile("MapperA.cs", BuildMapperA(2)))
                     .ToArray(),
                 generated,
-                Stage(
-                    "BuildConstructionPlanRequests",
-                    Expected(ConstructionA, IncrementalStepRunReason.Cached),
-                    Expected(ConstructionB, IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildMappingExtensionRequests",
-                    Expected(
-                        MappingExtensionA,
-                        IncrementalStepRunReason.Cached),
-                    Expected(
-                        MappingExtensionB,
-                        IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildMemberPlanRequests",
-                    Expected(MemberA, IncrementalStepRunReason.Cached),
-                    Expected(MemberB, IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildMemberExtensionRequests",
-                    Expected(MemberExtensionA, IncrementalStepRunReason.Cached),
-                    Expected(MemberExtensionB, IncrementalStepRunReason.Cached)),
-                Stage(
-                    "BuildTypeMapperRequests",
-                    Expected(MapperA, IncrementalStepRunReason.Modified),
-                    Expected(MapperB, IncrementalStepRunReason.Cached))));
+                [
+                    .. EarlyPipeline(
+                        Reason(IncrementalStepRunReason.Modified, 1),
+                        Reason(IncrementalStepRunReason.Cached, 1)),
+                    Stage(
+                        "BuildConstructionPlanRequests",
+                        Expected(
+                            ConstructionA,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            ConstructionB,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMappingExtensionRequests",
+                        Expected(
+                            MappingExtensionA,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            MappingExtensionB,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberPlanRequests",
+                        Expected(MemberA, IncrementalStepRunReason.Cached),
+                        Expected(MemberB, IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberExtensionRequests",
+                        Expected(
+                            MemberExtensionA,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            MemberExtensionB,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildTypeMapperRequests",
+                        Expected(MapperA, IncrementalStepRunReason.Modified),
+                        Expected(MapperB, IncrementalStepRunReason.Cached))
+                ]));
     }
 
     private static string BuildMapperA(int delta) =>

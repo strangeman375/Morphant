@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.Incrementality;
 
 namespace Morphant.Generator.MapperDeclaration;
 
@@ -45,14 +46,54 @@ internal static class MapperDeclarationPipeline
             .WithTrackingName(
                 MorphantGeneratorStageNames.FindMorphantMapperDeclarations);
 
-        return candidates
+        var semanticInputs = candidates
             .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
-                TryBuild(source.Left, source.Right, cancellationToken))
+                TryBuildSemanticInput(
+                    source.Left,
+                    source.Right,
+                    cancellationToken))
+            .Where(static input => input is not null)
+            .Select(static (input, _) => input!.Value)
+            .WithComparer(MapperSemanticInputComparer.Instance);
+
+        return semanticInputs
+            .Select(static (input, cancellationToken) =>
+                TryBuild(input, cancellationToken))
             .Where(static info => info is not null)
             .Select(static (info, _) => info!)
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildMapperDeclarationInfos);
+    }
+
+    private static MapperSemanticInput? TryBuildSemanticInput(
+        MapperDeclarationCandidate candidate,
+        CompilationContext context,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var semanticModel = context.Compilation.GetSemanticModel(
+            candidate.Declaration.SyntaxTree);
+
+        if (semanticModel.GetDeclaredSymbol(
+                candidate.Declaration,
+                cancellationToken) is not INamedTypeSymbol mapperType)
+        {
+            return null;
+        }
+
+        return new MapperSemanticInput(
+            candidate.Declaration,
+            candidate.Attribute,
+            mapperType,
+            context,
+            MapperSemanticFingerprintBuilder.Build(
+                candidate.Declaration,
+                candidate.Attribute,
+                mapperType,
+                context,
+                cancellationToken));
     }
 
     private static MapperDeclarationCandidate? CreateCandidate(
@@ -77,26 +118,19 @@ internal static class MapperDeclarationPipeline
     }
 
     private static MapperDeclarationInfo? TryBuild(
-        MapperDeclarationCandidate candidate,
-        CompilationContext context,
+        MapperSemanticInput input,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        var context = input.Context;
 
         if (context.KnownSymbols is not { } knownSymbols)
         {
             return null;
         }
 
-        var semanticModel = context.Compilation.GetSemanticModel(
-            candidate.Declaration.SyntaxTree);
-
-        if (semanticModel.GetDeclaredSymbol(
-                candidate.Declaration,
-                cancellationToken) is not INamedTypeSymbol mapperType)
-        {
-            return null;
-        }
+        var mapperType = input.MapperType;
 
         var mapperDeclarations = GetDeclarations<ClassDeclarationSyntax>(
             mapperType,
@@ -161,8 +195,8 @@ internal static class MapperDeclarationPipeline
             knownSymbols.TypeMapper);
 
         return new MapperDeclarationInfo(
-            candidate.Declaration,
-            candidate.Attribute,
+            input.AttributedDeclaration,
+            input.Attribute,
             mapperType,
             derivesFromTypeMapper,
             !derivesFromTypeMapper && HasMalformedBaseDeclaration(
@@ -178,7 +212,8 @@ internal static class MapperDeclarationPipeline
                 mapperType,
                 knownSymbols.SystemType,
                 context.SyntaxTrees,
-                cancellationToken));
+                cancellationToken),
+            context);
     }
 
     private static ImmutableArray<TSyntax> GetDeclarations<TSyntax>(

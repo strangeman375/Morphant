@@ -82,36 +82,77 @@ internal sealed class SemanticDependencyTests
                 "default value two",
                 [models, mapper, SourceFile("Defaults.cs", BuildDefaults(2))],
                 GeneratedWithoutMembers,
-                Stage(
-                    "BuildConstructionPlanModels",
-                    Expected(
-                        Construction,
-                        IncrementalStepRunReason.Modified)),
-                Stage(
-                    "BuildConstructionPlanRequests",
-                    Expected(
-                        Construction,
-                        IncrementalStepRunReason.Modified))),
+                [
+                    .. EarlyPipeline(
+                        Reason(IncrementalStepRunReason.Modified, 1)),
+                    Stage(
+                        "BuildConstructionPlanModels",
+                        Expected(
+                            Construction,
+                            IncrementalStepRunReason.Modified)),
+                    Stage(
+                        "BuildConstructionPlanRequests",
+                        Expected(
+                            Construction,
+                            IncrementalStepRunReason.Modified))
+                ]),
             Step(
                 "default value one restored",
                 [models, mapper, SourceFile("Defaults.cs", BuildDefaults(1))],
                 GeneratedWithoutMembers,
-                Stage(
-                    "BuildConstructionPlanModels",
-                    Expected(
-                        Construction,
-                        IncrementalStepRunReason.Modified)),
-                Stage(
-                    "BuildConstructionPlanRequests",
-                    Expected(
-                        Construction,
-                        IncrementalStepRunReason.Modified))));
+                [
+                    .. EarlyPipeline(
+                        Reason(IncrementalStepRunReason.Modified, 1)),
+                    Stage(
+                        "BuildConstructionPlanModels",
+                        Expected(
+                            Construction,
+                            IncrementalStepRunReason.Modified)),
+                    Stage(
+                        "BuildConstructionPlanRequests",
+                        Expected(
+                            Construction,
+                            IncrementalStepRunReason.Modified))
+                ]));
+    }
+
+    [Test]
+    public void Reanalyzes_a_callback_when_an_external_constant_changes()
+    {
+        var models = SourceFile("Models.cs", CallbackModelsSource);
+        var mapper = SourceFile("Mapper.cs", CallbackMapperSource);
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step(
+                "callback offset one",
+                [models, mapper, SourceFile("Defaults.cs", BuildDefaults(1))],
+                Generated),
+            Step(
+                "callback offset two",
+                [models, mapper, SourceFile("Defaults.cs", BuildDefaults(2))],
+                Generated,
+                ChangedCallbackStages()),
+            Step(
+                "callback offset one restored",
+                [models, mapper, SourceFile("Defaults.cs", BuildDefaults(1))],
+                Generated,
+                ChangedCallbackStages()));
+    }
+
+    private static ExpectedIncrementalStage[] ChangedCallbackStages()
+    {
+        return EarlyPipeline(
+            Reason(IncrementalStepRunReason.Modified, 1));
     }
 
     private static ExpectedIncrementalStage[] ChangedContractStages()
     {
         return
         [
+            .. EarlyPipeline(
+                Reason(IncrementalStepRunReason.Modified, 1)),
             Stage(
                 "BuildConstructionPlanModels",
                 Expected(
@@ -218,6 +259,49 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
+    }
+}
+""";
+
+    // lang=c#
+    private const string CallbackModelsSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class Destination
+    {
+        public int Value { get; set; }
+    }
+}
+""";
+
+    // lang=c#
+    private const string CallbackMapperSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Members((source, _) => new()
+                {
+                    Value = source.Value + Defaults.Value
+                });
     }
 }
 """;

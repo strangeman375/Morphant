@@ -8,39 +8,34 @@ internal static class PairConfigurationPipeline
 {
     public static IncrementalValuesProvider<MapperPairConfigurationModel>
         Build(
-            IncrementalValueProvider<CompilationContext> compilationContext,
             IncrementalValuesProvider<TypeMapperConfigureInfo> configureInfos)
     {
-        var discoveryModels = PairConfigurationDiscoveryPipeline.Build(
-            compilationContext,
-            configureInfos);
+        var discoveryModels =
+            PairConfigurationDiscoveryPipeline.Build(configureInfos);
 
         return discoveryModels
-            .Combine(compilationContext)
-            .Select(static (source, cancellationToken) =>
-                TryBuild(source, cancellationToken))
+            .Select(static (discovery, cancellationToken) =>
+                TryBuild(discovery, cancellationToken))
             .WhereHasValue()
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildPairConfigurationModels);
     }
 
     private static MapperPairConfigurationModel? TryBuild(
-        (
-            PairConfigurationDiscoveryModel Discovery,
-            CompilationContext Context
-        ) source,
+        PairConfigurationDiscoveryModel discovery,
         CancellationToken cancellationToken)
     {
+        var context = discovery.ConfigureInfo.Context;
         var mappingPairs = MappingPairPipeline.BuildModel(
-            source.Discovery.MappingRegistrations,
-            source.Context,
+            discovery.MappingRegistrations,
+            context,
             cancellationToken);
 
         return mappingPairs is { } model
             ? PairConfigurationModelBuilder.Build(
-                source.Discovery,
+                discovery,
                 model,
-                source.Context,
+                context,
                 cancellationToken)
             : null;
     }
