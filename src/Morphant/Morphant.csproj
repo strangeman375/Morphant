@@ -13,7 +13,7 @@
         <Title>Morphant</Title>
         <Description>Compile-time object mapper for C# that generates strongly typed mapping code from explicit configuration, without runtime reflection.</Description>
 
-        <PackageProjectUrl>https://github.com/strangeman375/Morphant</PackageProjectUrl>
+        <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
 
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>mapper;mapping;object-mapper;object-mapping;source-generator;code-generation;compile-time;roslyn;csharp</PackageTags>

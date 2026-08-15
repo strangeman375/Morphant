@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -168,6 +169,8 @@ internal sealed class PackageConsumptionTests
         ZipArchive package,
         string packageVersion)
     {
+        var expectedCopyright = "Copyright (c) strangeman375 " +
+            DateTime.UtcNow.ToString("yyyy", CultureInfo.InvariantCulture);
         var document = XDocument.Parse(ReadEntryText(
             package,
             "Morphant.nuspec"));
@@ -195,7 +198,9 @@ internal sealed class PackageConsumptionTests
                 Is.EqualTo("https://github.com/strangeman375/Morphant"));
             Assert.That(Value("description"), Is.Not.Empty);
             Assert.That(Value("releaseNotes"), Does.Contain("0.1"));
-            Assert.That(Value("copyright"), Does.Contain("2026"));
+            Assert.That(
+                Value("copyright"),
+                Is.EqualTo(expectedCopyright));
             Assert.That(Value("tags"), Does.Contain("source-generator"));
 
             var repository = metadata.Element(
