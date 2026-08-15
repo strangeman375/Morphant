@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Morphant.Exceptions;
 using Morphant.Markers;
 
@@ -8,6 +9,7 @@ namespace Morphant.Members;
 /// <typeparamref name="T"/>.
 /// </summary>
 /// <typeparam name="T">The argument type.</typeparam>
+[ExcludeFromCodeCoverage]
 public sealed class ConstructorParameter<T>
 {
     private ConstructorParameter()

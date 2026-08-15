@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Morphant.Markers;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace Morphant.Markers;
 /// <remarks>
 /// Used only for compile-time binding; no runtime instance is created.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 public abstract class ConstructorMarker
 {
     private protected ConstructorMarker()
@@ -16,6 +19,7 @@ public abstract class ConstructorMarker
 /// <summary>
 /// Selects convention-based construction.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class ByConventionMarker : ConstructorMarker
 {
     private ByConventionMarker()

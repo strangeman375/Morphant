@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Morphant.Exceptions;
 
 namespace Morphant;
@@ -10,6 +11,7 @@ namespace Morphant;
 /// Morphant interprets calls to this builder at compile time. Executing them
 /// at runtime throws <see cref="RuntimeInvocationNotSupportedException"/>.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 public abstract class MapperBuilderBase<T>
     where T : MapperBuilderBase<T>
 {
@@ -90,6 +92,7 @@ public abstract class MapperBuilderBase<T>
 /// <summary>
 /// Configures mappings declared by a mapper.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
 {
     private MapperBuilder()
@@ -132,6 +135,7 @@ public sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
 /// </summary>
 /// <typeparam name="TSource">The source type.</typeparam>
 /// <typeparam name="TDestination">The destination type.</typeparam>
+[ExcludeFromCodeCoverage]
 public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<MapperBuilder<TSource, TDestination>>
 {
     private MapperBuilder()

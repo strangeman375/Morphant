@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Morphant.Exceptions;
 using Morphant.Markers;
 
@@ -7,6 +8,7 @@ namespace Morphant.Members;
 /// Defines mapping for a destination member of type <typeparamref name="T"/>.
 /// </summary>
 /// <typeparam name="T">The member type.</typeparam>
+[ExcludeFromCodeCoverage]
 public sealed class Member<T>
 {
     private Member()

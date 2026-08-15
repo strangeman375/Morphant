@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Morphant.Context;
 
 /// <summary>
@@ -8,6 +10,7 @@ namespace Morphant.Context;
 /// Morphant does not create a runtime instance of it. Only
 /// <see cref="Operation"/> may be read by supported declarative code.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 public abstract class MappingContextMarker
 {
     private protected MappingContextMarker()

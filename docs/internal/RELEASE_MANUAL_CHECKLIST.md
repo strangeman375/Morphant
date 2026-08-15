@@ -24,7 +24,14 @@
 - Workflow `CI` на каждом pull request и push в `main` выполняет Release build,
   unit- и integration-тесты на Roslyn 4.4.0, проверку unit-тестов на Roslyn
   4.9.2 и coverage gates. На push в `main` он дополнительно прогоняет полный
-  набор тестов на Windows и macOS.
+  набор тестов на Windows и macOS. После успешного полного прогона line
+  coverage badge обновляется в служебной ветке `badges`; подробный отчёт
+  остаётся в summary и artifact workflow.
+- Ветка `main` защищена от прямых изменений не-владельцами: для них требуется
+  pull request, успешные проверки `Validate (Ubuntu, Roslyn 4.4)` и
+  `Roslyn 4.9.2 compatibility`, а также разрешение всех review discussions.
+  Force push и удаление ветки запрещены. Ограничения не применяются к
+  repository administrator, поэтому владелец сохраняет право прямого commit.
 - Workflow `Release` запускается вручную из `main` с точной версией из
   `src/Morphant.Product.props`. Он повторяет release matrix, один раз создаёт
   package artifact и после ручного разрешения публикует именно эти байты в

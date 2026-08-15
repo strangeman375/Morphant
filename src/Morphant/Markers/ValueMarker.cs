@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Morphant.Markers;
 
 /// <summary>
@@ -8,6 +10,7 @@ namespace Morphant.Markers;
 /// <remarks>
 /// Used only for compile-time binding; no runtime instance is created.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 public sealed class ValueMarker<T>
 {
     private ValueMarker()

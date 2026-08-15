@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Morphant.Context;
 using Morphant.Exceptions;
 using Morphant.Markers;
@@ -77,6 +78,7 @@ public interface ITypeMapper<in TSource, TDestination>
 /// <summary>
 /// Base class for compile-time mapper declarations.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public abstract class TypeMapper
 {
     /// <summary>

@@ -3,6 +3,7 @@
 # Morphant
 
 [![CI](https://github.com/strangeman375/Morphant/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/strangeman375/Morphant/actions/workflows/ci.yml)
+[![Line coverage](https://github.com/strangeman375/Morphant/raw/badges/coverage.svg)](https://github.com/strangeman375/Morphant/actions/workflows/ci.yml)
 
 Morphant is a compile-time object mapper for C#. It turns explicit
 configuration into strongly typed mapping code without runtime reflection.

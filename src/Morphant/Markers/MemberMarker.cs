@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Morphant.Exceptions;
 
 namespace Morphant.Markers;
@@ -8,6 +9,7 @@ namespace Morphant.Markers;
 /// <remarks>
 /// Used only for compile-time binding; no runtime instance is created.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 public abstract class MemberMarker
 {
     private protected MemberMarker()
@@ -18,6 +20,7 @@ public abstract class MemberMarker
 /// <summary>
 /// Selects convention-based mapping for the current target.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class AutoMarker : MemberMarker
 {
     private AutoMarker()
@@ -29,6 +32,7 @@ public sealed class AutoMarker : MemberMarker
 /// Selects convention-based mapping to <typeparamref name="T"/>.
 /// </summary>
 /// <typeparam name="T">The target type.</typeparam>
+[ExcludeFromCodeCoverage]
 public sealed class AutoMarker<T> : MemberMarker
 {
     private AutoMarker()
@@ -46,6 +50,7 @@ public sealed class AutoMarker<T> : MemberMarker
 /// <summary>
 /// Skips the current member or constructor argument.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class IgnoreMarker : MemberMarker
 {
     private IgnoreMarker()
@@ -57,6 +62,7 @@ public sealed class IgnoreMarker : MemberMarker
 /// Skips a target of type <typeparamref name="T"/>.
 /// </summary>
 /// <typeparam name="T">The target type.</typeparam>
+[ExcludeFromCodeCoverage]
 public sealed class IgnoreMarker<T> : MemberMarker
 {
     private IgnoreMarker()
@@ -74,6 +80,7 @@ public sealed class IgnoreMarker<T> : MemberMarker
 /// <summary>
 /// Base type for declarative nested-mapping markers.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public abstract class MapMarker : MemberMarker
 {
     private protected MapMarker()
@@ -85,6 +92,7 @@ public abstract class MapMarker : MemberMarker
 /// Selects a nested mapping to <typeparamref name="T"/>.
 /// </summary>
 /// <typeparam name="T">The nested destination type.</typeparam>
+[ExcludeFromCodeCoverage]
 public sealed class MapMarker<T> : MapMarker
 {
     private MapMarker()
