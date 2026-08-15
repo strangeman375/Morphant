@@ -244,14 +244,30 @@ jobs:
         shell: bash
         run: |
           badge_path="artifacts/coverage/badge_linecoverage.svg"
+          report_path="artifacts/coverage/SummaryGithub.md"
 
           if [[ ! -f "$badge_path" ]]; then
             echo "Coverage badge was not generated: $badge_path" >&2
             exit 1
           fi
 
+          if [[ ! -f "$report_path" ]]; then
+            echo "Coverage summary was not generated: $report_path" >&2
+            exit 1
+          fi
+
           cp "$badge_path" coverage.svg
-          git add coverage.svg
+          cp "$report_path" coverage.md
+
+          {
+            printf '\n---\n\n'
+            printf 'Full HTML report: download the **coverage** artifact from [CI run #%s](https://github.com/%s/actions/runs/%s).\n' \
+              "$GITHUB_RUN_NUMBER" \
+              "$GITHUB_REPOSITORY" \
+              "$GITHUB_RUN_ID"
+          } >> coverage.md
+
+          git add coverage.svg coverage.md
 
           if git diff --cached --quiet; then
             exit 0
