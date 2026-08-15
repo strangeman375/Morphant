@@ -48,8 +48,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Construct",
                 "construct",
-                "Defines destination construction using the current " +
-                "operation.",
+                "Defines destination construction with access to the " +
+                "current mapping context.",
                 "The construction plan.",
                 "global::Morphant.Delegates.Construct<" +
                 model.DeclarativeSourceTypeName + ", " +
@@ -73,7 +73,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Resolve",
                 "resolve",
-                "Defines destination selection using the current operation.",
+                "Defines destination resolution with access to the current " +
+                "mapping context.",
                 "The result plan.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +

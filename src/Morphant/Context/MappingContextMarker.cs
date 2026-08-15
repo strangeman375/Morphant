@@ -1,7 +1,7 @@
 namespace Morphant.Context;
 
 /// <summary>
-/// Exposes declarative information about the current mapping operation.
+/// Exposes declarative context for the current mapping.
 /// </summary>
 /// <remarks>
 /// This type exists only for target typing generated declarative callbacks.

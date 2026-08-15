@@ -165,7 +165,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination construction using the current operation.
+        /// Defines destination construction with access to the current mapping context.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">The construction plan.</param>
@@ -187,7 +187,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination selection using the current operation.
+        /// Defines destination resolution with access to the current mapping context.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">The result plan.</param>
@@ -299,7 +299,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination construction using the current operation.
+        /// Defines destination construction with access to the current mapping context.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">The construction plan.</param>
@@ -321,7 +321,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination selection using the current operation.
+        /// Defines destination resolution with access to the current mapping context.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">The result plan.</param>
@@ -532,7 +532,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result and current operation.
+        /// Defines member mappings with access to the selected result and current mapping context.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>
@@ -589,7 +589,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result and current operation.
+        /// Defines member mappings with access to the selected result and current mapping context.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>

@@ -174,7 +174,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination construction using the current operation.
+        /// Defines destination construction with access to the current mapping context.
         /// </summary>
         /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
@@ -200,7 +200,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination selection using the current operation.
+        /// Defines destination resolution with access to the current mapping context.
         /// </summary>
         /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
@@ -330,7 +330,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination construction using the current operation.
+        /// Defines destination construction with access to the current mapping context.
         /// </summary>
         /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
@@ -356,7 +356,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination selection using the current operation.
+        /// Defines destination resolution with access to the current mapping context.
         /// </summary>
         /// <typeparam name="T">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
