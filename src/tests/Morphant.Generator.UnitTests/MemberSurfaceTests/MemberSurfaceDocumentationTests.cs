@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.MemberSurfaceTests;
 internal sealed class MemberSurfaceDocumentationTests
 {
     [Test]
-    public async Task Uses_inheritdoc_and_meaningful_fallback_documentation()
+    public async Task Uses_mapping_specific_documentation_for_generated_plans()
     {
         // lang=c#
         const string source =
@@ -47,10 +47,14 @@ namespace TestCase
 
 namespace TestCase.Morphant.Generated
 {
-    /// <inheritdoc cref="global::TestCase.Destination"/>
+    /// <summary>
+    /// Maps members of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
     internal sealed record DestinationMembers
     {
-        /// <inheritdoc cref="global::TestCase.Destination.Documented"/>
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Documented"/>.
+        /// </summary>
         public global::Morphant.Members.Member<int> Documented
         {
             get => null!;
@@ -121,7 +125,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result and context.
+        /// Defines member mappings using the selected result and current operation.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>

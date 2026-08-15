@@ -146,7 +146,7 @@ internal sealed class SyntaxIsolationTests
                     "BuildTypeMapperRequests",
                     Expected(Mapper, IncrementalStepRunReason.Cached))),
             Step(
-                "emitted documentation presence changed",
+                "destination documentation removed",
                 [
                     mapper,
                     SourceFile(
@@ -165,18 +165,18 @@ internal sealed class SyntaxIsolationTests
                     "BuildConstructionPlanModels",
                     Expected(
                         Construction,
-                        IncrementalStepRunReason.Modified)),
+                        IncrementalStepRunReason.Unchanged)),
                 Stage(
                     "BuildConstructionPlanRequests",
                     Expected(
                         Construction,
-                        IncrementalStepRunReason.Modified)),
+                        IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMemberPlanModels",
-                    Expected(Member, IncrementalStepRunReason.Modified)),
+                    Expected(Member, IncrementalStepRunReason.Unchanged)),
                 Stage(
                     "BuildMemberPlanRequests",
-                    Expected(Member, IncrementalStepRunReason.Modified)),
+                    Expected(Member, IncrementalStepRunReason.Cached)),
                 Stage(
                     "BuildMappingExtensionRequests",
                     Expected(

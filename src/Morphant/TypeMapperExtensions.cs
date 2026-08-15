@@ -1,4 +1,5 @@
 using Morphant.Context;
+using Morphant.Exceptions;
 
 namespace Morphant;
 
@@ -24,6 +25,9 @@ public static class TypeMapperExtensions
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="mapper"/> is
     /// <see langword="null"/>.</exception>
+    /// <exception cref="MappingException">
+    /// The mapping cannot complete the requested operation.
+    /// </exception>
     public static TDestination Create<TSource, TDestination>(
         this ITypeMapper<TSource, TDestination> mapper,
         TSource? source)
@@ -63,6 +67,9 @@ public static class TypeMapperExtensions
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="mapper"/> is
     /// <see langword="null"/>.</exception>
+    /// <exception cref="MappingException">
+    /// The mapping cannot complete the requested operation.
+    /// </exception>
     public static TDestination Update<TSource, TDestination>(
         this ITypeMapper<TSource, TDestination> mapper,
         TSource? source,

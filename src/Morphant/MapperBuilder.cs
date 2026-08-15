@@ -6,6 +6,10 @@ namespace Morphant;
 /// Base class for mapper configuration builders.
 /// </summary>
 /// <typeparam name="T">The concrete builder type.</typeparam>
+/// <remarks>
+/// Morphant interprets calls to this builder at compile time. Executing them
+/// at runtime throws <see cref="RuntimeInvocationNotSupportedException"/>.
+/// </remarks>
 public abstract class MapperBuilderBase<T>
     where T : MapperBuilderBase<T>
 {
@@ -113,8 +117,9 @@ public sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
     /// <typeparam name="TDestination">The destination type.</typeparam>
     /// <param name="mappingMode">
     /// The compile-time constant operations to generate.
-    /// <see cref="Morphant.MappingMode.Default"/> inherits the configured
-    /// mapper mode.
+    /// <see cref="Morphant.MappingMode.Default"/> continues through normal
+    /// setting precedence; the fallback is
+    /// <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
     /// </param>
     /// <returns>The builder for the registered mapping.</returns>
     public MapperBuilder<TSource, TDestination> Map<TSource, TDestination>(MappingMode mappingMode = Morphant.MappingMode.Default) =>
@@ -134,7 +139,8 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     }
 
     /// <summary>
-    /// Includes configuration from the nearest matching base mapping.
+    /// Includes configuration from the nearest available mapping for the
+    /// specified source and destination types.
     /// </summary>
     /// <typeparam name="TBaseSource">
     /// The base source type. <typeparamref name="TSource"/> must be assignable
@@ -145,10 +151,11 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     /// assignable to this type.
     /// </typeparam>
     /// <remarks>
-    /// Local mappings and rules take precedence. Inherited mappings require a
-    /// <c>base.Configure(builder)</c> call. A different pair contributes
-    /// settings and explicit member rules, but not its result or
-    /// <c>Convert</c> plan; the exact same pair contributes its full plan.
+    /// Local settings and rules take precedence. A mapping declared in a base
+    /// mapper is available only through <c>base.Configure(builder)</c>. A
+    /// different pair contributes settings and explicit member rules, but not
+    /// its result or <c>Convert</c> plan; the exact same pair contributes its
+    /// full plan.
     /// </remarks>
     /// <returns>This mapping builder.</returns>
     public MapperBuilder<TSource, TDestination>

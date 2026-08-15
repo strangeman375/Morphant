@@ -46,17 +46,17 @@ public delegate TMembers Members<
 
 /// <summary>
 /// Describes destination member mappings with access to the selected result
-/// and declarative mapping context.
+/// and current mapping operation.
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TPrevious">The existing destination value type.</typeparam>
 /// <typeparam name="TResult">The selected mapping result type.</typeparam>
-/// <typeparam name="TContext">The declarative context marker type.</typeparam>
+/// <typeparam name="TContext">The operation marker type.</typeparam>
 /// <typeparam name="TMembers">The member plan type.</typeparam>
 /// <param name="source">The non-null source.</param>
 /// <param name="previous">The optional existing destination.</param>
 /// <param name="result">The non-null selected mapping result.</param>
-/// <param name="context">The declarative mapping context.</param>
+/// <param name="context">The current mapping operation marker.</param>
 /// <returns>The destination member plan.</returns>
 public delegate TMembers Members<
     in TSource,

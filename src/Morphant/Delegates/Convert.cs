@@ -8,7 +8,8 @@ namespace Morphant.Delegates;
 /// <param name="source">The original source.</param>
 /// <returns>The mapping result.</returns>
 /// <remarks>
-/// The returned value bypasses the declarative mapping pipeline.
+/// The callback receives the source before null handling. The returned value
+/// bypasses the declarative mapping pipeline.
 /// </remarks>
 public delegate TResult Convert<in TSource, out TResult>(TSource source);
 

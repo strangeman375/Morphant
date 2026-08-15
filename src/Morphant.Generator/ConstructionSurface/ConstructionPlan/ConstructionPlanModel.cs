@@ -8,7 +8,7 @@ internal sealed record ConstructionPlanModel(
     string ConstructorParametersTypeName,
     string DestinationTypeName,
     ImmutableArray<ConstructionTypeParameterModel> TypeParameters,
-    ConstructionDocumentationModel DestinationDocumentation,
+    string DestinationCref,
     string? ObsoleteAttributeSource,
     ImmutableArray<ConstructionConstructorModel> Constructors,
     ImmutableArray<ConstructionConstructorParameterFieldModel>
@@ -19,12 +19,7 @@ internal sealed record ConstructionTypeParameterModel(
     ImmutableArray<string> Constraints,
     bool RequiresNullableAnnotationsDisabled);
 
-internal sealed record ConstructionDocumentationModel(
-    string Cref,
-    bool HasDocumentation);
-
 internal sealed record ConstructionConstructorModel(
-    ConstructionDocumentationModel Documentation,
     string? ObsoleteAttributeSource,
     ImmutableArray<ConstructionConstructorParameterModel> Parameters);
 

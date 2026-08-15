@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.ConstructionSurfaceTests;
 internal sealed class ConstructionSurfaceDocumentationTests
 {
     [Test]
-    public async Task Inherits_destination_documentation_and_supplies_complete_fallbacks()
+    public async Task Uses_mapping_specific_documentation_for_generated_plans()
     {
         // lang=c#
         const string source =
@@ -59,7 +59,9 @@ namespace TestCase.Morphant.Generated
         public global::Morphant.Members.ConstructorParameter<int> value = null!;
     }
 
-    /// <inheritdoc cref="global::TestCase.Destination"/>
+    /// <summary>
+    /// Defines construction of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
     internal sealed class DestinationConstruction
     {
         /// <summary>
@@ -73,7 +75,10 @@ namespace TestCase.Morphant.Generated
         {
         }
 
-        /// <inheritdoc cref="global::TestCase.Destination.Destination(global::System.Int32)"/>
+        /// <summary>
+        /// Uses the corresponding destination constructor.
+        /// </summary>
+        /// <param name="value">Maps the <c>value</c> argument.</param>
         public DestinationConstruction(global::Morphant.Members.ConstructorParameter<int> value)
         {
         }
@@ -111,7 +116,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination construction with operation context.
+        /// Defines destination construction using the current operation.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">The construction plan.</param>
@@ -133,7 +138,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines how to select or construct the destination with context.
+        /// Defines destination selection using the current operation.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">The result plan.</param>
@@ -322,7 +327,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination construction with operation context.
+        /// Defines destination construction using the current operation.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="construct">The construction plan.</param>
@@ -344,7 +349,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines how to select or construct the destination with context.
+        /// Defines destination selection using the current operation.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="resolve">The result plan.</param>

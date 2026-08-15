@@ -5,6 +5,9 @@ namespace Morphant.Markers;
 /// <summary>
 /// Base type for declarative member markers.
 /// </summary>
+/// <remarks>
+/// Used only for compile-time binding; no runtime instance is created.
+/// </remarks>
 public abstract class MemberMarker
 {
     private protected MemberMarker()

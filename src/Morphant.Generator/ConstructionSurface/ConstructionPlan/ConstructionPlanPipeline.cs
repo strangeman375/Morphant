@@ -239,8 +239,9 @@ internal sealed class ConstructionPlanModelResultComparer :
                StringComparer.Ordinal.Equals(
                    left.DestinationTypeName,
                    right.DestinationTypeName) &&
-               left.DestinationDocumentation ==
-                   right.DestinationDocumentation &&
+               StringComparer.Ordinal.Equals(
+                   left.DestinationCref,
+                   right.DestinationCref) &&
                StringComparer.Ordinal.Equals(
                    left.ObsoleteAttributeSource,
                    right.ObsoleteAttributeSource) &&
@@ -292,8 +293,7 @@ internal sealed class ConstructionPlanModelResultComparer :
 
         for (var index = 0; index < left.Length; index++)
         {
-            if (left[index].Documentation != right[index].Documentation ||
-                !StringComparer.Ordinal.Equals(
+            if (!StringComparer.Ordinal.Equals(
                     left[index].ObsoleteAttributeSource,
                     right[index].ObsoleteAttributeSource) ||
                 !left[index].Parameters.SequenceEqual(

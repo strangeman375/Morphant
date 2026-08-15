@@ -232,10 +232,14 @@ namespace TestCase.Morphant.Generated
 
 namespace TestCase.Morphant.Generated
 {
-    /// <inheritdoc cref="global::TestCase.Destination"/>
+    /// <summary>
+    /// Maps members of <see cref="global::TestCase.Destination"/>.
+    /// </summary>
     internal sealed record DestinationMembers
     {
-        /// <inheritdoc cref="global::TestCase.Destination.Documented"/>
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Documented"/>.
+        /// </summary>
         public global::Morphant.Members.Member<int> Documented
         {
             get => null!;
@@ -339,7 +343,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result and context.
+        /// Defines member mappings using the selected result and current operation.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>
@@ -396,7 +400,7 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result and context.
+        /// Defines member mappings using the selected result and current operation.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>

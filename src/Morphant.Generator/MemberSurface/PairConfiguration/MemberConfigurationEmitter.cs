@@ -51,7 +51,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Defines member mappings using the selected result and context.",
+            "Defines member mappings using the selected result and current " +
+            "operation.",
             "The member plan.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +

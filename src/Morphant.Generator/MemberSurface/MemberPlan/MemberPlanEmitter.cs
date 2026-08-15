@@ -105,15 +105,7 @@ internal static class MemberPlanEmitter
         CodeWriter writer,
         MemberPlanModel model)
     {
-        var documentation = model.DestinationDocumentation;
-        var cref = XmlAttribute(documentation.Cref);
-
-        if (documentation.HasDocumentation)
-        {
-            writer.Line($"/// <inheritdoc cref=\"{cref}\"/>");
-            return;
-        }
-
+        var cref = XmlAttribute(model.DestinationCref);
         WriteSummary(
             writer,
             "Maps members of " +
@@ -124,15 +116,7 @@ internal static class MemberPlanEmitter
         CodeWriter writer,
         MemberPlanPropertyModel member)
     {
-        var documentation = member.Documentation;
-        var cref = XmlAttribute(documentation.Cref);
-
-        if (documentation.HasDocumentation)
-        {
-            writer.Line($"/// <inheritdoc cref=\"{cref}\"/>");
-            return;
-        }
-
+        var cref = XmlAttribute(member.Cref);
         WriteSummary(
             writer,
             member.CanWrite

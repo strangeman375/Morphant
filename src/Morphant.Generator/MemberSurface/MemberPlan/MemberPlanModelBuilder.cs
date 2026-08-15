@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.ConstructionSurface;
@@ -50,7 +49,7 @@ internal static class MemberPlanModelBuilder
             BuildTypeParameters(
                 typeParameters,
                 typeParameterNames),
-            BuildDocumentation(destinationType, cancellationToken),
+            BuildCref(destinationType),
             BuildObsoleteAttributeSource(destinationType),
             BuildMembers(
                 members,
@@ -204,9 +203,7 @@ internal static class MemberPlanModelBuilder
                     new MemberPlanPropertyModel(
                         property.Name,
                         typeName,
-                        BuildDocumentation(
-                            property,
-                            cancellationToken),
+                        BuildCref(property),
                         canWrite,
                         acceptsNull,
                         requiresNullableAnnotationsDisabled,
@@ -228,7 +225,7 @@ internal static class MemberPlanModelBuilder
                 new MemberPlanPropertyModel(
                     field.Name,
                     fieldTypeName,
-                    BuildDocumentation(field, cancellationToken),
+                    BuildCref(field),
                     !field.IsReadOnly,
                     fieldAcceptsNull,
                     fieldRequiresNullableAnnotationsDisabled,
@@ -397,19 +394,11 @@ internal static class MemberPlanModelBuilder
                SymbolNameHelper.GetFullMetadataName(type) == metadataName;
     }
 
-    private static MemberPlanDocumentationModel BuildDocumentation(
-        ISymbol symbol,
-        CancellationToken cancellationToken)
+    private static string BuildCref(ISymbol symbol)
     {
         var documentationSymbol = symbol.OriginalDefinition;
-        var xml = documentationSymbol.GetDocumentationCommentXml(
-            preferredCulture: CultureInfo.InvariantCulture,
-            expandIncludes: false,
-            cancellationToken: cancellationToken);
 
-        return new MemberPlanDocumentationModel(
-            documentationSymbol.ToDisplayString(DocumentationCrefFormat),
-            !string.IsNullOrWhiteSpace(xml));
+        return documentationSymbol.ToDisplayString(DocumentationCrefFormat);
     }
 
     private static string Identifier(string value)

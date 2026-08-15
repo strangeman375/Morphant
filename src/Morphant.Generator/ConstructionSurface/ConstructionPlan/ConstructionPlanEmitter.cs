@@ -33,7 +33,7 @@ internal static class ConstructionPlanEmitter
             Identifier(model.ConstructorParametersTypeName),
             model.TypeParameters);
         var destinationCref = XmlAttribute(
-            model.DestinationDocumentation.Cref);
+            model.DestinationCref);
 
         WriteSummary(
             writer,
@@ -213,15 +213,7 @@ internal static class ConstructionPlanEmitter
         CodeWriter writer,
         ConstructionPlanModel model)
     {
-        var documentation = model.DestinationDocumentation;
-        var cref = XmlAttribute(documentation.Cref);
-
-        if (documentation.HasDocumentation)
-        {
-            writer.Line($"/// <inheritdoc cref=\"{cref}\"/>");
-            return;
-        }
-
+        var cref = XmlAttribute(model.DestinationCref);
         WriteSummary(
             writer,
             "Defines construction of " +
@@ -232,15 +224,6 @@ internal static class ConstructionPlanEmitter
         CodeWriter writer,
         ConstructionConstructorModel constructor)
     {
-        if (constructor.Documentation.HasDocumentation)
-        {
-            writer.Line(
-                "/// <inheritdoc cref=\"" +
-                XmlAttribute(constructor.Documentation.Cref) +
-                "\"/>");
-            return;
-        }
-
         WriteSummary(
             writer,
             "Uses the corresponding destination constructor.");

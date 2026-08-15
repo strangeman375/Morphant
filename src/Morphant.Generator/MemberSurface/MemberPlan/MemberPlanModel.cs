@@ -6,7 +6,7 @@ internal sealed record MemberPlanModel(
     string Namespace,
     string TypeName,
     ImmutableArray<MemberPlanTypeParameterModel> TypeParameters,
-    MemberPlanDocumentationModel DestinationDocumentation,
+    string DestinationCref,
     string? ObsoleteAttributeSource,
     ImmutableArray<MemberPlanPropertyModel> Members);
 
@@ -15,14 +15,10 @@ internal sealed record MemberPlanTypeParameterModel(
     ImmutableArray<string> Constraints,
     bool RequiresNullableAnnotationsDisabled);
 
-internal sealed record MemberPlanDocumentationModel(
-    string Cref,
-    bool HasDocumentation);
-
 internal sealed record MemberPlanPropertyModel(
     string Name,
     string TypeName,
-    MemberPlanDocumentationModel Documentation,
+    string Cref,
     bool CanWrite,
     bool AcceptsNull,
     bool RequiresNullableAnnotationsDisabled,

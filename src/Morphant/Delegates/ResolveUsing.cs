@@ -10,6 +10,10 @@ namespace Morphant.Delegates;
 /// <param name="source">The non-null source.</param>
 /// <param name="previous">The optional existing destination.</param>
 /// <returns>The destination result.</returns>
+/// <remarks>
+/// A <see langword="null"/> result is final: Morphant skips <c>Members</c>
+/// and does not apply null handling again.
+/// </remarks>
 public delegate TResult ResolveUsing<in TSource, TPrevious, out TResult>(
     TSource source,
     Option<TPrevious> previous);
@@ -25,6 +29,10 @@ public delegate TResult ResolveUsing<in TSource, TPrevious, out TResult>(
 /// <param name="previous">The optional existing destination.</param>
 /// <param name="context">The current mapping context.</param>
 /// <returns>The destination result.</returns>
+/// <remarks>
+/// A <see langword="null"/> result is final: Morphant skips <c>Members</c>
+/// and does not apply null handling again.
+/// </remarks>
 public delegate TResult ResolveUsing<
     in TSource,
     TPrevious,

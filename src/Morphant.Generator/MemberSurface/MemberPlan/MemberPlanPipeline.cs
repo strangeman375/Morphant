@@ -229,8 +229,9 @@ internal sealed class MemberPlanModelResultComparer :
                StringComparer.Ordinal.Equals(
                    left.TypeName,
                    right.TypeName) &&
-               left.DestinationDocumentation ==
-                   right.DestinationDocumentation &&
+               StringComparer.Ordinal.Equals(
+                   left.DestinationCref,
+                   right.DestinationCref) &&
                StringComparer.Ordinal.Equals(
                    left.ObsoleteAttributeSource,
                    right.ObsoleteAttributeSource) &&

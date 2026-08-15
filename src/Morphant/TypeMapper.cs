@@ -85,6 +85,10 @@ public abstract class TypeMapper
     /// <param name="sourceType">The exact source type.</param>
     /// <param name="destinationType">The exact destination type.</param>
     /// <returns>Whether the pair is declared.</returns>
+    /// <remarks>
+    /// Morphant generates this override. Mapper declarations must not
+    /// override it manually.
+    /// </remarks>
     protected internal virtual bool Supports(
         global::System.Type sourceType,
         global::System.Type destinationType) =>
@@ -94,6 +98,10 @@ public abstract class TypeMapper
     /// Declares mappings for this mapper.
     /// </summary>
     /// <param name="builder">The mapper builder.</param>
+    /// <remarks>
+    /// Morphant analyzes this method at compile time and does not invoke it at
+    /// runtime.
+    /// </remarks>
     protected abstract void Configure(MapperBuilder builder);
 
     /// <summary>

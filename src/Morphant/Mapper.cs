@@ -1,4 +1,5 @@
 using Morphant.Context;
+using Morphant.Exceptions;
 
 namespace Morphant;
 
@@ -17,6 +18,9 @@ public interface IMapper
     /// The mapping result, which may be <see langword="default"/> when allowed
     /// by the mapping.
     /// </returns>
+    /// <exception cref="MappingException">
+    /// Mapping lookup or execution fails.
+    /// </exception>
     TDestination Map<TSource, TDestination>(TSource? source);
 
     /// <summary>
@@ -30,6 +34,9 @@ public interface IMapper
     /// The mapping result. It may replace <paramref name="destination"/> or be
     /// <see langword="default"/> when allowed by the mapping.
     /// </returns>
+    /// <exception cref="MappingException">
+    /// Mapping lookup or execution fails.
+    /// </exception>
     TDestination Map<TSource, TDestination>(
         TSource? source,
         TDestination? destination);

@@ -7,6 +7,10 @@ namespace Morphant.Delegates;
 /// <typeparam name="TResult">The destination result type.</typeparam>
 /// <param name="source">The non-null source.</param>
 /// <returns>The destination result.</returns>
+/// <remarks>
+/// A <see langword="null"/> result is final: Morphant skips <c>Members</c>
+/// and does not apply null handling again.
+/// </remarks>
 public delegate TResult ConstructUsing<in TSource, out TResult>(
     TSource source);
 
@@ -19,6 +23,10 @@ public delegate TResult ConstructUsing<in TSource, out TResult>(
 /// <param name="source">The non-null source.</param>
 /// <param name="context">The current mapping context.</param>
 /// <returns>The destination result.</returns>
+/// <remarks>
+/// A <see langword="null"/> result is final: Morphant skips <c>Members</c>
+/// and does not apply null handling again.
+/// </remarks>
 public delegate TResult ConstructUsing<
     in TSource,
     in TContext,

@@ -61,7 +61,7 @@ internal static class ConstructionPlanModelBuilder
             BuildTypeParameters(
                 typeParameters,
                 typeParameterNames),
-            BuildDocumentation(destinationType, cancellationToken),
+            BuildCref(destinationType),
             BuildObsoleteAttributeSource(destinationType),
             constructors,
             BuildConstructorParameterFields(constructors));
@@ -219,7 +219,6 @@ internal static class ConstructionPlanModelBuilder
 
             result.Add(
                 new ConstructionConstructorModel(
-                    BuildDocumentation(constructor, cancellationToken),
                     BuildObsoleteAttributeSource(constructor),
                     parameters.ToImmutable()));
         }
@@ -420,19 +419,11 @@ internal static class ConstructionPlanModelBuilder
                SymbolNameHelper.GetFullMetadataName(type) == metadataName;
     }
 
-    private static ConstructionDocumentationModel BuildDocumentation(
-        ISymbol symbol,
-        CancellationToken cancellationToken)
+    private static string BuildCref(ISymbol symbol)
     {
         var documentationSymbol = symbol.OriginalDefinition;
-        var xml = documentationSymbol.GetDocumentationCommentXml(
-            preferredCulture: CultureInfo.InvariantCulture,
-            expandIncludes: false,
-            cancellationToken: cancellationToken);
 
-        return new ConstructionDocumentationModel(
-            documentationSymbol.ToDisplayString(DocumentationCrefFormat),
-            !string.IsNullOrWhiteSpace(xml));
+        return documentationSymbol.ToDisplayString(DocumentationCrefFormat);
     }
 
     private static string MakeUnique(
