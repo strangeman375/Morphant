@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="logo.png" alt="Morphant logo" width="128" height="128">
-</p>
+<img src="logo.png" alt="Morphant logo" width="128" height="128">
 
 # Morphant
 

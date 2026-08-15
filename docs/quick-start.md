@@ -5,7 +5,7 @@
 The package contains both the runtime and the source generator:
 
 ```shell
-dotnet add package Morphant --version 0.1.0
+dotnet add package Morphant
 dotnet add package Microsoft.Extensions.DependencyInjection
 ```
 
