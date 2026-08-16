@@ -252,16 +252,6 @@ jobs:
       id-token: write
 
     steps:
-      - name: Verify protected environment configuration
-        env:
-          TRUSTED_PUBLISHING_CONFIGURED: ${{ vars.NUGET_TRUSTED_PUBLISHING_CONFIGURED }}
-        shell: bash
-        run: |
-          if [[ "$TRUSTED_PUBLISHING_CONFIGURED" != "true" ]]; then
-            echo "Set NUGET_TRUSTED_PUBLISHING_CONFIGURED=true in the protected nuget.org environment." >&2
-            exit 1
-          fi
-
       - name: Check out release commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -283,12 +273,6 @@ jobs:
       - name: Verify package hashes
         working-directory: artifacts/release-candidate
         run: sha256sum --check SHA256SUMS
-
-      - name: Log in to NuGet
-        id: nuget
-        uses: NuGet/login@e12aa70ccb4d344b799c19f5ceef68a8fb96164d # v1
-        with:
-          user: strangeman375
 
       - name: Create release tag
         env:
@@ -316,7 +300,7 @@ jobs:
 
       - name: Publish package
         env:
-          NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
           VERSION: ${{ needs.preflight.outputs.version }}
         shell: bash
         run: >-
