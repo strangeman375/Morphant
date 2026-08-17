@@ -331,11 +331,11 @@
     `MorphantMemberSelection`, `MorphantUnmappedMemberValidation`; package
     содержит strong-named `Morphant.Build.Tasks.dll`; snapshot включается через
     `MorphantGitSnapshot`, публикуется только после успешного `CoreCompile`,
-    имеет один общий Debug/Release slice на target framework, versioned hash
-    manifests и transactional rollback; Morphant-owned files всегда исключены
-    из `Compile`, а cleanup включён по умолчанию и допускает opt-out через
-    `MorphantCleanCompilerGeneratedFiles`. При различающемся conditional output
-    последний успешный build определяет содержимое общего slice.
+    имеет один общий Debug/Release slice на target framework, сравнивает файлы
+    по содержимому и удаляет stale Morphant output без manifest/state-файлов;
+    Morphant-owned files всегда исключены из `Compile`. При различающемся
+    conditional output последний успешный build определяет содержимое общего
+    slice.
 
 - [ ] **PKG-10 — Runtime XML documentation поставляется**
   - Исходное состояние: runtime DLL и XML из PACKAGE.
@@ -1033,22 +1033,23 @@ diagnostic, но не делает invalid configuration работоспосо�
     появляется только при реальной collision; hint names не меняются от
     unrelated edit.
 
-- [ ] **INC-09 — Git snapshot fail-safe и самовосстанавливается**
-  - Исходное состояние: успешный snapshot для двух mappings сохранён вместе с
-    root/slice manifests; hashes и timestamps записаны.
-  - Действие: по отдельности сократить manifest, изменить bytes `.g.cs`,
-    удалить файл, подменить destination каталогом, задать project root,
-    wildcard и внешний path, переопределить compiler output, выключить
-    функцию, переопределить post-compile target, сменить root, изменить root
-    ownership index и удалить один TFM; повторить multi-target build с parallel
-    MSBuild nodes.
-  - Ожидаемый результат: недоверенное состояние сначала принуждает compiler к
-    regeneration и никогда не разрешает deletion; unsafe paths/staging
-    fail-fast; ошибка publication полностью откатывается; disable/path change
-    не дают duplicate compile items; removed TFM очищается; разные
-    TFM slices и параллельные builds не повреждают root; Debug и Release
-    обновляют один slice по правилу last-successful-build-wins; unrelated files
-    сохраняются.
+- [ ] **INC-09 — Git snapshot синхронизируется после успешной компиляции**
+  - Исходное состояние: успешный snapshot для двух mappings сохранён; timestamps
+    записаны; рядом находится unrelated file.
+  - Действие: добавить и удалить mapping; выполнить no-op build и компиляцию с
+    неизменившимся generated output; по отдельности удалить и изменить `.g.cs`,
+    затем выполнить `Rebuild`; сломать compilation; подменить destination
+    каталогом; задать project root, wildcard и внешний path; переопределить
+    compiler output и post-compile target; выключить функцию, сменить root и
+    удалить один TFM; повторить multi-target build с parallel MSBuild nodes.
+  - Ожидаемый результат: stale files удаляются только после успешного compiler
+    run; одинаковые files не меняют timestamps; `Rebuild` восстанавливает
+    удалённый или изменённый snapshot; compiler failure сохраняет предыдущий
+    snapshot; unsafe paths/staging fail-fast до изменения файлов; collision с
+    destination directory не меняет остальные files; disable/path change не
+    дают duplicate compile items; removed TFM очищается; разные TFM slices и
+    параллельные builds не повреждают root; Debug и Release обновляют один slice
+    по правилу last-successful-build-wins; unrelated files сохраняются.
 
 ## 12. Документация и внешний вид
 
@@ -1186,8 +1187,8 @@ diagnostic, но не делает invalid configuration работоспосо�
     закрепляет .NET SDK `7.0.100` / MSBuild `17.4` и не ссылается на исходники.
   - Действие: restore/build/run C# 9 mapping с `MorphantGitSnapshot=true`.
   - Ожидаемый результат: runtime, analyzer и `Morphant.Build.Tasks.dll`
-    загружаются без binding errors; mapping выполняется; TFM snapshot и
-    versioned manifest опубликованы.
+    загружаются без binding errors; mapping выполняется; TFM snapshot
+    опубликован без дополнительных manifest/state-файлов.
 
 ## 14. Финальное решение
 

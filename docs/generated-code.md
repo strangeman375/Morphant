@@ -35,8 +35,9 @@ in review or Git history:
 The default root is `Generated/Morphant`. The root must be one literal,
 dedicated subdirectory of the consumer project. Project roots, parent or
 external/shared directories, wildcards, and item lists are rejected before
-Morphant deletes or publishes anything. Override the root only when the
-repository uses another project-owned layout:
+Morphant deletes or publishes anything. Do not share one snapshot root between
+projects. Override the root only when the repository uses another
+project-owned layout:
 
 ```xml
 <MorphantGitSnapshotPath>Generated/Mapping</MorphantGitSnapshotPath>
@@ -47,60 +48,51 @@ Morphant creates one slice per target framework, for example
 When their generated output is identical, switching configurations does not
 rewrite the snapshot. If conditional source, `DefineConstants`, or conditional
 Morphant properties make the output differ, the last successful build wins.
-Before committing, build the configuration whose output the repository treats
-as canonical (normally Release) and review the generated diff. Do not run
-different configurations concurrently when they can intentionally generate
-different results.
+Before committing, rebuild the configuration whose output the repository
+treats as canonical, normally Release, and review the generated diff:
 
-Each slice contains a versioned `Morphant.Generated.manifest` with the project
-identity, target framework, sorted file names, and SHA-256 hashes. The manifest
-does not record the build configuration, so equivalent Debug and Release builds
-do not create metadata-only Git changes. A root ownership manifest prevents two
-projects from sharing one root. Generated `.g.cs` files use deterministic UTF-8
-without BOM and CRLF; both manifests use UTF-8 without BOM and LF.
+```bash
+dotnet build -c Release -t:Rebuild
+```
 
-The package automatically enables Roslyn's file emission into a validated
-private directory under `obj`. A command-line or global override of
-`EmitCompilerGeneratedFiles` or `CompilerGeneratedFilesOutputPath` that breaks
-this boundary fails the build before cleanup. The effective
-`IntermediateOutputPath` must remain inside `BaseIntermediateOutputPath`, and
-an override of `TargetsTriggeredByCompilation` must retain Morphant's
-post-compile publication target. Morphant-owned file names are excluded from
-`Compile` regardless of whether snapshot publication is enabled or which root
-is currently configured, so disabling the feature or changing the path cannot
-introduce duplicate generated declarations.
+The package enables Roslyn's file emission into a validated private directory
+under `obj`. Only after `Csc` succeeds does a small MSBuild task copy
+`Morphant.Generated.*.g.cs` into the Git snapshot. It compares file contents,
+leaves identical files and timestamps untouched, removes stale Morphant files,
+and preserves unrelated files. Morphant files in removed target-framework
+slices are cleaned on the next successful compilation. Debug, Release, and
+parallel target-framework builds coordinate through a short cross-process lock.
 
-After compilation succeeds, a specialized MSBuild task stages the complete
-new slice and replaces the old slice, ownership index, and trusted state as
-one rollback-protected transaction. A failed compiler or publication step
-therefore preserves the previous snapshot instead of leaving a partially
-updated directory. Parallel builds coordinate through a cross-process lock;
-for different configurations that lock prevents corruption but deliberately
-does not change the last-successful-build-wins policy.
+A compiler error does not publish private staging, so the previous Git snapshot
+remains intact. A command-line or global override of
+`EmitCompilerGeneratedFiles`, `CompilerGeneratedFilesOutputPath`, or
+`TargetsTriggeredByCompilation` that breaks the staging contract fails before
+cleanup. Morphant-owned file names are excluded from `Compile` even when
+snapshot publication is disabled or its root changes.
 
-Cleanup is enabled by default. Morphant mirrors both the current slice manifest
-and the shared root ownership index under `obj`; it verifies those trusted
-bytes and every generated-file hash before deleting stale files. A missing,
-edited, or malformed current-slice manifest or `.g.cs` forces compilation and
-restores the current snapshot. Path traversal, duplicates, foreign project
-ownership, and an invalid or untrusted root index fail safely without deletion.
-Removed target-framework slices are removed from the project-owned root, while
-files not owned by Morphant are preserved.
+The snapshot deliberately has no manifest or trusted state. Consequently an
+up-to-date build, where `Csc` does not run, cannot discover a deleted or manually
+edited snapshot file. Run `Rebuild` to restore the complete current set. A rare
+file-system error during publication can leave a partially updated working
+tree; the build fails, and the next `Rebuild` restores it. Git remains the
+recovery point for the last committed snapshot.
 
 Do not edit generated files directly. Change the mapping configuration or
-mapped types, run a build, and commit both the source change and the complete
-snapshot. Set `MorphantCleanCompilerGeneratedFiles` to `false` only when
-another build step deliberately preserves historical Morphant files. Turning
-cleanup back on removes those stale files without requiring a forced rebuild.
+mapped types, rebuild, and commit both the source change and the complete
+snapshot. Generated `.g.cs` files retain Roslyn's UTF-8 encoding and Morphant's
+deterministic CRLF line endings.
 
 Changing `MorphantGitSnapshotPath` does not delete the old committed root.
 Reserved Morphant files there remain excluded from compilation, so the build
 is safe; remove the old root explicitly after reviewing the new snapshot.
 
+Enabling the snapshot or changing its path does not itself make `CoreCompile`
+out of date. Run `Rebuild` once after either change.
+
 `EmitCompilerGeneratedFiles` and `CompilerGeneratedFilesOutputPath` remain
 standard Roslyn diagnostics switches, but they do not provide the supported
 Git snapshot lifecycle on their own. Use `MorphantGitSnapshot` for a
-reviewable, self-cleaning snapshot.
+reviewable snapshot synchronized after successful compilation.
 
 ## File kinds
 

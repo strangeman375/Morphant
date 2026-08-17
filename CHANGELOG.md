@@ -11,9 +11,8 @@ documented breaking changes.
 - Add a supported, opt-in Git snapshot lifecycle through
   `MorphantGitSnapshot`, with one shared Debug/Release snapshot per target
   framework, unconditional compiler exclusion of owned files, validated private
-  staging, versioned hash manifests, trusted root/project ownership state,
-  rollback-protected publication, self-healing modified or missing files, and
-  stale-file cleanup enabled by default.
+  staging, post-compile content-aware synchronization, parallel publication
+  locking, and stale-file cleanup without manifests or persistent build state.
 
 ## [0.1.0]
 

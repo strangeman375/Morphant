@@ -200,7 +200,7 @@ jobs:
             -p:MorphantGitSnapshot=true \
             -p:RestoreSources=${{ github.workspace }}/artifacts/minimum-sdk-packages \
             -p:NuGetAudit=false
-          test -f Generated/Morphant/net7.0/Morphant.Generated.manifest
+          test -n "$(find Generated/Morphant/net7.0 -maxdepth 1 -name 'Morphant.Generated.TypeMapper.*.g.cs' -print -quit)"
 
   cross-platform:
     name: Validate (${{ matrix.os }})

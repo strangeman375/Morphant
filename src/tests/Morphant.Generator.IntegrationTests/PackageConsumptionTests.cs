@@ -116,9 +116,6 @@ internal sealed class PackageConsumptionTests
             var morphantGeneratedDirectory = Path.Combine(
                 consumerGenerated,
                 "net10.0");
-            var snapshotManifest = Path.Combine(
-                morphantGeneratedDirectory,
-                "Morphant.Generated.manifest");
             var staleMorphantFile = Path.Combine(
                 morphantGeneratedDirectory,
                 "Morphant.Generated.Removed.g.cs");
@@ -165,7 +162,7 @@ internal sealed class PackageConsumptionTests
             ];
             var run = await DotNetCli.Run(
                 repositoryRoot,
-                consumerArguments);
+                RebuildArguments(consumerArguments, consumerProject));
             AssertSucceeded(run);
 
             Assert.Multiple(() =>
@@ -184,9 +181,6 @@ internal sealed class PackageConsumptionTests
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
                 PrimaryGeneratedFiles);
-            AssertSnapshotManifest(
-                snapshotManifest,
-                PrimaryGeneratedFiles);
 
             await File.WriteAllTextAsync(
                 consumerSource,
@@ -197,9 +191,6 @@ internal sealed class PackageConsumptionTests
             AssertSucceeded(addedMappingRun);
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
-                BothGeneratedFiles);
-            AssertSnapshotManifest(
-                snapshotManifest,
                 BothGeneratedFiles);
 
             await File.WriteAllTextAsync(
@@ -212,9 +203,6 @@ internal sealed class PackageConsumptionTests
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
                 PrimaryGeneratedFiles);
-            AssertSnapshotManifest(
-                snapshotManifest,
-                PrimaryGeneratedFiles);
 
             await File.WriteAllTextAsync(
                 consumerSource,
@@ -225,9 +213,6 @@ internal sealed class PackageConsumptionTests
             AssertSucceeded(emptyMappingRun);
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
-                []);
-            AssertSnapshotManifest(
-                snapshotManifest,
                 []);
             Assert.That(
                 File.Exists(unrelatedGeneratedFile),
@@ -310,65 +295,6 @@ internal sealed class PackageConsumptionTests
             await File.WriteAllTextAsync(
                 consumerSource,
                 SecondMappingConsumerSource);
-            var optOutRun = await DotNetCli.Run(
-                repositoryRoot,
-                [
-                    .. consumerArguments,
-                    "-p:MorphantCleanCompilerGeneratedFiles=false"
-                ]);
-            AssertSucceeded(optOutRun);
-            Assert.That(
-                File.Exists(staleMorphantFile),
-                Is.True,
-                "The cleanup opt-out must preserve existing Morphant " +
-                "generated files.");
-            AssertGeneratedFileSet(
-                morphantGeneratedDirectory,
-                [.. BothGeneratedFiles, Path.GetFileName(staleMorphantFile)]);
-            AssertSnapshotManifest(
-                snapshotManifest,
-                BothGeneratedFiles);
-
-            await File.WriteAllTextAsync(
-                consumerSource,
-                originalConsumerSource);
-            var cleanupRestoredRun = await DotNetCli.Run(
-                repositoryRoot,
-                consumerArguments);
-            AssertSucceeded(cleanupRestoredRun);
-            AssertGeneratedFileSet(
-                morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
-            AssertSnapshotManifest(
-                snapshotManifest,
-                PrimaryGeneratedFiles);
-
-            await File.WriteAllTextAsync(
-                staleMorphantFile,
-                "// stale Morphant output");
-            var noOpOptOutRun = await DotNetCli.Run(
-                repositoryRoot,
-                [
-                    .. consumerArguments,
-                    "-p:MorphantCleanCompilerGeneratedFiles=false"
-                ]);
-            AssertSucceeded(noOpOptOutRun);
-            Assert.That(File.Exists(staleMorphantFile), Is.True);
-
-            var noOpCleanupRestoredRun = await DotNetCli.Run(
-                repositoryRoot,
-                consumerArguments);
-            AssertSucceeded(noOpCleanupRestoredRun);
-            AssertGeneratedFileSet(
-                morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
-
-            await File.WriteAllTextAsync(
-                staleMorphantFile,
-                "// stale Morphant output");
-            await File.WriteAllTextAsync(
-                consumerSource,
-                SecondMappingConsumerSource);
             var snapshotBeforeDesignTimeBuild = SnapshotContents(
                 morphantGeneratedDirectory);
             var designTimeRun = await DotNetCli.Run(
@@ -411,9 +337,6 @@ internal sealed class PackageConsumptionTests
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
                 PrimaryGeneratedFiles);
-            AssertSnapshotManifest(
-                snapshotManifest,
-                PrimaryGeneratedFiles);
 
             var successfulSnapshot = SnapshotContents(
                 morphantGeneratedDirectory);
@@ -442,44 +365,29 @@ internal sealed class PackageConsumptionTests
                 morphantGeneratedDirectory,
                 PrimaryGeneratedFiles[0]);
             File.Delete(deletedSnapshotFile);
+            var upToDateBuild = await DotNetCli.Run(
+                repositoryRoot,
+                BuildArguments(consumerArguments, consumerProject));
+            AssertSucceeded(upToDateBuild);
+            Assert.That(
+                File.Exists(deletedSnapshotFile),
+                Is.False,
+                "An up-to-date build does not run the compiler and therefore " +
+                "does not repair a snapshot file.");
+
             var repairedFileRun = await DotNetCli.Run(
                 repositoryRoot,
-                consumerArguments);
+                RebuildArguments(consumerArguments, consumerProject));
             AssertSucceeded(repairedFileRun);
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
                 PrimaryGeneratedFiles);
 
-            Directory.Delete(morphantGeneratedDirectory, recursive: true);
-            var repairedDirectoryRun = await DotNetCli.Run(
-                repositoryRoot,
-                consumerArguments);
-            AssertSucceeded(repairedDirectoryRun);
-            AssertGeneratedFileSet(
-                morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
-            AssertSnapshotManifest(
-                snapshotManifest,
-                PrimaryGeneratedFiles);
-
-            Directory.Delete(consumerIntermediate, recursive: true);
-            var repairedTrustedStateRun = await DotNetCli.Run(
-                repositoryRoot,
-                consumerArguments);
-            AssertSucceeded(repairedTrustedStateRun);
-            AssertGeneratedFileSet(
-                morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
-            AssertSnapshotManifest(
-                snapshotManifest,
-                PrimaryGeneratedFiles);
-
-            await AssertTamperedSnapshotSelfHeals(
+            await AssertTamperedSnapshotIsRepairedByRebuild(
                 repositoryRoot,
                 consumerArguments,
                 consumerProject,
-                morphantGeneratedDirectory,
-                snapshotManifest);
+                morphantGeneratedDirectory);
 
             await AssertUnsafeConfigurationFailsBeforeMutation(
                 repositoryRoot,
@@ -488,7 +396,7 @@ internal sealed class PackageConsumptionTests
                 consumerDirectory,
                 morphantGeneratedDirectory);
 
-            await AssertPublicationFailureDoesNotPartiallyUpdate(
+            await AssertDestinationDirectoryCollisionFailsBeforeMutation(
                 repositoryRoot,
                 consumerArguments,
                 consumerProject,
@@ -497,6 +405,7 @@ internal sealed class PackageConsumptionTests
             await AssertDisabledAndChangedPathRemainCompilerSafe(
                 repositoryRoot,
                 baseConsumerArguments,
+                consumerProject,
                 consumerDirectory,
                 consumerGenerated);
 
@@ -543,53 +452,11 @@ internal sealed class PackageConsumptionTests
             Assert.Multiple(() =>
             {
                 Assert.That(
-                    bytes.Take(3),
-                    Is.Not.EqualTo(new byte[] { 0xef, 0xbb, 0xbf }),
-                    $"{file} must use UTF-8 without BOM.");
-                Assert.That(
                     withoutCrLf,
                     Does.Not.Contain('\n').And.Not.Contain('\r'),
                     $"{file} must use deterministic CRLF line endings.");
             });
         }
-    }
-
-    private static void AssertSnapshotManifest(
-        string manifest,
-        IReadOnlyCollection<string> expected)
-    {
-        var bytes = File.ReadAllBytes(manifest);
-        Assert.Multiple(() =>
-        {
-            Assert.That(
-                bytes.Take(3),
-                Is.Not.EqualTo(new byte[] { 0xef, 0xbb, 0xbf }),
-                "The manifest must use UTF-8 without BOM.");
-            Assert.That(
-                bytes,
-                Does.Not.Contain((byte)'\r'),
-                "The manifest must use deterministic LF line endings.");
-        });
-
-        var lines = System.Text.Encoding.UTF8.GetString(bytes)
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var files = lines
-            .Skip(3)
-            .Select(static line => line.Split('\t'))
-            .Select(static fields => System.Text.Encoding.UTF8.GetString(
-                Convert.FromBase64String(fields[1])))
-            .ToArray();
-
-        Assert.That(
-            lines[0],
-            Is.EqualTo("MorphantGitSnapshotManifest/1"));
-        Assert.That(lines[1], Does.StartWith("project\t"));
-        Assert.That(lines[2], Does.StartWith("target-framework\t"));
-        Assert.That(
-            files,
-            Is.EqualTo(expected.Order(StringComparer.Ordinal)),
-            "The manifest must describe the complete current snapshot in " +
-            "deterministic order.");
     }
 
     private static Dictionary<string, DateTime> SnapshotWriteTimes(
@@ -612,30 +479,13 @@ internal sealed class PackageConsumptionTests
                 StringComparer.Ordinal);
     }
 
-    private static async Task AssertTamperedSnapshotSelfHeals(
+    private static async Task AssertTamperedSnapshotIsRepairedByRebuild(
         string repositoryRoot,
         IReadOnlyList<string> consumerArguments,
         string consumerProject,
-        string generatedDirectory,
-        string manifest)
+        string generatedDirectory)
     {
         var expected = SnapshotContents(generatedDirectory);
-        var manifestLines = await File.ReadAllLinesAsync(manifest);
-        await File.WriteAllTextAsync(
-            manifest,
-            string.Join('\n', manifestLines.Take(5)) + "\n",
-            new System.Text.UTF8Encoding(false));
-
-        var repairedManifestRun = await DotNetCli.Run(
-            repositoryRoot,
-            BuildArguments(consumerArguments, consumerProject));
-        AssertSucceeded(repairedManifestRun);
-        Assert.That(
-            SnapshotContents(generatedDirectory),
-            Is.EqualTo(expected),
-            "A shortened source manifest must force regeneration, not " +
-            "authorize deletion.");
-
         var generatedFile = Path.Combine(
             generatedDirectory,
             PrimaryGeneratedFiles[0]);
@@ -646,12 +496,12 @@ internal sealed class PackageConsumptionTests
 
         var repairedContentRun = await DotNetCli.Run(
             repositoryRoot,
-            BuildArguments(consumerArguments, consumerProject));
+            RebuildArguments(consumerArguments, consumerProject));
         AssertSucceeded(repairedContentRun);
         Assert.That(
             SnapshotContents(generatedDirectory),
             Is.EqualTo(expected),
-            "A generated-file hash mismatch must force regeneration.");
+            "A rebuild must restore manually edited generated files.");
     }
 
     private static async Task AssertUnsafeConfigurationFailsBeforeMutation(
@@ -670,6 +520,11 @@ internal sealed class PackageConsumptionTests
             (
                 $"-p:MorphantGitSnapshotPath={Path.Combine(consumerDirectory, "Generated", "*")}",
                 "MORPHANTMSB006"),
+            (
+                "-p:MorphantGitSnapshotPath=" + Path.Combine(
+                    Path.GetDirectoryName(consumerDirectory)!,
+                    "external-snapshot"),
+                "MORPHANTMSB005"),
             (
                 "-p:MorphantGitSnapshotPath=" +
                 Path.Combine(consumerDirectory, "Generated", "One") + ";" +
@@ -707,7 +562,7 @@ internal sealed class PackageConsumptionTests
         }
     }
 
-    private static async Task AssertPublicationFailureDoesNotPartiallyUpdate(
+    private static async Task AssertDestinationDirectoryCollisionFailsBeforeMutation(
         string repositoryRoot,
         IReadOnlyList<string> consumerArguments,
         string consumerProject,
@@ -722,7 +577,7 @@ internal sealed class PackageConsumptionTests
 
         var failedPublication = await DotNetCli.Run(
             repositoryRoot,
-            BuildArguments(consumerArguments, consumerProject));
+            RebuildArguments(consumerArguments, consumerProject));
         AssertFailed(failedPublication);
         Assert.That(
             SnapshotTree(generatedDirectory),
@@ -733,7 +588,7 @@ internal sealed class PackageConsumptionTests
         Directory.Delete(collision);
         var repairedPublication = await DotNetCli.Run(
             repositoryRoot,
-            BuildArguments(consumerArguments, consumerProject));
+            RebuildArguments(consumerArguments, consumerProject));
         AssertSucceeded(repairedPublication);
         AssertGeneratedFileSet(generatedDirectory, PrimaryGeneratedFiles);
     }
@@ -741,6 +596,7 @@ internal sealed class PackageConsumptionTests
     private static async Task AssertDisabledAndChangedPathRemainCompilerSafe(
         string repositoryRoot,
         IReadOnlyList<string> baseConsumerArguments,
+        string consumerProject,
         string consumerDirectory,
         string defaultGeneratedRoot)
     {
@@ -755,11 +611,13 @@ internal sealed class PackageConsumptionTests
             "Alternative");
         var changedPathRun = await DotNetCli.Run(
             repositoryRoot,
-            [
-                .. baseConsumerArguments,
-                "-p:MorphantGitSnapshot=true",
-                $"-p:MorphantGitSnapshotPath={alternativeRoot}"
-            ]);
+            RebuildArguments(
+                [
+                    .. baseConsumerArguments,
+                    "-p:MorphantGitSnapshot=true",
+                    $"-p:MorphantGitSnapshotPath={alternativeRoot}"
+                ],
+                consumerProject));
         AssertSucceeded(changedPathRun);
         AssertGeneratedFileSet(
             Path.Combine(
@@ -808,6 +666,14 @@ internal sealed class PackageConsumptionTests
             .. runArguments.Skip(3)
         ];
     }
+
+    private static string[] RebuildArguments(
+        IReadOnlyList<string> runArguments,
+        string project) =>
+    [
+        .. BuildArguments(runArguments, project),
+        "-t:Rebuild"
+    ];
 
     private static string[] WithConfiguration(
         IReadOnlyList<string> arguments,
