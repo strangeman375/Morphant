@@ -10,6 +10,36 @@ namespace Morphant.Generator.IntegrationTests;
 [TestFixture]
 internal sealed class PackageConsumptionTests
 {
+    private const string HintPrefix =
+        "Morphant_Generator_PackageTests_Consumer_";
+
+    private static readonly string[] PrimaryGeneratedFiles =
+    [
+        "Morphant.Generated.Construction." +
+        HintPrefix + "Destination.g.cs",
+        "Morphant.Generated.MappingExtension." +
+        HintPrefix + "Source__" + HintPrefix + "Destination.g.cs",
+        "Morphant.Generated.Member." + HintPrefix + "Destination.g.cs",
+        "Morphant.Generated.MemberExtension." +
+        HintPrefix + "Source__" + HintPrefix + "Destination.g.cs",
+        "Morphant.Generated.TypeMapper." + HintPrefix + "TestMapper.g.cs"
+    ];
+
+    private static readonly string[] BothGeneratedFiles =
+    [
+        .. PrimaryGeneratedFiles,
+        "Morphant.Generated.Construction." +
+        HintPrefix + "SecondDestination.g.cs",
+        "Morphant.Generated.MappingExtension." +
+        HintPrefix + "SecondSource__" +
+        HintPrefix + "SecondDestination.g.cs",
+        "Morphant.Generated.Member." +
+        HintPrefix + "SecondDestination.g.cs",
+        "Morphant.Generated.MemberExtension." +
+        HintPrefix + "SecondSource__" +
+        HintPrefix + "SecondDestination.g.cs"
+    ];
+
     [Test]
     public async Task Packs_complete_assets_and_applies_buildTransitive_contract()
     {
@@ -27,8 +57,29 @@ internal sealed class PackageConsumptionTests
         var packageVersion =
             $"0.0.0-package-consumption.{Guid.NewGuid():N}";
         var configuration = IntegrationTestEnvironment.BuildConfiguration;
+        var sourceConsumerDirectory = Path.Combine(
+            repositoryRoot,
+            "src",
+            "tests",
+            "Morphant.Generator.PackageTests.Consumer");
+        var consumerDirectory = Path.Combine(testDirectory, "consumer");
+        var consumerProject = Path.Combine(
+            consumerDirectory,
+            "Morphant.Generator.PackageTests.Consumer.csproj");
+        var consumerSource = Path.Combine(consumerDirectory, "Program.cs");
 
         Directory.CreateDirectory(packageFeed);
+        Directory.CreateDirectory(consumerDirectory);
+        File.Copy(
+            Path.Combine(
+                sourceConsumerDirectory,
+                "Morphant.Generator.PackageTests.Consumer.csproj"),
+            consumerProject);
+        File.Copy(
+            Path.Combine(sourceConsumerDirectory, "Program.cs"),
+            consumerSource);
+        var originalConsumerSource = await File.ReadAllTextAsync(
+            consumerSource);
 
         try
         {
@@ -84,12 +135,7 @@ internal sealed class PackageConsumptionTests
             [
                 "run",
                 "--project",
-                Path.Combine(
-                    repositoryRoot,
-                    "src",
-                    "tests",
-                    "Morphant.Generator.PackageTests.Consumer",
-                    "Morphant.Generator.PackageTests.Consumer.csproj"),
+                consumerProject,
                 "--configuration",
                 configuration,
                 $"-p:MorphantTestPackageVersion={packageVersion}",
@@ -105,11 +151,6 @@ internal sealed class PackageConsumptionTests
                 consumerArguments);
             AssertSucceeded(run);
 
-            var currentMorphantFiles = Directory.GetFiles(
-                morphantGeneratedDirectory,
-                "Morphant.Generated.*.g.cs",
-                SearchOption.TopDirectoryOnly);
-
             Assert.Multiple(() =>
             {
                 Assert.That(
@@ -118,15 +159,41 @@ internal sealed class PackageConsumptionTests
                     "The package must remove stale Morphant generated " +
                     "files before compilation.");
                 Assert.That(
-                    currentMorphantFiles,
-                    Is.Not.Empty,
-                    "The compiler must recreate current Morphant output.");
-                Assert.That(
                     File.Exists(unrelatedGeneratedFile),
                     Is.True,
                     "Morphant cleanup must preserve other generators' " +
                     "output.");
             });
+            AssertGeneratedFileSet(
+                morphantGeneratedDirectory,
+                PrimaryGeneratedFiles);
+
+            await File.WriteAllTextAsync(
+                consumerSource,
+                SecondMappingConsumerSource);
+            var addedMappingRun = await DotNetCli.Run(
+                repositoryRoot,
+                consumerArguments);
+            AssertSucceeded(addedMappingRun);
+            AssertGeneratedFileSet(
+                morphantGeneratedDirectory,
+                BothGeneratedFiles);
+
+            await File.WriteAllTextAsync(
+                consumerSource,
+                originalConsumerSource);
+            var removedMappingRun = await DotNetCli.Run(
+                repositoryRoot,
+                consumerArguments);
+            AssertSucceeded(removedMappingRun);
+            AssertGeneratedFileSet(
+                morphantGeneratedDirectory,
+                PrimaryGeneratedFiles);
+
+            var currentMorphantFiles = Directory.GetFiles(
+                morphantGeneratedDirectory,
+                "Morphant.Generated.*.g.cs",
+                SearchOption.TopDirectoryOnly);
 
             var noOpRun = await DotNetCli.Run(
                 repositoryRoot,
@@ -137,6 +204,86 @@ internal sealed class PackageConsumptionTests
                 currentMorphantFiles.All(File.Exists),
                 Is.True,
                 "An up-to-date build must preserve current generated files.");
+
+            await File.WriteAllTextAsync(
+                staleMorphantFile,
+                "// stale Morphant output");
+            await File.WriteAllTextAsync(
+                consumerSource,
+                SecondMappingConsumerSource);
+            var optOutRun = await DotNetCli.Run(
+                repositoryRoot,
+                [
+                    .. consumerArguments,
+                    "-p:MorphantCleanCompilerGeneratedFiles=false"
+                ]);
+            AssertSucceeded(optOutRun);
+            Assert.That(
+                File.Exists(staleMorphantFile),
+                Is.True,
+                "The cleanup opt-out must preserve existing Morphant " +
+                "generated files.");
+
+            await File.WriteAllTextAsync(
+                consumerSource,
+                originalConsumerSource);
+            var cleanupRestoredRun = await DotNetCli.Run(
+                repositoryRoot,
+                consumerArguments);
+            AssertSucceeded(cleanupRestoredRun);
+            AssertGeneratedFileSet(
+                morphantGeneratedDirectory,
+                PrimaryGeneratedFiles);
+
+            await File.WriteAllTextAsync(
+                staleMorphantFile,
+                "// stale Morphant output");
+            await File.WriteAllTextAsync(
+                consumerSource,
+                SecondMappingConsumerSource);
+            var designTimeRun = await DotNetCli.Run(
+                repositoryRoot,
+                [
+                    "build",
+                    consumerProject,
+                    "--configuration",
+                    configuration,
+                    "-m:1",
+                    "-nodeReuse:false",
+                    "--nologo",
+                    $"-p:MorphantTestPackageVersion={packageVersion}",
+                    $"-p:RestoreSources={packageFeed}",
+                    $"-p:BaseOutputPath={consumerOutput}",
+                    $"-p:BaseIntermediateOutputPath={consumerIntermediate}",
+                    "-p:EmitCompilerGeneratedFiles=true",
+                    $"-p:CompilerGeneratedFilesOutputPath={consumerGenerated}",
+                    "-p:DesignTimeBuild=true",
+                    "-p:NuGetAudit=false"
+                ]);
+            AssertSucceeded(designTimeRun);
+            Assert.That(
+                File.Exists(staleMorphantFile),
+                Is.True,
+                "A design-time build must not clean generated files used " +
+                "by the editor.");
+
+            await File.WriteAllTextAsync(
+                consumerSource,
+                originalConsumerSource);
+            var finalRun = await DotNetCli.Run(
+                repositoryRoot,
+                consumerArguments);
+            AssertSucceeded(finalRun);
+            AssertGeneratedFileSet(
+                morphantGeneratedDirectory,
+                PrimaryGeneratedFiles);
+
+            await AssertMultiTargetGeneratedFilesAreIsolated(
+                repositoryRoot,
+                testDirectory,
+                packageFeed,
+                packageVersion,
+                configuration);
         }
         finally
         {
@@ -146,6 +293,213 @@ internal sealed class PackageConsumptionTests
             }
         }
     }
+
+    private static void AssertGeneratedFileSet(
+        string directory,
+        IReadOnlyCollection<string> expected)
+    {
+        var actual = Directory.GetFiles(
+                directory,
+                "Morphant.Generated.*.g.cs",
+                SearchOption.TopDirectoryOnly)
+            .Select(Path.GetFileName)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.That(
+            actual,
+            Is.EqualTo(expected.Order(StringComparer.Ordinal)),
+            "The on-disk generated file set must match the current " +
+            "mapping configuration exactly.");
+    }
+
+    private static async Task AssertMultiTargetGeneratedFilesAreIsolated(
+        string repositoryRoot,
+        string testDirectory,
+        string packageFeed,
+        string packageVersion,
+        string configuration)
+    {
+        var projectDirectory = Path.Combine(
+            testDirectory,
+            "multi-target-consumer");
+        var projectPath = Path.Combine(
+            projectDirectory,
+            "MultiTargetConsumer.csproj");
+        var outputDirectory = Path.Combine(projectDirectory, "bin") +
+            Path.DirectorySeparatorChar;
+        var intermediateDirectory = Path.Combine(projectDirectory, "obj") +
+            Path.DirectorySeparatorChar;
+
+        Directory.CreateDirectory(projectDirectory);
+        await File.WriteAllTextAsync(
+            projectPath,
+            MultiTargetConsumerProject.Replace(
+                "__PACKAGE_VERSION__",
+                packageVersion));
+        await File.WriteAllTextAsync(
+            Path.Combine(projectDirectory, "Mapping.cs"),
+            MultiTargetConsumerSource);
+
+        var build = await DotNetCli.Run(
+            repositoryRoot,
+            [
+                "build",
+                projectPath,
+                "--configuration",
+                configuration,
+                "-m:1",
+                "-nodeReuse:false",
+                "--nologo",
+                $"-p:RestoreSources={packageFeed}",
+                $"-p:BaseOutputPath={outputDirectory}",
+                $"-p:BaseIntermediateOutputPath={intermediateDirectory}",
+                "-p:NuGetAudit=false"
+            ]);
+        AssertSucceeded(build);
+
+        string[] expected =
+        [
+            "Morphant.Generated.Construction." +
+            "MultiTarget_Destination.g.cs",
+            "Morphant.Generated.MappingExtension." +
+            "MultiTarget_Source__MultiTarget_Destination.g.cs",
+            "Morphant.Generated.Member.MultiTarget_Destination.g.cs",
+            "Morphant.Generated.MemberExtension." +
+            "MultiTarget_Source__MultiTarget_Destination.g.cs",
+            "Morphant.Generated.TypeMapper.MultiTarget_TestMapper.g.cs"
+        ];
+
+        foreach (var targetFramework in new[] { "netstandard2.0", "net10.0" })
+        {
+            AssertGeneratedFileSet(
+                Path.Combine(
+                    intermediateDirectory,
+                    "generated",
+                    targetFramework,
+                    "Morphant.Generator",
+                    "Morphant.Generator.MorphantGenerator"),
+                expected);
+        }
+    }
+
+    // lang=xml
+    private const string MultiTargetConsumerProject =
+"""
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated/$(TargetFramework)</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Morphant" Version="__PACKAGE_VERSION__" />
+  </ItemGroup>
+
+</Project>
+""";
+
+    // lang=c#
+    private const string MultiTargetConsumerSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace MultiTarget
+{
+    public sealed class Source
+    {
+        public int Value { get; set; }
+    }
+
+    public sealed class Destination
+    {
+        public int Value { get; set; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>();
+    }
+}
+""";
+
+    // lang=c#
+    private const string SecondMappingConsumerSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+using Morphant.Context;
+using System;
+
+namespace Morphant.Generator.PackageTests.Consumer
+{
+    public sealed class Source
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class Destination
+    {
+        public int Value { get; set; } = 41;
+    }
+
+    public sealed class SecondSource
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class SecondDestination
+    {
+        public int Value { get; set; } = 59;
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<Source, Destination>();
+            builder.Map<SecondSource, SecondDestination>();
+        }
+    }
+
+    internal static class Program
+    {
+        public static void Main()
+        {
+            var mapper = new TestMapper();
+            var primary =
+                ((ITypeMapper<Source, Destination>)mapper).Create(
+                    new Source { Value = 17 },
+                    default(MappingContext));
+            var second =
+                ((ITypeMapper<SecondSource, SecondDestination>)mapper).Create(
+                    new SecondSource { Value = 29 },
+                    default(MappingContext));
+
+            if (primary.Value != 41 || second.Value != 59)
+            {
+                throw new InvalidOperationException(
+                    "The packaged generator did not actualize both " +
+                    "mapping contracts.");
+            }
+        }
+    }
+}
+""";
 
     private static void AssertPackageContents(
         string repositoryRoot,

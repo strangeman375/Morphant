@@ -56,6 +56,7 @@ internal sealed class GateAndActualizationTests
     {
         var compatible = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
+            sources: [CompatibilityGeneratorTest.MapperSource],
             references:
             [
                 CompatibilityGeneratorTest.ActualRuntimeReference
@@ -64,6 +65,7 @@ internal sealed class GateAndActualizationTests
 
         var languageFailure = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp8,
+            sources: [CompatibilityGeneratorTest.MapperSource],
             references:
             [
                 CompatibilityGeneratorTest.ActualRuntimeReference
@@ -77,6 +79,7 @@ internal sealed class GateAndActualizationTests
 
         var missing = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
+            sources: [CompatibilityGeneratorTest.EmptySource],
             driver: languageFailure.Driver);
         CompatibilityGeneratorTest.AssertDiagnostics(
             missing,
@@ -90,6 +93,7 @@ internal sealed class GateAndActualizationTests
                 .CreateReference();
         var incompatible = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
+            sources: [CompatibilityGeneratorTest.EmptySource],
             references: [incompatibleReference],
             driver: missing.Driver);
         CompatibilityGeneratorTest.AssertDiagnostics(
@@ -101,6 +105,7 @@ internal sealed class GateAndActualizationTests
 
         var restored = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
+            sources: [CompatibilityGeneratorTest.MapperSource],
             references:
             [
                 CompatibilityGeneratorTest.ActualRuntimeReference
@@ -108,13 +113,38 @@ internal sealed class GateAndActualizationTests
             driver: incompatible.Driver);
         CompatibilityGeneratorTest.AssertDiagnostics(restored);
 
+        var expectedGeneratedFiles = new[]
+        {
+            "Morphant.Generated.Construction.TestCase_Destination.g.cs",
+            "Morphant.Generated.MappingExtension." +
+            "TestCase_Source__TestCase_Destination.g.cs",
+            "Morphant.Generated.Member.TestCase_Destination.g.cs",
+            "Morphant.Generated.MemberExtension." +
+            "TestCase_Source__TestCase_Destination.g.cs",
+            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+        };
+        var compatibleSources = GeneratedSources(compatible);
+        var restoredSources = GeneratedSources(restored);
+
         Assert.Multiple(() =>
         {
-            Assert.That(compatible.GeneratedSources, Is.Empty);
+            Assert.That(
+                compatibleSources.Select(static source => source.HintName),
+                Is.EqualTo(expectedGeneratedFiles));
             Assert.That(languageFailure.GeneratedSources, Is.Empty);
             Assert.That(missing.GeneratedSources, Is.Empty);
             Assert.That(incompatible.GeneratedSources, Is.Empty);
-            Assert.That(restored.GeneratedSources, Is.Empty);
+            Assert.That(restoredSources, Is.EqualTo(compatibleSources));
         });
+    }
+
+    private static (string HintName, string Source)[] GeneratedSources(
+        CompatibilityGeneratorResult result)
+    {
+        return result.GeneratedSources
+            .Select(static source =>
+                (source.HintName, source.SourceText.ToString()))
+            .OrderBy(static source => source.HintName, StringComparer.Ordinal)
+            .ToArray();
     }
 }

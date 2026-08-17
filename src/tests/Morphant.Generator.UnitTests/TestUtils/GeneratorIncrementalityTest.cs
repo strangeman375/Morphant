@@ -53,6 +53,31 @@ internal static class GeneratorIncrementalityTest
         return new ExpectedIncrementalReasonCount(reason, count);
     }
 
+    public static ExpectedCompilerDiagnostic CompilerDiagnostic(
+        string id,
+        DiagnosticSeverity severity,
+        string path,
+        int start,
+        int length,
+        params ExpectedCompilerDiagnosticLocation[] additionalLocations)
+    {
+        return new ExpectedCompilerDiagnostic(
+            id,
+            severity,
+            path,
+            start,
+            length,
+            SnapshotLocations(additionalLocations));
+    }
+
+    public static ExpectedCompilerDiagnosticLocation CompilerDiagnosticLocation(
+        string path,
+        int start,
+        int length)
+    {
+        return new ExpectedCompilerDiagnosticLocation(path, start, length);
+    }
+
     public static ExpectedIncrementalStage[] EarlyPipeline(
         params ExpectedIncrementalReasonCount[] reasons)
     {
@@ -83,6 +108,7 @@ internal static class GeneratorIncrementalityTest
             [],
             null,
             generatedHintNames.ToImmutableArray(),
+            [],
             stages.ToImmutableArray());
     }
 
@@ -102,6 +128,7 @@ internal static class GeneratorIncrementalityTest
             [],
             scenarioTypeName,
             generatedHintNames.ToImmutableArray(),
+            [],
             stages.ToImmutableArray());
     }
 
@@ -121,6 +148,28 @@ internal static class GeneratorIncrementalityTest
             [],
             null,
             generatedHintNames.ToImmutableArray(),
+            [],
+            stages.ToImmutableArray());
+    }
+
+    public static GeneratorIncrementalityStep StepWithReferencesAndDiagnostics(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<MetadataReference> additionalReferences,
+        IReadOnlyCollection<string> generatedHintNames,
+        IReadOnlyCollection<ExpectedCompilerDiagnostic> expectedDiagnostics,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            additionalReferences.ToImmutableArray(),
+            ImmutableDictionary<string, string>.Empty,
+            NullableContextOptions.Enable,
+            [],
+            null,
+            generatedHintNames.ToImmutableArray(),
+            expectedDiagnostics.ToImmutableArray(),
             stages.ToImmutableArray());
     }
 
@@ -141,6 +190,29 @@ internal static class GeneratorIncrementalityTest
             [],
             null,
             generatedHintNames.ToImmutableArray(),
+            [],
+            stages.ToImmutableArray());
+    }
+
+    public static GeneratorIncrementalityStep StepWithOptionsAndDiagnostics(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyDictionary<string, string> globalOptions,
+        IReadOnlyCollection<string> generatedHintNames,
+        IReadOnlyCollection<ExpectedCompilerDiagnostic> expectedDiagnostics,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            [],
+            globalOptions.ToImmutableDictionary(
+                StringComparer.OrdinalIgnoreCase),
+            NullableContextOptions.Enable,
+            [],
+            null,
+            generatedHintNames.ToImmutableArray(),
+            expectedDiagnostics.ToImmutableArray(),
             stages.ToImmutableArray());
     }
 
@@ -161,6 +233,27 @@ internal static class GeneratorIncrementalityTest
             preprocessorSymbols.ToImmutableArray(),
             null,
             generatedHintNames.ToImmutableArray(),
+            [],
+            stages.ToImmutableArray());
+    }
+
+    public static GeneratorIncrementalityStep StepWithDiagnostics(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<string> generatedHintNames,
+        IReadOnlyCollection<ExpectedCompilerDiagnostic> expectedDiagnostics,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            [],
+            ImmutableDictionary<string, string>.Empty,
+            NullableContextOptions.Enable,
+            [],
+            null,
+            generatedHintNames.ToImmutableArray(),
+            expectedDiagnostics.ToImmutableArray(),
             stages.ToImmutableArray());
     }
 
@@ -253,10 +346,15 @@ internal static class GeneratorIncrementalityTest
                 out var outputCompilation,
                 out var generatorDiagnostics);
 
-            AssertNoWarningsOrErrors(
-                $"Step '{step.Name}'",
+            var compilerDiagnostics = SnapshotCompilerDiagnostics(
                 generatorDiagnostics.Concat(
                     outputCompilation.GetDiagnostics()));
+            Assert.That(
+                compilerDiagnostics,
+                Is.EqualTo(step.ExpectedDiagnostics.ToArray()),
+                $"Step '{step.Name}' produced unexpected compiler " +
+                "warnings or errors." + Environment.NewLine +
+                string.Join(Environment.NewLine, compilerDiagnostics));
             var runResult = driver.GetRunResult();
 
             AssertIncrementality(step, runResult);
@@ -265,7 +363,8 @@ internal static class GeneratorIncrementalityTest
                 compilation,
                 parseOptions,
                 generatorFactory,
-                runResult);
+                runResult,
+                compilerDiagnostics);
 
             if (step.ScenarioTypeName is { } scenarioTypeName)
             {
@@ -348,14 +447,18 @@ internal static class GeneratorIncrementalityTest
         CSharpCompilation compilation,
         CSharpParseOptions parseOptions,
         Func<IIncrementalGenerator> generatorFactory,
-        GeneratorDriverRunResult warmRunResult)
+        GeneratorDriverRunResult warmRunResult,
+        ExpectedCompilerDiagnostic[] warmCompilerDiagnostics)
     {
         GeneratorDriver freshDriver = CSharpGeneratorDriver.Create(
             [generatorFactory().AsSourceGenerator()],
             parseOptions: parseOptions);
         freshDriver = freshDriver.WithUpdatedAnalyzerConfigOptions(
             new TestAnalyzerConfigOptionsProvider(step.GlobalOptions));
-        freshDriver = freshDriver.RunGenerators(compilation);
+        freshDriver = freshDriver.RunGeneratorsAndUpdateCompilation(
+            compilation,
+            out var freshOutputCompilation,
+            out var freshGeneratorDiagnostics);
 
         var warmResult = warmRunResult.Results.Single();
         var freshResult = freshDriver.GetRunResult().Results.Single();
@@ -375,6 +478,13 @@ internal static class GeneratorIncrementalityTest
             Is.EqualTo(SnapshotDiagnostics(freshResult)),
             $"Step '{step.Name}' produced different diagnostics with a " +
             "warm driver than with a fresh driver.");
+        Assert.That(
+            warmCompilerDiagnostics,
+            Is.EqualTo(SnapshotCompilerDiagnostics(
+                freshGeneratorDiagnostics.Concat(
+                    freshOutputCompilation.GetDiagnostics()))),
+            $"Step '{step.Name}' produced different compiler diagnostics " +
+            "with a warm driver than with a fresh driver.");
     }
 
     private static IncrementalGeneratedSource[] SnapshotGeneratedSources(
@@ -406,7 +516,9 @@ internal static class GeneratorIncrementalityTest
                     diagnostic.Location.IsInSource
                         ? diagnostic.Location.SourceSpan.Length
                         : 0,
-                    diagnostic.IsSuppressed))
+                    diagnostic.IsSuppressed,
+                    SnapshotLocations(diagnostic.AdditionalLocations),
+                    SnapshotProperties(diagnostic.Properties)))
             .OrderBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
             .ThenBy(
                 static diagnostic => diagnostic.Path,
@@ -417,6 +529,66 @@ internal static class GeneratorIncrementalityTest
                 static diagnostic => diagnostic.Message,
                 StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static string SnapshotProperties(
+        IReadOnlyDictionary<string, string?> properties)
+    {
+        return string.Join(
+            "\u001f",
+            properties
+                .OrderBy(static property => property.Key, StringComparer.Ordinal)
+                .Select(static property =>
+                    $"{property.Key}\u001e{property.Value}"));
+    }
+
+    private static ExpectedCompilerDiagnostic[] SnapshotCompilerDiagnostics(
+        IEnumerable<Diagnostic> diagnostics)
+    {
+        return diagnostics
+            .Where(static diagnostic =>
+                diagnostic.Severity is
+                    DiagnosticSeverity.Warning or
+                    DiagnosticSeverity.Error)
+            .Select(static diagnostic =>
+                new ExpectedCompilerDiagnostic(
+                    diagnostic.Id,
+                    diagnostic.Severity,
+                    diagnostic.Location.SourceTree?.FilePath,
+                    diagnostic.Location.IsInSource
+                        ? diagnostic.Location.SourceSpan.Start
+                        : -1,
+                    diagnostic.Location.IsInSource
+                        ? diagnostic.Location.SourceSpan.Length
+                        : 0,
+                    SnapshotLocations(diagnostic.AdditionalLocations)))
+            .Distinct()
+            .OrderBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
+            .ThenBy(
+                static diagnostic => diagnostic.Path,
+                StringComparer.Ordinal)
+            .ThenBy(static diagnostic => diagnostic.Start)
+            .ThenBy(static diagnostic => diagnostic.Length)
+            .ToArray();
+    }
+
+    private static string SnapshotLocations(
+        IEnumerable<Location> locations)
+    {
+        return SnapshotLocations(locations.Select(static location =>
+            new ExpectedCompilerDiagnosticLocation(
+                location.SourceTree?.FilePath,
+                location.IsInSource ? location.SourceSpan.Start : -1,
+                location.IsInSource ? location.SourceSpan.Length : 0)));
+    }
+
+    private static string SnapshotLocations(
+        IEnumerable<ExpectedCompilerDiagnosticLocation> locations)
+    {
+        return string.Join(
+            "\u001f",
+            locations.Select(static location =>
+                $"{location.Path}\u001e{location.Start}\u001e{location.Length}"));
     }
 
     private static CSharpParseOptions CreateParseOptions(
@@ -614,6 +786,7 @@ internal sealed record GeneratorIncrementalityStep(
     ImmutableArray<string> PreprocessorSymbols,
     string? ScenarioTypeName,
     ImmutableArray<string> GeneratedHintNames,
+    ImmutableArray<ExpectedCompilerDiagnostic> ExpectedDiagnostics,
     ImmutableArray<ExpectedIncrementalStage> ExpectedStages);
 
 internal sealed record GeneratorIncrementalitySourceFile(
@@ -649,7 +822,22 @@ internal sealed record IncrementalDiagnostic(
     string? Path,
     int Start,
     int Length,
-    bool IsSuppressed);
+    bool IsSuppressed,
+    string AdditionalLocations,
+    string Properties);
+
+internal sealed record ExpectedCompilerDiagnostic(
+    string Id,
+    DiagnosticSeverity Severity,
+    string? Path,
+    int Start,
+    int Length,
+    string AdditionalLocations);
+
+internal sealed record ExpectedCompilerDiagnosticLocation(
+    string? Path,
+    int Start,
+    int Length);
 
 internal sealed class MetadataReferenceIdentityComparer :
     IEqualityComparer<MetadataReference>

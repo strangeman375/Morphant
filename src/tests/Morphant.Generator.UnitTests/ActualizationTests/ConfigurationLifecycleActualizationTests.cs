@@ -59,6 +59,20 @@ internal sealed class ConfigurationLifecycleActualizationTests
                 7),
             ScenarioStep("ConstructUsing removed", string.Empty, 0, 7),
             ScenarioStep(
+                "ResolveUsing added",
+                """
+                .ResolveUsing((source, previous) =>
+                    previous.HasValue
+                        ? previous.Value
+                        : new Destination
+                        {
+                            Marker = source.Value + 30
+                        })
+                """,
+                37,
+                7),
+            ScenarioStep("ResolveUsing removed", string.Empty, 0, 7),
+            ScenarioStep(
                 "Convert added",
                 ".Convert(_ => new Destination { Marker = 37, Value = 38 })",
                 37,
