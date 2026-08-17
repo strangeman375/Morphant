@@ -3,19 +3,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/17/2026 - 09:36:00 |
-| Coverage date: | 08/17/2026 - 09:34:56 - 08/17/2026 - 09:35:55 |
+| Generated on: | 08/17/2026 - 10:51:46 |
+| Coverage date: | 08/17/2026 - 10:50:31 - 08/17/2026 - 10:51:41 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 2 |
 | Classes: | 304 |
 | Files: | 154 |
-| **Line coverage:** | 86.3% (29049 of 33641) |
-| Covered lines: | 29049 |
-| Uncovered lines: | 4592 |
+| **Line coverage:** | 86.3% (29051 of 33641) |
+| Covered lines: | 29051 |
+| Uncovered lines: | 4590 |
 | Coverable lines: | 33641 |
 | Total lines: | 56352 |
-| **Branch coverage:** | 76.6% (9824 of 12818) |
-| Covered branches: | 9824 |
+| **Branch coverage:** | 76.7% (9832 of 12818) |
+| Covered branches: | 9832 |
 | Total branches: | 12818 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -131,7 +131,7 @@
 |Morphant.Generator.MappingPair.MappingPairRegistrationModel|100%||
 |Morphant.Generator.MappingPair.MappingRegistrationDiagnosticDescriptors|100%||
 |Morphant.Generator.MappingPair.MappingRegistrationDiagnosticPipeline|100%|91.6%|
-|Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|96.8%|79.8%|
+|Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|97.6%|84.6%|
 |Morphant.Generator.MappingPair.MappingTypeIdentity|100%||
 |Morphant.Generator.MappingPair.MappingTypeIdentityPolicy|91%|80.7%|
 |Morphant.Generator.MappingPair.MappingTypeNormalization|100%|100%|
@@ -152,7 +152,7 @@
 |Morphant.Generator.MemberSurface.PairConfiguration.MemberConfigurationEmitt<br/>er|100%|83.3%|
 |Morphant.Generator.MorphantGenerator|100%|100%|
 |Morphant.Generator.PairConfiguration.BoundConfigurationExpression|100%||
-|Morphant.Generator.PairConfiguration.BuilderFlowAnalyzer|96.3%|86.2%|
+|Morphant.Generator.PairConfiguration.BuilderFlowAnalyzer|96.5%|86.6%|
 |Morphant.Generator.PairConfiguration.BuilderFlowBreakModel|100%||
 |Morphant.Generator.PairConfiguration.BuilderFlowLevelAnalysis|100%||
 |Morphant.Generator.PairConfiguration.ConfigurationFlowDiagnosticDescriptors|100%||
@@ -343,4 +343,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #13](https://github.com/strangeman375/Morphant/actions/runs/32015767220).
+Full HTML report: download the **coverage** artifact from [CI run #14](https://github.com/strangeman375/Morphant/actions/runs/32021877343).
