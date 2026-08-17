@@ -316,17 +316,19 @@
   - Ожидаемый результат: три пары файлов идентичны; package не содержит
     устаревшую копию README, лицензии или логотипа.
 
-- [ ] **PKG-09 — buildTransitive содержит settings и generated cleanup**
+- [ ] **PKG-09 — buildTransitive содержит settings и Git snapshot lifecycle**
   - Исходное состояние: `buildTransitive/Morphant.props` и
     `buildTransitive/Morphant.targets` из PACKAGE.
-  - Действие: проверить список `CompilerVisibleProperty` и target очистки
-    Morphant generated output.
+  - Действие: проверить список `CompilerVisibleProperty` и targets Git
+    snapshot.
   - Ожидаемый результат: ровно шесть properties:
     `MorphantMappingMode`, `MorphantNullSourceHandling`,
     `MorphantNullDestinationHandling`, `MorphantConstructorSelection`,
-    `MorphantMemberSelection`, `MorphantUnmappedMemberValidation`; cleanup
-    ограничен каталогом `Morphant.Generator`, пропускает design-time/no-op
-    builds и допускает opt-out через `MorphantCleanCompilerGeneratedFiles`.
+    `MorphantMemberSelection`, `MorphantUnmappedMemberValidation`; snapshot
+    включается через `MorphantGitSnapshot`, публикуется только после успешного
+    `CoreCompile`, изолирован по target framework, исключён из `Compile`, а
+    cleanup включён по умолчанию и допускает opt-out через
+    `MorphantCleanCompilerGeneratedFiles`.
 
 - [ ] **PKG-10 — Runtime XML documentation поставляется**
   - Исходное состояние: runtime DLL и XML из PACKAGE.

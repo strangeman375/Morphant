@@ -10,9 +10,9 @@ in Solution Explorer. This is Rider's live compiler view and does not require
 `EmitCompilerGeneratedFiles`.
 
 Do not use a file under `Generated/Morphant` as a live view. That directory is
-an on-disk build snapshot: it changes only when the compiler runs, while Rider
-keeps a separate design-time document. An editor tab opened from one view does
-not prove that the other view has refreshed.
+an on-disk Git snapshot: it changes only after a successful compiler run, while
+Rider keeps a separate design-time document. An editor tab opened from one view
+does not prove that the other view has refreshed.
 
 After changing `Map`, `Members`, `ConstructUsing`, or `Convert`, save the
 configuration and inspect the file under **Source Generators**. If a normal
@@ -23,36 +23,51 @@ Generators** and reopen the generated document.
 
 ## Store generated files in Git
 
-Use an explicit on-disk directory only when generated files must participate
+Enable Morphant's supported Git snapshot when generated files must participate
 in review or Git history:
 
 ```xml
 <PropertyGroup>
-  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-  <CompilerGeneratedFilesOutputPath>Generated/Morphant</CompilerGeneratedFilesOutputPath>
+  <MorphantGitSnapshot>true</MorphantGitSnapshot>
 </PropertyGroup>
-
-<ItemGroup>
-  <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
-</ItemGroup>
 ```
 
-Commit this directory together with the mapping configuration. Generated code
-then participates in code review and Git history, making mapping changes easy
-to inspect and revert.
+The default root is `Generated/Morphant`. Override it only when the repository
+uses another layout:
 
-The `Compile Remove` entry prevents the committed copies from being compiled a
-second time: Morphant already adds the freshly generated versions to the
-current compilation. During a real build, the Morphant package clears only its
-own generator directory before Roslyn writes the current output set. This is
-necessary because Roslyn otherwise leaves files behind when a generated hint
-disappears, for example after removing a `Map` call. Other generators' output
-is not touched.
+```xml
+<MorphantGitSnapshotPath>Generated/Mapping</MorphantGitSnapshotPath>
+```
+
+Morphant creates one subdirectory per target framework, for example
+`Generated/Morphant/net10.0`, and writes a `Morphant.Generated.manifest` next
+to the generated files. Commit the complete root together with the mapping
+configuration. Generated code then participates in code review and Git
+history, making mapping changes easy to inspect and revert.
+
+The package automatically enables Roslyn's file emission into an isolated
+directory under `obj`, excludes the checked-in snapshot from `Compile`, and
+publishes only `Morphant.Generated.*.g.cs` after compilation succeeds. A
+failed or skipped compilation therefore cannot replace the last successful
+Git snapshot. Target-framework isolation also makes ordinary parallel
+multi-target builds safe.
+
+Cleanup is enabled by default. After a successful build, and also after an
+up-to-date build, Morphant removes snapshot files that are absent from the
+manifest. This is necessary because Roslyn itself leaves files behind when a
+generated hint disappears, for example after removing a `Map` call. Files not
+owned by Morphant are preserved.
 
 Do not edit generated files directly. Change the mapping configuration or
-mapped types, run a build, and commit both the source change and the updated
-generated files. Set `MorphantCleanCompilerGeneratedFiles` to `false` only if
-another build step owns cleanup of the Morphant output directory.
+mapped types, run a build, and commit both the source change and the complete
+snapshot. Set `MorphantCleanCompilerGeneratedFiles` to `false` only when
+another build step deliberately preserves historical Morphant files. Turning
+cleanup back on removes those stale files without requiring a forced rebuild.
+
+`EmitCompilerGeneratedFiles` and `CompilerGeneratedFilesOutputPath` remain
+standard Roslyn diagnostics switches, but they do not provide the supported
+Git snapshot lifecycle on their own. Use `MorphantGitSnapshot` for a
+reviewable, self-cleaning snapshot.
 
 ## File kinds
 

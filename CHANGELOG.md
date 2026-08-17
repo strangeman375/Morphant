@@ -6,11 +6,12 @@ documented breaking changes.
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
-- Remove stale on-disk Morphant generated files before a real compiler run
-  when mappings disappear, without touching other generators or no-op and
-  design-time builds.
+- Add a supported, opt-in Git snapshot lifecycle through
+  `MorphantGitSnapshot`, with target-framework isolation, automatic compiler
+  exclusion, a current-file manifest, post-success publication, self-healing
+  missing files, and stale-file cleanup enabled by default.
 
 ## [0.1.0]
 
