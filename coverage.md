@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/17/2026 - 16:24:08 |
-| Coverage date: | 08/17/2026 - 16:22:17 - 08/17/2026 - 16:24:03 |
+| Generated on: | 08/17/2026 - 17:45:29 |
+| Coverage date: | 08/17/2026 - 17:44:11 - 08/17/2026 - 17:45:25 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
-| Classes: | 321 |
-| Files: | 163 |
-| **Line coverage:** | 84.8% (29804 of 35125) |
-| Covered lines: | 29804 |
-| Uncovered lines: | 5321 |
-| Coverable lines: | 35125 |
-| Total lines: | 58930 |
-| **Branch coverage:** | 75.5% (10048 of 13292) |
-| Covered branches: | 10048 |
-| Total branches: | 13292 |
+| Classes: | 310 |
+| Files: | 159 |
+| **Line coverage:** | 86% (29352 of 34106) |
+| Covered lines: | 29352 |
+| Uncovered lines: | 4754 |
+| Coverable lines: | 34106 |
+| Total lines: | 57140 |
+| **Branch coverage:** | 76.5% (9936 of 12984) |
+| Covered branches: | 9936 |
+| Total branches: | 12984 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -49,28 +49,17 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 50.7%</summary>
+<details><summary>Morphant.Build.Tasks - 64.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**50.7%**|**45.5%**|
-|Morphant.Build.Tasks.CleanMorphantGitSnapshot|0%||
+|**Morphant.Build.Tasks**|**64.7%**|**62.6%**|
+|Morphant.Build.Tasks.GitSnapshotContext|72.1%|57.8%|
+|Morphant.Build.Tasks.GitSnapshotLifecycle|79.8%|80%|
+|Morphant.Build.Tasks.ManageMorphantGitSnapshot|0%|0%|
 |Morphant.Build.Tasks.MorphantBuildTask|0%|0%|
-|Morphant.Build.Tasks.NullSnapshotPublicationObserver|100%||
-|Morphant.Build.Tasks.PortablePath|100%|90.9%|
-|Morphant.Build.Tasks.PrepareMorphantGitSnapshot|0%|0%|
-|Morphant.Build.Tasks.PublishMorphantGitSnapshot|0%||
-|Morphant.Build.Tasks.SnapshotException|100%||
-|Morphant.Build.Tasks.SnapshotFile|100%||
-|Morphant.Build.Tasks.SnapshotLifecycle|38.2%|30%|
-|Morphant.Build.Tasks.SnapshotManifest|100%|100%|
-|Morphant.Build.Tasks.SnapshotManifestFormat|74.4%|62.5%|
-|Morphant.Build.Tasks.SnapshotPath|75.6%|59.7%|
-|Morphant.Build.Tasks.SnapshotPreparation|0%||
-|Morphant.Build.Tasks.SnapshotRootEntry|100%||
-|Morphant.Build.Tasks.SnapshotRootManifest|100%|100%|
-|Morphant.Build.Tasks.SnapshotRootManifestFormat|82.9%|61.3%|
-|Morphant.Build.Tasks.ValidateMorphantGitSnapshot|0%|0%|
+|Morphant.Build.Tasks.PortablePath|97.5%|54.5%|
+|Morphant.Build.Tasks.SnapshotException|0%||
 
 </details>
 <details><summary>Morphant.Generator - 86.2%</summary>
@@ -367,4 +356,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #18](https://github.com/strangeman375/Morphant/actions/runs/32045130656).
+Full HTML report: download the **coverage** artifact from [CI run #19](https://github.com/strangeman375/Morphant/actions/runs/32051524308).
