@@ -79,7 +79,7 @@ jobs:
             "-reports:artifacts/test-results/*/*/coverage.cobertura.xml" \
             "-targetdir:artifacts/coverage" \
             "-reporttypes:Html;Cobertura;MarkdownSummaryGithub;Badges" \
-            "-assemblyfilters:+Morphant;+Morphant.Generator"
+            "-assemblyfilters:+Morphant;+Morphant.Generator;+Morphant.Build.Tasks"
 
       - name: Enforce coverage
         run: |
@@ -87,6 +87,8 @@ jobs:
             artifacts/coverage/Cobertura.xml Morphant.Generator 85 75
           python3 eng/verify_coverage.py \
             artifacts/coverage/Cobertura.xml Morphant 75 75
+          python3 eng/verify_coverage.py \
+            artifacts/coverage/Cobertura.xml Morphant.Build.Tasks 50 40
 
       - name: Add coverage summary
         run: cat artifacts/coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
@@ -154,6 +156,51 @@ jobs:
           path: artifacts/test-results
           if-no-files-found: warn
           retention-days: 14
+
+  minimum-sdk-package-consumer:
+    name: Package consumer (.NET SDK 7.0.100 / MSBuild 17.4)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up current and minimum .NET SDKs
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          dotnet-version: |
+            10.0.100
+            7.0.100
+
+      - name: Build package with the current SDK
+        run: |
+          dotnet restore src/Morphant.slnx -p:MorphantRoslynVersion=4.4.0
+          dotnet build src/Morphant.slnx \
+            --configuration Release \
+            --no-restore \
+            -p:ContinuousIntegrationBuild=true \
+            -p:MorphantRoslynVersion=4.4.0
+          dotnet pack src/Morphant/Morphant.csproj \
+            --configuration Release \
+            --no-build \
+            --no-restore \
+            --output artifacts/minimum-sdk-packages \
+            -p:PackageVersion=0.0.0-minimum-sdk.${{ github.run_id }}
+
+      - name: Build and run with the minimum SDK host
+        working-directory: src/tests/Morphant.Generator.PackageTests.MinimumSdkConsumer
+        run: |
+          test "$(dotnet --version)" = "7.0.100"
+          dotnet run \
+            --configuration Release \
+            -m:1 \
+            -nodeReuse:false \
+            -p:MorphantTestPackageVersion=0.0.0-minimum-sdk.${{ github.run_id }} \
+            -p:MorphantGitSnapshot=true \
+            -p:RestoreSources=${{ github.workspace }}/artifacts/minimum-sdk-packages \
+            -p:NuGetAudit=false
+          test -f Generated/Morphant/net7.0/Morphant.Generated.manifest
 
   cross-platform:
     name: Validate (${{ matrix.os }})
@@ -223,6 +270,7 @@ jobs:
       - validate
       - roslyn-compatibility
       - cross-platform
+      - minimum-sdk-package-consumer
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

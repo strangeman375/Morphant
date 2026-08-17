@@ -77,6 +77,8 @@ internal sealed class ConsumerBuildWorkspace : IDisposable
                     "Morphant.csproj"),
                 "--configuration",
                 _configuration,
+                "-m:1",
+                "-nodeReuse:false",
                 "--no-build",
                 "--no-restore",
                 "--output",

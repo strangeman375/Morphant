@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Morphant.Product.props" />
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AssemblyName>Morphant.Build.Tasks</AssemblyName>
+        <RootNamespace>Morphant.Build.Tasks</RootNamespace>
+        <DebugType>embedded</DebugType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="Microsoft.Build.Framework">
+            <HintPath>$(MSBuildBinPath)/ref/Microsoft.Build.Framework.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Morphant.Generator.UnitTests"
+                            PublicKey="$(MorphantStrongNamePublicKey)" />
+    </ItemGroup>
+
+</Project>

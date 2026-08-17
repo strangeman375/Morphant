@@ -34,6 +34,9 @@
         <ProjectReference Include="..\Morphant.Generator\Morphant.Generator.csproj"
                           ReferenceOutputAssembly="false"
                           PrivateAssets="all" />
+        <ProjectReference Include="..\Morphant.Build.Tasks\Morphant.Build.Tasks.csproj"
+                          ReferenceOutputAssembly="false"
+                          PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
@@ -65,6 +68,11 @@
         <None Include="build\Morphant.targets"
               Pack="true"
               PackagePath="buildTransitive\Morphant.targets"
+              Visible="false" />
+
+        <None Include="..\Morphant.Build.Tasks\bin\$(Configuration)\netstandard2.0\Morphant.Build.Tasks.dll"
+              Pack="true"
+              PackagePath="buildTransitive\Morphant.Build.Tasks.dll"
               Visible="false" />
     </ItemGroup>
 

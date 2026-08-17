@@ -97,6 +97,8 @@ internal sealed class PackageConsumptionTests
                         "Morphant.csproj"),
                     "--configuration",
                     configuration,
+                    "-m:1",
+                    "-nodeReuse:false",
                     "--no-build",
                     "--no-restore",
                     "--output",
@@ -258,6 +260,51 @@ internal sealed class PackageConsumptionTests
                 "An up-to-date build must not republish the Git snapshot.");
 
             await File.WriteAllTextAsync(
+                consumerSource,
+                originalConsumerSource +
+                Environment.NewLine +
+                "// Unrelated compiler input change." +
+                Environment.NewLine);
+            var unchangedGeneratorRun = await DotNetCli.Run(
+                repositoryRoot,
+                consumerArguments);
+            AssertSucceeded(unchangedGeneratorRun);
+            Assert.That(
+                SnapshotWriteTimes(morphantGeneratedDirectory),
+                Is.EqualTo(currentSnapshotWriteTimes),
+                "A real compilation with identical Morphant output must " +
+                "not touch snapshot timestamps.");
+
+            var alternateConfiguration = configuration == "Debug"
+                ? "Release"
+                : "Debug";
+            var alternateConfigurationRun = await DotNetCli.Run(
+                repositoryRoot,
+                WithConfiguration(
+                    consumerArguments,
+                    alternateConfiguration));
+            AssertSucceeded(alternateConfigurationRun);
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    SnapshotWriteTimes(morphantGeneratedDirectory),
+                    Is.EqualTo(currentSnapshotWriteTimes),
+                    "An equivalent build in another configuration must " +
+                    "reuse the shared snapshot without metadata churn.");
+                Assert.That(
+                    Directory.GetDirectories(
+                        consumerGenerated,
+                        "config-*",
+                        SearchOption.TopDirectoryOnly),
+                    Is.Empty,
+                    "Debug and Release must not create duplicate snapshot " +
+                    "directories.");
+            });
+            await File.WriteAllTextAsync(
+                consumerSource,
+                originalConsumerSource);
+
+            await File.WriteAllTextAsync(
                 staleMorphantFile,
                 "// stale Morphant output");
             await File.WriteAllTextAsync(
@@ -415,6 +462,44 @@ internal sealed class PackageConsumptionTests
                 snapshotManifest,
                 PrimaryGeneratedFiles);
 
+            Directory.Delete(consumerIntermediate, recursive: true);
+            var repairedTrustedStateRun = await DotNetCli.Run(
+                repositoryRoot,
+                consumerArguments);
+            AssertSucceeded(repairedTrustedStateRun);
+            AssertGeneratedFileSet(
+                morphantGeneratedDirectory,
+                PrimaryGeneratedFiles);
+            AssertSnapshotManifest(
+                snapshotManifest,
+                PrimaryGeneratedFiles);
+
+            await AssertTamperedSnapshotSelfHeals(
+                repositoryRoot,
+                consumerArguments,
+                consumerProject,
+                morphantGeneratedDirectory,
+                snapshotManifest);
+
+            await AssertUnsafeConfigurationFailsBeforeMutation(
+                repositoryRoot,
+                consumerArguments,
+                consumerProject,
+                consumerDirectory,
+                morphantGeneratedDirectory);
+
+            await AssertPublicationFailureDoesNotPartiallyUpdate(
+                repositoryRoot,
+                consumerArguments,
+                consumerProject,
+                morphantGeneratedDirectory);
+
+            await AssertDisabledAndChangedPathRemainCompilerSafe(
+                repositoryRoot,
+                baseConsumerArguments,
+                consumerDirectory,
+                consumerGenerated);
+
             await AssertMultiTargetGeneratedFilesAreIsolated(
                 repositoryRoot,
                 testDirectory,
@@ -448,14 +533,60 @@ internal sealed class PackageConsumptionTests
             Is.EqualTo(expected.Order(StringComparer.Ordinal)),
             "The on-disk generated file set must match the current " +
             "mapping configuration exactly.");
+
+        foreach (var file in actual)
+        {
+            var bytes = File.ReadAllBytes(Path.Combine(directory, file!));
+            var text = System.Text.Encoding.UTF8.GetString(bytes);
+            var withoutCrLf = text.Replace("\r\n", string.Empty);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    bytes.Take(3),
+                    Is.Not.EqualTo(new byte[] { 0xef, 0xbb, 0xbf }),
+                    $"{file} must use UTF-8 without BOM.");
+                Assert.That(
+                    withoutCrLf,
+                    Does.Not.Contain('\n').And.Not.Contain('\r'),
+                    $"{file} must use deterministic CRLF line endings.");
+            });
+        }
     }
 
     private static void AssertSnapshotManifest(
         string manifest,
         IReadOnlyCollection<string> expected)
     {
+        var bytes = File.ReadAllBytes(manifest);
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                bytes.Take(3),
+                Is.Not.EqualTo(new byte[] { 0xef, 0xbb, 0xbf }),
+                "The manifest must use UTF-8 without BOM.");
+            Assert.That(
+                bytes,
+                Does.Not.Contain((byte)'\r'),
+                "The manifest must use deterministic LF line endings.");
+        });
+
+        var lines = System.Text.Encoding.UTF8.GetString(bytes)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var files = lines
+            .Skip(3)
+            .Select(static line => line.Split('\t'))
+            .Select(static fields => System.Text.Encoding.UTF8.GetString(
+                Convert.FromBase64String(fields[1])))
+            .ToArray();
+
         Assert.That(
-            File.ReadAllLines(manifest),
+            lines[0],
+            Is.EqualTo("MorphantGitSnapshotManifest/1"));
+        Assert.That(lines[1], Does.StartWith("project\t"));
+        Assert.That(lines[2], Does.StartWith("target-framework\t"));
+        Assert.That(
+            files,
             Is.EqualTo(expected.Order(StringComparer.Ordinal)),
             "The manifest must describe the complete current snapshot in " +
             "deterministic order.");
@@ -481,6 +612,191 @@ internal sealed class PackageConsumptionTests
                 StringComparer.Ordinal);
     }
 
+    private static async Task AssertTamperedSnapshotSelfHeals(
+        string repositoryRoot,
+        IReadOnlyList<string> consumerArguments,
+        string consumerProject,
+        string generatedDirectory,
+        string manifest)
+    {
+        var expected = SnapshotContents(generatedDirectory);
+        var manifestLines = await File.ReadAllLinesAsync(manifest);
+        await File.WriteAllTextAsync(
+            manifest,
+            string.Join('\n', manifestLines.Take(5)) + "\n",
+            new System.Text.UTF8Encoding(false));
+
+        var repairedManifestRun = await DotNetCli.Run(
+            repositoryRoot,
+            BuildArguments(consumerArguments, consumerProject));
+        AssertSucceeded(repairedManifestRun);
+        Assert.That(
+            SnapshotContents(generatedDirectory),
+            Is.EqualTo(expected),
+            "A shortened source manifest must force regeneration, not " +
+            "authorize deletion.");
+
+        var generatedFile = Path.Combine(
+            generatedDirectory,
+            PrimaryGeneratedFiles[0]);
+        await File.AppendAllTextAsync(
+            generatedFile,
+            "// manual edit\n",
+            new System.Text.UTF8Encoding(false));
+
+        var repairedContentRun = await DotNetCli.Run(
+            repositoryRoot,
+            BuildArguments(consumerArguments, consumerProject));
+        AssertSucceeded(repairedContentRun);
+        Assert.That(
+            SnapshotContents(generatedDirectory),
+            Is.EqualTo(expected),
+            "A generated-file hash mismatch must force regeneration.");
+    }
+
+    private static async Task AssertUnsafeConfigurationFailsBeforeMutation(
+        string repositoryRoot,
+        IReadOnlyList<string> consumerArguments,
+        string consumerProject,
+        string consumerDirectory,
+        string generatedDirectory)
+    {
+        var expected = SnapshotContents(generatedDirectory);
+        var unsafeCases = new[]
+        {
+            (
+                $"-p:MorphantGitSnapshotPath={consumerDirectory}",
+                "MORPHANTMSB005"),
+            (
+                $"-p:MorphantGitSnapshotPath={Path.Combine(consumerDirectory, "Generated", "*")}",
+                "MORPHANTMSB006"),
+            (
+                "-p:MorphantGitSnapshotPath=" +
+                Path.Combine(consumerDirectory, "Generated", "One") + ";" +
+                Path.Combine(consumerDirectory, "Generated", "Two"),
+                "MSB1006"),
+            (
+                $"-p:CompilerGeneratedFilesOutputPath={generatedDirectory}",
+                "MORPHANTMSB004"),
+            ("-p:CompilerGeneratedFilesOutputPath=", "MORPHANTMSB006"),
+            ("-p:EmitCompilerGeneratedFiles=false", "MORPHANTMSB002"),
+            (
+                "-p:TargetsTriggeredByCompilation=ForeignTarget",
+                "MORPHANTMSB017")
+        };
+
+        foreach (var (property, expectedCode) in unsafeCases)
+        {
+            var result = await DotNetCli.Run(
+                repositoryRoot,
+                [
+                    .. BuildArguments(consumerArguments, consumerProject),
+                    property
+                ]);
+            AssertFailed(result);
+            Assert.That(
+                result.Output,
+                Does.Contain(expectedCode),
+                $"Unsafe configuration '{property}' failed without the " +
+                "expected actionable diagnostic.");
+            Assert.That(
+                SnapshotContents(generatedDirectory),
+                Is.EqualTo(expected),
+                $"Unsafe configuration '{property}' mutated the last " +
+                "successful snapshot.");
+        }
+    }
+
+    private static async Task AssertPublicationFailureDoesNotPartiallyUpdate(
+        string repositoryRoot,
+        IReadOnlyList<string> consumerArguments,
+        string consumerProject,
+        string generatedDirectory)
+    {
+        var collision = Path.Combine(
+            generatedDirectory,
+            PrimaryGeneratedFiles[1]);
+        File.Delete(collision);
+        Directory.CreateDirectory(collision);
+        var expectedFailureState = SnapshotTree(generatedDirectory);
+
+        var failedPublication = await DotNetCli.Run(
+            repositoryRoot,
+            BuildArguments(consumerArguments, consumerProject));
+        AssertFailed(failedPublication);
+        Assert.That(
+            SnapshotTree(generatedDirectory),
+            Is.EqualTo(expectedFailureState),
+            "A publication failure must not leave a partially replaced " +
+            "snapshot.");
+
+        Directory.Delete(collision);
+        var repairedPublication = await DotNetCli.Run(
+            repositoryRoot,
+            BuildArguments(consumerArguments, consumerProject));
+        AssertSucceeded(repairedPublication);
+        AssertGeneratedFileSet(generatedDirectory, PrimaryGeneratedFiles);
+    }
+
+    private static async Task AssertDisabledAndChangedPathRemainCompilerSafe(
+        string repositoryRoot,
+        IReadOnlyList<string> baseConsumerArguments,
+        string consumerDirectory,
+        string defaultGeneratedRoot)
+    {
+        var disabledRun = await DotNetCli.Run(
+            repositoryRoot,
+            baseConsumerArguments);
+        AssertSucceeded(disabledRun);
+
+        var alternativeRoot = Path.Combine(
+            consumerDirectory,
+            "Generated",
+            "Alternative");
+        var changedPathRun = await DotNetCli.Run(
+            repositoryRoot,
+            [
+                .. baseConsumerArguments,
+                "-p:MorphantGitSnapshot=true",
+                $"-p:MorphantGitSnapshotPath={alternativeRoot}"
+            ]);
+        AssertSucceeded(changedPathRun);
+        AssertGeneratedFileSet(
+            Path.Combine(
+                alternativeRoot,
+                "net10.0"),
+            PrimaryGeneratedFiles);
+        Assert.That(
+            Directory.Exists(defaultGeneratedRoot),
+            Is.True,
+            "Changing the path must not silently delete a committed old " +
+            "snapshot; its reserved files remain excluded from Compile.");
+    }
+
+    private static Dictionary<string, string> SnapshotTree(string directory)
+    {
+        var result = Directory.GetDirectories(
+                directory,
+                "*",
+                SearchOption.AllDirectories)
+            .ToDictionary(
+                path => "D:" + Path.GetRelativePath(directory, path),
+                static _ => string.Empty,
+                StringComparer.Ordinal);
+
+        foreach (var file in Directory.GetFiles(
+                     directory,
+                     "*",
+                     SearchOption.AllDirectories))
+        {
+            result.Add(
+                "F:" + Path.GetRelativePath(directory, file),
+                Convert.ToBase64String(File.ReadAllBytes(file)));
+        }
+
+        return result;
+    }
+
     private static string[] BuildArguments(
         IReadOnlyList<string> runArguments,
         string project)
@@ -491,6 +807,17 @@ internal sealed class PackageConsumptionTests
             project,
             .. runArguments.Skip(3)
         ];
+    }
+
+    private static string[] WithConfiguration(
+        IReadOnlyList<string> arguments,
+        string configuration)
+    {
+        var result = arguments.ToArray();
+        var option = Array.IndexOf(result, "--configuration");
+        Assert.That(option, Is.GreaterThanOrEqualTo(0));
+        result[option + 1] = configuration;
+        return result;
     }
 
     private static async Task AssertMultiTargetGeneratedFilesAreIsolated(
@@ -521,23 +848,28 @@ internal sealed class PackageConsumptionTests
             Path.Combine(projectDirectory, "Mapping.cs"),
             MultiTargetConsumerSource);
 
-        var build = await DotNetCli.Run(
-            repositoryRoot,
-            [
-                "build",
-                projectPath,
-                "--configuration",
-                configuration,
-                "-m:1",
-                "-nodeReuse:false",
-                "--nologo",
-                $"-p:RestoreSources={packageFeed}",
-                $"-p:BaseOutputPath={outputDirectory}",
-                $"-p:BaseIntermediateOutputPath={intermediateDirectory}",
-                "-p:MorphantGitSnapshot=true",
-                $"-p:MorphantGitSnapshotPath={Path.Combine(projectDirectory, "generated")}",
-                "-p:NuGetAudit=false"
-            ]);
+        string[] buildArguments =
+        [
+            "build",
+            projectPath,
+            "--configuration",
+            configuration,
+            string.Equals(
+                Environment.GetEnvironmentVariable("CI"),
+                "true",
+                StringComparison.OrdinalIgnoreCase)
+                ? "-m"
+                : "-m:1",
+            "-nodeReuse:false",
+            "--nologo",
+            $"-p:RestoreSources={packageFeed}",
+            $"-p:BaseOutputPath={outputDirectory}",
+            $"-p:BaseIntermediateOutputPath={intermediateDirectory}",
+            "-p:MorphantGitSnapshot=true",
+            $"-p:MorphantGitSnapshotPath={Path.Combine(projectDirectory, "generated")}",
+            "-p:NuGetAudit=false"
+        ];
+        var build = await DotNetCli.Run(repositoryRoot, buildArguments);
         AssertSucceeded(build);
 
         string[] expected =
@@ -561,6 +893,35 @@ internal sealed class PackageConsumptionTests
                     targetFramework),
                 expected);
         }
+
+        await File.WriteAllTextAsync(
+            projectPath,
+            MultiTargetConsumerProject
+                .Replace("__PACKAGE_VERSION__", packageVersion)
+                .Replace(
+                    "<TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>",
+                    "<TargetFrameworks>net10.0</TargetFrameworks>"));
+        var removedTargetFrameworkBuild = await DotNetCli.Run(
+            repositoryRoot,
+            buildArguments);
+        AssertSucceeded(removedTargetFrameworkBuild);
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                Directory.Exists(Path.Combine(
+                    projectDirectory,
+                    "generated",
+                    "netstandard2.0")),
+                Is.False,
+                "A removed target framework must be removed from the owned " +
+                "snapshot root.");
+            AssertGeneratedFileSet(
+                Path.Combine(
+                    projectDirectory,
+                    "generated",
+                    "net10.0"),
+                expected);
+        });
     }
 
     // lang=xml
@@ -735,6 +1096,10 @@ namespace Morphant.Generator.PackageTests.Consumer
                 package,
                 "analyzers/dotnet/cs/Morphant.Generator.dll",
                 expectedPublicKeyToken);
+            AssertStrongName(
+                package,
+                "buildTransitive/Morphant.Build.Tasks.dll",
+                expectedPublicKeyToken);
             AssertSymbolPackage(packageFeed, packageVersion);
         });
     }
@@ -760,6 +1125,7 @@ namespace Morphant.Generator.PackageTests.Consumer
                 "Morphant.nuspec",
                 "README.md",
                 "analyzers/dotnet/cs/Morphant.Generator.dll",
+                "buildTransitive/Morphant.Build.Tasks.dll",
                 "buildTransitive/Morphant.props",
                 "buildTransitive/Morphant.targets",
                 "lib/netstandard2.0/Morphant.dll",

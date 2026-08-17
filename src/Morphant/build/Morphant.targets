@@ -1,53 +1,70 @@
 <Project>
 
   <PropertyGroup>
-    <!--
-      Git snapshots are opt-in because they write generated sources into the
-      project tree. Once enabled, Morphant owns the complete snapshot lifecycle.
-    -->
     <MorphantGitSnapshot
         Condition="'$(MorphantGitSnapshot)' == ''">false</MorphantGitSnapshot>
     <MorphantGitSnapshotPath
         Condition="'$(MorphantGitSnapshotPath)' == ''">$(MSBuildProjectDirectory)/Generated/Morphant</MorphantGitSnapshotPath>
     <MorphantCleanCompilerGeneratedFiles
         Condition="'$(MorphantCleanCompilerGeneratedFiles)' == ''">true</MorphantCleanCompilerGeneratedFiles>
+
+    <_MorphantGitSnapshotTaskAssembly>$(MSBuildThisFileDirectory)Morphant.Build.Tasks.dll</_MorphantGitSnapshotTaskAssembly>
+    <_MorphantExpectedCompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)/Morphant.CompilerGenerated</_MorphantExpectedCompilerGeneratedFilesOutputPath>
+    <_MorphantGitSnapshotStateDirectory>$(IntermediateOutputPath)/Morphant.GitSnapshot</_MorphantGitSnapshotStateDirectory>
+    <_MorphantGitSnapshotTrustedManifest>$(_MorphantGitSnapshotStateDirectory)/Morphant.Generated.trusted.manifest</_MorphantGitSnapshotTrustedManifest>
+    <_MorphantGitSnapshotOutputsProject>$(_MorphantGitSnapshotStateDirectory)/Morphant.Generated.outputs.props</_MorphantGitSnapshotOutputsProject>
+    <_MorphantGitSnapshotForceCompileStamp>$(_MorphantGitSnapshotStateDirectory)/Morphant.Generated.force</_MorphantGitSnapshotForceCompileStamp>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true'">
-    <!--
-      Roslyn writes every generator to one output root. Keep that root under
-      obj and publish only Morphant files to the Git-owned snapshot directory.
-      Target-framework isolation prevents parallel inner builds from racing.
-    -->
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)Morphant.Generated</CompilerGeneratedFilesOutputPath>
-    <_MorphantGitSnapshotTargetPath
-        Condition="'$(TargetFramework)' == ''">$(MorphantGitSnapshotPath)</_MorphantGitSnapshotTargetPath>
-    <_MorphantGitSnapshotTargetPath
-        Condition="'$(TargetFramework)' != ''">$(MorphantGitSnapshotPath)/$(TargetFramework)</_MorphantGitSnapshotTargetPath>
-    <_MorphantGitSnapshotManifest>$(_MorphantGitSnapshotTargetPath)/Morphant.Generated.manifest</_MorphantGitSnapshotManifest>
-    <_MorphantExistingTargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation)</_MorphantExistingTargetsTriggeredByCompilation>
+  <UsingTask TaskName="Morphant.Build.Tasks.PrepareMorphantGitSnapshot"
+             AssemblyFile="$(_MorphantGitSnapshotTaskAssembly)" />
+  <UsingTask TaskName="Morphant.Build.Tasks.ValidateMorphantGitSnapshot"
+             AssemblyFile="$(_MorphantGitSnapshotTaskAssembly)" />
+  <UsingTask TaskName="Morphant.Build.Tasks.PublishMorphantGitSnapshot"
+             AssemblyFile="$(_MorphantGitSnapshotTaskAssembly)" />
+  <UsingTask TaskName="Morphant.Build.Tasks.CleanMorphantGitSnapshot"
+             AssemblyFile="$(_MorphantGitSnapshotTaskAssembly)" />
 
-    <!--
-      Roslyn invokes these targets only from the body of CoreCompile, after a
-      successful Csc task. Unlike BeforeTargets/AfterTargets alone, this does
-      not publish a partial snapshot when compilation fails or is skipped.
-    -->
+  <!--
+    Morphant.Generated.*.g.cs is a package-owned file-name namespace. Exclude
+    those review artifacts regardless of the publication switch or a changed
+    snapshot root. User source files and other generators remain compiler
+    inputs even when MorphantGitSnapshotPath is misconfigured.
+  -->
+  <ItemGroup>
+    <Compile Remove="$(MSBuildProjectDirectory)/**/Morphant.Generated.*.g.cs" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true'">
+    <!-- Global properties cannot be overwritten. The task validates that the
+         effective values below exactly match this private staging contract. -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(_MorphantExpectedCompilerGeneratedFilesOutputPath)</CompilerGeneratedFilesOutputPath>
+    <_MorphantExistingTargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation)</_MorphantExistingTargetsTriggeredByCompilation>
     <TargetsTriggeredByCompilation
         Condition="'$(_MorphantExistingTargetsTriggeredByCompilation)' == ''">PublishMorphantGitSnapshot</TargetsTriggeredByCompilation>
     <TargetsTriggeredByCompilation
         Condition="'$(_MorphantExistingTargetsTriggeredByCompilation)' != ''">$(_MorphantExistingTargetsTriggeredByCompilation);PublishMorphantGitSnapshot</TargetsTriggeredByCompilation>
   </PropertyGroup>
 
-  <!--
-    Checked-in snapshots are review artifacts, not compiler inputs. Remove the
-    whole snapshot root so every target-framework slice is excluded.
-  -->
+  <!-- Persisted output items let Rider/Visual Studio fast up-to-date checks
+       notice missing snapshot files before deciding to skip MSBuild. -->
+  <Import Project="$(_MorphantGitSnapshotOutputsProject)"
+          Condition="'$(MorphantGitSnapshot)' == 'true' and
+                     '$(IntermediateOutputPath)' != '' and
+                     Exists('$(_MorphantGitSnapshotOutputsProject)')" />
+
   <ItemGroup Condition="'$(MorphantGitSnapshot)' == 'true'">
-    <Compile Remove="$(MorphantGitSnapshotPath)/**/*.cs" />
+    <CustomAdditionalCompileInputs
+        Include="$(_MorphantGitSnapshotForceCompileStamp)" />
     <CustomAdditionalCompileOutputs
-        Include="$(_MorphantGitSnapshotManifest)" />
-    <UpToDateCheckOutput Include="$(_MorphantGitSnapshotManifest)" />
+        Include="$(_MorphantGitSnapshotTrustedManifest)" />
+    <CustomAdditionalCompileOutputs
+        Include="$(_MorphantGitSnapshotOutputsProject)" />
+    <UpToDateCheckOutput
+        Include="$(_MorphantGitSnapshotTrustedManifest)" />
+    <UpToDateCheckOutput
+        Include="$(_MorphantGitSnapshotOutputsProject)" />
   </ItemGroup>
 
   <Target Name="ValidateMorphantGitSnapshotConfiguration"
@@ -56,98 +73,114 @@
                       '$(MorphantGitSnapshot)' != 'false'"
            Text="MorphantGitSnapshot must be true or false." />
     <Error Condition="'$(MorphantGitSnapshot)' == 'true' and
-                      '$(MorphantGitSnapshotPath)' == ''"
-           Text="MorphantGitSnapshotPath must not be empty when MorphantGitSnapshot is enabled." />
-    <Error Condition="'$(MorphantGitSnapshot)' == 'true' and
                       '$(MorphantCleanCompilerGeneratedFiles)' != 'true' and
                       '$(MorphantCleanCompilerGeneratedFiles)' != 'false'"
            Text="MorphantCleanCompilerGeneratedFiles must be true or false." />
+    <ValidateMorphantGitSnapshot
+        Condition="'$(MorphantGitSnapshot)' == 'true'"
+        ProjectFile="$(MSBuildProjectFullPath)"
+        ProjectDirectory="$(MSBuildProjectDirectory)"
+        SnapshotRoot="$(MorphantGitSnapshotPath)"
+        TargetFramework="$(TargetFramework)"
+        TargetFrameworks="$(TargetFrameworks)"
+        BaseIntermediateOutputPath="$(BaseIntermediateOutputPath)"
+        IntermediateOutputPath="$(IntermediateOutputPath)"
+        CompilerGeneratedFilesOutputPath="$(CompilerGeneratedFilesOutputPath)"
+        EmitCompilerGeneratedFiles="$(EmitCompilerGeneratedFiles)"
+        TargetsTriggeredByCompilation="$(TargetsTriggeredByCompilation)" />
   </Target>
 
   <!--
-    Roslyn overwrites current generated files but never removes hints that
-    disappeared. Clean only Morphant-owned hint files in the private staging
-    directory. Doing this before a skipped compile is safe: the committed
-    snapshot remains intact and a later real compile regenerates staging.
-
-    The previous manifest is also projected into CoreCompile outputs. A
-    missing snapshot file therefore invalidates CoreCompile and self-heals on
-    the next build, without duplicating Roslyn's version-specific input list.
+    Validate every path and global-property boundary before deleting private
+    compiler output. A missing, edited, or malformed source manifest is never
+    trusted for cleanup: the task touches a private input and forces CoreCompile.
   -->
   <Target Name="PrepareMorphantGitSnapshot"
           BeforeTargets="CoreCompile"
+          DependsOnTargets="ValidateMorphantGitSnapshotConfiguration"
           Condition="'$(MorphantGitSnapshot)' == 'true' and
                      '$(DesignTimeBuild)' != 'true' and
                      '$(SkipCompilerExecution)' != 'true' and
                      '$(BuildingProject)' != 'false'">
-    <ReadLinesFromFile File="$(_MorphantGitSnapshotManifest)"
-                       Condition="Exists('$(_MorphantGitSnapshotManifest)')">
-      <Output TaskParameter="Lines"
-              ItemName="_MorphantPreviousSnapshotName" />
-    </ReadLinesFromFile>
+    <PrepareMorphantGitSnapshot
+        ProjectFile="$(MSBuildProjectFullPath)"
+        ProjectDirectory="$(MSBuildProjectDirectory)"
+        SnapshotRoot="$(MorphantGitSnapshotPath)"
+        TargetFramework="$(TargetFramework)"
+        TargetFrameworks="$(TargetFrameworks)"
+        BaseIntermediateOutputPath="$(BaseIntermediateOutputPath)"
+        IntermediateOutputPath="$(IntermediateOutputPath)"
+        CompilerGeneratedFilesOutputPath="$(CompilerGeneratedFilesOutputPath)"
+        EmitCompilerGeneratedFiles="$(EmitCompilerGeneratedFiles)"
+        Clean="$(MorphantCleanCompilerGeneratedFiles)">
+      <Output TaskParameter="SnapshotFiles"
+              ItemName="_MorphantValidatedSnapshotFile" />
+      <Output TaskParameter="SnapshotManifest"
+              PropertyName="_MorphantValidatedSnapshotManifest" />
+      <Output TaskParameter="ForceCompileStamp"
+              PropertyName="_MorphantValidatedForceCompileStamp" />
+      <Output TaskParameter="ForcedCompilation"
+              PropertyName="_MorphantForcedCompilation" />
+    </PrepareMorphantGitSnapshot>
 
     <ItemGroup>
+      <CustomAdditionalCompileInputs
+          Include="$(_MorphantValidatedForceCompileStamp)" />
       <CustomAdditionalCompileOutputs
-          Include="@(_MorphantPreviousSnapshotName->'$(_MorphantGitSnapshotTargetPath)/%(Identity)')" />
-      <_MorphantStaleCompilerGeneratedFile
-          Include="$(CompilerGeneratedFilesOutputPath)/**/Morphant.Generated.*.g.cs" />
+          Include="@(_MorphantValidatedSnapshotFile)" />
+      <CustomAdditionalCompileOutputs
+          Include="$(_MorphantValidatedSnapshotManifest)"
+          Condition="'$(_MorphantValidatedSnapshotManifest)' != ''" />
+      <!-- A deliberately absent output makes CoreCompile run even on file
+           systems whose timestamp resolution is too coarse for a touch. -->
+      <CustomAdditionalCompileOutputs
+          Include="$(_MorphantValidatedForceCompileStamp).required"
+          Condition="'$(_MorphantForcedCompilation)' == 'true'" />
+      <UpToDateCheckOutput
+          Include="@(_MorphantValidatedSnapshotFile)" />
     </ItemGroup>
-
-    <Delete Files="@(_MorphantStaleCompilerGeneratedFile)" />
   </Target>
 
+  <!-- TargetsTriggeredByCompilation invokes this only after a successful Csc
+       task. Publication stages a complete slice and rolls back every replaced
+       file/directory if any later publication step fails. -->
   <Target Name="PublishMorphantGitSnapshot"
           Condition="'$(MorphantGitSnapshot)' == 'true' and
                      '$(DesignTimeBuild)' != 'true' and
                      '$(SkipCompilerExecution)' != 'true' and
                      '$(BuildingProject)' != 'false'">
-    <ItemGroup>
-      <_MorphantCurrentCompilerGeneratedFile
-          Include="$(CompilerGeneratedFilesOutputPath)/**/Morphant.Generated.*.g.cs" />
-      <_MorphantCurrentSnapshotFile
-          Include="@(_MorphantCurrentCompilerGeneratedFile->'$(_MorphantGitSnapshotTargetPath)/%(Filename)%(Extension)')" />
-      <_MorphantCurrentSnapshotName
-          Include="@(_MorphantCurrentCompilerGeneratedFile->'%(Filename)%(Extension)')" />
-    </ItemGroup>
-
-    <MakeDir Directories="$(_MorphantGitSnapshotTargetPath)" />
-    <Copy SourceFiles="@(_MorphantCurrentCompilerGeneratedFile)"
-          DestinationFiles="@(_MorphantCurrentSnapshotFile)"
-          SkipUnchangedFiles="true" />
-    <WriteLinesToFile File="$(_MorphantGitSnapshotManifest)"
-                      Lines="@(_MorphantCurrentSnapshotName)"
-                      Overwrite="true"
-                      Encoding="UTF-8" />
-    <Touch Files="@(_MorphantCurrentSnapshotFile);$(_MorphantGitSnapshotManifest)"
-           AlwaysCreate="true" />
+    <PublishMorphantGitSnapshot
+        ProjectFile="$(MSBuildProjectFullPath)"
+        ProjectDirectory="$(MSBuildProjectDirectory)"
+        SnapshotRoot="$(MorphantGitSnapshotPath)"
+        TargetFramework="$(TargetFramework)"
+        TargetFrameworks="$(TargetFrameworks)"
+        BaseIntermediateOutputPath="$(BaseIntermediateOutputPath)"
+        IntermediateOutputPath="$(IntermediateOutputPath)"
+        CompilerGeneratedFilesOutputPath="$(CompilerGeneratedFilesOutputPath)"
+        EmitCompilerGeneratedFiles="$(EmitCompilerGeneratedFiles)"
+        Clean="$(MorphantCleanCompilerGeneratedFiles)" />
   </Target>
 
-  <!--
-    Run even when CoreCompile is up to date. This makes the cleanup opt-out
-    reversible without requiring a source edit or a forced rebuild.
-  -->
-  <Target Name="CleanStaleMorphantGitSnapshotFiles"
+  <!-- Run even when CoreCompile is up to date. The root ownership index makes
+       removal of target-framework slices safe and project-specific. -->
+  <Target Name="CleanObsoleteMorphantGitSnapshotSlices"
           AfterTargets="CoreCompile"
           Condition="'$(MorphantGitSnapshot)' == 'true' and
                      '$(MorphantCleanCompilerGeneratedFiles)' == 'true' and
                      '$(DesignTimeBuild)' != 'true' and
                      '$(SkipCompilerExecution)' != 'true' and
-                     '$(BuildingProject)' != 'false' and
-                     Exists('$(_MorphantGitSnapshotManifest)')">
-    <ReadLinesFromFile File="$(_MorphantGitSnapshotManifest)">
-      <Output TaskParameter="Lines"
-              ItemName="_MorphantExpectedSnapshotName" />
-    </ReadLinesFromFile>
-
-    <ItemGroup>
-      <_MorphantExpectedSnapshotFile
-          Include="@(_MorphantExpectedSnapshotName->'$(_MorphantGitSnapshotTargetPath)/%(Identity)')" />
-      <_MorphantStaleSnapshotFile
-          Include="$(_MorphantGitSnapshotTargetPath)/Morphant.Generated.*.g.cs"
-          Exclude="@(_MorphantExpectedSnapshotFile)" />
-    </ItemGroup>
-
-    <Delete Files="@(_MorphantStaleSnapshotFile)" />
+                     '$(BuildingProject)' != 'false'">
+    <CleanMorphantGitSnapshot
+        ProjectFile="$(MSBuildProjectFullPath)"
+        ProjectDirectory="$(MSBuildProjectDirectory)"
+        SnapshotRoot="$(MorphantGitSnapshotPath)"
+        TargetFramework="$(TargetFramework)"
+        TargetFrameworks="$(TargetFrameworks)"
+        BaseIntermediateOutputPath="$(BaseIntermediateOutputPath)"
+        IntermediateOutputPath="$(IntermediateOutputPath)"
+        CompilerGeneratedFilesOutputPath="$(CompilerGeneratedFilesOutputPath)"
+        EmitCompilerGeneratedFiles="$(EmitCompilerGeneratedFiles)" />
   </Target>
 
 </Project>
