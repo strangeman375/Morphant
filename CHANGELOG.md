@@ -6,6 +6,12 @@ documented breaking changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Remove stale on-disk Morphant generated files before a real compiler run
+  when mappings disappear, without touching other generators or no-op and
+  design-time builds.
+
 ## [0.1.0]
 
 Initial stable release.

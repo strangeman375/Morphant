@@ -203,7 +203,7 @@
     `-p:MorphantRoslynVersion=4.9.2`.
   - Действие: выполнить Release `dotnet test` проекта
     `Morphant.Generator.UnitTests` с Roslyn 4.9.2.
-  - Ожидаемый результат: 544 теста passed, failed нет, skipped нет; в том
+  - Ожидаемый результат: 545 тестов passed, failed нет, skipped нет; в том
     числе выполняется тест collection expressions.
 
 - [ ] **BUILD-03 — Финальный restore возвращён на Roslyn 4.4.0**
@@ -226,7 +226,7 @@
   - Исходное состояние: финальные Release outputs из BUILD-04.
   - Действие: выполнить unit-test project с `--no-build --no-restore` и
     `MorphantRoslynVersion=4.4.0`.
-  - Ожидаемый результат: 543 passed, 1 skipped, 0 failed. Единственный skip —
+  - Ожидаемый результат: 544 passed, 1 skipped, 0 failed. Единственный skip —
     collection-expression test с явной причиной «требуется Roslyn 4.8+».
 
 - [ ] **BUILD-06 — Интеграционные тесты проходят полностью**
@@ -269,7 +269,7 @@
     `LICENSE`, `README.md`, `logo.png`, `lib/netstandard2.0/Morphant.dll`,
     `lib/netstandard2.0/Morphant.xml`,
     `analyzers/dotnet/cs/Morphant.Generator.dll` и
-    `buildTransitive/Morphant.props`.
+    `buildTransitive/Morphant.props`, `buildTransitive/Morphant.targets`.
 
 - [ ] **PKG-03 — В package нет лишних файлов**
   - Исходное состояние: распакованный `.nupkg`.
@@ -316,13 +316,17 @@
   - Ожидаемый результат: три пары файлов идентичны; package не содержит
     устаревшую копию README, лицензии или логотипа.
 
-- [ ] **PKG-09 — buildTransitive содержит весь settings contract**
-  - Исходное состояние: `buildTransitive/Morphant.props` из PACKAGE.
-  - Действие: проверить список `CompilerVisibleProperty`.
+- [ ] **PKG-09 — buildTransitive содержит settings и generated cleanup**
+  - Исходное состояние: `buildTransitive/Morphant.props` и
+    `buildTransitive/Morphant.targets` из PACKAGE.
+  - Действие: проверить список `CompilerVisibleProperty` и target очистки
+    Morphant generated output.
   - Ожидаемый результат: ровно шесть properties:
     `MorphantMappingMode`, `MorphantNullSourceHandling`,
     `MorphantNullDestinationHandling`, `MorphantConstructorSelection`,
-    `MorphantMemberSelection`, `MorphantUnmappedMemberValidation`.
+    `MorphantMemberSelection`, `MorphantUnmappedMemberValidation`; cleanup
+    ограничен каталогом `Morphant.Generator`, пропускает design-time/no-op
+    builds и допускает opt-out через `MorphantCleanCompilerGeneratedFiles`.
 
 - [ ] **PKG-10 — Runtime XML documentation поставляется**
   - Исходное состояние: runtime DLL и XML из PACKAGE.
@@ -417,10 +421,12 @@
 - [ ] **USE-04 — EmitCompilerGeneratedFiles работает по инструкции**
   - Исходное состояние: в C9 добавлены properties и `Compile Remove` из
     `docs/generated-code.md`.
-  - Действие: clean build и просмотр указанной generated directory.
+  - Действие: build, добавить вторую mapping pair, build, удалить эту pair и
+    снова build без `clean`; просмотреть указанную generated directory.
   - Ожидаемый результат: появились только Morphant generated `.g.cs` files;
     они не компилируются второй раз, не вызывают duplicate symbol errors и
-    обновляются после mapping changes.
+    обновляются после mapping changes; файлы удалённой pair исчезают, output
+    других generators не удаляется.
 
 - [ ] **USE-05 — Удаление package не оставляет скрытой зависимости**
   - Исходное состояние: успешно собранный C9 с незафиксированными generated
@@ -965,11 +971,15 @@ diagnostic, но не делает invalid configuration работоспосо�
 
 - [ ] **INC-03 — Изменение mapper configuration актуализирует только нужное**
   - Исходное состояние: consumer имеет два независимых mappers/pairs.
-  - Действие: изменить `Members`/`Construct` только первой pair и rebuild без
-    перезапуска Rider.
+  - Действие: по очереди добавить и удалить `Members`, `ConstructUsing` и
+    `Convert` у первой pair; затем добавить и удалить вторую pair. После
+    каждого шага сохранить файл и проверить live output в `Dependencies |
+    Source Generators` без перезапуска Rider; отдельно выполнить build для
+    проверки физического generated snapshot.
   - Ожидаемый результат: runtime behavior и generated content первой pair
-    обновляются; независимая pair остаётся байтово прежней; старое поведение не
-    сохраняется из кэша.
+    сразу обновляются и возвращаются к default после удаления настройки;
+    независимая pair остаётся байтово прежней; добавленные artifacts появляются,
+    удалённые исчезают; старое поведение не сохраняется из кэша.
 
 - [ ] **INC-04 — Изменение mapped type актуализирует surface и diagnostics**
   - Исходное состояние: valid convention mapping с сохранённым generated

@@ -1,0 +1,55 @@
+<Project>
+
+  <PropertyGroup>
+    <MorphantCleanCompilerGeneratedFiles
+        Condition="'$(MorphantCleanCompilerGeneratedFiles)' == ''">true</MorphantCleanCompilerGeneratedFiles>
+  </PropertyGroup>
+
+  <!--
+    Roslyn overwrites current /generatedfilesout entries but does not remove
+    files whose source-generator hints disappeared. Clean only Morphant's
+    assembly-owned directory immediately before an actual compiler run. This
+    target deliberately mirrors CoreCompile's incremental inputs and outputs,
+    so it is skipped when compilation is up to date. Design-time builds are
+    excluded as well.
+  -->
+  <Target Name="CleanStaleMorphantCompilerGeneratedFiles"
+          BeforeTargets="CreateCompilerGeneratedFilesOutputPath"
+          Inputs="$(MSBuildAllProjects);
+                  @(Compile);
+                  @(_CoreCompileResourceInputs);
+                  $(ApplicationIcon);
+                  $(KeyOriginatorFile);
+                  @(ReferencePathWithRefAssemblies);
+                  @(CompiledLicenseFile);
+                  @(LinkResource);
+                  @(EmbeddedDocumentation);
+                  $(Win32Resource);
+                  $(Win32Manifest);
+                  @(CustomAdditionalCompileInputs);
+                  $(ResolvedCodeAnalysisRuleSet);
+                  @(AdditionalFiles);
+                  @(EmbeddedFiles);
+                  @(Analyzer);
+                  @(EditorConfigFiles);
+                  $(SourceLink)"
+          Outputs="@(DocFileItem);
+                   @(IntermediateAssembly);
+                   @(IntermediateRefAssembly);
+                   @(_DebugSymbolsIntermediatePath);
+                   $(NonExistentFile);
+                   @(CustomAdditionalCompileOutputs)"
+          Condition="'$(MorphantCleanCompilerGeneratedFiles)' == 'true' and
+                     '$(EmitCompilerGeneratedFiles)' == 'true' and
+                     '$(CompilerGeneratedFilesOutputPath)' != '' and
+                     '$(DesignTimeBuild)' != 'true' and
+                     '$(BuildingProject)' == 'true'">
+    <PropertyGroup>
+      <_MorphantDir>$(CompilerGeneratedFilesOutputPath)/Morphant.Generator</_MorphantDir>
+    </PropertyGroup>
+
+    <RemoveDir Directories="$(_MorphantDir)"
+               Condition="Exists('$(_MorphantDir)')" />
+  </Target>
+
+</Project>

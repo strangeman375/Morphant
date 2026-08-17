@@ -61,6 +61,11 @@
               Pack="true"
               PackagePath="buildTransitive\Morphant.props"
               Visible="false" />
+
+        <None Include="build\Morphant.targets"
+              Pack="true"
+              PackagePath="buildTransitive\Morphant.targets"
+              Visible="false" />
     </ItemGroup>
 
 </Project>

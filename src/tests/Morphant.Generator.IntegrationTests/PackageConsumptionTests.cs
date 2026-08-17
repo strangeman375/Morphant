@@ -11,7 +11,7 @@ namespace Morphant.Generator.IntegrationTests;
 internal sealed class PackageConsumptionTests
 {
     [Test]
-    public async Task Packs_complete_assets_and_imports_buildTransitive_settings()
+    public async Task Packs_complete_assets_and_applies_buildTransitive_contract()
     {
         var repositoryRoot = IntegrationTestEnvironment.RepositoryRoot;
         var testDirectory = Path.Combine(
@@ -23,6 +23,7 @@ internal sealed class PackageConsumptionTests
             Path.DirectorySeparatorChar;
         var consumerIntermediate = Path.Combine(testDirectory, "obj") +
             Path.DirectorySeparatorChar;
+        var consumerGenerated = Path.Combine(testDirectory, "generated");
         var packageVersion =
             $"0.0.0-package-consumption.{Guid.NewGuid():N}";
         var configuration = IntegrationTestEnvironment.BuildConfiguration;
@@ -56,26 +57,86 @@ internal sealed class PackageConsumptionTests
                 packageFeed,
                 packageVersion);
 
+            var morphantGeneratedDirectory = Path.Combine(
+                consumerGenerated,
+                "Morphant.Generator",
+                "Morphant.Generator.MorphantGenerator");
+            var staleMorphantFile = Path.Combine(
+                morphantGeneratedDirectory,
+                "Morphant.Generated.Removed.g.cs");
+            var unrelatedGeneratedFile = Path.Combine(
+                consumerGenerated,
+                "Other.Generator",
+                "OtherGenerator",
+                "Unrelated.g.cs");
+
+            Directory.CreateDirectory(morphantGeneratedDirectory);
+            Directory.CreateDirectory(Path.GetDirectoryName(
+                unrelatedGeneratedFile)!);
+            await File.WriteAllTextAsync(
+                staleMorphantFile,
+                "// stale Morphant output");
+            await File.WriteAllTextAsync(
+                unrelatedGeneratedFile,
+                "// unrelated generator output");
+
+            string[] consumerArguments =
+            [
+                "run",
+                "--project",
+                Path.Combine(
+                    repositoryRoot,
+                    "src",
+                    "tests",
+                    "Morphant.Generator.PackageTests.Consumer",
+                    "Morphant.Generator.PackageTests.Consumer.csproj"),
+                "--configuration",
+                configuration,
+                $"-p:MorphantTestPackageVersion={packageVersion}",
+                $"-p:RestoreSources={packageFeed}",
+                $"-p:BaseOutputPath={consumerOutput}",
+                $"-p:BaseIntermediateOutputPath={consumerIntermediate}",
+                "-p:EmitCompilerGeneratedFiles=true",
+                $"-p:CompilerGeneratedFilesOutputPath={consumerGenerated}",
+                "-p:NuGetAudit=false"
+            ];
             var run = await DotNetCli.Run(
                 repositoryRoot,
-                [
-                    "run",
-                    "--project",
-                    Path.Combine(
-                        repositoryRoot,
-                        "src",
-                        "tests",
-                        "Morphant.Generator.PackageTests.Consumer",
-                        "Morphant.Generator.PackageTests.Consumer.csproj"),
-                    "--configuration",
-                    configuration,
-                    $"-p:MorphantTestPackageVersion={packageVersion}",
-                    $"-p:RestoreSources={packageFeed}",
-                    $"-p:BaseOutputPath={consumerOutput}",
-                    $"-p:BaseIntermediateOutputPath={consumerIntermediate}",
-                    "-p:NuGetAudit=false"
-                ]);
+                consumerArguments);
             AssertSucceeded(run);
+
+            var currentMorphantFiles = Directory.GetFiles(
+                morphantGeneratedDirectory,
+                "Morphant.Generated.*.g.cs",
+                SearchOption.TopDirectoryOnly);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    File.Exists(staleMorphantFile),
+                    Is.False,
+                    "The package must remove stale Morphant generated " +
+                    "files before compilation.");
+                Assert.That(
+                    currentMorphantFiles,
+                    Is.Not.Empty,
+                    "The compiler must recreate current Morphant output.");
+                Assert.That(
+                    File.Exists(unrelatedGeneratedFile),
+                    Is.True,
+                    "Morphant cleanup must preserve other generators' " +
+                    "output.");
+            });
+
+            var noOpRun = await DotNetCli.Run(
+                repositoryRoot,
+                consumerArguments);
+            AssertSucceeded(noOpRun);
+
+            Assert.That(
+                currentMorphantFiles.All(File.Exists),
+                Is.True,
+                "An up-to-date build must preserve current generated files.");
         }
         finally
         {
@@ -138,6 +199,7 @@ internal sealed class PackageConsumptionTests
                 "README.md",
                 "analyzers/dotnet/cs/Morphant.Generator.dll",
                 "buildTransitive/Morphant.props",
+                "buildTransitive/Morphant.targets",
                 "lib/netstandard2.0/Morphant.dll",
                 "lib/netstandard2.0/Morphant.xml",
                 "logo.png"
