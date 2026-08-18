@@ -10,18 +10,26 @@ namespace Morphant.Generator.PackageTests.Consumer
     public sealed class Source
     {
         public int Value { get; init; }
+
+        public int ImplicitOnly { get; init; }
     }
 
     public sealed class Destination
     {
         public int Value { get; set; } = 41;
+
+        public int ImplicitOnly { get; set; } = 43;
     }
 
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<Source, Destination>();
+            builder.Map<Source, Destination>()
+                .Members((source, _) => new()
+                {
+                    Value = source.Value
+                });
     }
 
     internal static class Program
@@ -31,14 +39,17 @@ namespace Morphant.Generator.PackageTests.Consumer
             var mapper =
                 (ITypeMapper<Source, Destination>)new TestMapper();
             var result = mapper.Create(
-                new Source { Value = 17 },
+                new Source { Value = 17, ImplicitOnly = 73 },
                 default(MappingContext));
 
-            if (result.Value != 41)
+            if (result.Value != 17 ||
+                result.ImplicitOnly != 43 ||
+                typeof(Morphant.Generated.DestinationMembers).Name !=
+                "DestinationMembers")
             {
                 throw new InvalidOperationException(
-                    "MorphantMemberSelection was not visible to the " +
-                    "packaged generator.");
+                    "The generated Members API or packaged Explicit member " +
+                    "selection was not available to the consumer.");
             }
         }
     }

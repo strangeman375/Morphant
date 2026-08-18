@@ -28,4 +28,14 @@
                Text="The Morphant package did not import CompilerVisibleProperty entries: @(_MissingMorphantCompilerVisibleProperty)." />
     </Target>
 
+    <Target Name="VerifyMorphantDesignTimeGitSnapshotProperties"
+            BeforeTargets="CoreCompile"
+            Condition="'$(MorphantGitSnapshot)' == 'true' and
+                       '$(DesignTimeBuild)' == 'true'">
+        <Error Condition="'$(EmitCompilerGeneratedFiles)' != 'true'"
+               Text="The Morphant package did not keep source emission enabled for the design-time compiler command line." />
+        <Error Condition="'$(CompilerGeneratedFilesOutputPath)' != '$(_MorphantExpectedCompilerGeneratedFilesOutputPath)'"
+               Text="The Morphant package did not keep its private generated-files path in the design-time compiler command line." />
+    </Target>
+
 </Project>

@@ -72,9 +72,11 @@ treats as canonical, normally Release, and review the generated diff:
 dotnet build -c Release -t:Rebuild
 ```
 
-For a normal compilation, the package enables Roslyn's file emission into a
-validated private directory under `obj`. Design-time builds keep using the
-IDE's in-memory view. Only after `Csc` succeeds does a small MSBuild task copy
+The package keeps Roslyn's generated-file emission pointed at a validated
+private directory under `obj` for both normal and design-time compiler command
+lines. This keeps IDE source-generator documents discoverable; the IDE still
+uses its live compiler view, and design-time builds never publish or clean the
+Git snapshot. Only after a normal `Csc` succeeds does a small MSBuild task copy
 the selected Morphant files into the Git snapshot. It compares file contents,
 leaves identical files and timestamps untouched, removes stale or filtered-out
 Morphant files, and preserves unrelated files. Morphant files in removed

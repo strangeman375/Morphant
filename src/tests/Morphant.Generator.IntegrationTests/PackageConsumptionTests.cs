@@ -870,11 +870,15 @@ namespace Morphant.Generator.PackageTests.Consumer
     public sealed class Source
     {
         public int Value { get; init; }
+
+        public int ImplicitOnly { get; init; }
     }
 
     public sealed class Destination
     {
         public int Value { get; set; } = 41;
+
+        public int ImplicitOnly { get; set; } = 43;
     }
 
     public sealed class SecondSource
@@ -892,8 +896,16 @@ namespace Morphant.Generator.PackageTests.Consumer
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Source, Destination>();
-            builder.Map<SecondSource, SecondDestination>();
+            builder.Map<Source, Destination>()
+                .Members((source, _) => new()
+                {
+                    Value = source.Value
+                });
+            builder.Map<SecondSource, SecondDestination>()
+                .Members((source, _) => new()
+                {
+                    Value = source.Value
+                });
         }
     }
 
@@ -904,14 +916,18 @@ namespace Morphant.Generator.PackageTests.Consumer
             var mapper = new TestMapper();
             var primary =
                 ((ITypeMapper<Source, Destination>)mapper).Create(
-                    new Source { Value = 17 },
+                    new Source { Value = 17, ImplicitOnly = 73 },
                     default(MappingContext));
             var second =
                 ((ITypeMapper<SecondSource, SecondDestination>)mapper).Create(
                     new SecondSource { Value = 29 },
                     default(MappingContext));
 
-            if (primary.Value != 41 || second.Value != 59)
+            if (primary.Value != 17 ||
+                primary.ImplicitOnly != 43 ||
+                second.Value != 29 ||
+                typeof(Morphant.Generated.DestinationMembers).Name !=
+                "DestinationMembers")
             {
                 throw new InvalidOperationException(
                     "The packaged generator did not actualize both " +

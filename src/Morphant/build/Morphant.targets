@@ -24,14 +24,19 @@
     <Compile Remove="$(MSBuildProjectDirectory)/**/Morphant.Generated.*.g.cs" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true' and
-                            '$(DesignTimeBuild)' != 'true'">
+  <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true'">
     <!--
       Roslyn emits every source generator into one output root. Keep that root
-      under obj and publish only Morphant files after a successful Csc task.
+      under obj. Keep both properties in the design-time command line as well:
+      IDE project models use that command line to track source-generator
+      documents. Design-time builds still never prepare or publish a snapshot.
     -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(_MorphantExpectedCompilerGeneratedFilesOutputPath)</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true' and
+                            '$(DesignTimeBuild)' != 'true'">
     <_MorphantExistingTargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation)</_MorphantExistingTargetsTriggeredByCompilation>
     <TargetsTriggeredByCompilation
         Condition="'$(_MorphantExistingTargetsTriggeredByCompilation)' == ''">PublishMorphantGitSnapshot</TargetsTriggeredByCompilation>
