@@ -15,10 +15,9 @@ internal static class GitSnapshotLifecycle
             return;
         }
 
-        foreach (var file in Directory.GetFiles(
+        foreach (var file in CompilerGeneratedFiles(
                      context.CompilerGeneratedDirectory,
-                     GeneratedPattern,
-                     SearchOption.AllDirectories))
+                     GeneratedPattern))
         {
             File.Delete(file);
         }
@@ -29,18 +28,18 @@ internal static class GitSnapshotLifecycle
         context.EnsureSafeCompilerOutput();
         var currentFiles = FileSet(
             Directory.Exists(context.CompilerGeneratedDirectory)
-                ? Directory.GetFiles(
+                ? CompilerGeneratedFiles(
                     context.CompilerGeneratedDirectory,
                     context.SnapshotDetail == GitSnapshotDetail.Full
                         ? GeneratedPattern
-                        : MapperPattern,
-                    SearchOption.AllDirectories)
+                        : MapperPattern)
                 : []);
 
         using var snapshotLock = context.AcquireRootLock();
         context.EnsureSafeSnapshotPath(
             context.SliceDirectory,
             "Morphant snapshot slice");
+        var obsoleteSlices = ObsoleteSlices(context);
 
         var existingFiles = FileSet(
             Directory.Exists(context.SliceDirectory)
@@ -78,9 +77,47 @@ internal static class GitSnapshotLifecycle
             }
         }
 
-        CleanObsoleteSlices(context);
+        CleanObsoleteSlices(obsoleteSlices);
         DeleteIfEmpty(context.SliceDirectory);
         DeleteIfEmpty(context.SnapshotRoot);
+    }
+
+    private static IReadOnlyCollection<string> CompilerGeneratedFiles(
+        string root,
+        string pattern)
+    {
+        var files = new List<string>();
+        var pending = new Stack<string>();
+        pending.Push(root);
+
+        while (pending.Count > 0)
+        {
+            var directory = pending.Pop();
+
+            foreach (var child in Directory.GetDirectories(
+                         directory,
+                         "*",
+                         SearchOption.TopDirectoryOnly))
+            {
+                if ((File.GetAttributes(child) &
+                     FileAttributes.ReparsePoint) != 0)
+                {
+                    throw new SnapshotException(
+                        "MORPHANTMSB016",
+                        "CompilerGeneratedFilesOutputPath contains symbolic " +
+                        $"link or reparse point directory '{child}'.");
+                }
+
+                pending.Push(child);
+            }
+
+            files.AddRange(Directory.GetFiles(
+                directory,
+                pattern,
+                SearchOption.TopDirectoryOnly));
+        }
+
+        return files;
     }
 
     private static IReadOnlyDictionary<string, string> FileSet(
@@ -161,12 +198,15 @@ internal static class GitSnapshotLifecycle
         }
     }
 
-    private static void CleanObsoleteSlices(GitSnapshotContext context)
+    private static IReadOnlyCollection<string> ObsoleteSlices(
+        GitSnapshotContext context)
     {
         if (!Directory.Exists(context.SnapshotRoot))
         {
-            return;
+            return [];
         }
+
+        var result = new List<string>();
 
         foreach (var directory in Directory.GetDirectories(
                      context.SnapshotRoot,
@@ -182,6 +222,17 @@ internal static class GitSnapshotLifecycle
                 directory,
                 "obsolete Morphant snapshot slice");
 
+            result.Add(directory);
+        }
+
+        return result;
+    }
+
+    private static void CleanObsoleteSlices(
+        IEnumerable<string> obsoleteSlices)
+    {
+        foreach (var directory in obsoleteSlices)
+        {
             foreach (var file in Directory.GetFiles(
                          directory,
                          GeneratedPattern,

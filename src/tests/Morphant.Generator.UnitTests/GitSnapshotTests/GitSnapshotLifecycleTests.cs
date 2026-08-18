@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Text;
+using Microsoft.Build.Framework;
 using Morphant.Build.Tasks;
 
 namespace Morphant.Generator.UnitTests.GitSnapshotTests;
@@ -193,6 +195,154 @@ internal sealed class GitSnapshotLifecycleTests
         });
     }
 
+    [Test]
+    public void Prepare_rejects_nested_directory_links_before_deleting_files()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Ignore(
+                "Creating directory symbolic links is not generally " +
+                "available to Windows test runners.");
+        }
+
+        using var workspace = new SnapshotWorkspace();
+        var context = workspace.CreateContext("Release", "net10.0");
+        const string generated =
+            "Morphant.Generated.TypeMapper.Stale.g.cs";
+        var generatedPath = workspace.WriteCompilerOutput(
+            context,
+            generated,
+            "// stale\r\n");
+        var outsidePath = workspace.CreateCompilerOutputDirectoryLink(
+            context,
+            "Morphant.Generated.TypeMapper.Outside.g.cs",
+            "// outside\r\n");
+
+        var exception = Assert.Throws<SnapshotException>(() =>
+            GitSnapshotLifecycle.Prepare(context));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception!.Code, Is.EqualTo("MORPHANTMSB016"));
+            Assert.That(File.Exists(generatedPath), Is.True);
+            Assert.That(File.Exists(outsidePath), Is.True);
+        });
+    }
+
+    [Test]
+    public void Publish_preflights_obsolete_slice_links_before_mutation()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Ignore(
+                "Creating directory symbolic links is not generally " +
+                "available to Windows test runners.");
+        }
+
+        using var workspace = new SnapshotWorkspace();
+        var context = workspace.CreateContext("Release", "net10.0");
+        const string generated =
+            "Morphant.Generated.TypeMapper.Current.g.cs";
+        workspace.WriteCompilerOutput(context, generated, "// new\r\n");
+        var snapshotPath = workspace.WriteSnapshot(
+            context,
+            generated,
+            "// previous\r\n");
+        workspace.CreateObsoleteSliceDirectoryLink("net8.0");
+
+        var exception = Assert.Throws<SnapshotException>(() =>
+            GitSnapshotLifecycle.Publish(context));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exception!.Code, Is.EqualTo("MORPHANTMSB016"));
+            Assert.That(
+                File.ReadAllText(snapshotPath),
+                Is.EqualTo("// previous\r\n"));
+        });
+    }
+
+    [Test]
+    public void Path_overlap_validation_uses_platform_case_rules()
+    {
+        using var workspace = new SnapshotWorkspace();
+
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
+        {
+            var exception = Assert.Throws<SnapshotException>(() =>
+                workspace.CreateCaseAliasedIntermediateContext());
+
+            Assert.That(exception!.Code, Is.EqualTo("MORPHANTMSB003"));
+        }
+        else
+        {
+            Assert.That(
+                workspace.CreateCaseAliasedIntermediateContext,
+                Throws.Nothing);
+        }
+    }
+
+    [Test]
+    public void Msbuild_task_executes_prepare_operation()
+    {
+        using var workspace = new SnapshotWorkspace();
+        var context = workspace.CreateContext("Release", "net10.0");
+        var generatedPath = workspace.WriteCompilerOutput(
+            context,
+            "Morphant.Generated.TypeMapper.Stale.g.cs",
+            "// stale\r\n");
+        var buildEngine = new RecordingBuildEngine();
+        var task = workspace.CreateTask("Prepare", buildEngine);
+
+        var succeeded = task.Execute();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(succeeded, Is.True);
+            Assert.That(buildEngine.Errors, Is.Empty);
+            Assert.That(File.Exists(generatedPath), Is.False);
+        });
+    }
+
+    [Test]
+    public void Msbuild_task_reports_missing_publication_target()
+    {
+        using var workspace = new SnapshotWorkspace();
+        var buildEngine = new RecordingBuildEngine();
+        var task = workspace.CreateTask(
+            "Prepare",
+            buildEngine,
+            targetsTriggeredByCompilation: "ForeignTarget");
+
+        var succeeded = task.Execute();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(succeeded, Is.False);
+            Assert.That(
+                buildEngine.Errors.Select(static error => error.Code),
+                Is.EqualTo(new[] { "MORPHANTMSB017" }));
+        });
+    }
+
+    [Test]
+    public void Msbuild_task_reports_unknown_operation()
+    {
+        using var workspace = new SnapshotWorkspace();
+        var buildEngine = new RecordingBuildEngine();
+        var task = workspace.CreateTask("Unknown", buildEngine);
+
+        var succeeded = task.Execute();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(succeeded, Is.False);
+            Assert.That(
+                buildEngine.Errors.Select(static error => error.Code),
+                Is.EqualTo(new[] { "MORPHANTMSB001" }));
+        });
+    }
+
     private static string[] SnapshotFileNames(GitSnapshotContext context) =>
         Directory.GetFiles(
                 context.SliceDirectory,
@@ -246,22 +396,104 @@ internal sealed class GitSnapshotLifecycleTests
                 "true");
         }
 
-        public void WriteCompilerOutput(
+        public string WriteCompilerOutput(
             GitSnapshotContext context,
             string fileName,
-            string contents) => Write(
-            Path.Combine(
+            string contents)
+        {
+            var path = Path.Combine(
                 context.CompilerGeneratedDirectory,
                 "Morphant.Generator",
-                fileName),
-            contents);
+                fileName);
+            Write(path, contents);
+            return path;
+        }
 
-        public void WriteSnapshot(
+        public string WriteSnapshot(
             GitSnapshotContext context,
             string fileName,
-            string contents) => Write(
-            Path.Combine(context.SliceDirectory, fileName),
-            contents);
+            string contents)
+        {
+            var path = Path.Combine(context.SliceDirectory, fileName);
+            Write(path, contents);
+            return path;
+        }
+
+        public string CreateCompilerOutputDirectoryLink(
+            GitSnapshotContext context,
+            string fileName,
+            string contents)
+        {
+            var outsideDirectory = Path.Combine(Root, "outside-compiler");
+            var outsidePath = Path.Combine(outsideDirectory, fileName);
+            Write(outsidePath, contents);
+            Directory.CreateDirectory(context.CompilerGeneratedDirectory);
+            Directory.CreateSymbolicLink(
+                Path.Combine(context.CompilerGeneratedDirectory, "linked"),
+                outsideDirectory);
+            return outsidePath;
+        }
+
+        public void CreateObsoleteSliceDirectoryLink(string targetFramework)
+        {
+            var outsideDirectory = Path.Combine(Root, "outside-snapshot");
+            Directory.CreateDirectory(outsideDirectory);
+            Directory.CreateDirectory(SnapshotRoot);
+            Directory.CreateSymbolicLink(
+                Path.Combine(SnapshotRoot, targetFramework),
+                outsideDirectory);
+        }
+
+        public GitSnapshotContext CreateCaseAliasedIntermediateContext()
+        {
+            var baseIntermediate = Path.Combine(
+                ProjectDirectory,
+                "generated");
+            var intermediate = Path.Combine(
+                baseIntermediate,
+                "Release",
+                "net10.0");
+            return GitSnapshotContext.Create(
+                ProjectDirectory,
+                SnapshotRoot,
+                "Mappers",
+                "net10.0",
+                string.Empty,
+                baseIntermediate,
+                intermediate,
+                Path.Combine(intermediate, "Morphant.CompilerGenerated"),
+                "true");
+        }
+
+        public ManageMorphantGitSnapshot CreateTask(
+            string operation,
+            IBuildEngine buildEngine,
+            string targetsTriggeredByCompilation =
+                "PublishMorphantGitSnapshot")
+        {
+            var intermediate = Path.Combine(
+                BaseIntermediate,
+                "Release",
+                "net10.0");
+            return new ManageMorphantGitSnapshot
+            {
+                BuildEngine = buildEngine,
+                Operation = operation,
+                ProjectDirectory = ProjectDirectory,
+                SnapshotRoot = SnapshotRoot,
+                SnapshotDetail = "Mappers",
+                TargetFramework = "net10.0",
+                TargetFrameworks = string.Empty,
+                BaseIntermediateOutputPath = BaseIntermediate,
+                IntermediateOutputPath = intermediate,
+                CompilerGeneratedFilesOutputPath = Path.Combine(
+                    intermediate,
+                    "Morphant.CompilerGenerated"),
+                EmitCompilerGeneratedFiles = "true",
+                TargetsTriggeredByCompilation =
+                    targetsTriggeredByCompilation
+            };
+        }
 
         public void Dispose()
         {
@@ -276,5 +508,38 @@ internal sealed class GitSnapshotLifecycleTests
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, contents, new UTF8Encoding(false));
         }
+    }
+
+    private sealed class RecordingBuildEngine : IBuildEngine
+    {
+        public List<BuildErrorEventArgs> Errors { get; } = [];
+
+        public bool ContinueOnError => false;
+
+        public int LineNumberOfTaskNode => 0;
+
+        public int ColumnNumberOfTaskNode => 0;
+
+        public string ProjectFileOfTaskNode => "GitSnapshotTests.proj";
+
+        public void LogErrorEvent(BuildErrorEventArgs e) => Errors.Add(e);
+
+        public void LogWarningEvent(BuildWarningEventArgs e)
+        {
+        }
+
+        public void LogMessageEvent(BuildMessageEventArgs e)
+        {
+        }
+
+        public void LogCustomEvent(CustomBuildEventArgs e)
+        {
+        }
+
+        public bool BuildProjectFile(
+            string projectFileName,
+            string[] targetNames,
+            IDictionary globalProperties,
+            IDictionary targetOutputs) => throw new NotSupportedException();
     }
 }

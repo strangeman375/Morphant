@@ -23,6 +23,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Reference Include="Microsoft.Build.Framework">
+            <HintPath>$(MSBuildBinPath)/Microsoft.Build.Framework.dll</HintPath>
+            <Private>true</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
         <EmbeddedResource Include="CompatibilityDiagnosticsTests/Fixtures/*.txt">
             <WithCulture>false</WithCulture>
         </EmbeddedResource>

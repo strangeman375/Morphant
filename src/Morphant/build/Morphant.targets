@@ -24,7 +24,8 @@
     <Compile Remove="$(MSBuildProjectDirectory)/**/Morphant.Generated.*.g.cs" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true'">
+  <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true' and
+                            '$(DesignTimeBuild)' != 'true'">
     <!--
       Roslyn emits every source generator into one output root. Keep that root
       under obj and publish only Morphant files after a successful Csc task.

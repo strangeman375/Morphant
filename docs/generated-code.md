@@ -72,9 +72,10 @@ treats as canonical, normally Release, and review the generated diff:
 dotnet build -c Release -t:Rebuild
 ```
 
-The package enables Roslyn's file emission into a validated private directory
-under `obj`. Only after `Csc` succeeds does a small MSBuild task copy the
-selected Morphant files into the Git snapshot. It compares file contents,
+For a normal compilation, the package enables Roslyn's file emission into a
+validated private directory under `obj`. Design-time builds keep using the
+IDE's in-memory view. Only after `Csc` succeeds does a small MSBuild task copy
+the selected Morphant files into the Git snapshot. It compares file contents,
 leaves identical files and timestamps untouched, removes stale or filtered-out
 Morphant files, and preserves unrelated files. Morphant files in removed
 target-framework slices are cleaned on the next successful compilation. Debug,
@@ -99,6 +100,16 @@ Do not edit generated files directly. Change the mapping configuration or
 mapped types, rebuild, and commit both the source change and the complete
 snapshot. Generated `.g.cs` files retain Roslyn's UTF-8 encoding and Morphant's
 deterministic CRLF line endings.
+
+Keep those bytes stable after Git checkout by adding this rule to the consumer
+repository's `.gitattributes`:
+
+```gitattributes
+**/Morphant.Generated.*.g.cs text eol=crlf
+```
+
+Without the rule, a repository-wide LF policy can make an otherwise unchanged
+snapshot get rewritten during each real compilation.
 
 Changing `MorphantGitSnapshotPath` does not delete the old committed root.
 Reserved Morphant files there remain excluded from compilation, so the build

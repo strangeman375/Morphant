@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -197,7 +198,7 @@ internal sealed class GitSnapshotContext
         Directory.CreateDirectory(lockRoot);
 
         using var sha = SHA256.Create();
-        var identity = Path.DirectorySeparatorChar == '\\'
+        var identity = UsesCaseInsensitivePaths
             ? SnapshotRoot.ToUpperInvariant()
             : SnapshotRoot;
         var key = string.Concat(
@@ -372,8 +373,12 @@ internal sealed class GitSnapshotContext
             .Replace('/', Path.DirectorySeparatorChar);
     }
 
+    private static bool UsesCaseInsensitivePaths =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ||
+        RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
     private static StringComparison PathComparison =>
-        Path.DirectorySeparatorChar == '\\'
+        UsesCaseInsensitivePaths
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
 }
