@@ -17,7 +17,7 @@
 
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>mapper;mapping;object-mapper;object-mapping;source-generator;code-generation;compile-time;roslyn;csharp</PackageTags>
-        <PackageReleaseNotes>Initial stable 0.1 release with compile-time Create and Update mappings, explicit configuration, nested mappings, inheritance, diagnostics, and MSBuild settings. Release notes: https://github.com/strangeman375/Morphant/blob/v0.1.0/CHANGELOG.md#010. Current limitations: https://github.com/strangeman375/Morphant/blob/v0.1.0/docs/limitations.md</PackageReleaseNotes>
+        <PackageReleaseNotes>Adds opt-in Git snapshots for generated mappers, configurable snapshot detail and target frameworks, and reliable snapshot updates after successful builds. Release notes: https://github.com/strangeman375/Morphant/blob/v0.2.0/CHANGELOG.md#020. Current limitations: https://github.com/strangeman375/Morphant/blob/v0.2.0/docs/limitations.md</PackageReleaseNotes>
 
         <PackageIcon>logo.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>

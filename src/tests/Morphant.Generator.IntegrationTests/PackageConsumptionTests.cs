@@ -1043,6 +1043,13 @@ namespace Morphant.Generator.PackageTests.Consumer
         string packageVersion)
     {
         const string expectedPublicKeyToken = "ba27fb6be8f80649";
+        var productVersion = XDocument.Load(Path.Combine(
+                repositoryRoot,
+                "src",
+                "Morphant.Product.props"))
+            .Descendants("Version")
+            .Single()
+            .Value;
         var packagePath = Path.Combine(
             packageFeed,
             $"Morphant.{packageVersion}.nupkg");
@@ -1053,7 +1060,10 @@ namespace Morphant.Generator.PackageTests.Consumer
         {
             AssertPackagePayload(package);
             AssertPackagedRepositoryFiles(package, repositoryRoot);
-            AssertPackageMetadata(package, packageVersion);
+            AssertPackageMetadata(
+                package,
+                packageVersion,
+                productVersion);
             AssertBuildTransitiveProperties(package);
             AssertStrongName(
                 package,
@@ -1124,7 +1134,8 @@ namespace Morphant.Generator.PackageTests.Consumer
 
     private static void AssertPackageMetadata(
         ZipArchive package,
-        string packageVersion)
+        string packageVersion,
+        string productVersion)
     {
         var expectedCopyright = "Copyright (c) strangeman375 " +
             DateTime.UtcNow.ToString("yyyy", CultureInfo.InvariantCulture);
@@ -1154,7 +1165,12 @@ namespace Morphant.Generator.PackageTests.Consumer
                 Value("projectUrl"),
                 Is.EqualTo("https://github.com/strangeman375/Morphant"));
             Assert.That(Value("description"), Is.Not.Empty);
-            Assert.That(Value("releaseNotes"), Does.Contain("0.1"));
+            Assert.That(
+                Value("releaseNotes"),
+                Does.Contain($"blob/v{productVersion}/CHANGELOG.md"));
+            Assert.That(
+                Value("releaseNotes"),
+                Does.Contain($"blob/v{productVersion}/docs/limitations.md"));
             Assert.That(
                 Value("copyright"),
                 Is.EqualTo(expectedCopyright));

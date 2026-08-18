@@ -6,17 +6,17 @@ documented breaking changes.
 
 ## [Unreleased]
 
+## [0.2.0]
+
 ### Added
 
-- Add a supported, opt-in Git snapshot lifecycle through
-  `MorphantGitSnapshot`, with one shared Debug/Release snapshot per target
-  framework, unconditional compiler exclusion of owned files, validated private
-  staging, early compiler exclusion and IDE-compatible design-time emission,
-  post-compile content-aware synchronization, parallel publication locking, and
-  stale-file cleanup without manifests or persistent build state. Snapshots
-  contain mapper implementations by default; set
-  `MorphantGitSnapshotDetail` to `Full` to include generated configuration API
-  and template types.
+- Add opt-in Git snapshots of generated mapper implementations with
+  `MorphantGitSnapshot`. Snapshots update after successful builds, preserve the
+  last successful output after failed builds, and are excluded from
+  compilation.
+- Add settings for snapshot detail, location, and target frameworks. Mapper
+  implementations are saved by default; multi-target projects save only the
+  last declared target framework unless configured otherwise.
 
 ## [0.1.0]
 
@@ -39,5 +39,6 @@ Initial stable release.
 See [current limitations](docs/limitations.md) for functionality outside the
 0.1 release.
 
-[Unreleased]: https://github.com/strangeman375/Morphant/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/strangeman375/Morphant/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/strangeman375/Morphant/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/strangeman375/Morphant/releases/tag/v0.1.0
