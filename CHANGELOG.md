@@ -11,10 +11,10 @@ documented breaking changes.
 - Add a supported, opt-in Git snapshot lifecycle through
   `MorphantGitSnapshot`, with one shared Debug/Release snapshot per target
   framework, unconditional compiler exclusion of owned files, validated private
-  staging, IDE-compatible design-time emission, post-compile content-aware
-  synchronization, parallel publication locking, and stale-file cleanup without
-  manifests or persistent build state. Snapshots contain mapper implementations
-  by default; set
+  staging, early compiler exclusion and IDE-compatible design-time emission,
+  post-compile content-aware synchronization, parallel publication locking, and
+  stale-file cleanup without manifests or persistent build state. Snapshots
+  contain mapper implementations by default; set
   `MorphantGitSnapshotDetail` to `Full` to include generated configuration API
   and template types.
 

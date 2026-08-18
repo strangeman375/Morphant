@@ -417,14 +417,16 @@
 
 - [ ] **USE-02 — Quick-start mapper виден в Rider**
   - Исходное состояние: C9 содержит types и mapper, дословно скопированные из
-    root README; включён `MorphantGitSnapshot`, а mapping использует
-    `Members`.
-  - Действие: дождаться design-time analysis, проверить completion для
-    `Members`, открыть generated configuration API и partial mapper.
+    root README; включён `MorphantGitSnapshot`, mapping использует `Members`, а
+    mapper snapshot уже создан до открытия solution.
+  - Действие: открыть solution, дождаться design-time analysis, проверить
+    completion для `Members`, выполнить Restart Roslyn Analyzers and Source
+    Generators, открыть generated configuration API и partial mapper.
   - Ожидаемый результат: `[MorphantMapper]` распознан; generated partial class
     реализует `ITypeMapper<Customer, CustomerDto>`; `Morphant.Generated` и
-    generated extension methods доступны; нет ложных красных ошибок или
-    необходимости перезапустить Rider.
+    generated extension methods остаются доступны; snapshot не диагностируется
+    как compiler input и не вызывает `MORPH0034`; generated documents не
+    исчезают спустя несколько секунд.
 
 - [ ] **USE-03 — Clean CLI build совпадает с IDE**
   - Исходное состояние: USE-02 без IDE-only changes.

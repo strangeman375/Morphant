@@ -88,7 +88,9 @@ A compiler error does not publish private staging, so the previous Git snapshot
 remains intact. A command-line or global override of
 `EmitCompilerGeneratedFiles`, `CompilerGeneratedFilesOutputPath`, or
 `TargetsTriggeredByCompilation` that breaks the staging contract fails before
-cleanup. Morphant-owned file names are excluded from `Compile` even when
+cleanup. Morphant-owned file names are added to the SDK's early
+`DefaultItemExcludes` and defensively removed from `Compile` again, so Rider and
+MSBuild treat snapshots as review artifacts rather than source inputs even when
 snapshot publication is disabled or its root changes.
 
 The snapshot deliberately has no manifest or trusted state. Consequently an

@@ -17,8 +17,10 @@
 
   <!--
     Checked-in snapshots are review artifacts, not compiler inputs. Morphant's
-    hint-name namespace is reserved and remains excluded when publication is
-    disabled or its destination changes.
+    hint-name namespace is reserved in Morphant.props before the SDK's default
+    Compile glob. Keep this late removal as a fallback for explicit or unusual
+    Compile item declarations, including when publication is disabled or its
+    destination changes.
   -->
   <ItemGroup>
     <Compile Remove="$(MSBuildProjectDirectory)/**/Morphant.Generated.*.g.cs" />

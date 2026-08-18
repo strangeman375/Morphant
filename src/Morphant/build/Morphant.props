@@ -1,4 +1,13 @@
 <Project>
+  <!--
+    Register snapshot files before the SDK creates its default Compile items.
+    Some IDE project models briefly treat a late Compile Remove as stale and
+    feed the checked-in mapper back into the source generator.
+  -->
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/Morphant.Generated.*.g.cs</DefaultItemExcludes>
+  </PropertyGroup>
+
   <ItemGroup>
     <CompilerVisibleProperty Include="MorphantMappingMode" />
     <CompilerVisibleProperty Include="MorphantNullSourceHandling" />

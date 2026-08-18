@@ -1123,17 +1123,25 @@ namespace Morphant.Generator.PackageTests.Consumer
             .Select(static element => element.Attribute("Include")?.Value)
             .ToArray();
 
-        Assert.That(
-            properties,
-            Is.EqualTo(new[]
-            {
-                "MorphantMappingMode",
-                "MorphantNullSourceHandling",
-                "MorphantNullDestinationHandling",
-                "MorphantConstructorSelection",
-                "MorphantMemberSelection",
-                "MorphantUnmappedMemberValidation"
-            }));
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                properties,
+                Is.EqualTo(new[]
+                {
+                    "MorphantMappingMode",
+                    "MorphantNullSourceHandling",
+                    "MorphantNullDestinationHandling",
+                    "MorphantConstructorSelection",
+                    "MorphantMemberSelection",
+                    "MorphantUnmappedMemberValidation"
+                }));
+            Assert.That(
+                document.Descendants("DefaultItemExcludes").Single().Value,
+                Is.EqualTo(
+                    "$(DefaultItemExcludes);" +
+                    "**/Morphant.Generated.*.g.cs"));
+        });
     }
 
     private static void AssertSymbolPackage(
