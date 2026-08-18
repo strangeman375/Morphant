@@ -59,7 +59,9 @@ internal sealed class DiagnosticCatalogAuditTests
         new("MORPH0045", "Morphant.NestedMapping", DiagnosticSeverity.Error),
         new("MORPH0046", "Morphant.NestedMapping", DiagnosticSeverity.Error),
         new("MORPH0047", "Morphant.MappingCompleteness", DiagnosticSeverity.Warning),
-        new("MORPH0048", "Morphant.MappingCompleteness", DiagnosticSeverity.Warning)
+        new("MORPH0048", "Morphant.MappingCompleteness", DiagnosticSeverity.Warning),
+        new("MORPH0049", "Morphant.IncludeMembers", DiagnosticSeverity.Error),
+        new("MORPH0050", "Morphant.IncludeMembers", DiagnosticSeverity.Error)
     };
 
     [Test]

@@ -28,6 +28,8 @@ builder.Map<OrderDto, Order>()
 Conventions and `Auto()` require an exact, case-sensitive name and a
 warning-free implicit C# conversion. They never start a nested mapping;
 use an explicit [`Map`, `Create` or `Update`](../nested-mapping.md).
+Members exposed through [`IncludeMembers`](../include-members.md) participate
+in the same lookup.
 
 `MemberSelection` applies only to declarative mappings. A manual `Convert`
 owns all member behavior itself.

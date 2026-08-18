@@ -13,6 +13,7 @@ internal static class ExplicitStructuredConstructorPlanner
     public static ExplicitStructuredConstructorPlanningResult Build(
         ImmutableArray<StructuredObjectArgument> planArguments,
         ITypeSymbol sourceType,
+        ImmutableArray<ConventionReadableMember> sourceMembers,
         INamedTypeSymbol destination,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -21,6 +22,7 @@ internal static class ExplicitStructuredConstructorPlanner
         Func<ExpressionSyntax, IParameterSymbol,
             TypeMapperRewrittenDependencyExpression?>
             rewriteDependencyExpression,
+        string nonNullSourceName,
         SyntaxNode strategyOrigin,
         CancellationToken cancellationToken)
     {
@@ -184,12 +186,6 @@ internal static class ExplicitStructuredConstructorPlanner
             ImmutableArray.CreateBuilder<
                 TypeMapperConstructorArgumentMappingModel>(
                 planArguments.Length);
-        var sourceMembers =
-            ConventionMemberMappingPlanner.BuildReadableMembers(
-                sourceType,
-                compilation,
-                mapperType,
-                cancellationToken);
         var destinationMembers =
             ConventionConstructorMappingPlanner
                 .BuildConstructorDestinationMembers(
@@ -346,6 +342,18 @@ internal static class ExplicitStructuredConstructorPlanner
                             destinationParameter.Name,
                             sourceMember.Value.Name,
                             ValueLocalName: null,
+                            ConventionValueExpression:
+                                sourceMember.Value
+                                    .BuildIncludedValueExpression(
+                                        nonNullSourceName,
+                                        destinationParameter.Ordinal,
+                                        "c"),
+                            ConventionProbeValueExpression:
+                                sourceMember.Value
+                                    .BuildIncludedValueExpression(
+                                        "source!",
+                                        destinationParameter.Ordinal,
+                                        "c"),
                             TargetTypeName:
                                 ConventionConstructorMappingPlanner
                                     .BuildTargetValueLocalTypeName(
@@ -635,7 +643,8 @@ internal static class ExplicitStructuredConstructorPlanner
                                 ? "default(" +
                                   (argument.TargetTypeName ?? "object") +
                                   ")"
-                                : "source." +
+                                : argument.ConventionProbeValueExpression ??
+                                  "source." +
                                   Identifier(argument.SourceMemberName)) +
                             suffix);
                     }

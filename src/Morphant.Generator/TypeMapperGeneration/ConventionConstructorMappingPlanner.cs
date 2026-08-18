@@ -24,6 +24,31 @@ internal static class ConventionConstructorMappingPlanner
         string nonNullSourceName,
         CancellationToken cancellationToken)
     {
+        return Build(
+            sourceType,
+            destination,
+            memberMappings,
+            capabilities,
+            constructorSelection,
+            sourceMembers: default,
+            compilation,
+            mapperType,
+            nonNullSourceName,
+            cancellationToken);
+    }
+
+    public static ConventionConstructorPlanningResult Build(
+        ITypeSymbol sourceType,
+        ITypeSymbol? destination,
+        ConstructorInitializationMappingPlan memberMappings,
+        MappingPairCapabilities capabilities,
+        ConstructorSelectionValue? constructorSelection,
+        ImmutableArray<ConventionReadableMember> sourceMembers,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        string nonNullSourceName,
+        CancellationToken cancellationToken)
+    {
         ConstructorPlanningObservation EmptyObservation() =>
             new(
                 constructorSelection,
@@ -54,12 +79,14 @@ internal static class ConventionConstructorMappingPlanner
                 compilation,
                 cancellationToken);
 
-        var sourceMembers =
-            ConventionMemberMappingPlanner.BuildReadableMembers(
+        if (sourceMembers.IsDefault)
+        {
+            sourceMembers = ConventionMemberMappingPlanner.BuildReadableMembers(
                 sourceType,
                 compilation,
                 mapperType,
                 cancellationToken);
+        }
         var destinationMembers = BuildConstructorDestinationMembers(
             namedDestination,
             memberMappings.Observation,
@@ -74,6 +101,7 @@ internal static class ConventionConstructorMappingPlanner
                         namedDestination,
                         memberMappings,
                         constructor,
+                        sourceMembers,
                         compilation,
                         mapperType,
                         nonNullSourceName,
@@ -160,6 +188,7 @@ internal static class ConventionConstructorMappingPlanner
             INamedTypeSymbol namedDestination,
             ConstructorInitializationMappingPlan memberMappings,
             IMethodSymbol constructor,
+            ImmutableArray<ConventionReadableMember> sourceMembers,
             CSharpCompilation compilation,
             INamedTypeSymbol mapperType,
             string nonNullSourceName,
@@ -175,12 +204,6 @@ internal static class ConventionConstructorMappingPlanner
             return null;
         }
 
-        var sourceMembers =
-            ConventionMemberMappingPlanner.BuildReadableMembers(
-                sourceType,
-                compilation,
-                mapperType,
-                cancellationToken);
         var candidates =
             ImmutableArray.CreateBuilder<
                 ConstructorArgumentCandidate>();
@@ -630,7 +653,8 @@ internal static class ConventionConstructorMappingPlanner
                         var argument = arguments[index];
                         var valueExpression =
                             argument.ExplicitValueExpression is null
-                                ? "source!." +
+                                ? argument.ConventionProbeValueExpression ??
+                                  "source!." +
                                   Identifier(argument.SourceMemberName)
                                 : "(" + argument.TargetTypeName +
                                   ")default!";
@@ -882,7 +906,10 @@ internal static class ConventionConstructorMappingPlanner
 
                         writer.Line(
                             $"{Identifier(argument.Parameter.Name)}: " +
-                            $"source!.{Identifier(argument.SourceMember.Name)}" +
+                            SourceExpression(
+                                argument.SourceMember,
+                                "source!",
+                                index) +
                             suffix);
                     }
 
@@ -908,11 +935,23 @@ internal static class ConventionConstructorMappingPlanner
 
         var argumentModels = arguments
             .Select(
-                static argument =>
+                argument =>
                     new TypeMapperConstructorArgumentMappingModel(
                         argument.Parameter.Name,
                         argument.SourceMember.Name,
                         ValueLocalName: null,
+                        ConventionValueExpression:
+                            argument.SourceMember
+                                .BuildIncludedValueExpression(
+                                    nonNullSourceName,
+                                    argument.Parameter.Ordinal,
+                                    "c"),
+                        ConventionProbeValueExpression:
+                            argument.SourceMember
+                                .BuildIncludedValueExpression(
+                                    "source!",
+                                    argument.Parameter.Ordinal,
+                                    "c"),
                         TargetTypeName:
                             BuildTargetValueLocalTypeName(
                                 argument.Parameter),
@@ -1507,6 +1546,16 @@ internal static class ConventionConstructorMappingPlanner
             ? "@" + value
             : value;
     }
+
+    private static string SourceExpression(
+        ConventionReadableMember member,
+        string sourceName,
+        int expressionIndex) =>
+        member.BuildIncludedValueExpression(
+            sourceName,
+            expressionIndex,
+            "c") ??
+        sourceName + "." + Identifier(member.Name);
 
     private readonly record struct ConstructorArgumentCandidate(
         IParameterSymbol Parameter,

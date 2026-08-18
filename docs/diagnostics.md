@@ -59,6 +59,8 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0046](diagnostics/MORPH0046.md) | NestedMapping | Error | A nested Update has no valid destination value. |
 | [MORPH0047](diagnostics/MORPH0047.md) | MappingCompleteness | Warning | A supported source member is not used by the mapping. |
 | [MORPH0048](diagnostics/MORPH0048.md) | MappingCompleteness | Warning | A supported destination member is not mapped. |
+| [MORPH0049](diagnostics/MORPH0049.md) | IncludeMembers | Error | An `IncludeMembers` selector is invalid or duplicated. |
+| [MORPH0050](diagnostics/MORPH0050.md) | IncludeMembers | Error | Two included scopes expose the same source-member name. |
 
 ## Configure severity
 

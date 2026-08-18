@@ -46,12 +46,14 @@ internal enum MappingPlanSlotKind
 {
     ResultPolicy,
     Members,
+    IncludeMembers,
     Convert
 }
 
 internal readonly record struct DeclarativePairConfigurationModel(
     ImmutableArray<ResultPolicyConfigurationModel> ResultPolicies,
-    ImmutableArray<MembersConfigurationModel> Members);
+    ImmutableArray<MembersConfigurationModel> Members,
+    ImmutableArray<IncludeMembersConfigurationModel> IncludeMembers);
 
 internal readonly record struct ManualPairConfigurationModel(
     ImmutableArray<ConvertConfigurationModel> Conversions);
@@ -65,6 +67,11 @@ internal readonly record struct ResultPolicyConfigurationModel(
 internal readonly record struct MembersConfigurationModel(
     InvocationExpressionSyntax Invocation,
     MembersConfigurationForm Form,
+    BoundConfigurationExpression Expression);
+
+internal readonly record struct IncludeMembersConfigurationModel(
+    InvocationExpressionSyntax Invocation,
+    ITypeSymbol SourceType,
     BoundConfigurationExpression Expression);
 
 internal readonly record struct ConvertConfigurationModel(

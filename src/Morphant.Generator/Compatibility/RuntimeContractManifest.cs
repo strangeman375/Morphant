@@ -796,7 +796,20 @@ internal static class RuntimeContractManifest
                    Accessibility.Public,
                    isStatic: false,
                    arity: 2,
-                   self);
+                   self) &&
+               HasMethod(
+                   symbol,
+                   "IncludeMembers",
+                   Accessibility.Public,
+                   isStatic: false,
+                   arity: 1,
+                   self,
+                   [
+                       Parameter(Named(
+                           "System.Func`2",
+                           TypeParameter(0),
+                           MethodTypeParameter(0)))
+                   ]);
     }
 
     private static bool IsTypeMapperInterface(INamedTypeSymbol symbol)

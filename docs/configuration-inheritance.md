@@ -72,7 +72,8 @@ mapping may also be declared in the same mapper; declaration order does not
 matter.
 
 Local member rules replace inherited rules for the same destination member.
-Other inherited member rules remain.
+Other inherited member rules remain. `IncludeMembers` scopes are also
+inherited, with base scopes considered before local scopes.
 
 When the current and included mappings use different source or destination
 types, `IncludeBase` reuses member rules and mapping settings, but not

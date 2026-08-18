@@ -143,6 +143,26 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     }
 
     /// <summary>
+    /// Adds the readable instance members of a nested source object to the
+    /// convention lookup scope for this mapping.
+    /// </summary>
+    /// <typeparam name="TIncluded">
+    /// The type whose readable members are included.
+    /// </typeparam>
+    /// <param name="selector">
+    /// An inline property or field path rooted in the mapping source.
+    /// </param>
+    /// <remarks>
+    /// The root source keeps precedence. Included members participate in
+    /// automatic destination-member and constructor-parameter mapping; they
+    /// do not start a nested mapping.
+    /// </remarks>
+    /// <returns>This mapping builder.</returns>
+    public MapperBuilder<TSource, TDestination> IncludeMembers<TIncluded>(
+        Func<TSource, TIncluded> selector) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
     /// Includes configuration from the nearest available mapping for the
     /// specified source and destination types.
     /// </summary>
@@ -157,9 +177,9 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     /// <remarks>
     /// Local settings and rules take precedence. A mapping declared in a base
     /// mapper is available only through <c>base.Configure(builder)</c>. A
-    /// different pair contributes settings and explicit member rules, but not
-    /// its result or <c>Convert</c> plan; the exact same pair contributes its
-    /// full plan.
+    /// different pair contributes settings, included source scopes and
+    /// explicit member rules, but not its result or <c>Convert</c> plan; the
+    /// exact same pair contributes its full plan.
     /// </remarks>
     /// <returns>This mapping builder.</returns>
     public MapperBuilder<TSource, TDestination>

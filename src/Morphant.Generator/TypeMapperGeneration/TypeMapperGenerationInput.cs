@@ -11,7 +11,9 @@ internal readonly record struct TypeMapperGenerationInput(
     ImmutableArray<NestedMappingDiagnosticCandidate>
         NestedMappingDiagnostics,
     ImmutableArray<MappingCompletenessDiagnosticCandidate>
-        MappingCompletenessDiagnostics)
+        MappingCompletenessDiagnostics,
+    ImmutableArray<IncludeMembersDiagnosticCandidate>
+        IncludeMembersDiagnostics)
 {
     public string HintName => GeneratedSourceHintName.Create(
         "TypeMapper",

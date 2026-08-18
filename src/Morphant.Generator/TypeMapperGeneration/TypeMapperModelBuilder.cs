@@ -97,6 +97,10 @@ internal static class TypeMapperModelBuilder
             model,
             validation.Failures,
             cancellationToken);
+        var includeMembersDiagnostics =
+            IncludeMembersDiagnosticAnalyzer.Build(
+                model,
+                cancellationToken);
         var constructionDiagnostics = ConstructionDiagnosticAnalyzer.Build(
             analysis,
             model,
@@ -122,7 +126,8 @@ internal static class TypeMapperModelBuilder
             constructionDiagnostics,
             memberDiagnostics,
             nestedMappingDiagnostics,
-            mappingCompletenessDiagnostics);
+            mappingCompletenessDiagnostics,
+            includeMembersDiagnostics);
     }
 
     private static TypeMapperMappingsBuildResult BuildMappings(
@@ -602,11 +607,44 @@ internal static class TypeMapperModelBuilder
             };
         }
 
+        var includedSourceMembers = IncludedSourceMemberSet.Build(
+            declarativeSourceType,
+            configuration.Declarative.IncludeMembers,
+            compilation,
+            mapperType,
+            cancellationToken);
+        mapping = mapping with
+        {
+            SourceMembers = includedSourceMembers.Members,
+            IncludedSourcePathMembers = includedSourceMembers.PathMembers,
+            IncludeMembersIssues = includedSourceMembers.Issues
+        };
+
+        if (!includedSourceMembers.Issues.IsEmpty)
+        {
+            var firstIssue = includedSourceMembers.Issues[0];
+
+            return mapping with
+            {
+                Failure = MappingFailureObservation.Create(
+                    mapping.AnalysisContext,
+                    MappingFailureReason.InvalidPairConfiguration,
+                    "IncludeMembers configuration is invalid.",
+                    MappingObservationOriginKind.Callback,
+                    MappingAffectedPath.All(
+                        MappingPlanPhase.Configuration),
+                    firstIssue.Invocation,
+                    configuration.Origin.DeclaringMapperType)
+            };
+        }
+
         var conventionMemberMappings =
             ConventionMemberMappingPlanner.Build(
             declarativeSourceType,
             destinationPlan.MemberType,
             pair.Capabilities,
+            includedSourceMembers.Members,
+            nonNullSourceName,
             compilation,
             mapperType,
             cancellationToken);
@@ -754,6 +792,7 @@ internal static class TypeMapperModelBuilder
                         replacement: false),
                     pair.Capabilities,
                     constructorSelection,
+                    includedSourceMembers.Members,
                     compilation,
                     mapperType,
                     nonNullSourceName,
@@ -1233,7 +1272,8 @@ internal static class TypeMapperModelBuilder
             reasons,
             conflicts,
             PairConfigurationConflict.MixedManualAndDeclarative,
-            "Convert is combined with Construct, Resolve, or Members");
+            "Convert is combined with Construct, Resolve, Members, or " +
+            "IncludeMembers");
         AddConflictReason(
             reasons,
             conflicts,

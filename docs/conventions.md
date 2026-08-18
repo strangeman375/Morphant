@@ -10,6 +10,9 @@ Use explicit rules when a convention does not describe the intended mapping.
 Morphant does not normalize names, flatten paths or start nested mappings
 automatically.
 
+Use [`IncludeMembers`](include-members.md) to opt a selected nested source
+object into the same constructor and member conventions.
+
 ## Members
 
 A destination property or field is mapped when:
@@ -53,5 +56,4 @@ members are assignable. For a custom whole-value mapping, use
 [`Convert`](manual-mapping.md).
 
 See [Declarative mapping](declarative-mapping.md) for explicit rules and
-[Current limitations](limitations.md) for features not included in Morphant
-0.1.
+[Current limitations](limitations.md) for unsupported features.

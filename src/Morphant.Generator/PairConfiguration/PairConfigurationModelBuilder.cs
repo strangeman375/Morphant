@@ -588,7 +588,8 @@ internal static class PairConfigurationModelBuilder
         var localHasConvert = !local.Manual.Conversions.IsEmpty;
         var localHasDeclarative =
             !local.Declarative.ResultPolicies.IsEmpty ||
-            !local.Declarative.Members.IsEmpty;
+            !local.Declarative.Members.IsEmpty ||
+            !local.Declarative.IncludeMembers.IsEmpty;
         var exactSamePair =
             MappingPairKey.Create(local.Pair) ==
             MappingPairKey.Create(inherited.Pair);
@@ -608,7 +609,9 @@ internal static class PairConfigurationModelBuilder
                 declarative = new DeclarativePairConfigurationModel(
                     local.Declarative.ResultPolicies,
                     inherited.Declarative.Members.AddRange(
-                        local.Declarative.Members));
+                        local.Declarative.Members),
+                    inherited.Declarative.IncludeMembers.AddRange(
+                        local.Declarative.IncludeMembers));
                 conflicts |= inherited.Conflicts &
                     IncludedMembersConflictMask;
             }
@@ -632,7 +635,9 @@ internal static class PairConfigurationModelBuilder
                     ? local.Declarative.ResultPolicies
                     : inherited.Declarative.ResultPolicies,
                 inherited.Declarative.Members.AddRange(
-                    local.Declarative.Members));
+                    local.Declarative.Members),
+                inherited.Declarative.IncludeMembers.AddRange(
+                    local.Declarative.IncludeMembers));
             manual = local.Manual;
             conflicts |= inherited.Conflicts &
                 (CompositionConflictMask |
@@ -1111,6 +1116,8 @@ internal static class PairConfigurationModelBuilder
             ImmutableArray.CreateBuilder<ResultPolicyConfigurationModel>();
         var members =
             ImmutableArray.CreateBuilder<MembersConfigurationModel>();
+        var includeMembers =
+            ImmutableArray.CreateBuilder<IncludeMembersConfigurationModel>();
         var conversions =
             ImmutableArray.CreateBuilder<ConvertConfigurationModel>();
         var localPlanSlots =
@@ -1160,6 +1167,34 @@ internal static class PairConfigurationModelBuilder
                         out var includeBase))
                 {
                     includeBaseCalls.Add(includeBase);
+                }
+
+                continue;
+            }
+
+            if (IsIncludeMembersMethod(method))
+            {
+                var includeExpression = TryBindConfigurationExpression(
+                    invocation,
+                    method,
+                    semanticModel,
+                    compilation,
+                    targetMapperType,
+                    declaringMapperType,
+                    levelOrder,
+                    cancellationToken);
+
+                if (includeExpression is not null)
+                {
+                    localPlanSlots.Add(
+                        new MappingPlanSlotOccurrenceModel(
+                            invocation,
+                            MappingPlanSlotKind.IncludeMembers));
+                    includeMembers.Add(
+                        new IncludeMembersConfigurationModel(
+                            invocation,
+                            pair.SourceType,
+                            includeExpression));
                 }
 
                 continue;
@@ -1283,6 +1318,7 @@ internal static class PairConfigurationModelBuilder
 
         var immutableResultPolicies = resultPolicies.ToImmutable();
         var immutableMembers = members.ToImmutable();
+        var immutableIncludeMembers = includeMembers.ToImmutable();
         var immutableConversions = conversions.ToImmutable();
         var conflicts = PairConfigurationConflict.None;
 
@@ -1303,7 +1339,8 @@ internal static class PairConfigurationModelBuilder
 
         if (immutableConversions.Length > 0 &&
             (immutableResultPolicies.Length > 0 ||
-             immutableMembers.Length > 0))
+             immutableMembers.Length > 0 ||
+             immutableIncludeMembers.Length > 0))
         {
             conflicts |= PairConfigurationConflict.MixedManualAndDeclarative;
         }
@@ -1320,7 +1357,8 @@ internal static class PairConfigurationModelBuilder
             settings,
             new DeclarativePairConfigurationModel(
                 immutableResultPolicies,
-                immutableMembers),
+                immutableMembers,
+                immutableIncludeMembers),
             new ManualPairConfigurationModel(immutableConversions),
             new PairConfigurationCompositionModel(
                 includeBaseCalls.ToImmutable(),
@@ -1576,6 +1614,19 @@ internal static class PairConfigurationModelBuilder
                    SymbolNameHelper.GetFullMetadataName(
                        method.ContainingType.OriginalDefinition),
                    "Morphant.MapperBuilder`2");
+    }
+
+    private static bool IsIncludeMembersMethod(IMethodSymbol method)
+    {
+        return method.Name == "IncludeMembers" &&
+               method.MethodKind == MethodKind.Ordinary &&
+               !method.IsStatic &&
+               method.Parameters.Length == 1 &&
+               method.TypeArguments.Length == 1 &&
+               StringComparer.Ordinal.Equals(
+                   SymbolNameHelper.GetFullMetadataName(
+                       method.ContainingType.OriginalDefinition),
+                   MetadataNames.PairMapperBuilder);
     }
 
     private static ImmutableArray<Location>

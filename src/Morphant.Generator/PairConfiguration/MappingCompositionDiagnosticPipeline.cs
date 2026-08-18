@@ -89,6 +89,11 @@ internal static class MappingCompositionDiagnosticPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            if (occurrence.Kind == MappingPlanSlotKind.IncludeMembers)
+            {
+                continue;
+            }
+
             if (!firstBySlot.TryGetValue(occurrence.Kind, out var first))
             {
                 firstBySlot.Add(occurrence.Kind, occurrence);
@@ -126,25 +131,33 @@ internal static class MappingCompositionDiagnosticPipeline
         var firstMembers = FindFirst(
             pair.LocalPlanSlots,
             MappingPlanSlotKind.Members);
+        var firstIncludeMembers = FindFirst(
+            pair.LocalPlanSlots,
+            MappingPlanSlotKind.IncludeMembers);
         var firstConvert = FindFirst(
             pair.LocalPlanSlots,
             MappingPlanSlotKind.Convert);
 
         if (firstConvert is null ||
-            firstResultPolicy is null && firstMembers is null)
+            firstResultPolicy is null &&
+            firstMembers is null &&
+            firstIncludeMembers is null)
         {
             return;
         }
 
-        var firstDeclarative = Earlier(firstResultPolicy, firstMembers)!;
+        var firstDeclarative = Earlier(
+            Earlier(firstResultPolicy, firstMembers),
+            firstIncludeMembers)!;
         var primary = IsEarlier(firstConvert.Value, firstDeclarative.Value)
             ? firstDeclarative.Value
             : firstConvert.Value;
         var additionalLocations =
-            ImmutableArray.CreateBuilder<Location>(3);
+            ImmutableArray.CreateBuilder<Location>(4);
 
         AddLocation(firstResultPolicy);
         AddLocation(firstMembers);
+        AddLocation(firstIncludeMembers);
         AddLocation(firstConvert);
 
         var primaryLocation = GetInvocationNameLocation(primary.Invocation);
@@ -274,6 +287,7 @@ internal static class MappingCompositionDiagnosticPipeline
         {
             MappingPlanSlotKind.ResultPolicy => "Construct or Resolve",
             MappingPlanSlotKind.Members => "Members",
+            MappingPlanSlotKind.IncludeMembers => "IncludeMembers",
             MappingPlanSlotKind.Convert => "Convert",
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };

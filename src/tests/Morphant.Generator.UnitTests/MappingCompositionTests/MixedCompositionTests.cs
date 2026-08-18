@@ -251,8 +251,9 @@ public partial class TestMapper : TypeMapper
             Assert.That(
                 diagnostic.GetMessage(),
                 Is.EqualTo(
-                    "Convert cannot be combined with Construct, Resolve, or " +
-                    "Members for mapping 'TestCase.Source -> " +
+                    "Convert cannot be combined with Construct, Resolve, " +
+                    "Members, or IncludeMembers for mapping " +
+                    "'TestCase.Source -> " +
                     "TestCase.Destination' in mapper " +
                     "'TestCase.TestMapper'."));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);

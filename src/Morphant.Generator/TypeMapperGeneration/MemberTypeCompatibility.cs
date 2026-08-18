@@ -46,7 +46,8 @@ internal static class MemberTypeCompatibility
                     index,
                     candidate.SourceMemberName,
                     candidate.DestinationMemberName,
-                    candidate.CanAssign));
+                    candidate.CanAssign,
+                    candidate.SourceExpression));
         }
 
         if (probeCandidates.Count == 0)
@@ -142,7 +143,7 @@ internal static class MemberTypeCompatibility
                         writer.Indent();
                         writer.Line(
                             $"destination.{Identifier(candidate.DestinationMemberName)} = " +
-                            $"source!.{Identifier(candidate.SourceMemberName)};");
+                            SourceExpression(candidate) + ";");
                         writer.Unindent();
                         writer.Line("}");
                         continue;
@@ -162,7 +163,7 @@ internal static class MemberTypeCompatibility
                     writer.Indent();
                     writer.Line(
                         $"{Identifier(candidate.DestinationMemberName)} = " +
-                        $"source!.{Identifier(candidate.SourceMemberName)}");
+                        SourceExpression(candidate));
                     writer.Unindent();
                     writer.Line("};");
                     writer.Unindent();
@@ -181,11 +182,16 @@ internal static class MemberTypeCompatibility
             : value;
     }
 
+    private static string SourceExpression(ProbeCandidate candidate) =>
+        candidate.SourceExpression ??
+        $"source!.{Identifier(candidate.SourceMemberName)}";
+
     private readonly record struct ProbeCandidate(
         int CandidateIndex,
         string SourceMemberName,
         string DestinationMemberName,
-        bool CanAssign);
+        bool CanAssign,
+        string? SourceExpression);
 }
 
 internal readonly record struct MemberTypeCompatibilityCandidate(
@@ -193,4 +199,5 @@ internal readonly record struct MemberTypeCompatibilityCandidate(
     string DestinationMemberName,
     ITypeSymbol SourceType,
     ITypeSymbol DestinationType,
-    bool CanAssign);
+    bool CanAssign,
+    string? SourceExpression = null);

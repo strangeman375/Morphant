@@ -57,6 +57,10 @@ internal readonly record struct TypeMapperMappingModel
     TypeMapperMemberControlFlowNode? PostMemberControlFlow = null,
     ConstructorPlanningObservation? ConstructorObservation = null,
     MemberPlanningObservation? MemberObservation = null,
+    ImmutableArray<ConventionReadableMember> SourceMembers = default,
+    ImmutableArray<ISymbol> IncludedSourcePathMembers = default,
+    ImmutableArray<IncludeMembersIssueObservation> IncludeMembersIssues =
+        default,
     ImmutableArray<NestedMappingObservation> NestedObservations = default,
     CompletenessPlanningObservation? CompletenessObservation = null,
     ImmutableArray<StructuredTerminalObservation> StructuredTerminals =
@@ -110,6 +114,8 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
     string SourceMemberName,
     string? ValueLocalName,
     string? ExplicitValueExpression = null,
+    string? ConventionValueExpression = null,
+    string? ConventionProbeValueExpression = null,
     string? ValueLocalTypeName = null,
     string? TargetTypeName = null,
     TypeMapperDependencyExpressionModel? DependencyExpression = null,
@@ -131,6 +137,7 @@ internal readonly record struct TypeMapperMemberMappingModel
     string? ValueLocalName = null,
     bool RequiresPreviousDestinationValueLocal = false,
     bool IsResultDependent = false,
+    string? ConventionValueExpression = null,
     TypeMapperDependencyExpressionModel? DependencyExpression = null,
     ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
 );

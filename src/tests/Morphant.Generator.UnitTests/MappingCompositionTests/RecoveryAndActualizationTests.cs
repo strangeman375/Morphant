@@ -434,12 +434,14 @@ public partial class AMapper : TypeMapper
                     "'Members' is configured more than once for mapping " +
                     "'TestCase.Source -> TestCase.DestinationB' in mapper " +
                     "'TestCase.AMapper'.",
-                    "Convert cannot be combined with Construct, Resolve, or " +
-                    "Members for mapping 'TestCase.Source -> " +
+                    "Convert cannot be combined with Construct, Resolve, " +
+                    "Members, or IncludeMembers for mapping " +
+                    "'TestCase.Source -> " +
                     "TestCase.DestinationA' in mapper " +
                     "'TestCase.AMapper'.",
-                    "Convert cannot be combined with Construct, Resolve, or " +
-                    "Members for mapping 'TestCase.Source -> " +
+                    "Convert cannot be combined with Construct, Resolve, " +
+                    "Members, or IncludeMembers for mapping " +
+                    "'TestCase.Source -> " +
                     "TestCase.DestinationZ' in mapper " +
                     "'TestCase.ZMapper'."
                 }));

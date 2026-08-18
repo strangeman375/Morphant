@@ -81,6 +81,10 @@ internal static class TypeMapperPipeline
                 inputs.SelectMany(static input =>
                     input.MappingCompletenessDiagnostics),
                 cancellationToken));
+        result.AddRange(IncludeMembersDiagnosticPipeline.BuildDiagnostics(
+            inputs.SelectMany(static input =>
+                input.IncludeMembersDiagnostics),
+            cancellationToken));
 
         return result.ToImmutable();
     }

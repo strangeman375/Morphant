@@ -45,13 +45,17 @@ internal static class MappingCompletenessObservationBuilder
                 declarativeSourceType,
                 compilation)
                 ? ImmutableArray<ISymbol>.Empty
-                : ConventionMemberMappingPlanner.BuildReadableMembers(
-                        declarativeSourceType,
-                        compilation,
-                        mapperType,
-                        cancellationToken)
-                    .Select(static member => member.Symbol)
-                    .ToImmutableArray();
+                : mapping.SourceMembers.IsDefault
+                    ? ConventionMemberMappingPlanner.BuildReadableMembers(
+                            declarativeSourceType,
+                            compilation,
+                            mapperType,
+                            cancellationToken)
+                        .Select(static member => member.Symbol)
+                        .ToImmutableArray()
+                    : mapping.SourceMembers
+                        .Select(static member => member.Symbol)
+                        .ToImmutableArray();
         var supportedDestinationMembers =
             ConventionMemberMappingPlanner.BuildWritableMembers(
                     configuration.Pair.DestinationType,
@@ -82,6 +86,17 @@ internal static class MappingCompletenessObservationBuilder
         var reachablePaths = GetReachablePaths(
             mapping,
             effectiveSettings);
+
+        foreach (var pathMember in mapping.IncludedSourcePathMembers.IsDefault
+                     ? ImmutableArray<ISymbol>.Empty
+                     : mapping.IncludedSourcePathMembers)
+        {
+            AddSourceUse(
+                sourceUses,
+                pathMember,
+                SourceUseKind.Semantic,
+                mapping.AnalysisContext.Registration.Syntax);
+        }
 
         var reachableRuleOrigins = memberRules
             .Where(rule =>

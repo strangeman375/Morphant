@@ -19,7 +19,8 @@ internal static class MappingCompositionDiagnosticDescriptors
         Create(
             "MORPH0020",
             "Convert cannot be combined with other mapping rules",
-            "Convert cannot be combined with Construct, Resolve, or Members " +
+            "Convert cannot be combined with Construct, Resolve, Members, " +
+            "or IncludeMembers " +
             "for mapping '{0}' in mapper '{1}'.");
 
     private static DiagnosticDescriptor Create(

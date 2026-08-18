@@ -16,6 +16,7 @@ internal static class BuilderFlowAnalyzer
             "ConstructUsing",
             "ResolveUsing",
             "Members",
+            "IncludeMembers",
             "Convert");
 
     private static readonly ImmutableHashSet<string> PairMethodNames =
@@ -191,7 +192,8 @@ internal static class BuilderFlowAnalyzer
 
         if (symbol is not null)
         {
-            return IsGeneratedConfigurationMethod(symbol);
+            return IsGeneratedConfigurationMethod(symbol) ||
+                   IsIncludeMembersMethod(symbol);
         }
 
         var receiver = GetInvocationReceiver(invocation);
@@ -1249,6 +1251,19 @@ internal static class BuilderFlowAnalyzer
                    SymbolNameHelper.GetFullMetadataName(
                        definition.ContainingType),
                    MetadataNames.GeneratedMappingExtensions);
+    }
+
+    private static bool IsIncludeMembersMethod(IMethodSymbol method)
+    {
+        return method.Name == "IncludeMembers" &&
+               method.MethodKind == MethodKind.Ordinary &&
+               !method.IsStatic &&
+               method.Parameters.Length == 1 &&
+               method.TypeArguments.Length == 1 &&
+               StringComparer.Ordinal.Equals(
+                   SymbolNameHelper.GetFullMetadataName(
+                       method.ContainingType.OriginalDefinition),
+                   MetadataNames.PairMapperBuilder);
     }
 
     private static bool IsPairBuilderType(ITypeSymbol? type)

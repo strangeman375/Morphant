@@ -79,9 +79,9 @@ existing = mapper.Map(customer, existing);
 Always use the value returned by Update: a mapping may reuse the supplied
 destination or replace it.
 
-Mappings can rely on conventions, configure construction and members
-explicitly, call other registered mappings, or use `Convert` for an ordinary
-synchronous C# algorithm.
+Mappings can rely on conventions, include selected nested source members,
+configure construction and members explicitly, call other registered
+mappings, or use `Convert` for an ordinary synchronous C# algorithm.
 
 Continue with the
 [Quick start](https://github.com/strangeman375/Morphant/blob/main/docs/quick-start.md)

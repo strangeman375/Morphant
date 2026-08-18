@@ -352,6 +352,7 @@ T Morphant.MapperBuilderBase<T>
   M T UnmappedMemberValidation(Morphant.UnmappedMemberValidation)
 T Morphant.MapperBuilder<TSource, TDestination>
   M Morphant.MapperBuilder<TSource, TDestination> IncludeBase<TBaseSource, TBaseDestination>()
+  M Morphant.MapperBuilder<TSource, TDestination> IncludeMembers<TIncluded>(System.Func<TSource, TIncluded>)
 T Morphant.MappingMode
   V Default, Create, Update, CreateAndUpdate
 T Morphant.Markers.AutoMarker

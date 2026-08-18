@@ -283,6 +283,7 @@ internal static class StructuredConstructMappingPlanner
                         var convention = BuildByConventionPlan(
                             arguments,
                             sourceType,
+                            mapping.SourceMembers,
                             destination,
                             capabilities,
                             constructorMembers,
@@ -320,12 +321,14 @@ internal static class StructuredConstructMappingPlanner
                             ExplicitStructuredConstructorPlanner.Build(
                                 arguments,
                                 sourceType,
+                                mapping.SourceMembers,
                                 destination,
                                 compilation,
                                 mapperType,
                                 configuration.Expression.SemanticModel,
                                 Rewrite,
                                 RewriteDependency,
+                                mapping.NonNullSourceName,
                                 leaf.ObjectCreation,
                                 cancellationToken);
 
@@ -941,6 +944,7 @@ internal static class StructuredConstructMappingPlanner
             var convention = BuildByConventionPlan(
                 arguments,
                 sourceType,
+                mapping.SourceMembers,
                 destination,
                 capabilities,
                 memberMappings,
@@ -973,12 +977,14 @@ internal static class StructuredConstructMappingPlanner
             ExplicitStructuredConstructorPlanner.Build(
                 arguments,
                 sourceType,
+                mapping.SourceMembers,
                 destination,
                 compilation,
                 mapperType,
                 semanticModel,
                 rewriteExpression,
                 rewriteDependencyExpression,
+                nonNullSourceName,
                 creation,
                 cancellationToken);
 
@@ -1034,6 +1040,7 @@ internal static class StructuredConstructMappingPlanner
         BuildByConventionPlan(
             ImmutableArray<StructuredObjectArgument> arguments,
             ITypeSymbol sourceType,
+            ImmutableArray<ConventionReadableMember> sourceMembers,
             INamedTypeSymbol destination,
             MappingPairCapabilities capabilities,
             ConstructorInitializationMappingPlan memberMappings,
@@ -1123,18 +1130,13 @@ internal static class StructuredConstructMappingPlanner
                     memberMappings,
                     capabilities,
                     constructorSelection,
+                    sourceMembers,
                     compilation,
                     mapperType,
                     nonNullSourceName,
                     cancellationToken));
         }
 
-        var sourceMembers =
-            ConventionMemberMappingPlanner.BuildReadableMembers(
-                sourceType,
-                compilation,
-                mapperType,
-                cancellationToken);
         var destinationMembers =
             ConventionConstructorMappingPlanner
                 .BuildConstructorDestinationMembers(
@@ -1399,6 +1401,7 @@ internal static class StructuredConstructMappingPlanner
                         BuildAutomaticArgument(
                             sourceMember.Value,
                             parameter,
+                            nonNullSourceName,
                             rule.Value,
                             ConstructorParameterRuleOrigin.Auto));
                     continue;
@@ -1485,6 +1488,7 @@ internal static class StructuredConstructMappingPlanner
                     BuildAutomaticArgument(
                         automaticSource,
                         parameter,
+                        nonNullSourceName,
                         originNode: null,
                         ConstructorParameterRuleOrigin.Convention));
                 parameterObservations.Add(
@@ -1601,6 +1605,7 @@ internal static class StructuredConstructMappingPlanner
         BuildAutomaticArgument(
             ConventionReadableMember sourceMember,
             IParameterSymbol parameter,
+            string nonNullSourceName,
             SyntaxNode? originNode,
             ConstructorParameterRuleOrigin ruleOrigin)
     {
@@ -1608,6 +1613,16 @@ internal static class StructuredConstructMappingPlanner
             parameter.Name,
             sourceMember.Name,
             ValueLocalName: null,
+            ConventionValueExpression:
+                sourceMember.BuildIncludedValueExpression(
+                    nonNullSourceName,
+                    parameter.Ordinal,
+                    "c"),
+            ConventionProbeValueExpression:
+                sourceMember.BuildIncludedValueExpression(
+                    "source!",
+                    parameter.Ordinal,
+                    "c"),
             TargetTypeName:
                 ConventionConstructorMappingPlanner
                     .BuildTargetValueLocalTypeName(parameter),

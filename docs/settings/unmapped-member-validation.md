@@ -22,6 +22,9 @@ Explicit expressions, conventions, `Auto()`, constructor arguments and nested
 rules count according to their actual use. `Ignore()` deliberately occupies a
 destination member.
 
+For [`IncludeMembers`](../include-members.md), the selected path counts as
+used and the included readable-member surface is checked.
+
 A `Construct`, `Resolve` or `Members` lambda can acknowledge an intentionally
 unused source member without reading it when the mapping runs:
 

@@ -3,8 +3,8 @@
 ## Cause
 
 The mapping combines `Convert` with `Construct`, `Resolve`, `ConstructUsing`,
-`ResolveUsing`, or `Members`. `Convert` owns the complete mapping and leaves no
-later construction or member step to apply.
+`ResolveUsing`, `Members`, or `IncludeMembers`. `Convert` owns the complete
+mapping and leaves no later construction or member step to apply.
 
 ## Fix
 

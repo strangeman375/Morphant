@@ -184,6 +184,28 @@ internal sealed class TestPairConfigurationGenerator :
                 newLine);
         }
 
+        if (!model.Declarative.IncludeMembers.IsEmpty)
+        {
+            builder.Append("// IncludeMembers: ")
+                .Append(model.Declarative.IncludeMembers.Length)
+                .Append(newLine);
+
+            for (var callIndex = 0;
+                 callIndex < model.Declarative.IncludeMembers.Length;
+                 callIndex++)
+            {
+                var call = model.Declarative.IncludeMembers[callIndex];
+
+                WriteExpression(
+                    builder,
+                    "IncludeMembers",
+                    callIndex,
+                    "Selector",
+                    call.Expression,
+                    newLine);
+            }
+        }
+
         builder.Append("// Manual: Converts=")
             .Append(model.Manual.Conversions.Length)
             .Append(newLine);

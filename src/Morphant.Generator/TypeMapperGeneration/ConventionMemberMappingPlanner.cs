@@ -29,6 +29,8 @@ internal static class ConventionMemberMappingPlanner
             includeInitOnlyProperties: true,
             hasMemberCapability: true,
             excludeGeneratedPlanMemberNames: false,
+            readableMembers: default,
+            sourceValueName: "source",
             cancellationToken);
     }
 
@@ -49,6 +51,32 @@ internal static class ConventionMemberMappingPlanner
             capabilities.StructuredConstruction,
             capabilities.Members,
             excludeGeneratedPlanMemberNames: true,
+            readableMembers: default,
+            sourceValueName: "source",
+            cancellationToken);
+    }
+
+    public static ConventionMemberMappingPlan Build(
+        ITypeSymbol sourceType,
+        ITypeSymbol? destination,
+        MappingPairCapabilities capabilities,
+        ImmutableArray<ConventionReadableMember> readableMembers,
+        string sourceValueName,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        CancellationToken cancellationToken)
+    {
+        return Build(
+            sourceType,
+            destination,
+            compilation,
+            mapperType,
+            compilation.Assembly,
+            capabilities.StructuredConstruction,
+            capabilities.Members,
+            excludeGeneratedPlanMemberNames: true,
+            readableMembers,
+            sourceValueName,
             cancellationToken);
     }
 
@@ -61,6 +89,8 @@ internal static class ConventionMemberMappingPlanner
         bool includeInitOnlyProperties,
         bool hasMemberCapability,
         bool excludeGeneratedPlanMemberNames,
+        ImmutableArray<ConventionReadableMember> readableMembers,
+        string sourceValueName,
         CancellationToken cancellationToken)
     {
         if (destination is null)
@@ -79,11 +109,14 @@ internal static class ConventionMemberMappingPlanner
                     ImmutableArray<StructuredTerminalObservation>.Empty));
         }
 
-        var readableMembers = BuildReadableMembers(
+        if (readableMembers.IsDefault)
+        {
+            readableMembers = BuildReadableMembers(
                 sourceType,
                 compilation,
                 mapperType,
                 cancellationToken);
+        }
         var sourceMembers = readableMembers
             .ToDictionary(
                 static member => member.Name,
@@ -104,6 +137,8 @@ internal static class ConventionMemberMappingPlanner
             ImmutableArray.CreateBuilder<ISymbol>();
         var candidateDestinationMembers =
             ImmutableArray.CreateBuilder<ISymbol>();
+        var candidateValueExpressions =
+            ImmutableArray.CreateBuilder<string?>();
         var supportedDestinationMembers =
             ImmutableArray.CreateBuilder<ISymbol>();
         var requiredObligations =
@@ -161,10 +196,17 @@ internal static class ConventionMemberMappingPlanner
                     selectedWritable.Name,
                     sourceMember.Type,
                     selectedWritable.Type,
-                    selectedWritable.CanAssign));
+                    selectedWritable.CanAssign,
+                    sourceMember.BuildIncludedValueExpression(
+                        "source!",
+                        candidates.Count)));
             candidateRequiredMembers.Add(isRequired);
             candidateSourceMembers.Add(sourceMember.Symbol);
             candidateDestinationMembers.Add(selectedWritable.Symbol);
+            candidateValueExpressions.Add(
+                sourceMember.BuildIncludedValueExpression(
+                    sourceValueName,
+                    candidates.Count - 1));
         }
 
         var compatibleCandidates =
@@ -199,7 +241,9 @@ internal static class ConventionMemberMappingPlanner
                 candidate.SourceMemberName,
                 candidate.DestinationMemberName,
                 candidateRequiredMembers[index],
-                SourceValueLocalName: null);
+                SourceValueLocalName: null,
+                ConventionValueExpression:
+                    candidateValueExpressions[index]);
 
             create.Add(mapping);
 
@@ -1074,7 +1118,20 @@ internal readonly record struct ConstructorInitializationMappingPlan(
 internal readonly record struct ConventionReadableMember(
     string Name,
     ITypeSymbol Type,
-    ISymbol Symbol);
+    ISymbol Symbol,
+    IncludedSourceAccessModel? IncludedAccess = null)
+{
+    public string? BuildIncludedValueExpression(
+        string sourceName,
+        int expressionIndex,
+        string expressionKind = "m") =>
+        IncludedAccess?.BuildValueExpression(
+            sourceName,
+            Symbol,
+            Type,
+            expressionIndex,
+            expressionKind);
+}
 
 internal readonly record struct ConventionWritableMember(
     string Name,

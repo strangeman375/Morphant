@@ -1830,6 +1830,8 @@ internal static class TypeMapperEmitter
     {
         return mapping.ValueLocalName ??
                mapping.ExplicitValueExpression ??
+               mapping.SourceValueLocalName ??
+               mapping.ConventionValueExpression ??
                SourceValueExpression(
                    owner,
                    mapping.SourceMemberName,
@@ -1907,6 +1909,7 @@ internal static class TypeMapperEmitter
         TypeMapperConstructorArgumentMappingModel mapping)
     {
         return mapping.ExplicitValueExpression ??
+               mapping.ConventionValueExpression ??
                SourceValueExpression(
                    owner,
                    mapping.SourceMemberName,
