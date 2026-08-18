@@ -1,0 +1,55 @@
+name: Bug report
+description: Report reproducible incorrect behavior in Morphant
+title: "[Bug]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Morphant. Remove secrets and proprietary code from reproductions and logs.
+
+  - type: input
+    id: version
+    attributes:
+      label: Morphant version
+      placeholder: 0.2.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the .NET SDK, target framework, IDE, and operating system.
+      placeholder: .NET SDK 10.0.100, net8.0, Rider, Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest project or code sample that demonstrates the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include complete diagnostics or a relevant log excerpt when available.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Add anything else that may help reproduce or diagnose the problem.

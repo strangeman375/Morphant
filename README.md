@@ -4,14 +4,16 @@
 
 [![CI](https://github.com/strangeman375/Morphant/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/strangeman375/Morphant/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush)
 [![Line coverage](https://github.com/strangeman375/Morphant/raw/badges/coverage.svg)](https://github.com/strangeman375/Morphant/blob/badges/coverage.md)
+[![NuGet](https://img.shields.io/nuget/v/Morphant.svg)](https://www.nuget.org/packages/Morphant)
+[![NuGet downloads](https://img.shields.io/nuget/dt/Morphant.svg)](https://www.nuget.org/packages/Morphant)
 
 Morphant is a compile-time object mapper for C#. It turns explicit
 configuration into strongly typed mapping code without runtime reflection.
 `IMapper` is the main application entry point.
 
-> Morphant 0.1 is the first stable 0.x release. It focuses on core object
-> mapping; automatic collection mapping, projection and several other
-> general-purpose mapper features are not included yet. See
+> Morphant is currently in the 0.x series. It focuses on core object mapping;
+> automatic collection mapping, projection and several other general-purpose
+> mapper features are not included yet. See
 > [Current limitations](https://github.com/strangeman375/Morphant/blob/main/docs/limitations.md).
 
 ## Install

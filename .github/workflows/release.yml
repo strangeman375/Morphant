@@ -67,6 +67,23 @@ jobs:
             exit 1
           fi
 
+          awk -v heading="## [$product_version]" '
+            $0 == heading { capture = 1; next }
+            capture && /^## / { exit }
+            capture && /^\[[^]]+\]:/ { exit }
+            capture { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
+
+          if [[ ! -s "$RUNNER_TEMP/release-notes.md" ]]; then
+            echo "CHANGELOG.md has no release notes for $product_version." >&2
+            exit 1
+          fi
+
+          if ! grep --fixed-strings --quiet "[$product_version]:" CHANGELOG.md; then
+            echo "CHANGELOG.md has no link definition for $product_version." >&2
+            exit 1
+          fi
+
           echo "artifact_name=morphant-release-$product_version" >> "$GITHUB_OUTPUT"
           echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
           echo "version=$product_version" >> "$GITHUB_OUTPUT"
@@ -235,6 +252,46 @@ jobs:
           --no-restore
           -p:MorphantRoslynVersion=4.4.0
 
+  minimum-sdk-package-consumer:
+    name: Validate release package (.NET SDK 7.0.100 / MSBuild 17.4)
+    needs:
+      - preflight
+      - package
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up minimum .NET SDK
+        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        with:
+          dotnet-version: 7.0.100
+
+      - name: Download release candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.preflight.outputs.artifact_name }}
+          path: artifacts/release-candidate
+
+      - name: Build and run with the minimum SDK host
+        env:
+          VERSION: ${{ needs.preflight.outputs.version }}
+        shell: bash
+        working-directory: src/tests/Morphant.Generator.PackageTests.MinimumSdkConsumer
+        run: |
+          test "$(dotnet --version)" = "7.0.100"
+          dotnet run \
+            --configuration Release \
+            -m:1 \
+            -nodeReuse:false \
+            -p:MorphantTestPackageVersion="$VERSION" \
+            -p:MorphantGitSnapshot=true \
+            -p:RestoreSources="${{ github.workspace }}/artifacts/release-candidate" \
+            -p:NuGetAudit=false
+          test -n "$(find Generated/Morphant/net7.0 -maxdepth 1 -name 'Morphant.Generated.TypeMapper.*.g.cs' -print -quit)"
+
   publish:
     name: Publish to NuGet
     needs:
@@ -242,6 +299,7 @@ jobs:
       - package
       - roslyn-compatibility
       - cross-platform
+      - minimum-sdk-package-consumer
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
@@ -249,7 +307,6 @@ jobs:
       url: https://www.nuget.org/packages/Morphant/${{ needs.preflight.outputs.version }}
     permissions:
       contents: write
-      id-token: write
 
     steps:
       - name: Check out release commit
@@ -274,31 +331,74 @@ jobs:
         working-directory: artifacts/release-candidate
         run: sha256sum --check SHA256SUMS
 
-      - name: Create release tag
+      - name: Validate existing release state
+        id: release_state
         env:
           RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
           VERSION: ${{ needs.preflight.outputs.version }}
         shell: bash
         run: |
           tag="v$VERSION"
+          tag_exists=false
 
           if git rev-parse --verify "refs/tags/$tag" >/dev/null 2>&1; then
+            tag_exists=true
             existing_commit="$(git rev-list -n 1 "$tag")"
 
             if [[ "$existing_commit" != "$RELEASE_COMMIT" ]]; then
               echo "$tag already points to $existing_commit instead of $RELEASE_COMMIT." >&2
               exit 1
             fi
-
-            exit 0
           fi
 
+          normalized_version="${VERSION,,}"
+          package_exists="$(
+            curl --fail --silent --show-error --retry 3 --retry-all-errors \
+              https://api.nuget.org/v3-flatcontainer/morphant/index.json |
+              jq --arg version "$normalized_version" \
+                'any(.versions[]; ascii_downcase == $version)'
+          )"
+
+          if [[ "$package_exists" != "true" && "$package_exists" != "false" ]]; then
+            echo "Could not determine whether Morphant $VERSION exists on NuGet.org." >&2
+            exit 1
+          fi
+
+          if [[ "$package_exists" == "true" && "$tag_exists" != "true" ]]; then
+            echo "Morphant $VERSION already exists on NuGet.org, but $tag does not exist." >&2
+            echo "Refusing to create a tag for a package whose contents cannot be verified." >&2
+            exit 1
+          fi
+
+          echo "tag_exists=$tag_exists" >> "$GITHUB_OUTPUT"
+          echo "package_exists=$package_exists" >> "$GITHUB_OUTPUT"
+
+      - name: Validate NuGet API key
+        if: steps.release_state.outputs.package_exists != 'true'
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        shell: bash
+        run: |
+          if [[ -z "$NUGET_API_KEY" ]]; then
+            echo "The release workflow has no NUGET_API_KEY secret." >&2
+            exit 1
+          fi
+
+      - name: Create release tag
+        if: steps.release_state.outputs.tag_exists != 'true'
+        env:
+          RELEASE_COMMIT: ${{ needs.preflight.outputs.commit }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        shell: bash
+        run: |
+          tag="v$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag --annotate "$tag" "$RELEASE_COMMIT" --message "Morphant $VERSION"
           git push origin "refs/tags/$tag"
 
       - name: Publish package
+        if: steps.release_state.outputs.package_exists != 'true'
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
           VERSION: ${{ needs.preflight.outputs.version }}
@@ -308,7 +408,6 @@ jobs:
           "artifacts/release-candidate/Morphant.$VERSION.nupkg"
           --api-key "$NUGET_API_KEY"
           --source https://api.nuget.org/v3/index.json
-          --skip-duplicate
           --timeout 600
 
   github-release:

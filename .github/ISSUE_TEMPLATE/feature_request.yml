@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a user-facing improvement to Morphant
+title: "[Feature]: "
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem or unsupported scenario should Morphant address?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the public API or behavior you would like to use.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: How are you handling this today, and what trade-offs does that have?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include a compact example when it clarifies the request.
