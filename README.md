@@ -11,6 +11,9 @@ Morphant is a compile-time object mapper for C#. It turns explicit
 configuration into strongly typed mapping code without runtime reflection.
 `IMapper` is the main application entry point.
 
+If Morphant saves you time, you can
+[support its development on Boosty](https://boosty.to/strangeman375).
+
 > Morphant is currently in the 0.x series. It focuses on core object mapping;
 > automatic collection mapping, projection and several other general-purpose
 > mapper features are not included yet. See
