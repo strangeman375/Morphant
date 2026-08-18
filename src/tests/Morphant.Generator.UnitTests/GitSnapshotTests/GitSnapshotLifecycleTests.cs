@@ -14,12 +14,15 @@ internal sealed class GitSnapshotLifecycleTests
         var unchanged = "Morphant.Generated.TypeMapper.Unchanged.g.cs";
         var added = "Morphant.Generated.TypeMapper.Added.g.cs";
         var stale = "Morphant.Generated.TypeMapper.Stale.g.cs";
+        var fullArtifact = "Morphant.Generated.Construction.Template.g.cs";
         var unrelated = "Other.Generator.Output.g.cs";
 
         workspace.WriteCompilerOutput(context, unchanged, "// unchanged\r\n");
         workspace.WriteCompilerOutput(context, added, "// added\r\n");
+        workspace.WriteCompilerOutput(context, fullArtifact, "// template\r\n");
         workspace.WriteSnapshot(context, unchanged, "// unchanged\r\n");
         workspace.WriteSnapshot(context, stale, "// stale\r\n");
+        workspace.WriteSnapshot(context, fullArtifact, "// old template\r\n");
         workspace.WriteSnapshot(context, unrelated, "// unrelated\r\n");
         var unchangedPath = Path.Combine(context.SliceDirectory, unchanged);
         var originalWriteTime = new DateTime(
@@ -41,12 +44,58 @@ internal sealed class GitSnapshotLifecycleTests
                 Is.EqualTo(new[] { added, unchanged }));
             Assert.That(File.Exists(Path.Combine(context.SliceDirectory, stale)), Is.False);
             Assert.That(
+                File.Exists(Path.Combine(context.SliceDirectory, fullArtifact)),
+                Is.False);
+            Assert.That(
                 File.ReadAllText(Path.Combine(context.SliceDirectory, unrelated)),
                 Is.EqualTo("// unrelated\r\n"));
             Assert.That(
                 File.GetLastWriteTimeUtc(unchangedPath),
                 Is.EqualTo(originalWriteTime));
         });
+    }
+
+    [Test]
+    public void Full_detail_publishes_every_morphant_artifact()
+    {
+        using var workspace = new SnapshotWorkspace();
+        var context = workspace.CreateContext(
+            "Release",
+            "net10.0",
+            snapshotDetail: "Full");
+        string[] files =
+        [
+            "Morphant.Generated.Construction.Destination.g.cs",
+            "Morphant.Generated.MappingExtension.Pair.g.cs",
+            "Morphant.Generated.Member.Destination.g.cs",
+            "Morphant.Generated.MemberExtension.Pair.g.cs",
+            "Morphant.Generated.TypeMapper.Mapper.g.cs"
+        ];
+
+        foreach (var file in files)
+        {
+            workspace.WriteCompilerOutput(context, file, "// generated\r\n");
+        }
+
+        GitSnapshotLifecycle.Publish(context);
+
+        Assert.That(
+            SnapshotFileNames(context),
+            Is.EqualTo(files.Order(StringComparer.Ordinal)));
+    }
+
+    [Test]
+    public void Rejects_unknown_snapshot_detail_before_publication()
+    {
+        using var workspace = new SnapshotWorkspace();
+
+        var exception = Assert.Throws<SnapshotException>(() =>
+            workspace.CreateContext(
+                "Release",
+                "net10.0",
+                snapshotDetail: "Everything"));
+
+        Assert.That(exception!.Code, Is.EqualTo("MORPHANTMSB020"));
     }
 
     [Test]
@@ -178,7 +227,8 @@ internal sealed class GitSnapshotLifecycleTests
         public GitSnapshotContext CreateContext(
             string configuration,
             string targetFramework,
-            string targetFrameworks = "")
+            string targetFrameworks = "",
+            string snapshotDetail = "Mappers")
         {
             var intermediate = Path.Combine(
                 BaseIntermediate,
@@ -187,6 +237,7 @@ internal sealed class GitSnapshotLifecycleTests
             return GitSnapshotContext.Create(
                 ProjectDirectory,
                 SnapshotRoot,
+                snapshotDetail,
                 targetFramework,
                 targetFrameworks,
                 BaseIntermediate,

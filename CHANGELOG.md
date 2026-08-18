@@ -13,6 +13,9 @@ documented breaking changes.
   framework, unconditional compiler exclusion of owned files, validated private
   staging, post-compile content-aware synchronization, parallel publication
   locking, and stale-file cleanup without manifests or persistent build state.
+  Snapshots contain mapper implementations by default; set
+  `MorphantGitSnapshotDetail` to `Full` to include generated configuration API
+  and template types.
 
 ## [0.1.0]
 

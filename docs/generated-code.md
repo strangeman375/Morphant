@@ -32,6 +32,23 @@ in review or Git history:
 </PropertyGroup>
 ```
 
+By default the snapshot contains only generated mapper implementations
+(`TypeMapper` files). These are normally the files that matter during code
+review. To include the complete generated surface, including configuration API
+and template types, select full detail:
+
+```xml
+<PropertyGroup>
+  <MorphantGitSnapshot>true</MorphantGitSnapshot>
+  <MorphantGitSnapshotDetail>Full</MorphantGitSnapshotDetail>
+</PropertyGroup>
+```
+
+`MorphantGitSnapshotDetail` accepts `Mappers` (the default) or `Full`.
+Changing from `Full` to `Mappers` removes the no-longer-selected Morphant
+artifacts after the next successful compiler run; unrelated files remain
+untouched.
+
 The default root is `Generated/Morphant`. The root must be one literal,
 dedicated subdirectory of the consumer project. Project roots, parent or
 external/shared directories, wildcards, and item lists are rejected before
@@ -56,12 +73,13 @@ dotnet build -c Release -t:Rebuild
 ```
 
 The package enables Roslyn's file emission into a validated private directory
-under `obj`. Only after `Csc` succeeds does a small MSBuild task copy
-`Morphant.Generated.*.g.cs` into the Git snapshot. It compares file contents,
-leaves identical files and timestamps untouched, removes stale Morphant files,
-and preserves unrelated files. Morphant files in removed target-framework
-slices are cleaned on the next successful compilation. Debug, Release, and
-parallel target-framework builds coordinate through a short cross-process lock.
+under `obj`. Only after `Csc` succeeds does a small MSBuild task copy the
+selected Morphant files into the Git snapshot. It compares file contents,
+leaves identical files and timestamps untouched, removes stale or filtered-out
+Morphant files, and preserves unrelated files. Morphant files in removed
+target-framework slices are cleaned on the next successful compilation. Debug,
+Release, and parallel target-framework builds coordinate through a short
+cross-process lock.
 
 A compiler error does not publish private staging, so the previous Git snapshot
 remains intact. A command-line or global override of
@@ -86,8 +104,8 @@ Changing `MorphantGitSnapshotPath` does not delete the old committed root.
 Reserved Morphant files there remain excluded from compilation, so the build
 is safe; remove the old root explicitly after reviewing the new snapshot.
 
-Enabling the snapshot or changing its path does not itself make `CoreCompile`
-out of date. Run `Rebuild` once after either change.
+Enabling the snapshot or changing its path or detail does not itself make
+`CoreCompile` out of date. Run `Rebuild` once after any of these changes.
 
 `EmitCompilerGeneratedFiles` and `CompilerGeneratedFilesOutputPath` remain
 standard Roslyn diagnostics switches, but they do not provide the supported
@@ -103,6 +121,10 @@ reviewable snapshot synchronized after successful compilation.
 | `MappingExtension` | Mapping-specific destination selection and `Convert` methods |
 | `MemberExtension` | Mapping-specific `Members` methods |
 | `TypeMapper` | The generated mapper implementation |
+
+`Mappers` publishes only `TypeMapper`. `Full` publishes every kind in this
+table and automatically includes any new Morphant artifact kinds introduced in
+future versions.
 
 Hint names follow this readable form:
 

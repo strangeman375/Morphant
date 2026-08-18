@@ -13,7 +13,12 @@ internal sealed class PackageConsumptionTests
     private const string HintPrefix =
         "Morphant_Generator_PackageTests_Consumer_";
 
-    private static readonly string[] PrimaryGeneratedFiles =
+    private static readonly string[] MapperGeneratedFiles =
+    [
+        "Morphant.Generated.TypeMapper." + HintPrefix + "TestMapper.g.cs"
+    ];
+
+    private static readonly string[] PrimaryFullGeneratedFiles =
     [
         "Morphant.Generated.Construction." +
         HintPrefix + "Destination.g.cs",
@@ -25,9 +30,9 @@ internal sealed class PackageConsumptionTests
         "Morphant.Generated.TypeMapper." + HintPrefix + "TestMapper.g.cs"
     ];
 
-    private static readonly string[] BothGeneratedFiles =
+    private static readonly string[] BothFullGeneratedFiles =
     [
-        .. PrimaryGeneratedFiles,
+        .. PrimaryFullGeneratedFiles,
         "Morphant.Generated.Construction." +
         HintPrefix + "SecondDestination.g.cs",
         "Morphant.Generated.MappingExtension." +
@@ -180,29 +185,43 @@ internal sealed class PackageConsumptionTests
             });
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
+                MapperGeneratedFiles);
+
+            string[] fullConsumerArguments =
+            [
+                .. consumerArguments,
+                "-p:MorphantGitSnapshotDetail=Full"
+            ];
 
             await File.WriteAllTextAsync(
                 consumerSource,
                 SecondMappingConsumerSource);
             var addedMappingRun = await DotNetCli.Run(
                 repositoryRoot,
-                consumerArguments);
+                RebuildArguments(fullConsumerArguments, consumerProject));
             AssertSucceeded(addedMappingRun);
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
-                BothGeneratedFiles);
+                BothFullGeneratedFiles);
 
             await File.WriteAllTextAsync(
                 consumerSource,
                 originalConsumerSource);
             var removedMappingRun = await DotNetCli.Run(
                 repositoryRoot,
-                consumerArguments);
+                fullConsumerArguments);
             AssertSucceeded(removedMappingRun);
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
+                PrimaryFullGeneratedFiles);
+
+            var mapperDetailRun = await DotNetCli.Run(
+                repositoryRoot,
+                RebuildArguments(consumerArguments, consumerProject));
+            AssertSucceeded(mapperDetailRun);
+            AssertGeneratedFileSet(
+                morphantGeneratedDirectory,
+                MapperGeneratedFiles);
 
             await File.WriteAllTextAsync(
                 consumerSource,
@@ -229,7 +248,7 @@ internal sealed class PackageConsumptionTests
             AssertSucceeded(mappingRestoredRun);
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
+                MapperGeneratedFiles);
 
             var currentSnapshotWriteTimes = SnapshotWriteTimes(
                 morphantGeneratedDirectory);
@@ -336,7 +355,7 @@ internal sealed class PackageConsumptionTests
             AssertSucceeded(finalRun);
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
+                MapperGeneratedFiles);
 
             var successfulSnapshot = SnapshotContents(
                 morphantGeneratedDirectory);
@@ -363,7 +382,7 @@ internal sealed class PackageConsumptionTests
 
             var deletedSnapshotFile = Path.Combine(
                 morphantGeneratedDirectory,
-                PrimaryGeneratedFiles[0]);
+                MapperGeneratedFiles[0]);
             File.Delete(deletedSnapshotFile);
             var upToDateBuild = await DotNetCli.Run(
                 repositoryRoot,
@@ -381,7 +400,7 @@ internal sealed class PackageConsumptionTests
             AssertSucceeded(repairedFileRun);
             AssertGeneratedFileSet(
                 morphantGeneratedDirectory,
-                PrimaryGeneratedFiles);
+                MapperGeneratedFiles);
 
             await AssertTamperedSnapshotIsRepairedByRebuild(
                 repositoryRoot,
@@ -488,7 +507,7 @@ internal sealed class PackageConsumptionTests
         var expected = SnapshotContents(generatedDirectory);
         var generatedFile = Path.Combine(
             generatedDirectory,
-            PrimaryGeneratedFiles[0]);
+            MapperGeneratedFiles[0]);
         await File.AppendAllTextAsync(
             generatedFile,
             "// manual edit\n",
@@ -537,7 +556,10 @@ internal sealed class PackageConsumptionTests
             ("-p:EmitCompilerGeneratedFiles=false", "MORPHANTMSB002"),
             (
                 "-p:TargetsTriggeredByCompilation=ForeignTarget",
-                "MORPHANTMSB017")
+                "MORPHANTMSB017"),
+            (
+                "-p:MorphantGitSnapshotDetail=Everything",
+                "MORPHANTMSB020")
         };
 
         foreach (var (property, expectedCode) in unsafeCases)
@@ -570,7 +592,7 @@ internal sealed class PackageConsumptionTests
     {
         var collision = Path.Combine(
             generatedDirectory,
-            PrimaryGeneratedFiles[1]);
+            MapperGeneratedFiles[0]);
         File.Delete(collision);
         Directory.CreateDirectory(collision);
         var expectedFailureState = SnapshotTree(generatedDirectory);
@@ -590,7 +612,7 @@ internal sealed class PackageConsumptionTests
             repositoryRoot,
             RebuildArguments(consumerArguments, consumerProject));
         AssertSucceeded(repairedPublication);
-        AssertGeneratedFileSet(generatedDirectory, PrimaryGeneratedFiles);
+        AssertGeneratedFileSet(generatedDirectory, MapperGeneratedFiles);
     }
 
     private static async Task AssertDisabledAndChangedPathRemainCompilerSafe(
@@ -623,7 +645,7 @@ internal sealed class PackageConsumptionTests
             Path.Combine(
                 alternativeRoot,
                 "net10.0"),
-            PrimaryGeneratedFiles);
+            MapperGeneratedFiles);
         Assert.That(
             Directory.Exists(defaultGeneratedRoot),
             Is.True,
@@ -740,13 +762,6 @@ internal sealed class PackageConsumptionTests
 
         string[] expected =
         [
-            "Morphant.Generated.Construction." +
-            "MultiTarget_Destination.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "MultiTarget_Source__MultiTarget_Destination.g.cs",
-            "Morphant.Generated.Member.MultiTarget_Destination.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "MultiTarget_Source__MultiTarget_Destination.g.cs",
             "Morphant.Generated.TypeMapper.MultiTarget_TestMapper.g.cs"
         ];
 

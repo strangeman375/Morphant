@@ -3,6 +3,8 @@ namespace Morphant.Build.Tasks;
 internal static class GitSnapshotLifecycle
 {
     private const string GeneratedPattern = "Morphant.Generated.*.g.cs";
+    private const string MapperPattern =
+        "Morphant.Generated.TypeMapper.*.g.cs";
 
     public static void Prepare(GitSnapshotContext context)
     {
@@ -29,7 +31,9 @@ internal static class GitSnapshotLifecycle
             Directory.Exists(context.CompilerGeneratedDirectory)
                 ? Directory.GetFiles(
                     context.CompilerGeneratedDirectory,
-                    GeneratedPattern,
+                    context.SnapshotDetail == GitSnapshotDetail.Full
+                        ? GeneratedPattern
+                        : MapperPattern,
                     SearchOption.AllDirectories)
                 : []);
 

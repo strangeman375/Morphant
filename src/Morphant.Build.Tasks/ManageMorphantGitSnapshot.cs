@@ -13,6 +13,9 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
     [Required]
     public string SnapshotRoot { get; set; } = string.Empty;
 
+    [Required]
+    public string SnapshotDetail { get; set; } = string.Empty;
+
     public string TargetFramework { get; set; } = string.Empty;
 
     public string TargetFrameworks { get; set; } = string.Empty;
@@ -36,6 +39,7 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
         var context = GitSnapshotContext.Create(
             ProjectDirectory,
             SnapshotRoot,
+            SnapshotDetail,
             TargetFramework,
             TargetFrameworks,
             BaseIntermediateOutputPath,

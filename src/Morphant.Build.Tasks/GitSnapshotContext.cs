@@ -10,12 +10,14 @@ internal sealed class GitSnapshotContext
 
     private GitSnapshotContext(
         string snapshotRoot,
+        GitSnapshotDetail snapshotDetail,
         string targetFramework,
         IReadOnlyCollection<string> expectedTargetFrameworks,
         string intermediateDirectory,
         string compilerGeneratedDirectory)
     {
         SnapshotRoot = snapshotRoot;
+        SnapshotDetail = snapshotDetail;
         ExpectedTargetFrameworks = expectedTargetFrameworks;
         IntermediateDirectory = intermediateDirectory;
         CompilerGeneratedDirectory = compilerGeneratedDirectory;
@@ -23,6 +25,8 @@ internal sealed class GitSnapshotContext
     }
 
     public string SnapshotRoot { get; }
+
+    public GitSnapshotDetail SnapshotDetail { get; }
 
     public IReadOnlyCollection<string> ExpectedTargetFrameworks { get; }
 
@@ -35,6 +39,7 @@ internal sealed class GitSnapshotContext
     public static GitSnapshotContext Create(
         string projectDirectory,
         string snapshotRoot,
+        string snapshotDetail,
         string targetFramework,
         string targetFrameworks,
         string baseIntermediateOutputPath,
@@ -42,6 +47,8 @@ internal sealed class GitSnapshotContext
         string compilerGeneratedFilesOutputPath,
         string emitCompilerGeneratedFiles)
     {
+        var detail = ParseSnapshotDetail(snapshotDetail);
+
         if (!bool.TryParse(emitCompilerGeneratedFiles, out var emit) || !emit)
         {
             throw new SnapshotException(
@@ -157,10 +164,29 @@ internal sealed class GitSnapshotContext
 
         return new GitSnapshotContext(
             snapshot,
+            detail,
             targetFramework,
             frameworks,
             intermediate,
             compilerOutput);
+    }
+
+    private static GitSnapshotDetail ParseSnapshotDetail(string value)
+    {
+        if (string.Equals(value, "Mappers", StringComparison.Ordinal))
+        {
+            return GitSnapshotDetail.Mappers;
+        }
+
+        if (string.Equals(value, "Full", StringComparison.Ordinal))
+        {
+            return GitSnapshotDetail.Full;
+        }
+
+        throw new SnapshotException(
+            "MORPHANTMSB020",
+            "MorphantGitSnapshotDetail must be Mappers or Full. " +
+            $"The effective value is '{value}'.");
     }
 
     public IDisposable AcquireRootLock()
