@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/18/2026 - 06:18:48 |
-| Coverage date: | 08/18/2026 - 06:17:10 - 08/18/2026 - 06:18:43 |
+| Generated on: | 08/18/2026 - 06:53:14 |
+| Coverage date: | 08/18/2026 - 06:51:46 - 08/18/2026 - 06:53:10 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 310 |
 | Files: | 159 |
-| **Line coverage:** | 86% (29371 of 34123) |
-| Covered lines: | 29371 |
-| Uncovered lines: | 4752 |
-| Coverable lines: | 34123 |
-| Total lines: | 57174 |
-| **Branch coverage:** | 76.5% (9942 of 12990) |
-| Covered branches: | 9942 |
-| Total branches: | 12990 |
+| **Line coverage:** | 86.2% (29461 of 34149) |
+| Covered lines: | 29461 |
+| Uncovered lines: | 4688 |
+| Coverable lines: | 34149 |
+| Total lines: | 57230 |
+| **Branch coverage:** | 76.6% (9958 of 13000) |
+| Covered branches: | 9958 |
+| Total branches: | 13000 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -49,15 +49,15 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 66.3%</summary>
+<details><summary>Morphant.Build.Tasks - 80.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**66.3%**|**63.9%**|
-|Morphant.Build.Tasks.GitSnapshotContext|73.6%|60%|
-|Morphant.Build.Tasks.GitSnapshotLifecycle|80.1%|80.6%|
-|Morphant.Build.Tasks.ManageMorphantGitSnapshot|0%|0%|
-|Morphant.Build.Tasks.MorphantBuildTask|0%|0%|
+|**Morphant.Build.Tasks**|**80.7%**|**69.2%**|
+|Morphant.Build.Tasks.GitSnapshotContext|75.5%|60.9%|
+|Morphant.Build.Tasks.GitSnapshotLifecycle|84%|84.2%|
+|Morphant.Build.Tasks.ManageMorphantGitSnapshot|95.2%|83.3%|
+|Morphant.Build.Tasks.MorphantBuildTask|61.2%|0%|
 |Morphant.Build.Tasks.PortablePath|97.5%|54.5%|
 |Morphant.Build.Tasks.SnapshotException|100%||
 
@@ -356,4 +356,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #21](https://github.com/strangeman375/Morphant/actions/runs/32106124860).
+Full HTML report: download the **coverage** artifact from [CI run #22](https://github.com/strangeman375/Morphant/actions/runs/32108614402).
