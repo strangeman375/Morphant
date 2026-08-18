@@ -124,7 +124,7 @@ internal sealed class GitSnapshotLifecycleTests
     }
 
     [Test]
-    public void Removes_owned_files_for_a_removed_target_framework_only()
+    public void Multi_target_project_publishes_only_last_framework_by_default()
     {
         using var workspace = new SnapshotWorkspace();
         const string fileName =
@@ -138,6 +138,42 @@ internal sealed class GitSnapshotLifecycleTests
             "net10.0",
             "net8.0;net10.0");
 
+        var net8Output = workspace.WriteCompilerOutput(
+            net8,
+            fileName,
+            "// net8\r\n");
+        GitSnapshotLifecycle.Prepare(net8);
+        GitSnapshotLifecycle.Publish(net8);
+        workspace.WriteCompilerOutput(net10, fileName, "// net10\r\n");
+        GitSnapshotLifecycle.Publish(net10);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(File.Exists(net8Output), Is.True);
+            Assert.That(Directory.Exists(net8.SliceDirectory), Is.False);
+            Assert.That(
+                File.ReadAllText(Path.Combine(net10.SliceDirectory, fileName)),
+                Is.EqualTo("// net10\r\n"));
+        });
+    }
+
+    [Test]
+    public void Removes_owned_files_for_a_no_longer_selected_framework_only()
+    {
+        using var workspace = new SnapshotWorkspace();
+        const string fileName =
+            "Morphant.Generated.TypeMapper.TargetFramework.g.cs";
+        var net8 = workspace.CreateContext(
+            "Release",
+            "net8.0",
+            "net8.0;net10.0",
+            snapshotTargetFrameworks: " net8.0 ; NET8.0 ; net10.0 ");
+        var net10 = workspace.CreateContext(
+            "Release",
+            "net10.0",
+            "net8.0;net10.0",
+            snapshotTargetFrameworks: " net8.0 ; NET8.0 ; net10.0 ");
+
         workspace.WriteCompilerOutput(net8, fileName, "// net8\r\n");
         GitSnapshotLifecycle.Publish(net8);
         workspace.WriteSnapshot(net8, "Notes.txt", "keep");
@@ -147,11 +183,15 @@ internal sealed class GitSnapshotLifecycleTests
         var net10Only = workspace.CreateContext(
             "Release",
             "net10.0",
-            "net10.0");
+            "net8.0;net10.0",
+            snapshotTargetFrameworks: "net10.0");
         GitSnapshotLifecycle.Publish(net10Only);
 
         Assert.Multiple(() =>
         {
+            Assert.That(
+                net8.SelectedTargetFrameworks,
+                Is.EqualTo(new[] { "net8.0", "net10.0" }));
             Assert.That(
                 File.Exists(Path.Combine(net8.SliceDirectory, fileName)),
                 Is.False);
@@ -162,6 +202,21 @@ internal sealed class GitSnapshotLifecycleTests
                 File.Exists(Path.Combine(net10.SliceDirectory, fileName)),
                 Is.True);
         });
+    }
+
+    [Test]
+    public void Rejects_snapshot_framework_not_declared_by_the_project()
+    {
+        using var workspace = new SnapshotWorkspace();
+
+        var exception = Assert.Throws<SnapshotException>(() =>
+            workspace.CreateContext(
+                "Release",
+                "net10.0",
+                "net8.0;net10.0",
+                snapshotTargetFrameworks: "net9.0"));
+
+        Assert.That(exception!.Code, Is.EqualTo("MORPHANTMSB021"));
     }
 
     [Test]
@@ -378,6 +433,7 @@ internal sealed class GitSnapshotLifecycleTests
             string configuration,
             string targetFramework,
             string targetFrameworks = "",
+            string snapshotTargetFrameworks = "",
             string snapshotDetail = "Mappers")
         {
             var intermediate = Path.Combine(
@@ -390,6 +446,7 @@ internal sealed class GitSnapshotLifecycleTests
                 snapshotDetail,
                 targetFramework,
                 targetFrameworks,
+                snapshotTargetFrameworks,
                 BaseIntermediate,
                 intermediate,
                 Path.Combine(intermediate, "Morphant.CompilerGenerated"),
@@ -459,6 +516,7 @@ internal sealed class GitSnapshotLifecycleTests
                 "Mappers",
                 "net10.0",
                 string.Empty,
+                string.Empty,
                 baseIntermediate,
                 intermediate,
                 Path.Combine(intermediate, "Morphant.CompilerGenerated"),
@@ -484,6 +542,7 @@ internal sealed class GitSnapshotLifecycleTests
                 SnapshotDetail = "Mappers",
                 TargetFramework = "net10.0",
                 TargetFrameworks = string.Empty,
+                SnapshotTargetFrameworks = string.Empty,
                 BaseIntermediateOutputPath = BaseIntermediate,
                 IntermediateOutputPath = intermediate,
                 CompilerGeneratedFilesOutputPath = Path.Combine(

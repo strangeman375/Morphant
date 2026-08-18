@@ -60,13 +60,41 @@ project-owned layout:
 <MorphantGitSnapshotPath>Generated/Mapping</MorphantGitSnapshotPath>
 ```
 
-Morphant creates one slice per target framework, for example
-`Generated/Morphant/net10.0`. Debug and Release publish to that same slice.
-When their generated output is identical, switching configurations does not
-rewrite the snapshot. If conditional source, `DefineConstants`, or conditional
-Morphant properties make the output differ, the last successful build wins.
-Before committing, rebuild the configuration whose output the repository
-treats as canonical, normally Release, and review the generated diff:
+For a multi-target project, Morphant publishes only the last framework declared
+in `TargetFrameworks` by default. Keep the list ordered from oldest to newest;
+for example, `net8.0;net10.0` publishes only
+`Generated/Morphant/net10.0`. Morphant follows the declared order rather than
+trying to rank framework names or custom aliases.
+
+Use `MorphantGitSnapshotTargetFrameworks` to publish a different subset. Every
+value must also occur in the project's `TargetFramework` or `TargetFrameworks`:
+
+```xml
+<MorphantGitSnapshotTargetFrameworks>
+  net8.0;net10.0
+</MorphantGitSnapshotTargetFrameworks>
+```
+
+To publish every declared framework, use:
+
+```xml
+<MorphantGitSnapshotTargetFrameworks>
+  $(TargetFrameworks)
+</MorphantGitSnapshotTargetFrameworks>
+```
+
+Whitespace and duplicate entries are ignored. An undeclared value fails the
+build with an actionable error. A build of a non-selected framework does not
+prepare, publish, or clean the snapshot. After the next successful compilation
+of a selected framework, Morphant removes its generated files from slices that
+are no longer selected; unrelated files remain untouched.
+
+Debug and Release publish to the same slice for each selected framework. When
+their generated output is identical, switching configurations does not rewrite
+the snapshot. If conditional source, `DefineConstants`, or conditional Morphant
+properties make the output differ, the last successful build wins. Before
+committing, rebuild the configuration whose output the repository treats as
+canonical, normally Release, and review the generated diff:
 
 ```bash
 dotnet build -c Release -t:Rebuild
@@ -79,10 +107,10 @@ uses its live compiler view, and design-time builds never publish or clean the
 Git snapshot. Only after a normal `Csc` succeeds does a small MSBuild task copy
 the selected Morphant files into the Git snapshot. It compares file contents,
 leaves identical files and timestamps untouched, removes stale or filtered-out
-Morphant files, and preserves unrelated files. Morphant files in removed
-target-framework slices are cleaned on the next successful compilation. Debug,
-Release, and parallel target-framework builds coordinate through a short
-cross-process lock.
+Morphant files, and preserves unrelated files. Morphant files in removed or
+no-longer-selected target-framework slices are cleaned on the next successful
+compilation of a selected framework. Debug, Release, and parallel builds of
+selected frameworks coordinate through a short cross-process lock.
 
 A compiler error does not publish private staging, so the previous Git snapshot
 remains intact. A command-line or global override of
@@ -119,8 +147,9 @@ Changing `MorphantGitSnapshotPath` does not delete the old committed root.
 Reserved Morphant files there remain excluded from compilation, so the build
 is safe; remove the old root explicitly after reviewing the new snapshot.
 
-Enabling the snapshot or changing its path or detail does not itself make
-`CoreCompile` out of date. Run `Rebuild` once after any of these changes.
+Enabling the snapshot or changing its path, detail, or target-framework
+selection does not itself make `CoreCompile` out of date. Run `Rebuild` once
+after any of these changes.
 
 `EmitCompilerGeneratedFiles` and `CompilerGeneratedFilesOutputPath` remain
 standard Roslyn diagnostics switches, but they do not provide the supported

@@ -20,6 +20,8 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
 
     public string TargetFrameworks { get; set; } = string.Empty;
 
+    public string SnapshotTargetFrameworks { get; set; } = string.Empty;
+
     [Required]
     public string BaseIntermediateOutputPath { get; set; } = string.Empty;
 
@@ -42,6 +44,7 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
             SnapshotDetail,
             TargetFramework,
             TargetFrameworks,
+            SnapshotTargetFrameworks,
             BaseIntermediateOutputPath,
             IntermediateOutputPath,
             CompilerGeneratedFilesOutputPath,

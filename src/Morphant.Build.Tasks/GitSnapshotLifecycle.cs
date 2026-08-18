@@ -8,6 +8,11 @@ internal static class GitSnapshotLifecycle
 
     public static void Prepare(GitSnapshotContext context)
     {
+        if (!context.IsSelectedTargetFramework)
+        {
+            return;
+        }
+
         context.EnsureSafeCompilerOutput();
 
         if (!Directory.Exists(context.CompilerGeneratedDirectory))
@@ -25,6 +30,11 @@ internal static class GitSnapshotLifecycle
 
     public static void Publish(GitSnapshotContext context)
     {
+        if (!context.IsSelectedTargetFramework)
+        {
+            return;
+        }
+
         context.EnsureSafeCompilerOutput();
         var currentFiles = FileSet(
             Directory.Exists(context.CompilerGeneratedDirectory)
@@ -213,7 +223,8 @@ internal static class GitSnapshotLifecycle
                      "*",
                      SearchOption.TopDirectoryOnly))
         {
-            if (context.IsExpectedTargetFramework(Path.GetFileName(directory)))
+            if (context.IsSelectedTargetFrameworkSlice(
+                    Path.GetFileName(directory)))
             {
                 continue;
             }

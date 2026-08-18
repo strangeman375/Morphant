@@ -13,13 +13,16 @@ internal sealed class GitSnapshotContext
         string snapshotRoot,
         GitSnapshotDetail snapshotDetail,
         string targetFramework,
-        IReadOnlyCollection<string> expectedTargetFrameworks,
+        IReadOnlyCollection<string> selectedTargetFrameworks,
         string intermediateDirectory,
         string compilerGeneratedDirectory)
     {
         SnapshotRoot = snapshotRoot;
         SnapshotDetail = snapshotDetail;
-        ExpectedTargetFrameworks = expectedTargetFrameworks;
+        SelectedTargetFrameworks = selectedTargetFrameworks;
+        IsSelectedTargetFramework = selectedTargetFrameworks.Contains(
+            targetFramework,
+            StringComparer.OrdinalIgnoreCase);
         IntermediateDirectory = intermediateDirectory;
         CompilerGeneratedDirectory = compilerGeneratedDirectory;
         SliceDirectory = Path.Combine(snapshotRoot, targetFramework);
@@ -29,7 +32,9 @@ internal sealed class GitSnapshotContext
 
     public GitSnapshotDetail SnapshotDetail { get; }
 
-    public IReadOnlyCollection<string> ExpectedTargetFrameworks { get; }
+    public IReadOnlyCollection<string> SelectedTargetFrameworks { get; }
+
+    public bool IsSelectedTargetFramework { get; }
 
     public string IntermediateDirectory { get; }
 
@@ -43,6 +48,7 @@ internal sealed class GitSnapshotContext
         string snapshotDetail,
         string targetFramework,
         string targetFrameworks,
+        string snapshotTargetFrameworks,
         string baseIntermediateOutputPath,
         string intermediateOutputPath,
         string compilerGeneratedFilesOutputPath,
@@ -149,28 +155,73 @@ internal sealed class GitSnapshotContext
             : targetFramework;
         EnsureSafeComponent(targetFramework, "TargetFramework");
 
-        var frameworks = string.IsNullOrWhiteSpace(targetFrameworks)
-            ? [targetFramework]
-            : targetFrameworks
-                .Split([';'], StringSplitOptions.RemoveEmptyEntries)
-                .Select(static value => value.Trim())
-                .Append(targetFramework)
+        var declaredFrameworks = SplitFrameworks(targetFrameworks);
+
+        if (declaredFrameworks.Length == 0)
+        {
+            declaredFrameworks = [targetFramework];
+        }
+
+        foreach (var framework in declaredFrameworks)
+        {
+            EnsureSafeComponent(framework, "TargetFrameworks");
+        }
+
+        string[] selectedFrameworks;
+
+        if (string.IsNullOrWhiteSpace(snapshotTargetFrameworks))
+        {
+            selectedFrameworks =
+                [declaredFrameworks[declaredFrameworks.Length - 1]];
+        }
+        else
+        {
+            selectedFrameworks = SplitFrameworks(snapshotTargetFrameworks)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
-        foreach (var framework in frameworks)
+            if (selectedFrameworks.Length == 0)
+            {
+                throw new SnapshotException(
+                    "MORPHANTMSB021",
+                    "MorphantGitSnapshotTargetFrameworks must contain at " +
+                    "least one target framework when specified.");
+            }
+        }
+
+        foreach (var framework in selectedFrameworks)
         {
-            EnsureSafeComponent(framework, "TargetFrameworks");
+            EnsureSafeComponent(
+                framework,
+                "MorphantGitSnapshotTargetFrameworks");
+
+            if (!declaredFrameworks.Contains(
+                    framework,
+                    StringComparer.OrdinalIgnoreCase))
+            {
+                throw new SnapshotException(
+                    "MORPHANTMSB021",
+                    "MorphantGitSnapshotTargetFrameworks contains " +
+                    $"'{framework}', which is not declared by " +
+                    "TargetFramework or TargetFrameworks. Declared target " +
+                    $"frameworks: '{string.Join(";", declaredFrameworks)}'.");
+            }
         }
 
         return new GitSnapshotContext(
             snapshot,
             detail,
             targetFramework,
-            frameworks,
+            selectedFrameworks,
             intermediate,
             compilerOutput);
     }
+
+    private static string[] SplitFrameworks(string value) =>
+        value.Split([';'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(static framework => framework.Trim())
+            .Where(static framework => framework.Length > 0)
+            .ToArray();
 
     private static GitSnapshotDetail ParseSnapshotDetail(string value)
     {
@@ -232,8 +283,8 @@ internal sealed class GitSnapshotContext
         }
     }
 
-    public bool IsExpectedTargetFramework(string value) =>
-        ExpectedTargetFrameworks.Contains(
+    public bool IsSelectedTargetFrameworkSlice(string value) =>
+        SelectedTargetFrameworks.Contains(
             value,
             StringComparer.OrdinalIgnoreCase);
 

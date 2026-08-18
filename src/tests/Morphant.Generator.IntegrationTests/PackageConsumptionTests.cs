@@ -428,7 +428,7 @@ internal sealed class PackageConsumptionTests
                 consumerDirectory,
                 consumerGenerated);
 
-            await AssertMultiTargetGeneratedFilesAreIsolated(
+            await AssertMultiTargetSnapshotSelection(
                 repositoryRoot,
                 testDirectory,
                 packageFeed,
@@ -559,7 +559,10 @@ internal sealed class PackageConsumptionTests
                 "MORPHANTMSB017"),
             (
                 "-p:MorphantGitSnapshotDetail=Everything",
-                "MORPHANTMSB020")
+                "MORPHANTMSB020"),
+            (
+                "-p:MorphantGitSnapshotTargetFrameworks=net9.0",
+                "MORPHANTMSB021")
         };
 
         foreach (var (property, expectedCode) in unsafeCases)
@@ -708,7 +711,7 @@ internal sealed class PackageConsumptionTests
         return result;
     }
 
-    private static async Task AssertMultiTargetGeneratedFilesAreIsolated(
+    private static async Task AssertMultiTargetSnapshotSelection(
         string repositoryRoot,
         string testDirectory,
         string packageFeed,
@@ -729,9 +732,7 @@ internal sealed class PackageConsumptionTests
         Directory.CreateDirectory(projectDirectory);
         await File.WriteAllTextAsync(
             projectPath,
-            MultiTargetConsumerProject.Replace(
-                "__PACKAGE_VERSION__",
-                packageVersion));
+            MultiTargetConsumerProjectText(packageVersion));
         await File.WriteAllTextAsync(
             Path.Combine(projectDirectory, "Mapping.cs"),
             MultiTargetConsumerSource);
@@ -765,6 +766,31 @@ internal sealed class PackageConsumptionTests
             "Morphant.Generated.TypeMapper.MultiTarget_TestMapper.g.cs"
         ];
 
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                Directory.Exists(Path.Combine(
+                    projectDirectory,
+                    "generated",
+                    "netstandard2.0")),
+                Is.False,
+                "Only the last declared target framework is selected by " +
+                "default.");
+            AssertGeneratedFileSet(
+                Path.Combine(projectDirectory, "generated", "net10.0"),
+                expected);
+        });
+
+        await File.WriteAllTextAsync(
+            projectPath,
+            MultiTargetConsumerProjectText(
+                packageVersion,
+                snapshotTargetFrameworks: "netstandard2.0;net10.0"));
+        var allTargetFrameworksBuild = await DotNetCli.Run(
+            repositoryRoot,
+            [.. buildArguments, "-t:Rebuild"]);
+        AssertSucceeded(allTargetFrameworksBuild);
+
         foreach (var targetFramework in new[] { "netstandard2.0", "net10.0" })
         {
             AssertGeneratedFileSet(
@@ -777,14 +803,39 @@ internal sealed class PackageConsumptionTests
 
         await File.WriteAllTextAsync(
             projectPath,
-            MultiTargetConsumerProject
-                .Replace("__PACKAGE_VERSION__", packageVersion)
-                .Replace(
-                    "<TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>",
-                    "<TargetFrameworks>net10.0</TargetFrameworks>"));
+            MultiTargetConsumerProjectText(
+                packageVersion,
+                snapshotTargetFrameworks: "netstandard2.0"));
+        var selectedTargetFrameworkBuild = await DotNetCli.Run(
+            repositoryRoot,
+            [.. buildArguments, "-t:Rebuild"]);
+        AssertSucceeded(selectedTargetFrameworkBuild);
+        Assert.Multiple(() =>
+        {
+            AssertGeneratedFileSet(
+                Path.Combine(
+                    projectDirectory,
+                    "generated",
+                    "netstandard2.0"),
+                expected);
+            Assert.That(
+                Directory.Exists(Path.Combine(
+                    projectDirectory,
+                    "generated",
+                    "net10.0")),
+                Is.False,
+                "A no-longer-selected target framework must be removed from " +
+                "the owned snapshot root.");
+        });
+
+        await File.WriteAllTextAsync(
+            projectPath,
+            MultiTargetConsumerProjectText(
+                packageVersion,
+                targetFrameworks: "net10.0"));
         var removedTargetFrameworkBuild = await DotNetCli.Run(
             repositoryRoot,
-            buildArguments);
+            [.. buildArguments, "-t:Rebuild"]);
         AssertSucceeded(removedTargetFrameworkBuild);
         Assert.Multiple(() =>
         {
@@ -805,13 +856,31 @@ internal sealed class PackageConsumptionTests
         });
     }
 
+    private static string MultiTargetConsumerProjectText(
+        string packageVersion,
+        string targetFrameworks = "netstandard2.0;net10.0",
+        string? snapshotTargetFrameworks = null)
+    {
+        var snapshotProperty = snapshotTargetFrameworks is null
+            ? string.Empty
+            : "<MorphantGitSnapshotTargetFrameworks>" +
+              snapshotTargetFrameworks +
+              "</MorphantGitSnapshotTargetFrameworks>";
+
+        return MultiTargetConsumerProjectTemplate
+            .Replace("__PACKAGE_VERSION__", packageVersion)
+            .Replace("__TARGET_FRAMEWORKS__", targetFrameworks)
+            .Replace("__SNAPSHOT_TARGET_FRAMEWORKS__", snapshotProperty);
+    }
+
     // lang=xml
-    private const string MultiTargetConsumerProject =
+    private const string MultiTargetConsumerProjectTemplate =
 """
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>__TARGET_FRAMEWORKS__</TargetFrameworks>
+    __SNAPSHOT_TARGET_FRAMEWORKS__
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
