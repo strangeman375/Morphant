@@ -283,7 +283,7 @@ internal static class StructuredConstructMappingPlanner
                         var convention = BuildByConventionPlan(
                             arguments,
                             sourceType,
-                            mapping.SourceMembers,
+                            BuildSourceContext(mapping, sourceType),
                             destination,
                             capabilities,
                             constructorMembers,
@@ -321,7 +321,7 @@ internal static class StructuredConstructMappingPlanner
                             ExplicitStructuredConstructorPlanner.Build(
                                 arguments,
                                 sourceType,
-                                mapping.SourceMembers,
+                                BuildSourceContext(mapping, sourceType),
                                 destination,
                                 compilation,
                                 mapperType,
@@ -944,7 +944,7 @@ internal static class StructuredConstructMappingPlanner
             var convention = BuildByConventionPlan(
                 arguments,
                 sourceType,
-                mapping.SourceMembers,
+                BuildSourceContext(mapping, sourceType),
                 destination,
                 capabilities,
                 memberMappings,
@@ -977,7 +977,7 @@ internal static class StructuredConstructMappingPlanner
             ExplicitStructuredConstructorPlanner.Build(
                 arguments,
                 sourceType,
-                mapping.SourceMembers,
+                BuildSourceContext(mapping, sourceType),
                 destination,
                 compilation,
                 mapperType,
@@ -1040,7 +1040,7 @@ internal static class StructuredConstructMappingPlanner
         BuildByConventionPlan(
             ImmutableArray<StructuredObjectArgument> arguments,
             ITypeSymbol sourceType,
-            ImmutableArray<ConventionReadableMember> sourceMembers,
+            ConventionSourceMemberContext sourceContext,
             INamedTypeSymbol destination,
             MappingPairCapabilities capabilities,
             ConstructorInitializationMappingPlan memberMappings,
@@ -1130,7 +1130,7 @@ internal static class StructuredConstructMappingPlanner
                     memberMappings,
                     capabilities,
                     constructorSelection,
-                    sourceMembers,
+                    sourceContext,
                     compilation,
                     mapperType,
                     nonNullSourceName,
@@ -1150,7 +1150,7 @@ internal static class StructuredConstructMappingPlanner
                     constructor,
                     sourceType,
                     rules,
-                    sourceMembers,
+                    sourceContext,
                     destinationMembers,
                     destination,
                     memberMappings,
@@ -1221,7 +1221,16 @@ internal static class StructuredConstructMappingPlanner
                     candidate.Observation)
                 .ToImmutableArray(),
             selectedConstructor,
-            Terminals: ImmutableArray<StructuredTerminalObservation>.Empty);
+            Terminals: ImmutableArray<StructuredTerminalObservation>.Empty,
+            FlatteningIssues: selectedConstructor is null
+                ? selectedPlan is null && plannedCandidates.Length == 1
+                    ? plannedCandidates[0].FlatteningIssues
+                    : ImmutableArray<FlatteningIssueObservation>.Empty
+                : plannedCandidates.First(candidate =>
+                        ConventionConstructorMappingPlanner.AreSameConstructor(
+                            candidate.Constructor,
+                            selectedConstructor))
+                    .FlatteningIssues);
 
         return ObserveStrategy(new ConventionConstructorPlanningResult(
             selectedPlan,
@@ -1233,7 +1242,7 @@ internal static class StructuredConstructMappingPlanner
             IMethodSymbol constructor,
             ITypeSymbol sourceType,
             ImmutableArray<StructuredConstructorParameterRule> rules,
-            ImmutableArray<ConventionReadableMember> sourceMembers,
+            ConventionSourceMemberContext sourceContext,
             ImmutableArray<ISymbol> destinationMembers,
             INamedTypeSymbol destination,
             ConstructorInitializationMappingPlan memberMappings,
@@ -1255,6 +1264,8 @@ internal static class StructuredConstructMappingPlanner
         var parameterObservations =
             ImmutableArray.CreateBuilder<
                 ConstructorParameterRuleObservation>();
+        var flatteningIssues =
+            ImmutableArray.CreateBuilder<FlatteningIssueObservation>();
         var rejection = ConstructorCandidateRejectionReason.None;
 
         void Reject(ConstructorCandidateRejectionReason reason)
@@ -1363,9 +1374,20 @@ internal static class StructuredConstructMappingPlanner
                 {
                     var sourceMember =
                         ConventionConstructorMappingPlanner
-                            .TryFindSourceMember(
-                                sourceMembers,
-                                parameter.Name);
+                            .TryResolveSourceMember(
+                                sourceContext,
+                                parameter,
+                                compilation,
+                                mapperType,
+                                cancellationToken,
+                                out var flatteningIssue,
+                                rule.Value);
+
+                    if (flatteningIssue is { } issue)
+                    {
+                        flatteningIssues.Add(issue);
+                    }
+
                     var compatible = sourceMember is { } candidate &&
                         MappingExpressionCompatibility
                             .HasPotentiallyCompatibleConversion(
@@ -1389,7 +1411,10 @@ internal static class StructuredConstructMappingPlanner
                             destinationMember,
                             compatible,
                             ruleRejection,
-                            rule.DesignatorNode));
+                            rule.DesignatorNode,
+                            SourcePathMembers: sourceMember is { } resolved
+                                ? resolved.GetSourcePathMembers()
+                                : default));
 
                     if (!compatible || sourceMember is null)
                     {
@@ -1472,9 +1497,19 @@ internal static class StructuredConstructMappingPlanner
             }
 
             var sourceMember =
-                ConventionConstructorMappingPlanner.TryFindSourceMember(
-                    sourceMembers,
-                    parameter.Name);
+                ConventionConstructorMappingPlanner.TryResolveSourceMember(
+                    sourceContext,
+                    parameter,
+                    compilation,
+                    mapperType,
+                    cancellationToken,
+                    out var flatteningIssue);
+
+            if (flatteningIssue is { } issue)
+            {
+                flatteningIssues.Add(issue);
+            }
+
             var compatible = sourceMember is { } candidate &&
                 MappingExpressionCompatibility
                     .HasPotentiallyCompatibleConversion(
@@ -1503,7 +1538,9 @@ internal static class StructuredConstructMappingPlanner
                                 destinationMembers,
                                 parameter.Name),
                         IsApplicable: true,
-                        ConstructorCandidateRejectionReason.None));
+                        ConstructorCandidateRejectionReason.None,
+                        SourcePathMembers:
+                            automaticSource.GetSourcePathMembers()));
             }
             else if (ConventionConstructorMappingPlanner.CanOmit(parameter))
             {
@@ -1598,7 +1635,8 @@ internal static class StructuredConstructMappingPlanner
             new ConstructorCandidateObservation(
                 constructor,
                 parameterObservations.ToImmutable(),
-                rejection));
+                rejection),
+            flatteningIssues.ToImmutable());
     }
 
     private static TypeMapperConstructorArgumentMappingModel
@@ -1614,12 +1652,12 @@ internal static class StructuredConstructMappingPlanner
             sourceMember.Name,
             ValueLocalName: null,
             ConventionValueExpression:
-                sourceMember.BuildIncludedValueExpression(
+                sourceMember.BuildConventionValueExpression(
                     nonNullSourceName,
                     parameter.Ordinal,
                     "c"),
             ConventionProbeValueExpression:
-                sourceMember.BuildIncludedValueExpression(
+                sourceMember.BuildConventionValueExpression(
                     "source!",
                     parameter.Ordinal,
                     "c"),
@@ -2285,6 +2323,19 @@ internal static class StructuredConstructMappingPlanner
             ThrowExpression: null);
     }
 
+    private static ConventionSourceMemberContext BuildSourceContext(
+        TypeMapperMappingModel mapping,
+        ITypeSymbol sourceType) =>
+        new(
+            sourceType,
+            mapping.SourceMembers.IsDefault
+                ? ImmutableArray<ConventionReadableMember>.Empty
+                : mapping.SourceMembers,
+            mapping.IncludedSourceScopes.IsDefault
+                ? ImmutableArray<IncludedSourceScope>.Empty
+                : mapping.IncludedSourceScopes,
+            mapping.EffectiveSettings.Flattening ?? FlatteningValue.None);
+
     private static string Identifier(string value)
     {
         return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
@@ -2353,7 +2404,8 @@ internal readonly record struct StructuredConstructorParameterRule(
 internal readonly record struct StructuredConstructorCandidatePlanningResult(
     IMethodSymbol Constructor,
     ConventionConstructorMappingPlan? Plan,
-    ConstructorCandidateObservation Observation);
+    ConstructorCandidateObservation Observation,
+    ImmutableArray<FlatteningIssueObservation> FlatteningIssues);
 
 internal readonly record struct StructuredConstructMappingResult(
     TypeMapperControlFlowMappingModel? ControlFlow,

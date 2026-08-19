@@ -1523,6 +1523,18 @@ internal static class PairConfigurationModelBuilder
                 };
                 return true;
 
+            case "Flattening":
+                settings = settings with
+                {
+                    Flattening =
+                        BuildSetting<FlatteningValue>(
+                            invocation,
+                            semanticModel,
+                            cancellationToken,
+                            TryGetDefinedEnum)
+                };
+                return true;
+
             case "UnmappedMemberValidation":
                 settings = settings with
                 {
@@ -1772,6 +1784,7 @@ internal static class PairConfigurationModelBuilder
                    "NullDestinationHandling" or
                    "ConstructorSelection" or
                    "MemberSelection" or
+                   "Flattening" or
                    "UnmappedMemberValidation" &&
                method.MethodKind == MethodKind.Ordinary &&
                !method.IsStatic &&

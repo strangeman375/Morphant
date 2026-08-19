@@ -75,6 +75,18 @@ public abstract class MapperBuilderBase<T>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
+    /// Configures convention-based flattening of nested source members.
+    /// </summary>
+    /// <param name="flattening">
+    /// The compile-time constant policy.
+    /// <see cref="Morphant.Flattening.Default"/> inherits the setting; the
+    /// fallback is <see cref="Morphant.Flattening.Auto"/>.
+    /// </param>
+    /// <returns>This builder.</returns>
+    public T Flattening(Flattening flattening) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
     /// Configures validation of members omitted from the mapping plan.
     /// </summary>
     /// <param name="unmappedMemberValidation">

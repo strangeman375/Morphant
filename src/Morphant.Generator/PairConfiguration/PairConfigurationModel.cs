@@ -154,6 +154,7 @@ internal readonly record struct PairConfigurationSettings(
         NullDestinationHandling,
     PairConfigurationSetting<ConstructorSelectionValue> ConstructorSelection,
     PairConfigurationSetting<MemberSelectionValue> MemberSelection,
+    PairConfigurationSetting<FlatteningValue> Flattening,
     PairConfigurationSetting<UnmappedMemberValidationValue>
         UnmappedMemberValidation)
 {

@@ -28,7 +28,8 @@ internal static class IncludedSourceMemberSet
             return new IncludedSourceMemberSetResult(
                 rootMembers,
                 ImmutableArray<ISymbol>.Empty,
-                ImmutableArray<IncludeMembersIssueObservation>.Empty);
+                ImmutableArray<IncludeMembersIssueObservation>.Empty,
+                ImmutableArray<IncludedSourceScope>.Empty);
         }
 
         var issues =
@@ -112,7 +113,8 @@ internal static class IncludedSourceMemberSet
             return new IncludedSourceMemberSetResult(
                 rootMembers,
                 ImmutableArray<ISymbol>.Empty,
-                issues.ToImmutable());
+                issues.ToImmutable(),
+                scopes.ToImmutable());
         }
 
         var pathMembers = scopes
@@ -149,11 +151,19 @@ internal static class IncludedSourceMemberSet
                     member with
                     {
                         Type = scope.Access.CanProduceMissingValue
-                            ? LiftMissingValueType(
+                            ? ConventionSourceAccessModel.LiftMissingValueType(
                                 member.Type,
                                 compilation)
                             : member.Type,
-                        IncludedAccess = scope.Access
+                        SourceAccess = scope.Access,
+                        PathDisplay = scope.PathDisplay + "." + member.Name,
+                        PathIdentity = scope.PathIdentity + "/" +
+                            ConventionSourceAccessModel.MemberIdentity(
+                                member.Symbol),
+                        SourcePathMembers = scope.Access.Path
+                            .Select(static segment => segment.Symbol)
+                            .Append(member.Symbol)
+                            .ToImmutableArray()
                     },
                     scope));
             }
@@ -194,7 +204,8 @@ internal static class IncludedSourceMemberSet
         return new IncludedSourceMemberSetResult(
             result.ToImmutable(),
             pathMembers,
-            issues.ToImmutable());
+            issues.ToImmutable(),
+            scopes.ToImmutable());
     }
 
     private static bool TryGetSelectedPaths(
@@ -287,7 +298,7 @@ internal static class IncludedSourceMemberSet
         }
 
         var resolvedPath =
-            ImmutableArray.CreateBuilder<IncludedSourcePathSegment>(
+            ImmutableArray.CreateBuilder<ConventionSourcePathSegment>(
                 parsedPath.Length);
         var receiverType = rootType;
 
@@ -313,7 +324,7 @@ internal static class IncludedSourceMemberSet
                 return false;
             }
 
-            resolvedPath.Add(new IncludedSourcePathSegment(
+            resolvedPath.Add(new ConventionSourcePathSegment(
                 readableMember.Name,
                 readableMember.Type,
                 readableMember.Symbol,
@@ -360,7 +371,8 @@ internal static class IncludedSourceMemberSet
             pathDisplay,
             pathIdentity,
             members,
-            new IncludedSourceAccessModel(
+            selectedType,
+            new ConventionSourceAccessModel(
                 scopeIndex,
                 rootType,
                 requiresRootCast,
@@ -537,75 +549,28 @@ internal static class IncludedSourceMemberSet
         return type.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
     }
 
-    private static ITypeSymbol LiftMissingValueType(
-        ITypeSymbol type,
-        CSharpCompilation compilation)
-    {
-        if (type is INamedTypeSymbol named &&
-            named.OriginalDefinition.SpecialType ==
-                SpecialType.System_Nullable_T)
-        {
-            return type;
-        }
-
-        if (type is ITypeParameterSymbol typeParameter)
-        {
-            if (typeParameter.IsReferenceType)
-            {
-                return type.WithNullableAnnotation(
-                    NullableAnnotation.Annotated);
-            }
-
-            if (typeParameter.IsValueType)
-            {
-                return compilation
-                    .GetSpecialType(SpecialType.System_Nullable_T)
-                    .Construct(type.WithNullableAnnotation(
-                        NullableAnnotation.NotAnnotated));
-            }
-
-            // Unconstrained T? becomes T for value-type substitutions, so it
-            // cannot represent a missing included scope.
-            return compilation
-                .GetSpecialType(SpecialType.System_Object)
-                .WithNullableAnnotation(NullableAnnotation.Annotated);
-        }
-
-        if (type.IsReferenceType)
-        {
-            return type.WithNullableAnnotation(NullableAnnotation.Annotated);
-        }
-
-        if (type.IsValueType)
-        {
-            return compilation
-                .GetSpecialType(SpecialType.System_Nullable_T)
-                .Construct(type.WithNullableAnnotation(
-                    NullableAnnotation.NotAnnotated));
-        }
-
-        return type.WithNullableAnnotation(NullableAnnotation.Annotated);
-    }
-
-    private readonly record struct IncludedSourceScope(
-        IncludeMembersConfigurationModel Configuration,
-        SyntaxNode DiagnosticOrigin,
-        string PathDisplay,
-        string PathIdentity,
-        ImmutableArray<ConventionReadableMember> Members,
-        IncludedSourceAccessModel Access);
 }
 
 internal readonly record struct IncludedSourceMemberSetResult(
     ImmutableArray<ConventionReadableMember> Members,
     ImmutableArray<ISymbol> PathMembers,
-    ImmutableArray<IncludeMembersIssueObservation> Issues);
+    ImmutableArray<IncludeMembersIssueObservation> Issues,
+    ImmutableArray<IncludedSourceScope> Scopes);
 
-internal readonly record struct IncludedSourceAccessModel(
+internal readonly record struct IncludedSourceScope(
+    IncludeMembersConfigurationModel Configuration,
+    SyntaxNode DiagnosticOrigin,
+    string PathDisplay,
+    string PathIdentity,
+    ImmutableArray<ConventionReadableMember> Members,
+    ITypeSymbol SelectedType,
+    ConventionSourceAccessModel Access);
+
+internal readonly record struct ConventionSourceAccessModel(
     int ScopeIndex,
     ITypeSymbol RootType,
     bool RequiresRootCast,
-    ImmutableArray<IncludedSourcePathSegment> Path)
+    ImmutableArray<ConventionSourcePathSegment> Path)
 {
     public bool CanProduceMissingValue =>
         Path.Any(RequiresGuard);
@@ -659,6 +624,79 @@ internal readonly record struct IncludedSourceAccessModel(
                " ? " + value + " : default(" + typeName + "))";
     }
 
+    public ConventionSourceAccessModel Append(
+        ConventionReadableMember member) =>
+        this with
+        {
+            Path = Path.Add(new ConventionSourcePathSegment(
+                member.Name,
+                member.Type,
+                member.Symbol,
+                SuppressesNull: false,
+                RequiresNullGuard: false))
+        };
+
+    public static ITypeSymbol NormalizeReceiverType(ITypeSymbol type)
+    {
+        if (IsNullableValue(type))
+        {
+            return ((INamedTypeSymbol)type).TypeArguments[0]
+                .WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+        }
+
+        return type.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+    }
+
+    public static ITypeSymbol LiftMissingValueType(
+        ITypeSymbol type,
+        CSharpCompilation compilation)
+    {
+        if (IsNullableValue(type))
+        {
+            return type;
+        }
+
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            if (typeParameter.IsReferenceType)
+            {
+                return type.WithNullableAnnotation(
+                    NullableAnnotation.Annotated);
+            }
+
+            if (typeParameter.IsValueType)
+            {
+                return compilation
+                    .GetSpecialType(SpecialType.System_Nullable_T)
+                    .Construct(type.WithNullableAnnotation(
+                        NullableAnnotation.NotAnnotated));
+            }
+
+            return compilation
+                .GetSpecialType(SpecialType.System_Object)
+                .WithNullableAnnotation(NullableAnnotation.Annotated);
+        }
+
+        if (type.IsReferenceType)
+        {
+            return type.WithNullableAnnotation(NullableAnnotation.Annotated);
+        }
+
+        if (type.IsValueType)
+        {
+            return compilation
+                .GetSpecialType(SpecialType.System_Nullable_T)
+                .Construct(type.WithNullableAnnotation(
+                    NullableAnnotation.NotAnnotated));
+        }
+
+        return type.WithNullableAnnotation(NullableAnnotation.Annotated);
+    }
+
+    public static string MemberIdentity(ISymbol member) =>
+        SymbolNameHelper.GetFullMetadataName(member.ContainingType!) + "." +
+        member.MetadataName;
+
     private static bool CanBeNull(ITypeSymbol type)
     {
         if (IsNullableValue(type))
@@ -678,7 +716,7 @@ internal readonly record struct IncludedSourceAccessModel(
     }
 
     private static bool RequiresGuard(
-        IncludedSourcePathSegment segment) =>
+        ConventionSourcePathSegment segment) =>
         segment.RequiresNullGuard ||
         CanBeNull(segment.Type) &&
         (!segment.SuppressesNull || IsNullableValue(segment.Type));
@@ -697,7 +735,7 @@ internal readonly record struct IncludedSourceAccessModel(
     }
 }
 
-internal readonly record struct IncludedSourcePathSegment(
+internal readonly record struct ConventionSourcePathSegment(
     string Name,
     ITypeSymbol Type,
     ISymbol Symbol,

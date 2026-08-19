@@ -244,6 +244,13 @@ internal static class MappingSettingsDiagnosticPipeline
             MemberSelectionValue.Auto,
             static settings => settings.MemberSelection,
             compositionReliable);
+        var flattening = Resolve(
+            pair,
+            mapper,
+            assemblySettings.Flattening,
+            FlatteningValue.Auto,
+            static settings => settings.Flattening,
+            compositionReliable);
         var constructorSelection = Resolve(
             pair,
             mapper,
@@ -271,6 +278,13 @@ internal static class MappingSettingsDiagnosticPipeline
             AddInvalidUnlessInapplicable(
                 MappingSettingKind.MemberSelection,
                 memberSelection,
+                inapplicableKinds,
+                syntaxTreeOrder,
+                cSharpOrigins,
+                msBuildOrigins);
+            AddInvalidUnlessInapplicable(
+                MappingSettingKind.Flattening,
+                flattening,
                 inapplicableKinds,
                 syntaxTreeOrder,
                 cSharpOrigins,
@@ -333,6 +347,9 @@ internal static class MappingSettingsDiagnosticPipeline
         AddIfExplicit(
             MappingSettingKind.MemberSelection,
             pair.Settings.MemberSelection);
+        AddIfExplicit(
+            MappingSettingKind.Flattening,
+            pair.Settings.Flattening);
         AddIfExplicit(
             MappingSettingKind.UnmappedMemberValidation,
             pair.Settings.UnmappedMemberValidation);
@@ -725,6 +742,7 @@ internal static class MappingSettingsDiagnosticPipeline
             MappingSettingKind.ConstructorSelection =>
                 "ConstructorSelection",
             MappingSettingKind.MemberSelection => "MemberSelection",
+            MappingSettingKind.Flattening => "Flattening",
             MappingSettingKind.UnmappedMemberValidation =>
                 "UnmappedMemberValidation",
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
@@ -752,6 +770,7 @@ internal static class MappingSettingsDiagnosticPipeline
             MappingSettingKind.ConstructorSelection =>
                 values.ConstructorSelection,
             MappingSettingKind.MemberSelection => values.MemberSelection,
+            MappingSettingKind.Flattening => values.Flattening,
             MappingSettingKind.UnmappedMemberValidation =>
                 values.UnmappedMemberValidation,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
@@ -770,6 +789,7 @@ internal static class MappingSettingsDiagnosticPipeline
         NullDestinationHandling,
         ConstructorSelection,
         MemberSelection,
+        Flattening,
         UnmappedMemberValidation
     }
 

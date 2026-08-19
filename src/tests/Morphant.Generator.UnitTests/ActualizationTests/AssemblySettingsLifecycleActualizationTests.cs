@@ -68,6 +68,12 @@ internal sealed class AssemblySettingsLifecycleActualizationTests
                 "MorphantMemberSelection",
                 "Explicit"),
             DefaultStep("member selection restored", files),
+            SettingStep(
+                "disabled flattening",
+                files,
+                "MorphantFlattening",
+                "None"),
+            DefaultStep("flattening restored", files),
             StepWithOptionsAndDiagnostics(
                 "strict unmapped-member validation",
                 files,

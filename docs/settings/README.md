@@ -9,6 +9,7 @@ source/destination mapping.
 | [`NullSourceHandling`](null-handling.md) | `ReturnNull` | `MorphantNullSourceHandling` |
 | [`NullDestinationHandling`](null-handling.md) | `Create` | `MorphantNullDestinationHandling` |
 | [`MemberSelection`](member-selection.md) | `Auto` | `MorphantMemberSelection` |
+| [`Flattening`](flattening.md) | `Auto` | `MorphantFlattening` |
 | [`ConstructorSelection`](constructor-selection.md) | `Unambiguous` | `MorphantConstructorSelection` |
 | [`UnmappedMemberValidation`](unmapped-member-validation.md) | `None` | `MorphantUnmappedMemberValidation` |
 
@@ -20,6 +21,7 @@ Set MSBuild properties in a project file or `Directory.Build.props`:
 <PropertyGroup>
   <MorphantNullSourceHandling>Throw</MorphantNullSourceHandling>
   <MorphantMemberSelection>Explicit</MorphantMemberSelection>
+  <MorphantFlattening>None</MorphantFlattening>
 </PropertyGroup>
 ```
 
@@ -33,6 +35,7 @@ protected override void Configure(MapperBuilder builder)
 {
     builder.NullSourceHandling(NullSourceHandling.Throw);
     builder.MemberSelection(MemberSelection.Explicit);
+    builder.Flattening(Flattening.None);
 
     builder.Map<OrderDto, Order>();
     builder.Map<CustomerDto, Customer>();

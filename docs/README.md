@@ -8,6 +8,8 @@ mapper declaration, DI registration, Create, Update and a first explicit rule.
 - [Create and Update](create-and-update.md) — destination reuse, replacement
   and operation-specific behavior.
 - [Conventions](conventions.md) — automatic constructor and member mapping.
+- [Flatten nested source members](flattening.md) — map joined names such as
+  `CustomerAddressCity` from `Customer.Address.City`.
 - [Include nested source members](include-members.md) — opt selected nested
   objects into convention lookup.
 - [Declarative mapping](declarative-mapping.md) — creating a destination and
@@ -31,6 +33,7 @@ precedence and defaults.
 - [Mapping modes](settings/mapping-mode.md)
 - [Null handling](settings/null-handling.md)
 - [Member selection](settings/member-selection.md)
+- [Flattening](settings/flattening.md)
 - [Constructor selection](settings/constructor-selection.md)
 - [Unmapped member validation](settings/unmapped-member-validation.md)
 

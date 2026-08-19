@@ -12,6 +12,10 @@ documented breaking changes.
   constructor and destination-member conventions, including nullable paths,
   one-call multi-scope selection, `IncludeBase` composition, source-validation
   discards, and dedicated diagnostics for invalid or ambiguous selections.
+- Add automatic source flattening for convention mappings, including nullable
+  path handling, constructor and `IncludeMembers` support, configurable
+  `Flattening` defaults, and an ambiguity diagnostic that never guesses a
+  source path.
 
 ## [0.2.0]
 

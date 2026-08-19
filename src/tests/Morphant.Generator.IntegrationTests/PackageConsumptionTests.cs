@@ -1219,6 +1219,7 @@ namespace Morphant.Generator.PackageTests.Consumer
                     "MorphantNullDestinationHandling",
                     "MorphantConstructorSelection",
                     "MorphantMemberSelection",
+                    "MorphantFlattening",
                     "MorphantUnmappedMemberValidation"
                 }));
             Assert.That(

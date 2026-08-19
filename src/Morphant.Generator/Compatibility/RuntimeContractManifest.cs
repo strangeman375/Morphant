@@ -81,6 +81,11 @@ internal static class RuntimeContractManifest
             ("Auto", 1),
             ("Explicit", 2)),
         EnumRequirement(
+            "Morphant.Flattening",
+            ("Default", 0),
+            ("Auto", 1),
+            ("None", 2)),
+        EnumRequirement(
             "Morphant.NullDestinationHandling",
             ("Default", 0),
             ("Create", 1),
@@ -723,6 +728,10 @@ internal static class RuntimeContractManifest
                    symbol,
                    "MemberSelection",
                    "Morphant.MemberSelection") &&
+               HasBuilderSetting(
+                   symbol,
+                   "Flattening",
+                   "Morphant.Flattening") &&
                HasBuilderSetting(
                    symbol,
                    "UnmappedMemberValidation",

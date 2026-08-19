@@ -55,7 +55,7 @@ internal sealed class SettingsDiagnosticsTests
                 build.Process.ExitCode,
                 Is.EqualTo(1),
                 build.Process.Output);
-            Assert.That(diagnostics, Has.Length.EqualTo(6));
+            Assert.That(diagnostics, Has.Length.EqualTo(7));
             Assert.That(
                 diagnostics.Select(CompilerDiagnosticOutput.GetId),
                 Is.All.EqualTo("MORPH0022"));
@@ -72,6 +72,7 @@ internal sealed class SettingsDiagnosticsTests
             Assert.That(
                 diagnostics,
                 Has.Some.Contains("MemberSelection"));
+            Assert.That(diagnostics, Has.Some.Contains("Flattening"));
             Assert.That(
                 diagnostics,
                 Has.Some.Contains("UnmappedMemberValidation"));

@@ -201,7 +201,8 @@ internal sealed record ConstructorParameterRuleObservation(
     ISymbol? DestinationMember,
     bool IsApplicable,
     ConstructorCandidateRejectionReason RejectionReason,
-    SyntaxNode? DesignatorNode = null);
+    SyntaxNode? DesignatorNode = null,
+    ImmutableArray<ISymbol> SourcePathMembers = default);
 
 internal sealed record ConstructorCandidateObservation(
     IMethodSymbol Constructor,
@@ -213,7 +214,8 @@ internal sealed record ConstructorPlanningObservation(
     SyntaxNode? StrategyOrigin,
     ImmutableArray<ConstructorCandidateObservation> Candidates,
     IMethodSymbol? SelectedConstructor,
-    ImmutableArray<StructuredTerminalObservation> Terminals);
+    ImmutableArray<StructuredTerminalObservation> Terminals,
+    ImmutableArray<FlatteningIssueObservation> FlatteningIssues = default);
 
 internal enum StructuredTerminalKind
 {
@@ -269,7 +271,8 @@ internal sealed record MemberRuleObservation(
     SyntaxNode? DesignatorNode = null,
     SyntaxNode? ResultDependencyOrigin = null,
     INamedTypeSymbol? SourceMapper = null,
-    ITypeSymbol? TargetType = null);
+    ITypeSymbol? TargetType = null,
+    ImmutableArray<ISymbol> SourcePathMembers = default);
 
 internal sealed record MemberPlanningObservation(
     ImmutableArray<ISymbol> SupportedSourceMembers,
@@ -279,7 +282,15 @@ internal sealed record MemberPlanningObservation(
     ImmutableArray<StructuredTerminalObservation> Terminals,
     ImmutableArray<NestedMappingObservation> NestedMappings = default,
     ImmutableArray<SourceDiscardObservation> SourceDiscards = default,
-    SyntaxNode? PlanOrigin = null);
+    SyntaxNode? PlanOrigin = null,
+    ImmutableArray<FlatteningIssueObservation> FlatteningIssues = default);
+
+internal sealed record FlatteningIssueObservation(
+    string TargetName,
+    ISymbol TargetSymbol,
+    SyntaxNode? OriginNode,
+    ImmutableArray<string> CandidatePaths,
+    ImmutableArray<Location> CandidateLocations);
 
 internal enum NestedDestinationOrigin
 {

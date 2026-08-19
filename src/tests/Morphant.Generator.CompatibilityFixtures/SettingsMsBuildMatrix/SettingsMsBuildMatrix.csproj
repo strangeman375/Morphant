@@ -14,6 +14,7 @@
         <MorphantNullDestinationHandling>Unexpected</MorphantNullDestinationHandling>
         <MorphantConstructorSelection>Unexpected</MorphantConstructorSelection>
         <MorphantMemberSelection>Unexpected</MorphantMemberSelection>
+        <MorphantFlattening>Unexpected</MorphantFlattening>
         <MorphantUnmappedMemberValidation>Unexpected</MorphantUnmappedMemberValidation>
     </PropertyGroup>
 
@@ -23,6 +24,7 @@
         <CompilerVisibleProperty Include="MorphantNullDestinationHandling" />
         <CompilerVisibleProperty Include="MorphantConstructorSelection" />
         <CompilerVisibleProperty Include="MorphantMemberSelection" />
+        <CompilerVisibleProperty Include="MorphantFlattening" />
         <CompilerVisibleProperty Include="MorphantUnmappedMemberValidation" />
 
         <Reference Include="Morphant">

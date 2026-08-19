@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -29,7 +30,7 @@ internal static class ConventionMemberMappingPlanner
             includeInitOnlyProperties: true,
             hasMemberCapability: true,
             excludeGeneratedPlanMemberNames: false,
-            readableMembers: default,
+            sourceContext: null,
             sourceValueName: "source",
             cancellationToken);
     }
@@ -51,7 +52,7 @@ internal static class ConventionMemberMappingPlanner
             capabilities.StructuredConstruction,
             capabilities.Members,
             excludeGeneratedPlanMemberNames: true,
-            readableMembers: default,
+            sourceContext: null,
             sourceValueName: "source",
             cancellationToken);
     }
@@ -60,7 +61,7 @@ internal static class ConventionMemberMappingPlanner
         ITypeSymbol sourceType,
         ITypeSymbol? destination,
         MappingPairCapabilities capabilities,
-        ImmutableArray<ConventionReadableMember> readableMembers,
+        ConventionSourceMemberContext sourceContext,
         string sourceValueName,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -75,7 +76,7 @@ internal static class ConventionMemberMappingPlanner
             capabilities.StructuredConstruction,
             capabilities.Members,
             excludeGeneratedPlanMemberNames: true,
-            readableMembers,
+            sourceContext,
             sourceValueName,
             cancellationToken);
     }
@@ -89,7 +90,7 @@ internal static class ConventionMemberMappingPlanner
         bool includeInitOnlyProperties,
         bool hasMemberCapability,
         bool excludeGeneratedPlanMemberNames,
-        ImmutableArray<ConventionReadableMember> readableMembers,
+        ConventionSourceMemberContext? sourceContext,
         string sourceValueName,
         CancellationToken cancellationToken)
     {
@@ -109,6 +110,8 @@ internal static class ConventionMemberMappingPlanner
                     ImmutableArray<StructuredTerminalObservation>.Empty));
         }
 
+        var readableMembers = sourceContext?.DirectMembers ?? default;
+
         if (readableMembers.IsDefault)
         {
             readableMembers = BuildReadableMembers(
@@ -117,10 +120,12 @@ internal static class ConventionMemberMappingPlanner
                 mapperType,
                 cancellationToken);
         }
-        var sourceMembers = readableMembers
-            .ToDictionary(
-                static member => member.Name,
-                StringComparer.Ordinal);
+        var resolvedSourceContext = sourceContext ??
+            new ConventionSourceMemberContext(
+                sourceType,
+                readableMembers,
+                ImmutableArray<IncludedSourceScope>.Empty,
+                FlatteningValue.None);
 
         var create =
             ImmutableArray.CreateBuilder<
@@ -131,12 +136,10 @@ internal static class ConventionMemberMappingPlanner
         var candidates =
             ImmutableArray.CreateBuilder<
                 MemberTypeCompatibilityCandidate>();
-        var candidateRequiredMembers =
-            ImmutableArray.CreateBuilder<bool>();
-        var candidateSourceMembers =
-            ImmutableArray.CreateBuilder<ISymbol>();
-        var candidateDestinationMembers =
-            ImmutableArray.CreateBuilder<ISymbol>();
+        var candidateMembers =
+            ImmutableArray.CreateBuilder<ConventionReadableMember>();
+        var candidateGroups =
+            ImmutableArray.CreateBuilder<MemberCandidateGroup>();
         var candidateValueExpressions =
             ImmutableArray.CreateBuilder<string?>();
         var supportedDestinationMembers =
@@ -145,6 +148,8 @@ internal static class ConventionMemberMappingPlanner
             ImmutableArray.CreateBuilder<ISymbol>();
         var rules =
             ImmutableArray.CreateBuilder<MemberRuleObservation>();
+        var flatteningIssues =
+            ImmutableArray.CreateBuilder<FlatteningIssueObservation>();
 
         foreach (var memberGroup in BuildEffectiveMemberGroups(
                      destination,
@@ -177,10 +182,7 @@ internal static class ConventionMemberMappingPlanner
                     supportedWritable.Symbol);
             }
 
-            if (writableMember is not { } selectedWritable ||
-                !sourceMembers.TryGetValue(
-                    selectedWritable.Name,
-                    out var sourceMember))
+            if (writableMember is not { } selectedWritable)
             {
                 if (requiredMember is not null)
                 {
@@ -190,23 +192,76 @@ internal static class ConventionMemberMappingPlanner
                 continue;
             }
 
-            candidates.Add(
-                new MemberTypeCompatibilityCandidate(
-                    sourceMember.Name,
-                    selectedWritable.Name,
-                    sourceMember.Type,
-                    selectedWritable.Type,
-                    selectedWritable.CanAssign,
-                    sourceMember.BuildIncludedValueExpression(
-                        "source!",
-                        candidates.Count)));
-            candidateRequiredMembers.Add(isRequired);
-            candidateSourceMembers.Add(sourceMember.Symbol);
-            candidateDestinationMembers.Add(selectedWritable.Symbol);
-            candidateValueExpressions.Add(
-                sourceMember.BuildIncludedValueExpression(
-                    sourceValueName,
-                    candidates.Count - 1));
+            var resolution = ConventionSourceMemberResolver.ResolveExact(
+                resolvedSourceContext,
+                selectedWritable.Name,
+                compilation,
+                mapperType,
+                cancellationToken);
+
+            if (resolution.Candidates.IsEmpty)
+            {
+                if (requiredMember is not null)
+                {
+                    requiredObligations.Add(requiredMember);
+                }
+
+                continue;
+            }
+
+            var firstCandidate = candidates.Count;
+
+            foreach (var sourceMember in resolution.Candidates)
+            {
+                var candidateIndex = candidates.Count;
+                candidates.Add(
+                    new MemberTypeCompatibilityCandidate(
+                        sourceMember.Name,
+                        selectedWritable.Name,
+                        sourceMember.Type,
+                        selectedWritable.Type,
+                        selectedWritable.CanAssign,
+                        sourceMember.BuildConventionValueExpression(
+                            "source!",
+                            candidateIndex)));
+                candidateMembers.Add(sourceMember);
+                candidateValueExpressions.Add(
+                    sourceMember.BuildConventionValueExpression(
+                        sourceValueName,
+                        candidateIndex));
+            }
+
+            var firstFallbackCandidate = candidates.Count;
+
+            foreach (var sourceMember in resolution.FallbackCandidates)
+            {
+                var candidateIndex = candidates.Count;
+                candidates.Add(
+                    new MemberTypeCompatibilityCandidate(
+                        sourceMember.Name,
+                        selectedWritable.Name,
+                        sourceMember.Type,
+                        selectedWritable.Type,
+                        selectedWritable.CanAssign,
+                        sourceMember.BuildConventionValueExpression(
+                            "source!",
+                            candidateIndex)));
+                candidateMembers.Add(sourceMember);
+                candidateValueExpressions.Add(
+                    sourceMember.BuildConventionValueExpression(
+                        sourceValueName,
+                        candidateIndex));
+            }
+
+            candidateGroups.Add(new MemberCandidateGroup(
+                selectedWritable,
+                isRequired,
+                requiredMember,
+                resolution.HasDirectClaim,
+                firstCandidate,
+                resolution.Candidates.Length,
+                firstFallbackCandidate,
+                resolution.FallbackCandidates.Length));
         }
 
         var compatibleCandidates =
@@ -218,47 +273,83 @@ internal static class ConventionMemberMappingPlanner
                 mapperType,
                 cancellationToken);
 
-        for (var index = 0;
-             index < candidates.Count;
-             index++)
+        foreach (var group in candidateGroups)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var compatible = Enumerable.Range(
+                    group.FirstCandidate,
+                    group.CandidateCount)
+                .Where(index => compatibleCandidates[index])
+                .ToImmutableArray();
 
-            var candidate = candidates[index];
-
-            if (!compatibleCandidates[index])
+            if (!group.HasDirectClaim &&
+                compatible.IsEmpty &&
+                group.FallbackCandidateCount > 0)
             {
-                if (candidateRequiredMembers[index])
+                compatible = Enumerable.Range(
+                        group.FirstFallbackCandidate,
+                        group.FallbackCandidateCount)
+                    .Where(index => compatibleCandidates[index])
+                    .ToImmutableArray();
+            }
+
+            if (compatible.Length == 0 ||
+                group.HasDirectClaim && compatible.Length != 1)
+            {
+                if (group.RequiredMember is { } requiredMember)
                 {
-                    requiredObligations.Add(
-                        candidateDestinationMembers[index]);
+                    requiredObligations.Add(requiredMember);
                 }
 
                 continue;
             }
 
+            if (compatible.Length > 1)
+            {
+                var ambiguousMembers = compatible
+                    .Select(index => candidateMembers[index])
+                    .ToImmutableArray();
+                flatteningIssues.Add(BuildFlatteningIssue(
+                    group.Destination.Symbol,
+                    group.Destination.Name,
+                    ambiguousMembers));
+
+                if (group.RequiredMember is { } requiredMember)
+                {
+                    requiredObligations.Add(requiredMember);
+                }
+
+                continue;
+            }
+
+            var selectedIndex = compatible[0];
+            var candidate = candidates[selectedIndex];
+            var sourceMember = candidateMembers[selectedIndex];
+
             var mapping = new TypeMapperMemberMappingModel(
                 candidate.SourceMemberName,
                 candidate.DestinationMemberName,
-                candidateRequiredMembers[index],
+                group.IsRequired,
                 SourceValueLocalName: null,
                 ConventionValueExpression:
-                    candidateValueExpressions[index]);
+                    candidateValueExpressions[selectedIndex]);
 
             create.Add(mapping);
 
             rules.Add(
                 new MemberRuleObservation(
-                    candidateDestinationMembers[index],
-                    candidateSourceMembers[index],
+                    group.Destination.Symbol,
+                    sourceMember.Symbol,
                     MemberRuleOrigin.Convention,
                     OriginNode: null,
-                    candidateRequiredMembers[index],
+                    group.IsRequired,
                     MemberLifecycleDependency.Creation |
                     (candidate.CanAssign
                         ? MemberLifecycleDependency.ExistingDestination
                         : MemberLifecycleDependency.InitOnly),
-                    HiddenImportedSlot: null));
+                    HiddenImportedSlot: null,
+                    SourcePathMembers:
+                        sourceMember.GetSourcePathMembers()));
 
             if (candidate.CanAssign)
             {
@@ -282,7 +373,8 @@ internal static class ConventionMemberMappingPlanner
                 supportedDestinationMembers.ToImmutable(),
                 rules.ToImmutable(),
                 requiredObligations.ToImmutable(),
-                Terminals: ImmutableArray<StructuredTerminalObservation>.Empty));
+                Terminals: ImmutableArray<StructuredTerminalObservation>.Empty,
+                FlatteningIssues: flatteningIssues.ToImmutable()));
     }
 
     internal static ImmutableArray<ConventionReadableMember>
@@ -1057,6 +1149,36 @@ internal static class ConventionMemberMappingPlanner
         return FindRequiredMember(memberGroup) is not null;
     }
 
+    internal static FlatteningIssueObservation BuildFlatteningIssue(
+        ISymbol targetSymbol,
+        string targetName,
+        ImmutableArray<ConventionReadableMember> candidates,
+        SyntaxNode? originNode = null)
+    {
+        var locations = candidates
+            .SelectMany(static candidate =>
+                candidate.GetSourcePathMembers())
+            .SelectMany(static member => member.Locations)
+            .Where(static location => location.IsInSource)
+            .GroupBy(static location =>
+                (location.SourceTree?.FilePath ?? string.Empty) + "|" +
+                location.SourceSpan.Start + "|" +
+                location.SourceSpan.Length,
+                StringComparer.Ordinal)
+            .Select(static group => group.First())
+            .ToImmutableArray();
+
+        return new FlatteningIssueObservation(
+            targetName,
+            targetSymbol,
+            originNode,
+            candidates.Select(static candidate =>
+                    candidate.GetPathDisplay())
+                .OrderBy(static path => path, StringComparer.Ordinal)
+                .ToImmutableArray(),
+            locations);
+    }
+
     private readonly record struct EffectiveMemberGroup(
         string Name,
         ImmutableArray<ISymbol> Members);
@@ -1066,6 +1188,16 @@ internal static class ConventionMemberMappingPlanner
         ITypeSymbol Type,
         bool CanAssign,
         ISymbol Symbol);
+
+    private readonly record struct MemberCandidateGroup(
+        WritableMember Destination,
+        bool IsRequired,
+        ISymbol? RequiredMember,
+        bool HasDirectClaim,
+        int FirstCandidate,
+        int CandidateCount,
+        int FirstFallbackCandidate,
+        int FallbackCandidateCount);
 }
 
 internal readonly record struct ConventionMemberMappingPlan(
@@ -1119,18 +1251,28 @@ internal readonly record struct ConventionReadableMember(
     string Name,
     ITypeSymbol Type,
     ISymbol Symbol,
-    IncludedSourceAccessModel? IncludedAccess = null)
+    ConventionSourceAccessModel? SourceAccess = null,
+    string? PathDisplay = null,
+    string? PathIdentity = null,
+    ImmutableArray<ISymbol> SourcePathMembers = default)
 {
-    public string? BuildIncludedValueExpression(
+    public string? BuildConventionValueExpression(
         string sourceName,
         int expressionIndex,
         string expressionKind = "m") =>
-        IncludedAccess?.BuildValueExpression(
+        SourceAccess?.BuildValueExpression(
             sourceName,
             Symbol,
             Type,
             expressionIndex,
             expressionKind);
+
+    public ImmutableArray<ISymbol> GetSourcePathMembers() =>
+        SourcePathMembers.IsDefaultOrEmpty
+            ? ImmutableArray.Create(Symbol)
+            : SourcePathMembers;
+
+    public string GetPathDisplay() => PathDisplay ?? Name;
 }
 
 internal readonly record struct ConventionWritableMember(

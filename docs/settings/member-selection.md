@@ -25,9 +25,10 @@ builder.Map<OrderDto, Order>()
 - `Revision` explicitly requests convention mapping.
 - `LegacyCode` remains unchanged.
 
-Conventions and `Auto()` require an exact, case-sensitive name and a
-warning-free implicit C# conversion. They never start a nested mapping;
-use an explicit [`Map`, `Create` or `Update`](../nested-mapping.md).
+Conventions and `Auto()` require a warning-free implicit C# conversion. They
+prefer an exact, case-sensitive direct name and can use
+[`auto flattening`](../flattening.md). They never start a nested mapping; use
+an explicit [`Map`, `Create` or `Update`](../nested-mapping.md).
 Members exposed through [`IncludeMembers`](../include-members.md) participate
 in the same lookup.
 

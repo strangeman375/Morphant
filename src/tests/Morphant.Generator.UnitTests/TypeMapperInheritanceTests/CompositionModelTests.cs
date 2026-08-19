@@ -58,11 +58,11 @@ namespace TestCase
 // Mappers: 1
 // Mapper 0: TestCase.TestMapper
 // Unifiable: False
-// Root settings: MappingMode=Unset; NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
+// Root settings: MappingMode=Unset; NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Unset
 // Pairs: 1
 // Pair 0: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
-// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
+// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0
 // Manual: Converts=0
 // IncludeBase: 0
@@ -181,14 +181,14 @@ namespace TestCase
 // Mappers: 1
 // Mapper 0: TestCase.DogMapper
 // Unifiable: False
-// Root settings: MappingMode=Unset; NullSourceHandling=Explicit(Default); NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Explicit(Default)
+// Root settings: MappingMode=Unset; NullSourceHandling=Explicit(Default); NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Explicit(Default)
 // Base roots: 2
-// Base root 0 settings: MappingMode=Unset; NullSourceHandling=Explicit(ReturnDestination); NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Explicit(Source)
-// Base root 1 settings: MappingMode=Unset; NullSourceHandling=Explicit(Throw); NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Explicit(Strict)
+// Base root 0 settings: MappingMode=Unset; NullSourceHandling=Explicit(ReturnDestination); NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Explicit(Source)
+// Base root 1 settings: MappingMode=Unset; NullSourceHandling=Explicit(Throw); NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Explicit(Strict)
 // Pairs: 1
 // Pair 0: global::TestCase.Dog -> global::TestCase.DogDto
 // Map: builder.Map<Dog, DogDto>()
-// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Explicit(Strict)
+// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Explicit(Strict)
 // Declarative: ResultPolicies=0; Members=2
 // Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Entity, global::Morphant.Option<global::TestCase.EntityDto>); Output=global::TestCase.Morphant.Generated.EntityDtoMembers; Operation=AnonymousFunction; Syntax=(source, _) => default!
 // Members 1: Form=SourcePreviousAndResult; Inputs=(global::TestCase.Animal, global::Morphant.Option<global::TestCase.AnimalDto>, global::TestCase.AnimalDto); Output=global::TestCase.Morphant.Generated.AnimalDtoMembers; Operation=AnonymousFunction; Syntax=(source, _, result) => default!
@@ -196,8 +196,8 @@ namespace TestCase
 // IncludeBase: 1
 // IncludeBase 0: global::TestCase.Animal -> global::TestCase.AnimalDto
 // Included settings: 2
-// Included 0 settings: MappingMode=Implicit(Default); NullSourceHandling=Explicit(Default); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Default); MemberSelection=Unset; UnmappedMemberValidation=Explicit(Default)
-// Included 1 settings: MappingMode=Explicit(Create); NullSourceHandling=Explicit(ReturnNull); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Largest); MemberSelection=Unset; UnmappedMemberValidation=Explicit(Destination)
+// Included 0 settings: MappingMode=Implicit(Default); NullSourceHandling=Explicit(Default); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Default); MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Explicit(Default)
+// Included 1 settings: MappingMode=Explicit(Create); NullSourceHandling=Explicit(ReturnNull); NullDestinationHandling=Unset; ConstructorSelection=Explicit(Largest); MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Explicit(Destination)
 // Conflicts: None
 """;
 

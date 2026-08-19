@@ -419,6 +419,11 @@ internal static class ConstructionDiagnosticAnalyzer
             return;
         }
 
+        if (!observation.FlatteningIssues.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
         if (AddParameterRuleCandidates(
                 context,
                 mapping,
@@ -497,6 +502,11 @@ internal static class ConstructionDiagnosticAnalyzer
             policy is not { } resolvedPolicy)
         {
             return false;
+        }
+
+        if (!observation.FlatteningIssues.IsDefaultOrEmpty)
+        {
+            return true;
         }
 
         var rules = FindInvalidRules(

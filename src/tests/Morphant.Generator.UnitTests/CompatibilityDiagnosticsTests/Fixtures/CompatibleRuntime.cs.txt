@@ -45,6 +45,13 @@ namespace Morphant
         Explicit = 2
     }
 
+    public enum Flattening
+    {
+        Default = 0,
+        Auto = 1,
+        None = 2
+    }
+
     public enum NullDestinationHandling
     {
         Default = 0,
@@ -187,6 +194,9 @@ namespace Morphant
             throw new NotSupportedException();
 
         public T MemberSelection(MemberSelection value) =>
+            throw new NotSupportedException();
+
+        public T Flattening(Flattening value) =>
             throw new NotSupportedException();
 
         public T UnmappedMemberValidation(UnmappedMemberValidation value) =>

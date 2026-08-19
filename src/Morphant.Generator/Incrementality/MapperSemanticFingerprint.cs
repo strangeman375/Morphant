@@ -68,6 +68,7 @@ internal static class MapperSemanticFingerprintBuilder
                     signature,
                     declaration,
                     context,
+                    mapperType,
                     dependencyTypes,
                     cancellationToken);
             }
@@ -135,6 +136,7 @@ internal static class MapperSemanticFingerprintBuilder
         StringBuilder result,
         TypeDeclarationSyntax declaration,
         CompilationContext context,
+        INamedTypeSymbol mapperType,
         DependencyTypeSet dependencyTypes,
         CancellationToken cancellationToken)
     {
@@ -192,6 +194,8 @@ internal static class MapperSemanticFingerprintBuilder
                 AppendOperations(
                     result,
                     operation,
+                    context.Compilation,
+                    mapperType,
                     dependencyTypes,
                     cancellationToken);
             }
@@ -201,6 +205,8 @@ internal static class MapperSemanticFingerprintBuilder
     private static void AppendOperations(
         StringBuilder result,
         IOperation root,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
         DependencyTypeSet dependencyTypes,
         CancellationToken cancellationToken)
     {
@@ -248,6 +254,13 @@ internal static class MapperSemanticFingerprintBuilder
 
             result.AppendLine();
         }
+
+        FlatteningSemanticDependencyBuilder.Add(
+            root,
+            compilation,
+            mapperType,
+            dependencyTypes.Add,
+            cancellationToken);
     }
 
     private static ISymbol? GetReferencedSymbol(IOperation operation)

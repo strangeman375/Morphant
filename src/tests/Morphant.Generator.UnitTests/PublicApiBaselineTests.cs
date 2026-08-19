@@ -331,6 +331,8 @@ T Morphant.Exceptions.RuntimeInvocationNotSupportedException
   C .ctor()
 T Morphant.Exceptions.UnmatchedMappingSwitchException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
+T Morphant.Flattening
+  V Default, Auto, None
 T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource)
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
@@ -346,6 +348,7 @@ T Morphant.MapperBuilder
   M Morphant.MapperBuilder<TSource, TDestination> Map<TSource, TDestination>(Morphant.MappingMode)
 T Morphant.MapperBuilderBase<T>
   M T ConstructorSelection(Morphant.ConstructorSelection)
+  M T Flattening(Morphant.Flattening)
   M T MemberSelection(Morphant.MemberSelection)
   M T NullDestinationHandling(Morphant.NullDestinationHandling)
   M T NullSourceHandling(Morphant.NullSourceHandling)
@@ -434,6 +437,10 @@ T Morphant.UnmappedMemberValidation
                 (nameof(MappingMode.Create), 1),
                 (nameof(MappingMode.Update), 2),
                 (nameof(MappingMode.CreateAndUpdate), 3));
+            AssertEnumValues<Flattening>(
+                (nameof(Flattening.Default), 0),
+                (nameof(Flattening.Auto), 1),
+                (nameof(Flattening.None), 2));
             AssertEnumValues<MemberSelection>(
                 (nameof(MemberSelection.Default), 0),
                 (nameof(MemberSelection.Auto), 1),

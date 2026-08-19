@@ -73,11 +73,11 @@ namespace TestCase
 // Mappers: 1
 // Mapper 0: TestCase.TestMapper
 // Unifiable: False
-// Root settings: MappingMode=Unset; NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
+// Root settings: MappingMode=Unset; NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Unset
 // Pairs: 2
 // Pair 0: global::TestCase.BaseSource -> global::TestCase.BaseDestination
 // Map: builder.Map<BaseSource, BaseDestination>()
-// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
+// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0
 // IncludeMembers: 1
 // IncludeMembers 0: Form=Selector; Inputs=(global::TestCase.BaseSource); Output=object?; Operation=AnonymousFunction; Syntax=source => source.Profile
@@ -86,7 +86,7 @@ namespace TestCase
 // Conflicts: None
 // Pair 1: global::TestCase.Source -> global::TestCase.Destination
 // Map: builder.Map<Source, Destination>()
-// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
+// Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0
 // IncludeMembers: 2
 // IncludeMembers 0: Form=Selector; Inputs=(global::TestCase.BaseSource); Output=object?; Operation=AnonymousFunction; Syntax=source => source.Profile
@@ -95,7 +95,7 @@ namespace TestCase
 // IncludeBase: 1
 // IncludeBase 0: global::TestCase.BaseSource -> global::TestCase.BaseDestination
 // Included settings: 1
-// Included 0 settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
+// Included 0 settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Unset
 // Conflicts: None
 """;
 

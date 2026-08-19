@@ -20,6 +20,9 @@ internal static class AssemblyMappingSettingsPipeline
     private const string MemberSelectionPropertyName =
         "build_property.MorphantMemberSelection";
 
+    private const string FlatteningPropertyName =
+        "build_property.MorphantFlattening";
+
     private const string UnmappedMemberValidationPropertyName =
         "build_property.MorphantUnmappedMemberValidation";
 
@@ -46,6 +49,8 @@ internal static class AssemblyMappingSettingsPipeline
                             ConstructorSelectionPropertyName));
                 var member = ParseNamedValue<MemberSelectionValue>(
                     GetValue(globalOptions, MemberSelectionPropertyName));
+                var flattening = ParseNamedValue<FlatteningValue>(
+                    GetValue(globalOptions, FlatteningPropertyName));
                 var validation =
                     ParseNamedValue<UnmappedMemberValidationValue>(
                         GetValue(
@@ -58,6 +63,7 @@ internal static class AssemblyMappingSettingsPipeline
                     nullDestination.Value,
                     constructor.Value,
                     member.Value,
+                    flattening.Value,
                     validation.Value,
                     new InvalidMsBuildSettingValues(
                         mappingMode.InvalidValue,
@@ -65,6 +71,7 @@ internal static class AssemblyMappingSettingsPipeline
                         nullDestination.InvalidValue,
                         constructor.InvalidValue,
                         member.InvalidValue,
+                        flattening.InvalidValue,
                         validation.InvalidValue));
             })
             .WithTrackingName(

@@ -13,7 +13,8 @@ internal readonly record struct TypeMapperGenerationInput(
     ImmutableArray<MappingCompletenessDiagnosticCandidate>
         MappingCompletenessDiagnostics,
     ImmutableArray<IncludeMembersDiagnosticCandidate>
-        IncludeMembersDiagnostics)
+        IncludeMembersDiagnostics,
+    ImmutableArray<FlatteningDiagnosticCandidate> FlatteningDiagnostics)
 {
     public string HintName => GeneratedSourceHintName.Create(
         "TypeMapper",

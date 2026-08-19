@@ -7,8 +7,9 @@ builder.Map<Customer, CustomerDto>();
 ```
 
 Use explicit rules when a convention does not describe the intended mapping.
-Morphant does not normalize names, flatten paths or start nested mappings
-automatically.
+Morphant does not normalize names or start nested mappings automatically.
+When no direct source member matches, it can
+[`flatten` a nested source path](flattening.md) by joining member names.
 
 Use [`IncludeMembers`](include-members.md) to opt a selected nested source
 object into the same constructor and member conventions.
@@ -38,7 +39,8 @@ listed member.
 Create selects a constructor according to
 [`ConstructorSelection`](settings/constructor-selection.md). Constructor
 parameters are matched to readable source members by exact name first, then by
-a unique case-insensitive name. Optional parameters may keep their defaults.
+a unique case-insensitive name. Nested paths participate through auto
+flattening. Optional parameters may keep their defaults.
 
 Only accessible constructors with ordinary by-value parameters participate.
 If no constructor can be selected unambiguously, configure destination

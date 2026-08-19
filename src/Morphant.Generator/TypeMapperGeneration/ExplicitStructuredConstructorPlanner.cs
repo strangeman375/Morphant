@@ -13,7 +13,7 @@ internal static class ExplicitStructuredConstructorPlanner
     public static ExplicitStructuredConstructorPlanningResult Build(
         ImmutableArray<StructuredObjectArgument> planArguments,
         ITypeSymbol sourceType,
-        ImmutableArray<ConventionReadableMember> sourceMembers,
+        ConventionSourceMemberContext sourceContext,
         INamedTypeSymbol destination,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -31,6 +31,8 @@ internal static class ExplicitStructuredConstructorPlanner
                 destination,
                 compilation,
                 cancellationToken);
+        var flatteningIssues =
+            ImmutableArray.CreateBuilder<FlatteningIssueObservation>();
 
         ExplicitStructuredConstructorPlanningResult Unsupported(
             ConstructorCandidateRejectionReason rejection,
@@ -44,7 +46,8 @@ internal static class ExplicitStructuredConstructorPlanner
                     strategyOrigin,
                     selectedConstructor,
                     selectedRules,
-                    rejection));
+                    rejection,
+                    flatteningIssues.ToImmutable()));
 
         if (destination.TypeKind == TypeKind.Interface ||
             destination.IsAbstract)
@@ -300,9 +303,20 @@ internal static class ExplicitStructuredConstructorPlanner
                 {
                     var sourceMember =
                         ConventionConstructorMappingPlanner
-                            .TryFindSourceMember(
-                                sourceMembers,
-                                destinationParameter.Name);
+                            .TryResolveSourceMember(
+                                sourceContext,
+                                destinationParameter,
+                                compilation,
+                                mapperType,
+                                cancellationToken,
+                                out var flatteningIssue,
+                                planArgument.Value);
+
+                    if (flatteningIssue is { } issue)
+                    {
+                        flatteningIssues.Add(issue);
+                    }
+
                     var compatible = sourceMember is { } candidate &&
                         MappingExpressionCompatibility
                             .HasPotentiallyCompatibleConversion(
@@ -327,7 +341,10 @@ internal static class ExplicitStructuredConstructorPlanner
                             compatible,
                             rejection,
                             planArgument.Syntax.NameColon?.Name ??
-                            planArgument.Value);
+                            planArgument.Value,
+                            SourcePathMembers: sourceMember is { } resolved
+                                ? resolved.GetSourcePathMembers()
+                                : default);
 
                     if (!compatible || sourceMember is null)
                     {
@@ -344,13 +361,13 @@ internal static class ExplicitStructuredConstructorPlanner
                             ValueLocalName: null,
                             ConventionValueExpression:
                                 sourceMember.Value
-                                    .BuildIncludedValueExpression(
+                                    .BuildConventionValueExpression(
                                         nonNullSourceName,
                                         destinationParameter.Ordinal,
                                         "c"),
                             ConventionProbeValueExpression:
                                 sourceMember.Value
-                                    .BuildIncludedValueExpression(
+                                    .BuildConventionValueExpression(
                                         "source!",
                                         destinationParameter.Ordinal,
                                         "c"),
@@ -453,7 +470,8 @@ internal static class ExplicitStructuredConstructorPlanner
             strategyOrigin,
             destinationConstructor,
             parameterRules.ToImmutableArray(),
-            ConstructorCandidateRejectionReason.None);
+            ConstructorCandidateRejectionReason.None,
+            flatteningIssues.ToImmutable());
 
         return new ExplicitStructuredConstructorPlanningResult(
             new ExplicitStructuredConstructorPlan(
@@ -841,7 +859,8 @@ internal static class ExplicitStructuredConstructorPlanner
         SyntaxNode strategyOrigin,
         IMethodSymbol? selectedConstructor,
         ImmutableArray<ConstructorParameterRuleObservation> selectedRules,
-        ConstructorCandidateRejectionReason rejection)
+        ConstructorCandidateRejectionReason rejection,
+        ImmutableArray<FlatteningIssueObservation> flatteningIssues)
     {
         var rules = selectedRules.IsDefault
             ? ImmutableArray<ConstructorParameterRuleObservation>.Empty
@@ -867,7 +886,8 @@ internal static class ExplicitStructuredConstructorPlanner
             strategyOrigin,
             candidates,
             selectedConstructor,
-            Terminals: ImmutableArray<StructuredTerminalObservation>.Empty);
+            Terminals: ImmutableArray<StructuredTerminalObservation>.Empty,
+            FlatteningIssues: flatteningIssues);
     }
 
     private static HashSet<string> BuildUsedProbeNames(

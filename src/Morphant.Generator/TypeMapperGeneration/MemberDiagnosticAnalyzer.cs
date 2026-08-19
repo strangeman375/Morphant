@@ -449,6 +449,17 @@ internal static class MemberDiagnosticAnalyzer
                 continue;
             }
 
+            if (rule.InvalidReason ==
+                    MemberRuleInvalidReason.AutoUnavailable &&
+                !observation.FlatteningIssues.IsDefaultOrEmpty &&
+                observation.FlatteningIssues.Any(issue =>
+                    StringComparer.Ordinal.Equals(
+                        issue.TargetName,
+                        rule.DestinationMember.Name)))
+            {
+                continue;
+            }
+
             var additional = ImmutableArray.CreateBuilder<Location>();
             Location primary;
             string reason;

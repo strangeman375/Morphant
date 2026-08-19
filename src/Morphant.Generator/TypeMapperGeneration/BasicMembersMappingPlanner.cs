@@ -126,7 +126,9 @@ internal static class BasicMembersMappingPlanner
                                 .FindUnmappedRequiredMembers(
                                     destination,
                                     emptyCreate,
-                                    cancellationToken)
+                                    cancellationToken),
+                        FlatteningIssues =
+                            ImmutableArray<FlatteningIssueObservation>.Empty
                     }),
                 ControlFlow: null,
                 Failure: null);
@@ -269,7 +271,9 @@ internal static class BasicMembersMappingPlanner
                             Rules = ImmutableArray<MemberRuleObservation>.Empty,
                             RequiredObligations = ImmutableArray<ISymbol>.Empty,
                             Terminals = ImmutableArray.Create<StructuredTerminalObservation>(terminal),
-                            PlanOrigin = directExpression
+                            PlanOrigin = directExpression,
+                            FlatteningIssues =
+                                ImmutableArray<FlatteningIssueObservation>.Empty
                         },
                         ConfiguredMemberNames: ImmutableArray<string>.Empty,
                         Failure: failure));
@@ -378,6 +382,24 @@ internal static class BasicMembersMappingPlanner
         }
 
         var representativePlan = leaves.Values.First();
+        var allFlatteningIssues = leaves.Values
+            .SelectMany(static plan =>
+                plan.Observation.FlatteningIssues.IsDefault
+                    ? ImmutableArray<FlatteningIssueObservation>.Empty
+                    : plan.Observation.FlatteningIssues)
+            .GroupBy(static issue =>
+                issue.TargetName + "|" +
+                string.Join("|", issue.CandidatePaths),
+                StringComparer.Ordinal)
+            .Select(static group => group.First())
+            .ToImmutableArray();
+        representativePlan = representativePlan with
+        {
+            Observation = representativePlan.Observation with
+            {
+                FlatteningIssues = allFlatteningIssues
+            }
+        };
         var hasControlFlow =
             controlFlow.Root is not DeclarativeLeafSyntaxNode ||
             !controlFlow.RuntimeLocals.IsEmpty ||
@@ -788,6 +810,12 @@ internal static class BasicMembersMappingPlanner
                 rule.InvalidReason != MemberRuleInvalidReason.None)
             .Select(static rule => rule.DestinationMember)
             .ToImmutableArray();
+        var selectedFlatteningIssues =
+            SelectFlatteningIssues(
+                convention.Observation.FlatteningIssues,
+                memberSelection,
+                occupiedNames,
+                observedRules);
 
         plan = new ConventionMemberMappingPlan(
             immutableCreate,
@@ -806,7 +834,8 @@ internal static class BasicMembersMappingPlanner
                             cancellationToken),
                 NestedMappings = createNestedMapUsages.Observations
                     .AddRange(mapReplacementNestedMapUsages.Observations)
-                    .AddRange(updateNestedMapUsages.Observations)
+                    .AddRange(updateNestedMapUsages.Observations),
+                FlatteningIssues = selectedFlatteningIssues
             },
             occupiedNames.ToImmutableArray());
         plan = plan with
@@ -934,6 +963,11 @@ internal static class BasicMembersMappingPlanner
                         observation.TargetName,
                         StringComparer.Ordinal)));
         }
+        var flatteningIssues = SelectFlatteningIssues(
+            convention.Observation.FlatteningIssues,
+            memberSelection,
+            occupiedNames,
+            rules);
 
         return new ConventionMemberMappingPlan(
             create,
@@ -970,11 +1004,53 @@ internal static class BasicMembersMappingPlanner
                     .ToImmutableArray(),
                 PlanOrigin = immutablePlans
                     .Select(static plan => plan.Observation.PlanOrigin)
-                    .LastOrDefault(static origin => origin is not null)
+                    .LastOrDefault(static origin => origin is not null),
+                FlatteningIssues = flatteningIssues
             },
             occupiedNames.ToImmutableArray(),
             immutablePlans.Select(static plan => plan.Failure)
                 .FirstOrDefault(static failure => failure is not null));
+    }
+
+    private static ImmutableArray<FlatteningIssueObservation>
+        SelectFlatteningIssues(
+            ImmutableArray<FlatteningIssueObservation> issues,
+            MemberSelectionValue memberSelection,
+            ISet<string> occupiedNames,
+            IEnumerable<MemberRuleObservation> rules)
+    {
+        if (issues.IsDefaultOrEmpty)
+        {
+            return ImmutableArray<FlatteningIssueObservation>.Empty;
+        }
+
+        var ruleArray = rules.ToImmutableArray();
+        var result =
+            ImmutableArray.CreateBuilder<FlatteningIssueObservation>();
+
+        foreach (var issue in issues)
+        {
+            var autoRule = ruleArray.LastOrDefault(rule =>
+                rule.Origin == MemberRuleOrigin.Auto &&
+                StringComparer.Ordinal.Equals(
+                    rule.DestinationMember.Name,
+                    issue.TargetName));
+
+            if (autoRule is not null)
+            {
+                result.Add(issue with
+                {
+                    OriginNode = autoRule.OriginNode
+                });
+            }
+            else if (memberSelection == MemberSelectionValue.Auto &&
+                     !occupiedNames.Contains(issue.TargetName))
+            {
+                result.Add(issue);
+            }
+        }
+
+        return result.ToImmutable();
     }
 
     private static bool TryBuildExplicitMapping(

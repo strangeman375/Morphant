@@ -58,6 +58,7 @@ internal readonly record struct TypeMapperMappingModel
     ConstructorPlanningObservation? ConstructorObservation = null,
     MemberPlanningObservation? MemberObservation = null,
     ImmutableArray<ConventionReadableMember> SourceMembers = default,
+    ImmutableArray<IncludedSourceScope> IncludedSourceScopes = default,
     ImmutableArray<ISymbol> IncludedSourcePathMembers = default,
     ImmutableArray<IncludeMembersIssueObservation> IncludeMembersIssues =
         default,

@@ -18,6 +18,7 @@ internal sealed class MsBuildValueTests
                 ["build_property.MorphantConstructorSelection"] =
                     " unambiguous ",
                 ["build_property.MorphantMemberSelection"] = " auto ",
+                ["build_property.MorphantFlattening"] = " auto ",
                 ["build_property.MorphantUnmappedMemberValidation"] =
                     " default "
             });
@@ -43,6 +44,7 @@ internal sealed class MsBuildValueTests
                 ["build_property.MorphantConstructorSelection"] =
                     string.Empty,
                 ["build_property.MorphantMemberSelection"] = " default ",
+                ["build_property.MorphantFlattening"] = "\t",
                 ["build_property.MorphantUnmappedMemberValidation"] = "\t"
             });
 
@@ -67,6 +69,7 @@ internal sealed class MsBuildValueTests
                 ["build_property.MorphantConstructorSelection"] =
                     "ConstructorSelection.Greediest",
                 ["build_property.MorphantMemberSelection"] = "Auto, Explicit",
+                ["build_property.MorphantFlattening"] = "Enabled",
                 ["build_property.MorphantUnmappedMemberValidation"] = "-1"
             });
 
@@ -74,7 +77,7 @@ internal sealed class MsBuildValueTests
         {
             Assert.That(
                 result.Diagnostics.Select(static diagnostic => diagnostic.Id),
-                Is.EqualTo(Enumerable.Repeat("MORPH0022", 5)));
+                Is.EqualTo(Enumerable.Repeat("MORPH0022", 6)));
             Assert.That(
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
@@ -82,6 +85,8 @@ internal sealed class MsBuildValueTests
                 {
                     "MSBuild property 'MorphantConstructorSelection' has " +
                     "unsupported value 'ConstructorSelection.Greediest'.",
+                    "MSBuild property 'MorphantFlattening' has unsupported " +
+                    "value 'Enabled'.",
                     "MSBuild property 'MorphantMemberSelection' has " +
                     "unsupported value 'Auto, Explicit'.",
                     "MSBuild property 'MorphantNullDestinationHandling' " +
@@ -130,12 +135,14 @@ namespace TestCase
                 .NullDestinationHandling(NullDestinationHandling.Create)
                 .ConstructorSelection(ConstructorSelection.Unambiguous)
                 .MemberSelection(MemberSelection.Explicit)
+                .Flattening(Flattening.None)
                 .UnmappedMemberValidation(UnmappedMemberValidation.None);
             builder.Map<SourceB, DestinationB>(MappingMode.CreateAndUpdate)
                 .NullSourceHandling(NullSourceHandling.ReturnDestination)
                 .NullDestinationHandling(NullDestinationHandling.Throw)
                 .ConstructorSelection(ConstructorSelection.Parameterless)
                 .MemberSelection(MemberSelection.Auto)
+                .Flattening(Flattening.Auto)
                 .UnmappedMemberValidation(UnmappedMemberValidation.Source);
         }
     }
@@ -153,6 +160,7 @@ namespace TestCase
                 ["build_property.MorphantConstructorSelection"] =
                     "Unexpected",
                 ["build_property.MorphantMemberSelection"] = "Unexpected",
+                ["build_property.MorphantFlattening"] = "Unexpected",
                 ["build_property.MorphantUnmappedMemberValidation"] =
                     "Unexpected"
             });

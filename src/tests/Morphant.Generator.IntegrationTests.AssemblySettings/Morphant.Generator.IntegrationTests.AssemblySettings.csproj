@@ -11,6 +11,7 @@
         <MorphantNullDestinationHandling>Throw</MorphantNullDestinationHandling>
         <MorphantConstructorSelection>Explicit</MorphantConstructorSelection>
         <MorphantMemberSelection>Explicit</MorphantMemberSelection>
+        <MorphantFlattening>None</MorphantFlattening>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,6 +20,7 @@
         <CompilerVisibleProperty Include="MorphantNullDestinationHandling" />
         <CompilerVisibleProperty Include="MorphantConstructorSelection" />
         <CompilerVisibleProperty Include="MorphantMemberSelection" />
+        <CompilerVisibleProperty Include="MorphantFlattening" />
 
         <ProjectReference Include="..\..\Morphant\Morphant.csproj" />
         <ProjectReference Include="..\..\Morphant.Generator\Morphant.Generator.csproj"

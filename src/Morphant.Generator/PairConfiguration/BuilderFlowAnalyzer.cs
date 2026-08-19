@@ -26,6 +26,7 @@ internal static class BuilderFlowAnalyzer
             .Add("NullDestinationHandling")
             .Add("ConstructorSelection")
             .Add("MemberSelection")
+            .Add("Flattening")
             .Add("UnmappedMemberValidation");
 
     public static BuilderFlowLevelAnalysis Build(

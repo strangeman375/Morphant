@@ -28,9 +28,10 @@ Deep and conditional paths are supported:
 Methods, indexers, casts and computed expressions are invalid. Repeating a
 path reports `MORPH0049`.
 
-Explicit `Members` rules take precedence, followed by root-source members and
-then included members. Two included objects exposing the same exact,
-case-sensitive name produce `MORPH0050`. With
+Explicit `Members` rules take precedence, followed by direct root-source and
+included members, then root and included
+[`flattened paths`](flattening.md). Two included objects exposing the same
+exact, case-sensitive name produce `MORPH0050`. With
 [`MemberSelection.Explicit`](settings/member-selection.md), included members
 are available to `Auto()` and constructor conventions only.
 

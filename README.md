@@ -79,7 +79,8 @@ existing = mapper.Map(customer, existing);
 Always use the value returned by Update: a mapping may reuse the supplied
 destination or replace it.
 
-Mappings can rely on conventions, include selected nested source members,
+Mappings can rely on conventions, flatten nested source member names,
+include selected nested source members,
 configure construction and members explicitly, call other registered
 mappings, or use `Convert` for an ordinary synchronous C# algorithm.
 

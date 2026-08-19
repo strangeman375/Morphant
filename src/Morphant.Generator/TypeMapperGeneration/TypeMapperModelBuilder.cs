@@ -35,6 +35,9 @@ internal static class TypeMapperModelBuilder
     private const string InvalidMemberSelectionMessage =
         "MemberSelection has an invalid value.";
 
+    private const string InvalidFlatteningMessage =
+        "Flattening has an invalid value.";
+
     public static TypeMapperGenerationInput? TryBuild(
         (
             (
@@ -101,6 +104,9 @@ internal static class TypeMapperModelBuilder
             IncludeMembersDiagnosticAnalyzer.Build(
                 model,
                 cancellationToken);
+        var flatteningDiagnostics = FlatteningDiagnosticAnalyzer.Build(
+            model,
+            cancellationToken);
         var constructionDiagnostics = ConstructionDiagnosticAnalyzer.Build(
             analysis,
             model,
@@ -127,7 +133,8 @@ internal static class TypeMapperModelBuilder
             memberDiagnostics,
             nestedMappingDiagnostics,
             mappingCompletenessDiagnostics,
-            includeMembersDiagnostics);
+            includeMembersDiagnostics,
+            flatteningDiagnostics);
     }
 
     private static TypeMapperMappingsBuildResult BuildMappings(
@@ -508,7 +515,10 @@ internal static class TypeMapperModelBuilder
             destinationPlan,
             declarativeSourceType,
             nonNullSourceName,
-            mapperType);
+            mapperType) with
+        {
+            EffectiveSettings = effectiveSettings
+        };
 
         if (configuration.Conflicts != PairConfigurationConflict.None)
         {
@@ -590,6 +600,24 @@ internal static class TypeMapperModelBuilder
             };
         }
 
+        if (!effectiveSettings.IsFlatteningValid)
+        {
+            var failure = MappingFailureObservation.Create(
+                mapping.AnalysisContext,
+                MappingFailureReason.InvalidSetting,
+                InvalidFlatteningMessage,
+                MappingObservationOriginKind.Setting,
+                MappingAffectedPath.All(
+                    MappingPlanPhase.Configuration),
+                configuration.Settings.Flattening.Syntax);
+
+            return mapping with
+            {
+                CreateOperationFailure = failure,
+                UpdateOperationFailure = failure
+            };
+        }
+
         if (pair.Capabilities.DirectConstruction &&
             configuration.Settings.ConstructorSelection.Origin ==
                 PairConfigurationSettingOrigin.Explicit)
@@ -616,6 +644,7 @@ internal static class TypeMapperModelBuilder
         mapping = mapping with
         {
             SourceMembers = includedSourceMembers.Members,
+            IncludedSourceScopes = includedSourceMembers.Scopes,
             IncludedSourcePathMembers = includedSourceMembers.PathMembers,
             IncludeMembersIssues = includedSourceMembers.Issues
         };
@@ -638,12 +667,18 @@ internal static class TypeMapperModelBuilder
             };
         }
 
+        var conventionSourceContext = new ConventionSourceMemberContext(
+            declarativeSourceType,
+            includedSourceMembers.Members,
+            includedSourceMembers.Scopes,
+            effectiveSettings.Flattening!.Value);
+
         var conventionMemberMappings =
             ConventionMemberMappingPlanner.Build(
             declarativeSourceType,
             destinationPlan.MemberType,
             pair.Capabilities,
-            includedSourceMembers.Members,
+            conventionSourceContext,
             nonNullSourceName,
             compilation,
             mapperType,
@@ -792,7 +827,7 @@ internal static class TypeMapperModelBuilder
                         replacement: false),
                     pair.Capabilities,
                     constructorSelection,
-                    includedSourceMembers.Members,
+                    conventionSourceContext,
                     compilation,
                     mapperType,
                     nonNullSourceName,
@@ -1026,6 +1061,9 @@ internal static class TypeMapperModelBuilder
             GetSettingOrDefault(
                 settings.MemberSelection,
                 MemberSelectionValue.Default),
+            GetSettingOrDefault(
+                settings.Flattening,
+                FlatteningValue.Default),
             GetSettingOrDefault(
                 settings.UnmappedMemberValidation,
                 UnmappedMemberValidationValue.Default));

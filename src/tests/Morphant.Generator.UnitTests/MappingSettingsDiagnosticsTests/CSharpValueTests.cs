@@ -55,6 +55,10 @@ namespace TestCase
             builder.MemberSelection(MemberSelection.Auto);
             builder.MemberSelection(MemberSelection.Explicit);
 
+            builder.Flattening(Flattening.Default);
+            builder.Flattening(Flattening.Auto);
+            builder.Flattening(Flattening.None);
+
             builder.UnmappedMemberValidation(UnmappedMemberValidation.Default);
             builder.UnmappedMemberValidation(UnmappedMemberValidation.None);
             builder.UnmappedMemberValidation(UnmappedMemberValidation.Source);
@@ -96,6 +100,7 @@ namespace TestCase
     public sealed class Destination4 { }
     public sealed class Destination5 { }
     public sealed class Destination6 { }
+    public sealed class Destination7 { }
 
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
@@ -107,6 +112,7 @@ namespace TestCase
             var nullDestination = NullDestinationHandling.Throw;
             var constructor = ConstructorSelection.Greediest;
             var members = MemberSelection.Explicit;
+            var flattening = Flattening.None;
             var unmapped = UnmappedMemberValidation.Strict;
 
             builder.Map<Source, Destination1>(mode);
@@ -119,6 +125,8 @@ namespace TestCase
             builder.Map<Source, Destination5>()
                 .MemberSelection(members);
             builder.Map<Source, Destination6>()
+                .Flattening(flattening);
+            builder.Map<Source, Destination7>()
                 .UnmappedMemberValidation(unmapped);
         }
     }
@@ -132,7 +140,7 @@ namespace TestCase
         {
             Assert.That(
                 diagnostics.Select(static diagnostic => diagnostic.Id),
-                Is.EqualTo(Enumerable.Repeat("MORPH0021", 6)));
+                Is.EqualTo(Enumerable.Repeat("MORPH0021", 7)));
             Assert.That(
                 diagnostics.Select(diagnostic =>
                     MappingSettingsDiagnosticsGeneratorTest.SourceText(
@@ -144,6 +152,7 @@ namespace TestCase
                     "nullDestination",
                     "constructor",
                     "members",
+                    "flattening",
                     "unmapped"
                 }));
             Assert.That(
@@ -160,6 +169,8 @@ namespace TestCase
                     "Setting 'ConstructorSelection' must be a " +
                     "supported compile-time constant.",
                     "Setting 'MemberSelection' must be a supported " +
+                    "compile-time constant.",
+                    "Setting 'Flattening' must be a supported " +
                     "compile-time constant.",
                     "Setting 'UnmappedMemberValidation' must be a " +
                     "supported compile-time constant."
@@ -195,6 +206,8 @@ namespace TestCase
     public sealed class Destination10 { }
     public sealed class Destination11 { }
     public sealed class Destination12 { }
+    public sealed class Destination13 { }
+    public sealed class Destination14 { }
 
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
@@ -221,9 +234,13 @@ namespace TestCase
             builder.Map<Source, Destination10>()
                 .MemberSelection((MemberSelection)int.MaxValue);
             builder.Map<Source, Destination11>()
+                .Flattening((Flattening)(-1));
+            builder.Map<Source, Destination12>()
+                .Flattening((Flattening)int.MaxValue);
+            builder.Map<Source, Destination13>()
                 .UnmappedMemberValidation(
                     (UnmappedMemberValidation)(-1));
-            builder.Map<Source, Destination12>()
+            builder.Map<Source, Destination14>()
                 .UnmappedMemberValidation(
                     (UnmappedMemberValidation)int.MaxValue);
         }
@@ -237,7 +254,7 @@ namespace TestCase
         {
             Assert.That(
                 result.Diagnostics.Select(static diagnostic => diagnostic.Id),
-                Is.EqualTo(Enumerable.Repeat("MORPH0021", 12)));
+                Is.EqualTo(Enumerable.Repeat("MORPH0021", 14)));
             Assert.That(
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage().Split('\'')[1]),
@@ -253,6 +270,8 @@ namespace TestCase
                     "ConstructorSelection",
                     "MemberSelection",
                     "MemberSelection",
+                    "Flattening",
+                    "Flattening",
                     "UnmappedMemberValidation",
                     "UnmappedMemberValidation"
                 }));

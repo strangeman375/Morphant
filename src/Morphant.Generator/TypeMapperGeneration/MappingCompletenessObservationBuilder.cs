@@ -140,12 +140,18 @@ internal static class MappingCompletenessObservationBuilder
 
             if (rule.SourceMember is { } sourceMember)
             {
-                AddSourceUse(
-                    sourceUses,
-                    sourceMember,
-                    SourceUseKind.Semantic,
-                    rule.OriginNode ??
-                    mapping.AnalysisContext.Registration.Syntax);
+                foreach (var usedMember in
+                         SourcePathOrMember(
+                             rule.SourcePathMembers,
+                             sourceMember))
+                {
+                    AddSourceUse(
+                        sourceUses,
+                        usedMember,
+                        SourceUseKind.Semantic,
+                        rule.OriginNode ??
+                        mapping.AnalysisContext.Registration.Syntax);
+                }
             }
         }
 
@@ -191,12 +197,18 @@ internal static class MappingCompletenessObservationBuilder
 
                         if (rule.SourceMember is { } sourceMember)
                         {
-                            AddSourceUse(
-                                sourceUses,
-                                sourceMember,
-                                SourceUseKind.Semantic,
-                                rule.OriginNode ??
-                                slice.AnalysisContext.Registration.Syntax);
+                            foreach (var usedMember in
+                                     SourcePathOrMember(
+                                         rule.SourcePathMembers,
+                                         sourceMember))
+                            {
+                                AddSourceUse(
+                                    sourceUses,
+                                    usedMember,
+                                    SourceUseKind.Semantic,
+                                    rule.OriginNode ??
+                                    slice.AnalysisContext.Registration.Syntax);
+                            }
                         }
                     }
                 }
@@ -309,7 +321,13 @@ internal static class MappingCompletenessObservationBuilder
 
                     if (rule.SourceMember is { } sourceMember)
                     {
-                        AddUncertain(sourceMember);
+                        foreach (var usedMember in
+                                 SourcePathOrMember(
+                                     rule.SourcePathMembers,
+                                     sourceMember))
+                        {
+                            AddUncertain(usedMember);
+                        }
                     }
                 }
             }
@@ -345,7 +363,13 @@ internal static class MappingCompletenessObservationBuilder
                 {
                     if (rule.SourceMember is { } sourceMember)
                     {
-                        AddUncertain(sourceMember);
+                        foreach (var usedMember in
+                                 SourcePathOrMember(
+                                     rule.SourcePathMembers,
+                                     sourceMember))
+                        {
+                            AddUncertain(usedMember);
+                        }
                     }
 
                     if (rule.DestinationMember is { } destinationMember)
@@ -637,7 +661,7 @@ internal static class MappingCompletenessObservationBuilder
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    if (sourceMember.IncludedAccess is not { } access ||
+                    if (sourceMember.SourceAccess is not { } access ||
                         !access.Path.Any(segment =>
                             AreSameMember(
                                 segment.Symbol,
@@ -851,4 +875,11 @@ internal static class MappingCompletenessObservationBuilder
 
         observations.Add(new SourceUseObservation(member, kind, origin));
     }
+
+    private static IEnumerable<ISymbol> SourcePathOrMember(
+        ImmutableArray<ISymbol> path,
+        ISymbol member) =>
+        path.IsDefaultOrEmpty
+            ? new[] { member }
+            : path;
 }

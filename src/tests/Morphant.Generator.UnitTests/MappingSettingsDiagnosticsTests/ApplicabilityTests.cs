@@ -28,6 +28,7 @@ namespace TestCase
                 .NullDestinationHandling(NullDestinationHandling.Throw)
                 .ConstructorSelection((ConstructorSelection)int.MaxValue)
                 .MemberSelection(MemberSelection.Auto)
+                .Flattening(Flattening.None)
                 .UnmappedMemberValidation(UnmappedMemberValidation.Strict)
                 .Convert(source => new Destination());
     }
@@ -40,7 +41,7 @@ namespace TestCase
         {
             Assert.That(
                 result.Diagnostics.Select(static diagnostic => diagnostic.Id),
-                Is.EqualTo(Enumerable.Repeat("MORPH0023", 5)));
+                Is.EqualTo(Enumerable.Repeat("MORPH0023", 6)));
             Assert.That(
                 result.Diagnostics.Select(diagnostic =>
                     MappingSettingsDiagnosticsGeneratorTest.SourceText(
@@ -48,6 +49,7 @@ namespace TestCase
                 Is.EqualTo(new[]
                 {
                     "ConstructorSelection",
+                    "Flattening",
                     "MemberSelection",
                     "NullDestinationHandling",
                     "NullSourceHandling",
@@ -58,7 +60,7 @@ namespace TestCase
                     diagnostic.AdditionalLocations).Select(location =>
                     MappingSettingsDiagnosticsGeneratorTest.SourceText(
                         location)),
-                Is.EqualTo(Enumerable.Repeat("Convert", 5)));
+                Is.EqualTo(Enumerable.Repeat("Convert", 6)));
             Assert.That(
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),

@@ -20,7 +20,7 @@
     <Target Name="VerifyMorphantCompilerVisibleProperties"
             BeforeTargets="CoreCompile">
         <ItemGroup>
-            <_MissingMorphantCompilerVisibleProperty Include="MorphantMappingMode;MorphantNullSourceHandling;MorphantNullDestinationHandling;MorphantConstructorSelection;MorphantMemberSelection;MorphantUnmappedMemberValidation" />
+            <_MissingMorphantCompilerVisibleProperty Include="MorphantMappingMode;MorphantNullSourceHandling;MorphantNullDestinationHandling;MorphantConstructorSelection;MorphantMemberSelection;MorphantFlattening;MorphantUnmappedMemberValidation" />
             <_MissingMorphantCompilerVisibleProperty Remove="@(CompilerVisibleProperty)" />
         </ItemGroup>
 

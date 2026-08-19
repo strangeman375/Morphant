@@ -7,6 +7,7 @@ below, but not every feature expected from a general-purpose mapper.
 
 - generated Create and Update mappings;
 - convention and explicit constructor/member mapping;
+- automatic name-based flattening of nested source properties and fields;
 - opt-in convention lookup through selected nested source objects with
   `IncludeMembers`;
 - manual mappings with `Convert`;
@@ -23,9 +24,7 @@ below, but not every feature expected from a general-purpose mapper.
 
 - automatic collection, dictionary or buffer element mapping;
 - projection to `IQueryable`;
-- automatic name-based flattening, for example supplying `tenantId` or
-  `TenantId` from `source.Tenant.Id` without an explicit `IncludeMembers` or
-  `Members` rule;
+- unflattening a flat source into newly created nested destination objects;
 - distinguishing missing, null and default values for patch/merge mappings;
 - automatic immutable Update reconstruction;
 - first-class multi-source mappings or per-call user data; combine values into

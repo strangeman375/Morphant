@@ -314,6 +314,8 @@ internal sealed class TestPairConfigurationGenerator :
             .Append(FormatSetting(settings.ConstructorSelection))
             .Append("; MemberSelection=")
             .Append(FormatSetting(settings.MemberSelection))
+            .Append("; Flattening=")
+            .Append(FormatSetting(settings.Flattening))
             .Append("; UnmappedMemberValidation=")
             .Append(FormatSetting(settings.UnmappedMemberValidation))
             .Append(newLine);

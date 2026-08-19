@@ -50,6 +50,13 @@ internal enum MemberSelectionValue
     Explicit
 }
 
+internal enum FlatteningValue
+{
+    Default = 0,
+    Auto,
+    None
+}
+
 internal enum UnmappedMemberValidationValue
 {
     Default = 0,
@@ -65,6 +72,7 @@ internal readonly record struct MappingSettings(
     NullDestinationHandlingValue? NullDestinationHandling,
     ConstructorSelectionValue? ConstructorSelection,
     MemberSelectionValue? MemberSelection,
+    FlatteningValue? Flattening,
     UnmappedMemberValidationValue? UnmappedMemberValidation,
     InvalidMsBuildSettingValues InvalidMsBuildValues = default)
 {
@@ -75,6 +83,7 @@ internal readonly record struct MappingSettings(
             NullDestinationHandlingValue.Default,
             ConstructorSelectionValue.Default,
             MemberSelectionValue.Default,
+            FlatteningValue.Default,
             UnmappedMemberValidationValue.Default);
 }
 
@@ -84,6 +93,7 @@ internal readonly record struct InvalidMsBuildSettingValues(
     string? NullDestinationHandling,
     string? ConstructorSelection,
     string? MemberSelection,
+    string? Flattening,
     string? UnmappedMemberValidation);
 
 internal readonly record struct EffectiveMappingSettings(
@@ -92,6 +102,7 @@ internal readonly record struct EffectiveMappingSettings(
     NullDestinationHandlingValue? NullDestinationHandling,
     ConstructorSelectionValue? ConstructorSelection,
     MemberSelectionValue? MemberSelection,
+    FlatteningValue? Flattening,
     UnmappedMemberValidationValue? UnmappedMemberValidation)
 {
     public bool IsMappingModeValid =>
@@ -108,6 +119,9 @@ internal readonly record struct EffectiveMappingSettings(
 
     public bool IsMemberSelectionValid =>
         MemberSelection.HasValue;
+
+    public bool IsFlatteningValid =>
+        Flattening.HasValue;
 
     public bool IsUnmappedMemberValidationValid =>
         UnmappedMemberValidation.HasValue;
@@ -163,6 +177,10 @@ internal readonly record struct EffectiveMappingSettings(
                 assemblySettings.MemberSelection,
                 Values(static settings => settings.MemberSelection),
                 MemberSelectionValue.Auto),
+            SettingValueResolver.Resolve(
+                assemblySettings.Flattening,
+                Values(static settings => settings.Flattening),
+                FlatteningValue.Auto),
             SettingValueResolver.Resolve(
                 assemblySettings.UnmappedMemberValidation,
                 Values(static settings =>
