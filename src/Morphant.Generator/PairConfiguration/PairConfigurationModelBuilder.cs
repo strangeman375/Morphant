@@ -1622,7 +1622,7 @@ internal static class PairConfigurationModelBuilder
                method.MethodKind == MethodKind.Ordinary &&
                !method.IsStatic &&
                method.Parameters.Length == 1 &&
-               method.TypeArguments.Length == 1 &&
+               method.TypeArguments.Length == 0 &&
                StringComparer.Ordinal.Equals(
                    SymbolNameHelper.GetFullMetadataName(
                        method.ContainingType.OriginalDefinition),

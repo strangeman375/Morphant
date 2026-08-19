@@ -558,47 +558,17 @@ internal static class DeclarativeControlFlowPlanner
                 } discardIdentifier,
                 Right: var right
             } ||
-            UnwrapParentheses(right) is not MemberAccessExpressionSyntax
-            {
-                Expression: IdentifierNameSyntax receiver
-            } memberAccess ||
-            !SymbolEqualityComparer.Default.Equals(
-                semanticModel.GetSymbolInfo(
-                        receiver,
-                        cancellationToken)
-                    .Symbol,
-                sourceParameter) ||
+            !TryGetSourceRootedReadableMember(
+                right,
+                sourceParameter,
+                semanticModel,
+                cancellationToken,
+                out var member) ||
             semanticModel.GetSymbolInfo(
                     discardIdentifier,
                     cancellationToken)
                 .Symbol is { } discardSymbol &&
             discardSymbol is not IDiscardSymbol)
-        {
-            discard = default;
-            return false;
-        }
-
-        var member = semanticModel.GetSymbolInfo(
-                memberAccess,
-                cancellationToken)
-            .Symbol;
-
-        if (member is not IPropertySymbol
-            {
-                IsStatic: false,
-                IsIndexer: false,
-                ReturnsByRef: false,
-                ReturnsByRefReadonly: false,
-                IsImplicitlyDeclared: false,
-                GetMethod: not null
-            } &&
-            member is not IFieldSymbol
-            {
-                IsStatic: false,
-                IsConst: false,
-                IsImplicitlyDeclared: false,
-                IsFixedSizeBuffer: false
-            })
         {
             discard = default;
             return false;
@@ -610,6 +580,105 @@ internal static class DeclarativeControlFlowPlanner
             sourceParameter);
         return true;
     }
+
+    private static bool TryGetSourceRootedReadableMember(
+        ExpressionSyntax expression,
+        IParameterSymbol sourceParameter,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out ISymbol member)
+    {
+        expression = UnwrapSourceDiscardExpression(expression);
+
+        if (expression is not MemberAccessExpressionSyntax
+            {
+                Expression: var receiver
+            } memberAccess)
+        {
+            member = null!;
+            return false;
+        }
+
+        var selectedMember = semanticModel.GetSymbolInfo(
+                memberAccess,
+                cancellationToken)
+            .Symbol;
+
+        if (!IsReadableInstanceMember(selectedMember))
+        {
+            member = null!;
+            return false;
+        }
+
+        member = selectedMember!;
+
+        while (true)
+        {
+            receiver = UnwrapSourceDiscardExpression(receiver);
+
+            if (receiver is IdentifierNameSyntax identifier)
+            {
+                return SymbolEqualityComparer.Default.Equals(
+                    semanticModel.GetSymbolInfo(
+                            identifier,
+                            cancellationToken)
+                        .Symbol,
+                    sourceParameter);
+            }
+
+            if (receiver is MemberAccessExpressionSyntax
+                {
+                    Expression: var nextReceiver
+                } pathMember &&
+                IsReadableInstanceMember(
+                    semanticModel.GetSymbolInfo(
+                            pathMember,
+                            cancellationToken)
+                        .Symbol))
+            {
+                receiver = nextReceiver;
+                continue;
+            }
+
+            member = null!;
+            return false;
+        }
+    }
+
+    private static ExpressionSyntax UnwrapSourceDiscardExpression(
+        ExpressionSyntax expression)
+    {
+        expression = UnwrapParentheses(expression);
+
+        while (expression is PostfixUnaryExpressionSyntax
+               {
+                   RawKind:
+                       (int)SyntaxKind.SuppressNullableWarningExpression,
+                   Operand: var operand
+               })
+        {
+            expression = UnwrapParentheses(operand);
+        }
+
+        return expression;
+    }
+
+    private static bool IsReadableInstanceMember(ISymbol? member) =>
+        member is IPropertySymbol
+        {
+            IsStatic: false,
+            IsIndexer: false,
+            ReturnsByRef: false,
+            ReturnsByRefReadonly: false,
+            IsImplicitlyDeclared: false,
+            GetMethod: not null
+        } or IFieldSymbol
+        {
+            IsStatic: false,
+            IsConst: false,
+            IsImplicitlyDeclared: false,
+            IsFixedSizeBuffer: false
+        };
 
     private static bool IsMutationOf(
         SyntaxNode ancestor,

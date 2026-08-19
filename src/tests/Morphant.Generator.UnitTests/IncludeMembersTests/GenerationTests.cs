@@ -35,6 +35,8 @@ namespace TestCase
         public string? Name { get; init; }
 
         public int Count { get; init; }
+
+        public int RequiredCount { get; init; }
     }
 
     public sealed class Metadata
@@ -44,7 +46,7 @@ namespace TestCase
 
     public sealed class Destination
     {
-        public Destination(int id, int count)
+        public Destination(int id, int? count)
         {
             Id = id;
             Count = count;
@@ -52,7 +54,9 @@ namespace TestCase
 
         public int Id { get; }
 
-        public int Count { get; }
+        public int? Count { get; }
+
+        public int RequiredCount { get; set; } = 41;
 
         public string? Name { get; set; }
 
@@ -64,8 +68,11 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .IncludeMembers(source => source.Details)
-                .IncludeMembers(source => source.Metadata);
+                .IncludeMembers(source => new
+                {
+                    source.Details,
+                    source.Metadata
+                });
     }
 }
 """;
@@ -127,10 +134,10 @@ namespace TestCase
         {
             return new global::TestCase.Destination(
                 id: source.Id,
-                count: (source.Details is { } __morphantIncluded0_c_1_0 ? __morphantIncluded0_c_1_0.Count : default(int)))
+                count: (source.Details is { } __morphantIncluded0_c_1_0 ? __morphantIncluded0_c_1_0.Count : default(int?)))
             {
                 Name = source.Name,
-                Tag = (source.Metadata is { } __morphantIncluded1_m_1_0 ? __morphantIncluded1_m_1_0.Tag : default(string?))
+                Tag = (source.Metadata is { } __morphantIncluded1_m_2_0 ? __morphantIncluded1_m_2_0.Tag : default(string?))
             };
         }
 
@@ -140,7 +147,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             destination.Name = source.Name;
-            destination.Tag = (source.Metadata is { } __morphantIncluded1_m_1_0 ? __morphantIncluded1_m_1_0.Tag : default(string?));
+            destination.Tag = (source.Metadata is { } __morphantIncluded1_m_2_0 ? __morphantIncluded1_m_2_0.Tag : default(string?));
 
             return destination;
         }

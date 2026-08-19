@@ -146,11 +146,9 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     /// Adds the readable instance members of a nested source object to the
     /// convention lookup scope for this mapping.
     /// </summary>
-    /// <typeparam name="TIncluded">
-    /// The type whose readable members are included.
-    /// </typeparam>
     /// <param name="selector">
-    /// An inline property or field path rooted in the mapping source.
+    /// One inline property or field path rooted in the mapping source, or an
+    /// anonymous object containing several such paths.
     /// </param>
     /// <remarks>
     /// The root source keeps precedence. Included members participate in
@@ -158,8 +156,8 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     /// do not start a nested mapping.
     /// </remarks>
     /// <returns>This mapping builder.</returns>
-    public MapperBuilder<TSource, TDestination> IncludeMembers<TIncluded>(
-        Func<TSource, TIncluded> selector) =>
+    public MapperBuilder<TSource, TDestination> IncludeMembers(
+        Func<TSource, object?> selector) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using Morphant.Generator.MappingPair;
+using Morphant.Generator.MapperDeclaration;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
 
@@ -229,6 +230,9 @@ internal static class MappingCompletenessObservationBuilder
                 callback.Expression,
                 callback.AllowsCompileTimeDiscard,
                 supportedSourceMembers,
+                mapping.SourceMembers.IsDefault
+                    ? ImmutableArray<ConventionReadableMember>.Empty
+                    : mapping.SourceMembers,
                 sourceUses,
                 sourceDiscards,
                 unreachableRuleOrigins,
@@ -571,6 +575,7 @@ internal static class MappingCompletenessObservationBuilder
         BoundConfigurationExpression callback,
         bool allowsCompileTimeDiscard,
         ImmutableArray<ISymbol> supportedSourceMembers,
+        ImmutableArray<ConventionReadableMember> sourceMembers,
         ImmutableArray<SourceUseObservation>.Builder sourceUses,
         ImmutableArray<SourceDiscardObservation>.Builder sourceDiscards,
         HashSet<SyntaxNode> unreachableRuleOrigins,
@@ -626,11 +631,43 @@ internal static class MappingCompletenessObservationBuilder
                 }
 
                 discardedStatements.Add(statement);
-                sourceDiscards.Add(
-                    new SourceDiscardObservation(
-                        discard.Member,
-                        discard.Statement,
-                        callback));
+                AddSourceDiscard(discard.Member);
+
+                foreach (var sourceMember in sourceMembers)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (sourceMember.IncludedAccess is not { } access ||
+                        !access.Path.Any(segment =>
+                            AreSameMember(
+                                segment.Symbol,
+                                discard.Member)))
+                    {
+                        continue;
+                    }
+
+                    AddSourceDiscard(sourceMember.Symbol);
+                }
+
+                void AddSourceDiscard(ISymbol member)
+                {
+                    if (sourceDiscards.Any(candidate =>
+                            ReferenceEquals(
+                                candidate.Statement,
+                                discard.Statement) &&
+                            AreSameMember(
+                                candidate.Member,
+                                member)))
+                    {
+                        return;
+                    }
+
+                    sourceDiscards.Add(
+                        new SourceDiscardObservation(
+                            member,
+                            discard.Statement,
+                            callback));
+                }
             }
         }
 
@@ -725,6 +762,26 @@ internal static class MappingCompletenessObservationBuilder
                     identifier);
             }
         }
+    }
+
+    private static bool AreSameMember(ISymbol left, ISymbol right)
+    {
+        if (SymbolEqualityComparer.Default.Equals(left, right))
+        {
+            return true;
+        }
+
+        var leftContainingType = left.ContainingType is { } leftType
+            ? MapperContractDisplay.CreateType(leftType)
+            : string.Empty;
+        var rightContainingType = right.ContainingType is { } rightType
+            ? MapperContractDisplay.CreateType(rightType)
+            : string.Empty;
+
+        return StringComparer.Ordinal.Equals(
+                   leftContainingType,
+                   rightContainingType) &&
+               StringComparer.Ordinal.Equals(left.Name, right.Name);
     }
 
     private static void ObservePatternSourceUses(

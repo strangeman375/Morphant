@@ -58,7 +58,8 @@ namespace TestCase
                     "IncludeMembers is invalid for mapping " +
                     "'TestCase.Source -> TestCase.Destination' in mapper " +
                     "'TestCase.TestMapper': the selector must be an inline " +
-                    "property or field path rooted in source."));
+                    "property or field path rooted in source, or an " +
+                    "anonymous object of such paths."));
             Assert.That(diagnostic.AdditionalLocations, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -97,8 +98,11 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
-                .IncludeMembers(source => source.Details)
-                .IncludeMembers(source => source.Details);
+                .IncludeMembers(source => new
+                {
+                    source.Details,
+                    Again = source.Details
+                });
     }
 }
 """;
@@ -110,13 +114,16 @@ namespace TestCase
         {
             Assert.That(diagnostic.Id, Is.EqualTo("MORPH0049"));
             Assert.That(
+                IncludeMembersGeneratorTest.SourceText(diagnostic.Location),
+                Is.EqualTo("source.Details"));
+            Assert.That(
                 diagnostic.GetMessage(),
                 Does.EndWith(
                     "path 'Details' is included more than once."));
             Assert.That(
                 diagnostic.AdditionalLocations.Select(
                     IncludeMembersGeneratorTest.SourceText),
-                Is.EqualTo(new[] { "source => source.Details" }));
+                Is.EqualTo(new[] { "source.Details" }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -313,6 +320,88 @@ namespace TestCase
                 diagnostics[0].AdditionalLocations.Select(
                     IncludeMembersGeneratorTest.SourceText),
                 Is.EqualTo(new[] { "Unused" }));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Source_validation_accepts_nested_and_whole_scope_discards()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public Customer Customer { get; init; } = new();
+
+        public Audit Audit { get; init; } = new();
+    }
+
+    public sealed class Customer
+    {
+        public string Name { get; init; } = string.Empty;
+
+        public string LegacyCode { get; init; } = string.Empty;
+    }
+
+    public sealed class Audit
+    {
+        public string CreatedBy { get; init; } = string.Empty;
+
+        public string LegacyIp { get; init; } = string.Empty;
+
+        public long LegacyRevision { get; init; }
+    }
+
+    public sealed class Destination
+    {
+        public string Name { get; set; } = string.Empty;
+
+        public string CreatedBy { get; set; } = string.Empty;
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .IncludeMembers(source => new
+                {
+                    source.Customer,
+                    source.Audit
+                })
+                .Members(source =>
+                {
+                    _ = source.Customer.LegacyCode;
+                    _ = source.Audit;
+
+                    return new()
+                    {
+                        Name = Auto(),
+                        CreatedBy = Auto()
+                    };
+                })
+                .UnmappedMemberValidation(
+                    UnmappedMemberValidation.Source);
+    }
+}
+""";
+
+        var result = IncludeMembersGeneratorTest.Run(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                result.EffectiveDiagnostics
+                    .Where(candidate => candidate.Id == "MORPH0047"),
+                Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

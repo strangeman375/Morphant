@@ -80,7 +80,7 @@ namespace TestCase
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0
 // IncludeMembers: 1
-// IncludeMembers 0: Form=Selector; Inputs=(global::TestCase.BaseSource); Output=global::TestCase.Profile; Operation=AnonymousFunction; Syntax=source => source.Profile
+// IncludeMembers 0: Form=Selector; Inputs=(global::TestCase.BaseSource); Output=object?; Operation=AnonymousFunction; Syntax=source => source.Profile
 // Manual: Converts=0
 // IncludeBase: 0
 // Conflicts: None
@@ -89,8 +89,8 @@ namespace TestCase
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; UnmappedMemberValidation=Unset
 // Declarative: ResultPolicies=0; Members=0
 // IncludeMembers: 2
-// IncludeMembers 0: Form=Selector; Inputs=(global::TestCase.BaseSource); Output=global::TestCase.Profile; Operation=AnonymousFunction; Syntax=source => source.Profile
-// IncludeMembers 1: Form=Selector; Inputs=(global::TestCase.Source); Output=global::TestCase.Audit; Operation=AnonymousFunction; Syntax=source => source.Audit
+// IncludeMembers 0: Form=Selector; Inputs=(global::TestCase.BaseSource); Output=object?; Operation=AnonymousFunction; Syntax=source => source.Profile
+// IncludeMembers 1: Form=Selector; Inputs=(global::TestCase.Source); Output=object?; Operation=AnonymousFunction; Syntax=source => source.Audit
 // Manual: Converts=0
 // IncludeBase: 1
 // IncludeBase 0: global::TestCase.BaseSource -> global::TestCase.BaseDestination

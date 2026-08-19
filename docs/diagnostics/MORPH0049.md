@@ -2,18 +2,23 @@
 
 ## Cause
 
-An `IncludeMembers` selector is not an inline property or field path rooted in
-the mapping source. The diagnostic is also reported for an unreadable path, a
-selected type with no readable members, or the same included path configured
+An `IncludeMembers` selection is not an inline property or field path rooted
+in the mapping source. The diagnostic is also reported for an unreadable path,
+a selected type with no readable members, or the same included path configured
 twice.
 
 ## Fix
 
-Pass one unique inline path to each call:
+Pass one unique inline path, or an anonymous object containing several unique
+paths:
 
 ```csharp
 .IncludeMembers(source => source.Customer)
-.IncludeMembers(source => source.Envelope?.Audit)
+.IncludeMembers(source => new
+{
+    Audit = source.Envelope?.Audit,
+    source.Metadata
+})
 ```
 
 Move computed values, method calls and indexed access into an explicit

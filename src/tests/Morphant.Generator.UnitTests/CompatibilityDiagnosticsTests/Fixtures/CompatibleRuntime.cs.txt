@@ -208,7 +208,7 @@ namespace Morphant
         MapperBuilderBase<MapperBuilder<TSource, TDestination>>
     {
         public MapperBuilder<TSource, TDestination>
-            IncludeMembers<TIncluded>(Func<TSource, TIncluded> selector) =>
+            IncludeMembers(Func<TSource, object?> selector) =>
             throw new NotSupportedException();
 
         public MapperBuilder<TSource, TDestination>

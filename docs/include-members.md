@@ -1,12 +1,22 @@
 # Include nested source members
 
-`IncludeMembers` adds the readable properties and fields of a selected nested
-source object to Morphant's convention lookup:
+`IncludeMembers` adds the readable properties and fields of selected nested
+source objects to Morphant's convention lookup. Select one source directly:
 
 ```csharp
 builder.Map<Order, OrderDto>()
-    .IncludeMembers(source => source.Customer)
-    .IncludeMembers(source => source.Audit);
+    .IncludeMembers(source => source.Customer);
+```
+
+Or select several sources in one call:
+
+```csharp
+builder.Map<Order, OrderDto>()
+    .IncludeMembers(source => new
+    {
+        source.Customer,
+        source.Audit
+    });
 ```
 
 The included members can supply both constructor parameters and destination
@@ -15,8 +25,8 @@ for the selected type.
 
 ## Selection and precedence
 
-The selector must be an inline property or field path rooted in `source`.
-Direct and deep paths are supported:
+Each selection must be an inline property or field path rooted in `source`.
+Direct and deep paths are supported, including inside the anonymous object:
 
 ```csharp
 .IncludeMembers(source => source.Customer)
@@ -24,7 +34,8 @@ Direct and deep paths are supported:
 ```
 
 Methods, indexers, casts, computed expressions and delegate variables are not
-valid selectors.
+valid selectors. Repeating the same path, whether in one or several calls,
+reports `MORPH0049`.
 
 Convention lookup uses this order:
 
@@ -51,9 +62,16 @@ builder.Map<Order, OrderDto>()
 
 ## Null paths
 
-When a nullable path segment is `null`, an included value becomes
-`default(TMember)`. The usual warning-free C# conversion check still applies,
-so a possibly null value is not mapped automatically to a non-nullable target.
+A nullable path makes every included value nullable for compatibility checks.
+The usual warning-free C# conversion rules then apply:
+
+- an included reference member can map to a nullable reference target, but not
+  to a non-nullable one;
+- an included `int` member can map to `int?`, but not to `int`;
+- when the path is `null`, both nullable targets receive `null`.
+
+Morphant never substitutes `0` for a missing included value merely because
+the underlying member is an `int`.
 
 Use the null-forgiving operator only when the path is an application
 invariant:
@@ -65,7 +83,7 @@ invariant:
 For nullable references, the assertion is preserved in generated code and can
 throw `NullReferenceException` when it is false. As in ordinary C#,
 null-forgiving does not unwrap `Nullable<T>`; a missing nullable value still
-produces `default(TMember)`.
+produces `null`.
 
 ## Composition and validation
 
@@ -75,3 +93,21 @@ combined with `Convert`, because `Convert` owns the complete mapping.
 
 When source-side `UnmappedMemberValidation` is enabled, the selected path
 counts as used and the readable members of the included scope are validated.
+Use the existing compile-time discard in `Construct`, `Resolve` or `Members`
+to acknowledge one nested member or the entire included scope:
+
+```csharp
+.Members(source =>
+{
+    _ = source.Customer.LegacyCode; // one member
+    _ = source.Audit;               // the whole included scope
+
+    return new()
+    {
+        Name = Auto()
+    };
+})
+```
+
+These statements only affect validation; their getters are not called while
+mapping.

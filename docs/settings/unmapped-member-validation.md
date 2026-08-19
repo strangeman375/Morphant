@@ -40,8 +40,10 @@ unused source member without reading it when the mapping runs:
 });
 ```
 
-The discard must appear as a statement on its own in the lambda body and refer
-to one source property or field. The getter is not invoked.
+The discard must appear as a statement on its own in the lambda body. It can
+refer to a direct source member, one nested member exposed by
+`IncludeMembers`, or an included source object to acknowledge its complete
+member surface. The getters on that path are not invoked.
 
 `Convert` is a manual algorithm, so unmapped-member validation does not apply
 to it.

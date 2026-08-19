@@ -802,13 +802,13 @@ internal static class RuntimeContractManifest
                    "IncludeMembers",
                    Accessibility.Public,
                    isStatic: false,
-                   arity: 1,
+                   arity: 0,
                    self,
                    [
                        Parameter(Named(
                            "System.Func`2",
                            TypeParameter(0),
-                           MethodTypeParameter(0)))
+                           Object))
                    ]);
     }
 

@@ -35,47 +35,76 @@ internal static class IncludedSourceMemberSet
             ImmutableArray.CreateBuilder<IncludeMembersIssueObservation>();
         var scopes =
             ImmutableArray.CreateBuilder<IncludedSourceScope>();
-        var seenPaths = new Dictionary<string, IncludeMembersConfigurationModel>(
+        var seenPaths = new Dictionary<string, IncludedSourceScope>(
             StringComparer.Ordinal);
+        var scopeIndex = 0;
 
-        for (var index = 0; index < configurations.Length; index++)
+        foreach (var configuration in configurations)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var configuration = configurations[index];
 
-            if (!TryBuildScope(
-                    sourceType,
+            if (!TryGetSelectedPaths(
                     configuration,
-                    index,
-                    compilation,
-                    mapperType,
                     cancellationToken,
-                    out var scope,
-                    out var reason))
+                    out var sourceParameter,
+                    out var selectedPaths,
+                    out var selectorReason))
             {
                 issues.Add(new IncludeMembersIssueObservation(
                     IncludeMembersIssueKind.InvalidSelector,
                     configuration.Invocation,
                     configuration.Expression.Syntax.GetLocation(),
-                    reason,
+                    selectorReason,
                     ImmutableArray<Location>.Empty));
                 continue;
             }
 
-            if (seenPaths.TryGetValue(scope.PathIdentity, out var first))
+            foreach (var selectedPath in selectedPaths)
             {
-                issues.Add(new IncludeMembersIssueObservation(
-                    IncludeMembersIssueKind.InvalidSelector,
-                    configuration.Invocation,
-                    configuration.Expression.Syntax.GetLocation(),
-                    $"path '{scope.PathDisplay}' is included more than once",
-                    ImmutableArray.Create(
-                        first.Expression.Syntax.GetLocation())));
-                continue;
-            }
+                cancellationToken.ThrowIfCancellationRequested();
+                var diagnosticOrigin = selectedPaths.Length == 1
+                    ? configuration.Expression.Syntax
+                    : selectedPath;
 
-            seenPaths.Add(scope.PathIdentity, configuration);
-            scopes.Add(scope);
+                if (!TryBuildScope(
+                        sourceType,
+                        configuration,
+                        selectedPath,
+                        sourceParameter,
+                        diagnosticOrigin,
+                        scopeIndex++,
+                        compilation,
+                        mapperType,
+                        cancellationToken,
+                        out var scope,
+                        out var reason))
+                {
+                    issues.Add(new IncludeMembersIssueObservation(
+                        IncludeMembersIssueKind.InvalidSelector,
+                        configuration.Invocation,
+                        diagnosticOrigin.GetLocation(),
+                        reason,
+                        ImmutableArray<Location>.Empty));
+                    continue;
+                }
+
+                if (seenPaths.TryGetValue(
+                        scope.PathIdentity,
+                        out var first))
+                {
+                    issues.Add(new IncludeMembersIssueObservation(
+                        IncludeMembersIssueKind.InvalidSelector,
+                        configuration.Invocation,
+                        diagnosticOrigin.GetLocation(),
+                        $"path '{scope.PathDisplay}' is included more than once",
+                        ImmutableArray.Create(
+                            first.DiagnosticOrigin.GetLocation())));
+                    continue;
+                }
+
+                seenPaths.Add(scope.PathIdentity, scope);
+                scopes.Add(scope);
+            }
         }
 
         if (issues.Count > 0)
@@ -117,7 +146,15 @@ internal static class IncludedSourceMemberSet
                 }
 
                 matches.Add((
-                    member with { IncludedAccess = scope.Access },
+                    member with
+                    {
+                        Type = scope.Access.CanProduceMissingValue
+                            ? LiftMissingValueType(
+                                member.Type,
+                                compilation)
+                            : member.Type,
+                        IncludedAccess = scope.Access
+                    },
                     scope));
             }
         }
@@ -147,12 +184,10 @@ internal static class IncludedSourceMemberSet
             issues.Add(new IncludeMembersIssueObservation(
                 IncludeMembersIssueKind.AmbiguousMember,
                 ordered[1].Scope.Configuration.Invocation,
-                ordered[1].Scope.Configuration.Expression.Syntax
-                    .GetLocation(),
+                ordered[1].Scope.DiagnosticOrigin.GetLocation(),
                 $"member '{pair.Key}' is available from {paths}",
                 ordered.Select(static candidate =>
-                        candidate.Scope.Configuration.Expression.Syntax
-                            .GetLocation())
+                        candidate.Scope.DiagnosticOrigin.GetLocation())
                     .ToImmutableArray()));
         }
 
@@ -162,9 +197,47 @@ internal static class IncludedSourceMemberSet
             issues.ToImmutable());
     }
 
+    private static bool TryGetSelectedPaths(
+        IncludeMembersConfigurationModel configuration,
+        CancellationToken cancellationToken,
+        out IParameterSymbol sourceParameter,
+        out ImmutableArray<ExpressionSyntax> selectedPaths,
+        out string reason)
+    {
+        if (configuration.Expression.Syntax is not
+                LambdaExpressionSyntax lambda ||
+            lambda.AsyncKeyword.RawKind != 0 ||
+            lambda.ExpressionBody is not { } expressionBody ||
+            GetSingleParameter(lambda) is not { } parameterSyntax ||
+            configuration.Expression.SemanticModel.GetDeclaredSymbol(
+                parameterSyntax,
+                cancellationToken) is not IParameterSymbol parameter)
+        {
+            sourceParameter = null!;
+            selectedPaths = default;
+            reason = "the selector must be an inline property or field path " +
+                     "rooted in source, or an anonymous object of such paths";
+            return false;
+        }
+
+        expressionBody = UnwrapParentheses(expressionBody);
+        sourceParameter = parameter;
+        selectedPaths = expressionBody is
+            AnonymousObjectCreationExpressionSyntax anonymous
+                ? anonymous.Initializers
+                    .Select(static initializer => initializer.Expression)
+                    .ToImmutableArray()
+                : ImmutableArray.Create(expressionBody);
+        reason = string.Empty;
+        return true;
+    }
+
     private static bool TryBuildScope(
         ITypeSymbol currentSourceType,
         IncludeMembersConfigurationModel configuration,
+        ExpressionSyntax selectedPath,
+        IParameterSymbol sourceParameter,
+        SyntaxNode diagnosticOrigin,
         int scopeIndex,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
@@ -172,27 +245,16 @@ internal static class IncludedSourceMemberSet
         out IncludedSourceScope scope,
         out string reason)
     {
-        if (configuration.Expression.Syntax is not
-                LambdaExpressionSyntax lambda ||
-            lambda.AsyncKeyword.RawKind != 0 ||
-            lambda.ExpressionBody is not { } expressionBody ||
-            !configuration.Expression.SemanticModel.GetConversion(
-                    expressionBody,
-                    cancellationToken)
-                .IsIdentity ||
-            GetSingleParameter(lambda) is not { } parameterSyntax ||
-            configuration.Expression.SemanticModel.GetDeclaredSymbol(
-                parameterSyntax,
-                cancellationToken) is not IParameterSymbol parameter ||
-            !TryBuildPath(
-                expressionBody,
-                parameter,
+        if (!TryBuildPath(
+                selectedPath,
+                sourceParameter,
                 configuration.Expression.SemanticModel,
                 cancellationToken,
                 out var path))
         {
             scope = default;
-            reason = "the selector must be an inline property or field path rooted in source";
+            reason = "the selector must be an inline property or field path " +
+                     "rooted in source, or an anonymous object of such paths";
             return false;
         }
 
@@ -294,6 +356,7 @@ internal static class IncludedSourceMemberSet
 
         scope = new IncludedSourceScope(
             configuration,
+            diagnosticOrigin,
             pathDisplay,
             pathIdentity,
             members,
@@ -474,8 +537,36 @@ internal static class IncludedSourceMemberSet
         return type.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
     }
 
+    private static ITypeSymbol LiftMissingValueType(
+        ITypeSymbol type,
+        CSharpCompilation compilation)
+    {
+        if (type is INamedTypeSymbol named &&
+            named.OriginalDefinition.SpecialType ==
+                SpecialType.System_Nullable_T)
+        {
+            return type;
+        }
+
+        if (type is ITypeParameterSymbol || type.IsReferenceType)
+        {
+            return type.WithNullableAnnotation(NullableAnnotation.Annotated);
+        }
+
+        if (type.IsValueType)
+        {
+            return compilation
+                .GetSpecialType(SpecialType.System_Nullable_T)
+                .Construct(type.WithNullableAnnotation(
+                    NullableAnnotation.NotAnnotated));
+        }
+
+        return type.WithNullableAnnotation(NullableAnnotation.Annotated);
+    }
+
     private readonly record struct IncludedSourceScope(
         IncludeMembersConfigurationModel Configuration,
+        SyntaxNode DiagnosticOrigin,
         string PathDisplay,
         string PathIdentity,
         ImmutableArray<ConventionReadableMember> Members,
@@ -493,6 +584,9 @@ internal readonly record struct IncludedSourceAccessModel(
     bool RequiresRootCast,
     ImmutableArray<IncludedSourcePathSegment> Path)
 {
+    public bool CanProduceMissingValue =>
+        Path.Any(RequiresGuard);
+
     public string BuildValueExpression(
         string sourceName,
         ISymbol member,
@@ -513,17 +607,11 @@ internal readonly record struct IncludedSourceAccessModel(
             var segment = Path[index];
             var access = receiver + "." + Identifier(segment.Name);
 
-            if (segment.SuppressesNull &&
-                !segment.RequiresNullGuard &&
-                !IsNullableValue(segment.Type))
+            if (!RequiresGuard(segment))
             {
-                receiver = access + "!";
-                continue;
-            }
-
-            if (!segment.RequiresNullGuard && !CanBeNull(segment.Type))
-            {
-                receiver = access;
+                receiver = segment.SuppressesNull
+                    ? access + "!"
+                    : access;
                 continue;
             }
 
@@ -565,6 +653,12 @@ internal readonly record struct IncludedSourceAccessModel(
                !typeParameter.HasUnmanagedTypeConstraint &&
                type.NullableAnnotation == NullableAnnotation.Annotated;
     }
+
+    private static bool RequiresGuard(
+        IncludedSourcePathSegment segment) =>
+        segment.RequiresNullGuard ||
+        CanBeNull(segment.Type) &&
+        (!segment.SuppressesNull || IsNullableValue(segment.Type));
 
     private static bool IsNullableValue(ITypeSymbol type) =>
         type is INamedTypeSymbol named &&

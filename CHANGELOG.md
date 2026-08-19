@@ -10,8 +10,8 @@ documented breaking changes.
 
 - Add `IncludeMembers` for opting selected nested source objects into
   constructor and destination-member conventions, including nullable paths,
-  multiple scopes, `IncludeBase` composition, and dedicated diagnostics for
-  invalid or ambiguous selections.
+  one-call multi-scope selection, `IncludeBase` composition, source-validation
+  discards, and dedicated diagnostics for invalid or ambiguous selections.
 
 ## [0.2.0]
 

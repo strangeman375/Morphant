@@ -36,7 +36,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
 
     public sealed class Destination
     {
-        public Destination(int id, int count)
+        public Destination(int id, int? count)
         {
             Id = id;
             Count = count;
@@ -44,7 +44,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
 
         public int Id { get; }
 
-        public int Count { get; }
+        public int? Count { get; }
 
         public string? Name { get; set; }
 
@@ -56,6 +56,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
         public string? Name { get; set; }
 
         public string Untouched { get; set; } = "initial";
+    }
+
+    public sealed class NonNullableDestination
+    {
+        public int Count { get; set; } = 41;
+
+        public string Name { get; set; } = "initial";
     }
 
     public sealed class AssertedDestination
@@ -170,7 +177,35 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
 
     public sealed class OptionalDetailsDestination
     {
-        public int Score { get; set; }
+        public int? Score { get; set; }
+    }
+
+    public sealed class DiscardSource
+    {
+        public DiscardCustomer Customer { get; } = new DiscardCustomer();
+
+        public DiscardAudit Audit => throw new InvalidOperationException(
+            "A compile-time scope discard was evaluated at runtime.");
+    }
+
+    public sealed class DiscardCustomer
+    {
+        public string Name { get; } = "kept";
+
+        public string LegacyCode => throw new InvalidOperationException(
+            "A compile-time nested discard was evaluated at runtime.");
+    }
+
+    public sealed class DiscardAudit
+    {
+        public string LegacyIp { get; } = string.Empty;
+
+        public long LegacyRevision { get; }
+    }
+
+    public sealed class DiscardDestination
+    {
+        public string Name { get; set; } = string.Empty;
     }
 
     [MorphantMapper]
@@ -179,8 +214,14 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
         protected override void Configure(MapperBuilder builder)
         {
             builder.Map<Source, Destination>()
-                .IncludeMembers(source => source.Customer)
-                .IncludeMembers(source => source.Envelope?.Audit);
+                .IncludeMembers(source => new
+                {
+                    source.Customer,
+                    Audit = source.Envelope?.Audit
+                });
+
+            builder.Map<Source, NonNullableDestination>()
+                .IncludeMembers(source => source.Customer);
 
             builder.Map<Source, ExplicitDestination>()
                 .IncludeMembers(source => source.Customer)
@@ -198,7 +239,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 .Construct(_ => new(Auto()));
 
             builder.Map<Source, StructuredConventionDestination>()
-                .IncludeMembers(source => source.Customer)
+                .IncludeMembers(source => source.Customer!)
                 .MemberSelection(MemberSelection.Explicit)
                 .Construct(_ => new(ByConvention()));
 
@@ -214,6 +255,25 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
             builder.Map<OptionalDetailsSource,
                     OptionalDetailsDestination>()
                 .IncludeMembers(source => source.Details!);
+
+            builder.Map<DiscardSource, DiscardDestination>()
+                .IncludeMembers(source => new
+                {
+                    source.Customer,
+                    source.Audit
+                })
+                .Members(source =>
+                {
+                    _ = source.Customer.LegacyCode;
+                    _ = source.Audit;
+
+                    return new()
+                    {
+                        Name = Auto()
+                    };
+                })
+                .UnmappedMemberValidation(
+                    UnmappedMemberValidation.Source);
         }
     }
 
@@ -286,13 +346,44 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 updated.Name != "Ada" ||
                 updated.Tag != "created" ||
                 missing.Id != 23 ||
-                missing.Count != 0 ||
+                missing.Count is not null ||
                 missing.Name is not null ||
                 missing.Tag is not null)
             {
                 throw new InvalidOperationException(
                     "Included source scopes did not follow Create, Update " +
                     "or nullable-path semantics.");
+            }
+
+            var nonNullableCountMapper =
+                (ITypeMapper<Source, NonNullableDestination>)mapper;
+            var nonNullableFromPresent = nonNullableCountMapper.Create(
+                source,
+                default(MappingContext));
+            var nonNullableFromMissing = nonNullableCountMapper.Create(
+                new Source(),
+                default(MappingContext));
+            var nonNullablePrevious = new NonNullableDestination
+            {
+                Count = 43,
+                Name = "previous"
+            };
+            var nonNullableUpdated = nonNullableCountMapper.Update(
+                source,
+                nonNullablePrevious,
+                default(MappingContext));
+
+            if (nonNullableFromPresent.Count != 41 ||
+                nonNullableFromPresent.Name != "initial" ||
+                nonNullableFromMissing.Count != 41 ||
+                nonNullableFromMissing.Name != "initial" ||
+                !ReferenceEquals(nonNullableUpdated, nonNullablePrevious) ||
+                nonNullableUpdated.Count != 43 ||
+                nonNullableUpdated.Name != "previous")
+            {
+                throw new InvalidOperationException(
+                    "A nullable included value was assigned to a " +
+                    "non-nullable destination member.");
             }
 
             var explicitMapper =
@@ -424,11 +515,24 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 default(MappingContext));
 
             if (optionalDetails.Score != 37 ||
-                missingOptionalDetails.Score != 0)
+                missingOptionalDetails.Score is not null)
             {
                 throw new InvalidOperationException(
                     "The null-forgiving operator changed Nullable<T> " +
                     "runtime semantics.");
+            }
+
+            var discarded =
+                ((ITypeMapper<DiscardSource, DiscardDestination>)mapper)
+                .Create(
+                    new DiscardSource(),
+                    default(MappingContext));
+
+            if (discarded.Name != "kept")
+            {
+                throw new InvalidOperationException(
+                    "Compile-time included-source discards changed the " +
+                    "runtime mapping.");
             }
         }
     }
