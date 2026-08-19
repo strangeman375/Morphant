@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/19/2026 - 08:28:14 |
-| Coverage date: | 08/19/2026 - 08:26:27 - 08/19/2026 - 08:28:09 |
+| Generated on: | 08/19/2026 - 08:55:49 |
+| Coverage date: | 08/19/2026 - 08:54:04 - 08/19/2026 - 08:55:44 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 321 |
 | Files: | 163 |
-| **Line coverage:** | 86.2% (30184 of 34999) |
-| Covered lines: | 30184 |
-| Uncovered lines: | 4815 |
-| Coverable lines: | 34999 |
-| Total lines: | 58607 |
-| **Branch coverage:** | 76.4% (10168 of 13305) |
-| Covered branches: | 10168 |
-| Total branches: | 13305 |
+| **Line coverage:** | 86.2% (30190 of 35011) |
+| Covered lines: | 30190 |
+| Uncovered lines: | 4821 |
+| Coverable lines: | 35011 |
+| Total lines: | 58630 |
+| **Branch coverage:** | 76.4% (10170 of 13309) |
+| Covered branches: | 10170 |
+| Total branches: | 13309 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -273,7 +273,7 @@
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanne<br/>r|88.3%|68.2%|
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanni<br/>ngResult|100%||
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceAccessModel|88%|53.1%|
-|Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSet|81.6%|61.9%|
+|Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSet|80.6%|61.5%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSetResult|100%||
 |Morphant.Generator.TypeMapperGeneration.IncludedSourcePathSegment|100%||
 |Morphant.Generator.TypeMapperGeneration.IncludeMembersDiagnosticAnalyzer|97.8%|78.5%|
@@ -367,4 +367,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #33](https://github.com/strangeman375/Morphant/actions/runs/32232435942).
+Full HTML report: download the **coverage** artifact from [CI run #34](https://github.com/strangeman375/Morphant/actions/runs/32234688376).
