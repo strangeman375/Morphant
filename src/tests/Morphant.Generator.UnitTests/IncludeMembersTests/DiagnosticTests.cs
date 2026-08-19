@@ -129,6 +129,66 @@ namespace TestCase
     }
 
     [Test]
+    public void Rejects_the_same_included_path_across_calls()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public Details Details { get; init; } = new();
+    }
+
+    public sealed class Details
+    {
+        public string Name { get; init; } = string.Empty;
+    }
+
+    public sealed class Destination
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .IncludeMembers(source => source.Details)
+                .IncludeMembers(source => source.Details);
+    }
+}
+""";
+
+        var result = IncludeMembersGeneratorTest.Run(source);
+        var diagnostic = result.IncludeMembersDiagnostics.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0049"));
+            Assert.That(
+                IncludeMembersGeneratorTest.SourceText(diagnostic.Location),
+                Is.EqualTo("source => source.Details"));
+            Assert.That(
+                diagnostic.GetMessage(),
+                Does.EndWith(
+                    "path 'Details' is included more than once."));
+            Assert.That(
+                diagnostic.AdditionalLocations.Select(
+                    IncludeMembersGeneratorTest.SourceText),
+                Is.EqualTo(new[] { "source => source.Details" }));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
     public void Reports_an_ambiguous_member_from_two_included_scopes()
     {
         // lang=c#

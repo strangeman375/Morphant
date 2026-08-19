@@ -548,7 +548,30 @@ internal static class IncludedSourceMemberSet
             return type;
         }
 
-        if (type is ITypeParameterSymbol || type.IsReferenceType)
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            if (typeParameter.IsReferenceType)
+            {
+                return type.WithNullableAnnotation(
+                    NullableAnnotation.Annotated);
+            }
+
+            if (typeParameter.IsValueType)
+            {
+                return compilation
+                    .GetSpecialType(SpecialType.System_Nullable_T)
+                    .Construct(type.WithNullableAnnotation(
+                        NullableAnnotation.NotAnnotated));
+            }
+
+            // Unconstrained T? becomes T for value-type substitutions, so it
+            // cannot represent a missing included scope.
+            return compilation
+                .GetSpecialType(SpecialType.System_Object)
+                .WithNullableAnnotation(NullableAnnotation.Annotated);
+        }
+
+        if (type.IsReferenceType)
         {
             return type.WithNullableAnnotation(NullableAnnotation.Annotated);
         }

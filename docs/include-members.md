@@ -1,14 +1,7 @@
 # Include nested source members
 
-`IncludeMembers` adds the readable properties and fields of selected nested
-source objects to Morphant's convention lookup. Select one source directly:
-
-```csharp
-builder.Map<Order, OrderDto>()
-    .IncludeMembers(source => source.Customer);
-```
-
-Or select several sources in one call:
+`IncludeMembers` adds properties and fields of selected nested source objects
+to constructor and destination-member conventions:
 
 ```csharp
 builder.Map<Order, OrderDto>()
@@ -19,95 +12,64 @@ builder.Map<Order, OrderDto>()
     });
 ```
 
-The included members can supply both constructor parameters and destination
-members. They do not start a nested mapping and do not require a separate map
-for the selected type.
+For one object, pass its path directly:
+`.IncludeMembers(source => source.Customer)`. An included object does not need
+its own map and does not start a nested mapping.
 
 ## Selection and precedence
 
 Each selection must be an inline property or field path rooted in `source`.
-Direct and deep paths are supported, including inside the anonymous object:
+Deep and conditional paths are supported:
 
 ```csharp
-.IncludeMembers(source => source.Customer)
 .IncludeMembers(source => source.Envelope?.Audit)
 ```
 
-Methods, indexers, casts, computed expressions and delegate variables are not
-valid selectors. Repeating the same path, whether in one or several calls,
-reports `MORPH0049`.
+Methods, indexers, casts and computed expressions are invalid. Repeating a
+path reports `MORPH0049`.
 
-Convention lookup uses this order:
+Explicit `Members` rules take precedence, followed by root-source members and
+then included members. Two included objects exposing the same exact,
+case-sensitive name produce `MORPH0050`. With
+[`MemberSelection.Explicit`](settings/member-selection.md), included members
+are available to `Auto()` and constructor conventions only.
 
-1. A readable member on the root source.
-2. A member from an included scope.
+## Nullable paths
 
-A root member therefore wins over an included member with the same exact,
-case-sensitive name. If two included scopes expose the same name, Morphant
-reports `MORPH0050`; remove one of the conflicting scopes. Ordinary explicit
-`Members` rules still take precedence over conventions.
+A nullable segment makes every value from that path nullable. For example, a
+`string` member can map to `string?`, and an `int` member can map to `int?`.
+If the selected object is missing, the result is `null`; Morphant does not use
+`0` for a missing `int`. A nullable value is not mapped automatically to a
+non-nullable target.
 
-With `MemberSelection.Explicit`, included members are used only by explicitly
-requested `Auto()` rules and by constructor conventions:
+For an unconstrained generic `T`, automatic mapping is limited to targets that
+can represent `null` for every `T`, such as `object?`.
 
-```csharp
-builder.Map<Order, OrderDto>()
-    .IncludeMembers(source => source.Customer)
-    .MemberSelection(MemberSelection.Explicit)
-    .Members(source => new()
-    {
-        Name = Auto()
-    });
-```
-
-## Null paths
-
-A nullable path makes every included value nullable for compatibility checks.
-The usual warning-free C# conversion rules then apply:
-
-- an included reference member can map to a nullable reference target, but not
-  to a non-nullable one;
-- an included `int` member can map to `int?`, but not to `int`;
-- when the path is `null`, both nullable targets receive `null`.
-
-Morphant never substitutes `0` for a missing included value merely because
-the underlying member is an `int`.
-
-Use the null-forgiving operator only when the path is an application
-invariant:
+Use `!` only when the object must exist:
 
 ```csharp
 .IncludeMembers(source => source.Customer!)
 ```
 
-For nullable references, the assertion is preserved in generated code and can
-throw `NullReferenceException` when it is false. As in ordinary C#,
-null-forgiving does not unwrap `Nullable<T>`; a missing nullable value still
-produces `null`.
+The assertion is preserved in generated code and can throw when false. It does
+not unwrap `Nullable<T>`.
 
 ## Composition and validation
 
-`IncludeBase` inherits included scopes in base-first order. Local root-member
-precedence and ambiguity checks still apply. `IncludeMembers` cannot be
-combined with `Convert`, because `Convert` owns the complete mapping.
+`IncludeBase` inherits included objects. `IncludeMembers` cannot be combined
+with `Convert`.
 
-When source-side `UnmappedMemberValidation` is enabled, the selected path
-counts as used and the readable members of the included scope are validated.
-Use the existing compile-time discard in `Construct`, `Resolve` or `Members`
-to acknowledge one nested member or the entire included scope:
+Source-side `UnmappedMemberValidation` checks the included member surface. A
+compile-time discard can acknowledge one member or the complete object:
 
 ```csharp
 .Members(source =>
 {
-    _ = source.Customer.LegacyCode; // one member
-    _ = source.Audit;               // the whole included scope
+    _ = source.Customer.LegacyCode;
+    _ = source.Audit;
 
-    return new()
-    {
-        Name = Auto()
-    };
+    return new() { Name = Auto() };
 })
 ```
 
-These statements only affect validation; their getters are not called while
-mapping.
+Discard statements are compile-time only and do not themselves call getters.

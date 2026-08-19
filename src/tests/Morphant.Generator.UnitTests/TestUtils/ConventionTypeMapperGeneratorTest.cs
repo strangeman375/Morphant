@@ -35,6 +35,21 @@ internal sealed class ConventionTypeMapperGeneratorTest
         return RunAndAssert(
             languageVersion,
             source,
+            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+            expected,
+            allowUnsafe: false);
+    }
+
+    public static Task RunAndAssert(
+        LanguageVersion languageVersion,
+        string source,
+        string hintName,
+        string expected)
+    {
+        return RunAndAssert(
+            languageVersion,
+            source,
+            hintName,
             expected,
             allowUnsafe: false);
     }
@@ -47,6 +62,7 @@ internal sealed class ConventionTypeMapperGeneratorTest
         return RunAndAssert(
             languageVersion,
             source,
+            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
             expected,
             allowUnsafe: true);
     }
@@ -54,6 +70,7 @@ internal sealed class ConventionTypeMapperGeneratorTest
     private static async Task RunAndAssert(
         LanguageVersion languageVersion,
         string source,
+        string hintName,
         string expected,
         bool allowUnsafe)
     {
@@ -83,7 +100,7 @@ internal sealed class ConventionTypeMapperGeneratorTest
         test.TestState.GeneratedSources.Add(
         (
             typeof(TestConventionTypeMapperGenerator),
-            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs",
+            hintName,
             GeneratedSourceText.Normalize(expected)
         ));
 
