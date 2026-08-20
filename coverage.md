@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/19/2026 - 13:43:43 |
-| Coverage date: | 08/19/2026 - 13:41:56 - 08/19/2026 - 13:43:38 |
+| Generated on: | 08/20/2026 - 13:39:10 |
+| Coverage date: | 08/20/2026 - 13:37:19 - 08/20/2026 - 13:39:05 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 332 |
 | Files: | 169 |
-| **Line coverage:** | 86.5% (31182 of 36037) |
-| Covered lines: | 31182 |
-| Uncovered lines: | 4855 |
-| Coverable lines: | 36037 |
-| Total lines: | 60301 |
-| **Branch coverage:** | 76.6% (10462 of 13641) |
-| Covered branches: | 10462 |
-| Total branches: | 13641 |
+| **Line coverage:** | 86.5% (31206 of 36068) |
+| Covered lines: | 31206 |
+| Uncovered lines: | 4862 |
+| Coverable lines: | 36068 |
+| Total lines: | 60357 |
+| **Branch coverage:** | 76.6% (10473 of 13659) |
+| Covered branches: | 10473 |
+| Total branches: | 13659 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -235,7 +235,7 @@
 |Morphant.Generator.TypeMapperGeneration.ConventionMemberMappingPlan|100%|100%|
 |Morphant.Generator.TypeMapperGeneration.ConventionMemberMappingPlanner|84%|86.1%|
 |Morphant.Generator.TypeMapperGeneration.ConventionReadableMember|100%|83.3%|
-|Morphant.Generator.TypeMapperGeneration.ConventionSourceAccessModel|81.6%|58.6%|
+|Morphant.Generator.TypeMapperGeneration.ConventionSourceAccessModel|80.5%|59.3%|
 |Morphant.Generator.TypeMapperGeneration.ConventionSourceMemberContext|100%||
 |Morphant.Generator.TypeMapperGeneration.ConventionSourceMemberResolution|100%||
 |Morphant.Generator.TypeMapperGeneration.ConventionSourceMemberResolver|100%|100%|
@@ -378,4 +378,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #35](https://github.com/strangeman375/Morphant/actions/runs/32259334963).
+Full HTML report: download the **coverage** artifact from [CI run #36](https://github.com/strangeman375/Morphant/actions/runs/32375090693).
