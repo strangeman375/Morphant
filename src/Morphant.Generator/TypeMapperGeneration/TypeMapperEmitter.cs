@@ -102,7 +102,8 @@ internal static class TypeMapperEmitter
         }
 
         return SourceText.From(
-            writer.ToString(),
+            IncludedPatternLocalNameRewriter.Rewrite(
+                writer.ToString()),
             Encoding.UTF8);
     }
 

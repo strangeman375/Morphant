@@ -646,9 +646,10 @@ internal readonly record struct ConventionSourceAccessModel(
                 continue;
             }
 
-            // Pattern locals share the generated method's local scope. The
-            // numeric coordinates keep them unique; the segment name keeps
-            // the exceptional fallback readable.
+            // Pattern locals share the generated method's local scope. Keep
+            // a collision-proof placeholder while planning; the emitter can
+            // choose a short segment-based name after it sees the complete
+            // method and all of its declarations.
             var local = "__morphantIncludedScope" + ScopeIndex + "_" +
                         ExpressionKindName(expressionKind) +
                         expressionIndex + "_Path" + index + "_" +
