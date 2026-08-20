@@ -582,6 +582,49 @@ internal readonly record struct ConventionSourceAccessModel(
         int expressionIndex,
         string expressionKind)
     {
+        return RequiresTypedMissingBranch(member)
+            ? BuildGuardedValueExpression(
+                sourceName,
+                member,
+                memberType,
+                expressionIndex,
+                expressionKind)
+            : BuildConditionalAccessExpression(sourceName, member);
+    }
+
+    private string BuildConditionalAccessExpression(
+        string sourceName,
+        ISymbol member)
+    {
+        var expression = RequiresRootCast
+            ? "((" +
+              RootType.ToDisplayString(
+                  SymbolDisplayFormats.FullyQualifiedNullable) +
+              ")" + sourceName + ")"
+            : sourceName;
+        var accessOperator = ".";
+
+        foreach (var segment in Path)
+        {
+            expression += accessOperator + Identifier(segment.Name);
+            accessOperator = RequiresGuard(segment) ? "?." : ".";
+
+            if (segment.SuppressesNull)
+            {
+                expression += "!";
+            }
+        }
+
+        return expression + accessOperator + Identifier(member.Name);
+    }
+
+    private string BuildGuardedValueExpression(
+        string sourceName,
+        ISymbol member,
+        ITypeSymbol memberType,
+        int expressionIndex,
+        string expressionKind)
+    {
         var receiver = RequiresRootCast
             ? "((" +
               RootType.ToDisplayString(
@@ -611,18 +654,31 @@ internal readonly record struct ConventionSourceAccessModel(
         }
 
         var value = receiver + "." + Identifier(member.Name);
-
-        if (conditions.Count == 0)
-        {
-            return value;
-        }
-
         var typeName = memberType.ToDisplayString(
             SymbolDisplayFormats.FullyQualifiedNullable);
 
         return "(" + string.Join(" && ", conditions) +
                " ? " + value + " : default(" + typeName + "))";
     }
+
+    // Roslyn 4.4 cannot preserve the lifted target type when conditional
+    // access ends in an unconstrained T. Keep an explicit typed null branch
+    // for that case so a missing path never becomes default(T).
+    private bool RequiresTypedMissingBranch(ISymbol member) =>
+        CanProduceMissingValue &&
+        GetMemberType(member) is ITypeParameterSymbol
+        {
+            IsReferenceType: false,
+            IsValueType: false
+        };
+
+    private static ITypeSymbol? GetMemberType(ISymbol member) =>
+        member switch
+        {
+            IPropertySymbol property => property.Type,
+            IFieldSymbol field => field.Type,
+            _ => null
+        };
 
     public ConventionSourceAccessModel Append(
         ConventionReadableMember member) =>

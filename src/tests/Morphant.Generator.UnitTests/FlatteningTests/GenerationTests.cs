@@ -113,9 +113,9 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.Destination(
-                customerAddressCity: (source.Customer is { } __morphantIncluded0_c_0_0 && __morphantIncluded0_c_0_0.Address is { } __morphantIncluded0_c_0_1 ? __morphantIncluded0_c_0_1.City : default(string?)))
+                customerAddressCity: source.Customer?.Address?.City)
             {
-                CustomerAddressCount = (source.Customer is { } __morphantIncluded0_m_0_0 && __morphantIncluded0_m_0_0.Address is { } __morphantIncluded0_m_0_1 ? __morphantIncluded0_m_0_1.Count : default(int?))
+                CustomerAddressCount = source.Customer?.Address?.Count
             };
         }
 
@@ -124,7 +124,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            destination.CustomerAddressCount = (source.Customer is { } __morphantIncluded0_m_0_0 && __morphantIncluded0_m_0_0.Address is { } __morphantIncluded0_m_0_1 ? __morphantIncluded0_m_0_1.Count : default(int?));
+            destination.CustomerAddressCount = source.Customer?.Address?.Count;
 
             return destination;
         }

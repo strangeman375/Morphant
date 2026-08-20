@@ -257,10 +257,10 @@ namespace TestCase
         {
             return new global::TestCase.Destination(
                 id: source.Id,
-                count: (source.Details is { } __morphantIncluded0_c_1_0 ? __morphantIncluded0_c_1_0.Count : default(int?)))
+                count: source.Details?.Count)
             {
                 Name = source.Name,
-                Tag = (source.Metadata is { } __morphantIncluded1_m_2_0 ? __morphantIncluded1_m_2_0.Tag : default(string?))
+                Tag = source.Metadata?.Tag
             };
         }
 
@@ -270,7 +270,7 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             destination.Name = source.Name;
-            destination.Tag = (source.Metadata is { } __morphantIncluded1_m_2_0 ? __morphantIncluded1_m_2_0.Tag : default(string?));
+            destination.Tag = source.Metadata?.Tag;
 
             return destination;
         }

@@ -70,6 +70,21 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
         public string Name { get; set; } = string.Empty;
     }
 
+    public sealed class MixedAssertionSource
+    {
+        public MixedAssertionContainer? Container { get; init; }
+    }
+
+    public sealed class MixedAssertionContainer
+    {
+        public Customer? Customer { get; init; }
+    }
+
+    public sealed class MixedAssertionDestination
+    {
+        public string? Name { get; set; }
+    }
+
     public sealed class ExplicitConstructDestination
     {
         public ExplicitConstructDestination(string name)
@@ -233,6 +248,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
 
             builder.Map<Source, AssertedDestination>()
                 .IncludeMembers(source => source.Customer!);
+
+            builder.Map<MixedAssertionSource,
+                    MixedAssertionDestination>()
+                .IncludeMembers(source => source.Container?.Customer!);
 
             builder.Map<Source, ExplicitConstructDestination>()
                 .IncludeMembers(source => source.Customer!)
@@ -431,6 +450,36 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 throw new InvalidOperationException(
                     "The null-forgiving selector did not preserve the " +
                     "user's non-null assertion.");
+            }
+
+            var mixedAssertionMapper =
+                (ITypeMapper<MixedAssertionSource,
+                    MixedAssertionDestination>)mapper;
+            var missingContainer = mixedAssertionMapper.Create(
+                new MixedAssertionSource(),
+                default(MappingContext));
+            var mixedAssertionThrew = false;
+
+            try
+            {
+                _ = mixedAssertionMapper.Create(
+                    new MixedAssertionSource
+                    {
+                        Container = new MixedAssertionContainer()
+                    },
+                    default(MappingContext));
+            }
+            catch (NullReferenceException)
+            {
+                mixedAssertionThrew = true;
+            }
+
+            if (missingContainer.Name is not null ||
+                !mixedAssertionThrew)
+            {
+                throw new InvalidOperationException(
+                    "Conditional access changed the scope of a nested " +
+                    "null-forgiving assertion.");
             }
 
             var explicitConstruct =

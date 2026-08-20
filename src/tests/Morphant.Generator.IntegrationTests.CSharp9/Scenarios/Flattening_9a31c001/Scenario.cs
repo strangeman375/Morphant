@@ -221,6 +221,58 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
         public string CustomerAddressCity { get; }
     }
 
+    public sealed class CountingSource
+    {
+        private readonly CountingCustomer? _customer;
+
+        public CountingSource(CountingCustomer? customer)
+        {
+            _customer = customer;
+        }
+
+        public int CustomerReads { get; private set; }
+
+        public CountingCustomer? Customer
+        {
+            get
+            {
+                CustomerReads++;
+                return _customer;
+            }
+        }
+    }
+
+    public sealed class CountingCustomer
+    {
+        private readonly CountingAddress? _address;
+
+        public CountingCustomer(CountingAddress? address)
+        {
+            _address = address;
+        }
+
+        public int AddressReads { get; private set; }
+
+        public CountingAddress? Address
+        {
+            get
+            {
+                AddressReads++;
+                return _address;
+            }
+        }
+    }
+
+    public sealed class CountingAddress
+    {
+        public string City { get; init; } = string.Empty;
+    }
+
+    public sealed class CountingDestination
+    {
+        public string? CustomerAddressCity { get; set; }
+    }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
@@ -265,6 +317,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
             builder.Map<DirectClaimSource, DirectClaimDestination>();
 
             builder.Map<CaseFallbackSource, CaseFallbackDestination>();
+
+            builder.Map<CountingSource, CountingDestination>();
         }
     }
 
@@ -520,6 +574,39 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
                 throw new InvalidOperationException(
                     "An incompatible exact-case flattened path blocked a " +
                     "compatible constructor fallback.");
+            }
+
+            var countingAddress = new CountingAddress { City = "counted" };
+            var countingCustomer = new CountingCustomer(countingAddress);
+            var countingSource = new CountingSource(countingCustomer);
+            var countingMapper =
+                (ITypeMapper<CountingSource, CountingDestination>)mapper;
+            var counted = countingMapper.Create(
+                countingSource,
+                default(MappingContext));
+            var missingCustomer = new CountingSource(null);
+            var missingCustomerResult = countingMapper.Create(
+                missingCustomer,
+                default(MappingContext));
+            var customerWithoutAddress = new CountingCustomer(null);
+            var missingAddressSource =
+                new CountingSource(customerWithoutAddress);
+            var missingAddressResult = countingMapper.Create(
+                missingAddressSource,
+                default(MappingContext));
+
+            if (counted.CustomerAddressCity != "counted" ||
+                countingSource.CustomerReads != 1 ||
+                countingCustomer.AddressReads != 1 ||
+                missingCustomerResult.CustomerAddressCity is not null ||
+                missingCustomer.CustomerReads != 1 ||
+                missingAddressResult.CustomerAddressCity is not null ||
+                missingAddressSource.CustomerReads != 1 ||
+                customerWithoutAddress.AddressReads != 1)
+            {
+                throw new InvalidOperationException(
+                    "Null-conditional flattening repeated a getter or did " +
+                    "not short-circuit a missing path.");
             }
 
             var mapperDefault = new MapperDefaultMapper();
