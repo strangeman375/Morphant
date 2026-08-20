@@ -73,7 +73,8 @@ return a replacement.
 
 ## Add explicit rules
 
-Use `Construct` and `Members` when conventions are not enough:
+Use [`Construct`](api/construct.md) and [`Members`](api/members.md) when
+conventions are not enough:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -86,7 +87,8 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-Use `Convert` when the whole mapping is clearer as ordinary synchronous C#:
+Use [`Convert`](api/convert.md) when the whole mapping is clearer as ordinary
+synchronous C#:
 
 ```csharp
 builder.Map<string, Uri>()
@@ -94,9 +96,8 @@ builder.Map<string, Uri>()
         new Uri(source!, UriKind.RelativeOrAbsolute));
 ```
 
-Continue with [Create and Update](create-and-update.md),
-[Conventions](conventions.md), [Declarative mapping](declarative-mapping.md),
-[Manual mapping](manual-mapping.md), or
+Continue with [Choose a configuration method](api/README.md),
+[Create and Update](create-and-update.md), [Conventions](conventions.md), or
 [Dependency injection and `IMapper`](runtime-dispatch.md).
 
 ## Calling without DI

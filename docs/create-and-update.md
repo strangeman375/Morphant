@@ -17,8 +17,12 @@ destination = mapper.Map(source, destination);
 
 ## Choosing the destination
 
-- `Construct` and `ConstructUsing` run when no destination is available.
-- `Resolve` and `ResolveUsing` choose the result for every Create and Update.
+- [`Construct`](api/construct.md) and
+  [`ConstructUsing`](api/construct-using.md) run when no destination is
+  available.
+- [`Resolve`](api/resolve.md) and
+  [`ResolveUsing`](api/resolve-using.md) choose the result for every Create
+  and Update.
 - Without an explicit rule, Morphant uses constructor conventions when
   possible.
 
@@ -41,8 +45,9 @@ properties and mutable fields. During Update, a replacement constructed by
 destination applies only post-construction rules, so its creation-only
 members keep their values.
 
-`Members` may use `previous` to read the supplied destination and `result` to
-read the destination selected for the current operation.
+[`Members`](api/members.md) may use `previous` to read the supplied
+destination and `result` to read the destination selected for the current
+operation.
 
 ## Null values
 
@@ -56,9 +61,9 @@ may be called.
 
 ## Manual mappings
 
-`Convert` receives the source, optional previous destination and mapping
-context, then returns the final result. Constructor, member and null-handling
-rules are not applied around it.
+[`Convert`](api/convert.md) receives the source, optional previous destination
+and mapping context, then returns the final result. Constructor, member and
+null-handling rules are not applied around it.
 
-See [Declarative mapping](declarative-mapping.md) and
-[Manual mapping](manual-mapping.md) for configuration examples.
+See [Choose a configuration method](api/README.md) for the complete decision
+table and overload reference.

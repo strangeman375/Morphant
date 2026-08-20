@@ -1,7 +1,9 @@
 # Nested mapping
 
 Nested mapping is always explicit. A convention or `Auto()` rule never starts
-another mapping automatically.
+another mapping automatically. The
+[declarative expressions reference](api/declarative-expressions.md) lists
+every `Map`, `Create`, and `Update` form.
 
 ## Forms
 

@@ -3,6 +3,13 @@
 Start with the [Quick start](quick-start.md). It covers package installation,
 mapper declaration, DI registration, Create, Update and a first explicit rule.
 
+## Configure a mapping
+
+- [Choose a configuration method](api/README.md) — method availability,
+  intended use, overloads and parameters.
+- [Settings](settings/README.md) — defaults, configuration levels and
+  precedence.
+
 ## Mapping guides
 
 - [Create and Update](create-and-update.md) — destination reuse, replacement
@@ -24,18 +31,6 @@ mapper declaration, DI registration, Create, Update and a first explicit rule.
 - [Mapping recipes](recipes.md) — short examples for common custom mappings.
 - [Testing mappings](testing.md) — runtime behavior, diagnostics and generated
   code review.
-
-## Settings
-
-Read the [settings overview](settings/README.md) for configuration levels,
-precedence and defaults.
-
-- [Mapping modes](settings/mapping-mode.md)
-- [Null handling](settings/null-handling.md)
-- [Member selection](settings/member-selection.md)
-- [Flattening](settings/flattening.md)
-- [Constructor selection](settings/constructor-selection.md)
-- [Unmapped member validation](settings/unmapped-member-validation.md)
 
 ## Reference
 

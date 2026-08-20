@@ -1,7 +1,8 @@
 # Include nested source members
 
-`IncludeMembers` adds properties and fields of selected nested source objects
-to constructor and destination-member conventions:
+[`IncludeMembers`](api/include-members.md) adds properties and fields of
+selected nested source objects to constructor and destination-member
+conventions:
 
 ```csharp
 builder.Map<Order, OrderDto>()
@@ -57,8 +58,8 @@ not unwrap `Nullable<T>`.
 
 ## Composition and validation
 
-`IncludeBase` inherits included objects. `IncludeMembers` cannot be combined
-with `Convert`.
+[`IncludeBase`](api/include-base.md) inherits included objects.
+`IncludeMembers` cannot be combined with [`Convert`](api/convert.md).
 
 Source-side `UnmappedMemberValidation` checks the included member surface. A
 compile-time discard can acknowledge one member or the complete object:

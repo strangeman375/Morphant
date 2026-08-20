@@ -1,6 +1,7 @@
 # Manual mapping
 
-Use `Convert` when the complete mapping is clearer as ordinary synchronous C#:
+Use [`Convert`](api/convert.md) when the complete mapping is clearer as ordinary
+synchronous C#:
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -19,13 +20,8 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-The available overloads receive:
-
-| Parameters | Available information |
-|---|---|
-| `source` | Original source value |
-| `source, previous` | Source and existing-destination presence |
-| `source, previous, context` | Source, destination and mapping context |
+The [`Convert` reference](api/convert.md) lists all callback overloads and
+parameters.
 
 `previous` is `Option<TDestination>`. It is `None` for Create and for an Update
 without an actual destination, and `Some(destination)` otherwise.

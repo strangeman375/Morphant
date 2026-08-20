@@ -6,8 +6,10 @@ A bare mapping uses [automatic conventions](conventions.md):
 builder.Map<Customer, CustomerDto>();
 ```
 
-When conventions are not enough, use `Construct` or `Resolve` to choose the
-destination and `Members` to configure its members.
+When conventions are not enough, use [`Construct`](api/construct.md) or
+[`Resolve`](api/resolve.md) to choose the destination and
+[`Members`](api/members.md) to configure its members. See
+[Choose a configuration method](api/README.md) for availability and overloads.
 
 `Configure` is analyzed at compile time. Keep mapper settings and `Map`
 registrations in an unconditional sequence, and keep each mapping on the
@@ -19,10 +21,10 @@ Each mapping can use at most one of these methods:
 
 | Method | When it applies | Use it for |
 |---|---|---|
-| `Construct` | No destination is available | Explicit constructor arguments |
-| `Resolve` | Every Create and Update | Choosing reuse or replacement |
-| `ConstructUsing` | No destination is available | A factory or another custom creation method |
-| `ResolveUsing` | Every Create and Update | Custom reuse or replacement logic |
+| [`Construct`](api/construct.md) | No destination is available | Explicit constructor arguments |
+| [`Resolve`](api/resolve.md) | Every Create and Update | Choosing reuse or replacement |
+| [`ConstructUsing`](api/construct-using.md) | No destination is available | A factory or another custom creation method |
+| [`ResolveUsing`](api/resolve-using.md) | Every Create and Update | Custom reuse or replacement logic |
 
 `Construct` and `Resolve` are available when the destination has a supported
 constructor. Their inline lambdas describe construction:
@@ -73,10 +75,10 @@ builder.Map<OrderDto, Order>()
 | Rule | Meaning |
 |---|---|
 | Ordinary expression | Use that value |
-| `Auto()` | Apply exact-name convention to this member |
-| `Ignore()` | Leave this member unchanged |
-| `Map(...)` | Run an explicit nested mapping |
-| `Value<T>(value)` | Pin the exact receiving type |
+| [`Auto()`](api/declarative-expressions.md) | Apply exact-name convention to this member |
+| [`Ignore()`](api/declarative-expressions.md) | Leave this member unchanged |
+| [`Map(...)`](api/declarative-expressions.md) | Run an explicit nested mapping |
+| [`Value<T>(value)`](api/declarative-expressions.md) | Pin the exact receiving type |
 
 Members not mentioned in `Members` follow the configured
 [`MemberSelection`](settings/member-selection.md).
@@ -136,7 +138,7 @@ Code passed to `Construct`, `Resolve` and `Members` follows these rules:
 Only the selected branch is evaluated. Each expression needed by that branch
 is evaluated at most once; expressions used only by unselected branches or
 inapplicable rules are not evaluated. A local can express an explicit
-dependency. Use [`Convert`](manual-mapping.md) when loops, mutation, `try`,
+dependency. Use [`Convert`](api/convert.md) when loops, mutation, `try`,
 strict statement order or another ordinary C# algorithm would be clearer.
 
 See [Nested mapping](nested-mapping.md) for `Map`, `Create` and `Update` rules,

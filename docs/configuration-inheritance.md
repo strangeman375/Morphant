@@ -4,8 +4,8 @@ Morphant has two explicit reuse mechanisms:
 
 - `base.Configure(builder)` connects mapper-level defaults and makes base
   mappings available for inclusion;
-- `IncludeBase<TSource, TDestination>()` imports rules from one named mapping
-  configuration.
+- [`IncludeBase<TSource, TDestination>()`](api/include-base.md) imports rules
+  from one named mapping configuration.
 
 ## Connect a base mapper
 

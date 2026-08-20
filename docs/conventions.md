@@ -43,8 +43,8 @@ a unique case-insensitive name. Nested paths participate through auto
 flattening. Optional parameters may keep their defaults.
 
 Only accessible constructors with ordinary by-value parameters participate.
-If no constructor can be selected unambiguously, configure destination
-selection or `Convert` explicitly.
+If no constructor can be selected unambiguously, choose an explicit
+[destination method](api/README.md) or [`Convert`](api/convert.md).
 
 ## Destination types
 
@@ -55,7 +55,7 @@ construct one.
 
 An existing interface or abstract destination can still be updated when its
 members are assignable. For a custom whole-value mapping, use
-[`Convert`](manual-mapping.md).
+[`Convert`](api/convert.md).
 
 See [Declarative mapping](declarative-mapping.md) for explicit rules and
 [Current limitations](limitations.md) for unsupported features.

@@ -32,7 +32,8 @@ builder.Map<OrderDto, Order>()
 
 ## Create an interface through a factory
 
-`ConstructUsing` is ordinary synchronous C# and can use mapper dependencies:
+[`ConstructUsing`](api/construct-using.md) is ordinary synchronous C# and can
+use mapper dependencies:
 
 ```csharp
 builder.Map<OrderDto, IOrder>()
@@ -40,8 +41,8 @@ builder.Map<OrderDto, IOrder>()
         orderFactory.Create(source.Id));
 ```
 
-Use `ResolveUsing` instead when the factory also decides whether to reuse an
-existing destination.
+Use [`ResolveUsing`](api/resolve-using.md) instead when the factory also
+decides whether to reuse an existing destination.
 
 ## Map a nested object
 
@@ -60,8 +61,8 @@ Register the `AddressDto -> Address` mapping with DI as well. See
 
 ## Map a collection with custom code
 
-Morphant 0.1 has no automatic collection mapping. A `Convert` mapping can map
-a collection as a whole:
+Morphant 0.1 has no automatic collection mapping. A
+[`Convert`](api/convert.md) mapping can map a collection as a whole:
 
 ```csharp
 builder.Map<IReadOnlyList<OrderDto>, List<Order>>()

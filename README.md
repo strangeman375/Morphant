@@ -85,7 +85,8 @@ configure construction and members explicitly, call other registered
 mappings, or use `Convert` for an ordinary synchronous C# algorithm.
 
 Continue with the
-[Quick start](https://github.com/strangeman375/Morphant/blob/main/docs/quick-start.md)
+[Quick start](https://github.com/strangeman375/Morphant/blob/main/docs/quick-start.md),
+[choose a configuration method](https://github.com/strangeman375/Morphant/blob/main/docs/api/README.md),
 or browse the
 [documentation](https://github.com/strangeman375/Morphant/blob/main/docs/README.md).
 
