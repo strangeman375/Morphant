@@ -101,6 +101,49 @@ internal sealed class ActualizationTests
                     Expected(Mapper, IncrementalStepRunReason.Modified))));
     }
 
+    [Test]
+    public void Actualizes_when_output_nullability_changes()
+    {
+        var stable = SourceFile("MapperAndScenario.cs", StableSource);
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step(
+                "maybe-null read",
+                [
+                    stable,
+                    SourceFile(
+                        "Models.cs",
+                        OutputNullabilityModels("MaybeNull"))
+                ],
+                GeneratedFiles),
+            Step(
+                "not-null read",
+                [
+                    stable,
+                    SourceFile(
+                        "Models.cs",
+                        OutputNullabilityModels("NotNull"))
+                ],
+                GeneratedFiles,
+                Stage(
+                    "BuildTypeMapperRequests",
+                    Expected(Mapper, IncrementalStepRunReason.Modified))),
+            Step(
+                "maybe-null read restored",
+                [
+                    stable,
+                    SourceFile(
+                        "Models.cs",
+                        OutputNullabilityModels("MaybeNull"))
+                ],
+                GeneratedFiles,
+                Stage(
+                    "BuildTypeMapperRequests",
+                    Expected(Mapper, IncrementalStepRunReason.Modified))));
+    }
+
     private static string Models(string member, string expected) =>
         ModelsTemplate
             .Replace("__MEMBER__", member)
@@ -110,6 +153,9 @@ internal sealed class ActualizationTests
         IncludedModelsTemplate
             .Replace("__MEMBER__", member)
             .Replace("__EXPECTED__", expected);
+
+    private static string OutputNullabilityModels(string attribute) =>
+        OutputNullabilityModelsTemplate.Replace("__ATTRIBUTE__", attribute);
 
     // lang=c#
     private const string ModelsTemplate =
@@ -172,6 +218,39 @@ namespace TestCase
     public static class Expected
     {
         public const string Value = "__EXPECTED__";
+    }
+}
+""";
+
+    // lang=c#
+    private const string OutputNullabilityModelsTemplate =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using System.Diagnostics.CodeAnalysis;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        [__ATTRIBUTE__]
+        public Customer? Customer { get; init; } = new Customer();
+    }
+
+    public sealed class Customer
+    {
+        public string Name { get; init; } = "mapped";
+    }
+
+    public sealed class Destination
+    {
+        public string? CustomerName { get; set; } = "initial";
+    }
+
+    public static class Expected
+    {
+        public const string Value = "mapped";
     }
 }
 """;

@@ -98,6 +98,17 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
         public string? CustomerAddressCity { get; }
     }
 
+    public sealed class ExplicitSelectionConstructorDestination
+    {
+        public ExplicitSelectionConstructorDestination(
+            string? customerAddressCity)
+        {
+            CustomerAddressCity = customerAddressCity;
+        }
+
+        public string? CustomerAddressCity { get; }
+    }
+
     public sealed class StructuredConstructorDestination
     {
         public StructuredConstructorDestination(string? customerAddressCity)
@@ -273,6 +284,42 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
         public string? CustomerAddressCity { get; set; }
     }
 
+    public sealed class OutputNullabilitySource
+    {
+        [MaybeNull]
+        public OutputCustomer MaybeCustomer { get; init; }
+
+        [NotNull]
+        public OutputCustomer? CertainCustomer { get; init; } = new();
+
+        [NotNull]
+        public OutputMetrics? CertainMetrics { get; init; } = new();
+    }
+
+    public sealed class OutputCustomer
+    {
+        public string Name { get; init; } = string.Empty;
+    }
+
+    public struct OutputMetrics
+    {
+        public int Count { get; init; }
+    }
+
+    public sealed class OutputNullabilityDestination
+    {
+        public string? MaybeCustomerName { get; set; }
+
+        public string CertainCustomerName { get; set; } = string.Empty;
+
+        public int CertainMetricsCount { get; set; }
+    }
+
+    public sealed class OutputNullabilityIncludedDestination
+    {
+        public string? Name { get; set; }
+    }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
@@ -300,6 +347,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
             builder.Map<NestedSource, ExplicitConstructorDestination>()
                 .Construct(_ => new(Auto()));
 
+            builder.Map<NestedSource,
+                    ExplicitSelectionConstructorDestination>()
+                .MemberSelection(MemberSelection.Explicit);
+
             builder.Map<NestedSource, StructuredConstructorDestination>()
                 .Construct(source => source.Customer is null
                     ? new("fallback")
@@ -319,6 +370,13 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
             builder.Map<CaseFallbackSource, CaseFallbackDestination>();
 
             builder.Map<CountingSource, CountingDestination>();
+
+            builder.Map<OutputNullabilitySource,
+                    OutputNullabilityDestination>();
+
+            builder.Map<OutputNullabilitySource,
+                    OutputNullabilityIncludedDestination>()
+                .IncludeMembers(source => source.MaybeCustomer);
         }
     }
 
@@ -457,6 +515,19 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
             {
                 throw new InvalidOperationException(
                     "Explicit constructor Auto did not use flattening.");
+            }
+
+            var explicitSelectionConstructor =
+                ((ITypeMapper<NestedSource,
+                    ExplicitSelectionConstructorDestination>)mapper).Create(
+                    nestedSource,
+                    default(MappingContext));
+
+            if (explicitSelectionConstructor.CustomerAddressCity != "nested")
+            {
+                throw new InvalidOperationException(
+                    "Explicit member selection disabled constructor " +
+                    "flattening.");
             }
 
             var structuredMapper =
@@ -607,6 +678,44 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Flattening_9a31c
                 throw new InvalidOperationException(
                     "Null-conditional flattening repeated a getter or did " +
                     "not short-circuit a missing path.");
+            }
+
+            var outputNullability =
+                ((ITypeMapper<OutputNullabilitySource,
+                    OutputNullabilityDestination>)mapper).Create(
+                    new OutputNullabilitySource
+                    {
+                        MaybeCustomer = null!,
+                        CertainCustomer = new OutputCustomer
+                        {
+                            Name = "certain"
+                        },
+                        CertainMetrics = new OutputMetrics { Count = 19 }
+                    },
+                    default(MappingContext));
+
+            if (outputNullability.MaybeCustomerName is not null ||
+                outputNullability.CertainCustomerName != "certain" ||
+                outputNullability.CertainMetricsCount != 19)
+            {
+                throw new InvalidOperationException(
+                    "Output nullability attributes were ignored by " +
+                    "flattening.");
+            }
+
+            var includedOutputNullability =
+                ((ITypeMapper<OutputNullabilitySource,
+                    OutputNullabilityIncludedDestination>)mapper).Create(
+                    new OutputNullabilitySource
+                    {
+                        MaybeCustomer = null!
+                    },
+                    default(MappingContext));
+
+            if (includedOutputNullability.Name is not null)
+            {
+                throw new InvalidOperationException(
+                    "IncludeMembers ignored output nullability.");
             }
 
             var mapperDefault = new MapperDefaultMapper();

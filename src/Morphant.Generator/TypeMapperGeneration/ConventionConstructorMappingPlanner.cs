@@ -172,8 +172,10 @@ internal static class ConventionConstructorMappingPlanner
         }
 
         var selectedFlatteningIssues = selectedConstructor is null
-            ? selectedPlan is null && plannedCandidates.Length == 1
-                ? plannedCandidates[0].FlatteningIssues
+            ? selectedPlan is null
+                ? FindSharedFlatteningIssues(
+                    plannedCandidates.Select(static candidate =>
+                        candidate.FlatteningIssues))
                 : ImmutableArray<FlatteningIssueObservation>.Empty
             : plannedCandidates.First(candidate =>
                     AreSameConstructor(
@@ -1736,6 +1738,67 @@ internal static class ConventionConstructorMappingPlanner
                     rightParameter.Type.ToDisplayString(
                         SymbolDisplayFormats
                             .FullyQualifiedNullable)))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    internal static ImmutableArray<FlatteningIssueObservation>
+        FindSharedFlatteningIssues(
+            IEnumerable<ImmutableArray<FlatteningIssueObservation>>
+                issueSets)
+    {
+        var sets = issueSets.Select(static issues =>
+                issues.IsDefault
+                    ? ImmutableArray<FlatteningIssueObservation>.Empty
+                    : issues)
+            .ToImmutableArray();
+
+        if (sets.IsEmpty || sets[0].IsEmpty)
+        {
+            return ImmutableArray<FlatteningIssueObservation>.Empty;
+        }
+
+        var result =
+            ImmutableArray.CreateBuilder<FlatteningIssueObservation>();
+
+        foreach (var issue in sets[0])
+        {
+            if (result.Any(candidate =>
+                    AreSameFlatteningIssue(candidate, issue)) ||
+                sets.Skip(1).Any(issues =>
+                    !issues.Any(candidate =>
+                        AreSameFlatteningIssue(candidate, issue))))
+            {
+                continue;
+            }
+
+            result.Add(issue);
+        }
+
+        return result.ToImmutable();
+    }
+
+    private static bool AreSameFlatteningIssue(
+        FlatteningIssueObservation left,
+        FlatteningIssueObservation right)
+    {
+        if (!StringComparer.Ordinal.Equals(
+                left.TargetName,
+                right.TargetName) ||
+            left.CandidatePaths.Length != right.CandidatePaths.Length)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < left.CandidatePaths.Length; index++)
+        {
+            if (!StringComparer.Ordinal.Equals(
+                    left.CandidatePaths[index],
+                    right.CandidatePaths[index]))
             {
                 return false;
             }

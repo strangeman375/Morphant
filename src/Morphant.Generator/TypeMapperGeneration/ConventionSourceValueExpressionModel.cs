@@ -114,6 +114,11 @@ internal sealed class ConventionSourceValueExpressionModel
             {
                 expression += "!";
             }
+
+            if (segment.UnwrapsNullableValue)
+            {
+                expression += ".Value";
+            }
         }
 
         return expression + accessOperator + Identifier(MemberName);
@@ -134,6 +139,12 @@ internal sealed class ConventionSourceValueExpressionModel
                 receiver = segment.SuppressesNull
                     ? access + "!"
                     : access;
+
+                if (segment.UnwrapsNullableValue)
+                {
+                    receiver += ".Value";
+                }
+
                 continue;
             }
 
@@ -160,4 +171,5 @@ internal sealed class ConventionSourceValueExpressionModel
 internal readonly record struct ConventionSourceValuePathSegmentModel(
     string Name,
     bool SuppressesNull,
-    bool RequiresGuard);
+    bool RequiresGuard,
+    bool UnwrapsNullableValue);

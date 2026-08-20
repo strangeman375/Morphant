@@ -328,6 +328,7 @@ internal static class IncludedSourceMemberSet
                 readableMember.Name,
                 readableMember.Type,
                 readableMember.Symbol,
+                readableMember.ReadNullability,
                 segment.SuppressesNull,
                 segment.RequiresNullGuard));
             receiverType = readableMember.Type;
@@ -592,10 +593,17 @@ internal readonly record struct ConventionSourceAccessModel(
         return new ConventionSourceValueExpressionModel(
             receiverExpression,
             Path.Select(segment =>
-                    new ConventionSourceValuePathSegmentModel(
+                {
+                    var requiresGuard = RequiresGuard(segment);
+
+                    return new ConventionSourceValuePathSegmentModel(
                         segment.Name,
                         segment.SuppressesNull,
-                        RequiresGuard(segment)))
+                        requiresGuard,
+                        RequiresNullableValueUnwrap(
+                            segment,
+                            requiresGuard));
+                })
                 .ToImmutableArray(),
             member.Name,
             typeName,
@@ -629,6 +637,7 @@ internal readonly record struct ConventionSourceAccessModel(
                 member.Name,
                 member.Type,
                 member.Symbol,
+                member.ReadNullability,
                 SuppressesNull: false,
                 RequiresNullGuard: false))
         };
@@ -694,8 +703,23 @@ internal readonly record struct ConventionSourceAccessModel(
         SymbolNameHelper.GetFullMetadataName(member.ContainingType!) + "." +
         member.MetadataName;
 
-    private static bool CanBeNull(ITypeSymbol type)
+    private static bool CanBeNull(
+        ConventionSourcePathSegment segment)
     {
+        if (segment.ReadNullability ==
+            ConventionReadNullability.NotNull)
+        {
+            return false;
+        }
+
+        if (segment.ReadNullability ==
+            ConventionReadNullability.MaybeNull)
+        {
+            return CanContainNull(segment.Type);
+        }
+
+        var type = segment.Type;
+
         if (IsNullableValue(type))
         {
             return true;
@@ -712,11 +736,25 @@ internal readonly record struct ConventionSourceAccessModel(
                type.NullableAnnotation == NullableAnnotation.Annotated;
     }
 
+    private static bool CanContainNull(ITypeSymbol type) =>
+        IsNullableValue(type) ||
+        type.IsReferenceType ||
+        type is ITypeParameterSymbol typeParameter &&
+        !typeParameter.HasValueTypeConstraint &&
+        !typeParameter.HasUnmanagedTypeConstraint;
+
     private static bool RequiresGuard(
         ConventionSourcePathSegment segment) =>
         segment.RequiresNullGuard ||
-        CanBeNull(segment.Type) &&
+        CanBeNull(segment) &&
         (!segment.SuppressesNull || IsNullableValue(segment.Type));
+
+    private static bool RequiresNullableValueUnwrap(
+        ConventionSourcePathSegment segment,
+        bool requiresGuard) =>
+        !requiresGuard &&
+        segment.ReadNullability == ConventionReadNullability.NotNull &&
+        IsNullableValue(segment.Type);
 
     private static bool IsNullableValue(ITypeSymbol type) =>
         type is INamedTypeSymbol named &&
@@ -729,6 +767,7 @@ internal readonly record struct ConventionSourcePathSegment(
     string Name,
     ITypeSymbol Type,
     ISymbol Symbol,
+    ConventionReadNullability ReadNullability,
     bool SuppressesNull,
     bool RequiresNullGuard);
 

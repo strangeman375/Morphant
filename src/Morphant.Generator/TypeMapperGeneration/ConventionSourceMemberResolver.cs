@@ -239,7 +239,8 @@ internal static class ConventionSourceMemberResolver
             access,
             pathDisplay,
             pathIdentity,
-            pathMembers);
+            pathMembers,
+            terminal.ReadNullability);
     }
 
     private static ImmutableArray<ConventionReadableMember>

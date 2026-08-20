@@ -1223,8 +1223,11 @@ internal static class StructuredConstructMappingPlanner
             selectedConstructor,
             Terminals: ImmutableArray<StructuredTerminalObservation>.Empty,
             FlatteningIssues: selectedConstructor is null
-                ? selectedPlan is null && plannedCandidates.Length == 1
-                    ? plannedCandidates[0].FlatteningIssues
+                ? selectedPlan is null
+                    ? ConventionConstructorMappingPlanner
+                        .FindSharedFlatteningIssues(
+                            plannedCandidates.Select(static candidate =>
+                                candidate.FlatteningIssues))
                     : ImmutableArray<FlatteningIssueObservation>.Empty
                 : plannedCandidates.First(candidate =>
                         ConventionConstructorMappingPlanner.AreSameConstructor(

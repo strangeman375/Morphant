@@ -10,11 +10,12 @@ internal static class FlatteningGeneratorTest
     public static FlatteningGeneratorResult Run(
         string source,
         IReadOnlyDictionary<string, string>? globalOptions = null,
-        GeneratorDriver? driver = null) =>
+        GeneratorDriver? driver = null,
+        LanguageVersion languageVersion = LanguageVersion.CSharp9) =>
         new(GeneratorTestDriver.Run(
             "FlatteningConsumer",
             source,
-            LanguageVersion.CSharp9,
+            languageVersion,
             globalOptions: globalOptions,
             driver: driver));
 

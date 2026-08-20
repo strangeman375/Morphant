@@ -265,6 +265,29 @@ internal static class MappingCompletenessObservationBuilder
             AddFailureUncertainty(
                 slice.UpdateFailure,
                 slice.ConstructorObservation);
+            AddFlatteningUncertainty(
+                slice.MemberObservation?.FlatteningIssues ?? default);
+            AddFlatteningUncertainty(
+                slice.ConstructorObservation?.FlatteningIssues ?? default);
+        }
+
+        void AddFlatteningUncertainty(
+            ImmutableArray<FlatteningIssueObservation> issues)
+        {
+            if (issues.IsDefaultOrEmpty)
+            {
+                return;
+            }
+
+            foreach (var issue in issues)
+            {
+                AddUncertain(issue.TargetSymbol);
+
+                foreach (var candidateMember in issue.CandidateMembers)
+                {
+                    AddUncertain(candidateMember);
+                }
+            }
         }
 
         void AddFailureUncertainty(

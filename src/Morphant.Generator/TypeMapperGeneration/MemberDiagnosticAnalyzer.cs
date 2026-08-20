@@ -606,6 +606,15 @@ internal static class MemberDiagnosticAnalyzer
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            if (!observation.FlatteningIssues.IsDefaultOrEmpty &&
+                observation.FlatteningIssues.Any(issue =>
+                    SymbolEqualityComparer.Default.Equals(
+                        issue.TargetSymbol,
+                        required)))
+            {
+                continue;
+            }
+
             var rule = observation.Rules.FirstOrDefault(candidate =>
                 SymbolEqualityComparer.Default.Equals(
                     candidate.DestinationMember,

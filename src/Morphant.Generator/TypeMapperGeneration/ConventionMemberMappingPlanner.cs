@@ -14,6 +14,12 @@ internal static class ConventionMemberMappingPlanner
     private const string DisallowNullAttributeMetadataName =
         "System.Diagnostics.CodeAnalysis.DisallowNullAttribute";
 
+    private const string MaybeNullAttributeMetadataName =
+        "System.Diagnostics.CodeAnalysis.MaybeNullAttribute";
+
+    private const string NotNullAttributeMetadataName =
+        "System.Diagnostics.CodeAnalysis.NotNullAttribute";
+
     public static ConventionMemberMappingPlan Build(
         ITypeSymbol sourceType,
         ITypeSymbol? destination,
@@ -954,7 +960,8 @@ internal static class ConventionMemberMappingPlanner
                 return new ConventionReadableMember(
                     property.Name,
                     property.Type,
-                    property);
+                    property,
+                    ReadNullability: GetReadNullability(property));
             }
 
             if (member is IFieldSymbol field &&
@@ -971,7 +978,8 @@ internal static class ConventionMemberMappingPlanner
                 return new ConventionReadableMember(
                     field.Name,
                     field.Type,
-                    field);
+                    field,
+                    ReadNullability: GetReadNullability(field));
             }
         }
 
@@ -1085,11 +1093,51 @@ internal static class ConventionMemberMappingPlanner
         ISymbol? symbol,
         string metadataName)
     {
-        return symbol?.GetAttributes().Any(attribute =>
-                   attribute.AttributeClass is { } attributeType &&
-                   StringComparer.Ordinal.Equals(
-                       SymbolNameHelper.GetFullMetadataName(attributeType),
-                       metadataName)) == true;
+        return symbol is not null &&
+               HasAttribute(symbol.GetAttributes(), metadataName);
+    }
+
+    private static bool HasAttribute(
+        ImmutableArray<AttributeData> attributes,
+        string metadataName) =>
+        attributes.Any(attribute =>
+            attribute.AttributeClass is { } attributeType &&
+            StringComparer.Ordinal.Equals(
+                SymbolNameHelper.GetFullMetadataName(attributeType),
+                metadataName));
+
+    private static ConventionReadNullability GetReadNullability(
+        IPropertySymbol property)
+    {
+        var returnAttributes = property.GetMethod is { } getter
+            ? getter.GetReturnTypeAttributes()
+            : ImmutableArray<AttributeData>.Empty;
+
+        return GetReadNullability(
+            property.GetAttributes(),
+            returnAttributes);
+    }
+
+    private static ConventionReadNullability GetReadNullability(
+        IFieldSymbol field) =>
+        GetReadNullability(
+            field.GetAttributes(),
+            ImmutableArray<AttributeData>.Empty);
+
+    private static ConventionReadNullability GetReadNullability(
+        ImmutableArray<AttributeData> memberAttributes,
+        ImmutableArray<AttributeData> returnAttributes)
+    {
+        if (HasAttribute(memberAttributes, NotNullAttributeMetadataName) ||
+            HasAttribute(returnAttributes, NotNullAttributeMetadataName))
+        {
+            return ConventionReadNullability.NotNull;
+        }
+
+        return HasAttribute(memberAttributes, MaybeNullAttributeMetadataName) ||
+               HasAttribute(returnAttributes, MaybeNullAttributeMetadataName)
+            ? ConventionReadNullability.MaybeNull
+            : ConventionReadNullability.Declared;
     }
 
     private static bool IsAccessible(
@@ -1164,6 +1212,11 @@ internal static class ConventionMemberMappingPlanner
                 StringComparer.Ordinal)
             .Select(static group => group.First())
             .ToImmutableArray();
+        var candidateMembers = candidates
+            .SelectMany(static candidate =>
+                candidate.GetSourcePathMembers())
+            .Distinct(SymbolEqualityComparer.Default)
+            .ToImmutableArray();
 
         return new FlatteningIssueObservation(
             targetName,
@@ -1173,6 +1226,7 @@ internal static class ConventionMemberMappingPlanner
                     candidate.GetPathDisplay())
                 .OrderBy(static path => path, StringComparer.Ordinal)
                 .ToImmutableArray(),
+            candidateMembers,
             locations);
     }
 
@@ -1251,7 +1305,9 @@ internal readonly record struct ConventionReadableMember(
     ConventionSourceAccessModel? SourceAccess = null,
     string? PathDisplay = null,
     string? PathIdentity = null,
-    ImmutableArray<ISymbol> SourcePathMembers = default)
+    ImmutableArray<ISymbol> SourcePathMembers = default,
+    ConventionReadNullability ReadNullability =
+        ConventionReadNullability.Declared)
 {
     public ConventionSourceValueExpressionModel?
         BuildConventionValueExpression(string sourceName) =>
@@ -1266,6 +1322,13 @@ internal readonly record struct ConventionReadableMember(
             : SourcePathMembers;
 
     public string GetPathDisplay() => PathDisplay ?? Name;
+}
+
+internal enum ConventionReadNullability
+{
+    Declared,
+    MaybeNull,
+    NotNull
 }
 
 internal readonly record struct ConventionWritableMember(

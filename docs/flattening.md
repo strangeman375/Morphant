@@ -43,7 +43,9 @@ member. Constructor conventions still use flattening.
 If any intermediate object can be `null`, the flattened value is nullable.
 Thus `int` can map to `int?`, but not to `int`; a missing object produces
 `null`, never `0` or another fabricated value. The same rule applies to
-reference types and constructor arguments.
+reference types and constructor arguments. Morphant follows the declared
+nullable annotation and the output-flow attributes `MaybeNull` and `NotNull`
+on intermediate properties and fields.
 
 Use an explicit expression when your application has a stronger invariant or
 needs a fallback value.

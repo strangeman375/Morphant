@@ -290,6 +290,7 @@ internal sealed record FlatteningIssueObservation(
     ISymbol TargetSymbol,
     SyntaxNode? OriginNode,
     ImmutableArray<string> CandidatePaths,
+    ImmutableArray<ISymbol> CandidateMembers,
     ImmutableArray<Location> CandidateLocations);
 
 internal enum NestedDestinationOrigin
