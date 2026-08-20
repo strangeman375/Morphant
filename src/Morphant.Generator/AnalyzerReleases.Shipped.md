@@ -55,3 +55,13 @@ MORPH0045 | Morphant.NestedMapping | Error | Nested mapping result is incompatib
 MORPH0046 | Morphant.NestedMapping | Error | Nested Update destination is invalid
 MORPH0047 | Morphant.MappingCompleteness | Warning | Source member is not used
 MORPH0048 | Morphant.MappingCompleteness | Warning | Destination member is not mapped
+
+## Release 0.3.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+MORPH0049 | Morphant.IncludeMembers | Error | Invalid IncludeMembers selector
+MORPH0050 | Morphant.IncludeMembers | Error | Ambiguous included source member
+MORPH0051 | Morphant.Flattening | Error | Ambiguous flattened source path
