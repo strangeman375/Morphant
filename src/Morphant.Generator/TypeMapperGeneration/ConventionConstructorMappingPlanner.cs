@@ -1111,13 +1111,15 @@ internal static class ConventionConstructorMappingPlanner
                                 .BuildConventionValueExpression(
                                     nonNullSourceName,
                                     argument.Parameter.Ordinal,
-                                    "c"),
+                                    ConventionSourceExpressionKind
+                                        .Constructor),
                         ConventionProbeValueExpression:
                             argument.SourceMember
                                 .BuildConventionValueExpression(
                                     "source!",
                                     argument.Parameter.Ordinal,
-                                    "c"),
+                                    ConventionSourceExpressionKind
+                                        .Constructor),
                         TargetTypeName:
                             BuildTargetValueLocalTypeName(
                                 argument.Parameter),
@@ -1758,7 +1760,7 @@ internal static class ConventionConstructorMappingPlanner
         member.BuildConventionValueExpression(
             sourceName,
             expressionIndex,
-            "c") ??
+            ConventionSourceExpressionKind.Constructor) ??
         sourceName + "." + Identifier(member.Name);
 
     private readonly record struct ConstructorArgumentCandidate(

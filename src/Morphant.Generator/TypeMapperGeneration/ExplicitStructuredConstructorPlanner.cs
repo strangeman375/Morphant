@@ -364,13 +364,15 @@ internal static class ExplicitStructuredConstructorPlanner
                                     .BuildConventionValueExpression(
                                         nonNullSourceName,
                                         destinationParameter.Ordinal,
-                                        "c"),
+                                        ConventionSourceExpressionKind
+                                            .Constructor),
                             ConventionProbeValueExpression:
                                 sourceMember.Value
                                     .BuildConventionValueExpression(
                                         "source!",
                                         destinationParameter.Ordinal,
-                                        "c"),
+                                        ConventionSourceExpressionKind
+                                            .Constructor),
                             TargetTypeName:
                                 ConventionConstructorMappingPlanner
                                     .BuildTargetValueLocalTypeName(

@@ -85,6 +85,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
         public string? Name { get; set; }
     }
 
+    public sealed class ReverseMixedAssertionDestination
+    {
+        public string? Name { get; set; }
+    }
+
     public sealed class ExplicitConstructDestination
     {
         public ExplicitConstructDestination(string name)
@@ -252,6 +257,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
             builder.Map<MixedAssertionSource,
                     MixedAssertionDestination>()
                 .IncludeMembers(source => source.Container?.Customer!);
+
+            builder.Map<MixedAssertionSource,
+                    ReverseMixedAssertionDestination>()
+                .IncludeMembers(source => source.Container!.Customer);
 
             builder.Map<Source, ExplicitConstructDestination>()
                 .IncludeMembers(source => source.Customer!)
@@ -480,6 +489,46 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
                 throw new InvalidOperationException(
                     "Conditional access changed the scope of a nested " +
                     "null-forgiving assertion.");
+            }
+
+            var reverseMixedAssertionMapper =
+                (ITypeMapper<MixedAssertionSource,
+                    ReverseMixedAssertionDestination>)mapper;
+            var missingCustomer = reverseMixedAssertionMapper.Create(
+                new MixedAssertionSource
+                {
+                    Container = new MixedAssertionContainer()
+                },
+                default(MappingContext));
+            var presentCustomer = reverseMixedAssertionMapper.Create(
+                new MixedAssertionSource
+                {
+                    Container = new MixedAssertionContainer
+                    {
+                        Customer = new Customer { Name = "reverse" }
+                    }
+                },
+                default(MappingContext));
+            var reverseMixedAssertionThrew = false;
+
+            try
+            {
+                _ = reverseMixedAssertionMapper.Create(
+                    new MixedAssertionSource(),
+                    default(MappingContext));
+            }
+            catch (NullReferenceException)
+            {
+                reverseMixedAssertionThrew = true;
+            }
+
+            if (missingCustomer.Name is not null ||
+                presentCustomer.Name != "reverse" ||
+                !reverseMixedAssertionThrew)
+            {
+                throw new InvalidOperationException(
+                    "A null-forgiving boundary changed the following " +
+                    "nullable segment semantics.");
             }
 
             var explicitConstruct =

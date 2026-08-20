@@ -1259,7 +1259,8 @@ internal readonly record struct ConventionReadableMember(
     public string? BuildConventionValueExpression(
         string sourceName,
         int expressionIndex,
-        string expressionKind = "m") =>
+        ConventionSourceExpressionKind expressionKind =
+            ConventionSourceExpressionKind.Member) =>
         SourceAccess?.BuildValueExpression(
             sourceName,
             Symbol,

@@ -102,7 +102,7 @@ internal static class ConventionSourceValueCompatibility
         member.BuildConventionValueExpression(
             "source!",
             expressionIndex,
-            "f") ??
+            ConventionSourceExpressionKind.Probe) ??
         "source!." + Identifier(member.Name);
 
     private static string Identifier(string value) =>

@@ -580,7 +580,7 @@ internal readonly record struct ConventionSourceAccessModel(
         ISymbol member,
         ITypeSymbol memberType,
         int expressionIndex,
-        string expressionKind)
+        ConventionSourceExpressionKind expressionKind)
     {
         return RequiresTypedMissingBranch(member)
             ? BuildGuardedValueExpression(
@@ -623,7 +623,7 @@ internal readonly record struct ConventionSourceAccessModel(
         ISymbol member,
         ITypeSymbol memberType,
         int expressionIndex,
-        string expressionKind)
+        ConventionSourceExpressionKind expressionKind)
     {
         var receiver = RequiresRootCast
             ? "((" +
@@ -646,9 +646,13 @@ internal readonly record struct ConventionSourceAccessModel(
                 continue;
             }
 
-            var local = "__morphantIncluded" + ScopeIndex + "_" +
-                        expressionKind + "_" + expressionIndex + "_" +
-                        index;
+            // Pattern locals share the generated method's local scope. The
+            // numeric coordinates keep them unique; the segment name keeps
+            // the exceptional fallback readable.
+            var local = "__morphantIncludedScope" + ScopeIndex + "_" +
+                        ExpressionKindName(expressionKind) +
+                        expressionIndex + "_Path" + index + "_" +
+                        segment.Name;
             conditions.Add(access + " is { } " + local);
             receiver = local;
         }
@@ -782,6 +786,19 @@ internal readonly record struct ConventionSourceAccessModel(
         named.OriginalDefinition.SpecialType ==
             SpecialType.System_Nullable_T;
 
+    private static string ExpressionKindName(
+        ConventionSourceExpressionKind expressionKind) =>
+        expressionKind switch
+        {
+            ConventionSourceExpressionKind.Constructor => "Constructor",
+            ConventionSourceExpressionKind.Member => "Member",
+            ConventionSourceExpressionKind.Probe => "Probe",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(expressionKind),
+                expressionKind,
+                null)
+        };
+
     private static string Identifier(string value)
     {
         return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
@@ -802,6 +819,13 @@ internal readonly record struct ParsedIncludeMembersPathSegment(
     string Name,
     bool SuppressesNull,
     bool RequiresNullGuard);
+
+internal enum ConventionSourceExpressionKind
+{
+    Constructor,
+    Member,
+    Probe
+}
 
 internal enum IncludeMembersIssueKind
 {
