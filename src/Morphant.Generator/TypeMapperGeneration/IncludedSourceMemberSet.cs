@@ -575,95 +575,31 @@ internal readonly record struct ConventionSourceAccessModel(
     public bool CanProduceMissingValue =>
         Path.Any(RequiresGuard);
 
-    public string BuildValueExpression(
+    public ConventionSourceValueExpressionModel BuildValueExpression(
         string sourceName,
         ISymbol member,
-        ITypeSymbol memberType,
-        int expressionIndex,
-        ConventionSourceExpressionKind expressionKind)
+        ITypeSymbol memberType)
     {
-        return RequiresTypedMissingBranch(member)
-            ? BuildGuardedValueExpression(
-                sourceName,
-                member,
-                memberType,
-                expressionIndex,
-                expressionKind)
-            : BuildConditionalAccessExpression(sourceName, member);
-    }
-
-    private string BuildConditionalAccessExpression(
-        string sourceName,
-        ISymbol member)
-    {
-        var expression = RequiresRootCast
+        var receiverExpression = RequiresRootCast
             ? "((" +
               RootType.ToDisplayString(
                   SymbolDisplayFormats.FullyQualifiedNullable) +
               ")" + sourceName + ")"
             : sourceName;
-        var accessOperator = ".";
-
-        foreach (var segment in Path)
-        {
-            expression += accessOperator + Identifier(segment.Name);
-            accessOperator = RequiresGuard(segment) ? "?." : ".";
-
-            if (segment.SuppressesNull)
-            {
-                expression += "!";
-            }
-        }
-
-        return expression + accessOperator + Identifier(member.Name);
-    }
-
-    private string BuildGuardedValueExpression(
-        string sourceName,
-        ISymbol member,
-        ITypeSymbol memberType,
-        int expressionIndex,
-        ConventionSourceExpressionKind expressionKind)
-    {
-        var receiver = RequiresRootCast
-            ? "((" +
-              RootType.ToDisplayString(
-                  SymbolDisplayFormats.FullyQualifiedNullable) +
-              ")" + sourceName + ")"
-            : sourceName;
-        var conditions = new List<string>();
-
-        for (var index = 0; index < Path.Length; index++)
-        {
-            var segment = Path[index];
-            var access = receiver + "." + Identifier(segment.Name);
-
-            if (!RequiresGuard(segment))
-            {
-                receiver = segment.SuppressesNull
-                    ? access + "!"
-                    : access;
-                continue;
-            }
-
-            // Pattern locals share the generated method's local scope. Keep
-            // a collision-proof placeholder while planning; the emitter can
-            // choose a short segment-based name after it sees the complete
-            // method and all of its declarations.
-            var local = "__morphantIncludedScope" + ScopeIndex + "_" +
-                        ExpressionKindName(expressionKind) +
-                        expressionIndex + "_Path" + index + "_" +
-                        segment.Name;
-            conditions.Add(access + " is { } " + local);
-            receiver = local;
-        }
-
-        var value = receiver + "." + Identifier(member.Name);
         var typeName = memberType.ToDisplayString(
             SymbolDisplayFormats.FullyQualifiedNullable);
 
-        return "(" + string.Join(" && ", conditions) +
-               " ? " + value + " : default(" + typeName + "))";
+        return new ConventionSourceValueExpressionModel(
+            receiverExpression,
+            Path.Select(segment =>
+                    new ConventionSourceValuePathSegmentModel(
+                        segment.Name,
+                        segment.SuppressesNull,
+                        RequiresGuard(segment)))
+                .ToImmutableArray(),
+            member.Name,
+            typeName,
+            RequiresTypedMissingBranch(member));
     }
 
     // Roslyn 4.4 cannot preserve the lifted target type when conditional
@@ -787,26 +723,6 @@ internal readonly record struct ConventionSourceAccessModel(
         named.OriginalDefinition.SpecialType ==
             SpecialType.System_Nullable_T;
 
-    private static string ExpressionKindName(
-        ConventionSourceExpressionKind expressionKind) =>
-        expressionKind switch
-        {
-            ConventionSourceExpressionKind.Constructor => "Constructor",
-            ConventionSourceExpressionKind.Member => "Member",
-            ConventionSourceExpressionKind.Probe => "Probe",
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(expressionKind),
-                expressionKind,
-                null)
-        };
-
-    private static string Identifier(string value)
-    {
-        return SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||
-               SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
-            ? "@" + value
-            : value;
-    }
 }
 
 internal readonly record struct ConventionSourcePathSegment(
@@ -820,13 +736,6 @@ internal readonly record struct ParsedIncludeMembersPathSegment(
     string Name,
     bool SuppressesNull,
     bool RequiresNullGuard);
-
-internal enum ConventionSourceExpressionKind
-{
-    Constructor,
-    Member,
-    Probe
-}
 
 internal enum IncludeMembersIssueKind
 {

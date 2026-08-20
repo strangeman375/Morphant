@@ -56,7 +56,7 @@ internal static class ConventionSourceValueCompatibility
                     writer.Line(
                         "return " + SourceExpression(
                             potential[index],
-                            index) + ";");
+                            mapperType) + ";");
                     writer.Unindent();
                     writer.Line("}");
                 }
@@ -98,12 +98,16 @@ internal static class ConventionSourceValueCompatibility
 
     private static string SourceExpression(
         ConventionReadableMember member,
-        int expressionIndex) =>
-        member.BuildConventionValueExpression(
-            "source!",
-            expressionIndex,
-            ConventionSourceExpressionKind.Probe) ??
-        "source!." + Identifier(member.Name);
+        INamedTypeSymbol mapperType)
+    {
+        var localNames = new GeneratedLocalNameAllocator(
+            mapperType,
+            "source");
+
+        return member.BuildConventionValueExpression("source!")
+                   ?.Render(localNames) ??
+               "source!." + Identifier(member.Name);
+    }
 
     private static string Identifier(string value) =>
         SyntaxFacts.GetKeywordKind(value) != SyntaxKind.None ||

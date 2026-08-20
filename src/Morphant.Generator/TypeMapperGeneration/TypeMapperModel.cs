@@ -115,8 +115,9 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
     string SourceMemberName,
     string? ValueLocalName,
     string? ExplicitValueExpression = null,
-    string? ConventionValueExpression = null,
-    string? ConventionProbeValueExpression = null,
+    ConventionSourceValueExpressionModel? ConventionValueExpression = null,
+    ConventionSourceValueExpressionModel? ConventionProbeValueExpression =
+        null,
     string? ValueLocalTypeName = null,
     string? TargetTypeName = null,
     TypeMapperDependencyExpressionModel? DependencyExpression = null,
@@ -138,7 +139,7 @@ internal readonly record struct TypeMapperMemberMappingModel
     string? ValueLocalName = null,
     bool RequiresPreviousDestinationValueLocal = false,
     bool IsResultDependent = false,
-    string? ConventionValueExpression = null,
+    ConventionSourceValueExpressionModel? ConventionValueExpression = null,
     TypeMapperDependencyExpressionModel? DependencyExpression = null,
     ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
 );

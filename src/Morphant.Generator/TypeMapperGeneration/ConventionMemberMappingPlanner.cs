@@ -141,7 +141,8 @@ internal static class ConventionMemberMappingPlanner
         var candidateGroups =
             ImmutableArray.CreateBuilder<MemberCandidateGroup>();
         var candidateValueExpressions =
-            ImmutableArray.CreateBuilder<string?>();
+            ImmutableArray.CreateBuilder<
+                ConventionSourceValueExpressionModel?>();
         var supportedDestinationMembers =
             ImmutableArray.CreateBuilder<ISymbol>();
         var requiredObligations =
@@ -222,13 +223,11 @@ internal static class ConventionMemberMappingPlanner
                         selectedWritable.Type,
                         selectedWritable.CanAssign,
                         sourceMember.BuildConventionValueExpression(
-                            "source!",
-                            candidateIndex)));
+                            "source!")));
                 candidateMembers.Add(sourceMember);
                 candidateValueExpressions.Add(
                     sourceMember.BuildConventionValueExpression(
-                        sourceValueName,
-                        candidateIndex));
+                        sourceValueName));
             }
 
             var firstFallbackCandidate = candidates.Count;
@@ -244,13 +243,11 @@ internal static class ConventionMemberMappingPlanner
                         selectedWritable.Type,
                         selectedWritable.CanAssign,
                         sourceMember.BuildConventionValueExpression(
-                            "source!",
-                            candidateIndex)));
+                            "source!")));
                 candidateMembers.Add(sourceMember);
                 candidateValueExpressions.Add(
                     sourceMember.BuildConventionValueExpression(
-                        sourceValueName,
-                        candidateIndex));
+                        sourceValueName));
             }
 
             candidateGroups.Add(new MemberCandidateGroup(
@@ -1256,17 +1253,12 @@ internal readonly record struct ConventionReadableMember(
     string? PathIdentity = null,
     ImmutableArray<ISymbol> SourcePathMembers = default)
 {
-    public string? BuildConventionValueExpression(
-        string sourceName,
-        int expressionIndex,
-        ConventionSourceExpressionKind expressionKind =
-            ConventionSourceExpressionKind.Member) =>
+    public ConventionSourceValueExpressionModel?
+        BuildConventionValueExpression(string sourceName) =>
         SourceAccess?.BuildValueExpression(
             sourceName,
             Symbol,
-            Type,
-            expressionIndex,
-            expressionKind);
+            Type);
 
     public ImmutableArray<ISymbol> GetSourcePathMembers() =>
         SourcePathMembers.IsDefaultOrEmpty

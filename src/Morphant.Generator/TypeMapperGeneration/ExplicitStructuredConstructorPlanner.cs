@@ -362,17 +362,11 @@ internal static class ExplicitStructuredConstructorPlanner
                             ConventionValueExpression:
                                 sourceMember.Value
                                     .BuildConventionValueExpression(
-                                        nonNullSourceName,
-                                        destinationParameter.Ordinal,
-                                        ConventionSourceExpressionKind
-                                            .Constructor),
+                                        nonNullSourceName),
                             ConventionProbeValueExpression:
                                 sourceMember.Value
                                     .BuildConventionValueExpression(
-                                        "source!",
-                                        destinationParameter.Ordinal,
-                                        ConventionSourceExpressionKind
-                                            .Constructor),
+                                        "source!"),
                             TargetTypeName:
                                 ConventionConstructorMappingPlanner
                                     .BuildTargetValueLocalTypeName(
@@ -636,6 +630,10 @@ internal static class ExplicitStructuredConstructorPlanner
                     "> previous)");
                 writer.Line("{");
                 writer.Indent();
+                var localNames = new GeneratedLocalNameAllocator(
+                    mapperType,
+                    "source",
+                    "previous");
 
                 if (arguments.IsEmpty)
                 {
@@ -663,7 +661,8 @@ internal static class ExplicitStructuredConstructorPlanner
                                 ? "default(" +
                                   (argument.TargetTypeName ?? "object") +
                                   ")"
-                                : argument.ConventionProbeValueExpression ??
+                                : argument.ConventionProbeValueExpression
+                                      ?.Render(localNames) ??
                                   "source." +
                                   Identifier(argument.SourceMemberName)) +
                             suffix);

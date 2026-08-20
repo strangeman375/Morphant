@@ -502,10 +502,10 @@ internal static class TypeMapperRuntimeEquality
                 !StringComparer.Ordinal.Equals(
                     leftArgument.ExplicitValueExpression,
                     rightArgument.ExplicitValueExpression) ||
-                !StringComparer.Ordinal.Equals(
+                !Equals(
                     leftArgument.ConventionValueExpression,
                     rightArgument.ConventionValueExpression) ||
-                !StringComparer.Ordinal.Equals(
+                !Equals(
                     leftArgument.ConventionProbeValueExpression,
                     rightArgument.ConventionProbeValueExpression) ||
                 !StringComparer.Ordinal.Equals(
@@ -551,7 +551,7 @@ internal static class TypeMapperRuntimeEquality
                StringComparer.Ordinal.Equals(
                    left.ValueLocalName,
                    right.ValueLocalName) &&
-               StringComparer.Ordinal.Equals(
+               Equals(
                    left.ConventionValueExpression,
                    right.ConventionValueExpression) &&
                left.RequiresPreviousDestinationValueLocal ==

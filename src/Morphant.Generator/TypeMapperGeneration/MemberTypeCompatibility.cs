@@ -143,7 +143,7 @@ internal static class MemberTypeCompatibility
                         writer.Indent();
                         writer.Line(
                             $"destination.{Identifier(candidate.DestinationMemberName)} = " +
-                            SourceExpression(candidate) + ";");
+                            SourceExpression(candidate, mapperType) + ";");
                         writer.Unindent();
                         writer.Line("}");
                         continue;
@@ -163,7 +163,7 @@ internal static class MemberTypeCompatibility
                     writer.Indent();
                     writer.Line(
                         $"{Identifier(candidate.DestinationMemberName)} = " +
-                        SourceExpression(candidate));
+                        SourceExpression(candidate, mapperType));
                     writer.Unindent();
                     writer.Line("};");
                     writer.Unindent();
@@ -182,16 +182,25 @@ internal static class MemberTypeCompatibility
             : value;
     }
 
-    private static string SourceExpression(ProbeCandidate candidate) =>
-        candidate.SourceExpression ??
-        $"source!.{Identifier(candidate.SourceMemberName)}";
+    private static string SourceExpression(
+        ProbeCandidate candidate,
+        INamedTypeSymbol mapperType)
+    {
+        var localNames = new GeneratedLocalNameAllocator(
+            mapperType,
+            "source",
+            "destination");
+
+        return candidate.SourceExpression?.Render(localNames) ??
+               $"source!.{Identifier(candidate.SourceMemberName)}";
+    }
 
     private readonly record struct ProbeCandidate(
         int CandidateIndex,
         string SourceMemberName,
         string DestinationMemberName,
         bool CanAssign,
-        string? SourceExpression);
+        ConventionSourceValueExpressionModel? SourceExpression);
 }
 
 internal readonly record struct MemberTypeCompatibilityCandidate(
@@ -200,4 +209,4 @@ internal readonly record struct MemberTypeCompatibilityCandidate(
     ITypeSymbol SourceType,
     ITypeSymbol DestinationType,
     bool CanAssign,
-    string? SourceExpression = null);
+    ConventionSourceValueExpressionModel? SourceExpression = null);

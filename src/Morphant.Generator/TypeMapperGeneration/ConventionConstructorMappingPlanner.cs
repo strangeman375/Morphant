@@ -694,6 +694,9 @@ internal static class ConventionConstructorMappingPlanner
                     $"{sourceTypeName} source)");
                 writer.Line("{");
                 writer.Indent();
+                var localNames = new GeneratedLocalNameAllocator(
+                    mapperType,
+                    "source");
 
                 if (arguments.IsEmpty)
                 {
@@ -713,7 +716,8 @@ internal static class ConventionConstructorMappingPlanner
                         var argument = arguments[index];
                         var valueExpression =
                             argument.ExplicitValueExpression is null
-                                ? argument.ConventionProbeValueExpression ??
+                                ? argument.ConventionProbeValueExpression
+                                      ?.Render(localNames) ??
                                   "source!." +
                                   Identifier(argument.SourceMemberName)
                                 : "(" + argument.TargetTypeName +
@@ -1048,6 +1052,9 @@ internal static class ConventionConstructorMappingPlanner
                     $"{sourceTypeName} source)");
                 writer.Line("{");
                 writer.Indent();
+                var localNames = new GeneratedLocalNameAllocator(
+                    mapperType,
+                    "source");
 
                 if (arguments.IsEmpty)
                 {
@@ -1075,7 +1082,7 @@ internal static class ConventionConstructorMappingPlanner
                             SourceExpression(
                                 argument.SourceMember,
                                 "source!",
-                                index) +
+                                localNames) +
                             suffix);
                     }
 
@@ -1109,17 +1116,11 @@ internal static class ConventionConstructorMappingPlanner
                         ConventionValueExpression:
                             argument.SourceMember
                                 .BuildConventionValueExpression(
-                                    nonNullSourceName,
-                                    argument.Parameter.Ordinal,
-                                    ConventionSourceExpressionKind
-                                        .Constructor),
+                                    nonNullSourceName),
                         ConventionProbeValueExpression:
                             argument.SourceMember
                                 .BuildConventionValueExpression(
-                                    "source!",
-                                    argument.Parameter.Ordinal,
-                                    ConventionSourceExpressionKind
-                                        .Constructor),
+                                    "source!"),
                         TargetTypeName:
                             BuildTargetValueLocalTypeName(
                                 argument.Parameter),
@@ -1756,11 +1757,9 @@ internal static class ConventionConstructorMappingPlanner
     private static string SourceExpression(
         ConventionReadableMember member,
         string sourceName,
-        int expressionIndex) =>
+        GeneratedLocalNameAllocator localNames) =>
         member.BuildConventionValueExpression(
-            sourceName,
-            expressionIndex,
-            ConventionSourceExpressionKind.Constructor) ??
+            sourceName)?.Render(localNames) ??
         sourceName + "." + Identifier(member.Name);
 
     private readonly record struct ConstructorArgumentCandidate(

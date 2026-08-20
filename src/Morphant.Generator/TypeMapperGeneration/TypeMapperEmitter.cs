@@ -101,10 +101,7 @@ internal static class TypeMapperEmitter
             writer.CloseBlock();
         }
 
-        return SourceText.From(
-            IncludedPatternLocalNameRewriter.Rewrite(
-                writer.ToString()),
-            Encoding.UTF8);
+        return SourceText.From(writer.ToString(), Encoding.UTF8);
     }
 
     private static void WriteType(
@@ -246,6 +243,10 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        var localNames = TypeMapperMethodLocalNames.Build(
+            mapping,
+            create: true);
+
         writer.Line("/// <inheritdoc/>");
         writer.Line(
             $"{mapping.DestinationTypeName} " +
@@ -325,7 +326,8 @@ internal static class TypeMapperEmitter
         {
             WriteCreateBody(
                 writer,
-                mapping);
+                mapping,
+                localNames);
             return;
         }
 
@@ -341,7 +343,8 @@ internal static class TypeMapperEmitter
 
     private static void WriteCreateBody(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        GeneratedLocalNameAllocator localNames)
     {
         writer.Unindent();
         writer.Line("{");
@@ -356,7 +359,8 @@ internal static class TypeMapperEmitter
         WriteCreateCallOrStatements(
             writer,
             mapping,
-            update: false);
+            update: false,
+            localNames: localNames);
 
         writer.Unindent();
         writer.Line("}");
@@ -365,7 +369,8 @@ internal static class TypeMapperEmitter
     private static void WriteCreateCallOrStatements(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        bool update)
+        bool update,
+        GeneratedLocalNameAllocator localNames)
     {
         if (mapping.CreateImplMethodName is
             { } createImplMethodName)
@@ -381,22 +386,26 @@ internal static class TypeMapperEmitter
         WriteCreateStatements(
             writer,
             mapping,
-            update);
+            update,
+            localNames);
     }
 
     private static void WriteCreateStatements(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        bool update) =>
+        bool update,
+        GeneratedLocalNameAllocator localNames) =>
         WriteCreateStatements(
             writer,
             mapping,
-            MappingOperationExpression(update));
+            MappingOperationExpression(update),
+            localNames);
 
     private static void WriteCreateStatements(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        string operationExpression)
+        string operationExpression,
+        GeneratedLocalNameAllocator localNames)
     {
         if (mapping.Failure is
             { } unsupportedExceptionMessage)
@@ -414,20 +423,23 @@ internal static class TypeMapperEmitter
             WriteControlFlowCreateNode(
                 writer,
                 controlFlow.CreateRoot,
-                operationExpression);
+                operationExpression,
+                localNames);
             return;
         }
 
         WriteControlFlowCreateLeaf(
             writer,
             mapping,
-            operationExpression);
+            operationExpression,
+            localNames);
     }
 
     private static void WriteControlFlowCreateNode(
         CodeWriter writer,
         TypeMapperControlFlowNode node,
-        string operationExpression)
+        string operationExpression,
+        GeneratedLocalNameAllocator localNames)
     {
         WriteLocalValues(
             writer,
@@ -441,7 +453,8 @@ internal static class TypeMapperEmitter
             WriteControlFlowCreateNode(
                 writer,
                 node.EvaluationContinuation!,
-                operationExpression);
+                operationExpression,
+                localNames);
             return;
         }
 
@@ -464,7 +477,8 @@ internal static class TypeMapperEmitter
                 WriteControlFlowCreateNode(
                     writer,
                     section.Branch,
-                    operationExpression);
+                    operationExpression,
+                    localNames);
                 writer.Unindent();
                 writer.Line("}");
             }
@@ -479,7 +493,8 @@ internal static class TypeMapperEmitter
                 WriteControlFlowCreateNode(
                     writer,
                     continuation,
-                    operationExpression);
+                    operationExpression,
+                    localNames);
             }
 
             return;
@@ -493,7 +508,8 @@ internal static class TypeMapperEmitter
             WriteControlFlowCreateNode(
                 writer,
                 node.WhenTrue!,
-                operationExpression);
+                operationExpression,
+                localNames);
             writer.Unindent();
             writer.Line("}");
             writer.Line("else");
@@ -502,7 +518,8 @@ internal static class TypeMapperEmitter
             WriteControlFlowCreateNode(
                 writer,
                 node.WhenFalse!,
-                operationExpression);
+                operationExpression,
+                localNames);
             writer.Unindent();
             writer.Line("}");
             return;
@@ -521,13 +538,15 @@ internal static class TypeMapperEmitter
         WriteControlFlowCreateLeaf(
             writer,
             node.Leaf!.Value,
-            operationExpression);
+            operationExpression,
+            localNames);
     }
 
     private static void WriteControlFlowCreateLeaf(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        string operationExpression)
+        string operationExpression,
+        GeneratedLocalNameAllocator localNames)
     {
         if (mapping.Failure is
             { } unsupportedMappingMessage)
@@ -564,7 +583,8 @@ internal static class TypeMapperEmitter
                 writer,
                 mapping,
                 factory,
-                operationExpression);
+                operationExpression,
+                localNames);
             return;
         }
 
@@ -575,7 +595,8 @@ internal static class TypeMapperEmitter
                 writer,
                 mapping,
                 constructor,
-                operationExpression);
+                operationExpression,
+                localNames);
             return;
         }
 
@@ -590,7 +611,8 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping,
         TypeMapperConstructorMappingModel constructor,
-        string operationExpression)
+        string operationExpression,
+        GeneratedLocalNameAllocator localNames)
     {
         var hasValueLocals = false;
 
@@ -616,7 +638,8 @@ internal static class TypeMapperEmitter
                 $" {valueLocalName} = " +
                 ConstructorArgumentUncachedValueExpression(
                     mapping,
-                    argument) +
+                    argument,
+                    localNames) +
                 ";");
         }
 
@@ -673,7 +696,8 @@ internal static class TypeMapperEmitter
                     $"{Identifier(argument.ParameterName)}: " +
                     ConstructorArgumentValueExpression(
                         mapping,
-                        argument) +
+                        argument,
+                        localNames) +
                     suffix);
             }
 
@@ -705,7 +729,10 @@ internal static class TypeMapperEmitter
 
                 writer.Line(
                     $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                    MemberValueExpression(mapping, memberMapping) +
+                    MemberValueExpression(
+                        mapping,
+                        memberMapping,
+                        localNames) +
                     suffix);
             }
 
@@ -727,6 +754,7 @@ internal static class TypeMapperEmitter
                 mapping,
                 postControlFlow,
                 Identifier(mapping.ResultLocalName),
+                localNames,
                 operationExpression: operationExpression);
             return;
         }
@@ -744,7 +772,10 @@ internal static class TypeMapperEmitter
             writer.Line(
                 $"{resultLocalName}." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(mapping, memberMapping) +
+                MemberValueExpression(
+                    mapping,
+                    memberMapping,
+                    localNames) +
                 ";");
         }
 
@@ -756,7 +787,8 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping,
         TypeMapperFactoryMappingModel factory,
-        string operationExpression)
+        string operationExpression,
+        GeneratedLocalNameAllocator localNames)
     {
         var destinationLocalName =
             Identifier(factory.DestinationLocalName);
@@ -819,6 +851,7 @@ internal static class TypeMapperEmitter
                 mapping,
                 postControlFlow,
                 assignmentTarget,
+                localNames,
                 returnExpression,
                 operationExpression);
             return;
@@ -830,7 +863,10 @@ internal static class TypeMapperEmitter
             writer.Line(
                 $"{assignmentTarget}." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(mapping, memberMapping) +
+                MemberValueExpression(
+                    mapping,
+                    memberMapping,
+                    localNames) +
                 ";");
         }
 
@@ -842,6 +878,10 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        var localNames = TypeMapperMethodLocalNames.Build(
+            mapping,
+            create: true);
+
         writer.Line("/// <inheritdoc/>");
         writer.Line(
             $"{mapping.DestinationTypeName} " +
@@ -935,7 +975,8 @@ internal static class TypeMapperEmitter
         {
             WriteUpdateBody(
                 writer,
-                mapping);
+                mapping,
+                localNames);
             return;
         }
 
@@ -1040,7 +1081,8 @@ internal static class TypeMapperEmitter
 
     private static void WriteUpdateBody(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        GeneratedLocalNameAllocator localNames)
     {
         writer.Unindent();
         writer.Line("{");
@@ -1060,7 +1102,8 @@ internal static class TypeMapperEmitter
         {
             WriteDestinationNullHandling(
                 writer,
-                mapping);
+                mapping,
+                localNames);
             writer.Line();
         }
 
@@ -1078,7 +1121,8 @@ internal static class TypeMapperEmitter
 
     private static void WriteUpdateStatements(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        GeneratedLocalNameAllocator localNames)
     {
         if (mapping.Failure is
             { } unsupportedExceptionMessage)
@@ -1095,14 +1139,16 @@ internal static class TypeMapperEmitter
         {
             WriteControlFlowUpdateNode(
                 writer,
-                controlFlow.UpdateRoot);
+                controlFlow.UpdateRoot,
+                localNames);
             return;
         }
 
         WriteUpdateLeafStatements(
             writer,
             mapping,
-            allowReplacement: false);
+            allowReplacement: false,
+            localNames: localNames);
     }
 
     private static void WriteSourceNullHandling(
@@ -1161,7 +1207,8 @@ internal static class TypeMapperEmitter
 
     private static void WriteDestinationNullHandling(
         CodeWriter writer,
-        TypeMapperMappingModel mapping)
+        TypeMapperMappingModel mapping,
+        GeneratedLocalNameAllocator localNames)
     {
         writer.Line("if (destination is null)");
         writer.Line("{");
@@ -1173,7 +1220,8 @@ internal static class TypeMapperEmitter
                 WriteCreateCallOrStatements(
                     writer,
                     mapping,
-                    update: true);
+                    update: true,
+                    localNames: localNames);
                 break;
 
             case NullDestinationHandlingValue.Throw:
@@ -1195,6 +1243,9 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        var localNames = TypeMapperMethodLocalNames.Build(
+            mapping,
+            create: true);
         var methodName =
             mapping.CreateImplMethodName ??
             throw new InvalidOperationException(
@@ -1225,7 +1276,8 @@ internal static class TypeMapperEmitter
             mapping,
             mapping.CreateImplUsesOperation
                 ? "operation"
-                : MappingOperationExpression(update: false));
+                : MappingOperationExpression(update: false),
+            localNames);
 
         writer.Unindent();
         writer.Line("}");
@@ -1249,6 +1301,9 @@ internal static class TypeMapperEmitter
         CodeWriter writer,
         TypeMapperMappingModel mapping)
     {
+        var localNames = TypeMapperMethodLocalNames.Build(
+            mapping,
+            create: false);
         var methodName =
             mapping.UpdateImplMethodName ??
             throw new InvalidOperationException(
@@ -1273,7 +1328,8 @@ internal static class TypeMapperEmitter
 
         WriteUpdateStatements(
             writer,
-            mapping);
+            mapping,
+            localNames);
 
         writer.Unindent();
         writer.Line("}");
@@ -1322,7 +1378,8 @@ internal static class TypeMapperEmitter
 
     private static void WriteControlFlowUpdateNode(
         CodeWriter writer,
-        TypeMapperControlFlowNode node)
+        TypeMapperControlFlowNode node,
+        GeneratedLocalNameAllocator localNames)
     {
         WriteLocalValues(
             writer,
@@ -1335,7 +1392,8 @@ internal static class TypeMapperEmitter
             writer.Line();
             WriteControlFlowUpdateNode(
                 writer,
-                node.EvaluationContinuation!);
+                node.EvaluationContinuation!,
+                localNames);
             return;
         }
 
@@ -1357,7 +1415,8 @@ internal static class TypeMapperEmitter
                 writer.Indent();
                 WriteControlFlowUpdateNode(
                     writer,
-                    section.Branch);
+                    section.Branch,
+                    localNames);
                 writer.Unindent();
                 writer.Line("}");
             }
@@ -1371,7 +1430,8 @@ internal static class TypeMapperEmitter
                 writer.Line();
                 WriteControlFlowUpdateNode(
                     writer,
-                    continuation);
+                    continuation,
+                    localNames);
             }
 
             return;
@@ -1384,7 +1444,8 @@ internal static class TypeMapperEmitter
             writer.Indent();
             WriteControlFlowUpdateNode(
                 writer,
-                node.WhenTrue!);
+                node.WhenTrue!,
+                localNames);
             writer.Unindent();
             writer.Line("}");
             writer.Line("else");
@@ -1392,7 +1453,8 @@ internal static class TypeMapperEmitter
             writer.Indent();
             WriteControlFlowUpdateNode(
                 writer,
-                node.WhenFalse!);
+                node.WhenFalse!,
+                localNames);
             writer.Unindent();
             writer.Line("}");
             return;
@@ -1411,13 +1473,15 @@ internal static class TypeMapperEmitter
         WriteUpdateLeafStatements(
             writer,
             node.Leaf!.Value,
-            allowReplacement: true);
+            allowReplacement: true,
+            localNames: localNames);
     }
 
     private static void WriteUpdateLeafStatements(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
-        bool allowReplacement)
+        bool allowReplacement,
+        GeneratedLocalNameAllocator localNames)
     {
         if (mapping.Failure is
             { } unsupportedMappingMessage)
@@ -1455,7 +1519,8 @@ internal static class TypeMapperEmitter
                 writer,
                 mapping,
                 factory,
-                MappingOperationExpression(update: true));
+                MappingOperationExpression(update: true),
+                localNames);
             return;
         }
 
@@ -1466,7 +1531,8 @@ internal static class TypeMapperEmitter
                 writer,
                 mapping,
                 constructor,
-                MappingOperationExpression(update: true));
+                MappingOperationExpression(update: true),
+                localNames);
             return;
         }
 
@@ -1488,6 +1554,7 @@ internal static class TypeMapperEmitter
                 mapping,
                 postControlFlow,
                 "destination",
+                localNames,
                 operationExpression:
                     MappingOperationExpression(update: true));
             return;
@@ -1509,7 +1576,10 @@ internal static class TypeMapperEmitter
             writer.Line(
                 "destination." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(mapping, memberMapping) +
+                MemberValueExpression(
+                    mapping,
+                    memberMapping,
+                    localNames) +
                 ";");
         }
 
@@ -1522,6 +1592,7 @@ internal static class TypeMapperEmitter
         TypeMapperMappingModel mapping,
         TypeMapperMemberControlFlowNode node,
         string assignmentTarget,
+        GeneratedLocalNameAllocator localNames,
         string? returnExpression = null,
         string? operationExpression = null)
     {
@@ -1539,6 +1610,7 @@ internal static class TypeMapperEmitter
                 mapping,
                 node.EvaluationContinuation!,
                 assignmentTarget,
+                localNames,
                 returnExpression,
                 operationExpression);
             return;
@@ -1564,6 +1636,7 @@ internal static class TypeMapperEmitter
                     mapping,
                     section.Branch,
                     assignmentTarget,
+                    localNames,
                     returnExpression,
                     operationExpression);
                 writer.Unindent();
@@ -1581,6 +1654,7 @@ internal static class TypeMapperEmitter
                     mapping,
                     continuation,
                     assignmentTarget,
+                    localNames,
                     returnExpression,
                     operationExpression);
             }
@@ -1598,6 +1672,7 @@ internal static class TypeMapperEmitter
                 mapping,
                 node.WhenTrue!,
                 assignmentTarget,
+                localNames,
                 returnExpression,
                 operationExpression);
             writer.Unindent();
@@ -1610,6 +1685,7 @@ internal static class TypeMapperEmitter
                 mapping,
                 node.WhenFalse!,
                 assignmentTarget,
+                localNames,
                 returnExpression,
                 operationExpression);
             writer.Unindent();
@@ -1644,7 +1720,10 @@ internal static class TypeMapperEmitter
             writer.Line(
                 assignmentTarget + "." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
-                MemberValueExpression(mapping, memberMapping) +
+                MemberValueExpression(
+                    mapping,
+                    memberMapping,
+                    localNames) +
                 ";");
         }
 
@@ -1827,12 +1906,13 @@ internal static class TypeMapperEmitter
 
     private static string MemberValueExpression(
         TypeMapperMappingModel owner,
-        TypeMapperMemberMappingModel mapping)
+        TypeMapperMemberMappingModel mapping,
+        GeneratedLocalNameAllocator localNames)
     {
         return mapping.ValueLocalName ??
                mapping.ExplicitValueExpression ??
                mapping.SourceValueLocalName ??
-               mapping.ConventionValueExpression ??
+               mapping.ConventionValueExpression?.Render(localNames) ??
                SourceValueExpression(
                    owner,
                    mapping.SourceMemberName,
@@ -1897,20 +1977,23 @@ internal static class TypeMapperEmitter
 
     private static string ConstructorArgumentValueExpression(
         TypeMapperMappingModel owner,
-        TypeMapperConstructorArgumentMappingModel mapping)
+        TypeMapperConstructorArgumentMappingModel mapping,
+        GeneratedLocalNameAllocator localNames)
     {
         return mapping.ValueLocalName ??
                ConstructorArgumentUncachedValueExpression(
                    owner,
-                   mapping);
+                   mapping,
+                   localNames);
     }
 
     private static string ConstructorArgumentUncachedValueExpression(
         TypeMapperMappingModel owner,
-        TypeMapperConstructorArgumentMappingModel mapping)
+        TypeMapperConstructorArgumentMappingModel mapping,
+        GeneratedLocalNameAllocator localNames)
     {
         return mapping.ExplicitValueExpression ??
-               mapping.ConventionValueExpression ??
+               mapping.ConventionValueExpression?.Render(localNames) ??
                SourceValueExpression(
                    owner,
                    mapping.SourceMemberName,

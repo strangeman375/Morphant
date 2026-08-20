@@ -1653,14 +1653,10 @@ internal static class StructuredConstructMappingPlanner
             ValueLocalName: null,
             ConventionValueExpression:
                 sourceMember.BuildConventionValueExpression(
-                    nonNullSourceName,
-                    parameter.Ordinal,
-                    ConventionSourceExpressionKind.Constructor),
+                    nonNullSourceName),
             ConventionProbeValueExpression:
                 sourceMember.BuildConventionValueExpression(
-                    "source!",
-                    parameter.Ordinal,
-                    ConventionSourceExpressionKind.Constructor),
+                    "source!"),
             TargetTypeName:
                 ConventionConstructorMappingPlanner
                     .BuildTargetValueLocalTypeName(parameter),
