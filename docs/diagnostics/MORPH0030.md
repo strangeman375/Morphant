@@ -13,6 +13,6 @@ Use constants or accessible mapper or static members. Do not capture
 file-local symbols. The end of the diagnostic identifies the unavailable
 reference.
 
-See [Declarative mapping](../declarative-mapping.md).
+See [Callback forms](../api/README.md#callback-forms).
 
 [All diagnostics](../diagnostics.md)

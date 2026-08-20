@@ -24,8 +24,8 @@ when its type is incompatible. For a flattened tier, incompatible or
 nullable-unsafe paths are ignored before choosing a candidate.
 
 If several compatible paths have the same joined name, Morphant reports
-`MORPH0051` instead of choosing by declaration order. Select the intended path
-explicitly:
+[`MORPH0051`](diagnostics/MORPH0051.md) instead of choosing by declaration
+order. Select the intended path explicitly:
 
 ```csharp
 .Members(source => new()

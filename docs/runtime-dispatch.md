@@ -84,6 +84,9 @@ var created = typeMapper.Create(orderDto);
 var updated = typeMapper.Update(orderDto, order);
 ```
 
+Nested calls can use other mapping pairs declared by the same generated
+mapper. Mappings declared by another mapper require the application `IMapper`.
+
 This is an additional option. The standard application path remains DI
 registration and `IMapper`.
 

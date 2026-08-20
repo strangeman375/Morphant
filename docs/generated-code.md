@@ -27,7 +27,7 @@ The optional settings are:
 
 | Setting | Default | Purpose |
 |---|---|---|
-| `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include generated APIs and template types. |
+| `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include the complete generated surface. |
 | `MorphantGitSnapshotTargetFrameworks` | Last declared TFM | Semicolon-separated subset of the project's TFMs; use `$(TargetFrameworks)` to select all. |
 | `MorphantGitSnapshotPath` | `Generated/Morphant` | Dedicated snapshot directory inside the project. |
 

@@ -83,17 +83,10 @@ base mapper.
 
 ## Settings precedence
 
-Each setting is resolved independently in this order:
-
-1. Current mapping.
-2. Included mappings, nearest first.
-3. Current mapper.
-4. Connected base mappers, nearest first.
-5. MSBuild property.
-6. Morphant default.
-
-`Default` continues to the next level. See the
-[settings overview](settings/README.md) for configuration examples.
+Local mapping settings take precedence over included mapping settings, and
+current mapper settings take precedence over connected base mapper settings.
+Each setting is resolved independently. See the
+[settings overview](settings/README.md) for the complete order and examples.
 
 ## Boundaries
 

@@ -15,7 +15,7 @@ types, scalar destinations, or factory-based creation, use
 ## Overloads
 
 Each overload accepts a `construct` callback and returns the same mapping
-builder.
+builder. The callback must be an inline lambda.
 
 | Callback | Use when |
 |---|---|

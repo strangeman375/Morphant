@@ -15,8 +15,10 @@ builder.Map<OrderDto, Order>()
     .UnmappedMemberValidation(UnmappedMemberValidation.Strict);
 ```
 
-Unused source members produce `MORPH0047`; destination members that are not
-mapped produce `MORPH0048`. Both are warnings and do not change the mapping.
+Unused source members produce
+[`MORPH0047`](../diagnostics/MORPH0047.md); destination members that are not
+mapped produce [`MORPH0048`](../diagnostics/MORPH0048.md). Both are warnings
+and do not change the mapping.
 
 Explicit expressions, conventions, `Auto()`, constructor arguments and nested
 rules count according to their actual use. `Ignore()` deliberately occupies a

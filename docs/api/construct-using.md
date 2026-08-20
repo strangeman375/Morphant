@@ -11,7 +11,8 @@ that is not a destination constructor expression.
 ## Overloads
 
 Each overload accepts a `construct` callback and returns the same mapping
-builder.
+builder. Inline lambdas and method groups are supported, as are compatible
+delegates stored in accessible mapper or static members.
 
 | Callback | Use when |
 |---|---|

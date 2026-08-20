@@ -13,7 +13,7 @@ supported by-value parameters.
 ## Overloads
 
 Each overload accepts a `resolve` callback and returns the same mapping
-builder.
+builder. The callback must be an inline lambda.
 
 | Callback | Use when |
 |---|---|

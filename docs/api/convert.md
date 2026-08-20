@@ -11,7 +11,8 @@ are clearer in normal C# than as declarative rules.
 ## Overloads
 
 Each overload accepts a `mapping` callback and returns the same mapping
-builder.
+builder. Inline lambdas and method groups are supported, as are compatible
+delegates stored in accessible mapper or static members.
 
 | Callback | Available information |
 |---|---|

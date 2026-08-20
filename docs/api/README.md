@@ -30,6 +30,14 @@ Choose at most one destination method: `Construct`, `Resolve`,
 `Convert` replaces destination and member rules and cannot be combined with
 `Members` or `IncludeMembers`.
 
+## Callback forms
+
+`Construct`, `Resolve`, and `Members` require inline lambdas.
+`ConstructUsing`, `ResolveUsing`, and `Convert` also accept method groups and
+compatible delegates. Callbacks may reference constants and accessible mapper
+or static members, but not non-constant locals or local functions declared
+inside `Configure`.
+
 Inside declarative callbacks, use
 [`Auto`, `Ignore`, `Value`, `ByConvention`, `Map`, `Create`, and `Update`](declarative-expressions.md).
 

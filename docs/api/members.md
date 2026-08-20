@@ -13,7 +13,7 @@ that can be updated in place.
 ## Overloads
 
 Each overload accepts a `members` callback and returns the same mapping
-builder.
+builder. The callback must be an inline lambda.
 
 | Callback | Available information |
 |---|---|
