@@ -159,6 +159,18 @@
 ## Repository workflow
 
 - Preserve unrelated changes.
+- Before editing, confirm that the repository root is `/workspace/Morphant`;
+  use scratch locations only for disposable intermediate work.
+- Before a long implementation, persist agreed design decisions and completion
+  criteria in the repository when they are not already documented.
+- Split multi-stage work into coherent checkpoints. Commit and publish verified
+  progress periodically instead of keeping hours of valuable work only in a
+  transient workspace.
+- Preserve meaningful progress before long builds, test runs or external
+  operations. If a command or tool appears stalled, inspect or stop it instead
+  of waiting indefinitely, and report a blocker when recovery is unclear.
+- Keep the user informed at meaningful milestones and ask before resolving
+  ambiguities that materially affect public behavior.
 - Before publishing, verify the exact committed file set and update shared
   branches only by ordinary fast-forward. Never force-push.
 - Do not rerun tests or repeat a completed diff review merely because
