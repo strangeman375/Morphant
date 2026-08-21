@@ -31,5 +31,8 @@ Local rules take precedence. A different pair contributes settings,
 `IncludeMembers` scopes, and member rules; an exact pair from a base mapper can
 also contribute its destination or `Convert` rule.
 
+`IncludeBase` never imports `ForDerived` links. Runtime routing and
+configuration reuse are independent.
+
 See [Configuration inheritance](../configuration-inheritance.md) for
 precedence and boundaries.

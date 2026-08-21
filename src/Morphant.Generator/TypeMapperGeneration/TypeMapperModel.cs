@@ -66,6 +66,7 @@ internal readonly record struct TypeMapperMappingModel
     CompletenessPlanningObservation? CompletenessObservation = null,
     ImmutableArray<StructuredTerminalObservation> StructuredTerminals =
         default,
+    ImmutableArray<TypeMapperDerivedMappingModel> DerivedMappings = default,
     EffectiveMappingSettings EffectiveSettings = default,
     string? CreateImplMethodName = null,
     string? UpdateImplMethodName = null,
@@ -78,6 +79,20 @@ internal readonly record struct TypeMapperMappingModel
     public string InterfaceTypeName =>
         $"global::Morphant.ITypeMapper<{SourceTypeName}, {DestinationTypeName}>";
 }
+
+internal readonly record struct TypeMapperDerivedMappingModel
+(
+    string SourceTypeName,
+    string SourceRuntimeTypeName,
+    string SourceMatchTypeName,
+    string DestinationTypeName,
+    string DestinationRuntimeTypeName,
+    string DestinationMatchTypeName,
+    bool DestinationCanBeNull,
+    bool DestinationMatchesBase,
+    ImmutableArray<int> MoreSpecificMappingIndexes,
+    ImmutableArray<int> DisqualifyingMappingIndexes
+);
 
 internal readonly record struct TypeMapperManualMappingModel
 (

@@ -36,6 +36,7 @@ internal sealed class PublicApiBaselineTests
             typeof(MapperBuilder),
             typeof(MapperBuilder<,>),
             typeof(AmbiguousMappingException),
+            typeof(AmbiguousPolymorphicMappingException),
             typeof(InvalidMappingContextException),
             typeof(InvalidMappingRegistrationException),
             typeof(MappingConfigurationException),
@@ -46,8 +47,10 @@ internal sealed class PublicApiBaselineTests
             typeof(NullDestinationException),
             typeof(NullSourceException),
             typeof(OptionValueMissingException),
+            typeof(PolymorphicDestinationTypeMismatchException),
             typeof(RuntimeInvocationNotSupportedException),
-            typeof(UnmatchedMappingSwitchException)
+            typeof(UnmatchedMappingSwitchException),
+            typeof(UnmatchedPolymorphicMappingException)
         };
         var abstractInfrastructureTypes = new[]
         {
@@ -75,6 +78,9 @@ internal sealed class PublicApiBaselineTests
         var supportsMethod = typeof(TypeMapper).GetMethod(
             "Supports",
             BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var forDerivedMethod = typeof(MapperBuilder<,>)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Single(method => method.Name == "ForDerived");
         var mapperAttributeUsage =
             typeof(MorphantMapperAttribute)
                 .GetCustomAttribute<AttributeUsageAttribute>()!;
@@ -149,6 +155,13 @@ internal sealed class PublicApiBaselineTests
                 supportsMethod.GetParameters()
                     .Select(static parameter => parameter.Name),
                 Is.EqualTo(new[] { "sourceType", "destinationType" }));
+            Assert.That(
+                forDerivedMethod.GetGenericArguments()
+                    .Select(parameter => parameter
+                        .GetGenericParameterConstraints()
+                        .Single()),
+                Is.EqualTo(typeof(MapperBuilder<,>)
+                    .GetGenericArguments()));
             Assert.That(
                 GetImplicitOperatorCount(typeof(AutoMarker<>)),
                 Is.EqualTo(1));
@@ -298,6 +311,11 @@ T Morphant.Delegates.Resolve<TSource, TPrevious, TContext, TResult>
   M TResult Invoke(TSource, Morphant.Option<TPrevious>, TContext)
 T Morphant.Exceptions.AmbiguousMappingException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
+T Morphant.Exceptions.AmbiguousPolymorphicMappingException
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type, System.Type, System.Type[], System.Type[])
+  P System.Collections.Generic.IReadOnlyList<System.Type> MatchingDestinationTypes { get; }
+  P System.Collections.Generic.IReadOnlyList<System.Type> MatchingSourceTypes { get; }
+  P System.Type ActualSourceType { get; }
 T Morphant.Exceptions.InvalidMappingContextException
   C .ctor()
 T Morphant.Exceptions.InvalidMappingRegistrationException
@@ -327,10 +345,19 @@ T Morphant.Exceptions.NullSourceException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
 T Morphant.Exceptions.OptionValueMissingException
   C .ctor()
+T Morphant.Exceptions.PolymorphicDestinationTypeMismatchException
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type, System.Type, System.Type, System.Type, System.Type)
+  P System.Type ActualDestinationType { get; }
+  P System.Type ActualSourceType { get; }
+  P System.Type BranchSourceType { get; }
+  P System.Type ExpectedDestinationType { get; }
 T Morphant.Exceptions.RuntimeInvocationNotSupportedException
   C .ctor()
 T Morphant.Exceptions.UnmatchedMappingSwitchException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
+T Morphant.Exceptions.UnmatchedPolymorphicMappingException
+  C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type, System.Type)
+  P System.Type ActualSourceType { get; }
 T Morphant.Flattening
   V Default, Auto, None
 T Morphant.IMapper
@@ -352,8 +379,10 @@ T Morphant.MapperBuilderBase<T>
   M T MemberSelection(Morphant.MemberSelection)
   M T NullDestinationHandling(Morphant.NullDestinationHandling)
   M T NullSourceHandling(Morphant.NullSourceHandling)
+  M T UnknownDerivedTypeHandling(Morphant.UnknownDerivedTypeHandling)
   M T UnmappedMemberValidation(Morphant.UnmappedMemberValidation)
 T Morphant.MapperBuilder<TSource, TDestination>
+  M Morphant.MapperBuilder<TSource, TDestination> ForDerived<TDerivedSource, TDerivedDestination>()
   M Morphant.MapperBuilder<TSource, TDestination> IncludeBase<TBaseSource, TBaseDestination>()
   M Morphant.MapperBuilder<TSource, TDestination> IncludeMembers(System.Func<TSource, System.Object>)
 T Morphant.MappingMode
@@ -405,6 +434,8 @@ T Morphant.TypeMapper
 T Morphant.TypeMapperExtensions
   M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
   M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)
+T Morphant.UnknownDerivedTypeHandling
+  V Default, UseBaseMapping, Throw
 T Morphant.UnmappedMemberValidation
   V Default, None, Source, Destination, Strict
 """;
@@ -454,6 +485,10 @@ T Morphant.UnmappedMemberValidation
                 (nameof(NullSourceHandling.ReturnNull), 1),
                 (nameof(NullSourceHandling.ReturnDestination), 2),
                 (nameof(NullSourceHandling.Throw), 3));
+            AssertEnumValues<UnknownDerivedTypeHandling>(
+                (nameof(UnknownDerivedTypeHandling.Default), 0),
+                (nameof(UnknownDerivedTypeHandling.UseBaseMapping), 1),
+                (nameof(UnknownDerivedTypeHandling.Throw), 2));
             AssertEnumValues<UnmappedMemberValidation>(
                 (nameof(UnmappedMemberValidation.Default), 0),
                 (nameof(UnmappedMemberValidation.None), 1),

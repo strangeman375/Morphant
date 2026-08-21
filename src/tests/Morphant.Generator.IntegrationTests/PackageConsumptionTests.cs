@@ -1217,6 +1217,7 @@ namespace Morphant.Generator.PackageTests.Consumer
                     "MorphantMappingMode",
                     "MorphantNullSourceHandling",
                     "MorphantNullDestinationHandling",
+                    "MorphantUnknownDerivedTypeHandling",
                     "MorphantConstructorSelection",
                     "MorphantMemberSelection",
                     "MorphantFlattening",

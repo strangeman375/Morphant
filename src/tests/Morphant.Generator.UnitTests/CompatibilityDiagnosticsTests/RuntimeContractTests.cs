@@ -6,7 +6,7 @@ namespace Morphant.Generator.UnitTests.CompatibilityDiagnosticsTests;
 internal sealed class RuntimeContractTests
 {
     [Test]
-    public void Accepts_the_normal_runtime_and_the_test_owned_revision_1_contract()
+    public void Accepts_the_normal_runtime_and_the_test_owned_revision_2_contract()
     {
         var actual = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
@@ -83,7 +83,7 @@ namespace Morphant
     {
         var incompatible =
             RuntimeContractFixture.Compatible()
-                .WithRevision("2")
+                .WithRevision("1")
                 .CreateReference();
         var result = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
@@ -153,7 +153,7 @@ namespace Morphant
     public void Rejects_duplicate_revision_metadata_before_manifest_shape()
     {
         var runtime = RuntimeContractFixture.Compatible()
-            .WithDuplicateRevision("2")
+            .WithDuplicateRevision("1")
             .CreateReference();
         var result = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,
@@ -170,7 +170,7 @@ namespace Morphant
     {
         var runtime =
             RuntimeContractFixture.Compatible()
-                .WithRevision("2")
+                .WithRevision("1")
                 .CreateReference();
         var result = CompatibilityGeneratorTest.Run(
             LanguageVersion.CSharp9,

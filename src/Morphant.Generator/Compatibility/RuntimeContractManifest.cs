@@ -96,6 +96,11 @@ internal static class RuntimeContractManifest
             ("ReturnNull", 1),
             ("ReturnDestination", 2),
             ("Throw", 3)),
+        EnumRequirement(
+            "Morphant.UnknownDerivedTypeHandling",
+            ("Default", 0),
+            ("UseBaseMapping", 1),
+            ("Throw", 2)),
         Requirement("Morphant.Option`1", TypeKind.Struct, IsOption),
         Requirement(
             "Morphant.TypeMapperExtensions",
@@ -315,6 +320,27 @@ internal static class RuntimeContractManifest
             "Morphant.Exceptions.MappingException",
             MappingFailureConstructor()),
         ExceptionRequirement(
+            "Morphant.Exceptions.AmbiguousPolymorphicMappingException",
+            "Morphant.Exceptions.MappingException",
+            Constructor(
+                Named("Morphant.Context.MappingOperation"),
+                SystemType,
+                SystemType,
+                SystemType,
+                Array(SystemType),
+                Array(SystemType)),
+            Property("ActualSourceType", SystemType),
+            Property(
+                "MatchingSourceTypes",
+                Named(
+                    "System.Collections.Generic.IReadOnlyList`1",
+                    SystemType)),
+            Property(
+                "MatchingDestinationTypes",
+                Named(
+                    "System.Collections.Generic.IReadOnlyList`1",
+                    SystemType))),
+        ExceptionRequirement(
             "Morphant.Exceptions.InvalidMappingContextException",
             "Morphant.Exceptions.MorphantException",
             Constructor()),
@@ -385,13 +411,37 @@ internal static class RuntimeContractManifest
             "Morphant.Exceptions.MorphantException",
             Constructor()),
         ExceptionRequirement(
+            "Morphant.Exceptions.PolymorphicDestinationTypeMismatchException",
+            "Morphant.Exceptions.MappingException",
+            Constructor(
+                Named("Morphant.Context.MappingOperation"),
+                SystemType,
+                SystemType,
+                SystemType,
+                SystemType,
+                SystemType,
+                SystemType),
+            Property("ActualSourceType", SystemType),
+            Property("BranchSourceType", SystemType),
+            Property("ExpectedDestinationType", SystemType),
+            Property("ActualDestinationType", SystemType)),
+        ExceptionRequirement(
             "Morphant.Exceptions.RuntimeInvocationNotSupportedException",
             "Morphant.Exceptions.MorphantException",
             Constructor()),
         ExceptionRequirement(
             "Morphant.Exceptions.UnmatchedMappingSwitchException",
             "Morphant.Exceptions.MappingException",
-            MappingFailureConstructor())
+            MappingFailureConstructor()),
+        ExceptionRequirement(
+            "Morphant.Exceptions.UnmatchedPolymorphicMappingException",
+            "Morphant.Exceptions.MappingException",
+            Constructor(
+                Named("Morphant.Context.MappingOperation"),
+                SystemType,
+                SystemType,
+                SystemType),
+            Property("ActualSourceType", SystemType))
     );
 
     public static bool DeclaresAnySymbol(IAssemblySymbol assembly)
@@ -722,6 +772,10 @@ internal static class RuntimeContractManifest
                    "Morphant.NullDestinationHandling") &&
                HasBuilderSetting(
                    symbol,
+                   "UnknownDerivedTypeHandling",
+                   "Morphant.UnknownDerivedTypeHandling") &&
+               HasBuilderSetting(
+                   symbol,
                    "ConstructorSelection",
                    "Morphant.ConstructorSelection") &&
                HasBuilderSetting(
@@ -818,7 +872,31 @@ internal static class RuntimeContractManifest
                            "System.Func`2",
                            TypeParameter(0),
                            Object))
-                   ]);
+                   ]) &&
+               HasMethod(
+                   symbol,
+                   "ForDerived",
+                   Accessibility.Public,
+                   isStatic: false,
+                   arity: 2,
+                   self,
+                   additionalCheck: method =>
+                       HasTypeParameterConstraint(
+                           method.TypeParameters[0],
+                           symbol.TypeParameters[0]) &&
+                       HasTypeParameterConstraint(
+                           method.TypeParameters[1],
+                           symbol.TypeParameters[1]));
+    }
+
+    private static bool HasTypeParameterConstraint(
+        ITypeParameterSymbol parameter,
+        ITypeSymbol expectedConstraint)
+    {
+        return parameter.ConstraintTypes.Any(constraint =>
+            SymbolEqualityComparer.Default.Equals(
+                constraint,
+                expectedConstraint));
     }
 
     private static bool IsTypeMapperInterface(INamedTypeSymbol symbol)
@@ -1246,6 +1324,11 @@ internal static class RuntimeContractManifest
         return new NamedTypePattern(metadataName, typeArguments);
     }
 
+    private static TypePattern Array(TypePattern elementType)
+    {
+        return new ArrayTypePattern(elementType);
+    }
+
     private static TypePattern TypeParameter(int ordinal)
     {
         return new TypeParameterPattern(
@@ -1298,6 +1381,16 @@ internal static class RuntimeContractManifest
             }
 
             return true;
+        }
+    }
+
+    private sealed class ArrayTypePattern(TypePattern elementType) :
+        TypePattern
+    {
+        public override bool Matches(ITypeSymbol symbol)
+        {
+            return symbol is IArrayTypeSymbol { Rank: 1 } array &&
+                   elementType.Matches(array.ElementType);
         }
     }
 

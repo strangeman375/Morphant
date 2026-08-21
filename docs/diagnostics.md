@@ -62,6 +62,10 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0049](diagnostics/MORPH0049.md) | IncludeMembers | Error | An `IncludeMembers` selector is invalid or duplicated. |
 | [MORPH0050](diagnostics/MORPH0050.md) | IncludeMembers | Error | Two included scopes expose the same source-member name. |
 | [MORPH0051](diagnostics/MORPH0051.md) | Flattening | Error | More than one compatible nested source path matches the same target name. |
+| [MORPH0052](diagnostics/MORPH0052.md) | Polymorphism | Error | A mapping links its exact source type as a derived branch. |
+| [MORPH0053](diagnostics/MORPH0053.md) | Polymorphism | Error | The same derived source branch is configured more than once. |
+| [MORPH0054](diagnostics/MORPH0054.md) | Polymorphism | Error | A branch source or destination is incompatible with the base pair. |
+| [MORPH0055](diagnostics/MORPH0055.md) | Polymorphism | Error | A branch type is inaccessible to generated code. |
 
 ## Configure severity
 

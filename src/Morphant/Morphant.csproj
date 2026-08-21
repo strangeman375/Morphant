@@ -29,7 +29,7 @@
 
     <ItemGroup>
         <AssemblyMetadata Include="Morphant.GeneratorContractVersion"
-                          Value="1" />
+                          Value="2" />
 
         <ProjectReference Include="..\Morphant.Generator\Morphant.Generator.csproj"
                           ReferenceOutputAssembly="false"

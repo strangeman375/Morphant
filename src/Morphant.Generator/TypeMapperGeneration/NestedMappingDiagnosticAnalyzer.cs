@@ -653,6 +653,11 @@ internal static class NestedMappingDiagnosticAnalyzer
     private static MappingExecutionPathSet GetReachablePaths(
         TypeMapperMappingModel mapping)
     {
+        if (!PolymorphicBasePlanReachability.IsReachable(mapping))
+        {
+            return MappingExecutionPathSet.None;
+        }
+
         var settings = mapping.EffectiveSettings;
         var result = MappingExecutionPathSet.None;
 

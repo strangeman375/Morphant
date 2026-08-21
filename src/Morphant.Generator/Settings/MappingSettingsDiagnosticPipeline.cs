@@ -25,7 +25,9 @@ internal static class MappingSettingsDiagnosticPipeline
         PairConfigurationConflict.MissingBasePair |
         PairConfigurationConflict.IncompatibleBasePair |
         PairConfigurationConflict.InvalidBasePair |
-        PairConfigurationConflict.InaccessibleInheritedPlan;
+        PairConfigurationConflict.InaccessibleInheritedPlan |
+        PairConfigurationConflict.DuplicateDerivedMapping |
+        PairConfigurationConflict.InvalidDerivedMapping;
 
     public static void Register(
         IncrementalGeneratorInitializationContext context,
@@ -205,6 +207,21 @@ internal static class MappingSettingsDiagnosticPipeline
         {
             return;
         }
+
+        var unknownDerived = Resolve(
+            pair,
+            mapper,
+            assemblySettings.UnknownDerivedTypeHandling,
+            UnknownDerivedTypeHandlingValue.UseBaseMapping,
+            static settings => settings.UnknownDerivedTypeHandling,
+            compositionReliable);
+
+        AddInvalidOrigin(
+            MappingSettingKind.UnknownDerivedTypeHandling,
+            unknownDerived,
+            syntaxTreeOrder,
+            cSharpOrigins,
+            msBuildOrigins);
 
         var hasLocalDeclarativeSlot = pair.LocalPlanSlots.Any(
             static occurrence => occurrence.Kind is
@@ -739,6 +756,8 @@ internal static class MappingSettingsDiagnosticPipeline
             MappingSettingKind.NullSourceHandling => "NullSourceHandling",
             MappingSettingKind.NullDestinationHandling =>
                 "NullDestinationHandling",
+            MappingSettingKind.UnknownDerivedTypeHandling =>
+                "UnknownDerivedTypeHandling",
             MappingSettingKind.ConstructorSelection =>
                 "ConstructorSelection",
             MappingSettingKind.MemberSelection => "MemberSelection",
@@ -767,6 +786,8 @@ internal static class MappingSettingsDiagnosticPipeline
                 values.NullSourceHandling,
             MappingSettingKind.NullDestinationHandling =>
                 values.NullDestinationHandling,
+            MappingSettingKind.UnknownDerivedTypeHandling =>
+                values.UnknownDerivedTypeHandling,
             MappingSettingKind.ConstructorSelection =>
                 values.ConstructorSelection,
             MappingSettingKind.MemberSelection => values.MemberSelection,
@@ -787,6 +808,7 @@ internal static class MappingSettingsDiagnosticPipeline
         MappingMode,
         NullSourceHandling,
         NullDestinationHandling,
+        UnknownDerivedTypeHandling,
         ConstructorSelection,
         MemberSelection,
         Flattening,

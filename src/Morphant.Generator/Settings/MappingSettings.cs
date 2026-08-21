@@ -32,6 +32,15 @@ internal enum NullDestinationHandlingValue
     Throw
 }
 
+internal enum UnknownDerivedTypeHandlingValue
+{
+    Default = 0,
+
+    UseBaseMapping,
+
+    Throw
+}
+
 internal enum ConstructorSelectionValue
 {
     Default = 0,
@@ -70,6 +79,7 @@ internal readonly record struct MappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,
     NullDestinationHandlingValue? NullDestinationHandling,
+    UnknownDerivedTypeHandlingValue? UnknownDerivedTypeHandling,
     ConstructorSelectionValue? ConstructorSelection,
     MemberSelectionValue? MemberSelection,
     FlatteningValue? Flattening,
@@ -81,6 +91,7 @@ internal readonly record struct MappingSettings(
             MappingModeValue.Default,
             NullSourceHandlingValue.Default,
             NullDestinationHandlingValue.Default,
+            UnknownDerivedTypeHandlingValue.Default,
             ConstructorSelectionValue.Default,
             MemberSelectionValue.Default,
             FlatteningValue.Default,
@@ -91,6 +102,7 @@ internal readonly record struct InvalidMsBuildSettingValues(
     string? MappingMode,
     string? NullSourceHandling,
     string? NullDestinationHandling,
+    string? UnknownDerivedTypeHandling,
     string? ConstructorSelection,
     string? MemberSelection,
     string? Flattening,
@@ -100,6 +112,7 @@ internal readonly record struct EffectiveMappingSettings(
     MappingModeValue? MappingMode,
     NullSourceHandlingValue? NullSourceHandling,
     NullDestinationHandlingValue? NullDestinationHandling,
+    UnknownDerivedTypeHandlingValue? UnknownDerivedTypeHandling,
     ConstructorSelectionValue? ConstructorSelection,
     MemberSelectionValue? MemberSelection,
     FlatteningValue? Flattening,
@@ -113,6 +126,9 @@ internal readonly record struct EffectiveMappingSettings(
 
     public bool IsNullDestinationHandlingValid =>
         NullDestinationHandling.HasValue;
+
+    public bool IsUnknownDerivedTypeHandlingValid =>
+        UnknownDerivedTypeHandling.HasValue;
 
     public bool IsConstructorSelectionValid =>
         ConstructorSelection.HasValue;
@@ -139,7 +155,8 @@ internal readonly record struct EffectiveMappingSettings(
         IsNullSourceHandlingValid &&
         (SupportsCreate ||
          SupportsUpdate &&
-         IsNullDestinationHandlingValid);
+         IsNullDestinationHandlingValid) &&
+        IsUnknownDerivedTypeHandlingValid;
 
     public static EffectiveMappingSettings Resolve(
         MappingSettings assemblySettings,
@@ -169,6 +186,11 @@ internal readonly record struct EffectiveMappingSettings(
                 Values(static settings =>
                     settings.NullDestinationHandling),
                 NullDestinationHandlingValue.Create),
+            SettingValueResolver.Resolve(
+                assemblySettings.UnknownDerivedTypeHandling,
+                Values(static settings =>
+                    settings.UnknownDerivedTypeHandling),
+                UnknownDerivedTypeHandlingValue.UseBaseMapping),
             SettingValueResolver.Resolve(
                 assemblySettings.ConstructorSelection,
                 Values(static settings => settings.ConstructorSelection),

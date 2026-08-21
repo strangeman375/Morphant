@@ -35,6 +35,7 @@ internal readonly record struct PairConfigurationModel(
     PairConfigurationSettings Settings,
     DeclarativePairConfigurationModel Declarative,
     ManualPairConfigurationModel Manual,
+    PolymorphicPairConfigurationModel Polymorphism,
     PairConfigurationCompositionModel Composition,
     PairConfigurationConflict Conflicts);
 
@@ -78,6 +79,37 @@ internal readonly record struct ConvertConfigurationModel(
     InvocationExpressionSyntax Invocation,
     ConvertConfigurationForm Form,
     BoundConfigurationExpression Expression);
+
+internal readonly record struct DerivedMappingConfigurationModel(
+    InvocationExpressionSyntax Invocation,
+    ITypeSymbol SourceType,
+    ITypeSymbol DestinationType,
+    bool HasValidMethodBinding);
+
+internal readonly record struct PolymorphicPairConfigurationModel(
+    ImmutableArray<DerivedMappingConfigurationModel> DerivedMappings,
+    ImmutableArray<PolymorphicConfigurationIssueModel> Issues)
+{
+    public static PolymorphicPairConfigurationModel Empty =>
+        new(
+            ImmutableArray<DerivedMappingConfigurationModel>.Empty,
+            ImmutableArray<PolymorphicConfigurationIssueModel>.Empty);
+}
+
+internal readonly record struct PolymorphicConfigurationIssueModel(
+    PolymorphicConfigurationIssueKind Kind,
+    DerivedMappingConfigurationModel DerivedMapping,
+    InvocationExpressionSyntax? FirstInvocation = null);
+
+internal enum PolymorphicConfigurationIssueKind
+{
+    SelfLink,
+    DuplicateSource,
+    IncompatibleSource,
+    IncompatibleDestination,
+    InaccessibleSource,
+    InaccessibleDestination
+}
 
 internal sealed record BoundConfigurationExpression(
     ExpressionSyntax Syntax,
@@ -152,6 +184,8 @@ internal readonly record struct PairConfigurationSettings(
     PairConfigurationSetting<NullSourceHandlingValue> NullSourceHandling,
     PairConfigurationSetting<NullDestinationHandlingValue>
         NullDestinationHandling,
+    PairConfigurationSetting<UnknownDerivedTypeHandlingValue>
+        UnknownDerivedTypeHandling,
     PairConfigurationSetting<ConstructorSelectionValue> ConstructorSelection,
     PairConfigurationSetting<MemberSelectionValue> MemberSelection,
     PairConfigurationSetting<FlatteningValue> Flattening,
@@ -218,5 +252,7 @@ internal enum PairConfigurationConflict
     MissingBasePair = 1 << 6,
     IncompatibleBasePair = 1 << 7,
     InaccessibleInheritedPlan = 1 << 8,
-    InvalidBasePair = 1 << 9
+    InvalidBasePair = 1 << 9,
+    DuplicateDerivedMapping = 1 << 10,
+    InvalidDerivedMapping = 1 << 11
 }

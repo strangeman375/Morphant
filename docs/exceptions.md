@@ -17,6 +17,9 @@ code does not need to parse exception messages.
 | Null destination rejected | `NullDestinationException` |
 | No DI registration for the requested source/destination mapping | `MappingNotFoundException` |
 | More than one DI registration for the requested mapping | `AmbiguousMappingException` |
+| Several incomparable `ForDerived` branches are most specific | `AmbiguousPolymorphicMappingException` |
+| No `ForDerived` branch matches and strict handling is enabled | `UnmatchedPolymorphicMappingException` |
+| Existing Update destination is incompatible with the selected branch | `PolymorphicDestinationTypeMismatchException` |
 | The only registration resolves to null | `InvalidMappingRegistrationException` |
 | `MappingContext.Mapper` used after the top-level `Map` call returned | `MappingScopeCompletedException` |
 | Property read from a default `MappingContext` | `InvalidMappingContextException` |

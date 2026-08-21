@@ -21,6 +21,9 @@ internal static class TypeMapperEmitter
     private const string InvalidNullDestinationHandlingExceptionMessage =
         "NullDestinationHandling has an invalid value.";
 
+    private const string InvalidUnknownDerivedTypeHandlingExceptionMessage =
+        "UnknownDerivedTypeHandling has an invalid value.";
+
     public static SourceText Emit(TypeMapperModel model)
     {
         return Emit(model, includeTransferProbeLocations: false);
@@ -289,7 +292,19 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.CreateOperationFailure is { } operationFailure)
+        if (!mapping.EffectiveSettings.IsUnknownDerivedTypeHandlingValid)
+        {
+            WriteMappingConfigurationFailure(
+                writer,
+                mapping,
+                InvalidUnknownDerivedTypeHandlingExceptionMessage,
+                update: false);
+            writer.Unindent();
+            return;
+        }
+
+        if (!PolymorphicBasePlanReachability.RequiresDispatch(mapping) &&
+            mapping.CreateOperationFailure is { } operationFailure)
         {
             WriteMappingConfigurationFailure(
                 writer,
@@ -302,12 +317,24 @@ internal static class TypeMapperEmitter
 
         if (mapping.ManualMapping is { } manualMapping)
         {
-            WriteManualMapping(
-                writer,
-                mapping,
-                manualMapping,
-                update: false);
-            writer.Unindent();
+            if (!PolymorphicBasePlanReachability.RequiresDispatch(mapping))
+            {
+                WriteManualMapping(
+                    writer,
+                    mapping,
+                    manualMapping,
+                    update: false);
+                writer.Unindent();
+            }
+            else
+            {
+                WritePolymorphicManualMapping(
+                    writer,
+                    mapping,
+                    manualMapping,
+                    update: false,
+                    localNames);
+            }
             return;
         }
 
@@ -322,7 +349,8 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.SourceCanBeNull)
+        if (mapping.SourceCanBeNull ||
+            PolymorphicBasePlanReachability.RequiresDispatch(mapping))
         {
             WriteCreateBody(
                 writer,
@@ -350,12 +378,34 @@ internal static class TypeMapperEmitter
         writer.Line("{");
         writer.Indent();
 
-        WriteSourceNullHandling(
+        if (mapping.SourceCanBeNull)
+        {
+            WriteSourceNullHandling(
+                writer,
+                mapping,
+                update: false);
+            writer.Line();
+        }
+
+        WriteNonNullSourceNormalization(writer, mapping);
+        WritePolymorphicDispatch(
             writer,
             mapping,
-            update: false);
-        writer.Line();
-        WriteNonNullSourceNormalization(writer, mapping);
+            update: false,
+            localNames);
+
+        if (mapping.CreateOperationFailure is { } operationFailure)
+        {
+            WriteMappingConfigurationFailureStatement(
+                writer,
+                mapping,
+                operationFailure,
+                update: false);
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
+
         WriteCreateCallOrStatements(
             writer,
             mapping,
@@ -926,7 +976,19 @@ internal static class TypeMapperEmitter
             return;
         }
 
-        if (mapping.UpdateOperationFailure is { } operationFailure)
+        if (!mapping.EffectiveSettings.IsUnknownDerivedTypeHandlingValid)
+        {
+            WriteMappingConfigurationFailure(
+                writer,
+                mapping,
+                InvalidUnknownDerivedTypeHandlingExceptionMessage,
+                update: true);
+            writer.Unindent();
+            return;
+        }
+
+        if (!PolymorphicBasePlanReachability.RequiresDispatch(mapping) &&
+            mapping.UpdateOperationFailure is { } operationFailure)
         {
             WriteMappingConfigurationFailure(
                 writer,
@@ -939,12 +1001,24 @@ internal static class TypeMapperEmitter
 
         if (mapping.ManualMapping is { } manualMapping)
         {
-            WriteManualMapping(
-                writer,
-                mapping,
-                manualMapping,
-                update: true);
-            writer.Unindent();
+            if (!PolymorphicBasePlanReachability.RequiresDispatch(mapping))
+            {
+                WriteManualMapping(
+                    writer,
+                    mapping,
+                    manualMapping,
+                    update: true);
+                writer.Unindent();
+            }
+            else
+            {
+                WritePolymorphicManualMapping(
+                    writer,
+                    mapping,
+                    manualMapping,
+                    update: true,
+                    localNames);
+            }
             return;
         }
 
@@ -971,7 +1045,8 @@ internal static class TypeMapperEmitter
         }
 
         if (mapping.SourceCanBeNull ||
-            mapping.DestinationCanBeNull)
+            mapping.DestinationCanBeNull ||
+            PolymorphicBasePlanReachability.RequiresDispatch(mapping))
         {
             WriteUpdateBody(
                 writer,
@@ -990,11 +1065,58 @@ internal static class TypeMapperEmitter
         writer.Unindent();
     }
 
+    private static void WritePolymorphicManualMapping(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperManualMappingModel manualMapping,
+        bool update,
+        GeneratedLocalNameAllocator localNames)
+    {
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        if (mapping.SourceCanBeNull)
+        {
+            writer.Line("if (source is not null)");
+            writer.Line("{");
+            writer.Indent();
+            WriteNonNullSourceNormalization(writer, mapping);
+            WritePolymorphicDispatch(
+                writer,
+                mapping,
+                update,
+                localNames);
+            writer.Unindent();
+            writer.Line("}");
+            writer.Line();
+        }
+        else
+        {
+            WritePolymorphicDispatch(
+                writer,
+                mapping,
+                update,
+                localNames);
+        }
+
+        WriteManualMapping(
+            writer,
+            mapping,
+            manualMapping,
+            update,
+            asStatement: true);
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
     private static void WriteManualMapping(
         CodeWriter writer,
         TypeMapperMappingModel mapping,
         TypeMapperManualMappingModel manualMapping,
-        bool update)
+        bool update,
+        bool asStatement = false)
     {
         if (mapping.Failure is
             { } unsupportedExceptionMessage)
@@ -1014,11 +1136,15 @@ internal static class TypeMapperEmitter
         if (manualMapping.Form ==
             PairConfiguration.ConvertConfigurationForm.Source)
         {
-            writer.Line($"=> {helperMethodName}(source);");
+            writer.Line(
+                (asStatement ? "return " : "=> ") +
+                $"{helperMethodName}(source);");
             return;
         }
 
-        writer.Line($"=> {helperMethodName}(");
+        writer.Line(
+            (asStatement ? "return " : "=> ") +
+            $"{helperMethodName}(");
         writer.Indent();
         writer.Line("source,");
         var hasContext = manualMapping.Form ==
@@ -1096,6 +1222,24 @@ internal static class TypeMapperEmitter
                 update: true);
             writer.Line();
             WriteNonNullSourceNormalization(writer, mapping);
+        }
+
+        WritePolymorphicDispatch(
+            writer,
+            mapping,
+            update: true,
+            localNames);
+
+        if (mapping.UpdateOperationFailure is { } operationFailure)
+        {
+            WriteMappingConfigurationFailureStatement(
+                writer,
+                mapping,
+                operationFailure,
+                update: true);
+            writer.Unindent();
+            writer.Line("}");
+            return;
         }
 
         if (mapping.DestinationCanBeNull)
@@ -1203,6 +1347,328 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"var {mapping.NonNullSourceName} = source.Value;");
         writer.Line();
+    }
+
+    private static void WritePolymorphicDispatch(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        bool update,
+        GeneratedLocalNameAllocator localNames)
+    {
+        var derivedMappings = mapping.DerivedMappings;
+
+        if (!PolymorphicBasePlanReachability.RequiresDispatch(mapping))
+        {
+            return;
+        }
+
+        var sourceExpression = mapping.NonNullSourceName;
+        var sourceLocalNames = derivedMappings
+            .Select((_, index) => localNames.Allocate(
+                "polymorphicSource" + index))
+            .ToImmutableArray();
+
+        writer.Line(
+            $"if ({sourceExpression}.GetType() != " +
+            $"typeof({mapping.SourceRuntimeTypeName}))");
+        writer.Line("{");
+        writer.Indent();
+
+        for (var index = 0; index < derivedMappings.Length; index++)
+        {
+            var derivedMapping = derivedMappings[index];
+            writer.Line(
+                "if (" + BuildSourceMatchCondition(
+                    sourceExpression,
+                    derivedMappings,
+                    index,
+                    derivedMapping.DisqualifyingMappingIndexes,
+                    sourceLocalNames[index]) + ")");
+            writer.Line("{");
+            writer.Indent();
+
+            if (update)
+            {
+                WritePolymorphicUpdateBranch(
+                    writer,
+                    mapping,
+                    derivedMapping,
+                    sourceLocalNames[index],
+                    localNames);
+            }
+            else
+            {
+                writer.Line(
+                    "return " + BuildPolymorphicMapCall(
+                        derivedMapping,
+                        sourceLocalNames[index],
+                        destinationExpression: null) + ";");
+            }
+
+            writer.Unindent();
+            writer.Line("}");
+            writer.Line();
+        }
+
+        if (HasPotentialAmbiguity(derivedMappings))
+        {
+            WritePolymorphicAmbiguity(
+                writer,
+                mapping,
+                derivedMappings,
+                sourceExpression,
+                update,
+                localNames);
+        }
+
+        if (mapping.EffectiveSettings.UnknownDerivedTypeHandling ==
+            UnknownDerivedTypeHandlingValue.Throw)
+        {
+            writer.Line(
+                "throw new global::Morphant.Exceptions." +
+                "UnmatchedPolymorphicMappingException(");
+            writer.Indent();
+            writer.Line(MappingOperationExpression(update) + ",");
+            writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
+            writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
+            writer.Line($"{sourceExpression}.GetType());");
+            writer.Unindent();
+        }
+        else if (mapping.EffectiveSettings.UnknownDerivedTypeHandling !=
+                 UnknownDerivedTypeHandlingValue.UseBaseMapping)
+        {
+            throw new InvalidOperationException(
+                "UnknownDerivedTypeHandling has an invalid value.");
+        }
+
+        writer.Unindent();
+        writer.Line("}");
+        writer.Line();
+    }
+
+    private static string BuildSourceMatchCondition(
+        string sourceExpression,
+        ImmutableArray<TypeMapperDerivedMappingModel> derivedMappings,
+        int mappingIndex,
+        ImmutableArray<int> excludedMappingIndexes,
+        string? sourceLocalName)
+    {
+        var mapping = derivedMappings[mappingIndex];
+        var condition = sourceExpression + " is " +
+                        mapping.SourceMatchTypeName;
+
+        if (sourceLocalName is not null)
+        {
+            condition += " " + sourceLocalName;
+        }
+
+        foreach (var excludedIndex in excludedMappingIndexes)
+        {
+            condition += " && " + sourceExpression + " is not " +
+                         derivedMappings[excludedIndex].SourceMatchTypeName;
+        }
+
+        return condition;
+    }
+
+    private static bool HasPotentialAmbiguity(
+        ImmutableArray<TypeMapperDerivedMappingModel> mappings)
+    {
+        for (var left = 0; left < mappings.Length; left++)
+        {
+            for (var right = left + 1; right < mappings.Length; right++)
+            {
+                if (mappings[left].DisqualifyingMappingIndexes.Contains(
+                        right) &&
+                    mappings[right].DisqualifyingMappingIndexes.Contains(
+                        left))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static void WritePolymorphicAmbiguity(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        ImmutableArray<TypeMapperDerivedMappingModel> derivedMappings,
+        string sourceExpression,
+        bool update,
+        GeneratedLocalNameAllocator localNames)
+    {
+        var anyMatch = string.Join(
+            " || ",
+            derivedMappings.Select(derivedMapping =>
+                sourceExpression + " is " +
+                derivedMapping.SourceMatchTypeName));
+        var sourceTypesName = localNames.Allocate(
+            "matchingPolymorphicSourceTypes");
+        var destinationTypesName = localNames.Allocate(
+            "matchingPolymorphicDestinationTypes");
+
+        writer.Line("if (" + anyMatch + ")");
+        writer.Line("{");
+        writer.Indent();
+        writer.Line(
+            "var " + sourceTypesName + " = new " +
+            "global::System.Collections.Generic.List<" +
+            "global::System.Type>();");
+        writer.Line(
+            "var " + destinationTypesName + " = new " +
+            "global::System.Collections.Generic.List<" +
+            "global::System.Type>();");
+
+        for (var index = 0; index < derivedMappings.Length; index++)
+        {
+            var derivedMapping = derivedMappings[index];
+            writer.Line();
+            writer.Line(
+                "if (" + BuildSourceMatchCondition(
+                    sourceExpression,
+                    derivedMappings,
+                    index,
+                    derivedMapping.MoreSpecificMappingIndexes,
+                    sourceLocalName: null) + ")");
+            writer.Line("{");
+            writer.Indent();
+            writer.Line(
+                sourceTypesName + ".Add(typeof(" +
+                derivedMapping.SourceRuntimeTypeName + "));");
+            writer.Line(
+                destinationTypesName + ".Add(typeof(" +
+                derivedMapping.DestinationRuntimeTypeName + "));");
+            writer.Unindent();
+            writer.Line("}");
+        }
+
+        writer.Line();
+        writer.Line(
+            "throw new global::Morphant.Exceptions." +
+            "AmbiguousPolymorphicMappingException(");
+        writer.Indent();
+        writer.Line(MappingOperationExpression(update) + ",");
+        writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
+        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
+        writer.Line(sourceExpression + ".GetType(),");
+        writer.Line(sourceTypesName + ".ToArray(),");
+        writer.Line(destinationTypesName + ".ToArray());");
+        writer.Unindent();
+        writer.Unindent();
+        writer.Line("}");
+        writer.Line();
+    }
+
+    private static void WritePolymorphicUpdateBranch(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperDerivedMappingModel derivedMapping,
+        string sourceLocalName,
+        GeneratedLocalNameAllocator localNames)
+    {
+        if (derivedMapping.DestinationMatchesBase)
+        {
+            writer.Line(
+                "return " + BuildPolymorphicMapCall(
+                    derivedMapping,
+                    sourceLocalName,
+                    "destination") + ";");
+            return;
+        }
+
+        if (mapping.DestinationCanBeNull)
+        {
+            writer.Line("if (destination is null)");
+            writer.Line("{");
+            writer.Indent();
+
+            if (derivedMapping.DestinationCanBeNull)
+            {
+                writer.Line(
+                    "return " + BuildPolymorphicMapCall(
+                        derivedMapping,
+                        sourceLocalName,
+                        "default(" +
+                        derivedMapping.DestinationTypeName + ")") + ";");
+            }
+            else
+            {
+                WritePolymorphicDestinationMismatch(
+                    writer,
+                    mapping,
+                    derivedMapping,
+                    sourceLocalName,
+                    actualDestinationTypeExpression: "null");
+            }
+
+            writer.Unindent();
+            writer.Line("}");
+            writer.Line();
+        }
+
+        var destinationLocalName = localNames.Allocate(
+            "polymorphicDestination");
+        writer.Line(
+            "if (destination is " +
+            derivedMapping.DestinationMatchTypeName + " " +
+            destinationLocalName + ")");
+        writer.Line("{");
+        writer.Indent();
+        writer.Line(
+            "return " + BuildPolymorphicMapCall(
+                derivedMapping,
+                sourceLocalName,
+                destinationLocalName) + ";");
+        writer.Unindent();
+        writer.Line("}");
+        writer.Line();
+
+        WritePolymorphicDestinationMismatch(
+            writer,
+            mapping,
+            derivedMapping,
+            sourceLocalName,
+            "destination.GetType()");
+    }
+
+    private static string BuildPolymorphicMapCall(
+        TypeMapperDerivedMappingModel derivedMapping,
+        string sourceExpression,
+        string? destinationExpression)
+    {
+        var arguments = destinationExpression is null
+            ? sourceExpression
+            : sourceExpression + ", " + destinationExpression;
+
+        return "context.Mapper.Map<" +
+               derivedMapping.SourceTypeName + ", " +
+               derivedMapping.DestinationTypeName + ">(" +
+               arguments + ")";
+    }
+
+    private static void WritePolymorphicDestinationMismatch(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperDerivedMappingModel derivedMapping,
+        string sourceExpression,
+        string actualDestinationTypeExpression)
+    {
+        writer.Line(
+            "throw new global::Morphant.Exceptions." +
+            "PolymorphicDestinationTypeMismatchException(");
+        writer.Indent();
+        writer.Line(MappingOperationExpression(update: true) + ",");
+        writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
+        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
+        writer.Line(sourceExpression + ".GetType(),");
+        writer.Line(
+            $"typeof({derivedMapping.SourceRuntimeTypeName}),");
+        writer.Line(
+            $"typeof({derivedMapping.DestinationRuntimeTypeName}),");
+        writer.Line(actualDestinationTypeExpression + ");");
+        writer.Unindent();
     }
 
     private static void WriteDestinationNullHandling(

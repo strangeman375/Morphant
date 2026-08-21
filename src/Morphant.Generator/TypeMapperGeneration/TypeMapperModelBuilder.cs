@@ -517,7 +517,10 @@ internal static class TypeMapperModelBuilder
             nonNullSourceName,
             mapperType) with
         {
-            EffectiveSettings = effectiveSettings
+            EffectiveSettings = effectiveSettings,
+            DerivedMappings = BuildDerivedMappings(
+                configuration,
+                compilation)
         };
 
         if (configuration.Conflicts != PairConfigurationConflict.None)
@@ -1025,6 +1028,108 @@ internal static class TypeMapperModelBuilder
         return new DestinationPlan(memberType, updateKind);
     }
 
+    private static ImmutableArray<TypeMapperDerivedMappingModel>
+        BuildDerivedMappings(
+        PairConfigurationModel configuration,
+        CSharpCompilation compilation)
+    {
+        var configured = configuration.Polymorphism.DerivedMappings;
+
+        if (configured.IsEmpty)
+        {
+            return ImmutableArray<TypeMapperDerivedMappingModel>.Empty;
+        }
+
+        var result = ImmutableArray.CreateBuilder<
+            TypeMapperDerivedMappingModel>(configured.Length);
+
+        for (var index = 0; index < configured.Length; index++)
+        {
+            var mapping = configured[index];
+            var moreSpecific = ImmutableArray.CreateBuilder<int>();
+            var disqualifying = ImmutableArray.CreateBuilder<int>();
+
+            for (var candidateIndex = 0;
+                 candidateIndex < configured.Length;
+                 candidateIndex++)
+            {
+                if (candidateIndex == index)
+                {
+                    continue;
+                }
+
+                var candidate = configured[candidateIndex];
+
+                if (IsAssignable(
+                        candidate.SourceType,
+                        mapping.SourceType,
+                        compilation) &&
+                    !IsAssignable(
+                        mapping.SourceType,
+                        candidate.SourceType,
+                        compilation))
+                {
+                    moreSpecific.Add(candidateIndex);
+                }
+
+                if (!IsAssignable(
+                        mapping.SourceType,
+                        candidate.SourceType,
+                        compilation))
+                {
+                    disqualifying.Add(candidateIndex);
+                }
+            }
+
+            var destinationMatchType = GetRuntimeMatchType(
+                mapping.DestinationType);
+
+            result.Add(new TypeMapperDerivedMappingModel(
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    mapping.SourceType),
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    mapping.SourceType),
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    GetRuntimeMatchType(mapping.SourceType)),
+                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                    mapping.DestinationType),
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    mapping.DestinationType),
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    destinationMatchType),
+                CanBeNull(mapping.DestinationType),
+                MappingTypeIdentityPolicy.Create(
+                    mapping.DestinationType) ==
+                    configuration.Pair.Identity.Destination,
+                moreSpecific.ToImmutable(),
+                disqualifying.ToImmutable()));
+        }
+
+        return result.ToImmutable();
+    }
+
+    private static ITypeSymbol GetRuntimeMatchType(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol namedType &&
+               namedType.OriginalDefinition.SpecialType ==
+                   SpecialType.System_Nullable_T
+            ? namedType.TypeArguments[0]
+            : type.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+    }
+
+    private static bool IsAssignable(
+        ITypeSymbol source,
+        ITypeSymbol destination,
+        CSharpCompilation compilation)
+    {
+        var conversion = compilation.ClassifyConversion(source, destination);
+
+        return conversion.IsIdentity ||
+               conversion.IsImplicit &&
+               (conversion.IsReference || conversion.IsBoxing ||
+                conversion.IsNullable);
+    }
+
     private static string BuildNonNullSourceName(
         ITypeSymbol sourceType,
         INamedTypeSymbol mapperType)
@@ -1055,6 +1160,9 @@ internal static class TypeMapperModelBuilder
             GetSettingOrDefault(
                 settings.NullDestinationHandling,
                 NullDestinationHandlingValue.Default),
+            GetSettingOrDefault(
+                settings.UnknownDerivedTypeHandling,
+                UnknownDerivedTypeHandlingValue.Default),
             GetSettingOrDefault(
                 settings.ConstructorSelection,
                 ConstructorSelectionValue.Default),
@@ -1342,6 +1450,16 @@ internal static class TypeMapperModelBuilder
             conflicts,
             PairConfigurationConflict.InaccessibleInheritedPlan,
             "an inherited mapping expression is inaccessible");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.DuplicateDerivedMapping,
+            "a ForDerived source type is configured more than once");
+        AddConflictReason(
+            reasons,
+            conflicts,
+            PairConfigurationConflict.InvalidDerivedMapping,
+            "a ForDerived link is invalid");
 
         return "The mapping configuration is invalid: " +
                string.Join("; ", reasons) + ".";

@@ -14,6 +14,9 @@ internal static class AssemblyMappingSettingsPipeline
     private const string NullDestinationHandlingPropertyName =
         "build_property.MorphantNullDestinationHandling";
 
+    private const string UnknownDerivedTypeHandlingPropertyName =
+        "build_property.MorphantUnknownDerivedTypeHandling";
+
     private const string ConstructorSelectionPropertyName =
         "build_property.MorphantConstructorSelection";
 
@@ -42,6 +45,11 @@ internal static class AssemblyMappingSettingsPipeline
                         GetValue(
                             globalOptions,
                             NullDestinationHandlingPropertyName));
+                var unknownDerived =
+                    ParseNamedValue<UnknownDerivedTypeHandlingValue>(
+                        GetValue(
+                            globalOptions,
+                            UnknownDerivedTypeHandlingPropertyName));
                 var constructor =
                     ParseNamedValue<ConstructorSelectionValue>(
                         GetValue(
@@ -61,6 +69,7 @@ internal static class AssemblyMappingSettingsPipeline
                     mappingMode.Value,
                     nullSource.Value,
                     nullDestination.Value,
+                    unknownDerived.Value,
                     constructor.Value,
                     member.Value,
                     flattening.Value,
@@ -69,6 +78,7 @@ internal static class AssemblyMappingSettingsPipeline
                         mappingMode.InvalidValue,
                         nullSource.InvalidValue,
                         nullDestination.InvalidValue,
+                        unknownDerived.InvalidValue,
                         constructor.InvalidValue,
                         member.InvalidValue,
                         flattening.InvalidValue,

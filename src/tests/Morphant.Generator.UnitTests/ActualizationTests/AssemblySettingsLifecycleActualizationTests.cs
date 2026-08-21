@@ -57,6 +57,12 @@ internal sealed class AssemblySettingsLifecycleActualizationTests
                 "Throw"),
             DefaultStep("null-destination handling restored", files),
             SettingStep(
+                "throwing unknown-derived handling",
+                files,
+                "MorphantUnknownDerivedTypeHandling",
+                "Throw"),
+            DefaultStep("unknown-derived handling restored", files),
+            SettingStep(
                 "parameterless constructor selection",
                 files,
                 "MorphantConstructorSelection",

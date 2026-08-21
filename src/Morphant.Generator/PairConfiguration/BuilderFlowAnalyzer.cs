@@ -22,8 +22,10 @@ internal static class BuilderFlowAnalyzer
     private static readonly ImmutableHashSet<string> PairMethodNames =
         CallbackMethodNames
             .Add("IncludeBase")
+            .Add("ForDerived")
             .Add("NullSourceHandling")
             .Add("NullDestinationHandling")
+            .Add("UnknownDerivedTypeHandling")
             .Add("ConstructorSelection")
             .Add("MemberSelection")
             .Add("Flattening")

@@ -62,6 +62,13 @@ internal sealed class GeneratedLocalNameAllocator
             _usedNames);
     }
 
+    public string Allocate(string preferredName)
+    {
+        return UserResultMappingPlanner.AllocateName(
+            preferredName,
+            _usedNames);
+    }
+
     private void ReserveDeclarations(SyntaxNode syntax)
     {
         foreach (var node in syntax.DescendantNodesAndSelf())

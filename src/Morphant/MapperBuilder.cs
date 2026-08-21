@@ -49,6 +49,21 @@ public abstract class MapperBuilderBase<T>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
+    /// Configures how a polymorphic mapping handles a non-exact runtime
+    /// source type that matches no derived branch.
+    /// </summary>
+    /// <param name="unknownDerivedTypeHandling">
+    /// The compile-time constant policy.
+    /// <see cref="Morphant.UnknownDerivedTypeHandling.Default"/> inherits the
+    /// setting; the fallback is
+    /// <see cref="Morphant.UnknownDerivedTypeHandling.UseBaseMapping"/>.
+    /// </param>
+    /// <returns>This builder.</returns>
+    public T UnknownDerivedTypeHandling(
+        UnknownDerivedTypeHandling unknownDerivedTypeHandling) =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
     /// Configures constructor selection for convention-based creation.
     /// </summary>
     /// <param name="constructorSelection">
@@ -194,5 +209,32 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     /// <returns>This mapping builder.</returns>
     public MapperBuilder<TSource, TDestination>
         IncludeBase<TBaseSource, TBaseDestination>() =>
+        throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
+    /// Routes a matching non-exact runtime source to a separately registered
+    /// mapping pair.
+    /// </summary>
+    /// <typeparam name="TDerivedSource">
+    /// The runtime source branch. It must be assignable to
+    /// <typeparamref name="TSource"/> and differ from it.
+    /// </typeparam>
+    /// <typeparam name="TDerivedDestination">
+    /// The destination of the branch. It must be assignable to
+    /// <typeparamref name="TDestination"/>.
+    /// </typeparam>
+    /// <remarks>
+    /// This call adds only a dispatch link. Register
+    /// <typeparamref name="TDerivedSource"/> to
+    /// <typeparamref name="TDerivedDestination"/> separately with
+    /// <see cref="MapperBuilder.Map{TSource, TDestination}(MappingMode)"/>.
+    /// It does not inherit mapping rules; use <see cref="IncludeBase"/> for
+    /// rule reuse when needed.
+    /// </remarks>
+    /// <returns>This mapping builder.</returns>
+    public MapperBuilder<TSource, TDestination>
+        ForDerived<TDerivedSource, TDerivedDestination>()
+        where TDerivedSource : TSource
+        where TDerivedDestination : TDestination =>
         throw new RuntimeInvocationNotSupportedException();
 }

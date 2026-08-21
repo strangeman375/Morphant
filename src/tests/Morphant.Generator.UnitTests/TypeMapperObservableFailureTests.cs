@@ -120,6 +120,56 @@ internal sealed class TypeMapperObservableFailureTests
                     typeof(int)),
                 "No declarative switch branch matched during Create for " +
                 "mapping 'System.String' -> 'System.Int32'."
+            ),
+            (
+                new AmbiguousPolymorphicMappingException(
+                    MappingOperation.Create,
+                    typeof(object),
+                    typeof(object),
+                    typeof(string),
+                    [typeof(IComparable), typeof(IFormattable)],
+                    [typeof(string), typeof(int)]),
+                "Runtime source type 'System.String' matches multiple " +
+                "equally specific branches for mapping 'System.Object' -> " +
+                "'System.Object': 'System.IComparable' -> 'System.String', " +
+                "'System.IFormattable' -> 'System.Int32'."
+            ),
+            (
+                new UnmatchedPolymorphicMappingException(
+                    MappingOperation.Create,
+                    typeof(object),
+                    typeof(object),
+                    typeof(string)),
+                "No polymorphic branch matches runtime source type " +
+                "'System.String' for mapping 'System.Object' -> " +
+                "'System.Object', and UnknownDerivedTypeHandling.Throw " +
+                "rejects base fallback."
+            ),
+            (
+                new PolymorphicDestinationTypeMismatchException(
+                    MappingOperation.Update,
+                    typeof(object),
+                    typeof(object),
+                    typeof(string),
+                    typeof(string),
+                    typeof(string),
+                    typeof(int)),
+                "Runtime source type 'System.String' selected polymorphic " +
+                "branch 'System.String' -> 'System.String', but destination " +
+                "type 'System.Int32' cannot be used as 'System.String'."
+            ),
+            (
+                new PolymorphicDestinationTypeMismatchException(
+                    MappingOperation.Update,
+                    typeof(object),
+                    typeof(object),
+                    typeof(string),
+                    typeof(string),
+                    typeof(int),
+                    null),
+                "Runtime source type 'System.String' selected polymorphic " +
+                "branch 'System.String' -> 'System.Int32', but a null " +
+                "destination cannot be used as 'System.Int32'."
             )
         };
 
@@ -134,7 +184,7 @@ internal sealed class TypeMapperObservableFailureTests
                 failures.Select(static failure => failure.Failure)
                     .OfType<MappingException>()
                     .ToArray(),
-                Has.Length.EqualTo(11));
+                Has.Length.EqualTo(15));
 
             var configuration =
                 (MappingConfigurationException)failures[0].Failure;
@@ -160,6 +210,40 @@ internal sealed class TypeMapperObservableFailureTests
                 Is.EqualTo(typeof(string)));
             Assert.That(
                 mismatch.ActualDestinationType,
+                Is.EqualTo(typeof(int)));
+
+            var ambiguity = failures.Select(static failure => failure.Failure)
+                .OfType<AmbiguousPolymorphicMappingException>()
+                .Single();
+            Assert.That(ambiguity.ActualSourceType, Is.EqualTo(typeof(string)));
+            Assert.That(
+                ambiguity.MatchingSourceTypes,
+                Is.EqualTo(new[]
+                {
+                    typeof(IComparable),
+                    typeof(IFormattable)
+                }));
+            Assert.That(
+                ambiguity.MatchingDestinationTypes,
+                Is.EqualTo(new[] { typeof(string), typeof(int) }));
+
+            var unmatched = failures.Select(static failure => failure.Failure)
+                .OfType<UnmatchedPolymorphicMappingException>()
+                .Single();
+            Assert.That(unmatched.ActualSourceType, Is.EqualTo(typeof(string)));
+
+            var polymorphicMismatch = failures
+                .Select(static failure => failure.Failure)
+                .OfType<PolymorphicDestinationTypeMismatchException>()
+                .First();
+            Assert.That(
+                polymorphicMismatch.BranchSourceType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(
+                polymorphicMismatch.ExpectedDestinationType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(
+                polymorphicMismatch.ActualDestinationType,
                 Is.EqualTo(typeof(int)));
         });
     }

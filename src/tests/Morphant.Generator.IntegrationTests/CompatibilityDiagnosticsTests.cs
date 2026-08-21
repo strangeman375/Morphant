@@ -32,12 +32,12 @@ internal sealed class CompatibilityDiagnosticsTests
     }
 
     [Test]
-    public async Task Runtime_revision_2_reports_MORPH0004()
+    public async Task Runtime_revision_1_reports_MORPH0004()
     {
         using var workspace = new ConsumerBuildWorkspace();
         var runtime = await workspace.BuildRuntimeCandidate(
-            "RuntimeV2",
-            "Morphant.TestRuntimeV2");
+            "RuntimeV1",
+            "Morphant.TestRuntimeV1");
         AssertSucceeded(runtime.Process);
 
         var build = await workspace.BuildConsumer(

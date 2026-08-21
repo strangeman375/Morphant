@@ -63,6 +63,9 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
             compilationContext,
             assemblySettings,
             contractAnalysisCollection);
+        PolymorphismDiagnosticPipeline.Register(
+            context,
+            contractAnalysisCollection);
         InheritanceDiagnosticPipeline.Register(
             context,
             contractAnalysisCollection);

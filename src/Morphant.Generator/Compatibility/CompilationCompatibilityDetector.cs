@@ -11,7 +11,7 @@ internal static class CompilationCompatibilityDetector
         "Morphant.GeneratorContractVersion";
     private const string AssemblyMetadataAttributeMetadataName =
         "System.Reflection.AssemblyMetadataAttribute";
-    private const int SupportedContractRevision = 1;
+    private const int SupportedContractRevision = 2;
 
     public static CompilationCompatibility Detect(
         CSharpCompilation compilation,

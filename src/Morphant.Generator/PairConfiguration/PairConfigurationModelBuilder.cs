@@ -131,6 +131,8 @@ internal static class PairConfigurationModelBuilder
                             knownSymbols,
                             augmentedCompilation,
                             targetMapperType,
+                            compilation,
+                            discovery.ConfigureInfo.MapperType,
                             declaringMapperType,
                             level.ConstructedMapperType,
                             levelOrder,
@@ -1103,6 +1105,8 @@ internal static class PairConfigurationModelBuilder
         KnownSymbols knownSymbols,
         CSharpCompilation compilation,
         INamedTypeSymbol targetMapperType,
+        CSharpCompilation sourceCompilation,
+        INamedTypeSymbol sourceTargetMapperType,
         INamedTypeSymbol declaringMapperType,
         INamedTypeSymbol constructedMapperType,
         int levelOrder,
@@ -1120,6 +1124,8 @@ internal static class PairConfigurationModelBuilder
             ImmutableArray.CreateBuilder<IncludeMembersConfigurationModel>();
         var conversions =
             ImmutableArray.CreateBuilder<ConvertConfigurationModel>();
+        var derivedMappings =
+            ImmutableArray.CreateBuilder<DerivedMappingConfigurationModel>();
         var localPlanSlots =
             ImmutableArray.CreateBuilder<MappingPlanSlotOccurrenceModel>();
         var includeBaseCalls =
@@ -1142,6 +1148,18 @@ internal static class PairConfigurationModelBuilder
                     invocation,
                     cancellationToken).Symbol is not IMethodSymbol method)
             {
+                if (IsPotentialForDerivedInvocation(invocation) &&
+                    TryBuildDerivedMappingConfiguration(
+                        invocation,
+                        sourceSemanticModel,
+                        mapperTypeSubstitutions,
+                        cancellationToken,
+                        hasValidMethodBinding: false,
+                        out var invalidDerivedMapping))
+                {
+                    derivedMappings.Add(invalidDerivedMapping);
+                }
+
                 continue;
             }
 
@@ -1167,6 +1185,22 @@ internal static class PairConfigurationModelBuilder
                         out var includeBase))
                 {
                     includeBaseCalls.Add(includeBase);
+                }
+
+                continue;
+            }
+
+            if (IsForDerivedMethod(method))
+            {
+                if (TryBuildDerivedMappingConfiguration(
+                        invocation,
+                        sourceSemanticModel,
+                        mapperTypeSubstitutions,
+                        cancellationToken,
+                        hasValidMethodBinding: true,
+                        out var derivedMapping))
+                {
+                    derivedMappings.Add(derivedMapping);
                 }
 
                 continue;
@@ -1320,6 +1354,7 @@ internal static class PairConfigurationModelBuilder
         var immutableMembers = members.ToImmutable();
         var immutableIncludeMembers = includeMembers.ToImmutable();
         var immutableConversions = conversions.ToImmutable();
+        var immutableDerivedMappings = derivedMappings.ToImmutable();
         var conflicts = PairConfigurationConflict.None;
 
         if (immutableResultPolicies.Length > 1)
@@ -1345,6 +1380,42 @@ internal static class PairConfigurationModelBuilder
             conflicts |= PairConfigurationConflict.MixedManualAndDeclarative;
         }
 
+        var polymorphism = BuildPolymorphicConfiguration(
+            pair,
+            immutableDerivedMappings,
+            GetConfiguredPairType(
+                pair.Registration.Syntax,
+                sourceSemanticModel,
+                mapperTypeSubstitutions,
+                sourceCompilation,
+                typeArgumentIndex: 0,
+                pair.SourceType,
+                cancellationToken),
+            GetConfiguredPairType(
+                pair.Registration.Syntax,
+                sourceSemanticModel,
+                mapperTypeSubstitutions,
+                sourceCompilation,
+                typeArgumentIndex: 1,
+                pair.DestinationType,
+                cancellationToken),
+            sourceCompilation,
+            sourceTargetMapperType);
+
+        if (polymorphism.Issues.Any(static issue =>
+                issue.Kind ==
+                    PolymorphicConfigurationIssueKind.DuplicateSource))
+        {
+            conflicts |= PairConfigurationConflict.DuplicateDerivedMapping;
+        }
+
+        if (polymorphism.Issues.Any(static issue =>
+                issue.Kind !=
+                    PolymorphicConfigurationIssueKind.DuplicateSource))
+        {
+            conflicts |= PairConfigurationConflict.InvalidDerivedMapping;
+        }
+
         return new PairConfigurationModel(
             pair,
             new PairConfigurationOriginModel(
@@ -1360,12 +1431,153 @@ internal static class PairConfigurationModelBuilder
                 immutableMembers,
                 immutableIncludeMembers),
             new ManualPairConfigurationModel(immutableConversions),
+            polymorphism,
             new PairConfigurationCompositionModel(
                 includeBaseCalls.ToImmutable(),
                 ImmutableArray<PairConfigurationSettings>.Empty,
                 ImmutableArray<InheritanceCompositionIssueModel>.Empty,
                 ImmutableArray<InheritedCallbackAccessibilityModel>.Empty),
             conflicts);
+    }
+
+    private static PolymorphicPairConfigurationModel
+        BuildPolymorphicConfiguration(
+        MappingPairModel pair,
+        ImmutableArray<DerivedMappingConfigurationModel> derivedMappings,
+        ITypeSymbol baseSourceType,
+        ITypeSymbol baseDestinationType,
+        CSharpCompilation compilation,
+        INamedTypeSymbol targetMapperType)
+    {
+        if (derivedMappings.IsEmpty)
+        {
+            return PolymorphicPairConfigurationModel.Empty;
+        }
+
+        var issues = ImmutableArray.CreateBuilder<
+            PolymorphicConfigurationIssueModel>();
+        var firstBySource = new Dictionary<MappingTypeIdentity,
+            DerivedMappingConfigurationModel>();
+
+        foreach (var derivedMapping in derivedMappings)
+        {
+            var sourceIdentity = MappingTypeIdentityPolicy.Create(
+                derivedMapping.SourceType);
+
+            if (sourceIdentity == pair.Identity.Source)
+            {
+                issues.Add(new PolymorphicConfigurationIssueModel(
+                    PolymorphicConfigurationIssueKind.SelfLink,
+                    derivedMapping));
+            }
+
+            if (firstBySource.TryGetValue(
+                    sourceIdentity,
+                    out var first))
+            {
+                issues.Add(new PolymorphicConfigurationIssueModel(
+                    PolymorphicConfigurationIssueKind.DuplicateSource,
+                    derivedMapping,
+                    first.Invocation));
+            }
+            else
+            {
+                firstBySource.Add(sourceIdentity, derivedMapping);
+            }
+
+            if (!derivedMapping.HasValidMethodBinding &&
+                !IsDerivedTypeConversion(compilation.ClassifyConversion(
+                    derivedMapping.SourceType,
+                    baseSourceType)))
+            {
+                issues.Add(new PolymorphicConfigurationIssueModel(
+                    PolymorphicConfigurationIssueKind.IncompatibleSource,
+                    derivedMapping));
+            }
+
+            if (!derivedMapping.HasValidMethodBinding &&
+                !IsDerivedTypeConversion(compilation.ClassifyConversion(
+                    derivedMapping.DestinationType,
+                    baseDestinationType)))
+            {
+                issues.Add(new PolymorphicConfigurationIssueModel(
+                    PolymorphicConfigurationIssueKind
+                        .IncompatibleDestination,
+                    derivedMapping));
+            }
+
+            if (!IsAccessibleFromGeneratedMapper(
+                    derivedMapping.SourceType,
+                    compilation,
+                    targetMapperType))
+            {
+                issues.Add(new PolymorphicConfigurationIssueModel(
+                    PolymorphicConfigurationIssueKind.InaccessibleSource,
+                    derivedMapping));
+            }
+
+            if (!IsAccessibleFromGeneratedMapper(
+                    derivedMapping.DestinationType,
+                    compilation,
+                    targetMapperType))
+            {
+                issues.Add(new PolymorphicConfigurationIssueModel(
+                    PolymorphicConfigurationIssueKind
+                        .InaccessibleDestination,
+                    derivedMapping));
+            }
+        }
+
+        return new PolymorphicPairConfigurationModel(
+            derivedMappings,
+            issues.ToImmutable());
+    }
+
+    private static bool IsAccessibleFromGeneratedMapper(
+        ITypeSymbol type,
+        CSharpCompilation compilation,
+        INamedTypeSymbol targetMapperType)
+    {
+        return MappingTypeEligibilityPolicy.GetNameability(
+                   type,
+                   compilation) == MappingTypeNameability.Available &&
+               compilation.IsSymbolAccessibleWithin(
+                   type,
+                   targetMapperType);
+    }
+
+    private static ITypeSymbol GetConfiguredPairType(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
+            mapperTypeSubstitutions,
+        Compilation compilation,
+        int typeArgumentIndex,
+        ITypeSymbol fallback,
+        CancellationToken cancellationToken)
+    {
+        if (semanticModel.GetSymbolInfo(
+                invocation,
+                cancellationToken).Symbol is not IMethodSymbol
+                {
+                    TypeArguments.Length: 2
+                } method)
+        {
+            return fallback;
+        }
+
+        return MapperTypeSubstitution.Substitute(
+            method.TypeArguments[typeArgumentIndex],
+            mapperTypeSubstitutions,
+            compilation);
+    }
+
+    private static bool IsDerivedTypeConversion(Conversion conversion)
+    {
+        return conversion.IsIdentity ||
+               conversion.IsImplicit &&
+               (conversion.IsReference || conversion.IsBoxing ||
+                conversion.IsNullable);
     }
 
     private static bool TryBuildIncludeBaseConfiguration(
@@ -1409,6 +1621,52 @@ internal static class PairConfigurationModelBuilder
                 destinationType,
                 mapperTypeSubstitutions,
                 semanticModel.Compilation));
+        return true;
+    }
+
+    private static bool TryBuildDerivedMappingConfiguration(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol>
+            mapperTypeSubstitutions,
+        CancellationToken cancellationToken,
+        bool hasValidMethodBinding,
+        out DerivedMappingConfigurationModel configuration)
+    {
+        var genericName = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax
+            {
+                Name: GenericNameSyntax memberName
+            } => memberName,
+            GenericNameSyntax directName => directName,
+            _ => null
+        };
+
+        if (genericName?.TypeArgumentList.Arguments is not
+                { Count: 2 } arguments ||
+            semanticModel.GetTypeInfo(
+                arguments[0],
+                cancellationToken).Type is not { } sourceType ||
+            semanticModel.GetTypeInfo(
+                arguments[1],
+                cancellationToken).Type is not { } destinationType)
+        {
+            configuration = default;
+            return false;
+        }
+
+        configuration = new DerivedMappingConfigurationModel(
+            invocation,
+            MapperTypeSubstitution.Substitute(
+                sourceType,
+                mapperTypeSubstitutions,
+                semanticModel.Compilation),
+            MapperTypeSubstitution.Substitute(
+                destinationType,
+                mapperTypeSubstitutions,
+                semanticModel.Compilation),
+            hasValidMethodBinding);
         return true;
     }
 
@@ -1492,6 +1750,18 @@ internal static class PairConfigurationModelBuilder
                 {
                     NullDestinationHandling =
                         BuildSetting<NullDestinationHandlingValue>(
+                            invocation,
+                            semanticModel,
+                            cancellationToken,
+                            TryGetDefinedEnum)
+                };
+                return true;
+
+            case "UnknownDerivedTypeHandling":
+                settings = settings with
+                {
+                    UnknownDerivedTypeHandling =
+                        BuildSetting<UnknownDerivedTypeHandlingValue>(
                             invocation,
                             semanticModel,
                             cancellationToken,
@@ -1626,6 +1896,36 @@ internal static class PairConfigurationModelBuilder
                    SymbolNameHelper.GetFullMetadataName(
                        method.ContainingType.OriginalDefinition),
                    "Morphant.MapperBuilder`2");
+    }
+
+    private static bool IsForDerivedMethod(IMethodSymbol method)
+    {
+        return method.Name == "ForDerived" &&
+               method.MethodKind == MethodKind.Ordinary &&
+               !method.IsStatic &&
+               method.Parameters.Length == 0 &&
+               method.TypeArguments.Length == 2 &&
+               StringComparer.Ordinal.Equals(
+                   SymbolNameHelper.GetFullMetadataName(
+                       method.ContainingType.OriginalDefinition),
+                   MetadataNames.PairMapperBuilder);
+    }
+
+    private static bool IsPotentialForDerivedInvocation(
+        InvocationExpressionSyntax invocation)
+    {
+        var name = invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax { Name: var memberName } =>
+                memberName,
+            SimpleNameSyntax simpleName => simpleName,
+            _ => null
+        };
+
+        return name is GenericNameSyntax genericName &&
+               genericName.Identifier.ValueText == "ForDerived" &&
+               genericName.TypeArgumentList.Arguments.Count == 2 &&
+               invocation.ArgumentList.Arguments.Count == 0;
     }
 
     private static bool IsIncludeMembersMethod(IMethodSymbol method)
@@ -1782,6 +2082,7 @@ internal static class PairConfigurationModelBuilder
         return method.Name is
                    "NullSourceHandling" or
                    "NullDestinationHandling" or
+                   "UnknownDerivedTypeHandling" or
                    "ConstructorSelection" or
                    "MemberSelection" or
                    "Flattening" or

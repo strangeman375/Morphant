@@ -11,7 +11,7 @@ internal sealed class RuntimeContractFixture
 
     private static int _assemblyIndex;
     private string _source = LoadSource();
-    private string _revision = "1";
+    private string _revision = "2";
 
     private RuntimeContractFixture()
     {

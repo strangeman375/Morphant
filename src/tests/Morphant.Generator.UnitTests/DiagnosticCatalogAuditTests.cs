@@ -62,7 +62,11 @@ internal sealed class DiagnosticCatalogAuditTests
         new("MORPH0048", "Morphant.MappingCompleteness", DiagnosticSeverity.Warning),
         new("MORPH0049", "Morphant.IncludeMembers", DiagnosticSeverity.Error),
         new("MORPH0050", "Morphant.IncludeMembers", DiagnosticSeverity.Error),
-        new("MORPH0051", "Morphant.Flattening", DiagnosticSeverity.Error)
+        new("MORPH0051", "Morphant.Flattening", DiagnosticSeverity.Error),
+        new("MORPH0052", "Morphant.Polymorphism", DiagnosticSeverity.Error),
+        new("MORPH0053", "Morphant.Polymorphism", DiagnosticSeverity.Error),
+        new("MORPH0054", "Morphant.Polymorphism", DiagnosticSeverity.Error),
+        new("MORPH0055", "Morphant.Polymorphism", DiagnosticSeverity.Error)
     };
 
     [Test]

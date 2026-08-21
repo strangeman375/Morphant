@@ -13,6 +13,8 @@ below, but not every feature expected from a general-purpose mapper.
 - manual mappings with `Convert`;
 - explicit nested mapping;
 - runtime lookup through DI and `IMapper`;
+- explicit pair-local runtime polymorphism for class, interface and compatible
+  value-type branches;
 - null, member, constructor and mapping-mode settings;
 - mapper and mapping-configuration inheritance;
 - compile-time diagnostics and typed runtime exceptions;
@@ -30,8 +32,7 @@ below, but not every feature expected from a general-purpose mapper.
 - first-class multi-source mappings or per-call user data; combine values into
   one source type, such as a tuple, handle it with `Convert`, and pass state to
   nested mappings explicitly;
-- keyed mappings or generated dispatch for explicitly configured derived
-  types;
+- keyed mappings or discriminator-based dispatch;
 - preserving shared object references or mapping cycles;
 - cross-assembly configuration inheritance;
 - generated DI registration;

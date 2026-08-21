@@ -8,6 +8,7 @@ source/destination mapping.
 | [`MappingMode`](mapping-mode.md) | `CreateAndUpdate` | `MorphantMappingMode` |
 | [`NullSourceHandling`](null-handling.md) | `ReturnNull` | `MorphantNullSourceHandling` |
 | [`NullDestinationHandling`](null-handling.md) | `Create` | `MorphantNullDestinationHandling` |
+| [`UnknownDerivedTypeHandling`](unknown-derived-type-handling.md) | `UseBaseMapping` | `MorphantUnknownDerivedTypeHandling` |
 | [`MemberSelection`](member-selection.md) | `Auto` | `MorphantMemberSelection` |
 | [`Flattening`](flattening.md) | `Auto` | `MorphantFlattening` |
 | [`ConstructorSelection`](constructor-selection.md) | `Unambiguous` | `MorphantConstructorSelection` |
@@ -20,6 +21,7 @@ Set MSBuild properties in a project file or `Directory.Build.props`:
 ```xml
 <PropertyGroup>
   <MorphantNullSourceHandling>Throw</MorphantNullSourceHandling>
+  <MorphantUnknownDerivedTypeHandling>Throw</MorphantUnknownDerivedTypeHandling>
   <MorphantMemberSelection>Explicit</MorphantMemberSelection>
   <MorphantFlattening>None</MorphantFlattening>
 </PropertyGroup>
@@ -34,6 +36,7 @@ the next configuration level.
 protected override void Configure(MapperBuilder builder)
 {
     builder.NullSourceHandling(NullSourceHandling.Throw);
+    builder.UnknownDerivedTypeHandling(UnknownDerivedTypeHandling.Throw);
     builder.MemberSelection(MemberSelection.Explicit);
     builder.Flattening(Flattening.None);
 
@@ -51,6 +54,7 @@ value wins.
 ```csharp
 builder.Map<OrderDto, Order>(MappingMode.Create)
     .NullSourceHandling(NullSourceHandling.ReturnNull)
+    .UnknownDerivedTypeHandling(UnknownDerivedTypeHandling.UseBaseMapping)
     .MemberSelection(MemberSelection.Auto);
 ```
 

@@ -492,6 +492,11 @@ internal static class MappingCompletenessObservationBuilder
         TypeMapperMappingModel mapping,
         EffectiveMappingSettings settings)
     {
+        if (!PolymorphicBasePlanReachability.IsReachable(mapping))
+        {
+            return MappingExecutionPathSet.None;
+        }
+
         var result = MappingExecutionPathSet.None;
 
         if (settings.SupportsCreate &&

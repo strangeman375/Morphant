@@ -82,7 +82,8 @@ destination or replace it.
 Mappings can rely on conventions, flatten nested source member names,
 include selected nested source members,
 configure construction and members explicitly, call other registered
-mappings, or use `Convert` for an ordinary synchronous C# algorithm.
+mappings, explicitly route derived runtime source types, or use `Convert` for
+an ordinary synchronous C# algorithm.
 
 Continue with the
 [Quick start](https://github.com/strangeman375/Morphant/blob/main/docs/quick-start.md),

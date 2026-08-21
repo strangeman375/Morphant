@@ -12,6 +12,7 @@
     <CompilerVisibleProperty Include="MorphantMappingMode" />
     <CompilerVisibleProperty Include="MorphantNullSourceHandling" />
     <CompilerVisibleProperty Include="MorphantNullDestinationHandling" />
+    <CompilerVisibleProperty Include="MorphantUnknownDerivedTypeHandling" />
     <CompilerVisibleProperty Include="MorphantConstructorSelection" />
     <CompilerVisibleProperty Include="MorphantMemberSelection" />
     <CompilerVisibleProperty Include="MorphantFlattening" />

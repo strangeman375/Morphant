@@ -201,6 +201,9 @@ internal static class TypeMapperRuntimeEquality
                    leftMapping.MemberObservation?.NestedMappings ?? ImmutableArray<NestedMappingObservation>.Empty,
                    rightMapping.MemberObservation?.NestedMappings ?? ImmutableArray<NestedMappingObservation>.Empty) &&
                AreEquivalent(
+                   leftMapping.DerivedMappings,
+                   rightMapping.DerivedMappings) &&
+               AreEquivalent(
                    leftMapping.PostMemberControlFlow,
                    rightMapping.PostMemberControlFlow) &&
                leftMapping.EffectiveSettings.Equals(
@@ -466,6 +469,80 @@ internal static class TypeMapperRuntimeEquality
         for (var index = 0; index < length; index++)
         {
             if (!StringComparer.Ordinal.Equals(left[index], right[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool AreEquivalent(
+        ImmutableArray<TypeMapperDerivedMappingModel> left,
+        ImmutableArray<TypeMapperDerivedMappingModel> right)
+    {
+        var length = Count(left);
+
+        if (length != Count(right))
+        {
+            return false;
+        }
+
+        for (var index = 0; index < length; index++)
+        {
+            var leftMapping = left[index];
+            var rightMapping = right[index];
+
+            if (!StringComparer.Ordinal.Equals(
+                    leftMapping.SourceTypeName,
+                    rightMapping.SourceTypeName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftMapping.SourceRuntimeTypeName,
+                    rightMapping.SourceRuntimeTypeName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftMapping.SourceMatchTypeName,
+                    rightMapping.SourceMatchTypeName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftMapping.DestinationTypeName,
+                    rightMapping.DestinationTypeName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftMapping.DestinationRuntimeTypeName,
+                    rightMapping.DestinationRuntimeTypeName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftMapping.DestinationMatchTypeName,
+                    rightMapping.DestinationMatchTypeName) ||
+                leftMapping.DestinationCanBeNull !=
+                    rightMapping.DestinationCanBeNull ||
+                leftMapping.DestinationMatchesBase !=
+                    rightMapping.DestinationMatchesBase ||
+                !AreEquivalent(
+                    leftMapping.MoreSpecificMappingIndexes,
+                    rightMapping.MoreSpecificMappingIndexes) ||
+                !AreEquivalent(
+                    leftMapping.DisqualifyingMappingIndexes,
+                    rightMapping.DisqualifyingMappingIndexes))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool AreEquivalent(
+        ImmutableArray<int> left,
+        ImmutableArray<int> right)
+    {
+        var length = Count(left);
+
+        if (length != Count(right))
+        {
+            return false;
+        }
+
+        for (var index = 0; index < length; index++)
+        {
+            if (left[index] != right[index])
             {
                 return false;
             }

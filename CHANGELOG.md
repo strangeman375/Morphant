@@ -6,6 +6,14 @@ documented breaking changes.
 
 ## [Unreleased]
 
+### Added
+
+- Add explicit pair-local runtime polymorphism with `ForDerived`,
+  most-specific class/interface selection, strict Update destination checks,
+  value-type support, nested and DI routing, and typed runtime failures.
+- Add `UnknownDerivedTypeHandling` at assembly, mapper and mapping levels,
+  including strict closed-hierarchy handling and dedicated diagnostics.
+
 ## [0.3.0]
 
 ### Added

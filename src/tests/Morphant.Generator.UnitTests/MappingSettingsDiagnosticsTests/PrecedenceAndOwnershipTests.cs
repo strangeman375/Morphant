@@ -29,6 +29,7 @@ namespace TestCase
             var invalidMode = MappingMode.Create;
             var invalidNullSource = NullSourceHandling.Throw;
             var invalidNullDestination = NullDestinationHandling.Throw;
+            var invalidUnknown = UnknownDerivedTypeHandling.Throw;
             var invalidConstructor = ConstructorSelection.Greediest;
             var invalidRoot = MemberSelection.Auto;
             var invalidValidation = UnmappedMemberValidation.Strict;
@@ -36,6 +37,7 @@ namespace TestCase
             builder.MappingMode(invalidMode);
             builder.NullSourceHandling(invalidNullSource);
             builder.NullDestinationHandling(invalidNullDestination);
+            builder.UnknownDerivedTypeHandling(invalidUnknown);
             builder.ConstructorSelection(invalidConstructor);
             builder.MemberSelection(invalidRoot);
             builder.UnmappedMemberValidation(invalidValidation);
@@ -44,6 +46,8 @@ namespace TestCase
                     MappingMode.CreateAndUpdate)
                 .NullSourceHandling(NullSourceHandling.ReturnNull)
                 .NullDestinationHandling(NullDestinationHandling.Create)
+                .UnknownDerivedTypeHandling(
+                    UnknownDerivedTypeHandling.UseBaseMapping)
                 .ConstructorSelection(ConstructorSelection.Unambiguous)
                 .MemberSelection(MemberSelection.Explicit)
                 .UnmappedMemberValidation(UnmappedMemberValidation.None);
@@ -88,6 +92,7 @@ namespace TestCase
         {
             var invalidNullSource = NullSourceHandling.Throw;
             var invalidNullDestination = NullDestinationHandling.Throw;
+            var invalidUnknown = UnknownDerivedTypeHandling.Throw;
             var invalidConstructor = ConstructorSelection.Greediest;
             var invalidBase = MemberSelection.Auto;
             var invalidValidation = UnmappedMemberValidation.Strict;
@@ -95,6 +100,7 @@ namespace TestCase
             builder.MappingMode(MappingMode.CreateAndUpdate);
             builder.NullSourceHandling(invalidNullSource);
             builder.NullDestinationHandling(invalidNullDestination);
+            builder.UnknownDerivedTypeHandling(invalidUnknown);
             builder.ConstructorSelection(invalidConstructor);
             builder.MemberSelection(invalidBase);
             builder.UnmappedMemberValidation(invalidValidation);
@@ -110,6 +116,8 @@ namespace TestCase
             builder.MappingMode(MappingMode.Default);
             builder.NullSourceHandling(NullSourceHandling.Default);
             builder.NullDestinationHandling(NullDestinationHandling.Default);
+            builder.UnknownDerivedTypeHandling(
+                UnknownDerivedTypeHandling.Default);
             builder.ConstructorSelection(ConstructorSelection.Default);
             builder.MemberSelection(MemberSelection.Default);
             builder.UnmappedMemberValidation(
@@ -126,7 +134,7 @@ namespace TestCase
         {
             Assert.That(
                 result.Diagnostics.Select(static diagnostic => diagnostic.Id),
-                Is.EqualTo(Enumerable.Repeat("MORPH0021", 5)));
+                Is.EqualTo(Enumerable.Repeat("MORPH0021", 6)));
             Assert.That(
                 result.Diagnostics.Select(diagnostic =>
                     MappingSettingsDiagnosticsGeneratorTest.SourceText(
@@ -135,6 +143,7 @@ namespace TestCase
                 {
                     "invalidNullSource",
                     "invalidNullDestination",
+                    "invalidUnknown",
                     "invalidConstructor",
                     "invalidBase",
                     "invalidValidation"
@@ -223,6 +232,7 @@ namespace TestCase
             var invalidMode = MappingMode.Create;
             var invalidNullSource = NullSourceHandling.Throw;
             var invalidNullDestination = NullDestinationHandling.Throw;
+            var invalidUnknown = UnknownDerivedTypeHandling.Throw;
             var invalidConstructor = ConstructorSelection.Greediest;
             var invalidBase = MemberSelection.Auto;
             var invalidValidation = UnmappedMemberValidation.Strict;
@@ -230,6 +240,7 @@ namespace TestCase
             builder.MappingMode(invalidMode);
             builder.NullSourceHandling(invalidNullSource);
             builder.NullDestinationHandling(invalidNullDestination);
+            builder.UnknownDerivedTypeHandling(invalidUnknown);
             builder.ConstructorSelection(invalidConstructor);
             builder.MemberSelection(invalidBase);
             builder.UnmappedMemberValidation(invalidValidation);
@@ -245,6 +256,8 @@ namespace TestCase
             builder.MappingMode(MappingMode.CreateAndUpdate);
             builder.NullSourceHandling(NullSourceHandling.ReturnNull);
             builder.NullDestinationHandling(NullDestinationHandling.Create);
+            builder.UnknownDerivedTypeHandling(
+                UnknownDerivedTypeHandling.UseBaseMapping);
             builder.ConstructorSelection(ConstructorSelection.Unambiguous);
             builder.MemberSelection(MemberSelection.Explicit);
             builder.UnmappedMemberValidation(UnmappedMemberValidation.None);
@@ -287,6 +300,8 @@ namespace TestCase
             builder.MappingMode(MappingMode.CreateAndUpdate);
             builder.NullSourceHandling(NullSourceHandling.ReturnNull);
             builder.NullDestinationHandling(NullDestinationHandling.Create);
+            builder.UnknownDerivedTypeHandling(
+                UnknownDerivedTypeHandling.UseBaseMapping);
             builder.ConstructorSelection(ConstructorSelection.Unambiguous);
             builder.MemberSelection(MemberSelection.Auto);
             builder.UnmappedMemberValidation(UnmappedMemberValidation.None);
@@ -302,6 +317,8 @@ namespace TestCase
             builder.MappingMode(MappingMode.Default);
             builder.NullSourceHandling(NullSourceHandling.Default);
             builder.NullDestinationHandling(NullDestinationHandling.Default);
+            builder.UnknownDerivedTypeHandling(
+                UnknownDerivedTypeHandling.Default);
             builder.ConstructorSelection(ConstructorSelection.Default);
             builder.MemberSelection(MemberSelection.Default);
             builder.UnmappedMemberValidation(
@@ -319,6 +336,8 @@ namespace TestCase
                 ["build_property.MorphantMappingMode"] = "Unexpected",
                 ["build_property.MorphantNullSourceHandling"] = "Unexpected",
                 ["build_property.MorphantNullDestinationHandling"] =
+                    "Unexpected",
+                ["build_property.MorphantUnknownDerivedTypeHandling"] =
                     "Unexpected",
                 ["build_property.MorphantConstructorSelection"] =
                     "Unexpected",

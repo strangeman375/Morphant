@@ -18,6 +18,7 @@ inside `TypeMapper.Configure`. For application-side `IMapper.Map`, see
 | [`Convert`](convert.md) | Any valid mapping pair | Own the complete mapping algorithm |
 | [`IncludeMembers`](include-members.md) | Any valid mapping pair | Add selected nested source objects to convention lookup |
 | [`IncludeBase`](include-base.md) | A compatible mapping is available | Reuse settings and declarative rules |
+| [`ForDerived`](for-derived.md) | The source and destination are assignable to the base pair | Route an explicit runtime source branch |
 
 If `Construct` or `Resolve` is absent, use a `Using` method or `Convert`.
 If `Members` is absent, the destination has no member Morphant can assign or
@@ -50,4 +51,6 @@ Configuration methods also control
 [`Flattening`](../settings/flattening.md),
 [`ConstructorSelection`](../settings/constructor-selection.md), and
 [`UnmappedMemberValidation`](../settings/unmapped-member-validation.md).
+Runtime polymorphism additionally uses
+[`UnknownDerivedTypeHandling`](../settings/unknown-derived-type-handling.md).
 See the [settings overview](../settings/README.md) for defaults and precedence.

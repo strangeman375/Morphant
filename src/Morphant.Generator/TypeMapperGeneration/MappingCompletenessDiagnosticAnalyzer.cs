@@ -178,6 +178,11 @@ internal static class MappingCompletenessDiagnosticAnalyzer
     private static MappingExecutionPathSet GetReachablePaths(
         TypeMapperMappingModel mapping)
     {
+        if (!PolymorphicBasePlanReachability.IsReachable(mapping))
+        {
+            return MappingExecutionPathSet.None;
+        }
+
         var settings = mapping.EffectiveSettings;
         var result = MappingExecutionPathSet.None;
 

@@ -15,6 +15,8 @@ internal sealed class MsBuildValueTests
                 ["build_property.MorphantNullSourceHandling"] = " throw ",
                 ["build_property.MorphantNullDestinationHandling"] =
                     " create ",
+                ["build_property.MorphantUnknownDerivedTypeHandling"] =
+                    " usebasemapping ",
                 ["build_property.MorphantConstructorSelection"] =
                     " unambiguous ",
                 ["build_property.MorphantMemberSelection"] = " auto ",
@@ -41,6 +43,8 @@ internal sealed class MsBuildValueTests
                 ["build_property.MorphantNullSourceHandling"] = "   ",
                 ["build_property.MorphantNullDestinationHandling"] =
                     "Default",
+                ["build_property.MorphantUnknownDerivedTypeHandling"] =
+                    " default ",
                 ["build_property.MorphantConstructorSelection"] =
                     string.Empty,
                 ["build_property.MorphantMemberSelection"] = " default ",
@@ -66,6 +70,8 @@ internal sealed class MsBuildValueTests
                 ["build_property.MorphantNullSourceHandling"] =
                     " Unexpected ",
                 ["build_property.MorphantNullDestinationHandling"] = "2",
+                ["build_property.MorphantUnknownDerivedTypeHandling"] =
+                    "Fallback",
                 ["build_property.MorphantConstructorSelection"] =
                     "ConstructorSelection.Greediest",
                 ["build_property.MorphantMemberSelection"] = "Auto, Explicit",
@@ -77,7 +83,7 @@ internal sealed class MsBuildValueTests
         {
             Assert.That(
                 result.Diagnostics.Select(static diagnostic => diagnostic.Id),
-                Is.EqualTo(Enumerable.Repeat("MORPH0022", 6)));
+                Is.EqualTo(Enumerable.Repeat("MORPH0022", 7)));
             Assert.That(
                 result.Diagnostics.Select(static diagnostic =>
                     diagnostic.GetMessage()),
@@ -93,6 +99,8 @@ internal sealed class MsBuildValueTests
                     "has unsupported value '2'.",
                     "MSBuild property 'MorphantNullSourceHandling' has " +
                     "unsupported value 'Unexpected'.",
+                    "MSBuild property 'MorphantUnknownDerivedTypeHandling' " +
+                    "has unsupported value 'Fallback'.",
                     "MSBuild property 'MorphantUnmappedMemberValidation' " +
                     "has unsupported value '-1'."
                 }));
@@ -133,6 +141,8 @@ namespace TestCase
             builder.Map<SourceA, DestinationA>(MappingMode.CreateAndUpdate)
                 .NullSourceHandling(NullSourceHandling.ReturnNull)
                 .NullDestinationHandling(NullDestinationHandling.Create)
+                .UnknownDerivedTypeHandling(
+                    UnknownDerivedTypeHandling.UseBaseMapping)
                 .ConstructorSelection(ConstructorSelection.Unambiguous)
                 .MemberSelection(MemberSelection.Explicit)
                 .Flattening(Flattening.None)
@@ -140,6 +150,8 @@ namespace TestCase
             builder.Map<SourceB, DestinationB>(MappingMode.CreateAndUpdate)
                 .NullSourceHandling(NullSourceHandling.ReturnDestination)
                 .NullDestinationHandling(NullDestinationHandling.Throw)
+                .UnknownDerivedTypeHandling(
+                    UnknownDerivedTypeHandling.Throw)
                 .ConstructorSelection(ConstructorSelection.Parameterless)
                 .MemberSelection(MemberSelection.Auto)
                 .Flattening(Flattening.Auto)
@@ -156,6 +168,8 @@ namespace TestCase
                 ["build_property.MorphantMappingMode"] = "Unexpected",
                 ["build_property.MorphantNullSourceHandling"] = "Unexpected",
                 ["build_property.MorphantNullDestinationHandling"] =
+                    "Unexpected",
+                ["build_property.MorphantUnknownDerivedTypeHandling"] =
                     "Unexpected",
                 ["build_property.MorphantConstructorSelection"] =
                     "Unexpected",

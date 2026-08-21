@@ -1,10 +1,11 @@
 #nullable enable
 #pragma warning disable CS1591
 
-// Test-owned revision-1 contract used to exercise the generator as a black
+// Test-owned revision-2 contract used to exercise the generator as a black
 // box. It is intentionally independent from the production manifest.
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 [assembly: AssemblyMetadata("Morphant.GeneratorContractVersion", "%%REVISION%%")]
@@ -65,6 +66,13 @@ namespace Morphant
         ReturnNull = 1,
         ReturnDestination = 2,
         Throw = 3
+    }
+
+    public enum UnknownDerivedTypeHandling
+    {
+        Default = 0,
+        UseBaseMapping = 1,
+        Throw = 2
     }
 
     public enum UnmappedMemberValidation
@@ -190,6 +198,10 @@ namespace Morphant
         public T NullDestinationHandling(NullDestinationHandling value) =>
             throw new NotSupportedException();
 
+        public T UnknownDerivedTypeHandling(
+            UnknownDerivedTypeHandling value) =>
+            throw new NotSupportedException();
+
         public T ConstructorSelection(ConstructorSelection value) =>
             throw new NotSupportedException();
 
@@ -223,6 +235,12 @@ namespace Morphant
 
         public MapperBuilder<TSource, TDestination>
             IncludeBase<TBaseSource, TBaseDestination>() =>
+            throw new NotSupportedException();
+
+        public MapperBuilder<TSource, TDestination>
+            ForDerived<TDerivedSource, TDerivedDestination>()
+            where TDerivedSource : TSource
+            where TDerivedDestination : TDestination =>
             throw new NotSupportedException();
     }
 
@@ -463,6 +481,25 @@ namespace Morphant.Exceptions
         }
     }
 
+    public sealed class AmbiguousPolymorphicMappingException : MappingException
+    {
+        public AmbiguousPolymorphicMappingException(
+            MappingOperation operation,
+            Type sourceType,
+            Type destinationType,
+            Type actualSourceType,
+            Type[] matchingSourceTypes,
+            Type[] matchingDestinationTypes)
+        {
+        }
+
+        public Type ActualSourceType => throw new NotSupportedException();
+        public IReadOnlyList<Type> MatchingSourceTypes =>
+            throw new NotSupportedException();
+        public IReadOnlyList<Type> MatchingDestinationTypes =>
+            throw new NotSupportedException();
+    }
+
     public sealed class InvalidMappingContextException : MorphantException
     {
         public InvalidMappingContextException()
@@ -568,6 +605,26 @@ namespace Morphant.Exceptions
         }
     }
 
+    public sealed class PolymorphicDestinationTypeMismatchException :
+        MappingException
+    {
+        public PolymorphicDestinationTypeMismatchException(
+            MappingOperation operation,
+            Type sourceType,
+            Type destinationType,
+            Type actualSourceType,
+            Type branchSourceType,
+            Type expectedDestinationType,
+            Type? actualDestinationType)
+        {
+        }
+
+        public Type ActualSourceType => throw new NotSupportedException();
+        public Type BranchSourceType => throw new NotSupportedException();
+        public Type ExpectedDestinationType => throw new NotSupportedException();
+        public Type? ActualDestinationType => null;
+    }
+
     public sealed class RuntimeInvocationNotSupportedException : MorphantException
     {
         public RuntimeInvocationNotSupportedException()
@@ -583,5 +640,18 @@ namespace Morphant.Exceptions
             Type destinationType)
         {
         }
+    }
+
+    public sealed class UnmatchedPolymorphicMappingException : MappingException
+    {
+        public UnmatchedPolymorphicMappingException(
+            MappingOperation operation,
+            Type sourceType,
+            Type destinationType,
+            Type actualSourceType)
+        {
+        }
+
+        public Type ActualSourceType => throw new NotSupportedException();
     }
 }
