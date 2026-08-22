@@ -1059,23 +1059,26 @@ internal static class TypeMapperModelBuilder
                 }
 
                 var candidate = configured[candidateIndex];
+                var candidateIsAssignableToMapping = IsAssignable(
+                    candidate.SourceType,
+                    mapping.SourceType,
+                    compilation);
+                var mappingIsAssignableToCandidate = IsAssignable(
+                    mapping.SourceType,
+                    candidate.SourceType,
+                    compilation);
 
-                if (IsAssignable(
-                        candidate.SourceType,
-                        mapping.SourceType,
-                        compilation) &&
-                    !IsAssignable(
-                        mapping.SourceType,
-                        candidate.SourceType,
-                        compilation))
+                if (candidateIsAssignableToMapping &&
+                    !mappingIsAssignableToCandidate)
                 {
                     moreSpecific.Add(candidateIndex);
                 }
 
-                if (!IsAssignable(
-                        mapping.SourceType,
-                        candidate.SourceType,
-                        compilation))
+                if (!mappingIsAssignableToCandidate &&
+                    (candidateIsAssignableToMapping ||
+                     CanHaveCommonRuntimeSubtype(
+                         mapping.SourceType,
+                         candidate.SourceType)))
                 {
                     disqualifying.Add(candidateIndex);
                 }
@@ -1129,6 +1132,45 @@ internal static class TypeMapperModelBuilder
                (conversion.IsReference || conversion.IsBoxing ||
                 conversion.IsNullable);
     }
+
+    private static bool CanHaveCommonRuntimeSubtype(
+        ITypeSymbol left,
+        ITypeSymbol right)
+    {
+        left = GetRuntimeMatchType(left);
+        right = GetRuntimeMatchType(right);
+
+        if (left.TypeKind == TypeKind.TypeParameter ||
+            right.TypeKind == TypeKind.TypeParameter)
+        {
+            return true;
+        }
+
+        if (left.TypeKind == TypeKind.Interface)
+        {
+            return right.TypeKind == TypeKind.Interface ||
+                   CanMatchAdditionalInterfaceAtRuntime(right);
+        }
+
+        if (right.TypeKind == TypeKind.Interface)
+        {
+            return CanMatchAdditionalInterfaceAtRuntime(left);
+        }
+
+        return (left.TypeKind == TypeKind.Array &&
+                right.TypeKind == TypeKind.Array) ||
+               (left.TypeKind == TypeKind.Delegate &&
+                right.TypeKind == TypeKind.Delegate);
+    }
+
+    private static bool CanMatchAdditionalInterfaceAtRuntime(
+        ITypeSymbol type) =>
+        type.TypeKind == TypeKind.Array ||
+        type is INamedTypeSymbol
+        {
+            TypeKind: TypeKind.Class,
+            IsSealed: false
+        };
 
     private static string BuildNonNullSourceName(
         ITypeSymbol sourceType,

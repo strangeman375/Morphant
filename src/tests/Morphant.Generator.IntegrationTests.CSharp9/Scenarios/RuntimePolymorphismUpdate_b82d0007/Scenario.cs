@@ -1,17 +1,4 @@
-using Microsoft.CodeAnalysis.CSharp;
-using Morphant.Generator.UnitTests.TestUtils;
-
-namespace Morphant.Generator.UnitTests.RuntimePolymorphismTests;
-
-[TestFixture]
-internal sealed class UpdateTests
-{
-    [Test]
-    public void Preserves_derived_update_identity_policy_and_replacement()
-    {
-        // lang=c#
-        const string source =
-"""
+// Compiled integration scenario: polymorphic Update lifecycle
 #nullable enable
 #pragma warning disable CS1591
 
@@ -19,7 +6,7 @@ using System;
 using Morphant;
 using Morphant.Exceptions;
 
-namespace TestCase
+namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorphismUpdate_b82d0007
 {
     public class Animal { }
     public sealed class Dog : Animal
@@ -104,24 +91,5 @@ namespace TestCase
                     "The derived pair could not return a replacement.");
             }
         }
-    }
-}
-""";
-
-        var result = GeneratorTestDriver.Run(
-            "RuntimePolymorphismUpdate",
-            source,
-            LanguageVersion.CSharp9);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.EffectiveDiagnostics, Is.Empty);
-            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
-        });
-
-        GeneratedCodeExecution.AssertScenario(
-            "runtime polymorphism update",
-            result.OutputCompilation,
-            "TestCase.Scenario");
     }
 }

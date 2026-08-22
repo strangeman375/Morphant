@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.RuntimePolymorphismTests;
 internal sealed class BasePlanReachabilityTests
 {
     [Test]
-    public void Throw_makes_an_interface_base_plan_unreachable()
+    public void Suppresses_an_unreachable_interface_base_plan()
     {
         // lang=c#
         const string source =
@@ -15,16 +15,13 @@ internal sealed class BasePlanReachabilityTests
 #nullable enable
 #pragma warning disable CS1591
 
-using System;
 using Morphant;
-using Morphant.Exceptions;
 
 namespace TestCase
 {
     public interface IAnimal { }
     public interface IDog : IAnimal { }
     public sealed class Dog : IDog { }
-    public sealed class Unknown : IAnimal { }
     public interface IAnimalDto { }
     public sealed class DogDto : IAnimalDto { }
 
@@ -41,31 +38,6 @@ namespace TestCase
                 .Convert(_ => new DogDto());
         }
     }
-
-    public static class Scenario
-    {
-        public static void Verify()
-        {
-            var mapper =
-                (ITypeMapper<IAnimal, IAnimalDto>)new TestMapper();
-
-            if (mapper.Create(new Dog()) is not DogDto)
-            {
-                throw new InvalidOperationException(
-                    "The known branch was not selected.");
-            }
-
-            try
-            {
-                mapper.Create(new Unknown());
-                throw new InvalidOperationException(
-                    "The unknown branch reached the base plan.");
-            }
-            catch (UnmatchedPolymorphicMappingException)
-            {
-            }
-        }
-    }
 }
 """;
 
@@ -79,11 +51,6 @@ namespace TestCase
             Assert.That(result.EffectiveDiagnostics, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
-
-        GeneratedCodeExecution.AssertScenario(
-            "runtime polymorphism unreachable base",
-            result.OutputCompilation,
-            "TestCase.Scenario");
     }
 
     [TestCase(false)]

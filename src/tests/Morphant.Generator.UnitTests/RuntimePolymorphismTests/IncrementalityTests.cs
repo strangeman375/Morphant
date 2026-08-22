@@ -67,14 +67,6 @@ namespace TestCase
             Assert.That(dog.EffectiveDiagnostics, Is.Empty);
             Assert.That(cat.EffectiveDiagnostics, Is.Empty);
             Assert.That(restored.EffectiveDiagnostics, Is.Empty);
-            Assert.That(
-                dog.TypeMapperSource,
-                Does.Contain(
-                    "source is global::TestCase.Dog polymorphicSource0"));
-            Assert.That(
-                cat.TypeMapperSource,
-                Does.Contain(
-                    "source is global::TestCase.Cat polymorphicSource0"));
             Assert.That(cat.TypeMapperSource, Is.Not.EqualTo(
                 dog.TypeMapperSource));
             Assert.That(restored.TypeMapperSource, Is.EqualTo(

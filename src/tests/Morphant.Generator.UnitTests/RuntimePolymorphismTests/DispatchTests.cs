@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.UnitTests.TestUtils;
 
@@ -8,7 +7,7 @@ namespace Morphant.Generator.UnitTests.RuntimePolymorphismTests;
 internal sealed class DispatchTests
 {
     [Test]
-    public void Routes_create_and_strict_update_through_the_exact_derived_pair()
+    public async Task Emits_compact_switch_dispatch_for_class_branches()
     {
         // lang=c#
         const string source =
@@ -16,62 +15,27 @@ internal sealed class DispatchTests
 #nullable enable
 #pragma warning disable CS1591
 
-using System;
 using Morphant;
-using Morphant.Exceptions;
 
 namespace TestCase
 {
+    public class Animal { }
+    public sealed class Dog : Animal { }
+    public sealed class Cat : Animal { }
+    public class AnimalDto { }
+    public sealed class DogDto : AnimalDto { }
+    public sealed class CatDto : AnimalDto { }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<object, object>()
-                .ForDerived<string, string>()
-                .Convert(source => source!);
-            builder.Map<string, string>()
-                .Convert(source => source!);
-        }
-    }
-
-    public static class Scenario
-    {
-        public static void Verify()
-        {
-            var mapper = (ITypeMapper<object, object>)new TestMapper();
-            object source = "derived";
-            var created = mapper.Create(source);
-            var updated = mapper.Update(source, "previous");
-            var updatedFromNull = mapper.Update(source, null);
-
-            if (created is not string ||
-                updated is not string ||
-                updatedFromNull is not string)
-            {
-                throw new InvalidOperationException(
-                    "The derived string mapping was not selected.");
-            }
-
-            try
-            {
-                mapper.Update(source, new object());
-                throw new InvalidOperationException(
-                    "An incompatible destination was accepted.");
-            }
-            catch (PolymorphicDestinationTypeMismatchException exception)
-            {
-                if (exception.SourceType != typeof(object) ||
-                    exception.DestinationType != typeof(object) ||
-                    exception.ActualSourceType != typeof(string) ||
-                    exception.BranchSourceType != typeof(string) ||
-                    exception.ExpectedDestinationType != typeof(string) ||
-                    exception.ActualDestinationType != typeof(object))
-                {
-                    throw new InvalidOperationException(
-                        "The mismatch exception lost its branch details.");
-                }
-            }
+            builder.Map<Animal, AnimalDto>()
+                .ForDerived<Dog, DogDto>()
+                .ForDerived<Cat, CatDto>();
+            builder.Map<Dog, DogDto>();
+            builder.Map<Cat, CatDto>();
         }
     }
 }
@@ -86,126 +50,225 @@ namespace TestCase
 namespace TestCase
 {
     public partial class TestMapper :
-        global::Morphant.ITypeMapper<object, object>,
-        global::Morphant.ITypeMapper<string, string>
+        global::Morphant.ITypeMapper<global::TestCase.Animal, global::TestCase.AnimalDto>,
+        global::Morphant.ITypeMapper<global::TestCase.Dog, global::TestCase.DogDto>,
+        global::Morphant.ITypeMapper<global::TestCase.Cat, global::TestCase.CatDto>
     {
         /// <inheritdoc/>
         protected override bool Supports(
             global::System.Type sourceType,
             global::System.Type destinationType) =>
-                (sourceType == typeof(object) &&
-                    destinationType == typeof(object)) ||
-                (sourceType == typeof(string) &&
-                    destinationType == typeof(string)) ||
+                (sourceType == typeof(global::TestCase.Animal) &&
+                    destinationType == typeof(global::TestCase.AnimalDto)) ||
+                (sourceType == typeof(global::TestCase.Dog) &&
+                    destinationType == typeof(global::TestCase.DogDto)) ||
+                (sourceType == typeof(global::TestCase.Cat) &&
+                    destinationType == typeof(global::TestCase.CatDto)) ||
                 base.Supports(sourceType, destinationType);
 
         /// <inheritdoc/>
-        object global::Morphant.ITypeMapper<object, object>.Create(
-            object? source,
+        global::TestCase.AnimalDto global::Morphant.ITypeMapper<global::TestCase.Animal, global::TestCase.AnimalDto>.Create(
+            global::TestCase.Animal? source,
             global::Morphant.Context.MappingContext context)
         {
-            if (source is not null)
+            if (source is null)
             {
-                if (source.GetType() != typeof(object))
-                {
-                    if (source is string polymorphicSource0)
-                    {
-                        return context.Mapper.Map<string, string>(polymorphicSource0);
-                    }
-
-                }
-
+                return default!;
             }
 
-            return __ConvertDestination(source);
+            switch (source)
+            {
+                case global::TestCase.Dog polymorphicSource:
+                    return context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(polymorphicSource);
+
+                case global::TestCase.Cat polymorphicSource:
+                    return context.Mapper.Map<global::TestCase.Cat, global::TestCase.CatDto>(polymorphicSource);
+            }
+
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
-        object global::Morphant.ITypeMapper<object, object>.Update(
-            object? source,
-            object? destination,
+        global::TestCase.AnimalDto global::Morphant.ITypeMapper<global::TestCase.Animal, global::TestCase.AnimalDto>.Update(
+            global::TestCase.Animal? source,
+            global::TestCase.AnimalDto? destination,
             global::Morphant.Context.MappingContext context)
         {
-            if (source is not null)
+            if (source is null)
             {
-                if (source.GetType() != typeof(object))
-                {
-                    if (source is string polymorphicSource0)
-                    {
-                        if (destination is null)
-                        {
-                            return context.Mapper.Map<string, string>(polymorphicSource0, default(string));
-                        }
-
-                        if (destination is string polymorphicDestination)
-                        {
-                            return context.Mapper.Map<string, string>(polymorphicSource0, polymorphicDestination);
-                        }
-
-                        throw new global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
-                            global::Morphant.Context.MappingOperation.Update,
-                            typeof(object),
-                            typeof(object),
-                            polymorphicSource0.GetType(),
-                            typeof(string),
-                            typeof(string),
-                            destination.GetType());
-                    }
-
-                }
-
+                return default!;
             }
 
-            return __ConvertDestination(source);
+            switch (source)
+            {
+                case global::TestCase.Dog polymorphicSource:
+                    return destination switch
+                    {
+                        null =>
+                            context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
+                                polymorphicSource,
+                                default(global::TestCase.DogDto)),
+                        global::TestCase.DogDto polymorphicDestination =>
+                            context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
+                                polymorphicSource,
+                                polymorphicDestination),
+                        _ => throw new
+                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
+                                global::Morphant.Context.MappingOperation.Update,
+                                typeof(global::TestCase.Animal),
+                                typeof(global::TestCase.AnimalDto),
+                                polymorphicSource.GetType(),
+                                typeof(global::TestCase.Dog),
+                                typeof(global::TestCase.DogDto),
+                                destination.GetType())
+                    };
+
+                case global::TestCase.Cat polymorphicSource:
+                    return destination switch
+                    {
+                        null =>
+                            context.Mapper.Map<global::TestCase.Cat, global::TestCase.CatDto>(
+                                polymorphicSource,
+                                default(global::TestCase.CatDto)),
+                        global::TestCase.CatDto polymorphicDestination =>
+                            context.Mapper.Map<global::TestCase.Cat, global::TestCase.CatDto>(
+                                polymorphicSource,
+                                polymorphicDestination),
+                        _ => throw new
+                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
+                                global::Morphant.Context.MappingOperation.Update,
+                                typeof(global::TestCase.Animal),
+                                typeof(global::TestCase.AnimalDto),
+                                polymorphicSource.GetType(),
+                                typeof(global::TestCase.Cat),
+                                typeof(global::TestCase.CatDto),
+                                destination.GetType())
+                    };
+            }
+
+            if (destination is null)
+            {
+                return __Create(source, context);
+            }
+
+            return __Update(source, destination, context);
         }
 
-        private object __ConvertDestination(object? source) => source!;
+        private global::TestCase.AnimalDto __Create(
+            global::TestCase.Animal source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.AnimalDto();
+        }
+
+        private global::TestCase.AnimalDto __Update(
+            global::TestCase.Animal source,
+            global::TestCase.AnimalDto destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
+        }
 
         /// <inheritdoc/>
-        string global::Morphant.ITypeMapper<string, string>.Create(
-            string? source,
+        global::TestCase.DogDto global::Morphant.ITypeMapper<global::TestCase.Dog, global::TestCase.DogDto>.Create(
+            global::TestCase.Dog? source,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination1(source);
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            return __Create1(source, context);
+        }
 
         /// <inheritdoc/>
-        string global::Morphant.ITypeMapper<string, string>.Update(
-            string? source,
-            string? destination,
+        global::TestCase.DogDto global::Morphant.ITypeMapper<global::TestCase.Dog, global::TestCase.DogDto>.Update(
+            global::TestCase.Dog? source,
+            global::TestCase.DogDto? destination,
             global::Morphant.Context.MappingContext context)
-            => __ConvertDestination1(source);
+        {
+            if (source is null)
+            {
+                return default!;
+            }
 
-        private string __ConvertDestination1(string? source) => source!;
+            if (destination is null)
+            {
+                return __Create1(source, context);
+            }
+
+            return __Update1(source, destination, context);
+        }
+
+        private global::TestCase.DogDto __Create1(
+            global::TestCase.Dog source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.DogDto();
+        }
+
+        private global::TestCase.DogDto __Update1(
+            global::TestCase.Dog source,
+            global::TestCase.DogDto destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
+        }
+
+        /// <inheritdoc/>
+        global::TestCase.CatDto global::Morphant.ITypeMapper<global::TestCase.Cat, global::TestCase.CatDto>.Create(
+            global::TestCase.Cat? source,
+            global::Morphant.Context.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            return __Create2(source, context);
+        }
+
+        /// <inheritdoc/>
+        global::TestCase.CatDto global::Morphant.ITypeMapper<global::TestCase.Cat, global::TestCase.CatDto>.Update(
+            global::TestCase.Cat? source,
+            global::TestCase.CatDto? destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            if (source is null)
+            {
+                return default!;
+            }
+
+            if (destination is null)
+            {
+                return __Create2(source, context);
+            }
+
+            return __Update2(source, destination, context);
+        }
+
+        private global::TestCase.CatDto __Create2(
+            global::TestCase.Cat source,
+            global::Morphant.Context.MappingContext context)
+        {
+            return new global::TestCase.CatDto();
+        }
+
+        private global::TestCase.CatDto __Update2(
+            global::TestCase.Cat source,
+            global::TestCase.CatDto destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
+        }
     }
 }
 """;
 
-        var result = GeneratorTestDriver.Run(
-            "RuntimePolymorphismDispatch",
+        await ConventionTypeMapperGeneratorTest.RunAndAssert(
+            LanguageVersion.CSharp9,
             source,
-            LanguageVersion.CSharp9);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.EffectiveDiagnostics, Is.Empty);
-            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
-            Assert.That(
-                result.GeneratedSources.Select(static generated =>
-                    generated.HintName).ToArray(),
-                Is.EqualTo(new[]
-                {
-                    "Morphant.Generated.MappingExtension.System_Object__System_Object.g.cs",
-                    "Morphant.Generated.MappingExtension.System_String__System_String.g.cs",
-                    "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
-                }));
-        });
-
-        Assert.That(
-            result.TypeMapperSource.ReplaceLineEndings("\n"),
-            Is.EqualTo(expected + "\n"));
-
-        GeneratedCodeExecution.AssertScenario(
-            "runtime polymorphism dispatch",
-            result.OutputCompilation,
-            "TestCase.Scenario");
+            expected);
     }
 }

@@ -1,17 +1,4 @@
-using Microsoft.CodeAnalysis.CSharp;
-using Morphant.Generator.UnitTests.TestUtils;
-
-namespace Morphant.Generator.UnitTests.RuntimePolymorphismTests;
-
-[TestFixture]
-internal sealed class ValueTypeTests
-{
-    [Test]
-    public void Supports_boxed_sources_destinations_and_nullable_values()
-    {
-        // lang=c#
-        const string source =
-"""
+// Compiled integration scenario: polymorphic value-type branches
 #nullable enable
 #pragma warning disable CS1591
 
@@ -19,7 +6,7 @@ using System;
 using Morphant;
 using Morphant.Exceptions;
 
-namespace TestCase
+namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorphismValues_b82d0008
 {
     public interface IValueSource
     {
@@ -111,24 +98,5 @@ namespace TestCase
                 }
             }
         }
-    }
-}
-""";
-
-        var result = GeneratorTestDriver.Run(
-            "RuntimePolymorphismValues",
-            source,
-            LanguageVersion.CSharp9);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.EffectiveDiagnostics, Is.Empty);
-            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
-        });
-
-        GeneratedCodeExecution.AssertScenario(
-            "runtime polymorphism values",
-            result.OutputCompilation,
-            "TestCase.Scenario");
     }
 }

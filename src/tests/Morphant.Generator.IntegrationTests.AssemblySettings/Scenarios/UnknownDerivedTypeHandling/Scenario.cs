@@ -1,17 +1,4 @@
-using Microsoft.CodeAnalysis.CSharp;
-using Morphant.Generator.UnitTests.TestUtils;
-
-namespace Morphant.Generator.UnitTests.RuntimePolymorphismTests;
-
-[TestFixture]
-internal sealed class SettingPrecedenceTests
-{
-    [Test]
-    public void Resolves_assembly_mapper_and_pair_precedence()
-    {
-        // lang=c#
-        const string source =
-"""
+// Compiled integration scenario: assembly, mapper, and pair setting precedence
 #nullable enable
 #pragma warning disable CS1591
 
@@ -19,7 +6,7 @@ using System;
 using Morphant;
 using Morphant.Exceptions;
 
-namespace TestCase
+namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.UnknownDerivedTypeHandling
 {
     public interface IAnimal { }
     public interface IDog : IAnimal { }
@@ -29,35 +16,35 @@ namespace TestCase
     public partial class AssemblyMapper : TypeMapper
     {
         protected override void Configure(MapperBuilder builder) =>
-            builder.Map<IAnimal, object>()
+            builder.Map<IAnimal, object>(global::Morphant.MappingMode.Create)
                 .ForDerived<IDog, string>()
                 .Convert(_ => "base");
     }
 
     [MorphantMapper]
-    public partial class RootMapper : TypeMapper
+    public partial class MapperOverride : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
             builder.UnknownDerivedTypeHandling(
-                UnknownDerivedTypeHandling.UseBaseMapping);
-            builder.Map<IAnimal, object>()
+                global::Morphant.UnknownDerivedTypeHandling.UseBaseMapping);
+            builder.Map<IAnimal, object>(global::Morphant.MappingMode.Create)
                 .ForDerived<IDog, string>()
                 .Convert(_ => "base");
         }
     }
 
     [MorphantMapper]
-    public partial class PairMapper : TypeMapper
+    public partial class PairOverride : TypeMapper
     {
         protected override void Configure(MapperBuilder builder)
         {
             builder.UnknownDerivedTypeHandling(
-                UnknownDerivedTypeHandling.UseBaseMapping);
-            builder.Map<IAnimal, object>()
+                global::Morphant.UnknownDerivedTypeHandling.UseBaseMapping);
+            builder.Map<IAnimal, object>(global::Morphant.MappingMode.Create)
                 .ForDerived<IDog, string>()
                 .UnknownDerivedTypeHandling(
-                    UnknownDerivedTypeHandling.Throw)
+                    global::Morphant.UnknownDerivedTypeHandling.Throw)
                 .Convert(_ => "base");
         }
     }
@@ -67,8 +54,8 @@ namespace TestCase
         public static void Verify()
         {
             AssertThrows(new AssemblyMapper());
-            AssertUsesBase(new RootMapper());
-            AssertThrows(new PairMapper());
+            AssertUsesBase(new MapperOverride());
+            AssertThrows(new PairOverride());
         }
 
         private static void AssertThrows(TypeMapper mapper)
@@ -96,29 +83,5 @@ namespace TestCase
                     "The mapper setting did not override MSBuild.");
             }
         }
-    }
-}
-""";
-
-        var result = GeneratorTestDriver.Run(
-            "RuntimePolymorphismSettingPrecedence",
-            source,
-            LanguageVersion.CSharp9,
-            globalOptions: new Dictionary<string, string>
-            {
-                ["build_property.MorphantUnknownDerivedTypeHandling"] =
-                    " throw "
-            });
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(result.EffectiveDiagnostics, Is.Empty);
-            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
-        });
-
-        GeneratedCodeExecution.AssertScenario(
-            "runtime polymorphism setting precedence",
-            result.OutputCompilation,
-            "TestCase.Scenario");
     }
 }

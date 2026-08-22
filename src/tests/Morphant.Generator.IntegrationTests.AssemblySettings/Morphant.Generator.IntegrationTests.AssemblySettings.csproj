@@ -12,6 +12,7 @@
         <MorphantConstructorSelection>Explicit</MorphantConstructorSelection>
         <MorphantMemberSelection>Explicit</MorphantMemberSelection>
         <MorphantFlattening>None</MorphantFlattening>
+        <MorphantUnknownDerivedTypeHandling>Throw</MorphantUnknownDerivedTypeHandling>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,6 +22,7 @@
         <CompilerVisibleProperty Include="MorphantConstructorSelection" />
         <CompilerVisibleProperty Include="MorphantMemberSelection" />
         <CompilerVisibleProperty Include="MorphantFlattening" />
+        <CompilerVisibleProperty Include="MorphantUnknownDerivedTypeHandling" />
 
         <ProjectReference Include="..\..\Morphant\Morphant.csproj" />
         <ProjectReference Include="..\..\Morphant.Generator\Morphant.Generator.csproj"
