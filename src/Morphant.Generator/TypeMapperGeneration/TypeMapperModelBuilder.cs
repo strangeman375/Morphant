@@ -354,6 +354,9 @@ internal static class TypeMapperModelBuilder
             SourceRuntimeTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
                     registration.SourceType),
+            SourceMatchTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    GetRuntimeMatchType(registration.SourceType)),
             MaybeNullSourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedMaybeNullTypeName(
                     registration.SourceType),
@@ -959,6 +962,9 @@ internal static class TypeMapperModelBuilder
             SourceRuntimeTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
                     pair.SourceType),
+            SourceMatchTypeName:
+                TypeMapperMappingTypePolicy.GetGeneratedRuntimeTypeName(
+                    GetRuntimeMatchType(pair.SourceType)),
             MaybeNullSourceTypeName:
                 TypeMapperMappingTypePolicy.GetGeneratedMaybeNullTypeName(
                     pair.SourceType),

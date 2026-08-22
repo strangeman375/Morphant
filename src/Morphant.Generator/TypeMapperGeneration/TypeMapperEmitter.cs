@@ -1423,7 +1423,7 @@ internal static class TypeMapperEmitter
         {
             var nonExactCondition = sourceExpression + ".GetType() != " +
                                     "typeof(" +
-                                    mapping.SourceRuntimeTypeName + ")";
+                                    mapping.SourceMatchTypeName + ")";
 
             writer.Line(
                 sourceCanBeNull

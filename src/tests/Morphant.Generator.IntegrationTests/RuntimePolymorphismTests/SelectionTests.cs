@@ -22,4 +22,9 @@ internal sealed class SelectionTests
     public void Throw_rejects_unknown_runtime_types_even_without_links() =>
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
             .RuntimePolymorphismEmptyStrict_b82d0004.Scenario.Verify();
+
+    [Test]
+    public void Null_sources_follow_the_base_pair_policy_before_dispatch() =>
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .RuntimePolymorphismNulls_b82d0018.Scenario.Verify();
 }

@@ -25,6 +25,12 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
         public int Value { get; }
     }
 
+    public readonly struct ExactNullableSource
+    {
+        public ExactNullableSource(int value) => Value = value;
+        public int Value { get; }
+    }
+
     public sealed class UnknownSource : IValueSource
     {
         public int Value => -1;
@@ -49,6 +55,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
                 .Convert(source => new ValueDestination(source.Value));
             builder.Map<OptionalSource, ValueDestination?>()
                 .Convert(source => new ValueDestination(source.Value));
+            builder.Map<ExactNullableSource?, string>()
+                .UnknownDerivedTypeHandling(
+                    UnknownDerivedTypeHandling.Throw)
+                .Convert(source => source?.Value.ToString() ?? "null");
         }
     }
 
@@ -69,13 +79,24 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
                 optional,
                 (object)new ValueDestination(2));
             var fallback = mapper.Create(new UnknownSource());
+            var nullableSourceMapper =
+                (ITypeMapper<ExactNullableSource?, string>)new TestMapper();
+            var exactNullableValue = nullableSourceMapper.Create(
+                new ExactNullableSource(17));
+            var updatedExactNullableValue = nullableSourceMapper.Update(
+                new ExactNullableSource(23),
+                "previous");
+            var nullNullableValue = nullableSourceMapper.Create(null);
 
             if (created is not ValueDestination { Value: 7 } ||
                 updated is not ValueDestination { Value: 7 } ||
                 nullableFromNull is not ValueDestination { Value: 11 } ||
                 nullableFromBox is not ValueDestination { Value: 11 } ||
                 fallback is null ||
-                fallback.GetType() != typeof(object))
+                fallback.GetType() != typeof(object) ||
+                exactNullableValue != "17" ||
+                updatedExactNullableValue != "23" ||
+                nullNullableValue != "null")
             {
                 throw new InvalidOperationException(
                     "Value-type polymorphic mapping is incorrect.");

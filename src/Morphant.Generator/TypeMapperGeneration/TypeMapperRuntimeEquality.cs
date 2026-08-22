@@ -122,6 +122,9 @@ internal static class TypeMapperRuntimeEquality
                    leftMapping.SourceRuntimeTypeName,
                    rightMapping.SourceRuntimeTypeName) &&
                StringComparer.Ordinal.Equals(
+                   leftMapping.SourceMatchTypeName,
+                   rightMapping.SourceMatchTypeName) &&
+               StringComparer.Ordinal.Equals(
                    leftMapping.MaybeNullSourceTypeName,
                    rightMapping.MaybeNullSourceTypeName) &&
                StringComparer.Ordinal.Equals(
