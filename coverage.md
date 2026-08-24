@@ -3,30 +3,30 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/24/2026 - 08:32:24 |
-| Coverage date: | 08/24/2026 - 08:30:34 - 08/24/2026 - 08:32:19 |
+| Generated on: | 08/24/2026 - 09:14:07 |
+| Coverage date: | 08/24/2026 - 09:12:17 - 08/24/2026 - 09:14:03 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 346 |
 | Files: | 178 |
-| **Line coverage:** | 86.7% (32804 of 37796) |
-| Covered lines: | 32804 |
-| Uncovered lines: | 4992 |
-| Coverable lines: | 37796 |
-| Total lines: | 63309 |
-| **Branch coverage:** | 76.6% (10989 of 14330) |
-| Covered branches: | 10989 |
-| Total branches: | 14330 |
+| **Line coverage:** | 86.7% (32814 of 37805) |
+| Covered lines: | 32814 |
+| Uncovered lines: | 4991 |
+| Coverable lines: | 37805 |
+| Total lines: | 63360 |
+| **Branch coverage:** | 76.6% (10994 of 14336) |
+| Covered branches: | 10994 |
+| Total branches: | 14336 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>Morphant - 97.2%</summary>
+<details><summary>Morphant - 97.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant**|**97.2%**|**77.5%**|
+|**Morphant**|**97.4%**|**77.9%**|
 |Morphant.Context.MappingContext|100%|100%|
 |Morphant.Context.MappingScope|95.1%|90%|
 |Morphant.Exceptions.AmbiguousMappingException|100%||
@@ -39,11 +39,11 @@
 |Morphant.Exceptions.MappingOperationNotSupportedException|100%||
 |Morphant.Exceptions.MappingScopeCompletedException|100%||
 |Morphant.Exceptions.MorphantException|100%||
-|Morphant.Exceptions.NestedDestinationTypeMismatchException|100%|75%|
+|Morphant.Exceptions.NestedDestinationTypeMismatchException|100%|66.6%|
 |Morphant.Exceptions.NullDestinationException|100%||
 |Morphant.Exceptions.NullSourceException|100%||
 |Morphant.Exceptions.OptionValueMissingException|100%||
-|Morphant.Exceptions.PolymorphicDestinationTypeMismatchException|100%|62.5%|
+|Morphant.Exceptions.PolymorphicDestinationTypeMismatchException|100%|75%|
 |Morphant.Exceptions.RuntimeInvocationNotSupportedException|100%||
 |Morphant.Exceptions.UnmatchedMappingSwitchException|100%||
 |Morphant.Exceptions.UnmatchedPolymorphicMappingException|100%|75%|
@@ -228,7 +228,7 @@
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticPipeline|75%|50%|
 |Morphant.Generator.TypeMapperGeneration.CallbackTransferFailureObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.CompletenessPlanningObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|68%|68.1%|
+|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|67.8%|68.1%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticAnalyzer|89.6%|80%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticDescriptors|100%||
@@ -392,4 +392,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #52](https://github.com/strangeman375/Morphant/actions/runs/32706463713).
+Full HTML report: download the **coverage** artifact from [CI run #53](https://github.com/strangeman375/Morphant/actions/runs/32710013124).
