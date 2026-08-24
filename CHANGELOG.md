@@ -6,6 +6,8 @@ documented breaking changes.
 
 ## [Unreleased]
 
+## [0.4.0]
+
 ### Added
 
 - Add explicit pair-local runtime polymorphism with `ForDerived`,
@@ -60,7 +62,8 @@ Initial stable release.
 See [current limitations](docs/limitations.md) for functionality outside the
 0.1 release.
 
-[Unreleased]: https://github.com/strangeman375/Morphant/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/strangeman375/Morphant/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/strangeman375/Morphant/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/strangeman375/Morphant/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/strangeman375/Morphant/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/strangeman375/Morphant/releases/tag/v0.1.0

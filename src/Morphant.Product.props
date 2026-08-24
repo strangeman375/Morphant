@@ -1,10 +1,10 @@
 <Project>
 
     <PropertyGroup>
-        <Version>0.3.0</Version>
+        <Version>0.4.0</Version>
 
-        <!-- Keep patch releases in the 0.3 line binary-compatible. -->
-        <AssemblyVersion>0.3.0.0</AssemblyVersion>
+        <!-- Keep patch releases in the 0.4 line binary-compatible. -->
+        <AssemblyVersion>0.4.0.0</AssemblyVersion>
 
         <Authors>strangeman375</Authors>
         <Company>strangeman375</Company>

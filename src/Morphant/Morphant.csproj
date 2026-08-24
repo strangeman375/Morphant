@@ -17,7 +17,7 @@
 
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>mapper;mapping;object-mapper;object-mapping;source-generator;code-generation;compile-time;roslyn;csharp</PackageTags>
-        <PackageReleaseNotes>Adds IncludeMembers and automatic source flattening for convention mappings, including nullable paths, inheritance, settings, and dedicated diagnostics. Release notes: https://github.com/strangeman375/Morphant/blob/v0.3.0/CHANGELOG.md#030. Current limitations: https://github.com/strangeman375/Morphant/blob/v0.3.0/docs/limitations.md</PackageReleaseNotes>
+        <PackageReleaseNotes>Adds explicit pair-local runtime polymorphism with ForDerived, most-specific class/interface dispatch, strict Update destination checks, value-type support, configurable unknown-derived handling, and dedicated diagnostics and runtime exceptions. Release notes: https://github.com/strangeman375/Morphant/blob/v0.4.0/CHANGELOG.md#040. Current limitations: https://github.com/strangeman375/Morphant/blob/v0.4.0/docs/limitations.md</PackageReleaseNotes>
 
         <PackageIcon>logo.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>

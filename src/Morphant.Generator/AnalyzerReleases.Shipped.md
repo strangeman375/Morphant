@@ -65,3 +65,14 @@ Rule ID | Category | Severity | Notes
 MORPH0049 | Morphant.IncludeMembers | Error | Invalid IncludeMembers selector
 MORPH0050 | Morphant.IncludeMembers | Error | Ambiguous included source member
 MORPH0051 | Morphant.Flattening | Error | Ambiguous flattened source path
+
+## Release 0.4.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+MORPH0052 | Morphant.Polymorphism | Error | Polymorphic mapping links to itself
+MORPH0053 | Morphant.Polymorphism | Error | Duplicate polymorphic source branch
+MORPH0054 | Morphant.Polymorphism | Error | Incompatible polymorphic branch type
+MORPH0055 | Morphant.Polymorphism | Error | Inaccessible polymorphic branch type
