@@ -1068,22 +1068,18 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 destinationTypeName)
             : destinationTypeName;
 
-        var expectedType = $"typeof({runtimeDestinationTypeName})";
         var mappingOperation =
             "global::Morphant.Context.MappingOperation." + operation;
-        var mappingSourceType = $"typeof({runtimeSourceTypeName})";
-        var mappingDestinationType = expectedType;
-        var actualTypeExpression = allowNull
-            ? Identifier(incompatibleDestinationName) + ".GetType()"
-            : expression + ".GetType()";
+        var actualDestinationExpression = allowNull
+            ? Identifier(incompatibleDestinationName)
+            : expression;
         var mismatch =
-            "throw new global::Morphant.Exceptions." +
-            "NestedDestinationTypeMismatchException(" +
+            "throw global::Morphant.Exceptions." +
+            "NestedDestinationTypeMismatchException.Create<" +
+            runtimeSourceTypeName + ", " +
+            runtimeDestinationTypeName + ">(" +
             mappingOperation + ", " +
-            mappingSourceType + ", " +
-            mappingDestinationType + ", " +
-            expectedType + ", " +
-            actualTypeExpression + ")";
+            actualDestinationExpression + ")";
 
         if (!allowNull)
         {
@@ -1100,12 +1096,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                              OriginalDefinition.SpecialType:
                                  SpecialType.System_Nullable_T
                          }
-            ? "throw new global::Morphant.Exceptions." +
-              "NestedDestinationTypeMismatchException(" +
-              mappingOperation + ", " +
-              mappingSourceType + ", " +
-              mappingDestinationType + ", " +
-              expectedType + ", null)"
+            ? "throw global::Morphant.Exceptions." +
+              "NestedDestinationTypeMismatchException.Create<" +
+              runtimeSourceTypeName + ", " +
+              runtimeDestinationTypeName + ">(" +
+              mappingOperation + ", null)"
             : $"default({castTypeName})";
 
         return SyntaxFactory.ParseExpression(

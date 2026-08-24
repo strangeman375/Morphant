@@ -340,6 +340,7 @@ T Morphant.Exceptions.NestedDestinationTypeMismatchException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type, System.Type, System.Type)
   P System.Type ActualDestinationType { get; }
   P System.Type ExpectedDestinationType { get; }
+  M Morphant.Exceptions.NestedDestinationTypeMismatchException Create<TSource, TDestination>(Morphant.Context.MappingOperation, System.Object)
 T Morphant.Exceptions.NullDestinationException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type)
 T Morphant.Exceptions.NullSourceException
@@ -352,6 +353,7 @@ T Morphant.Exceptions.PolymorphicDestinationTypeMismatchException
   P System.Type ActualSourceType { get; }
   P System.Type BranchSourceType { get; }
   P System.Type ExpectedDestinationType { get; }
+  M Morphant.Exceptions.PolymorphicDestinationTypeMismatchException CreateForUpdate<TSource, TDestination, TBranchSource, TBranchDestination>(TBranchSource, System.Object)
 T Morphant.Exceptions.RuntimeInvocationNotSupportedException
   C .ctor()
 T Morphant.Exceptions.UnmatchedMappingSwitchException

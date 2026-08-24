@@ -148,15 +148,15 @@ namespace TestCase
                             context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
                                 polymorphicSource,
                                 polymorphicDestination),
-                        _ => throw new
-                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
-                                global::Morphant.Context.MappingOperation.Update,
-                                typeof(global::TestCase.Animal),
-                                typeof(global::TestCase.AnimalDto),
-                                polymorphicSource.GetType(),
-                                typeof(global::TestCase.Dog),
-                                typeof(global::TestCase.DogDto),
-                                destination.GetType())
+                        _ => throw global::Morphant.Exceptions
+                            .PolymorphicDestinationTypeMismatchException
+                            .CreateForUpdate<
+                                global::TestCase.Animal,
+                                global::TestCase.AnimalDto,
+                                global::TestCase.Dog,
+                                global::TestCase.DogDto>(
+                                polymorphicSource,
+                                destination)
                     };
                     return true;
 
@@ -171,15 +171,15 @@ namespace TestCase
                             context.Mapper.Map<global::TestCase.Cat, global::TestCase.CatDto>(
                                 polymorphicSource,
                                 polymorphicDestination),
-                        _ => throw new
-                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
-                                global::Morphant.Context.MappingOperation.Update,
-                                typeof(global::TestCase.Animal),
-                                typeof(global::TestCase.AnimalDto),
-                                polymorphicSource.GetType(),
-                                typeof(global::TestCase.Cat),
-                                typeof(global::TestCase.CatDto),
-                                destination.GetType())
+                        _ => throw global::Morphant.Exceptions
+                            .PolymorphicDestinationTypeMismatchException
+                            .CreateForUpdate<
+                                global::TestCase.Animal,
+                                global::TestCase.AnimalDto,
+                                global::TestCase.Cat,
+                                global::TestCase.CatDto>(
+                                polymorphicSource,
+                                destination)
                     };
                     return true;
 
@@ -444,15 +444,15 @@ namespace TestCase
                             context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
                                 polymorphicSource,
                                 polymorphicDestination),
-                        _ => throw new
-                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
-                                global::Morphant.Context.MappingOperation.Update,
-                                typeof(global::TestCase.Animal),
-                                typeof(global::TestCase.AnimalDto),
-                                polymorphicSource.GetType(),
-                                typeof(global::TestCase.Dog),
-                                typeof(global::TestCase.DogDto),
-                                destination.GetType())
+                        _ => throw global::Morphant.Exceptions
+                            .PolymorphicDestinationTypeMismatchException
+                            .CreateForUpdate<
+                                global::TestCase.Animal,
+                                global::TestCase.AnimalDto,
+                                global::TestCase.Dog,
+                                global::TestCase.DogDto>(
+                                polymorphicSource,
+                                destination)
                     };
                     return true;
 
@@ -647,15 +647,15 @@ namespace TestCase
                             context.Mapper.Map<global::TestCase.IWorking, global::TestCase.WorkingDto>(
                                 polymorphicSource,
                                 polymorphicDestination),
-                        _ => throw new
-                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
-                                global::Morphant.Context.MappingOperation.Update,
-                                typeof(global::TestCase.IRoot),
-                                typeof(global::TestCase.RootDto),
-                                polymorphicSource.GetType(),
-                                typeof(global::TestCase.IWorking),
-                                typeof(global::TestCase.WorkingDto),
-                                destination.GetType())
+                        _ => throw global::Morphant.Exceptions
+                            .PolymorphicDestinationTypeMismatchException
+                            .CreateForUpdate<
+                                global::TestCase.IRoot,
+                                global::TestCase.RootDto,
+                                global::TestCase.IWorking,
+                                global::TestCase.WorkingDto>(
+                                polymorphicSource,
+                                destination)
                     };
                     return true;
 
@@ -671,15 +671,15 @@ namespace TestCase
                             context.Mapper.Map<global::TestCase.IPet, global::TestCase.PetDto>(
                                 polymorphicSource,
                                 polymorphicDestination),
-                        _ => throw new
-                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
-                                global::Morphant.Context.MappingOperation.Update,
-                                typeof(global::TestCase.IRoot),
-                                typeof(global::TestCase.RootDto),
-                                polymorphicSource.GetType(),
-                                typeof(global::TestCase.IPet),
-                                typeof(global::TestCase.PetDto),
-                                destination.GetType())
+                        _ => throw global::Morphant.Exceptions
+                            .PolymorphicDestinationTypeMismatchException
+                            .CreateForUpdate<
+                                global::TestCase.IRoot,
+                                global::TestCase.RootDto,
+                                global::TestCase.IPet,
+                                global::TestCase.PetDto>(
+                                polymorphicSource,
+                                destination)
                     };
                     return true;
 

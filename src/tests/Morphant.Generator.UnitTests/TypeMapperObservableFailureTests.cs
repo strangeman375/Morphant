@@ -249,7 +249,7 @@ internal sealed class TypeMapperObservableFailureTests
     }
 
     [Test]
-    public void Polymorphic_exception_factories_preserve_generated_matches()
+    public void Exception_factories_preserve_generated_runtime_types()
     {
         var source = "source";
         var ambiguity =
@@ -263,6 +263,18 @@ internal sealed class TypeMapperObservableFailureTests
             UnmatchedPolymorphicMappingException.Create<object, object>(
                 MappingOperation.Create,
                 source);
+        var polymorphicMismatch =
+            PolymorphicDestinationTypeMismatchException.CreateForUpdate<
+                object,
+                object,
+                string,
+                IComparable>(
+                source,
+                42);
+        var nestedMismatch =
+            NestedDestinationTypeMismatchException.Create<object, string>(
+                MappingOperation.Update,
+                42);
 
         Assert.Multiple(() =>
         {
@@ -293,6 +305,42 @@ internal sealed class TypeMapperObservableFailureTests
             Assert.That(
                 unmatched.DestinationType,
                 Is.EqualTo(typeof(object)));
+            Assert.That(
+                polymorphicMismatch.Operation,
+                Is.EqualTo(MappingOperation.Update));
+            Assert.That(
+                polymorphicMismatch.SourceType,
+                Is.EqualTo(typeof(object)));
+            Assert.That(
+                polymorphicMismatch.DestinationType,
+                Is.EqualTo(typeof(object)));
+            Assert.That(
+                polymorphicMismatch.ActualSourceType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(
+                polymorphicMismatch.BranchSourceType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(
+                polymorphicMismatch.ExpectedDestinationType,
+                Is.EqualTo(typeof(IComparable)));
+            Assert.That(
+                polymorphicMismatch.ActualDestinationType,
+                Is.EqualTo(typeof(int)));
+            Assert.That(
+                nestedMismatch.Operation,
+                Is.EqualTo(MappingOperation.Update));
+            Assert.That(
+                nestedMismatch.SourceType,
+                Is.EqualTo(typeof(object)));
+            Assert.That(
+                nestedMismatch.DestinationType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(
+                nestedMismatch.ExpectedDestinationType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(
+                nestedMismatch.ActualDestinationType,
+                Is.EqualTo(typeof(int)));
         });
     }
 
@@ -323,6 +371,13 @@ internal sealed class TypeMapperObservableFailureTests
                     .Create<object, object>(
                         MappingOperation.Create,
                         null!),
+                Throws.ArgumentNullException.With.Property("ParamName")
+                    .EqualTo("source"));
+            Assert.That(
+                () => PolymorphicDestinationTypeMismatchException
+                    .CreateForUpdate<object, object, string, string>(
+                        null!,
+                        new object()),
                 Throws.ArgumentNullException.With.Property("ParamName")
                     .EqualTo("source"));
         });

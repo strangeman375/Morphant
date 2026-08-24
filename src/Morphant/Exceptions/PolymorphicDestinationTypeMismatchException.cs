@@ -10,6 +10,44 @@ public sealed class PolymorphicDestinationTypeMismatchException :
     MappingException
 {
     /// <summary>
+    /// Creates the exception for a generated polymorphic Update branch.
+    /// </summary>
+    /// <typeparam name="TSource">The requested base source type.</typeparam>
+    /// <typeparam name="TDestination">The requested base destination
+    /// type.</typeparam>
+    /// <typeparam name="TBranchSource">The selected branch source
+    /// type.</typeparam>
+    /// <typeparam name="TBranchDestination">The selected branch destination
+    /// type.</typeparam>
+    /// <param name="source">The runtime source that selected the branch.</param>
+    /// <param name="destination">The incompatible destination, or
+    /// <see langword="null"/>.</param>
+    /// <returns>The initialized exception.</returns>
+    public static PolymorphicDestinationTypeMismatchException
+        CreateForUpdate<
+            TSource,
+            TDestination,
+            TBranchSource,
+            TBranchDestination>(
+            TBranchSource source,
+            object? destination)
+    {
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        return new PolymorphicDestinationTypeMismatchException(
+            MappingOperation.Update,
+            typeof(TSource),
+            typeof(TDestination),
+            source.GetType(),
+            typeof(TBranchSource),
+            typeof(TBranchDestination),
+            destination?.GetType());
+    }
+
+    /// <summary>
     /// Initializes the exception for the requested base mapping.
     /// </summary>
     /// <param name="operation">The requested operation.</param>

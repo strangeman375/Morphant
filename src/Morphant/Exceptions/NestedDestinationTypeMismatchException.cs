@@ -8,6 +8,27 @@ namespace Morphant.Exceptions;
 public sealed class NestedDestinationTypeMismatchException : MappingException
 {
     /// <summary>
+    /// Creates the exception for a generated nested mapping call.
+    /// </summary>
+    /// <typeparam name="TSource">The nested mapping source type.</typeparam>
+    /// <typeparam name="TDestination">The nested mapping destination
+    /// type.</typeparam>
+    /// <param name="operation">The requested operation.</param>
+    /// <param name="destination">The incompatible destination, or
+    /// <see langword="null"/>.</param>
+    /// <returns>The initialized exception.</returns>
+    public static NestedDestinationTypeMismatchException
+        Create<TSource, TDestination>(
+            MappingOperation operation,
+            object? destination) =>
+        new(
+            operation,
+            typeof(TSource),
+            typeof(TDestination),
+            typeof(TDestination),
+            destination?.GetType());
+
+    /// <summary>
     /// Initializes the exception for the specified nested mapping.
     /// </summary>
     /// <param name="operation">The requested operation.</param>

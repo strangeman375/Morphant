@@ -1723,8 +1723,7 @@ internal static class TypeMapperEmitter
                     mapping,
                     derivedMapping,
                     pattern: "null",
-                    sourceLocalName,
-                    actualDestinationTypeExpression: "null");
+                    sourceLocalName);
             }
         }
 
@@ -1742,7 +1741,6 @@ internal static class TypeMapperEmitter
             derivedMapping,
             pattern: "_",
             sourceLocalName,
-            "destination.GetType()",
             isLast: true);
 
         writer.Unindent();
@@ -1791,25 +1789,24 @@ internal static class TypeMapperEmitter
         TypeMapperDerivedMappingModel derivedMapping,
         string pattern,
         string sourceExpression,
-        string actualDestinationTypeExpression,
         bool isLast = false)
     {
-        writer.Line(pattern + " => throw new");
+        writer.Line(
+            pattern + " => throw global::Morphant.Exceptions");
         writer.Indent();
-        writer.Line(
-            "global::Morphant.Exceptions." +
-            "PolymorphicDestinationTypeMismatchException(");
+        writer.Line(".PolymorphicDestinationTypeMismatchException");
+        writer.Line(".CreateForUpdate<");
         writer.Indent();
-        writer.Line(MappingOperationExpression(update: true) + ",");
-        writer.Line($"typeof({mapping.SourceRuntimeTypeName}),");
-        writer.Line($"typeof({mapping.DestinationRuntimeTypeName}),");
-        writer.Line(sourceExpression + ".GetType(),");
+        writer.Line(mapping.SourceRuntimeTypeName + ",");
+        writer.Line(mapping.DestinationRuntimeTypeName + ",");
+        writer.Line(derivedMapping.SourceRuntimeTypeName + ",");
         writer.Line(
-            $"typeof({derivedMapping.SourceRuntimeTypeName}),");
+            derivedMapping.DestinationRuntimeTypeName + ">(");
+        writer.Unindent();
+        writer.Indent();
+        writer.Line(sourceExpression + ",");
         writer.Line(
-            $"typeof({derivedMapping.DestinationRuntimeTypeName}),");
-        writer.Line(
-            actualDestinationTypeExpression + ")" +
+            "destination)" +
             (isLast ? string.Empty : ","));
         writer.Unindent();
         writer.Unindent();
