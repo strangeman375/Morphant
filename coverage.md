@@ -3,17 +3,17 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/24/2026 - 13:33:38 |
-| Coverage date: | 08/24/2026 - 13:31:48 - 08/24/2026 - 13:33:33 |
+| Generated on: | 08/24/2026 - 14:15:20 |
+| Coverage date: | 08/24/2026 - 14:13:50 - 08/24/2026 - 14:15:16 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 347 |
 | Files: | 179 |
-| **Line coverage:** | 86.9% (33328 of 38349) |
-| Covered lines: | 33328 |
+| **Line coverage:** | 86.9% (33320 of 38341) |
+| Covered lines: | 33320 |
 | Uncovered lines: | 5021 |
-| Coverable lines: | 38349 |
-| Total lines: | 64200 |
+| Coverable lines: | 38341 |
+| Total lines: | 64191 |
 | **Branch coverage:** | 76.7% (11160 of 14540) |
 | Covered branches: | 11160 |
 | Total branches: | 14540 |
@@ -81,7 +81,7 @@
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterFieldModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterModel|100%||
-|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanEmi<br/>tter|94.9%|83.7%|
+|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanEmi<br/>tter|94.7%|83.7%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>el|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elBuilder|82.9%|69%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResult|100%||
@@ -393,4 +393,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #57](https://github.com/strangeman375/Morphant/actions/runs/32732971625).
+Full HTML report: download the **coverage** artifact from [CI run #59](https://github.com/strangeman375/Morphant/actions/runs/32737150724).
