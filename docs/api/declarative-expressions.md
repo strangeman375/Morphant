@@ -17,6 +17,9 @@ describe a mapping rule; they are not runtime methods for application code.
 Use the generic forms when target typing would otherwise be ambiguous.
 `ByConvention()` is for `Construct` and `Resolve`; the other helpers can be
 used for constructor arguments or destination members where applicable.
+`ByConvention()` is available only when the destination has at least one
+supported constructor parameter to override. Use `new()` for parameterless
+construction.
 
 ## Nested mapping helpers
 

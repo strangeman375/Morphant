@@ -85,14 +85,6 @@ namespace TestCase.Morphant.Generated
         where T : class
     {
         /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public DestinationConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
-        /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>
         public DestinationConstruction()
@@ -124,14 +116,6 @@ namespace TestCase.Morphant.Generated
     internal sealed class DestinationConstruction<T>
         where T : struct
     {
-        /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public DestinationConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
         /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>

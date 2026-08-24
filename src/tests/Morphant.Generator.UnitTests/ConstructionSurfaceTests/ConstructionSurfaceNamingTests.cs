@@ -68,14 +68,6 @@ namespace Morphant.Generated
     internal sealed class GlobalDestinationConstruction
     {
         /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public GlobalDestinationConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
-        /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>
         public GlobalDestinationConstruction()
@@ -107,14 +99,6 @@ namespace Global.Morphant.Generated
     internal sealed class GlobalDestinationConstruction
     {
         /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public GlobalDestinationConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
-        /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>
         public GlobalDestinationConstruction()
@@ -145,14 +129,6 @@ namespace Second.Morphant.Generated
     /// </summary>
     internal sealed class DestinationConstruction
     {
-        /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public DestinationConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
         /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>
@@ -849,14 +825,6 @@ namespace TestCase.Morphant.Generated
     internal sealed class URLConstruction
     {
         /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public URLConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
-        /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>
         public URLConstruction()
@@ -887,14 +855,6 @@ namespace TestCase.Morphant.Generated
     /// </summary>
     internal sealed class UrlConstruction
     {
-        /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public UrlConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
         /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>

@@ -79,14 +79,6 @@ namespace TestCase.Morphant.Generated
     internal sealed class AnimalDtoConstruction
     {
         /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public AnimalDtoConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
-        /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>
         public AnimalDtoConstruction()
@@ -117,14 +109,6 @@ namespace TestCase.Morphant.Generated
     /// </summary>
     internal sealed class DogDtoConstruction
     {
-        /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public DogDtoConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
         /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>

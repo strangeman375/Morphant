@@ -62,14 +62,6 @@ namespace TestCase.Morphant.Generated
     internal sealed class CustomStructConstruction
     {
         /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public CustomStructConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
-        /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>
         public CustomStructConstruction()
@@ -100,14 +92,6 @@ namespace TestCase.Morphant.Generated
     /// </summary>
     internal sealed class EmptyClassConstruction
     {
-        /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public EmptyClassConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
         /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>

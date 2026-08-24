@@ -16,6 +16,12 @@ documented breaking changes.
 - Add `UnknownDerivedTypeHandling` at assembly, mapper and mapping levels,
   including strict closed-hierarchy handling and dedicated diagnostics.
 
+### Changed
+
+- Omit the redundant `ByConvention()` construction overload when a destination
+  has no supported constructor parameters; parameterless construction uses
+  `new()` directly.
+
 ## [0.3.0]
 
 ### Added

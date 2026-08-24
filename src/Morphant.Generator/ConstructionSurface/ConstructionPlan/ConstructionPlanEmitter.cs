@@ -112,8 +112,11 @@ internal static class ConstructionPlanEmitter
             $"internal sealed class {typeReference}",
             model.TypeParameters);
 
-        WriteByConventionConstructor(writer, model, typeName);
-        writer.Line();
+        if (!model.ConstructorParameterFields.IsEmpty)
+        {
+            WriteByConventionConstructor(writer, model, typeName);
+            writer.Line();
+        }
 
         foreach (var constructor in model.Constructors)
         {
@@ -156,18 +159,6 @@ internal static class ConstructionPlanEmitter
             writer,
             "marker",
             "The convention marker.");
-
-        if (model.ConstructorParameterFields.IsEmpty)
-        {
-            WriteConstructor(
-                writer,
-                typeName,
-                new[]
-                {
-                    "global::Morphant.Markers.ByConventionMarker marker"
-                });
-            return;
-        }
 
         WriteParameterDocumentation(
             writer,

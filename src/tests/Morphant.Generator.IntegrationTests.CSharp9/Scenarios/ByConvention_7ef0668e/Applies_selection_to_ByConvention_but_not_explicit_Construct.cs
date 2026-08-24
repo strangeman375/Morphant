@@ -34,6 +34,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByConvention_7ef
         public ExplicitByConventionDestination()
         {
         }
+
+        public ExplicitByConventionDestination(int id)
+        {
+        }
     }
 
     public sealed class ExplicitConstructDestination

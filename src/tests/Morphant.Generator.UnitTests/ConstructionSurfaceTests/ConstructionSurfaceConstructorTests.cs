@@ -288,7 +288,7 @@ namespace Morphant
     }
 
     [Test]
-    public async Task Generates_ByConvention_overlay_for_parameterless_types()
+    public async Task Omits_ByConvention_overlay_for_parameterless_types()
     {
         // lang=c#
         const string source =
@@ -330,14 +330,6 @@ namespace TestCase.Morphant.Generated
     /// </summary>
     internal sealed class DestinationConstruction
     {
-        /// <summary>
-        /// Uses convention-based construction.
-        /// </summary>
-        /// <param name="marker">The convention marker.</param>
-        public DestinationConstruction(global::Morphant.Markers.ByConventionMarker marker)
-        {
-        }
-
         /// <summary>
         /// Uses the corresponding destination constructor.
         /// </summary>

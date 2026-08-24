@@ -187,7 +187,10 @@ namespace TestCase
     public sealed class ExplicitDestination { }
     public sealed class RuntimeDestination { }
     public sealed class ConventionDestination { }
-    public sealed class ByConventionDestination { }
+    public sealed class ByConventionDestination
+    {
+        public ByConventionDestination(int id) { }
+    }
 
     [MorphantMapper]
     public partial class TestMapper : TypeMapper
@@ -226,7 +229,7 @@ namespace TestCase
                 result.Diagnostics.Select(diagnostic =>
                     MappingSettingsDiagnosticsGeneratorTest.Line(
                         diagnostic.Location)),
-                Is.EqualTo(new[] { 30, 33 }));
+                Is.EqualTo(new[] { 33, 36 }));
             Assert.That(
                 result.Diagnostics.Select(diagnostic =>
                     MappingSettingsDiagnosticsGeneratorTest.SourceText(
