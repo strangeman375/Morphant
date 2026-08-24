@@ -316,6 +316,7 @@ T Morphant.Exceptions.AmbiguousPolymorphicMappingException
   P System.Collections.Generic.IReadOnlyList<System.Type> MatchingDestinationTypes { get; }
   P System.Collections.Generic.IReadOnlyList<System.Type> MatchingSourceTypes { get; }
   P System.Type ActualSourceType { get; }
+  M Morphant.Exceptions.AmbiguousPolymorphicMappingException Create<TSource, TDestination>(Morphant.Context.MappingOperation, System.Object, System.ValueTuple<System.Boolean, System.Type, System.Type>[])
 T Morphant.Exceptions.InvalidMappingContextException
   C .ctor()
 T Morphant.Exceptions.InvalidMappingRegistrationException
@@ -358,6 +359,7 @@ T Morphant.Exceptions.UnmatchedMappingSwitchException
 T Morphant.Exceptions.UnmatchedPolymorphicMappingException
   C .ctor(Morphant.Context.MappingOperation, System.Type, System.Type, System.Type)
   P System.Type ActualSourceType { get; }
+  M Morphant.Exceptions.UnmatchedPolymorphicMappingException Create<TSource, TDestination>(Morphant.Context.MappingOperation, System.Object)
 T Morphant.Flattening
   V Default, Auto, None
 T Morphant.IMapper

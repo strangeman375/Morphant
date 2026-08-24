@@ -272,8 +272,8 @@ internal static class TypeMapperTransferValidator
         {
             Failure = failure,
             CompletenessObservation = completeness,
-            CreatePolymorphicMethodName = null,
-            UpdatePolymorphicMethodName = null,
+            TryCreatePolymorphicMethodName = null,
+            TryUpdatePolymorphicMethodName = null,
             CreateImplMethodName = null,
             UpdateImplMethodName = null,
             CreateImplUsesOperation = false,

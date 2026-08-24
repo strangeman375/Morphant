@@ -249,6 +249,86 @@ internal sealed class TypeMapperObservableFailureTests
     }
 
     [Test]
+    public void Polymorphic_exception_factories_preserve_generated_matches()
+    {
+        var source = "source";
+        var ambiguity =
+            AmbiguousPolymorphicMappingException.Create<object, object>(
+                MappingOperation.Update,
+                source,
+                (true, typeof(IComparable), typeof(string)),
+                (false, typeof(IDisposable), typeof(object)),
+                (true, typeof(IFormattable), typeof(int)));
+        var unmatched =
+            UnmatchedPolymorphicMappingException.Create<object, object>(
+                MappingOperation.Create,
+                source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                ambiguity.Operation,
+                Is.EqualTo(MappingOperation.Update));
+            Assert.That(ambiguity.SourceType, Is.EqualTo(typeof(object)));
+            Assert.That(
+                ambiguity.DestinationType,
+                Is.EqualTo(typeof(object)));
+            Assert.That(
+                ambiguity.ActualSourceType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(
+                ambiguity.MatchingSourceTypes,
+                Is.EqualTo(new[]
+                {
+                    typeof(IComparable),
+                    typeof(IFormattable)
+                }));
+            Assert.That(
+                ambiguity.MatchingDestinationTypes,
+                Is.EqualTo(new[] { typeof(string), typeof(int) }));
+            Assert.That(
+                unmatched.ActualSourceType,
+                Is.EqualTo(typeof(string)));
+            Assert.That(unmatched.SourceType, Is.EqualTo(typeof(object)));
+            Assert.That(
+                unmatched.DestinationType,
+                Is.EqualTo(typeof(object)));
+        });
+    }
+
+    [Test]
+    public void Polymorphic_exception_factories_validate_inputs()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                () => AmbiguousPolymorphicMappingException
+                    .Create<object, object>(
+                        MappingOperation.Create,
+                        null!,
+                        (true, typeof(string), typeof(string)),
+                        (true, typeof(int), typeof(int))),
+                Throws.ArgumentNullException.With.Property("ParamName")
+                    .EqualTo("source"));
+            Assert.That(
+                () => AmbiguousPolymorphicMappingException
+                    .Create<object, object>(
+                        MappingOperation.Create,
+                        new object(),
+                        null!),
+                Throws.ArgumentNullException.With.Property("ParamName")
+                    .EqualTo("branches"));
+            Assert.That(
+                () => UnmatchedPolymorphicMappingException
+                    .Create<object, object>(
+                        MappingOperation.Create,
+                        null!),
+                Throws.ArgumentNullException.With.Property("ParamName")
+                    .EqualTo("source"));
+        });
+    }
+
+    [Test]
     public async Task Emits_complete_stubs_for_an_invalid_effective_setting()
     {
         // lang=c#

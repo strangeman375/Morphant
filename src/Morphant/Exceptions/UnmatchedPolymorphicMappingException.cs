@@ -8,6 +8,32 @@ namespace Morphant.Exceptions;
 public sealed class UnmatchedPolymorphicMappingException : MappingException
 {
     /// <summary>
+    /// Creates the exception for a generated base mapping.
+    /// </summary>
+    /// <typeparam name="TSource">The requested base source type.</typeparam>
+    /// <typeparam name="TDestination">The requested base destination
+    /// type.</typeparam>
+    /// <param name="operation">The requested operation.</param>
+    /// <param name="source">The unmatched runtime source.</param>
+    /// <returns>The initialized exception.</returns>
+    public static UnmatchedPolymorphicMappingException
+        Create<TSource, TDestination>(
+            MappingOperation operation,
+            object source)
+    {
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        return new UnmatchedPolymorphicMappingException(
+            operation,
+            typeof(TSource),
+            typeof(TDestination),
+            source.GetType());
+    }
+
+    /// <summary>
     /// Initializes the exception for the requested base mapping.
     /// </summary>
     /// <param name="operation">The requested operation.</param>

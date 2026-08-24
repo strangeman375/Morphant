@@ -76,7 +76,12 @@ namespace TestCase
                 return default!;
             }
 
-            return __CreatePolymorphic(source, context);
+            if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
+            {
+                return polymorphicDestination;
+            }
+
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -90,34 +95,50 @@ namespace TestCase
                 return default!;
             }
 
-            return __UpdatePolymorphic(source, destination, context);
-        }
-
-        private global::TestCase.AnimalDto __CreatePolymorphic(
-            global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
-        {
-            switch (source)
+            if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
             {
-                case global::TestCase.Dog polymorphicSource:
-                    return context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(polymorphicSource);
-
-                case global::TestCase.Cat polymorphicSource:
-                    return context.Mapper.Map<global::TestCase.Cat, global::TestCase.CatDto>(polymorphicSource);
+                return polymorphicDestination;
             }
 
-            return __Create(source, context);
+            if (destination is null)
+            {
+                return __Create(source, context);
+            }
+
+            return __Update(source, destination, context);
         }
 
-        private global::TestCase.AnimalDto __UpdatePolymorphic(
+        private bool __TryCreatePolymorphic(
             global::TestCase.Animal source,
-            global::TestCase.AnimalDto? destination,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.AnimalDto result)
         {
             switch (source)
             {
                 case global::TestCase.Dog polymorphicSource:
-                    return destination switch
+                    result = context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(polymorphicSource);
+                    return true;
+
+                case global::TestCase.Cat polymorphicSource:
+                    result = context.Mapper.Map<global::TestCase.Cat, global::TestCase.CatDto>(polymorphicSource);
+                    return true;
+
+                default:
+                    result = default!;
+                    return false;
+            }
+        }
+
+        private bool __TryUpdatePolymorphic(
+            global::TestCase.Animal source,
+            global::TestCase.AnimalDto? destination,
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.AnimalDto result)
+        {
+            switch (source)
+            {
+                case global::TestCase.Dog polymorphicSource:
+                    result = destination switch
                     {
                         null =>
                             context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
@@ -137,9 +158,10 @@ namespace TestCase
                                 typeof(global::TestCase.DogDto),
                                 destination.GetType())
                     };
+                    return true;
 
                 case global::TestCase.Cat polymorphicSource:
-                    return destination switch
+                    result = destination switch
                     {
                         null =>
                             context.Mapper.Map<global::TestCase.Cat, global::TestCase.CatDto>(
@@ -159,14 +181,12 @@ namespace TestCase
                                 typeof(global::TestCase.CatDto),
                                 destination.GetType())
                     };
-            }
+                    return true;
 
-            if (destination is null)
-            {
-                return __Create(source, context);
+                default:
+                    result = default!;
+                    return false;
             }
-
-            return __Update(source, destination, context);
         }
 
         private global::TestCase.AnimalDto __Create(
@@ -310,7 +330,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Animal, AnimalDto>(MappingMode.Create)
+            builder.Map<Animal, AnimalDto>()
                 .ForDerived<Dog, DogDto>()
                 .UnknownDerivedTypeHandling(
                     UnknownDerivedTypeHandling.Throw);
@@ -348,7 +368,12 @@ namespace TestCase
                 return default!;
             }
 
-            return __CreatePolymorphic(source, context);
+            if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
+            {
+                return polymorphicDestination;
+            }
+
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -356,32 +381,93 @@ namespace TestCase
             global::TestCase.Animal? source,
             global::TestCase.AnimalDto? destination,
             global::Morphant.Context.MappingContext context)
-            => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
-                global::Morphant.Context.MappingOperation.Update,
-                typeof(global::TestCase.Animal),
-                typeof(global::TestCase.AnimalDto),
-                global::Morphant.MappingMode.Create);
+        {
+            if (source is null)
+            {
+                return default!;
+            }
 
-        private global::TestCase.AnimalDto __CreatePolymorphic(
+            if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
+            {
+                return polymorphicDestination;
+            }
+
+            if (destination is null)
+            {
+                return __Create(source, context);
+            }
+
+            return __Update(source, destination, context);
+        }
+
+        private bool __TryCreatePolymorphic(
             global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.AnimalDto result)
         {
             switch (source)
             {
                 case global::TestCase.Dog polymorphicSource:
-                    return context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(polymorphicSource);
-            }
+                    result = context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(polymorphicSource);
+                    return true;
 
-            if (source.GetType() != typeof(global::TestCase.Animal))
+                case { } when source.GetType() !=
+                    typeof(global::TestCase.Animal):
+                    throw global::Morphant.Exceptions.UnmatchedPolymorphicMappingException.Create<
+                        global::TestCase.Animal,
+                        global::TestCase.AnimalDto>(
+                        global::Morphant.Context.MappingOperation.Create,
+                        source);
+
+                default:
+                    result = default!;
+                    return false;
+            }
+        }
+
+        private bool __TryUpdatePolymorphic(
+            global::TestCase.Animal source,
+            global::TestCase.AnimalDto? destination,
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.AnimalDto result)
+        {
+            switch (source)
             {
-                throw new global::Morphant.Exceptions.UnmatchedPolymorphicMappingException(
-                    global::Morphant.Context.MappingOperation.Create,
-                    typeof(global::TestCase.Animal),
-                    typeof(global::TestCase.AnimalDto),
-                    source.GetType());
-            }
+                case global::TestCase.Dog polymorphicSource:
+                    result = destination switch
+                    {
+                        null =>
+                            context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
+                                polymorphicSource,
+                                default(global::TestCase.DogDto)),
+                        global::TestCase.DogDto polymorphicDestination =>
+                            context.Mapper.Map<global::TestCase.Dog, global::TestCase.DogDto>(
+                                polymorphicSource,
+                                polymorphicDestination),
+                        _ => throw new
+                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
+                                global::Morphant.Context.MappingOperation.Update,
+                                typeof(global::TestCase.Animal),
+                                typeof(global::TestCase.AnimalDto),
+                                polymorphicSource.GetType(),
+                                typeof(global::TestCase.Dog),
+                                typeof(global::TestCase.DogDto),
+                                destination.GetType())
+                    };
+                    return true;
 
-            return __Create(source, context);
+                case { } when source.GetType() !=
+                    typeof(global::TestCase.Animal):
+                    throw global::Morphant.Exceptions.UnmatchedPolymorphicMappingException.Create<
+                        global::TestCase.Animal,
+                        global::TestCase.AnimalDto>(
+                        global::Morphant.Context.MappingOperation.Update,
+                        source);
+
+                default:
+                    result = default!;
+                    return false;
+            }
         }
 
         private global::TestCase.AnimalDto __Create(
@@ -389,6 +475,14 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.AnimalDto();
+        }
+
+        private global::TestCase.AnimalDto __Update(
+            global::TestCase.Animal source,
+            global::TestCase.AnimalDto destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
         }
     }
 }
@@ -425,7 +519,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<IRoot, RootDto>(MappingMode.Create)
+            builder.Map<IRoot, RootDto>()
                 .ForDerived<IWorking, WorkingDto>()
                 .ForDerived<IPet, PetDto>();
         }
@@ -462,7 +556,12 @@ namespace TestCase
                 return default!;
             }
 
-            return __CreatePolymorphic(source, context);
+            if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
+            {
+                return polymorphicDestination;
+            }
+
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -470,55 +569,140 @@ namespace TestCase
             global::TestCase.IRoot? source,
             global::TestCase.RootDto? destination,
             global::Morphant.Context.MappingContext context)
-            => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
-                global::Morphant.Context.MappingOperation.Update,
-                typeof(global::TestCase.IRoot),
-                typeof(global::TestCase.RootDto),
-                global::Morphant.MappingMode.Create);
+        {
+            if (source is null)
+            {
+                return default!;
+            }
 
-        private global::TestCase.RootDto __CreatePolymorphic(
+            if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
+            {
+                return polymorphicDestination;
+            }
+
+            if (destination is null)
+            {
+                return __Create(source, context);
+            }
+
+            return __Update(source, destination, context);
+        }
+
+        private bool __TryCreatePolymorphic(
             global::TestCase.IRoot source,
-            global::Morphant.Context.MappingContext context)
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.RootDto result)
         {
             switch (source)
             {
                 case global::TestCase.IWorking polymorphicSource
                     when source is not global::TestCase.IPet:
-                    return context.Mapper.Map<global::TestCase.IWorking, global::TestCase.WorkingDto>(polymorphicSource);
+                    result = context.Mapper.Map<global::TestCase.IWorking, global::TestCase.WorkingDto>(polymorphicSource);
+                    return true;
 
                 case global::TestCase.IPet polymorphicSource
                     when source is not global::TestCase.IWorking:
-                    return context.Mapper.Map<global::TestCase.IPet, global::TestCase.PetDto>(polymorphicSource);
-            }
+                    result = context.Mapper.Map<global::TestCase.IPet, global::TestCase.PetDto>(polymorphicSource);
+                    return true;
 
-            if (source is global::TestCase.IWorking ||
-                source is global::TestCase.IPet)
+                case { } when source is global::TestCase.IWorking ||
+                    source is global::TestCase.IPet:
+                    throw global::Morphant.Exceptions.AmbiguousPolymorphicMappingException.Create<
+                        global::TestCase.IRoot,
+                        global::TestCase.RootDto>(
+                        global::Morphant.Context.MappingOperation.Create,
+                        source,
+                        (
+                            source is global::TestCase.IWorking,
+                            typeof(global::TestCase.IWorking),
+                            typeof(global::TestCase.WorkingDto)),
+                        (
+                            source is global::TestCase.IPet,
+                            typeof(global::TestCase.IPet),
+                            typeof(global::TestCase.PetDto)));
+
+                default:
+                    result = default!;
+                    return false;
+            }
+        }
+
+        private bool __TryUpdatePolymorphic(
+            global::TestCase.IRoot source,
+            global::TestCase.RootDto? destination,
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.RootDto result)
+        {
+            switch (source)
             {
-                var matchingPolymorphicSourceTypes = new global::System.Collections.Generic.List<global::System.Type>();
-                var matchingPolymorphicDestinationTypes = new global::System.Collections.Generic.List<global::System.Type>();
+                case global::TestCase.IWorking polymorphicSource
+                    when source is not global::TestCase.IPet:
+                    result = destination switch
+                    {
+                        null =>
+                            context.Mapper.Map<global::TestCase.IWorking, global::TestCase.WorkingDto>(
+                                polymorphicSource,
+                                default(global::TestCase.WorkingDto)),
+                        global::TestCase.WorkingDto polymorphicDestination =>
+                            context.Mapper.Map<global::TestCase.IWorking, global::TestCase.WorkingDto>(
+                                polymorphicSource,
+                                polymorphicDestination),
+                        _ => throw new
+                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
+                                global::Morphant.Context.MappingOperation.Update,
+                                typeof(global::TestCase.IRoot),
+                                typeof(global::TestCase.RootDto),
+                                polymorphicSource.GetType(),
+                                typeof(global::TestCase.IWorking),
+                                typeof(global::TestCase.WorkingDto),
+                                destination.GetType())
+                    };
+                    return true;
 
-                if (source is global::TestCase.IWorking)
-                {
-                    matchingPolymorphicSourceTypes.Add(typeof(global::TestCase.IWorking));
-                    matchingPolymorphicDestinationTypes.Add(typeof(global::TestCase.WorkingDto));
-                }
+                case global::TestCase.IPet polymorphicSource
+                    when source is not global::TestCase.IWorking:
+                    result = destination switch
+                    {
+                        null =>
+                            context.Mapper.Map<global::TestCase.IPet, global::TestCase.PetDto>(
+                                polymorphicSource,
+                                default(global::TestCase.PetDto)),
+                        global::TestCase.PetDto polymorphicDestination =>
+                            context.Mapper.Map<global::TestCase.IPet, global::TestCase.PetDto>(
+                                polymorphicSource,
+                                polymorphicDestination),
+                        _ => throw new
+                            global::Morphant.Exceptions.PolymorphicDestinationTypeMismatchException(
+                                global::Morphant.Context.MappingOperation.Update,
+                                typeof(global::TestCase.IRoot),
+                                typeof(global::TestCase.RootDto),
+                                polymorphicSource.GetType(),
+                                typeof(global::TestCase.IPet),
+                                typeof(global::TestCase.PetDto),
+                                destination.GetType())
+                    };
+                    return true;
 
-                if (source is global::TestCase.IPet)
-                {
-                    matchingPolymorphicSourceTypes.Add(typeof(global::TestCase.IPet));
-                    matchingPolymorphicDestinationTypes.Add(typeof(global::TestCase.PetDto));
-                }
+                case { } when source is global::TestCase.IWorking ||
+                    source is global::TestCase.IPet:
+                    throw global::Morphant.Exceptions.AmbiguousPolymorphicMappingException.Create<
+                        global::TestCase.IRoot,
+                        global::TestCase.RootDto>(
+                        global::Morphant.Context.MappingOperation.Update,
+                        source,
+                        (
+                            source is global::TestCase.IWorking,
+                            typeof(global::TestCase.IWorking),
+                            typeof(global::TestCase.WorkingDto)),
+                        (
+                            source is global::TestCase.IPet,
+                            typeof(global::TestCase.IPet),
+                            typeof(global::TestCase.PetDto)));
 
-                throw new global::Morphant.Exceptions.AmbiguousPolymorphicMappingException(
-                    global::Morphant.Context.MappingOperation.Create,
-                    typeof(global::TestCase.IRoot),
-                    typeof(global::TestCase.RootDto),
-                    source.GetType(),
-                    matchingPolymorphicSourceTypes.ToArray(),
-                    matchingPolymorphicDestinationTypes.ToArray());
+                default:
+                    result = default!;
+                    return false;
             }
-
-            return __Create(source, context);
         }
 
         private global::TestCase.RootDto __Create(
@@ -526,6 +710,14 @@ namespace TestCase
             global::Morphant.Context.MappingContext context)
         {
             return new global::TestCase.RootDto();
+        }
+
+        private global::TestCase.RootDto __Update(
+            global::TestCase.IRoot source,
+            global::TestCase.RootDto destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            return destination;
         }
     }
 }
@@ -595,7 +787,12 @@ namespace TestCase
                 return default!;
             }
 
-            return __CreatePolymorphic(source, context);
+            if (__TryCreatePolymorphic(source, context, out var polymorphicDestination))
+            {
+                return polymorphicDestination;
+            }
+
+            return __Create(source, context);
         }
 
         /// <inheritdoc/>
@@ -609,31 +806,9 @@ namespace TestCase
                 return default!;
             }
 
-            return __UpdatePolymorphic(source, destination, context);
-        }
-
-        private global::TestCase.AnimalDto __CreatePolymorphic(
-            global::TestCase.Animal source,
-            global::Morphant.Context.MappingContext context)
-        {
-            switch (source)
+            if (__TryUpdatePolymorphic(source, destination, context, out var polymorphicDestination))
             {
-                case global::TestCase.Dog polymorphicSource:
-                    return context.Mapper.Map<global::TestCase.Dog, global::TestCase.AnimalDto>(polymorphicSource);
-            }
-
-            return __Create(source, context);
-        }
-
-        private global::TestCase.AnimalDto __UpdatePolymorphic(
-            global::TestCase.Animal source,
-            global::TestCase.AnimalDto? destination,
-            global::Morphant.Context.MappingContext context)
-        {
-            switch (source)
-            {
-                case global::TestCase.Dog polymorphicSource:
-                    return context.Mapper.Map<global::TestCase.Dog, global::TestCase.AnimalDto>(polymorphicSource, destination);
+                return polymorphicDestination;
             }
 
             if (destination is null)
@@ -642,6 +817,41 @@ namespace TestCase
             }
 
             return __Update(source, destination, context);
+        }
+
+        private bool __TryCreatePolymorphic(
+            global::TestCase.Animal source,
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.AnimalDto result)
+        {
+            switch (source)
+            {
+                case global::TestCase.Dog polymorphicSource:
+                    result = context.Mapper.Map<global::TestCase.Dog, global::TestCase.AnimalDto>(polymorphicSource);
+                    return true;
+
+                default:
+                    result = default!;
+                    return false;
+            }
+        }
+
+        private bool __TryUpdatePolymorphic(
+            global::TestCase.Animal source,
+            global::TestCase.AnimalDto? destination,
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.AnimalDto result)
+        {
+            switch (source)
+            {
+                case global::TestCase.Dog polymorphicSource:
+                    result = context.Mapper.Map<global::TestCase.Dog, global::TestCase.AnimalDto>(polymorphicSource, destination);
+                    return true;
+
+                default:
+                    result = default!;
+                    return false;
+            }
         }
 
         private global::TestCase.AnimalDto __Create(
@@ -697,7 +907,7 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder)
         {
-            builder.Map<Number?, NumberDto>(MappingMode.Create)
+            builder.Map<Number?, NumberDto>()
                 .UnknownDerivedTypeHandling(
                     UnknownDerivedTypeHandling.Throw);
         }
@@ -736,7 +946,12 @@ namespace TestCase
 
             var sourceValue = source.Value;
 
-            return __CreatePolymorphic(sourceValue, context);
+            if (__TryCreatePolymorphic(sourceValue, context, out var polymorphicDestination))
+            {
+                return polymorphicDestination;
+            }
+
+            return __Create(sourceValue, context);
         }
 
         /// <inheritdoc/>
@@ -744,26 +959,68 @@ namespace TestCase
             global::TestCase.Number? source,
             global::TestCase.NumberDto? destination,
             global::Morphant.Context.MappingContext context)
-            => throw new global::Morphant.Exceptions.MappingOperationNotSupportedException(
-                global::Morphant.Context.MappingOperation.Update,
-                typeof(global::TestCase.Number?),
-                typeof(global::TestCase.NumberDto),
-                global::Morphant.MappingMode.Create);
-
-        private global::TestCase.NumberDto __CreatePolymorphic(
-            global::TestCase.Number sourceValue,
-            global::Morphant.Context.MappingContext context)
         {
-            if (sourceValue.GetType() != typeof(global::TestCase.Number))
+            if (source is null)
             {
-                throw new global::Morphant.Exceptions.UnmatchedPolymorphicMappingException(
-                    global::Morphant.Context.MappingOperation.Create,
-                    typeof(global::TestCase.Number?),
-                    typeof(global::TestCase.NumberDto),
-                    sourceValue.GetType());
+                return default!;
             }
 
-            return __Create(sourceValue, context);
+            var sourceValue = source.Value;
+
+            if (__TryUpdatePolymorphic(sourceValue, destination, context, out var polymorphicDestination))
+            {
+                return polymorphicDestination;
+            }
+
+            if (destination is null)
+            {
+                return __Create(sourceValue, context);
+            }
+
+            return __Update(sourceValue, destination, context);
+        }
+
+        private bool __TryCreatePolymorphic(
+            global::TestCase.Number sourceValue,
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.NumberDto result)
+        {
+            switch (sourceValue)
+            {
+                case { } when sourceValue.GetType() !=
+                    typeof(global::TestCase.Number):
+                    throw global::Morphant.Exceptions.UnmatchedPolymorphicMappingException.Create<
+                        global::TestCase.Number?,
+                        global::TestCase.NumberDto>(
+                        global::Morphant.Context.MappingOperation.Create,
+                        sourceValue);
+
+                default:
+                    result = default!;
+                    return false;
+            }
+        }
+
+        private bool __TryUpdatePolymorphic(
+            global::TestCase.Number sourceValue,
+            global::TestCase.NumberDto? destination,
+            global::Morphant.Context.MappingContext context,
+            out global::TestCase.NumberDto result)
+        {
+            switch (sourceValue)
+            {
+                case { } when sourceValue.GetType() !=
+                    typeof(global::TestCase.Number):
+                    throw global::Morphant.Exceptions.UnmatchedPolymorphicMappingException.Create<
+                        global::TestCase.Number?,
+                        global::TestCase.NumberDto>(
+                        global::Morphant.Context.MappingOperation.Update,
+                        sourceValue);
+
+                default:
+                    result = default!;
+                    return false;
+            }
         }
 
         private global::TestCase.NumberDto __Create(
@@ -775,6 +1032,16 @@ namespace TestCase
                 Value = sourceValue.Value
             };
         }
+
+        private global::TestCase.NumberDto __Update(
+            global::TestCase.Number sourceValue,
+            global::TestCase.NumberDto destination,
+            global::Morphant.Context.MappingContext context)
+        {
+            destination.Value = sourceValue.Value;
+
+            return destination;
+        }
     }
 }
 """;
@@ -784,4 +1051,5 @@ namespace TestCase
             source,
             expected);
     }
+
 }

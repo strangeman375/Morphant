@@ -217,20 +217,20 @@ internal static class TypeMapperModelBuilder
                 mapperType,
                 cancellationToken);
 
-            var createPolymorphicMethodName =
+            var tryCreatePolymorphicMethodName =
                 RequiresCreatePolymorphicMethod(
                     mapping,
                     effectiveSettings)
                     ? AllocateName(
-                        "__CreatePolymorphic",
+                        "__TryCreatePolymorphic",
                         usedGeneratedMethodNames)
                     : null;
-            var updatePolymorphicMethodName =
+            var tryUpdatePolymorphicMethodName =
                 RequiresUpdatePolymorphicMethod(
                     mapping,
                     effectiveSettings)
                     ? AllocateName(
-                        "__UpdatePolymorphic",
+                        "__TryUpdatePolymorphic",
                         usedGeneratedMethodNames)
                     : null;
             var createMethodName = RequiresCreateMethod(
@@ -255,10 +255,10 @@ internal static class TypeMapperModelBuilder
                 mapping with
                 {
                     EffectiveSettings = effectiveSettings,
-                    CreatePolymorphicMethodName =
-                        createPolymorphicMethodName,
-                    UpdatePolymorphicMethodName =
-                        updatePolymorphicMethodName,
+                    TryCreatePolymorphicMethodName =
+                        tryCreatePolymorphicMethodName,
+                    TryUpdatePolymorphicMethodName =
+                        tryUpdatePolymorphicMethodName,
                     CreateImplMethodName = createMethodName,
                     UpdateImplMethodName = updateMethodName,
                     CreateImplUsesOperation = createImplUsesOperation,

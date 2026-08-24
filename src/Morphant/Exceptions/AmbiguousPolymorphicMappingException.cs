@@ -9,6 +9,57 @@ namespace Morphant.Exceptions;
 public sealed class AmbiguousPolymorphicMappingException : MappingException
 {
     /// <summary>
+    /// Creates the exception from generated, reflection-free branch matches.
+    /// </summary>
+    /// <typeparam name="TSource">The requested base source type.</typeparam>
+    /// <typeparam name="TDestination">The requested base destination
+    /// type.</typeparam>
+    /// <param name="operation">The requested operation.</param>
+    /// <param name="source">The runtime source.</param>
+    /// <param name="branches">The potentially ambiguous branches and their
+    /// generated match results.</param>
+    /// <returns>The initialized exception.</returns>
+    public static AmbiguousPolymorphicMappingException
+        Create<TSource, TDestination>(
+            MappingOperation operation,
+            object source,
+            params (bool Matches, Type SourceType, Type DestinationType)[]
+                branches)
+    {
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        if (branches is null)
+        {
+            throw new ArgumentNullException(nameof(branches));
+        }
+
+        var matchingSourceTypes = new List<Type>(branches.Length);
+        var matchingDestinationTypes = new List<Type>(branches.Length);
+
+        foreach (var branch in branches)
+        {
+            if (!branch.Matches)
+            {
+                continue;
+            }
+
+            matchingSourceTypes.Add(branch.SourceType);
+            matchingDestinationTypes.Add(branch.DestinationType);
+        }
+
+        return new AmbiguousPolymorphicMappingException(
+            operation,
+            typeof(TSource),
+            typeof(TDestination),
+            source.GetType(),
+            matchingSourceTypes.ToArray(),
+            matchingDestinationTypes.ToArray());
+    }
+
+    /// <summary>
     /// Initializes the exception for the requested base mapping.
     /// </summary>
     /// <param name="operation">The requested operation.</param>
