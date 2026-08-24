@@ -395,9 +395,35 @@ namespace TestCase
         {
             var result = new global::TestCase.Destination();
 
-            _ = result.Existing is { } destinationExisting ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: destinationExisting is global::TestCase.ChildDestination nestedDestination ? nestedDestination : throw global::Morphant.Exceptions.NestedDestinationTypeMismatchException.Create<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::Morphant.Context.MappingOperation.Update, destinationExisting)) : default(global::TestCase.ChildDestination);
+            if (result.Existing is { } existingDestination)
+            {
+                var childSource = source.Child;
+                var nestedDestination = existingDestination switch
+                {
+                    global::TestCase.ChildDestination compatibleExisting => compatibleExisting,
+                    var incompatibleExisting => throw
+                        global::Morphant.Exceptions
+                            .NestedDestinationTypeMismatchException
+                            .Create<
+                                global::TestCase.ChildSource,
+                                global::TestCase.ChildDestination>(
+                                global::Morphant.Context.MappingOperation.Update,
+                                incompatibleExisting),
+                };
 
-            _ = result.Empty is { } destinationEmpty ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::TestCase.TestMapper.ThrowIfEvaluated(source), destination: destinationEmpty) : default(global::TestCase.ChildDestination);
+                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+                    childSource,
+                    destination: nestedDestination);
+            }
+
+            if (result.Empty is { } emptyDestination)
+            {
+                var childSource = global::TestCase.TestMapper.ThrowIfEvaluated(source);
+
+                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+                    childSource,
+                    destination: emptyDestination);
+            }
 
             return result;
         }
@@ -407,9 +433,35 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            _ = destination.Existing is { } destinationExisting ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: destinationExisting is global::TestCase.ChildDestination nestedDestination ? nestedDestination : throw global::Morphant.Exceptions.NestedDestinationTypeMismatchException.Create<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::Morphant.Context.MappingOperation.Update, destinationExisting)) : default(global::TestCase.ChildDestination);
+            if (destination.Existing is { } existingDestination)
+            {
+                var childSource = source.Child;
+                var nestedDestination = existingDestination switch
+                {
+                    global::TestCase.ChildDestination compatibleExisting => compatibleExisting,
+                    var incompatibleExisting => throw
+                        global::Morphant.Exceptions
+                            .NestedDestinationTypeMismatchException
+                            .Create<
+                                global::TestCase.ChildSource,
+                                global::TestCase.ChildDestination>(
+                                global::Morphant.Context.MappingOperation.Update,
+                                incompatibleExisting),
+                };
 
-            _ = destination.Empty is { } destinationEmpty ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::TestCase.TestMapper.ThrowIfEvaluated(source), destination: destinationEmpty) : default(global::TestCase.ChildDestination);
+                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+                    childSource,
+                    destination: nestedDestination);
+            }
+
+            if (destination.Empty is { } emptyDestination)
+            {
+                var childSource = global::TestCase.TestMapper.ThrowIfEvaluated(source);
+
+                _ = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(
+                    childSource,
+                    destination: emptyDestination);
+            }
 
             return destination;
         }

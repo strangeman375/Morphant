@@ -124,10 +124,11 @@ internal static class TypeMapperModelBuilder
             MappingCompletenessDiagnosticAnalyzer.Build(
                 model,
                 cancellationToken);
+        var emissionModel = GeneratedCodeReadabilityLowerer.Lower(model);
 
         return new TypeMapperGenerationInput(
             SymbolNameHelper.GetFullMetadataName(mapperType),
-            TypeMapperEmitter.Emit(model).ToString(),
+            TypeMapperEmitter.Emit(emissionModel).ToString(),
             callbackDiagnostics,
             constructionDiagnostics,
             memberDiagnostics,

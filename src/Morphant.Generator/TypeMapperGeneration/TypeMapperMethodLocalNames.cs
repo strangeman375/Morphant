@@ -48,6 +48,9 @@ internal static class TypeMapperMethodLocalNames
         localNames.ReserveExpressionDeclarations(node.SwitchExpression);
         localNames.ReserveExpressionDeclarations(
             node.EvaluationExpression);
+        localNames.ReserveExpressionDeclarations(
+            node.EvaluationCondition);
+        ReserveLocals(node.EvaluationLocals, localNames);
         localNames.ReserveExpressionDeclarations(node.ThrowExpression);
 
         foreach (var section in Normalize(node.SwitchSections))
@@ -200,6 +203,9 @@ internal static class TypeMapperMethodLocalNames
         localNames.ReserveExpressionDeclarations(node.SwitchExpression);
         localNames.ReserveExpressionDeclarations(
             node.EvaluationExpression);
+        localNames.ReserveExpressionDeclarations(
+            node.EvaluationCondition);
+        ReserveLocals(node.EvaluationLocals, localNames);
         localNames.ReserveExpressionDeclarations(node.ThrowExpression);
 
         foreach (var section in Normalize(node.SwitchSections))
@@ -247,6 +253,9 @@ internal static class TypeMapperMethodLocalNames
             localNames.ReserveExpressionDeclarations(
                 mapping.ExplicitValueExpression);
             ReserveLocals(mapping.EvaluationLocals, localNames);
+            ReserveLocals(
+                mapping.InvocationArgumentLocals,
+                localNames);
         }
     }
 

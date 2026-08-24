@@ -103,6 +103,10 @@
   kind have an actual case-insensitive hint-name collision after sanitization.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes, or compatibility branches without a concrete user-facing need.
+- Keep generated invocations structurally simple. Materialize synthetic
+  `switch`, conditional, and throw-heavy argument expressions in named locals
+  before the call, and use statement blocks instead of oversized conditional
+  expression statements.
 - Diagnostics are part of Morphant 0.1. When C# can declare an
   `ITypeMapper<,>` contract, invalid or unsupported behavior must retain a
   complete generated mapper and use typed Morphant exception stubs for

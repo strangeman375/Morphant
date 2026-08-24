@@ -1070,9 +1070,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 
         var mappingOperation =
             "global::Morphant.Context.MappingOperation." + operation;
-        var actualDestinationExpression = allowNull
-            ? Identifier(incompatibleDestinationName)
-            : expression;
+        var actualDestinationExpression =
+            Identifier(incompatibleDestinationName);
         var mismatch =
             "throw global::Morphant.Exceptions." +
             "NestedDestinationTypeMismatchException.Create<" +
@@ -1084,10 +1083,12 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         if (!allowNull)
         {
             return SyntaxFactory.ParseExpression(
-                expression + " is " + runtimeDestinationTypeName + " " +
-                Identifier(compatibleDestinationName) + " ? " +
-                Identifier(compatibleDestinationName) + " : " +
-                mismatch);
+                expression + " switch { " +
+                runtimeDestinationTypeName + " " +
+                Identifier(compatibleDestinationName) + " => " +
+                Identifier(compatibleDestinationName) + ", " +
+                "var " + Identifier(incompatibleDestinationName) +
+                " => " + mismatch + " }");
         }
 
         var nullResult = destinationType.IsValueType &&

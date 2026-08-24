@@ -560,8 +560,11 @@ internal static class TypeMapperEmitter
         if (node.EvaluationExpression is
                 { } evaluationExpression)
         {
-            writer.Line($"_ = {evaluationExpression};");
-            writer.Line();
+            WriteEvaluation(
+                writer,
+                evaluationExpression,
+                node.EvaluationCondition,
+                node.EvaluationLocals);
             WriteControlFlowCreateNode(
                 writer,
                 node.EvaluationContinuation!,
@@ -881,6 +884,7 @@ internal static class TypeMapperEmitter
         foreach (var memberMapping in
                  mapping.CreatePostMemberMappings)
         {
+            WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
                 $"{resultLocalName}." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
@@ -972,6 +976,7 @@ internal static class TypeMapperEmitter
         foreach (var memberMapping in
                  mapping.CreatePostMemberMappings)
         {
+            WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
                 $"{assignmentTarget}." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
@@ -2090,8 +2095,11 @@ internal static class TypeMapperEmitter
         if (node.EvaluationExpression is
                 { } evaluationExpression)
         {
-            writer.Line($"_ = {evaluationExpression};");
-            writer.Line();
+            WriteEvaluation(
+                writer,
+                evaluationExpression,
+                node.EvaluationCondition,
+                node.EvaluationLocals);
             WriteControlFlowUpdateNode(
                 writer,
                 node.EvaluationContinuation!,
@@ -2275,6 +2283,7 @@ internal static class TypeMapperEmitter
         foreach (var memberMapping in
                  mapping.UpdateMemberMappings)
         {
+            WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
                 "destination." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
@@ -2305,8 +2314,11 @@ internal static class TypeMapperEmitter
 
         if (node.EvaluationExpression is { } evaluationExpression)
         {
-            writer.Line($"_ = {evaluationExpression};");
-            writer.Line();
+            WriteEvaluation(
+                writer,
+                evaluationExpression,
+                node.EvaluationCondition,
+                node.EvaluationLocals);
             WritePostMemberControlFlow(
                 writer,
                 mapping,
@@ -2419,6 +2431,7 @@ internal static class TypeMapperEmitter
 
         foreach (var memberMapping in node.MemberMappings)
         {
+            WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
                 assignmentTarget + "." +
                 $"{Identifier(memberMapping.DestinationMemberName)} = " +
@@ -2583,6 +2596,38 @@ internal static class TypeMapperEmitter
         }
     }
 
+    private static void WriteEvaluation(
+        CodeWriter writer,
+        string expression,
+        string? condition,
+        ImmutableArray<TypeMapperLocalValueModel> locals)
+    {
+        if (condition is null)
+        {
+            WriteLocalValues(
+                writer,
+                locals.IsDefault
+                    ? ImmutableArray<TypeMapperLocalValueModel>.Empty
+                    : locals);
+            writer.Line($"_ = {expression};");
+            writer.Line();
+            return;
+        }
+
+        writer.Line($"if ({condition})");
+        writer.Line("{");
+        writer.Indent();
+        WriteLocalValues(
+            writer,
+            locals.IsDefault
+                ? ImmutableArray<TypeMapperLocalValueModel>.Empty
+                : locals);
+        writer.Line($"_ = {expression};");
+        writer.Unindent();
+        writer.Line("}");
+        writer.Line();
+    }
+
     private static void WriteMultilineDeclaration(
         CodeWriter writer,
         string declaration)
@@ -2675,6 +2720,17 @@ internal static class TypeMapperEmitter
             $"{local.DeclarationType} {local.Name} = " +
             local.ValueExpression +
             ";");
+    }
+
+    private static void WriteInvocationArgumentLocals(
+        CodeWriter writer,
+        TypeMapperMemberMappingModel mapping)
+    {
+        WriteLocalValues(
+            writer,
+            mapping.InvocationArgumentLocals.IsDefault
+                ? ImmutableArray<TypeMapperLocalValueModel>.Empty
+                : mapping.InvocationArgumentLocals);
     }
 
     private static string ConstructorArgumentValueExpression(

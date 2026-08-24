@@ -482,7 +482,7 @@ internal static class DeclarativeNestedMapExpression
             generatedDestinationType = readOnly.MemberType;
             guardNullDestination = true;
             guardVariableName = usageRegistry.AllocateGuardName(
-                "destination" + readOnly.MemberName,
+                BuildPreferredDestinationName(readOnly.MemberName),
                 mapperType);
         }
         else if (nestedOperation == DeclarativeNestedMapOperation.Update &&
@@ -520,11 +520,16 @@ internal static class DeclarativeNestedMapExpression
                 currentDestinationType,
                 destinationType))
         {
+            var targetName = readOnlyTarget?.MemberName ??
+                targetContext?.SourceMemberName ??
+                "Destination";
+            var targetSuffix = char.ToUpperInvariant(targetName[0]) +
+                               targetName.Substring(1);
             compatibleDestinationName = usageRegistry.AllocateGuardName(
-                "nestedDestination",
+                "compatible" + targetSuffix,
                 mapperType);
             incompatibleDestinationName = usageRegistry.AllocateGuardName(
-                "incompatibleDestination",
+                "incompatible" + targetSuffix,
                 mapperType);
         }
 
@@ -590,6 +595,17 @@ internal static class DeclarativeNestedMapExpression
                 targetContext?.Paths ?? usageRegistry.Paths));
         usageRegistry.Observe(mapping.Observation);
         return true;
+    }
+
+    private static string BuildPreferredDestinationName(string memberName)
+    {
+        var prefix = char.ToLowerInvariant(memberName[0]) +
+                     memberName.Substring(1);
+        return prefix.EndsWith(
+                "Destination",
+                StringComparison.Ordinal)
+            ? prefix
+            : prefix + "Destination";
     }
 
     private static ImmutableArray<NestedMappingObservation>

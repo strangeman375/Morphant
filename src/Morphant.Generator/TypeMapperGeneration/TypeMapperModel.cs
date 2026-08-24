@@ -159,7 +159,9 @@ internal readonly record struct TypeMapperMemberMappingModel
     bool IsResultDependent = false,
     ConventionSourceValueExpressionModel? ConventionValueExpression = null,
     TypeMapperDependencyExpressionModel? DependencyExpression = null,
-    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
+    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default,
+    ImmutableArray<TypeMapperLocalValueModel> InvocationArgumentLocals =
+        default
 );
 
 internal sealed record TypeMapperControlFlowMappingModel
@@ -199,7 +201,9 @@ internal sealed record TypeMapperControlFlowNode
     TypeMapperDependencyExpressionModel? ThrowDependency = null,
     TypeMapperDependencyExpressionModel? SwitchDependency = null,
     TypeMapperDependencyExpressionModel? EvaluationDependency = null,
-    bool ThrowUsesCurrentMappingOperation = false
+    bool ThrowUsesCurrentMappingOperation = false,
+    string? EvaluationCondition = null,
+    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
 );
 
 internal readonly record struct TypeMapperMemberControlFlowLeafModel(
@@ -235,7 +239,9 @@ internal sealed record TypeMapperMemberControlFlowNode
     TypeMapperDependencyExpressionModel? SwitchDependency = null,
     TypeMapperDependencyExpressionModel? EvaluationDependency = null,
     bool ThrowUsesCurrentMappingOperation = false,
-    MemberPlanningObservation? MemberObservation = null
+    MemberPlanningObservation? MemberObservation = null,
+    string? EvaluationCondition = null,
+    ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default
 );
 
 internal readonly record struct TypeMapperMemberSwitchSectionModel

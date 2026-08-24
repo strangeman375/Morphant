@@ -29,6 +29,10 @@ internal sealed class GeneratedLocalNameAllocator
         }
     }
 
+    private GeneratedLocalNameAllocator()
+    {
+    }
+
     public void Reserve(string? name)
     {
         if (name is not null)
@@ -67,6 +71,13 @@ internal sealed class GeneratedLocalNameAllocator
         return UserResultMappingPlanner.AllocateName(
             preferredName,
             _usedNames);
+    }
+
+    public GeneratedLocalNameAllocator Clone()
+    {
+        var clone = new GeneratedLocalNameAllocator();
+        clone._usedNames.UnionWith(_usedNames);
+        return clone;
     }
 
     private void ReserveDeclarations(SyntaxNode syntax)
