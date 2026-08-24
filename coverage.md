@@ -3,19 +3,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/24/2026 - 09:14:07 |
-| Coverage date: | 08/24/2026 - 09:12:17 - 08/24/2026 - 09:14:03 |
+| Generated on: | 08/24/2026 - 09:44:05 |
+| Coverage date: | 08/24/2026 - 09:42:17 - 08/24/2026 - 09:44:00 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 346 |
 | Files: | 178 |
-| **Line coverage:** | 86.7% (32814 of 37805) |
-| Covered lines: | 32814 |
-| Uncovered lines: | 4991 |
+| **Line coverage:** | 86.8% (32819 of 37805) |
+| Covered lines: | 32819 |
+| Uncovered lines: | 4986 |
 | Coverable lines: | 37805 |
 | Total lines: | 63360 |
-| **Branch coverage:** | 76.6% (10994 of 14336) |
-| Covered branches: | 10994 |
+| **Branch coverage:** | 76.7% (10997 of 14336) |
+| Covered branches: | 10997 |
 | Total branches: | 14336 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -228,7 +228,7 @@
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticPipeline|75%|50%|
 |Morphant.Generator.TypeMapperGeneration.CallbackTransferFailureObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.CompletenessPlanningObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|67.8%|68.1%|
+|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|68.2%|68.6%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticAnalyzer|89.6%|80%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticDescriptors|100%||
@@ -392,4 +392,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #53](https://github.com/strangeman375/Morphant/actions/runs/32710013124).
+Full HTML report: download the **coverage** artifact from [CI run #54](https://github.com/strangeman375/Morphant/actions/runs/32712751072).
