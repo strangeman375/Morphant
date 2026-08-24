@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperNestedMapTests;
 internal sealed class AdaptiveTests
 {
     [Test]
-    public async Task Uses_the_selected_result_member_for_adaptive_Update()
+    public async Task Emits_adaptive_destination_conversions_for_reference_and_value_members()
     {
         // lang=c#
         const string source =
@@ -23,7 +23,7 @@ namespace TestCase
 
     public sealed record ChildDestination(int Value);
 
-    public sealed record Source(ChildSource Child);
+    public sealed record Source(ChildSource Child, int Number);
 
     public sealed class Destination
     {
@@ -33,6 +33,10 @@ namespace TestCase
         }
 
         public ChildDestination Child { get; set; }
+
+        public object? Reference { get; set; } = new ChildDestination(-1);
+
+        public object Value { get; set; } = -1;
     }
 
     [MorphantMapper]
@@ -46,7 +50,9 @@ namespace TestCase
                         : new ChildDestination(0)))
                 .Members((source, _) => new()
                 {
-                    Child = Map(source.Child)
+                    Child = Map(source.Child),
+                    Reference = Map<ChildDestination>(source.Child),
+                    Value = Map<int>(source.Number)
                 });
     }
 }
@@ -262,6 +268,24 @@ namespace TestCase.Morphant.Generated
             set { }
         }
 
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Reference"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<object?>? Reference
+        {
+            get => null!;
+            set { }
+        }
+
+        /// <summary>
+        /// Maps <see cref="global::TestCase.Destination.Value"/>.
+        /// </summary>
+        public global::Morphant.Members.Member<object> Value
+        {
+            get => null!;
+            set { }
+        }
+
         public bool Equals(DestinationMembers? other) => false;
 
         public override int GetHashCode() => 0;
@@ -385,10 +409,15 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
+            global::TestCase.ChildSource sourceChild = source.Child;
+            global::TestCase.ChildDestination value = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild);
+
             return new global::TestCase.Destination(
                 child: new global::TestCase.ChildDestination(0))
             {
-                Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child)
+                Child = value,
+                Reference = value,
+                Value = context.Mapper.Map<int, int>(source.Number)
             };
         }
 
@@ -400,7 +429,19 @@ namespace TestCase
             var result = new global::TestCase.Destination(
                 child: new global::TestCase.ChildDestination(40));
 
-            result.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: result.Child);
+            global::TestCase.ChildSource sourceChild = source.Child;
+
+            result.Child = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild, destination: result.Child);
+            result.Reference = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild, destination: result.Reference switch
+            {
+                null => default(global::TestCase.ChildDestination? ),
+                global::TestCase.ChildDestination nestedDestination1 => nestedDestination1,
+                var incompatibleDestination1 => throw global::Morphant.Exceptions.NestedDestinationTypeMismatchException.Create<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::Morphant.Context.MappingOperation.Update, incompatibleDestination1)});
+            result.Value = context.Mapper.Map<int, int>(source.Number, destination: result.Value switch
+            {
+                null => throw global::Morphant.Exceptions.NestedDestinationTypeMismatchException.Create<int, int>(global::Morphant.Context.MappingOperation.Update, null),
+                int nestedDestination2 => nestedDestination2,
+                var incompatibleDestination2 => throw global::Morphant.Exceptions.NestedDestinationTypeMismatchException.Create<int, int>(global::Morphant.Context.MappingOperation.Update, incompatibleDestination2)});
 
             return result;
         }

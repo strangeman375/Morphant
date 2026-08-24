@@ -7,7 +7,7 @@ namespace Morphant.Generator.UnitTests.TypeMapperNestedMapTests;
 internal sealed class ReadOnlyMemberTests
 {
     [Test]
-    public async Task Updates_non_null_read_only_members_and_skips_null_members()
+    public async Task Emits_guarded_conversion_for_wide_read_only_member()
     {
         // lang=c#
         const string source =
@@ -22,7 +22,11 @@ namespace TestCase
 {
     public sealed record ChildSource(int Value);
 
-    public sealed class ChildDestination
+    public interface IChildDestination
+    {
+    }
+
+    public sealed class ChildDestination : IChildDestination
     {
         public ChildDestination(int value)
         {
@@ -36,7 +40,7 @@ namespace TestCase
 
     public sealed class Destination
     {
-        public ChildDestination Existing { get; } = new(10);
+        public IChildDestination Existing { get; } = new ChildDestination(10);
 
         public ChildDestination? Empty => null;
     }
@@ -50,7 +54,7 @@ namespace TestCase
                 {
                     var members = new DestinationMembers();
 
-                    Update(source.Child, members.Existing);
+                    Update<ChildDestination>(source.Child, members.Existing);
                     Update<ChildDestination>(
                         ThrowIfEvaluated(source),
                         members.Empty);
@@ -253,7 +257,7 @@ namespace TestCase.Morphant.Generated
         /// <summary>
         /// Selects <see cref="global::TestCase.Destination.Existing"/>.
         /// </summary>
-        public global::Morphant.Members.Member<global::TestCase.ChildDestination> Existing
+        public global::Morphant.Members.Member<global::TestCase.IChildDestination> Existing
         {
             get => null!;
         }
@@ -391,7 +395,7 @@ namespace TestCase
         {
             var result = new global::TestCase.Destination();
 
-            _ = result.Existing is { } destinationExisting ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: destinationExisting) : default(global::TestCase.ChildDestination);
+            _ = result.Existing is { } destinationExisting ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: destinationExisting is global::TestCase.ChildDestination nestedDestination ? nestedDestination : throw global::Morphant.Exceptions.NestedDestinationTypeMismatchException.Create<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::Morphant.Context.MappingOperation.Update, destinationExisting)) : default(global::TestCase.ChildDestination);
 
             _ = result.Empty is { } destinationEmpty ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::TestCase.TestMapper.ThrowIfEvaluated(source), destination: destinationEmpty) : default(global::TestCase.ChildDestination);
 
@@ -403,7 +407,7 @@ namespace TestCase
             global::TestCase.Destination destination,
             global::Morphant.Context.MappingContext context)
         {
-            _ = destination.Existing is { } destinationExisting ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: destinationExisting) : default(global::TestCase.ChildDestination);
+            _ = destination.Existing is { } destinationExisting ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(source.Child, destination: destinationExisting is global::TestCase.ChildDestination nestedDestination ? nestedDestination : throw global::Morphant.Exceptions.NestedDestinationTypeMismatchException.Create<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::Morphant.Context.MappingOperation.Update, destinationExisting)) : default(global::TestCase.ChildDestination);
 
             _ = destination.Empty is { } destinationEmpty ? context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(global::TestCase.TestMapper.ThrowIfEvaluated(source), destination: destinationEmpty) : default(global::TestCase.ChildDestination);
 
