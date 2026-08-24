@@ -208,6 +208,18 @@ internal static class TypeMapperEmitter
         writer.Line();
         WriteUpdate(writer, mapping);
 
+        if (mapping.CreatePolymorphicMethodName is not null)
+        {
+            writer.Line();
+            WriteCreatePolymorphic(writer, mapping);
+        }
+
+        if (mapping.UpdatePolymorphicMethodName is not null)
+        {
+            writer.Line();
+            WriteUpdatePolymorphic(writer, mapping);
+        }
+
         if (mapping.CreateImplMethodName is not null)
         {
             writer.Line();
@@ -328,12 +340,14 @@ internal static class TypeMapperEmitter
             }
             else
             {
-                WritePolymorphicManualMapping(
-                    writer,
-                    mapping,
-                    manualMapping,
-                    update: false,
-                    localNames);
+                var polymorphicMethodName =
+                    mapping.CreatePolymorphicMethodName ??
+                    throw new InvalidOperationException(
+                        "A polymorphic Create method name is required.");
+
+                writer.Line(
+                    $"=> {polymorphicMethodName}(source, context);");
+                writer.Unindent();
             }
             return;
         }
@@ -388,11 +402,16 @@ internal static class TypeMapperEmitter
         }
 
         WriteNonNullSourceNormalization(writer, mapping);
-        WritePolymorphicDispatch(
-            writer,
-            mapping,
-            update: false,
-            localNames);
+
+        if (mapping.CreatePolymorphicMethodName is { } methodName)
+        {
+            writer.Line(
+                $"return {methodName}(" +
+                $"{mapping.NonNullSourceName}, context);");
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
 
         if (mapping.CreateOperationFailure is { } operationFailure)
         {
@@ -1012,12 +1031,15 @@ internal static class TypeMapperEmitter
             }
             else
             {
-                WritePolymorphicManualMapping(
-                    writer,
-                    mapping,
-                    manualMapping,
-                    update: true,
-                    localNames);
+                var polymorphicMethodName =
+                    mapping.UpdatePolymorphicMethodName ??
+                    throw new InvalidOperationException(
+                        "A polymorphic Update method name is required.");
+
+                writer.Line(
+                    $"=> {polymorphicMethodName}(" +
+                    "source, destination, context);");
+                writer.Unindent();
             }
             return;
         }
@@ -1063,36 +1085,6 @@ internal static class TypeMapperEmitter
         writer.Line(
             $"=> {BuildUpdateImplCall(mapping, methodName)};");
         writer.Unindent();
-    }
-
-    private static void WritePolymorphicManualMapping(
-        CodeWriter writer,
-        TypeMapperMappingModel mapping,
-        TypeMapperManualMappingModel manualMapping,
-        bool update,
-        GeneratedLocalNameAllocator localNames)
-    {
-        writer.Unindent();
-        writer.Line("{");
-        writer.Indent();
-
-        WritePolymorphicDispatch(
-            writer,
-            mapping,
-            update,
-            localNames,
-            sourceExpression: "source",
-            sourceCanBeNull: mapping.SourceCanBeNull);
-
-        WriteManualMapping(
-            writer,
-            mapping,
-            manualMapping,
-            update,
-            asStatement: true);
-
-        writer.Unindent();
-        writer.Line("}");
     }
 
     private static void WriteManualMapping(
@@ -1208,11 +1200,15 @@ internal static class TypeMapperEmitter
             WriteNonNullSourceNormalization(writer, mapping);
         }
 
-        WritePolymorphicDispatch(
-            writer,
-            mapping,
-            update: true,
-            localNames);
+        if (mapping.UpdatePolymorphicMethodName is { } polymorphicMethodName)
+        {
+            writer.Line(
+                $"return {polymorphicMethodName}(" +
+                $"{mapping.NonNullSourceName}, destination, context);");
+            writer.Unindent();
+            writer.Line("}");
+            return;
+        }
 
         if (mapping.UpdateOperationFailure is { } operationFailure)
         {
@@ -1802,6 +1798,157 @@ internal static class TypeMapperEmitter
             default:
                 throw new InvalidOperationException(
                     "NullDestinationHandling has an invalid value.");
+        }
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteCreatePolymorphic(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        var localNames = TypeMapperMethodLocalNames.Build(
+            mapping,
+            create: true);
+        var methodName =
+            mapping.CreatePolymorphicMethodName ??
+            throw new InvalidOperationException(
+                "A polymorphic Create method name is required.");
+        var manualMapping = mapping.ManualMapping;
+        var sourceTypeName = manualMapping is null
+            ? mapping.NonNullSourceTypeName
+            : mapping.MaybeNullSourceTypeName;
+        var sourceName = manualMapping is null
+            ? mapping.NonNullSourceName
+            : "source";
+
+        writer.Line(
+            $"private {mapping.DestinationTypeName} {methodName}(");
+        writer.Indent();
+        writer.Line($"{sourceTypeName} {sourceName},");
+        writer.Line(
+            "global::Morphant.Context.MappingContext context)");
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        WritePolymorphicDispatch(
+            writer,
+            mapping,
+            update: false,
+            localNames,
+            sourceName,
+            sourceCanBeNull:
+                manualMapping is not null && mapping.SourceCanBeNull);
+
+        if (manualMapping is { } configuredManualMapping)
+        {
+            WriteManualMapping(
+                writer,
+                mapping,
+                configuredManualMapping,
+                update: false,
+                asStatement: true);
+        }
+        else if (mapping.CreateOperationFailure is
+                 { } operationFailure)
+        {
+            WriteMappingConfigurationFailureStatement(
+                writer,
+                mapping,
+                operationFailure,
+                update: false);
+        }
+        else
+        {
+            WriteCreateCallOrStatements(
+                writer,
+                mapping,
+                update: false,
+                localNames);
+        }
+
+        writer.Unindent();
+        writer.Line("}");
+    }
+
+    private static void WriteUpdatePolymorphic(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping)
+    {
+        var localNames = TypeMapperMethodLocalNames.Build(
+            mapping,
+            create: true);
+        var methodName =
+            mapping.UpdatePolymorphicMethodName ??
+            throw new InvalidOperationException(
+                "A polymorphic Update method name is required.");
+        var manualMapping = mapping.ManualMapping;
+        var sourceTypeName = manualMapping is null
+            ? mapping.NonNullSourceTypeName
+            : mapping.MaybeNullSourceTypeName;
+        var sourceName = manualMapping is null
+            ? mapping.NonNullSourceName
+            : "source";
+
+        writer.Line(
+            $"private {mapping.DestinationTypeName} {methodName}(");
+        writer.Indent();
+        writer.Line($"{sourceTypeName} {sourceName},");
+        writer.Line(
+            $"{mapping.MaybeNullDestinationTypeName} destination,");
+        writer.Line(
+            "global::Morphant.Context.MappingContext context)");
+        writer.Unindent();
+        writer.Line("{");
+        writer.Indent();
+
+        WritePolymorphicDispatch(
+            writer,
+            mapping,
+            update: true,
+            localNames,
+            sourceName,
+            sourceCanBeNull:
+                manualMapping is not null && mapping.SourceCanBeNull);
+
+        if (manualMapping is { } configuredManualMapping)
+        {
+            WriteManualMapping(
+                writer,
+                mapping,
+                configuredManualMapping,
+                update: true,
+                asStatement: true);
+        }
+        else if (mapping.UpdateOperationFailure is
+                 { } operationFailure)
+        {
+            WriteMappingConfigurationFailureStatement(
+                writer,
+                mapping,
+                operationFailure,
+                update: true);
+        }
+        else
+        {
+            if (mapping.DestinationCanBeNull)
+            {
+                WriteDestinationNullHandling(
+                    writer,
+                    mapping,
+                    localNames);
+                writer.Line();
+            }
+
+            var updateMethodName =
+                mapping.UpdateImplMethodName ??
+                throw new InvalidOperationException(
+                    "An Update implementation method name is required.");
+
+            writer.Line(
+                $"return {BuildUpdateImplCall(mapping, updateMethodName)};");
         }
 
         writer.Unindent();

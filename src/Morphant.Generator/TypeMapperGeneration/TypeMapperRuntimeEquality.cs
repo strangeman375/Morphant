@@ -212,6 +212,12 @@ internal static class TypeMapperRuntimeEquality
                leftMapping.EffectiveSettings.Equals(
                    rightMapping.EffectiveSettings) &&
                StringComparer.Ordinal.Equals(
+                   leftMapping.CreatePolymorphicMethodName,
+                   rightMapping.CreatePolymorphicMethodName) &&
+               StringComparer.Ordinal.Equals(
+                   leftMapping.UpdatePolymorphicMethodName,
+                   rightMapping.UpdatePolymorphicMethodName) &&
+               StringComparer.Ordinal.Equals(
                    leftMapping.CreateImplMethodName,
                    rightMapping.CreateImplMethodName) &&
                StringComparer.Ordinal.Equals(

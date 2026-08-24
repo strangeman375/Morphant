@@ -217,6 +217,22 @@ internal static class TypeMapperModelBuilder
                 mapperType,
                 cancellationToken);
 
+            var createPolymorphicMethodName =
+                RequiresCreatePolymorphicMethod(
+                    mapping,
+                    effectiveSettings)
+                    ? AllocateName(
+                        "__CreatePolymorphic",
+                        usedGeneratedMethodNames)
+                    : null;
+            var updatePolymorphicMethodName =
+                RequiresUpdatePolymorphicMethod(
+                    mapping,
+                    effectiveSettings)
+                    ? AllocateName(
+                        "__UpdatePolymorphic",
+                        usedGeneratedMethodNames)
+                    : null;
             var createMethodName = RequiresCreateMethod(
                     mapping,
                     effectiveSettings)
@@ -239,6 +255,10 @@ internal static class TypeMapperModelBuilder
                 mapping with
                 {
                     EffectiveSettings = effectiveSettings,
+                    CreatePolymorphicMethodName =
+                        createPolymorphicMethodName,
+                    UpdatePolymorphicMethodName =
+                        updatePolymorphicMethodName,
                     CreateImplMethodName = createMethodName,
                     UpdateImplMethodName = updateMethodName,
                     CreateImplUsesOperation = createImplUsesOperation,
@@ -1260,6 +1280,33 @@ internal static class TypeMapperModelBuilder
 
         return createRequiresImplementation ||
                updateWithoutPreviousRequiresImplementation;
+    }
+
+    private static bool RequiresCreatePolymorphicMethod(
+        TypeMapperMappingModel mapping,
+        EffectiveMappingSettings settings)
+    {
+        return mapping.Failure is null &&
+               PolymorphicBasePlanReachability.RequiresDispatch(mapping) &&
+               settings.IsMappingModeValid &&
+               settings.SupportsCreate &&
+               settings.IsUnknownDerivedTypeHandlingValid &&
+               (mapping.ManualMapping is not null ||
+                settings.IsNullSourceHandlingValid);
+    }
+
+    private static bool RequiresUpdatePolymorphicMethod(
+        TypeMapperMappingModel mapping,
+        EffectiveMappingSettings settings)
+    {
+        return mapping.Failure is null &&
+               PolymorphicBasePlanReachability.RequiresDispatch(mapping) &&
+               settings.IsMappingModeValid &&
+               settings.SupportsUpdate &&
+               settings.IsUnknownDerivedTypeHandlingValid &&
+               (mapping.ManualMapping is not null ||
+                settings.IsNullSourceHandlingValid &&
+                settings.IsNullDestinationHandlingValid);
     }
 
     private static bool CreatePathNeedsOperationParameter(

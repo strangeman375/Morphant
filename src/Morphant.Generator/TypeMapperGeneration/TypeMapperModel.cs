@@ -69,6 +69,8 @@ internal readonly record struct TypeMapperMappingModel
         default,
     ImmutableArray<TypeMapperDerivedMappingModel> DerivedMappings = default,
     EffectiveMappingSettings EffectiveSettings = default,
+    string? CreatePolymorphicMethodName = null,
+    string? UpdatePolymorphicMethodName = null,
     string? CreateImplMethodName = null,
     string? UpdateImplMethodName = null,
     bool CreateImplUsesOperation = false,
