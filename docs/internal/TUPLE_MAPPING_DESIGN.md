@@ -120,6 +120,8 @@ generator, а не пользователя.
 Construction plan показывает один logical constructor с плоским списком
 всех elements. Для named element parameter носит semantic name, для
 unnamed element — `ItemN`. `Rest` в construction plan отсутствует.
+Этот constructor является intrinsic tuple construction contract, а не одним
+из CLR constructors, между которыми выбирает `ConstructorSelection`.
 
 ```csharp
 builder.Map<Source, (int Id, string Name)>()
@@ -140,9 +142,11 @@ builder.Map<Source, (int Id, string Name)>()
         }));
 ```
 
-`Resolve` сохраняет обычный lifecycle: он может вернуть `previous` либо
-целый replacement tuple. Elements без semantic names не получают convention
-rules, поэтому их значения должны прийти из explicit element rules или из
+`Resolve` сохраняет обычный lifecycle Morphant: generator видит отдельно
+ветку, возвращающую `previous`, и ветку logical construction. Первая reuse
+existing destination, вторая создаёт replacement и получает applicable
+creation rules. Elements без semantic names не получают convention rules,
+поэтому их значения должны прийти из explicit element rules или из
 whole-result rule.
 
 ### `Members`
@@ -159,15 +163,26 @@ builder.Map<Source, (int Id, string Name)>()
 ```
 
 Unmentioned named elements следуют `MemberSelection`. Unnamed elements не
-получают automatic rule, но могут быть явно заняты value, `Ignore`,
-`Map`, `Create` или `Update` rule.
+получают automatic rule, но могут быть явно заняты value, `Ignore`, `Map`,
+`Create` или `Update` rule. Unmentioned element и explicitly ignored element —
+разные состояния:
 
-На Create и explicit replacement branch applicable value rules для обоих BCL
-tuple сначала объединяются в final element plan, а затем понижаются прямо в
-canonical construction. На branch, который reuse existing `ValueTuple`,
-member rule понижается в assignment к mutable field. Для `System.Tuple` тот же
-declarative slot предоставляет значение constructor, хотя соответствующее CLR
-property read-only:
+- `Ignore` подавляет automatic rule этого slot. Если current path уже имеет
+  independently selected seed для element из explicit construction или
+  whole-result value, seed сохраняется. На reused Update сохраняется current
+  value. На Create без seed `Ignore` явно выбирает `default(TElement)`;
+- unmentioned element получает convention только когда это разрешает
+  `MemberSelection`. Если ни convention, ни seed нет, element остаётся missing.
+  `MemberSelection.Explicit` и `UnmappedMemberValidation.None` не превращают
+  missing element в скрытый `default`.
+
+На Create и explicit replacement branch applicable rules для обоих BCL tuple
+собираются в один final logical element plan. Когда initial result не требуется
+пользовательскому expression, generator-owned construction values сразу
+понижаются в canonical construction. На branch, который reuse existing
+`ValueTuple`, member rule понижается в assignment к mutable field. Для
+`System.Tuple` тот же declarative slot предоставляет значение canonical
+constructor, хотя соответствующее CLR property read-only:
 
 ```csharp
 builder.Map<Source, Tuple<int, string>>()
@@ -191,25 +206,34 @@ Morphant допускают nested mapping в публично readable referenc
 
 ### Composition
 
-Tuple не вводит composition restrictions. Действуют общие rules Morphant,
-пониженные через final logical element plan:
+Tuple не вводит API composition restrictions. `Construct`/`Resolve` и
+`ConstructUsing`/`ResolveUsing` можно комбинировать с `Members`. Lowering
+подчиняется следующим rules:
 
-1. `Construct`, `Resolve`, `ConstructUsing` или `ResolveUsing` задаёт initial
-   construction/result source текущего lifecycle branch.
-2. Construction/convention values и `Members` объединяются в final element
-   plan. Explicit member rule имеет обычный precedence над earlier rule того же
-   element.
-3. На Create/replacement branch final plan обоих BCL tuple понижается сразу в
-   один canonical construction. Overridden element expression удаляется из
-   generated plan и не вычисляется.
-4. На branch, который reuse existing `ValueTuple`, applicable `Members` rules
+1. Convention, `Construct` или declarative construction branch `Resolve`
+   задаёт generator-owned initial construction plan. `ConstructUsing` и
+   `ResolveUsing` вместо этого возвращают opaque whole-result seed, который
+   всегда должен быть вычислен.
+2. Construction values, selected seed и `Members` объединяются в final logical
+   element plan. Explicit member rule имеет обычный precedence над earlier rule
+   того же element. Automatic member convention не дублирует element, который
+   уже занят construction rule на текущем lifecycle path.
+3. Если ни одно surviving rule не читает `result`, generator-owned Create или
+   replacement construction сразу понижается в один canonical construction.
+   Overridden generator-owned element expression удаляется и не вычисляется.
+4. Если surviving rule читает `result`, initial result сначала материализуется:
+   пользователь явно сделал его состояние observable. Затем `ValueTuple`
+   получает applicable field assignments, а `System.Tuple` при необходимости
+   реконструируется один раз из selected seed и final element values. Initial
+   construction expressions в этой форме могут вычисляться, даже если
+   corresponding element позднее заменён.
+5. Whole-result callback всегда выполняется. Generator не пытается удалить или
+   переписать вычисления внутри `ConstructUsing`/`ResolveUsing`; returned value
+   становится selected seed для последующей member phase.
+6. На branch, который reuse existing `ValueTuple`, applicable `Members` rules
    обновляют mutable fields переданной по значению копии.
-5. Automatic member convention не дублирует corresponding element,
-   который уже занят construction rule на текущем lifecycle path.
-6. `System.Tuple` Update без explicit whole-result replacement не получает
+7. `System.Tuple` Update без explicit whole-result replacement не получает
    construction path только из-за scalar `Members` rules.
-7. Whole-result `Resolve`/factory остаётся lifecycle operation и вычисляется,
-   даже если subsequent `Members` rules задают все tuple elements.
 8. `Convert` остаётся final/exclusive алгоритмом.
 
 ```csharp
@@ -223,7 +247,8 @@ builder.Map<Source, (int Id, string Name)>()
     });
 ```
 
-При Create final plan сразу понижается в эквивалент одного construction:
+Поскольку ни одно rule не читает `result`, при Create final plan сразу
+понижается в эквивалент одного construction:
 
 ```csharp
 return (Id: source.Id, Name: source.DisplayName);
@@ -232,12 +257,28 @@ return (Id: source.Id, Name: source.DisplayName);
 `source.Name` проиграл по precedence, поэтому не попадает в generated code и
 не вычисляется. При Update с reused `ValueTuple` result `Construct` не
 выполняется, а `Members` обновляет его mutable fields. Тот же precedence
-действует для `Resolve`.
+действует для declarative construction branch `Resolve`.
 
-Для `System.Tuple` действует то же lowering final plan в canonical constructor.
-Branch, который reuse existing destination, сохраняет scalar elements и не
-вычисляет их `Members` rules. Без `Resolve` один только `Members` не
-реконструирует `System.Tuple` во время Update.
+Если `Members` читает `result`, два observable этапа не склеиваются:
+
+```csharp
+builder.Map<Source, Tuple<int, string>>()
+    .Construct(source => new(source.Id, source.Name))
+    .Members((source, _, result) => new()
+    {
+        Item2 = result.Item1 + ":" + source.DisplayName
+    });
+```
+
+Здесь initial `Tuple<int, string>` сначала существует как `result`, после чего
+generator создаёт final tuple с сохранённым `Item1` и новым `Item2`. Это
+тот случай, когда промежуточная generator-owned tuple construction является
+частью контракта, а не упущенной оптимизацией. Runtime factory result также
+всегда материализован, потому что его callback является observable.
+
+Для `System.Tuple` branch, который reuse existing destination, сохраняет scalar
+elements и не вычисляет их `Members` rules. Без `Resolve`/`ResolveUsing` один
+только `Members` не реконструирует `System.Tuple` во время Update.
 
 `IncludeMembers`, flattening, `IncludeBase`, runtime polymorphism и declarative nested
 markers применяют обычные contracts и не получают tuple-specific
@@ -247,13 +288,19 @@ markers применяют обычные contracts и не получают tup
 
 ### `ValueTuple`
 
-Create собирает новое tuple value одним canonical construction из final
-construction/member plan, когда каждый required destination element получил
-значение. Значения могут прийти из name-based convention либо explicit
-`Construct`/`Members` rules. Rules, overridden при merge final plan, не
-вычисляются. Bare mapping использует только convention. Отсутствующие semantic
-names не приводят к скрытому positional copy или к тихому выбору `default`
-вместо маппинга.
+Create собирает новое tuple value из complete final construction/member plan,
+когда каждый required destination element получил значение. Значения могут
+прийти из name-based convention, explicit `Construct`/`Members`, selected
+whole-result seed либо explicit `Ignore`. `Ignore` без seed выбирает
+`default(TElement)`; просто отсутствующий rule этого не делает. Bare mapping
+использует только convention. Отсутствующие semantic names не приводят к
+скрытому positional copy или к тихому выбору `default` вместо маппинга.
+
+Когда `result` не нужен, generator-owned plan понижается в один canonical
+construction, а overridden expressions не вычисляются. Если rule читает
+`result` или initial value пришёл из runtime callback, selected value сначала
+материализуется, после чего generator изменяет его by-value copy. Поэтому
+observable initial expressions и whole-result callbacks сохраняются.
 
 Явный `Members` означает, что пользователь владеет member plan. В нём
 можно явно задать или игнорировать unnamed elements; unmentioned
@@ -263,11 +310,11 @@ elements дальше следуют обычному `MemberSelection` и
 Update не считает `ValueTuple` immutable. Branch, который reuse existing
 destination, применяет applicable assignments к mutable fields и возвращает
 его. Parameter `destination` уже является value-type copy, поэтому generator
-может записать поля прямо в него и вернуть `destination`. Create/replacement
-branch вместо промежуточной construction и последующих writes сразу понижает
-final element plan в canonical construction. Отдельный result local нужен
-только если этого требует result selection или control flow, а не является
-частью tuple contract.
+может записать поля прямо в него и вернуть `destination`. Generator-owned
+replacement branch без `result` dependency сразу понижает final element plan в
+canonical construction. Отдельный result local нужен только для selected
+whole-result value, `result` dependency или control flow, а не является частью
+tuple contract.
 
 Unmatched element сохраняет existing value в Update. Explicit `Resolve` может
 вернуть целый replacement. Вызывающий код, как и для любого value-type
@@ -276,19 +323,48 @@ Update, обязан сохранить returned value.
 ### `System.Tuple`
 
 Create всегда знает canonical logical constructor `System.Tuple` и сам
-понижает в него final element plan. Каждый required element должен получить
-значение из convention или explicit `Construct`/`Members` rule. У
-`System.Tuple` elements всегда имеют только technical `ItemN`, поэтому они не
-получают automatic convention и задаются явно. Это не требует от
-пользователя `Resolve`, factory или `Convert`: whole-result rules остаются
-необязательными альтернативами.
+понижает в него complete final element plan. Каждый required element должен
+получить value или explicit `Ignore`; ignored element без seed получает
+`default(TElement)`. У `System.Tuple` elements всегда имеют только technical
+`ItemN`, поэтому они не получают automatic convention и задаются явно. Это не
+требует от пользователя `Resolve`, factory или `Convert`: whole-result rules
+остаются необязательными альтернативами.
 
 Existing `System.Tuple` не пересоздаётся автоматически. Assignable element
 rules для него физически невозможны, поэтому default Update возвращает existing
 destination. Scalar `Members` rules, использованные для Create, не меняют этот
-Update contract. Explicit `Resolve` или `ResolveUsing` может вернуть
-replacement; applicable read-only nested member rule может обновить сам
-referenced object.
+Update contract. Applicable read-only nested member rule при этом может
+обновить сам referenced object.
+
+Declarative `Resolve` уже разделяет lifecycle paths структурно: `return
+previous` означает reuse, scalar creation-only rules не вычисляются; logical
+construction означает replacement и получает final element plan.
+
+Для `ResolveUsing` это разделение определяется во время выполнения:
+
+- `null` остаётся terminal result, `Members` не выполняется;
+- если при Update callback вернул тот же reference, который находился в
+  `previous`, это reuse branch. Проверка выполняется через reference identity;
+  scalar rules не вычисляются, но applicable nested Update может выполняться;
+- другой non-null instance — replacement seed. Applicable scalar rules
+  вычисляются, и при наличии изменений generator создаёт final
+  `System.Tuple` через canonical constructor, сохраняя остальные elements из
+  seed;
+- на Create любой non-null callback result является replacement seed.
+
+Replacement seed не обещает сохранить identity callback result, если scalar
+plan требует canonical reconstruction. Без таких изменений generator возвращает
+selected instance как есть. Если callback identity или дополнительное состояние
+runtime subtype должно быть частью результата, пользователь выбирает `Convert`
+либо не добавляет scalar `Members`.
+
+Эта identity classification нужна именно для first-class `System.Tuple`.
+Обычный declarative `Resolve` уже имеет такую branch semantics для других
+immutable destinations. Но arbitrary `ResolveUsing` result нельзя безопасно
+пересоздать в общем случае: callback может вернуть cached или derived instance,
+а generator не знает clone contract. Поэтому existing diagnostic для
+init-only/get-only scalar `Members` после arbitrary `ConstructUsing` или
+`ResolveUsing` сохраняется; tuple support его не ослабляет для user types.
 
 ### Nullability
 
@@ -346,10 +422,12 @@ Tuple mapping не добавляет public setting. Existing settings дейс
 - `MappingMode` решает, доступны ли Create и Update;
 - `MemberSelection` управляет unmentioned logical tuple elements на applicable
   lifecycle path; technical `ItemN` всё равно не получает automatic convention;
-- `ConstructorSelection` видит один flattened logical element constructor у
-  non-empty tuple; empty `ValueTuple` использует parameterless construction;
+- `ConstructorSelection` не участвует в first-class BCL tuple mapping:
+  canonical tuple construction intrinsic. Explicit pair-level setting получает
+  обычную diagnostic о неприменимости, inherited setting не имеет эффекта;
 - `UnmappedMemberValidation` проверяет logical elements, а не aliases и
-  physical fields по отдельности;
+  physical fields по отдельности, но отключение validation не предоставляет
+  missing constructor values;
 - null settings следуют root nullability.
 
 Diagnostic и generated documentation показывают semantic name. Для unnamed
@@ -368,20 +446,31 @@ diagnostics с tuple-aware target names.
   доступен для данной form.
 - Singleton/empty `ValueTuple` и legacy `System.Tuple` понижаются в
   explicit BCL construction.
-- Create/replacement обоих BCL tuple получает constructor arguments из final
-  logical element plan. Overridden element expressions не генерируются;
-  промежуточный tuple с проигравшими values не создаётся.
+- Generator-owned Create/replacement обоих BCL tuple получает constructor
+  arguments из final logical element plan. Если `result` не требуется,
+  overridden construction expressions не генерируются и промежуточный tuple с
+  проигравшими values не создаётся.
+- Если surviving rule читает `result`, initial tuple материализуется ровно один
+  раз. Затем `ValueTuple` изменяется assignments, а `System.Tuple` при
+  необходимости получает одну final canonical reconstruction.
+- `ConstructUsing`/`ResolveUsing` callback всегда выполняется. Generator не
+  оптимизирует его внутренние вычисления; returned tuple используется как
+  selected seed.
 - `System.Tuple` не требует explicit factory, если все required values доступны.
 - Long tuples понижаются в required nested BCL representation, но
   generated declarative surface и diagnostics остаются плоскими.
 - Value tuple Update изменяет текущий selected tuple value и возвращает его.
   Обычно это сам by-value `destination` parameter; отдельный local создаётся
   только при необходимости. Caller-owned value не изменяется по ссылке.
-- Только surviving final element expressions вычисляются, каждое ровно один
-  раз и в обычном declarative order. Если constructor argument order отличается,
-  generator сохраняет observable order через readable locals. Overridden
-  element expressions не вычисляются. Whole-result selectors сохраняют свой
-  lifecycle и evaluation.
+- На fused path только surviving final element expressions вычисляются, каждое
+  ровно один раз и в обычном declarative order. Если constructor argument order
+  отличается, generator сохраняет observable order через readable locals.
+  Result-dependent paths сохраняют observable initial construction; overridden
+  initial expressions поэтому могут вычисляться. Whole-result selectors всегда
+  сохраняют свой lifecycle и evaluation.
+- `ResolveUsing` для `System.Tuple` использует `ReferenceEquals` только когда
+  Update действительно имел non-null previous. Value tuples не получают
+  искусственной equality-based reuse classification.
 - Generated code остаётся C# 9-compatible. Future projection support может
   выбрать другую construction form из-за expression-tree restrictions; это
   не входит в текущую feature.
@@ -409,9 +498,12 @@ diagnostics с tuple-aware target names.
 - flat logical construction/member plans;
 - `Construct`, `Resolve`, applicable `Members`, `ConstructUsing`,
   `ResolveUsing` и `Convert`;
-- normal composition `Construct`/`Resolve` с `Members`;
+- normal composition destination methods с `Members`, включая fused и
+  result-dependent paths;
 - mutable `ValueTuple` Create/Update и immutable-container semantics `System.Tuple`;
-- tuple-aware settings, completeness, source/destination validation и diagnostics;
+- `System.Tuple` runtime callback classification по reference identity;
+- explicit `Ignore`, completeness, source/destination validation и diagnostics;
+- применимость обычных settings без tuple-specific public setting;
 - root, nested, inherited, standalone и application/DI paths;
 - deterministic incremental generation и readable C# 9 output.
 
@@ -421,43 +513,71 @@ collection element mapping и отдельная tuple matching setting.
 ## Black-box acceptance matrix
 
 1. Named value tuple -> named value tuple: same order, reorder и different arity.
-2. Named value tuple <-> class, struct и record through constructor/member conventions.
+2. Named value tuple <-> class, struct и record through constructor/member
+   conventions.
 3. Fully unnamed и partially named tuples: no ordinal convention; explicit
    `Construct`, `Resolve` и `Members` work.
 4. Named alias и underlying `ItemN` count as one source element for usage
    validation.
 5. Same underlying `ValueTuple` с different name layouts does not use direct
    assignment and follows names.
-6. Empty, singleton, 2-, 7-, 8- и long `ValueTuple`; flat public surface without
+6. Recursive tuple-name layouts, включая nested tuple elements, сохраняются
+   отдельно для source и destination.
+7. Empty, singleton, 2-, 7-, 8- и long `ValueTuple`; flat public surface without
    `Rest`.
-7. 1-, 7-, 8- и long `System.Tuple`; canonical construction from complete
-   convention/explicit `Construct`/`Members` element plans, missing-value
-   diagnostics, no required factory и no public `Rest`.
-8. `ValueTuple` Create through convention, `Construct`, `Resolve`, `Members` и
-   runtime factories.
-9. `ValueTuple` Update mutates the by-value destination/current selected result,
-   unmatched preservation, explicit overrides, `Ignore`, nested markers и
-   replacement; no mandatory redundant result copy.
-10. `Construct`/`Resolve` combined with `Members`, including constructor/member
-    overlap, non-evaluation of overridden element expressions, surviving-rule
-    evaluation order and previous/new `Resolve` branches.
-11. `System.Tuple` no-op Update, no implicit reconstruction from scalar
-    `Members`, explicit replacement и applicable read-only nested Update.
-12. Nullable root tuples, nullable elements, null source/destination policies and
+8. 1-, 7-, 8- и long `System.Tuple`; canonical construction from complete
+   explicit element plans, missing-value diagnostics, no required factory и no
+   public `Rest`.
+9. Malformed/non-tuple `Rest` chain не flatten и участвует только через real
+   declared surface.
+10. `ValueTuple` Create through convention, `Construct`, `Resolve`, `Members`
+    and runtime factories.
+11. `ValueTuple` Update mutates the by-value destination/current selected result,
+    unmatched preservation, explicit overrides, nested markers и replacement;
+    no mandatory redundant result copy.
+12. `Construct`/declarative `Resolve` combined with `Members`: overlap is fused,
+    discarded expressions are not evaluated, surviving rules keep declarative
+    order, previous branch reuses and construction branch receives creation-only
+    rules.
+13. A surviving `result` dependency materializes initial construction before the
+    member phase; ValueTuple assignment and System.Tuple reconstruction preserve
+    observable values, side effects and control flow.
+14. Discarded rules do not count as source usage and do not retain generated
+    mapping dependencies or downstream plan diagnostics; expressions required
+    by an observable initial result do.
+15. `Ignore` with no Create seed chooses element `default`; with selected seed or
+    reused Update it preserves that value. Unmentioned/missing element never gets
+    implicit `default`, including with `MemberSelection.Explicit` or
+    `UnmappedMemberValidation.None`.
+16. `System.Tuple` default Update is a no-op for scalar slots; scalar `Members`
+    alone do not reconstruct it; applicable read-only nested Update still runs.
+17. `System.Tuple` declarative `Resolve` covers reuse and replacement branches;
+    only replacement evaluates scalar creation rules.
+18. `ResolveUsing` for `System.Tuple` covers terminal null, same-reference reuse
+    and different-reference replacement. Reference identity controls scalar
+    rule evaluation and reconstruction; a replacement without scalar changes is
+    returned unchanged, and nested Update remains applicable on reuse.
+19. `ConstructUsing`/`ResolveUsing` whole-result callbacks execute exactly once
+    and their internal values are never optimized away.
+20. Update with unavailable/null destination and `NullDestinationHandling.Create`
+    uses a complete tuple construction path while preserving operation context.
+21. Nullable root tuples, nullable elements, null source/destination policies and
     nullability diagnostics.
-13. `MemberSelection`, `ConstructorSelection`, `MappingMode` and every
-    `UnmappedMemberValidation` mode.
-14. `IncludeMembers`, flattening, explicit nested mappings, inheritance and runtime
+22. `MemberSelection`, `MappingMode` and every `UnmappedMemberValidation` mode;
+    explicit pair-level `ConstructorSelection` is inapplicable and inherited
+    `ConstructorSelection` has no effect.
+23. `IncludeMembers`, flattening, explicit nested mappings, inheritance and runtime
     polymorphism boundaries.
-15. Concrete custom `ITuple` mapped through declared static surface; `ITuple`
+24. Concrete custom `ITuple` maps through declared static surface; `ITuple`
     interface indexing remains explicit/manual.
-16. Conflicting tuple presentations for one physical pair produce one stable,
-    actionable compile-time diagnostic.
-17. Mapper contracts, DI ambiguity and standalone lookup continue to use physical
+25. Conflicting tuple presentations for one physical pair produce one stable,
+    actionable compile-time diagnostic; presentations on different physical
+    pairs remain independent.
+26. Mapper contracts, DI ambiguity and standalone lookup continue to use physical
     CLR pair identity.
-18. Generated snapshots preserve aliases, evaluation order, readable locals,
-    C# 9 syntax and deterministic CRLF output.
-19. Adding, removing or renaming a tuple element invalidates only affected
+27. Generated snapshots preserve aliases, evaluation order, readable locals,
+    reference checks, C# 9 syntax and deterministic CRLF output.
+28. Adding, removing or renaming a tuple element invalidates only affected
     incremental outputs and diagnostics.
 
 ## Documentation completion

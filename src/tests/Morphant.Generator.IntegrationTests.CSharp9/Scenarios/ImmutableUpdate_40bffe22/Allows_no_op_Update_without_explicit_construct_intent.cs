@@ -54,6 +54,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
         }
 
         public int Value { get; }
+
+        public int Initial { get; init; }
     }
 
     public sealed class ReplacementDestination
@@ -64,6 +66,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
         }
 
         public int Value { get; }
+
+        public int Initial { get; init; }
     }
 
     [MorphantMapper]
@@ -74,6 +78,10 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
         public static int RuntimeConstructCount { get; private set; }
 
         public static int InitMemberCount { get; private set; }
+
+        public static int ReusedInitialCount { get; private set; }
+
+        public static int ReplacementInitialCount { get; private set; }
 
         protected override void Configure(MapperBuilder builder)
         {
@@ -107,11 +115,19 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
                     }
 
                     return new(value: source.Value);
+                })
+                .Members(source => new()
+                {
+                    Initial = TrackReusedInitial(source.Value)
                 });
 
             builder.Map<Source, ReplacementDestination>()
                 .Resolve((source, _) =>
-                    new(value: source.Value));
+                    new(value: source.Value))
+                .Members(source => new()
+                {
+                    Initial = TrackReplacementInitial(source.Value)
+                });
 
             builder.Map<Source, int>();
         }
@@ -131,6 +147,18 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
         private static int TrackInitMember(int value)
         {
             InitMemberCount++;
+            return value;
+        }
+
+        private static int TrackReusedInitial(int value)
+        {
+            ReusedInitialCount++;
+            return value;
+        }
+
+        private static int TrackReplacementInitial(int value)
+        {
+            ReplacementInitialCount++;
             return value;
         }
     }
@@ -227,21 +255,31 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ImmutableUpdate_
                     "A no-op Update did not preserve the destination.");
             }
 
-            var previous = new ReusedDestination(2);
+            var previous = new ReusedDestination(2)
+            {
+                Initial = 12
+            };
             var reused = reusedMapper.Update(
                 source,
                 previous,
                 context);
             var replacementPrevious =
-                new ReplacementDestination(3);
+                new ReplacementDestination(3)
+                {
+                    Initial = 13
+                };
             var replacement = replacementMapper.Update(
                 source,
                 replacementPrevious,
                 context);
 
             if (!ReferenceEquals(previous, reused) ||
+                reused.Initial != 12 ||
+                TestMapper.ReusedInitialCount != 0 ||
                 ReferenceEquals(replacementPrevious, replacement) ||
-                replacement.Value != 9)
+                replacement.Value != 9 ||
+                replacement.Initial != 9 ||
+                TestMapper.ReplacementInitialCount != 1)
             {
                 throw new InvalidOperationException(
                     "Explicit immutable intent was not authoritative.");
