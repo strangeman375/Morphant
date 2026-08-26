@@ -4,16 +4,23 @@
 
 A member rule reaches an operation where it cannot run. For example, an
 `init`-only member cannot be assigned after an existing destination has been
-selected, and a creation-time rule cannot read `result` before that destination
-exists.
+selected or after `ConstructUsing`/`ResolveUsing` has returned an already
+initialized result. A creation-time rule also cannot read `result` before that
+destination exists.
 
 ## Fix
 
 Use a settable member for paths that update an existing instance, avoid reading
 `result` in a creation-time rule, or change `Resolve` so the affected path
 creates a replacement that can receive the rule during initialization. You can
-also restrict the mapping mode when the rule is valid for only Create or only
-Update.
+also ensure the member is initialized in the result returned by
+`ConstructUsing`/`ResolveUsing`, or restrict the mapping mode when the rule is
+valid for only Create or only Update.
+
+Morphant does not reconstruct or replace a result returned by a runtime
+callback. Eligible nested `Update` statements remain valid because they
+operate on the referenced object rather than assigning the creation-only
+member.
 
 The diagnostic message identifies both the reason and affected operations.
 

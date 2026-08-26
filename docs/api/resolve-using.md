@@ -24,7 +24,7 @@ delegates stored in accessible mapper or static members.
 | `source` | Non-null source after null-source handling |
 | `previous` | `Option<TDestination>` containing the existing destination, when available |
 | `context` | Current `MappingContext`, including `Operation` and `Mapper` |
-| Return value | Final destination |
+| Return value | Destination selected for the operation |
 
 ```csharp
 builder.Map<OrderDto, IOrder>()
@@ -36,8 +36,12 @@ builder.Map<OrderDto, IOrder>()
 
 A `null` callback result is final: Morphant skips `Members` and does not apply
 null handling again. A non-null result can continue through
-[`Members`](members.md). `ResolveUsing` cannot be combined with another
-destination method or `Convert`.
+[`Members`](members.md), but it remains the selected result regardless of
+whether it is the previous instance or a replacement. Morphant can assign
+settable members or run an eligible nested `Update`; an `init`-only member must
+already be initialized in the returned result. Configuring it in `Members`
+produces [`MORPH0042`](../diagnostics/MORPH0042.md). `ResolveUsing` cannot be
+combined with another destination method or `Convert`.
 
 Related: [`Resolve`](resolve.md),
 [dependency injection and `IMapper`](../runtime-dispatch.md).

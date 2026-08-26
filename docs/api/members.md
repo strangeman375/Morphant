@@ -44,5 +44,12 @@ builder.Map<OrderDto, Order>()
 [`MemberSelection`](../settings/member-selection.md). It can be combined with
 one destination method, but not with `Convert`.
 
+With `Construct` or a construction branch of `Resolve`, Morphant owns object
+creation and can place creation-only rules in the initializer. A result returned
+by `ConstructUsing` or `ResolveUsing` is already initialized and is not
+reconstructed. Its settable members and eligible readable nested members remain
+available, but an `init`-only rule produces
+[`MORPH0042`](../diagnostics/MORPH0042.md).
+
 Related: [declarative expressions](declarative-expressions.md),
 [nested mapping](../nested-mapping.md).
