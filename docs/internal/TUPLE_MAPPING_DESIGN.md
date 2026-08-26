@@ -1,6 +1,6 @@
 # First-class tuple mapping design
 
-Статус: итоговый дизайн на ревью; реализация не начата.
+Статус: дизайн утверждён; готов к реализации.
 
 ## Цель
 
@@ -217,6 +217,13 @@ Tuple не вводит API composition restrictions. `Construct`/`Resolve` и
 `ConstructUsing`/`ResolveUsing` можно комбинировать с `Members`. Lowering
 подчиняется следующим rules:
 
+Чтение `result` в `Members` подчиняется обычному lifecycle Morphant и не
+вводит tuple-specific правила валидности. Selected result должен сначала
+существовать, после чего выполняется member phase. Если какой-то
+lifecycle path не может предоставить такой result, это обычная
+construction/lifecycle error. Отдельной tuple completeness diagnostic
+для этого случая нет.
+
 1. Convention, `Construct` или declarative construction branch `Resolve`
    задаёт generator-owned initial construction plan.
 2. Construction values и `Members` объединяются в final logical element plan.
@@ -418,11 +425,19 @@ source/destination types. Tuple names не создают новую runtime map
 source и destination.
 
 Одна physical mapping pair должна иметь одну согласованную tuple
-presentation во всех registrations одной compilation. Если два mapper типизируют
-ту же physical pair разными tuple-name layouts, generator выдаёт
-compile-time diagnostic вместо молчаливого выбора canonical aliases. Это
-необходимо, поскольку generated extension signatures не могут отличаться
-только tuple names.
+presentation во всех registrations одной compilation. Сравниваются
+рекурсивные layouts обеих сторон pair:
+
+- если source и destination presentations совпадают, registrations без
+  diagnostic используют один generated DSL surface;
+- если presentation различается хотя бы на одной стороне, generator
+  выдаёт `MORPH0056` вместо молчаливого выбора canonical aliases.
+
+Destination presentation определяет construction/member plan, а source
+presentation — contextual type и доступные имена в callback. Поэтому
+конфликт source aliases так же неразрешим для текущего pair-specific DSL,
+как конфликт destination aliases: generated extension signatures не могут
+отличаться только tuple names.
 
 Внутри одной pair source и destination могут иметь разные presentations;
 именно это делает возможным name-based reorder. Construction/member plan types
@@ -449,10 +464,16 @@ Diagnostic и generated documentation показывают semantic name. Для
 element используется форма `element #N (ItemN)`. `Rest` или цепочка
 physical nesting не показываются.
 
-Нужна tuple-specific compile-time diagnostic для conflicting presentation
-одной physical pair. Остальные failures по возможности используют
-уже существующие construction, member, conversion, nullability и completeness
-diagnostics с tuple-aware target names.
+`MORPH0056` (`Registration`, `Error`) сообщает о conflicting tuple
+presentation одной physical pair между иначе независимо допустимыми
+registrations. Прямая повторная регистрация physical pair внутри одного
+mapper по-прежнему получает только `MORPH0013`, даже если tuple aliases
+в declarations различаются. Одна registration не получает обе diagnostics
+за один conflict.
+
+Остальные failures по возможности используют уже существующие
+construction, member, conversion, nullability и completeness diagnostics с
+tuple-aware target names.
 
 ## Generated code
 
@@ -592,9 +613,10 @@ collection element mapping и отдельная tuple matching setting.
     polymorphism boundaries.
 25. Concrete custom `ITuple` maps through declared static surface; `ITuple`
     interface indexing remains explicit/manual.
-26. Conflicting tuple presentations for one physical pair produce one stable,
-    actionable compile-time diagnostic; presentations on different physical
-    pairs remain independent.
+26. Identical recursive source and destination presentations for one physical
+    pair share one DSL surface. A difference on either side produces one stable,
+    actionable `MORPH0056`; presentations on different physical pairs remain
+    independent. A direct duplicate in one mapper produces only `MORPH0013`.
 27. Mapper contracts, DI ambiguity and standalone lookup continue to use physical
     CLR pair identity.
 28. Generated snapshots preserve aliases, evaluation order, readable locals,
