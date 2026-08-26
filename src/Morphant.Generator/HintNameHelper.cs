@@ -30,7 +30,7 @@ internal static class HintNameHelper
         return hintNamePart + "__" + GetStableHash(value);
     }
 
-    private static string GetStableHash(string value)
+    internal static string GetStableHash(string value)
     {
         unchecked
         {

@@ -84,7 +84,8 @@ internal readonly record struct MappingPairCapabilities(
     bool Runtime,
     bool Manual,
     MappingConstructionKind Construction,
-    bool Members)
+    bool Members,
+    bool IntrinsicConstruction = false)
 {
     public bool StructuredConstruction =>
         Construction == MappingConstructionKind.Structured;

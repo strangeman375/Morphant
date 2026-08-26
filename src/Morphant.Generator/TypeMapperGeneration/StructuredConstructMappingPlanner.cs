@@ -274,7 +274,45 @@ internal static class StructuredConstructMappingPlanner
                                 argument.MemberAssignments))
                         .ToImmutableArray();
 
-                    if (ContainsMarker(
+                    if (BclTupleShapePolicy.TryCreate(destination) is
+                            { } tupleDestination)
+                    {
+                        var tuplePlanning =
+                            BclTupleMappingPlanner.BuildStructured(
+                                tupleDestination,
+                                sourceType,
+                                BuildSourceContext(mapping, sourceType),
+                                constructorMembers,
+                                leaf.ObjectCreation,
+                                arguments,
+                                configuration.Expression.SemanticModel,
+                                compilation,
+                                mapperType,
+                                mapping.NonNullSourceName,
+                                RewriteDependency,
+                                cancellationToken);
+
+                        plannedLeaf = tuplePlanning.Plan is
+                                { } tuplePlan
+                            ? new StructuredConstructLeafNode(
+                                StructuredConstructLeafKind.Constructor,
+                                tuplePlan,
+                                tuplePlanning.Observation,
+                                Failure: null,
+                                Terminal: null)
+                            : BuildUnsupportedPlanLeaf(
+                                mapping,
+                                configuration.Expression.DeclaringMapperType,
+                                leaf.ObjectCreation,
+                                previousAvailable == true
+                                    ? MappingExecutionPathSet
+                                        .UpdateWithPrevious
+                                    : MappingExecutionPathSet.NoPrevious,
+                                MappingFailureReason
+                                    .ConstructorParameterRuleInvalid,
+                                tuplePlanning.Observation);
+                    }
+                    else if (ContainsMarker(
                             arguments,
                             ByConventionMarkerMetadataName,
                             configuration.Expression.SemanticModel,
@@ -934,6 +972,39 @@ internal static class StructuredConstructMappingPlanner
         }
 
         var arguments = BuildObjectArguments(creation);
+
+        if (BclTupleShapePolicy.TryCreate(destination) is
+                { } tupleDestination)
+        {
+            var tuplePlanning = BclTupleMappingPlanner.BuildStructured(
+                tupleDestination,
+                sourceType,
+                BuildSourceContext(mapping, sourceType),
+                memberMappings,
+                creation,
+                arguments,
+                semanticModel,
+                compilation,
+                mapperType,
+                nonNullSourceName,
+                rewriteDependencyExpression,
+                cancellationToken);
+
+            return tuplePlanning.Plan is { } tuplePlan
+                ? new StructuredConstructLeafNode(
+                    StructuredConstructLeafKind.Constructor,
+                    tuplePlan,
+                    tuplePlanning.Observation,
+                    Failure: null,
+                    Terminal: null)
+                : BuildUnsupportedPlanLeaf(
+                    mapping,
+                    sourceMapper,
+                    creation,
+                    paths,
+                    MappingFailureReason.ConstructorParameterRuleInvalid,
+                    tuplePlanning.Observation);
+        }
 
         if (ContainsMarker(
                 arguments,
@@ -1669,7 +1740,7 @@ internal static class StructuredConstructMappingPlanner
             RuleOrigin: ruleOrigin);
     }
 
-    private static bool TryGetByConventionRules(
+    internal static bool TryGetByConventionRules(
         ImmutableArray<StructuredObjectArgument> arguments,
         INamedTypeSymbol destination,
         Compilation compilation,
@@ -1730,17 +1801,22 @@ internal static class StructuredConstructMappingPlanner
             return false;
         }
 
-        var constructionModel = ConstructionPlanModelBuilder.Build(
-            destination.OriginalDefinition,
-            "Morphant.Generated",
-            "Construction",
-            compilation,
-            cancellationToken);
-        var parameterNames =
-            constructionModel.ConstructorParameterFields.ToDictionary(
-                field => field.Name,
-                field => field.ParameterName,
-                StringComparer.Ordinal);
+        var tupleShape = BclTupleShapePolicy.TryCreate(destination);
+        var parameterNames = tupleShape is not null
+            ? tupleShape.Elements.ToDictionary(
+                static element => element.Name,
+                static element => element.Name,
+                StringComparer.Ordinal)
+            : ConstructionPlanModelBuilder.Build(
+                    destination.OriginalDefinition,
+                    "Morphant.Generated",
+                    "Construction",
+                    compilation,
+                    cancellationToken)
+                .ConstructorParameterFields.ToDictionary(
+                    field => field.Name,
+                    field => field.ParameterName,
+                    StringComparer.Ordinal);
         var result =
             ImmutableArray.CreateBuilder<
                 StructuredConstructorParameterRule>();
@@ -2178,6 +2254,8 @@ internal static class StructuredConstructMappingPlanner
                 constructor.CreateMemberMappings,
             CreatePostMemberMappings =
                 constructor.CreatePostMemberMappings,
+            CreateTupleReconstruction =
+                constructor.TupleReconstruction,
             UpdateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             ControlFlow = null,
             CreateFailure = null,
@@ -2254,6 +2332,7 @@ internal static class StructuredConstructMappingPlanner
         var leaf = mapping with
         {
             CreateConstructor = null,
+            CreateTupleReconstruction = null,
             CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
             UpdateMemberMappings = memberMappings.Update,

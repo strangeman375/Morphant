@@ -51,5 +51,11 @@ reconstructed. Its settable members and eligible readable nested members remain
 available, but an `init`-only rule produces
 [`MORPH0042`](../diagnostics/MORPH0042.md).
 
+For tuples, the plan contains one flat property per logical element and never
+contains `Rest`. Rules can supply final constructor values as well as writable
+`ValueTuple` updates. Existing `System.Tuple` instances are not reconstructed
+for scalar rules; eligible nested `Update` statements on referenced elements
+remain valid. See [Tuple mapping](../tuple-mapping.md).
+
 Related: [declarative expressions](declarative-expressions.md),
 [nested mapping](../nested-mapping.md).

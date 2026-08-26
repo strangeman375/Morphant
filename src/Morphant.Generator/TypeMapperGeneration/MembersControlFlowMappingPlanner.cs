@@ -491,9 +491,10 @@ internal static class MembersControlFlowMappingPlanner
                     leaf =>
                     {
                         var plan = configuredMembers.Leaves[leaf];
+                        var leafMapping = flatMappings[leaf];
 
                         if (MemberRecoveryPlanner.TryBuildFailure(
-                                baseMapping,
+                                leafMapping,
                                 plan,
                                 resultPolicy,
                                 paths,
@@ -782,6 +783,9 @@ internal static class MembersControlFlowMappingPlanner
                AreEquivalentConstructor(
                    left.CreateConstructor,
                    right.CreateConstructor) &&
+               TypeMapperRuntimeEquality.AreEquivalent(
+                   left.CreateTupleReconstruction,
+                   right.CreateTupleReconstruction) &&
                left.CreateMemberMappings.SequenceEqual(
                    right.CreateMemberMappings) &&
                AreEquivalentFailure(
@@ -829,49 +833,9 @@ internal static class MembersControlFlowMappingPlanner
             return left is null && right is null;
         }
 
-        return StringComparer.Ordinal.Equals(
-                   left.Value.ConstructedTypeName,
-                   right.Value.ConstructedTypeName) &&
-               left.Value.Arguments.Length ==
-                   right.Value.Arguments.Length &&
-               left.Value.Arguments.Zip(
-                       right.Value.Arguments,
-                       AreEquivalentConstructorArgument)
-                   .All(static equivalent => equivalent);
-    }
-
-    private static bool AreEquivalentConstructorArgument(
-        TypeMapperConstructorArgumentMappingModel left,
-        TypeMapperConstructorArgumentMappingModel right)
-    {
-        return StringComparer.Ordinal.Equals(
-                   left.ParameterName,
-                   right.ParameterName) &&
-               StringComparer.Ordinal.Equals(
-                   left.SourceMemberName,
-                   right.SourceMemberName) &&
-               StringComparer.Ordinal.Equals(
-                   left.ValueLocalName,
-                   right.ValueLocalName) &&
-               StringComparer.Ordinal.Equals(
-                   left.ExplicitValueExpression,
-                   right.ExplicitValueExpression) &&
-               StringComparer.Ordinal.Equals(
-                   left.ValueLocalTypeName,
-                   right.ValueLocalTypeName) &&
-               StringComparer.Ordinal.Equals(
-                   left.TargetTypeName,
-                   right.TargetTypeName) &&
-               Equals(
-                   left.DependencyExpression,
-                   right.DependencyExpression) &&
-               (left.EvaluationLocals.IsDefault
-                    ? ImmutableArray<TypeMapperLocalValueModel>.Empty
-                    : left.EvaluationLocals)
-               .SequenceEqual(
-                   right.EvaluationLocals.IsDefault
-                       ? ImmutableArray<TypeMapperLocalValueModel>.Empty
-                       : right.EvaluationLocals);
+        return TypeMapperRuntimeEquality.AreEquivalent(
+            left.Value,
+            right.Value);
     }
 
     private static TypeMapperControlFlowNode SelectRoot(
@@ -891,6 +855,7 @@ internal static class MembersControlFlowMappingPlanner
             {
                 CreateFactory = null,
                 CreateConstructor = null,
+                CreateTupleReconstruction = null,
                 CreateFailure = null
             };
 

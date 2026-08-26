@@ -35,6 +35,13 @@ internal static class MappingRegistrationDiagnosticDescriptors
             "Mappings '{0}' and '{1}' may become identical for some generic " +
             "type arguments in mapper '{2}'.");
 
+    public static readonly DiagnosticDescriptor ConflictingTuplePresentation =
+        Create(
+            "MORPH0056",
+            "Tuple presentation is conflicting",
+            "Mapping '{0}' uses tuple presentation '{1}', which conflicts " +
+            "with the presentation '{2}' of the same physical mapping pair.");
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

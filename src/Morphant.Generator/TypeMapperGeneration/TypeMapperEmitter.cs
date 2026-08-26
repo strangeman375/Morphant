@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.Settings;
 
 namespace Morphant.Generator.TypeMapperGeneration;
@@ -773,12 +774,34 @@ internal static class TypeMapperEmitter
 
         var hasPostMappings =
             !mapping.CreatePostMemberMappings.IsEmpty ||
-            mapping.PostMemberControlFlow is not null;
+            mapping.PostMemberControlFlow is not null ||
+            mapping.CreateTupleReconstruction is not null;
         var constructionPrefix = hasPostMappings
-            ? $"var {Identifier(mapping.ResultLocalName)} = "
+            ? (constructor.TupleConstruction is null
+                ? "var "
+                : mapping.NonNullDestinationTypeName + " ") +
+              $"{Identifier(mapping.ResultLocalName)} = "
             : "return ";
 
-        if (constructor.Arguments.IsEmpty)
+        if (constructor.TupleConstruction is { } tupleConstruction)
+        {
+            var arguments = constructor.Arguments
+                .OrderBy(static argument => argument.TupleElementOrdinal)
+                .Select(argument => ConstructorArgumentValueExpression(
+                    mapping,
+                    argument,
+                    localNames))
+                .ToImmutableArray();
+            writer.Line(
+                constructionPrefix +
+                BuildTupleConstructionExpression(
+                    tupleConstruction,
+                    arguments) +
+                (mapping.CreateMemberMappings.IsEmpty
+                    ? ";"
+                    : string.Empty));
+        }
+        else if (constructor.Arguments.IsEmpty)
         {
             writer.Line(
                 $"{constructionPrefix}new " +
@@ -843,7 +866,7 @@ internal static class TypeMapperEmitter
                         : string.Empty;
 
                 writer.Line(
-                    $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                    $"{DestinationAccess(memberMapping)} = " +
                     MemberValueExpression(
                         mapping,
                         memberMapping,
@@ -870,7 +893,24 @@ internal static class TypeMapperEmitter
                 postControlFlow,
                 Identifier(mapping.ResultLocalName),
                 localNames,
-                operationExpression: operationExpression);
+                operationExpression: operationExpression,
+                tupleReconstruction: mapping.CreateTupleReconstruction);
+            return;
+        }
+
+        if (mapping.CreateTupleReconstruction is
+                { } tupleReconstruction)
+        {
+            WriteMemberValueLocals(
+                writer,
+                mapping.CreatePostMemberMappings);
+            WriteTupleReconstructionReturn(
+                writer,
+                mapping,
+                tupleReconstruction,
+                mapping.CreatePostMemberMappings,
+                Identifier(mapping.ResultLocalName),
+                localNames);
             return;
         }
 
@@ -887,7 +927,7 @@ internal static class TypeMapperEmitter
             WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
                 $"{resultLocalName}." +
-                $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                $"{DestinationAccess(memberMapping)} = " +
                 MemberValueExpression(
                     mapping,
                     memberMapping,
@@ -979,7 +1019,7 @@ internal static class TypeMapperEmitter
             WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
                 $"{assignmentTarget}." +
-                $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                $"{DestinationAccess(memberMapping)} = " +
                 MemberValueExpression(
                     mapping,
                     memberMapping,
@@ -2286,7 +2326,7 @@ internal static class TypeMapperEmitter
             WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
                 "destination." +
-                $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                $"{DestinationAccess(memberMapping)} = " +
                 MemberValueExpression(
                     mapping,
                     memberMapping,
@@ -2305,7 +2345,8 @@ internal static class TypeMapperEmitter
         string assignmentTarget,
         GeneratedLocalNameAllocator localNames,
         string? returnExpression = null,
-        string? operationExpression = null)
+        string? operationExpression = null,
+        TypeMapperTupleReconstructionModel? tupleReconstruction = null)
     {
         operationExpression ??=
             MappingOperationExpression(update: false);
@@ -2326,7 +2367,8 @@ internal static class TypeMapperEmitter
                 assignmentTarget,
                 localNames,
                 returnExpression,
-                operationExpression);
+                operationExpression,
+                tupleReconstruction);
             return;
         }
 
@@ -2352,7 +2394,8 @@ internal static class TypeMapperEmitter
                     assignmentTarget,
                     localNames,
                     returnExpression,
-                    operationExpression);
+                    operationExpression,
+                    tupleReconstruction);
                 writer.Unindent();
                 writer.Line("}");
             }
@@ -2370,7 +2413,8 @@ internal static class TypeMapperEmitter
                     assignmentTarget,
                     localNames,
                     returnExpression,
-                    operationExpression);
+                    operationExpression,
+                    tupleReconstruction);
             }
 
             return;
@@ -2388,7 +2432,8 @@ internal static class TypeMapperEmitter
                 assignmentTarget,
                 localNames,
                 returnExpression,
-                operationExpression);
+                operationExpression,
+                tupleReconstruction);
             writer.Unindent();
             writer.Line("}");
             writer.Line("else");
@@ -2401,7 +2446,8 @@ internal static class TypeMapperEmitter
                 assignmentTarget,
                 localNames,
                 returnExpression,
-                operationExpression);
+                operationExpression,
+                tupleReconstruction);
             writer.Unindent();
             writer.Line("}");
             return;
@@ -2429,12 +2475,24 @@ internal static class TypeMapperEmitter
 
         WriteMemberValueLocals(writer, node.MemberMappings);
 
+        if (tupleReconstruction is { } reconstruction)
+        {
+            WriteTupleReconstructionReturn(
+                writer,
+                mapping,
+                reconstruction,
+                node.MemberMappings,
+                assignmentTarget,
+                localNames);
+            return;
+        }
+
         foreach (var memberMapping in node.MemberMappings)
         {
             WriteInvocationArgumentLocals(writer, memberMapping);
             writer.Line(
                 assignmentTarget + "." +
-                $"{Identifier(memberMapping.DestinationMemberName)} = " +
+                $"{DestinationAccess(memberMapping)} = " +
                 MemberValueExpression(
                     mapping,
                     memberMapping,
@@ -2448,6 +2506,39 @@ internal static class TypeMapperEmitter
         }
 
         writer.Line($"return {returnExpression ?? assignmentTarget};");
+    }
+
+    private static void WriteTupleReconstructionReturn(
+        CodeWriter writer,
+        TypeMapperMappingModel mapping,
+        TypeMapperTupleReconstructionModel reconstruction,
+        ImmutableArray<TypeMapperMemberMappingModel> memberMappings,
+        string resultExpression,
+        GeneratedLocalNameAllocator localNames)
+    {
+        foreach (var memberMapping in memberMappings)
+        {
+            WriteInvocationArgumentLocals(writer, memberMapping);
+        }
+
+        var arguments = reconstruction.Elements
+            .Select(element => memberMappings.LastOrDefault(member =>
+                    StringComparer.Ordinal.Equals(
+                        member.DestinationMemberName,
+                        element.Name)) is
+                { DestinationMemberName: not null } member
+                ? MemberValueExpression(
+                    mapping,
+                    member,
+                    localNames)
+                : resultExpression + "." + element.AccessPath)
+            .ToImmutableArray();
+        writer.Line(
+            "return " +
+            BuildTupleConstructionExpression(
+                reconstruction.Construction,
+                arguments) +
+            ";");
     }
 
     private static void WriteMappingConfigurationFailure(
@@ -2783,5 +2874,126 @@ internal static class TypeMapperEmitter
                SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
             ? "@" + value
             : value;
+    }
+
+    private static string DestinationAccess(
+        TypeMapperMemberMappingModel mapping) =>
+        mapping.DestinationAccessPath ??
+        Identifier(mapping.DestinationMemberName);
+
+    private static string BuildTupleConstructionExpression(
+        TypeMapperTupleConstructionModel tuple,
+        ImmutableArray<string> arguments)
+    {
+        if (tuple.ElementTypeNames.Length != arguments.Length)
+        {
+            throw new InvalidOperationException(
+                "Tuple construction requires one value per element.");
+        }
+
+        if (tuple.ElementNames.Length != arguments.Length)
+        {
+            throw new InvalidOperationException(
+                "Tuple construction requires one name per element.");
+        }
+
+        if (tuple.Kind == BclTupleKind.ValueTuple &&
+            arguments.Length >= 2)
+        {
+            return "(" + string.Join(
+                ", ",
+                arguments.Select((argument, index) =>
+                    tuple.ElementNames[index] is { } name
+                        ? Identifier(name) + ": " + argument
+                        : argument)) + ")";
+        }
+
+        return BuildTupleConstructionExpression(
+            tuple.Kind,
+            tuple.ElementTypeNames,
+            arguments,
+            offset: 0,
+            arguments.Length);
+    }
+
+    private static string BuildTupleConstructionExpression(
+        BclTupleKind kind,
+        ImmutableArray<string> elementTypeNames,
+        ImmutableArray<string> arguments,
+        int offset,
+        int count)
+    {
+        var typePrefix = kind == BclTupleKind.ValueTuple
+            ? "global::System.ValueTuple"
+            : "global::System.Tuple";
+
+        if (count == 0)
+        {
+            return "new global::System.ValueTuple()";
+        }
+
+        var directCount = Math.Min(count, 7);
+        var hasRest = count > 7;
+        var typeArguments = new List<string>(directCount +
+            (hasRest ? 1 : 0));
+        var valueArguments = new List<string>(directCount +
+            (hasRest ? 1 : 0));
+
+        for (var index = 0; index < directCount; index++)
+        {
+            typeArguments.Add(elementTypeNames[offset + index]);
+            valueArguments.Add(arguments[offset + index]);
+        }
+
+        if (hasRest)
+        {
+            var restCount = count - directCount;
+            typeArguments.Add(BuildTupleTypeName(
+                kind,
+                elementTypeNames,
+                offset + directCount,
+                restCount));
+            valueArguments.Add(BuildTupleConstructionExpression(
+                kind,
+                elementTypeNames,
+                arguments,
+                offset + directCount,
+                restCount));
+        }
+
+        return "new " + typePrefix + "<" +
+               string.Join(", ", typeArguments) + ">(" +
+               string.Join(", ", valueArguments) + ")";
+    }
+
+    private static string BuildTupleTypeName(
+        BclTupleKind kind,
+        ImmutableArray<string> elementTypeNames,
+        int offset,
+        int count)
+    {
+        var typePrefix = kind == BclTupleKind.ValueTuple
+            ? "global::System.ValueTuple"
+            : "global::System.Tuple";
+        var directCount = Math.Min(count, 7);
+        var hasRest = count > 7;
+        var typeArguments = new List<string>(directCount +
+            (hasRest ? 1 : 0));
+
+        for (var index = 0; index < directCount; index++)
+        {
+            typeArguments.Add(elementTypeNames[offset + index]);
+        }
+
+        if (hasRest)
+        {
+            typeArguments.Add(BuildTupleTypeName(
+                kind,
+                elementTypeNames,
+                offset + directCount,
+                count - directCount));
+        }
+
+        return typePrefix + "<" + string.Join(", ", typeArguments) + ">";
     }
 }

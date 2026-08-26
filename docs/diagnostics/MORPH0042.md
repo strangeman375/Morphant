@@ -6,7 +6,8 @@ A member rule reaches an operation where it cannot run. For example, an
 `init`-only member cannot be assigned after an existing destination has been
 selected or after `ConstructUsing`/`ResolveUsing` has returned an already
 initialized result. A creation-time rule also cannot read `result` before that
-destination exists.
+destination exists. The same restriction applies to a scalar rule for a
+read-only `System.Tuple` element after a runtime factory returns.
 
 ## Fix
 

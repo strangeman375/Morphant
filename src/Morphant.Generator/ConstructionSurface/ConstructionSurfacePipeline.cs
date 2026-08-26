@@ -161,7 +161,8 @@ internal static class ConstructionSurfacePipeline
         CancellationToken cancellationToken)
     {
         var definitions =
-            new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
+            new Dictionary<string, ConstructionPlanDefinition>(
+                StringComparer.Ordinal);
 
         foreach (var pair in pairs)
         {
@@ -176,13 +177,23 @@ internal static class ConstructionSurfacePipeline
                 DestinationCapabilityPolicy.GetDestinationType(
                     pair.DestinationType,
                     compilation);
-            var definition = destination.OriginalDefinition;
-            var identity = definition.ContainingAssembly.Identity + "|" +
-                           SymbolNameHelper.GetFullMetadataName(definition);
+            var tuple = BclTupleShapePolicy.TryCreate(destination);
+            var definition = tuple is null
+                ? destination.OriginalDefinition
+                : destination;
+            var identity = tuple is null
+                ? definition.ContainingAssembly.Identity + "|" +
+                  SymbolNameHelper.GetFullMetadataName(definition)
+                : "tuple|" +
+                  BclTuplePlanNaming.BuildStableIdentity(tuple);
 
             if (!definitions.ContainsKey(identity))
             {
-                definitions.Add(identity, definition);
+                definitions.Add(
+                    identity,
+                    new ConstructionPlanDefinition(
+                        definition,
+                        tuple));
             }
         }
 
@@ -194,20 +205,23 @@ internal static class ConstructionSurfacePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var metadataName =
-                SymbolNameHelper.GetFullMetadataName(definition.Value);
-            var planNamespace =
-                GeneratedPlanNaming.BuildNamespace(
-                    definition.Value);
-            var planTypeName =
-                GeneratedPlanNaming.BuildConstructionTypeName(
-                    definition.Value);
-            var model = ConstructionPlanModelBuilder.Build(
-                definition.Value,
-                planNamespace,
-                planTypeName,
-                compilation,
-                cancellationToken);
+            var metadataName = definition.Value.Tuple is { } tuple
+                ? "Tuple." +
+                  BclTuplePlanNaming.BuildHintIdentity(tuple)
+                : SymbolNameHelper.GetFullMetadataName(
+                    definition.Value.DestinationType);
+            var model = definition.Value.Tuple is { } tupleShape
+                ? BclTuplePlanModelBuilder.BuildConstruction(
+                    tupleShape,
+                    compilation)
+                : ConstructionPlanModelBuilder.Build(
+                    definition.Value.DestinationType,
+                    GeneratedPlanNaming.BuildNamespace(
+                        definition.Value.DestinationType),
+                    GeneratedPlanNaming.BuildConstructionTypeName(
+                        definition.Value.DestinationType),
+                    compilation,
+                    cancellationToken);
             var hintName = GeneratedSourceHintName.Create(
                 "Construction",
                 hintNameAllocator.Allocate(metadataName));
@@ -257,4 +271,8 @@ internal static class ConstructionSurfacePipeline
     internal readonly record struct ConstructionSurfaceRequest(
         string HintName,
         string Source);
+
+    private readonly record struct ConstructionPlanDefinition(
+        INamedTypeSymbol DestinationType,
+        BclTupleShape? Tuple);
 }

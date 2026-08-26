@@ -44,6 +44,8 @@ internal static class PairConfigurationModelBuilder
             ", " +
             destinationTypeName +
             ">";
+        var tupleShape = BclTupleShapePolicy.TryCreate(
+            previousDestinationType);
 
         return new PairConfigurationModel(
             builderTypeName,
@@ -59,16 +61,28 @@ internal static class PairConfigurationModelBuilder
                 typeParameterNames),
             pair.Capabilities.StructuredConstruction,
             pair.Capabilities.StructuredConstruction
-                ? BuildPlanTypeName(
-                    (INamedTypeSymbol)previousDestinationType,
-                    typeParameterNames,
-                    GeneratedPlanNaming.BuildConstructionTypeName)
+                ? tupleShape is { } constructionTuple
+                    ? BclTuplePlanNaming.BuildPlanTypeReference(
+                        constructionTuple,
+                        BclTuplePlanNaming.BuildConstructionTypeName(
+                            constructionTuple),
+                        typeParameterNames)
+                    : BuildPlanTypeName(
+                        (INamedTypeSymbol)previousDestinationType,
+                        typeParameterNames,
+                        GeneratedPlanNaming.BuildConstructionTypeName)
                 : destinationTypeName,
             pair.Capabilities.Members
-                ? BuildPlanTypeName(
-                    (INamedTypeSymbol)previousDestinationType,
-                    typeParameterNames,
-                    GeneratedPlanNaming.BuildMembersTypeName)
+                ? tupleShape is { } membersTuple
+                    ? BclTuplePlanNaming.BuildPlanTypeReference(
+                        membersTuple,
+                        BclTuplePlanNaming.BuildMembersTypeName(
+                            membersTuple),
+                        typeParameterNames)
+                    : BuildPlanTypeName(
+                        (INamedTypeSymbol)previousDestinationType,
+                        typeParameterNames,
+                        GeneratedPlanNaming.BuildMembersTypeName)
                 : null,
             PairTypeParameterModelBuilder.Build(
                 sourceType,

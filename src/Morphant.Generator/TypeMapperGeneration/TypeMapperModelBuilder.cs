@@ -645,7 +645,8 @@ internal static class TypeMapperModelBuilder
             };
         }
 
-        if (pair.Capabilities.DirectConstruction &&
+        if ((pair.Capabilities.DirectConstruction ||
+             pair.Capabilities.IntrinsicConstruction) &&
             configuration.Settings.ConstructorSelection.Origin ==
                 PairConfigurationSettingOrigin.Explicit)
         {
@@ -846,19 +847,35 @@ internal static class TypeMapperModelBuilder
             ConventionConstructorMappingPlan? constructorMapping = null;
             MappingFailureObservation? createFailure = null;
 
+            var constructorMembers =
+                memberMappings.BuildConstructorInitializationPlan(
+                    replacement: false);
+            var tupleDestination = BclTupleShapePolicy.TryCreate(
+                destinationPlan.MemberType);
             var constructorPlanning =
-                ConventionConstructorMappingPlanner.Build(
-                    declarativeSourceType,
-                    destinationPlan.MemberType,
-                    memberMappings.BuildConstructorInitializationPlan(
-                        replacement: false),
-                    pair.Capabilities,
-                    constructorSelection,
-                    conventionSourceContext,
-                    compilation,
-                    mapperType,
-                    nonNullSourceName,
-                    cancellationToken);
+                tupleDestination is { }
+                    ? BclTupleMappingPlanner.BuildConvention(
+                        tupleDestination,
+                        declarativeSourceType,
+                        conventionSourceContext,
+                        constructorMembers,
+                        compilation,
+                        mapperType,
+                        nonNullSourceName,
+                        effectiveSettings.MemberSelection ==
+                            MemberSelectionValue.Auto,
+                        cancellationToken)
+                    : ConventionConstructorMappingPlanner.Build(
+                        declarativeSourceType,
+                        destinationPlan.MemberType,
+                        constructorMembers,
+                        pair.Capabilities,
+                        constructorSelection,
+                        conventionSourceContext,
+                        compilation,
+                        mapperType,
+                        nonNullSourceName,
+                        cancellationToken);
             constructorMapping = constructorPlanning.Plan;
             var constructorObservation =
                 constructorPlanning.Observation with
@@ -870,6 +887,7 @@ internal static class TypeMapperModelBuilder
             if (constructorMapping is null)
             {
                 var missingConstructionPolicy =
+                    tupleDestination is not null ||
                     constructorSelection is not null &&
                     !pair.Capabilities.StructuredConstruction;
                 createFailure = MappingFailureObservation.Create(
@@ -904,6 +922,8 @@ internal static class TypeMapperModelBuilder
                     CreatePostMemberMappings =
                         constructorMapping?.CreatePostMemberMappings ??
                         ImmutableArray<TypeMapperMemberMappingModel>.Empty,
+                    CreateTupleReconstruction =
+                        constructorMapping?.TupleReconstruction,
                     UpdateMemberMappings = memberMappings.Update,
                     CreateFailure = createFailure,
                     ConstructorObservation = constructorObservation

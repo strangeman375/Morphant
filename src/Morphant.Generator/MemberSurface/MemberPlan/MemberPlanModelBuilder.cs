@@ -235,7 +235,7 @@ internal static class MemberPlanModelBuilder
         return result.ToImmutable();
     }
 
-    private static string BuildInputTypeName(
+    internal static string BuildInputTypeName(
         ITypeSymbol type,
         NullableAnnotation nullableAnnotation,
         ISymbol member,

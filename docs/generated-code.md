@@ -72,4 +72,9 @@ For stable line endings across platforms, add:
 Morphant removes obsolete generated files after a successful compilation and
 preserves unrelated files in the snapshot directory.
 
+Tuple construction and member plans are emitted under
+`Morphant.Generated.Tuples`. Their readable prefix contains tuple kind and
+logical arity; a stable suffix distinguishes physical element types and tuple
+presentations. Long tuple plans are flat and hide the BCL `Rest` chain.
+
 See [Testing mappings](testing.md) for generated-diff checks.

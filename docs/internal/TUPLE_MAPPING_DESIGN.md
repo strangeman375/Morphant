@@ -1,6 +1,7 @@
 # First-class tuple mapping design
 
-Статус: дизайн утверждён; готов к реализации.
+Статус: реализовано; contract закреплён analyzer-backed integration,
+generated-source, diagnostics и incrementality tests.
 
 ## Цель
 
@@ -536,6 +537,8 @@ tuple-aware target names.
 - `System.Tuple` не требует explicit factory, если все required values доступны.
 - Long tuples понижаются в required nested BCL representation, но
   generated declarative surface и diagnostics остаются плоскими.
+- Generated tuple-plan names используют стабильную source-level type identity
+  и не зависят от того, предоставил тип reference или runtime assembly.
 - Value tuple Update изменяет текущий selected tuple value и возвращает его.
   Обычно это сам by-value `destination` parameter; отдельный local создаётся
   только при необходимости. Caller-owned value не изменяется по ссылке.
@@ -666,13 +669,13 @@ DSL surface и source-generic surface refactoring.
 
 ## Documentation completion
 
-При реализации нужно:
+Выполнено при реализации:
 
-- убрать tuples из opaque/manual-only ограничений;
-- обновить `conventions.md`, `create-and-update.md`, API pages и
+- [x] tuples убраны из opaque/manual-only ограничений;
+- [x] обновлены `conventions.md`, `create-and-update.md`, API pages и
   `limitations.md`;
-- добавить user-facing tuple guide с named, unnamed, legacy и Update
-  examples;
-- добавить страницы для новых diagnostics и обновить diagnostics
-  index;
-- обновить generated-code snapshots.
+- [x] добавлен user-facing `tuple-mapping.md` с named, unnamed, legacy и
+  Update examples;
+- [x] добавлена страница `MORPH0056`, обновлены связанные diagnostics и index;
+- [x] добавлены exact generated-code snapshots для tuple plans и mapper
+  lowering.

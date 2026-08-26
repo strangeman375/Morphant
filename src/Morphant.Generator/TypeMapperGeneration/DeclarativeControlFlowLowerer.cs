@@ -86,6 +86,7 @@ internal static class DeclarativeControlFlowLowerer
                 UpdateDirectExpression = null,
                 CreateFactory = null,
                 CreateConstructor = null,
+                CreateTupleReconstruction = null,
                 CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 UpdateMemberMappings = memberLeaf.MemberMappings,

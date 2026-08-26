@@ -8,7 +8,7 @@ replacement.
 
 `Resolve` has the same constructor requirement as [`Construct`](construct.md):
 the destination must expose at least one accessible constructor with
-supported by-value parameters.
+supported by-value parameters, or be a BCL tuple with intrinsic construction.
 
 ## Overloads
 
@@ -39,4 +39,5 @@ builder.Map<OrderDto, Order>()
 destination method or `Convert`.
 
 Related: [Create and Update](../create-and-update.md),
-[declarative expressions](declarative-expressions.md).
+[declarative expressions](declarative-expressions.md),
+[tuple mapping](../tuple-mapping.md).

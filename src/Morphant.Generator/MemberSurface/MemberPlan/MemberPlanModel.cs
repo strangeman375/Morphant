@@ -18,7 +18,7 @@ internal sealed record MemberPlanTypeParameterModel(
 internal sealed record MemberPlanPropertyModel(
     string Name,
     string TypeName,
-    string Cref,
+    string? Cref,
     bool CanWrite,
     bool AcceptsNull,
     bool RequiresNullableAnnotationsDisabled,

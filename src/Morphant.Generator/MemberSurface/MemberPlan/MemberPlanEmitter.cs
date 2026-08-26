@@ -116,6 +116,15 @@ internal static class MemberPlanEmitter
         CodeWriter writer,
         MemberPlanPropertyModel member)
     {
+        if (member.Cref is null)
+        {
+            WriteSummary(
+                writer,
+                "Maps tuple element " +
+                $"<c>{XmlText(member.Name)}</c>.");
+            return;
+        }
+
         var cref = XmlAttribute(member.Cref);
         WriteSummary(
             writer,

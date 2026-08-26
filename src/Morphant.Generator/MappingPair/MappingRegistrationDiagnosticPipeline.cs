@@ -24,6 +24,8 @@ internal static class MappingRegistrationDiagnosticPipeline
         CancellationToken cancellationToken)
     {
         var candidates = ImmutableArray.CreateBuilder<DiagnosticCandidate>();
+        var tuplePresentations =
+            ImmutableArray.CreateBuilder<TuplePresentationRegistration>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
 
@@ -41,6 +43,29 @@ internal static class MappingRegistrationDiagnosticPipeline
             }
 
             var model = configuration.MappingPairs;
+
+            foreach (var pair in model.Pairs)
+            {
+                if (!BclTupleShapePolicy.ContainsTuplePresentation(
+                        pair.SourceType) &&
+                    !BclTupleShapePolicy.ContainsTuplePresentation(
+                        pair.DestinationType))
+                {
+                    continue;
+                }
+
+                tuplePresentations.Add(
+                    new TuplePresentationRegistration(
+                        MappingTypeIdentityPolicy
+                            .CreateAlphaEquivalentPairKey(
+                                pair.SourceType,
+                                pair.DestinationType),
+                        BclTupleShapePolicy.BuildPairPresentationKey(
+                            pair.SourceType,
+                            pair.DestinationType),
+                        pair,
+                        declaration.MapperIdentity));
+            }
 
             foreach (var pair in model.UnavailablePairs)
             {
@@ -136,6 +161,11 @@ internal static class MappingRegistrationDiagnosticPipeline
             }
         }
 
+        AddTuplePresentationDiagnostics(
+            tuplePresentations.ToImmutable(),
+            candidates,
+            cancellationToken);
+
         return candidates
             .OrderBy(static candidate => candidate.IdOrder)
             .ThenBy(static candidate => candidate.MapperIdentity,
@@ -148,6 +178,82 @@ internal static class MappingRegistrationDiagnosticPipeline
             .ThenBy(static candidate => candidate.Position)
             .Select(static candidate => candidate.Diagnostic)
             .ToImmutableArray();
+    }
+
+    private static void AddTuplePresentationDiagnostics(
+        ImmutableArray<TuplePresentationRegistration> registrations,
+        ImmutableArray<DiagnosticCandidate>.Builder candidates,
+        CancellationToken cancellationToken)
+    {
+        foreach (var physicalPair in registrations
+                     .GroupBy(
+                         static registration => registration.PhysicalPairKey,
+                         StringComparer.Ordinal)
+                     .OrderBy(
+                         static group => group.Key,
+                         StringComparer.Ordinal))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var ordered = physicalPair
+                .OrderBy(static registration =>
+                    registration.Pair.Registration.Syntax.SyntaxTree
+                        .FilePath,
+                    StringComparer.Ordinal)
+                .ThenBy(static registration =>
+                    registration.Pair.Registration.Syntax.SpanStart)
+                .ThenBy(static registration =>
+                    registration.MapperIdentity,
+                    StringComparer.Ordinal)
+                .ThenBy(static registration =>
+                    registration.PresentationKey,
+                    StringComparer.Ordinal)
+                .ToImmutableArray();
+            var first = ordered[0];
+
+            foreach (var registration in ordered.Skip(1))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (StringComparer.Ordinal.Equals(
+                        first.PresentationKey,
+                        registration.PresentationKey))
+                {
+                    continue;
+                }
+
+                candidates.Add(new DiagnosticCandidate(
+                    IdOrder: 56,
+                    registration.MapperIdentity,
+                    physicalPair.Key,
+                    RoleOrder: 0,
+                    registration.Pair.Registration.Syntax.SpanStart,
+                    SecondaryKey: registration.PresentationKey,
+                    Diagnostic.Create(
+                        MappingRegistrationDiagnosticDescriptors
+                            .ConflictingTuplePresentation,
+                        GetMapIdentifierLocation(
+                            registration.Pair.Registration.Syntax),
+                        [GetMapIdentifierLocation(
+                            first.Pair.Registration.Syntax)],
+                        properties: null,
+                        MapperContractDisplay.Create(
+                            registration.Pair.SourceType,
+                            registration.Pair.DestinationType),
+                        BuildTuplePresentationDisplay(registration.Pair),
+                        BuildTuplePresentationDisplay(first.Pair))));
+            }
+        }
+    }
+
+    private static string BuildTuplePresentationDisplay(
+        MappingPairModel pair)
+    {
+        return pair.SourceType.ToDisplayString(
+                   SymbolDisplayFormats.FullyQualifiedNullable) +
+               " -> " +
+               pair.DestinationType.ToDisplayString(
+                   SymbolDisplayFormats.FullyQualifiedNullable);
     }
 
     private static Location GetTypeArgumentLocation(
@@ -201,4 +307,10 @@ internal static class MappingRegistrationDiagnosticPipeline
         int Position,
         string SecondaryKey,
         Diagnostic Diagnostic);
+
+    private readonly record struct TuplePresentationRegistration(
+        string PhysicalPairKey,
+        string PresentationKey,
+        MappingPairModel Pair,
+        string MapperIdentity);
 }

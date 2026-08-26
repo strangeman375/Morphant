@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
@@ -35,7 +36,10 @@ internal static class MemberTypeCompatibility
                     .HasPotentiallyCompatibleConversion(
                         candidate.SourceType,
                         candidate.DestinationType,
-                        compilation))
+                        compilation) ||
+                !PreservesTuplePresentation(
+                    candidate.SourceType,
+                    candidate.DestinationType))
             {
                 continue;
             }
@@ -47,7 +51,11 @@ internal static class MemberTypeCompatibility
                     candidate.SourceMemberName,
                     candidate.DestinationMemberName,
                     candidate.CanAssign,
-                    candidate.SourceExpression));
+                    candidate.SourceExpression,
+                    candidate.UseValueProbe
+                        ? candidate.DestinationType.ToDisplayString(
+                            SymbolDisplayFormats.FullyQualifiedNullable)
+                        : null));
         }
 
         if (probeCandidates.Count == 0)
@@ -130,6 +138,25 @@ internal static class MemberTypeCompatibility
 
                     var candidate = candidates[index];
 
+                    if (candidate.DestinationValueTypeName is
+                            { } destinationValueTypeName)
+                    {
+                        writer.Line(
+                            $"private static void __MorphantTypeCompatibilityProbe{index}(");
+                        writer.Indent();
+                        writer.Line($"{sourceTypeName} source,");
+                        writer.Line($"{destinationValueTypeName} value)");
+                        writer.Unindent();
+                        writer.Line("{");
+                        writer.Indent();
+                        writer.Line(
+                            "value = " +
+                            SourceExpression(candidate, mapperType) + ";");
+                        writer.Unindent();
+                        writer.Line("}");
+                        continue;
+                    }
+
                     if (candidate.CanAssign)
                     {
                         writer.Line(
@@ -172,6 +199,17 @@ internal static class MemberTypeCompatibility
             });
     }
 
+    private static bool PreservesTuplePresentation(
+        ITypeSymbol source,
+        ITypeSymbol destination)
+    {
+        return !BclTupleShapePolicy.ContainsTuplePresentation(source) ||
+               !BclTupleShapePolicy.ContainsTuplePresentation(destination) ||
+               StringComparer.Ordinal.Equals(
+                   BclTupleShapePolicy.BuildPresentationKey(source),
+                   BclTupleShapePolicy.BuildPresentationKey(destination));
+    }
+
     private static string Identifier(string value)
     {
         return SyntaxFacts.GetKeywordKind(value) !=
@@ -200,7 +238,8 @@ internal static class MemberTypeCompatibility
         string SourceMemberName,
         string DestinationMemberName,
         bool CanAssign,
-        ConventionSourceValueExpressionModel? SourceExpression);
+        ConventionSourceValueExpressionModel? SourceExpression,
+        string? DestinationValueTypeName);
 }
 
 internal readonly record struct MemberTypeCompatibilityCandidate(
@@ -209,4 +248,5 @@ internal readonly record struct MemberTypeCompatibilityCandidate(
     ITypeSymbol SourceType,
     ITypeSymbol DestinationType,
     bool CanAssign,
-    ConventionSourceValueExpressionModel? SourceExpression = null);
+    ConventionSourceValueExpressionModel? SourceExpression = null,
+    bool UseValueProbe = false);

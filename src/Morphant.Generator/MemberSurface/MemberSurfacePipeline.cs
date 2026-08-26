@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.ConstructionSurface.PairConfiguration;
 using Morphant.Generator.Incrementality;
 using Morphant.Generator.MappingPair;
@@ -174,9 +175,15 @@ internal static class MemberSurfacePipeline
                 .GetDestinationType(
                     pair.DestinationType,
                     compilation);
-            var definition = destination.OriginalDefinition;
-            var identity = definition.ContainingAssembly.Identity + "|" +
-                           SymbolNameHelper.GetFullMetadataName(definition);
+            var tuple = BclTupleShapePolicy.TryCreate(destination);
+            var definition = tuple is null
+                ? destination.OriginalDefinition
+                : destination;
+            var identity = tuple is null
+                ? definition.ContainingAssembly.Identity + "|" +
+                  SymbolNameHelper.GetFullMetadataName(definition)
+                : "tuple|" +
+                  BclTuplePlanNaming.BuildStableIdentity(tuple);
 
             if (!definitions.ContainsKey(identity))
             {
@@ -184,7 +191,8 @@ internal static class MemberSurfacePipeline
                     identity,
                     new MemberPlanDefinition(
                         definition,
-                        pair.Capabilities.StructuredConstruction));
+                        pair.Capabilities.StructuredConstruction,
+                        tuple));
             }
         }
 
@@ -196,13 +204,20 @@ internal static class MemberSurfacePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var metadataName = SymbolNameHelper.GetFullMetadataName(
-                definition.Value.DestinationType);
-            var model = MemberPlanModelBuilder.Build(
-                definition.Value.DestinationType,
-                definition.Value.IncludeInitOnlyProperties,
-                compilation,
-                cancellationToken);
+            var metadataName = definition.Value.Tuple is { } tuple
+                ? "Tuple." +
+                  BclTuplePlanNaming.BuildHintIdentity(tuple)
+                : SymbolNameHelper.GetFullMetadataName(
+                    definition.Value.DestinationType);
+            var model = definition.Value.Tuple is { } tupleShape
+                ? BclTuplePlanModelBuilder.BuildMembers(
+                    tupleShape,
+                    compilation)
+                : MemberPlanModelBuilder.Build(
+                    definition.Value.DestinationType,
+                    definition.Value.IncludeInitOnlyProperties,
+                    compilation,
+                    cancellationToken);
             var hintName = GeneratedSourceHintName.Create(
                 "Member",
                 hintNameAllocator.Allocate(metadataName));
@@ -256,7 +271,8 @@ internal static class MemberSurfacePipeline
 
     private readonly record struct MemberPlanDefinition(
         INamedTypeSymbol DestinationType,
-        bool IncludeInitOnlyProperties);
+        bool IncludeInitOnlyProperties,
+        BclTupleShape? Tuple);
 
     internal readonly record struct MemberSurfaceRequest(
         string HintName,

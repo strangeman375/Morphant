@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.Incrementality;
 using Morphant.Generator.MappingPair;
 
@@ -23,6 +24,7 @@ internal static class ConstructionPlanPipeline
                     source.Left,
                     source.Right.Compilation));
         var coordination = candidates
+            .Select(static (candidate, _) => candidate.Coordination)
             .Collect()
             .Select(static (values, cancellationToken) =>
                 DestinationPlanCoordinationBuilder.Build(
@@ -52,40 +54,57 @@ internal static class ConstructionPlanPipeline
                 MorphantGeneratorStageNames.BuildConstructionPlanModels);
     }
 
-    private static DestinationPlanCandidate BuildCandidate(
+    private static ConstructionPlanCandidate BuildCandidate(
         CanonicalMappingPairCandidate candidate,
         CSharpCompilation compilation)
     {
         var destination = DestinationCapabilityPolicy
             .GetDestinationType(
                 candidate.Pair.DestinationType,
-                compilation)
-            .OriginalDefinition;
+                compilation);
+        var tuple = BclTupleShapePolicy.TryCreate(destination);
+        var planIdentity = tuple is null
+            ? string.Empty
+            : BclTuplePlanNaming.BuildStableIdentity(tuple);
+        var definition = tuple is null
+            ? destination.OriginalDefinition
+            : destination;
         var assemblyIdentity =
-            destination.ContainingAssembly.Identity.ToString();
-        var metadataName = SymbolNameHelper.GetFullMetadataName(destination);
+            definition.ContainingAssembly.Identity.ToString();
+        var metadataName = tuple is null
+            ? SymbolNameHelper.GetFullMetadataName(definition)
+            : "Tuple." + planIdentity;
 
-        return new DestinationPlanCandidate(
-            candidate.CandidateIdentity,
-            assemblyIdentity + "|" + metadataName,
-            assemblyIdentity,
-            metadataName,
-            IncludeInitOnlyProperties: false);
+        return new ConstructionPlanCandidate(
+            new DestinationPlanCandidate(
+                candidate.CandidateIdentity,
+                tuple is null
+                    ? assemblyIdentity + "|" + metadataName
+                    : "tuple|" + planIdentity,
+                assemblyIdentity,
+                metadataName,
+                IncludeInitOnlyProperties: false),
+            definition,
+            tuple is not null,
+            planIdentity);
     }
 
     private static ConstructionPlanGenerationInput? BuildGenerationInput(
-        DestinationPlanCandidate candidate,
+        ConstructionPlanCandidate candidate,
         DestinationPlanCoordination coordination)
     {
-        return coordination.IsOwner(candidate)
+        return coordination.IsOwner(candidate.Coordination)
             ? new ConstructionPlanGenerationInput(
-                candidate.AssemblyIdentity,
-                candidate.MetadataName,
+                candidate.Coordination.AssemblyIdentity,
+                candidate.Coordination.MetadataName,
                 GeneratedSourceHintName.Create(
                     "Construction",
                     HintNameCollisions.Resolve(
                         coordination.HintNameAllocations,
-                        candidate.MetadataName)))
+                        candidate.Coordination.MetadataName)),
+                candidate.Destination,
+                candidate.IsTuple,
+                candidate.PlanIdentity)
             : null;
     }
 
@@ -94,10 +113,12 @@ internal static class ConstructionPlanPipeline
         CompilationContext context,
         CancellationToken cancellationToken)
     {
-        var destination = TypeContractDependencies.ResolveType(
-            context.Compilation,
-            generationInput.AssemblyIdentity,
-            generationInput.MetadataName);
+        var destination = generationInput.IsTuple
+            ? generationInput.Destination
+            : TypeContractDependencies.ResolveType(
+                context.Compilation,
+                generationInput.AssemblyIdentity,
+                generationInput.MetadataName);
 
         if (destination is null)
         {
@@ -123,12 +144,18 @@ internal static class ConstructionPlanPipeline
         CancellationToken cancellationToken)
     {
         var destination = input.Destination.OriginalDefinition;
-        var model = ConstructionPlanModelBuilder.Build(
-            destination,
-            GeneratedPlanNaming.BuildNamespace(destination),
-            GeneratedPlanNaming.BuildConstructionTypeName(destination),
-            input.Compilation,
-            cancellationToken);
+        var model = input.GenerationInput.IsTuple &&
+                    BclTupleShapePolicy.TryCreate(input.Destination) is
+                        { } tuple
+            ? BclTuplePlanModelBuilder.BuildConstruction(
+                tuple,
+                input.Compilation)
+            : ConstructionPlanModelBuilder.Build(
+                destination,
+                GeneratedPlanNaming.BuildNamespace(destination),
+                GeneratedPlanNaming.BuildConstructionTypeName(destination),
+                input.Compilation,
+                cancellationToken);
 
         return new ConstructionPlanModelResult(
             input.GenerationInput.HintName,
@@ -138,7 +165,16 @@ internal static class ConstructionPlanPipeline
     private readonly record struct ConstructionPlanGenerationInput(
         string AssemblyIdentity,
         string MetadataName,
-        string HintName);
+        string HintName,
+        INamedTypeSymbol Destination,
+        bool IsTuple,
+        string PlanIdentity);
+
+    private readonly record struct ConstructionPlanCandidate(
+        DestinationPlanCandidate Coordination,
+        INamedTypeSymbol Destination,
+        bool IsTuple,
+        string PlanIdentity);
 
     private readonly record struct ConstructionPlanModelInput(
         ConstructionPlanGenerationInput GenerationInput,
@@ -160,7 +196,20 @@ internal static class ConstructionPlanPipeline
             ConstructionPlanModelInput left,
             ConstructionPlanModelInput right)
         {
-            return left.GenerationInput == right.GenerationInput &&
+            return StringComparer.Ordinal.Equals(
+                       left.GenerationInput.AssemblyIdentity,
+                       right.GenerationInput.AssemblyIdentity) &&
+                   StringComparer.Ordinal.Equals(
+                       left.GenerationInput.MetadataName,
+                       right.GenerationInput.MetadataName) &&
+                   StringComparer.Ordinal.Equals(
+                       left.GenerationInput.HintName,
+                       right.GenerationInput.HintName) &&
+                   left.GenerationInput.IsTuple ==
+                       right.GenerationInput.IsTuple &&
+                   StringComparer.Ordinal.Equals(
+                       left.GenerationInput.PlanIdentity,
+                       right.GenerationInput.PlanIdentity) &&
                    left.LanguageVersion == right.LanguageVersion &&
                    StringComparer.Ordinal.Equals(
                        left.CompilationAssemblyIdentity,
@@ -176,7 +225,15 @@ internal static class ConstructionPlanPipeline
 
         public int GetHashCode(ConstructionPlanModelInput value)
         {
-            var hash = value.GenerationInput.GetHashCode();
+            var hash = StringComparer.Ordinal.GetHashCode(
+                value.GenerationInput.HintName);
+
+            hash = TypeContractDependencies.AddHash(
+                hash,
+                value.GenerationInput.PlanIdentity);
+            hash = TypeContractDependencies.AddHash(
+                hash,
+                value.GenerationInput.IsTuple);
 
             hash = TypeContractDependencies.AddHash(
                 hash,

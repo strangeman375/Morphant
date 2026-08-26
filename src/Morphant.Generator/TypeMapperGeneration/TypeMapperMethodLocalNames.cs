@@ -172,7 +172,8 @@ internal static class TypeMapperMethodLocalNames
         ReserveMembers(mapping.CreateMemberMappings, localNames);
 
         if (!mapping.CreatePostMemberMappings.IsEmpty ||
-            mapping.PostMemberControlFlow is not null)
+            mapping.PostMemberControlFlow is not null ||
+            mapping.CreateTupleReconstruction is not null)
         {
             localNames.Reserve(mapping.ResultLocalName);
         }

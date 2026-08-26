@@ -66,6 +66,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0053](diagnostics/MORPH0053.md) | Polymorphism | Error | The same derived source branch is configured more than once. |
 | [MORPH0054](diagnostics/MORPH0054.md) | Polymorphism | Error | A branch source or destination is incompatible with the base pair. |
 | [MORPH0055](diagnostics/MORPH0055.md) | Polymorphism | Error | A branch type is inaccessible to generated code. |
+| [MORPH0056](diagnostics/MORPH0056.md) | Registration | Error | The same CLR mapping pair is registered with conflicting tuple element names. |
 
 ## Configure severity
 

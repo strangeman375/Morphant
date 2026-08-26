@@ -1113,12 +1113,13 @@ internal static class DeclarativeNestedMapExpression
                 .Symbol is not IPropertySymbol
                 {
                     GetMethod: not null,
-                    SetMethod: null,
                     Type: INamedTypeSymbol
                     {
                         TypeArguments.Length: 1
                     } memberMarkerType
                 } property ||
+            (property.SetMethod is not null &&
+             !IsGeneratedSystemTupleMemberPlan(property.ContainingType)) ||
             !StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
                     memberMarkerType.OriginalDefinition),
@@ -1137,6 +1138,20 @@ internal static class DeclarativeNestedMapExpression
             resultName + "." + Identifier(property.Name),
             property);
         return true;
+    }
+
+    private static bool IsGeneratedSystemTupleMemberPlan(
+        INamedTypeSymbol type)
+    {
+        return StringComparer.Ordinal.Equals(
+                   type.ContainingNamespace.ToDisplayString(),
+                   "Morphant.Generated.Tuples") &&
+               type.Name.StartsWith(
+                   "SystemTuple",
+                   StringComparison.Ordinal) &&
+               type.Name.EndsWith(
+                   "Members",
+                   StringComparison.Ordinal);
     }
 
     private static bool IsDeclarativeResultLocal(

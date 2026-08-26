@@ -76,6 +76,7 @@ internal static class RuntimeResultMappingPlanner
                 UpdateDirectExpression = null,
                 CreateFactory = factory,
                 CreateConstructor = null,
+                CreateTupleReconstruction = null,
                 CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 CreatePostMemberMappings = postMembers,
                 UpdateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
@@ -155,6 +156,7 @@ internal static class RuntimeResultMappingPlanner
             {
                 CreateFactory = null,
                 CreateConstructor = null,
+                CreateTupleReconstruction = null,
                 CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 UpdateMemberMappings = memberMappings,

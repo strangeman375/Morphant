@@ -131,6 +131,11 @@ internal static class MappingCompletenessDiagnosticAnalyzer
         var pairKey = context.Identity.Source.Key + "->" +
             context.Identity.Destination.Key;
         var memberIdentity = DisplayMember(member);
+        var memberDisplay = DisplayMember(
+            role == MappingTypeRole.Source
+                ? context.SourceType
+                : context.DestinationType,
+            member);
         var identity = ((int)kind).ToString(
                 System.Globalization.CultureInfo.InvariantCulture) +
             "|" + mapperIdentity +
@@ -156,7 +161,7 @@ internal static class MappingCompletenessDiagnosticAnalyzer
             memberOrder,
             primary,
             additional,
-            memberIdentity,
+            memberDisplay,
             MapperContractDisplay.Create(
                 context.SourceType,
                 context.DestinationType));
@@ -228,7 +233,7 @@ internal static class MappingCompletenessDiagnosticAnalyzer
 
     private static bool AreSameMember(ISymbol left, ISymbol right)
     {
-        return SymbolEqualityComparer.Default.Equals(left, right) ||
+        return BclTupleShapePolicy.AreSameLogicalElement(left, right) ||
                StringComparer.Ordinal.Equals(
                    DisplayMember(left),
                    DisplayMember(right));
@@ -241,6 +246,27 @@ internal static class MappingCompletenessDiagnosticAnalyzer
             : string.Empty;
 
         return containing + "." + member.Name;
+    }
+
+    private static string DisplayMember(
+        ITypeSymbol tupleType,
+        ISymbol member)
+    {
+        var element = BclTupleShapePolicy.FindElement(
+            tupleType,
+            member);
+
+        if (element is null)
+        {
+            return DisplayMember(member);
+        }
+
+        return element.HasSemanticName
+            ? element.Name
+            : "element #" +
+              element.Ordinal.ToString(
+                  System.Globalization.CultureInfo.InvariantCulture) +
+              " (" + element.Name + ")";
     }
 
     private static Location GetTypeArgumentLocation(

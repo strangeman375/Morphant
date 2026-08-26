@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
 using Morphant.Generator.Settings;
 
@@ -76,7 +77,8 @@ internal readonly record struct TypeMapperMappingModel
     bool CreateImplUsesOperation = false,
     ImmutableArray<string> HelperMethodDeclarations = default,
     ImmutableArray<string> TransferredWarningSuppressions = default,
-    bool RequiresUnsafeContext = false
+    bool RequiresUnsafeContext = false,
+    TypeMapperTupleReconstructionModel? CreateTupleReconstruction = null
 )
 {
     public string InterfaceTypeName =>
@@ -116,7 +118,27 @@ internal readonly record struct TypeMapperConstructorMappingModel
 (
     string ConstructedTypeName,
     ImmutableArray<TypeMapperConstructorArgumentMappingModel> Arguments,
-    ImmutableArray<TypeMapperLocalValueModel> ValueLocals = default
+    ImmutableArray<TypeMapperLocalValueModel> ValueLocals = default,
+    TypeMapperTupleConstructionModel? TupleConstruction = null
+);
+
+internal readonly record struct TypeMapperTupleConstructionModel
+(
+    BclTupleKind Kind,
+    ImmutableArray<string> ElementTypeNames,
+    ImmutableArray<string?> ElementNames
+);
+
+internal readonly record struct TypeMapperTupleReconstructionModel
+(
+    TypeMapperTupleConstructionModel Construction,
+    ImmutableArray<TypeMapperTupleElementModel> Elements
+);
+
+internal readonly record struct TypeMapperTupleElementModel
+(
+    string Name,
+    string AccessPath
 );
 
 internal enum TypeMapperUpdateKind
@@ -143,7 +165,10 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
     IParameterSymbol? ParameterSymbol = null,
     ISymbol? SourceMemberSymbol = null,
     SyntaxNode? RuleOriginNode = null,
-    ConstructorParameterRuleOrigin? RuleOrigin = null
+    ConstructorParameterRuleOrigin? RuleOrigin = null,
+    int TupleElementOrdinal = 0,
+    int DeclarativeOrder = 0,
+    ImmutableArray<ISymbol> SourcePathMembers = default
 );
 
 internal readonly record struct TypeMapperMemberMappingModel
@@ -161,7 +186,8 @@ internal readonly record struct TypeMapperMemberMappingModel
     TypeMapperDependencyExpressionModel? DependencyExpression = null,
     ImmutableArray<TypeMapperLocalValueModel> EvaluationLocals = default,
     ImmutableArray<TypeMapperLocalValueModel> InvocationArgumentLocals =
-        default
+        default,
+    string? DestinationAccessPath = null
 );
 
 internal sealed record TypeMapperControlFlowMappingModel

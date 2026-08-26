@@ -17,6 +17,10 @@ internal static class MemberDiagnosticAnalyzer
         "init-only member cannot be assigned after ConstructUsing or " +
         "ResolveUsing returns";
 
+    private const string ReadOnlyTupleRuntimeResultReason =
+        "read-only tuple element cannot be assigned after ConstructUsing " +
+        "or ResolveUsing returns";
+
     private const string ResultDependencyReason =
         "member rule uses 'result' before the destination is created";
 
@@ -771,7 +775,11 @@ internal static class MemberDiagnosticAnalyzer
                 primary,
                 additional.ToImmutable(),
                 "runtime-result",
-                RuntimeResultReason,
+                BclTupleShapePolicy.TryCreate(
+                    context.Pair.Pair.DestinationType) is
+                        { Kind: BclTupleKind.SystemTuple }
+                    ? ReadOnlyTupleRuntimeResultReason
+                    : RuntimeResultReason,
                 paths,
                 rule.OriginNode ?? observation.PlanOrigin));
         }
@@ -873,9 +881,35 @@ internal static class MemberDiagnosticAnalyzer
             MapperContractDisplay.Create(
                 registration.SourceType,
                 registration.DestinationType),
-            member?.Name ?? string.Empty,
+            BuildMemberName(registration.DestinationType, member),
             reason,
             paths);
+    }
+
+    private static string BuildMemberName(
+        ITypeSymbol destinationType,
+        ISymbol? member)
+    {
+        if (member is null ||
+            BclTupleShapePolicy.TryCreate(destinationType) is null)
+        {
+            return member?.Name ?? string.Empty;
+        }
+
+        var element = BclTupleShapePolicy.FindElement(
+            destinationType,
+            member);
+
+        if (element is null)
+        {
+            return member.Name;
+        }
+
+        return element.HasSemanticName
+            ? element.Name
+            : "element #" +
+              element.Ordinal.ToString(CultureInfo.InvariantCulture) +
+              " (" + element.Name + ")";
     }
 
     private static bool HasSelectedRejection(

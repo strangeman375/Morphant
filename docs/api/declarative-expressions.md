@@ -21,6 +21,10 @@ used for constructor arguments or destination members where applicable.
 supported constructor parameter to override. Use `new()` for parameterless
 construction.
 
+For a tuple, the target is a logical element. Convention helpers use semantic
+element names and never infer unnamed `ItemN` elements by position. Tuple
+construction plans are flat even when the BCL representation contains `Rest`.
+
 ## Nested mapping helpers
 
 | Call | Source | Destination | Operation |

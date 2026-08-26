@@ -15,6 +15,8 @@ mapper declaration, DI registration, Create, Update and a first explicit rule.
 - [Create and Update](create-and-update.md) — destination reuse, replacement
   and operation-specific behavior.
 - [Conventions](conventions.md) — automatic constructor and member mapping.
+- [Tuple mapping](tuple-mapping.md) — named and unnamed value tuples,
+  `System.Tuple`, construction and Update behavior.
 - [Flatten nested source members](flattening.md) — map joined names such as
   `CustomerAddressCity` from `Customer.Address.City`.
 - [Include nested source members](include-members.md) — opt selected nested

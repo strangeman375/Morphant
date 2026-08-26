@@ -177,7 +177,8 @@ internal static class MappingSettingsDiagnosticPipeline
                 inapplicable);
         }
         else if (!hasMixedModel &&
-                 pair.Pair.Capabilities.DirectConstruction)
+                 (pair.Pair.Capabilities.DirectConstruction ||
+                  pair.Pair.Capabilities.IntrinsicConstruction))
         {
             AddMissingConstructionInapplicableSetting(
                 pair,

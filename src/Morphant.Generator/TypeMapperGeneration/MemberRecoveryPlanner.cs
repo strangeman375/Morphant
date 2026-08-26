@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
 
 namespace Morphant.Generator.TypeMapperGeneration;
@@ -263,6 +264,10 @@ internal static class MemberRecoveryPlanner
         }
 
         if (!existingDestination &&
+            mapping.CreateTupleReconstruction is null &&
+            BclTupleShapePolicy.TryCreate(
+                mapping.AnalysisContext.DestinationType) is not
+                { Kind: BclTupleKind.SystemTuple } &&
             plan.Observation.Rules.FirstOrDefault(rule =>
                 rule.InvalidReason == MemberRuleInvalidReason.None &&
                 rule.Origin is not

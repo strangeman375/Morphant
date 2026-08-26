@@ -41,8 +41,12 @@ internal static class MappingCompletenessObservationBuilder
             MappingTypeNormalization.NormalizeDeclarativeSource(
                 configuration.Pair.SourceType,
                 compilation);
-        var supportedSourceMembers =
-            DestinationCapabilityPolicy.IsOpaque(
+        var tupleSource = BclTupleShapePolicy.TryCreate(
+            declarativeSourceType);
+        var supportedSourceMembers = tupleSource is not null
+            ? tupleSource.Elements.Select(static element => element.Symbol)
+                .ToImmutableArray()
+            : DestinationCapabilityPolicy.IsOpaque(
                 declarativeSourceType,
                 compilation)
                 ? ImmutableArray<ISymbol>.Empty
@@ -57,6 +61,24 @@ internal static class MappingCompletenessObservationBuilder
                     : mapping.SourceMembers
                         .Select(static member => member.Symbol)
                         .ToImmutableArray();
+
+        if (tupleSource is not null && !mapping.SourceMembers.IsDefault)
+        {
+            foreach (var sourceMember in mapping.SourceMembers)
+            {
+                if (!supportedSourceMembers.Any(candidate =>
+                        BclTupleShapePolicy.AreSameLogicalElement(
+                            candidate,
+                            sourceMember.Symbol) ||
+                        SymbolEqualityComparer.Default.Equals(
+                            candidate,
+                            sourceMember.Symbol)))
+                {
+                    supportedSourceMembers = supportedSourceMembers.Add(
+                        sourceMember.Symbol);
+                }
+            }
+        }
         var supportedDestinationMembers =
             ConventionMemberMappingPlanner.BuildWritableMembers(
                     configuration.Pair.DestinationType,
@@ -118,6 +140,26 @@ internal static class MappingCompletenessObservationBuilder
 
             if (rule.OriginNode is { } origin &&
                 !reachableRuleOrigins.Any(candidate =>
+                    IsSameSyntax(candidate, origin)))
+            {
+                unreachableRuleOrigins.Add(origin);
+            }
+        }
+
+        var survivingConstructorOrigins = mappingSlices
+            .SelectMany(static slice => SelectedParameterRules(slice))
+            .Where(static rule => rule.IsApplicable)
+            .Select(static rule => rule.OriginNode)
+            .OfType<SyntaxNode>()
+            .ToImmutableArray();
+
+        foreach (var origin in mappingSlices
+                     .SelectMany(static slice => SelectedParameterRules(slice))
+                     .Where(static rule => !rule.IsApplicable)
+                     .Select(static rule => rule.OriginNode)
+                     .OfType<SyntaxNode>())
+        {
+            if (!survivingConstructorOrigins.Any(candidate =>
                     IsSameSyntax(candidate, origin)))
             {
                 unreachableRuleOrigins.Add(origin);
@@ -209,6 +251,60 @@ internal static class MappingCompletenessObservationBuilder
                                     rule.OriginNode ??
                                     slice.AnalysisContext.Registration.Syntax);
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        if ((reachablePaths & MappingExecutionPathSet.NoPrevious) !=
+                MappingExecutionPathSet.None &&
+            BclTupleShapePolicy.TryCreate(
+                configuration.Pair.DestinationType) is
+                { } tupleDestination)
+        {
+            foreach (var slice in mappingSlices)
+            {
+                if (slice.CreateFailure is not null ||
+                    slice.CreateConstructor is not
+                    {
+                        TupleConstruction: not null
+                    } constructor)
+                {
+                    continue;
+                }
+
+                foreach (var argument in constructor.Arguments)
+                {
+                    var element = tupleDestination.Elements.FirstOrDefault(
+                        candidate => StringComparer.Ordinal.Equals(
+                            candidate.Name,
+                            argument.ParameterName));
+
+                    if (element is null)
+                    {
+                        continue;
+                    }
+
+                    AddOccupancy(
+                        occupancy,
+                        element.Symbol,
+                        MemberRuleOrigin.ConstructorArgument,
+                        argument.RuleOriginNode);
+
+                    if (argument.SourceMemberSymbol is
+                        { } sourceMember)
+                    {
+                        foreach (var usedMember in SourcePathOrMember(
+                                     argument.SourcePathMembers,
+                                     sourceMember))
+                        {
+                            AddSourceUse(
+                                sourceUses,
+                                usedMember,
+                                SourceUseKind.Semantic,
+                                argument.RuleOriginNode ??
+                                slice.AnalysisContext.Registration.Syntax);
                         }
                     }
                 }
@@ -439,6 +535,25 @@ internal static class MappingCompletenessObservationBuilder
                 occupancy.ToImmutable(),
                 errorDerivedUncertainty.ToImmutable())
         };
+    }
+
+    private static IEnumerable<ConstructorParameterRuleObservation>
+        SelectedParameterRules(TypeMapperMappingModel mapping)
+    {
+        if (mapping.ConstructorObservation is not
+            {
+                SelectedConstructor: { } selected
+            } observation)
+        {
+            return Enumerable.Empty<ConstructorParameterRuleObservation>();
+        }
+
+        return observation.Candidates.FirstOrDefault(candidate =>
+                ConventionConstructorMappingPlanner.AreSameConstructor(
+                    candidate.Constructor,
+                    selected))
+            ?.ParameterRules ??
+            ImmutableArray<ConstructorParameterRuleObservation>.Empty;
     }
 
     private static bool IsFailureRule(
@@ -818,7 +933,7 @@ internal static class MappingCompletenessObservationBuilder
 
     private static bool AreSameMember(ISymbol left, ISymbol right)
     {
-        if (SymbolEqualityComparer.Default.Equals(left, right))
+        if (BclTupleShapePolicy.AreSameLogicalElement(left, right))
         {
             return true;
         }

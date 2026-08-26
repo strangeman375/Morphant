@@ -20,6 +20,8 @@ below, but not every feature expected from a general-purpose mapper.
 - compile-time diagnostics and typed runtime exceptions;
 - nullable, value, record, interface, abstract and closed generic destination
   types when Morphant can create them by convention or an explicit rule;
+- first-class named and explicitly configured unnamed `ValueTuple` and
+  `System.Tuple` mappings, including long and nullable tuple forms;
 - C# 9 and newer consumers running Roslyn 4.4.0 or later.
 
 ## Not included
@@ -30,8 +32,8 @@ below, but not every feature expected from a general-purpose mapper.
 - distinguishing missing, null and default values for patch/merge mappings;
 - automatic immutable Update reconstruction;
 - first-class multi-source mappings or per-call user data; combine values into
-  one source type, such as a tuple, handle it with `Convert`, and pass state to
-  nested mappings explicitly;
+  one source record or named tuple and pass state to nested mappings
+  explicitly;
 - keyed mappings or discriminator-based dispatch;
 - preserving shared object references or mapping cycles;
 - cross-assembly configuration inheritance;

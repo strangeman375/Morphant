@@ -6,9 +6,6 @@ internal static class MappingTypeEligibilityPolicy
 {
     public const string RootTypeParameterReason = "a root type parameter";
 
-    private const string ITupleMetadataName =
-        "System.Runtime.CompilerServices.ITuple";
-
     public static bool IsEligible(
         ITypeSymbol type,
         Compilation compilation)
@@ -37,8 +34,7 @@ internal static class MappingTypeEligibilityPolicy
         }
 
         return rootType is INamedTypeSymbol namedRootType &&
-               (IsTuple(namedRootType) ||
-                IsCollectionOrBuffer(namedRootType) ||
+               (IsCollectionOrBuffer(namedRootType) ||
                 IsDelegate(namedRootType) ||
                 IsExpressionTree(namedRootType) ||
                 IsDeferredOrAsync(namedRootType) ||
@@ -140,25 +136,6 @@ internal static class MappingTypeEligibilityPolicy
                    SpecialType.System_Nullable_T
             ? namedType.TypeArguments[0]
             : type;
-    }
-
-    private static bool IsTuple(INamedTypeSymbol type)
-    {
-        if (type.IsTupleType ||
-            HasMetadataName(type, ITupleMetadataName) ||
-            type.AllInterfaces.Any(
-                static interfaceType =>
-                    HasMetadataName(
-                        interfaceType,
-                        ITupleMetadataName)))
-        {
-            return true;
-        }
-
-        return type.ContainingNamespace is
-                   { IsGlobalNamespace: false } containingNamespace &&
-               containingNamespace.ToDisplayString() == "System" &&
-               type.Name is "Tuple" or "ValueTuple";
     }
 
     private static bool IsCollectionOrBuffer(INamedTypeSymbol type)

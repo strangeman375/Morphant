@@ -26,6 +26,16 @@ internal static class DestinationCapabilityPolicy
             destinationType,
             compilation);
 
+        if (BclTupleShapePolicy.TryCreate(destination) is { } tuple)
+        {
+            return new MappingPairCapabilities(
+                Runtime: true,
+                Manual: true,
+                MappingConstructionKind.Structured,
+                Members: !tuple.Elements.IsEmpty,
+                IntrinsicConstruction: true);
+        }
+
         var isOpaque = IsOpaque(destination);
         var hasSupportedConstructor =
             !isOpaque &&

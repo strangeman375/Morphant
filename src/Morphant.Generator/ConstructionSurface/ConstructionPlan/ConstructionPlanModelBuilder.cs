@@ -89,7 +89,7 @@ internal static class ConstructionPlanModelBuilder
         return result.ToImmutable();
     }
 
-    private static ImmutableArray<ConstructionTypeParameterModel>
+    internal static ImmutableArray<ConstructionTypeParameterModel>
         BuildTypeParameters(
             ImmutableArray<ITypeParameterSymbol> typeParameters,
             IReadOnlyDictionary<ITypeParameterSymbol, string>
@@ -281,7 +281,7 @@ internal static class ConstructionPlanModelBuilder
         return result.ToImmutable();
     }
 
-    private static string BuildInputTypeName(
+    internal static string BuildInputTypeName(
         ITypeSymbol type,
         NullableAnnotation nullableAnnotation,
         ISymbol inputSymbol,

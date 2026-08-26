@@ -10,8 +10,8 @@ inside `TypeMapper.Configure`. For application-side `IMapper.Map`, see
 | Method | Available when | Use it for |
 |---|---|---|
 | [`Map`](map.md) | The source and destination form a valid mapping pair | Register the pair and use conventions |
-| [`Construct`](construct.md) | The destination has a supported constructor | Supply constructor arguments when no destination exists |
-| [`Resolve`](resolve.md) | The destination has a supported constructor | Choose reuse or construction for both Create and Update |
+| [`Construct`](construct.md) | A supported constructor or intrinsic BCL tuple construction is available | Supply constructor arguments when no destination exists |
+| [`Resolve`](resolve.md) | A supported constructor or intrinsic BCL tuple construction is available | Choose reuse or construction for both Create and Update |
 | [`ConstructUsing`](construct-using.md) | Any valid mapping pair | Create through a factory or ordinary C# callback |
 | [`ResolveUsing`](resolve-using.md) | Any valid mapping pair | Choose reuse or replacement in ordinary C# |
 | [`Members`](members.md) | The destination has at least one supported member | Configure selected destination members |
@@ -23,6 +23,9 @@ inside `TypeMapper.Configure`. For application-side `IMapper.Map`, see
 If `Construct` or `Resolve` is absent, use a `Using` method or `Convert`.
 If `Members` is absent, the destination has no member Morphant can assign or
 update through a declarative plan.
+
+For BCL tuples, generated construction and member plans expose flat logical
+elements and never expose `Rest`. See [Tuple mapping](../tuple-mapping.md).
 
 ## Combine methods
 

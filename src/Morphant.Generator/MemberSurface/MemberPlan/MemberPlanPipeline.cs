@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.Incrementality;
 using Morphant.Generator.MappingPair;
 
@@ -22,6 +23,7 @@ internal static class MemberPlanPipeline
                     source.Left,
                     source.Right.Compilation));
         var coordination = candidates
+            .Select(static (candidate, _) => candidate.Coordination)
             .Collect()
             .Select(static (values, cancellationToken) =>
                 DestinationPlanCoordinationBuilder.Build(
@@ -51,41 +53,58 @@ internal static class MemberPlanPipeline
                 MorphantGeneratorStageNames.BuildMemberPlanModels);
     }
 
-    private static DestinationPlanCandidate BuildCandidate(
+    private static MemberPlanCandidate BuildCandidate(
         CanonicalMappingPairCandidate candidate,
         CSharpCompilation compilation)
     {
         var destination = DestinationCapabilityPolicy
             .GetDestinationType(
                 candidate.Pair.DestinationType,
-                compilation)
-            .OriginalDefinition;
+                compilation);
+        var tuple = BclTupleShapePolicy.TryCreate(destination);
+        var planIdentity = tuple is null
+            ? string.Empty
+            : BclTuplePlanNaming.BuildStableIdentity(tuple);
+        var definition = tuple is null
+            ? destination.OriginalDefinition
+            : destination;
         var assemblyIdentity =
-            destination.ContainingAssembly.Identity.ToString();
-        var metadataName = SymbolNameHelper.GetFullMetadataName(destination);
+            definition.ContainingAssembly.Identity.ToString();
+        var metadataName = tuple is null
+            ? SymbolNameHelper.GetFullMetadataName(definition)
+            : "Tuple." + planIdentity;
 
-        return new DestinationPlanCandidate(
-            candidate.CandidateIdentity,
-            assemblyIdentity + "|" + metadataName,
-            assemblyIdentity,
-            metadataName,
-            candidate.Pair.Capabilities.StructuredConstruction);
+        return new MemberPlanCandidate(
+            new DestinationPlanCandidate(
+                candidate.CandidateIdentity,
+                tuple is null
+                    ? assemblyIdentity + "|" + metadataName
+                    : "tuple|" + planIdentity,
+                assemblyIdentity,
+                metadataName,
+                candidate.Pair.Capabilities.StructuredConstruction),
+            definition,
+            tuple is not null,
+            planIdentity);
     }
 
     private static MemberPlanGenerationInput? BuildGenerationInput(
-        DestinationPlanCandidate candidate,
+        MemberPlanCandidate candidate,
         DestinationPlanCoordination coordination)
     {
-        return coordination.IsOwner(candidate)
+        return coordination.IsOwner(candidate.Coordination)
             ? new MemberPlanGenerationInput(
-                candidate.AssemblyIdentity,
-                candidate.MetadataName,
-                candidate.IncludeInitOnlyProperties,
+                candidate.Coordination.AssemblyIdentity,
+                candidate.Coordination.MetadataName,
+                candidate.Coordination.IncludeInitOnlyProperties,
                 GeneratedSourceHintName.Create(
                     "Member",
                     HintNameCollisions.Resolve(
                         coordination.HintNameAllocations,
-                        candidate.MetadataName)))
+                        candidate.Coordination.MetadataName)),
+                candidate.Destination,
+                candidate.IsTuple,
+                candidate.PlanIdentity)
             : null;
     }
 
@@ -94,10 +113,12 @@ internal static class MemberPlanPipeline
         CompilationContext context,
         CancellationToken cancellationToken)
     {
-        var destination = TypeContractDependencies.ResolveType(
-            context.Compilation,
-            generationInput.AssemblyIdentity,
-            generationInput.MetadataName);
+        var destination = generationInput.IsTuple
+            ? generationInput.Destination
+            : TypeContractDependencies.ResolveType(
+                context.Compilation,
+                generationInput.AssemblyIdentity,
+                generationInput.MetadataName);
 
         if (destination is null)
         {
@@ -122,11 +143,17 @@ internal static class MemberPlanPipeline
         MemberPlanModelInput input,
         CancellationToken cancellationToken)
     {
-        var model = MemberPlanModelBuilder.Build(
-            input.Destination,
-            input.GenerationInput.IncludeInitOnlyProperties,
-            input.Compilation,
-            cancellationToken);
+        var model = input.GenerationInput.IsTuple &&
+                    BclTupleShapePolicy.TryCreate(input.Destination) is
+                        { } tuple
+            ? BclTuplePlanModelBuilder.BuildMembers(
+                tuple,
+                input.Compilation)
+            : MemberPlanModelBuilder.Build(
+                input.Destination,
+                input.GenerationInput.IncludeInitOnlyProperties,
+                input.Compilation,
+                cancellationToken);
 
         return new MemberPlanModelResult(
             input.GenerationInput.HintName,
@@ -137,7 +164,16 @@ internal static class MemberPlanPipeline
         string AssemblyIdentity,
         string MetadataName,
         bool IncludeInitOnlyProperties,
-        string HintName);
+        string HintName,
+        INamedTypeSymbol Destination,
+        bool IsTuple,
+        string PlanIdentity);
+
+    private readonly record struct MemberPlanCandidate(
+        DestinationPlanCandidate Coordination,
+        INamedTypeSymbol Destination,
+        bool IsTuple,
+        string PlanIdentity);
 
     private readonly record struct MemberPlanModelInput(
         MemberPlanGenerationInput GenerationInput,
@@ -159,7 +195,22 @@ internal static class MemberPlanPipeline
             MemberPlanModelInput left,
             MemberPlanModelInput right)
         {
-            return left.GenerationInput == right.GenerationInput &&
+            return StringComparer.Ordinal.Equals(
+                       left.GenerationInput.AssemblyIdentity,
+                       right.GenerationInput.AssemblyIdentity) &&
+                   StringComparer.Ordinal.Equals(
+                       left.GenerationInput.MetadataName,
+                       right.GenerationInput.MetadataName) &&
+                   left.GenerationInput.IncludeInitOnlyProperties ==
+                       right.GenerationInput.IncludeInitOnlyProperties &&
+                   StringComparer.Ordinal.Equals(
+                       left.GenerationInput.HintName,
+                       right.GenerationInput.HintName) &&
+                   left.GenerationInput.IsTuple ==
+                       right.GenerationInput.IsTuple &&
+                   StringComparer.Ordinal.Equals(
+                       left.GenerationInput.PlanIdentity,
+                       right.GenerationInput.PlanIdentity) &&
                    left.LanguageVersion == right.LanguageVersion &&
                    StringComparer.Ordinal.Equals(
                        left.CompilationAssemblyIdentity,
@@ -175,7 +226,15 @@ internal static class MemberPlanPipeline
 
         public int GetHashCode(MemberPlanModelInput value)
         {
-            var hash = value.GenerationInput.GetHashCode();
+            var hash = StringComparer.Ordinal.GetHashCode(
+                value.GenerationInput.HintName);
+
+            hash = TypeContractDependencies.AddHash(
+                hash,
+                value.GenerationInput.PlanIdentity);
+            hash = TypeContractDependencies.AddHash(
+                hash,
+                value.GenerationInput.IsTuple);
 
             hash = TypeContractDependencies.AddHash(
                 hash,

@@ -1125,7 +1125,7 @@ internal static class BasicMembersMappingPlanner
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Update,
                     mapping.ResultLocalName + "." +
-                    Identifier(destinationMember.Name),
+                    DestinationAccess(destinationMember),
                     destinationMember.Type,
                     destinationMember.Symbol,
                     targetDesignator,
@@ -1156,7 +1156,7 @@ internal static class BasicMembersMappingPlanner
                     destinationMember.Name,
                     DeclarativeNestedMapOperation.Update,
                     "destination." +
-                    Identifier(destinationMember.Name),
+                    DestinationAccess(destinationMember),
                     destinationMember.Type,
                     destinationMember.Symbol,
                     targetDesignator,
@@ -1202,7 +1202,8 @@ internal static class BasicMembersMappingPlanner
                 ExplicitValueExpression: valueExpression,
                 ExplicitValueTypeName: valueTypeName,
                 IsResultDependent: resultDependent,
-                DependencyExpression: dependencyExpression);
+                DependencyExpression: dependencyExpression,
+                DestinationAccessPath: destinationMember.AccessPath);
 
         var create = createSucceeded
             ? BuildMapping(
@@ -1230,14 +1231,18 @@ internal static class BasicMembersMappingPlanner
 
         plan = new ExplicitMemberMappingPlan(
             Create: isResultDependent ? null : create,
-            CreatePost: destinationMember.CanAssign && createSucceeded
+            CreatePost: (destinationMember.CanAssign ||
+                         destinationMember.CanReconstruct) &&
+                        createSucceeded
                 ? create
                 : null,
             MapReplacement: replacementIsResultDependent
                 ? null
                 : mapReplacement,
             MapReplacementPost:
-                destinationMember.CanAssign && mapReplacementSucceeded
+                (destinationMember.CanAssign ||
+                 destinationMember.CanReconstruct) &&
+                mapReplacementSucceeded
                 ? mapReplacement
                 : null,
             Update: destinationMember.CanAssign && updateSucceeded
@@ -1401,6 +1406,10 @@ internal static class BasicMembersMappingPlanner
             ? "@" + value
             : value;
     }
+
+    private static string DestinationAccess(
+        ConventionWritableMember member) =>
+        member.AccessPath ?? Identifier(member.Name);
 
     private static PreviousExpressionSubstitution
         BuildPreviousSubstitution(

@@ -116,6 +116,20 @@ internal static class ConventionMemberMappingPlanner
                     ImmutableArray<StructuredTerminalObservation>.Empty));
         }
 
+        if (BclTupleShapePolicy.TryCreate(destination) is
+                { } tupleDestination)
+        {
+            return BuildTuple(
+                sourceType,
+                tupleDestination,
+                compilation,
+                mapperType,
+                hasMemberCapability,
+                sourceContext,
+                sourceValueName,
+                cancellationToken);
+        }
+
         var readableMembers = sourceContext?.DirectMembers ?? default;
 
         if (readableMembers.IsDefault)
@@ -380,6 +394,218 @@ internal static class ConventionMemberMappingPlanner
                 FlatteningIssues: flatteningIssues.ToImmutable()));
     }
 
+    private static ConventionMemberMappingPlan BuildTuple(
+        ITypeSymbol sourceType,
+        BclTupleShape destination,
+        CSharpCompilation compilation,
+        INamedTypeSymbol mapperType,
+        bool hasMemberCapability,
+        ConventionSourceMemberContext? sourceContext,
+        string sourceValueName,
+        CancellationToken cancellationToken)
+    {
+        var readableMembers = sourceContext?.DirectMembers ?? default;
+
+        if (readableMembers.IsDefault)
+        {
+            readableMembers = BuildReadableMembers(
+                sourceType,
+                compilation,
+                mapperType,
+                cancellationToken);
+        }
+
+        var resolvedSourceContext = sourceContext ??
+            new ConventionSourceMemberContext(
+                sourceType,
+                readableMembers,
+                ImmutableArray<IncludedSourceScope>.Empty,
+                FlatteningValue.None);
+        var create =
+            ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
+        var update =
+            ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
+        var candidates =
+            ImmutableArray.CreateBuilder<MemberTypeCompatibilityCandidate>();
+        var candidateMembers =
+            ImmutableArray.CreateBuilder<ConventionReadableMember>();
+        var candidateValueExpressions =
+            ImmutableArray.CreateBuilder<
+                ConventionSourceValueExpressionModel?>();
+        var candidateGroups =
+            ImmutableArray.CreateBuilder<TupleMemberCandidateGroup>();
+        var rules = ImmutableArray.CreateBuilder<MemberRuleObservation>();
+        var flatteningIssues =
+            ImmutableArray.CreateBuilder<FlatteningIssueObservation>();
+
+        if (hasMemberCapability)
+        {
+            foreach (var element in destination.Elements.Where(
+                         static element => element.HasSemanticName))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var resolution = ConventionSourceMemberResolver.ResolveExact(
+                    resolvedSourceContext,
+                    element.Name,
+                    compilation,
+                    mapperType,
+                    cancellationToken);
+
+                if (resolution.Candidates.IsEmpty)
+                {
+                    continue;
+                }
+
+                var firstCandidate = candidates.Count;
+
+                foreach (var sourceMember in resolution.Candidates)
+                {
+                    candidates.Add(new MemberTypeCompatibilityCandidate(
+                        sourceMember.Name,
+                        element.Name,
+                        sourceMember.Type,
+                        element.Type,
+                        destination.IsValueTuple,
+                        sourceMember.BuildConventionValueExpression(
+                            "source!"),
+                        UseValueProbe: true));
+                    candidateMembers.Add(sourceMember);
+                    candidateValueExpressions.Add(
+                        sourceMember.BuildConventionValueExpression(
+                            sourceValueName));
+                }
+
+                var firstFallbackCandidate = candidates.Count;
+
+                foreach (var sourceMember in resolution.FallbackCandidates)
+                {
+                    candidates.Add(new MemberTypeCompatibilityCandidate(
+                        sourceMember.Name,
+                        element.Name,
+                        sourceMember.Type,
+                        element.Type,
+                        destination.IsValueTuple,
+                        sourceMember.BuildConventionValueExpression(
+                            "source!"),
+                        UseValueProbe: true));
+                    candidateMembers.Add(sourceMember);
+                    candidateValueExpressions.Add(
+                        sourceMember.BuildConventionValueExpression(
+                            sourceValueName));
+                }
+
+                candidateGroups.Add(new TupleMemberCandidateGroup(
+                    element,
+                    resolution.HasDirectClaim,
+                    firstCandidate,
+                    resolution.Candidates.Length,
+                    firstFallbackCandidate,
+                    resolution.FallbackCandidates.Length));
+            }
+        }
+
+        var compatibleCandidates =
+            MemberTypeCompatibility.FindCompatibleCandidates(
+                sourceType,
+                destination.Type,
+                candidates.ToImmutable(),
+                compilation,
+                mapperType,
+                cancellationToken);
+
+        foreach (var group in candidateGroups)
+        {
+            var compatible = Enumerable.Range(
+                    group.FirstCandidate,
+                    group.CandidateCount)
+                .Where(index => compatibleCandidates[index])
+                .ToImmutableArray();
+
+            if (!group.HasDirectClaim &&
+                compatible.IsEmpty &&
+                group.FallbackCandidateCount > 0)
+            {
+                compatible = Enumerable.Range(
+                        group.FirstFallbackCandidate,
+                        group.FallbackCandidateCount)
+                    .Where(index => compatibleCandidates[index])
+                    .ToImmutableArray();
+            }
+
+            if (compatible.Length == 0 ||
+                group.HasDirectClaim && compatible.Length != 1)
+            {
+                continue;
+            }
+
+            if (compatible.Length > 1)
+            {
+                flatteningIssues.Add(BuildFlatteningIssue(
+                    group.Destination.Symbol,
+                    group.Destination.Name,
+                    compatible.Select(index => candidateMembers[index])
+                        .ToImmutableArray()));
+                continue;
+            }
+
+            var selectedIndex = compatible[0];
+            var candidate = candidates[selectedIndex];
+            var sourceMember = candidateMembers[selectedIndex];
+            var mapping = new TypeMapperMemberMappingModel(
+                candidate.SourceMemberName,
+                candidate.DestinationMemberName,
+                IsRequired: false,
+                SourceValueLocalName: null,
+                ConventionValueExpression:
+                    candidateValueExpressions[selectedIndex],
+                DestinationAccessPath: BuildTupleDestinationAccessPath(
+                    destination,
+                    group.Destination));
+
+            create.Add(mapping);
+            rules.Add(new MemberRuleObservation(
+                group.Destination.Symbol,
+                sourceMember.Symbol,
+                MemberRuleOrigin.Convention,
+                OriginNode: null,
+                IsRequired: false,
+                MemberLifecycleDependency.Creation |
+                (destination.IsValueTuple
+                    ? MemberLifecycleDependency.ExistingDestination
+                    : MemberLifecycleDependency.InitOnly),
+                HiddenImportedSlot: null,
+                SourcePathMembers: sourceMember.GetSourcePathMembers()));
+
+            if (destination.IsValueTuple)
+            {
+                update.Add(mapping);
+            }
+        }
+
+        var immutableCreate = create.ToImmutable();
+        var immutableUpdate = update.ToImmutable();
+
+        return new ConventionMemberMappingPlan(
+            immutableCreate,
+            immutableUpdate,
+            immutableCreate,
+            immutableUpdate,
+            immutableUpdate,
+            new MemberPlanningObservation(
+                readableMembers.Select(static member => member.Symbol)
+                    .ToImmutableArray(),
+                hasMemberCapability
+                    ? destination.Elements.Select(static element =>
+                            element.Symbol)
+                        .ToImmutableArray()
+                    : ImmutableArray<ISymbol>.Empty,
+                rules.ToImmutable(),
+                RequiredObligations: ImmutableArray<ISymbol>.Empty,
+                Terminals: ImmutableArray<StructuredTerminalObservation>.Empty,
+                FlatteningIssues: flatteningIssues.ToImmutable()));
+    }
+
     internal static ImmutableArray<ConventionReadableMember>
         BuildReadableMembers(
             ITypeSymbol sourceType,
@@ -387,6 +613,18 @@ internal static class ConventionMemberMappingPlanner
             INamedTypeSymbol mapperType,
             CancellationToken cancellationToken)
     {
+        if (BclTupleShapePolicy.TryCreate(sourceType) is
+                { } tupleSource)
+        {
+            return tupleSource.Elements
+                .Where(static element => element.HasSemanticName)
+                .Select(element => new ConventionReadableMember(
+                    element.Name,
+                    element.Type,
+                    element.Symbol))
+                .ToImmutableArray();
+        }
+
         var result =
             ImmutableArray.CreateBuilder<
                 ConventionReadableMember>();
@@ -422,6 +660,23 @@ internal static class ConventionMemberMappingPlanner
             return ImmutableArray<ConventionWritableMember>.Empty;
         }
 
+        if (BclTupleShapePolicy.TryCreate(destination) is
+                { } tupleDestination)
+        {
+            return tupleDestination.Elements.Select(element =>
+                    new ConventionWritableMember(
+                        element.Name,
+                        element.Type,
+                        tupleDestination.IsValueTuple,
+                        IsRequired: false,
+                        element.Symbol,
+                        BuildTupleDestinationAccessPath(
+                            tupleDestination,
+                            element),
+                        CanReconstruct: !tupleDestination.IsValueTuple))
+                .ToImmutableArray();
+        }
+
         var result =
             ImmutableArray.CreateBuilder<ConventionWritableMember>();
 
@@ -451,10 +706,23 @@ internal static class ConventionMemberMappingPlanner
                     writableMember.Type,
                     writableMember.CanAssign,
                     IsRequiredInstanceMember(memberGroup),
-                    writableMember.Symbol));
+                    writableMember.Symbol,
+                    AccessPath: null,
+                    CanReconstruct: false));
         }
 
         return result.ToImmutable();
+    }
+
+    private static string? BuildTupleDestinationAccessPath(
+        BclTupleShape tuple,
+        BclTupleElement element)
+    {
+        return tuple.IsValueTuple &&
+               tuple.Type.IsTupleType &&
+               element.HasSemanticName
+            ? null
+            : element.AccessPath;
     }
 
     internal static ISymbol? FindEffectiveInstanceMember(
@@ -1249,6 +1517,14 @@ internal static class ConventionMemberMappingPlanner
         int CandidateCount,
         int FirstFallbackCandidate,
         int FallbackCandidateCount);
+
+    private readonly record struct TupleMemberCandidateGroup(
+        BclTupleElement Destination,
+        bool HasDirectClaim,
+        int FirstCandidate,
+        int CandidateCount,
+        int FirstFallbackCandidate,
+        int FallbackCandidateCount);
 }
 
 internal readonly record struct ConventionMemberMappingPlan(
@@ -1336,4 +1612,6 @@ internal readonly record struct ConventionWritableMember(
     ITypeSymbol Type,
     bool CanAssign,
     bool IsRequired,
-    ISymbol Symbol);
+    ISymbol Symbol,
+    string? AccessPath,
+    bool CanReconstruct);

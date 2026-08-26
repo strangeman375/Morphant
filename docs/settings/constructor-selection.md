@@ -56,5 +56,10 @@ An explicitly named constructor is unaffected by the setting.
 `ConstructUsing`, `ResolveUsing` and `Convert` do not use constructor
 selection.
 
+BCL tuple construction is intrinsic and also does not use this setting.
+An explicit pair-level `ConstructorSelection` on a `ValueTuple` or
+`System.Tuple` destination produces `MORPH0023`; an inherited or assembly-level
+value has no effect on that tuple mapping.
+
 Configure an assembly default with `MorphantConstructorSelection`. See the
 [settings overview](README.md) for levels and precedence.

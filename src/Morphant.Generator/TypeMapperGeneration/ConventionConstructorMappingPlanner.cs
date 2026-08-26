@@ -1852,7 +1852,8 @@ internal readonly record struct ConventionConstructorMappingPlan(
     TypeMapperConstructorMappingModel Constructor,
     ImmutableArray<TypeMapperMemberMappingModel> CreateMemberMappings,
     ImmutableArray<TypeMapperMemberMappingModel> CreatePostMemberMappings,
-    ConstructorPlanningObservation? Observation = null);
+    ConstructorPlanningObservation? Observation = null,
+    TypeMapperTupleReconstructionModel? TupleReconstruction = null);
 
 internal readonly record struct ConventionConstructorPlanningResult(
     ConventionConstructorMappingPlan? Plan,

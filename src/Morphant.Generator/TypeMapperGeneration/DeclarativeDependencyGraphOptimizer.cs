@@ -49,6 +49,7 @@ internal static class DeclarativeDependencyGraphOptimizer
                 CreateDirectExpression = null,
                 CreateFactory = null,
                 CreateConstructor = null,
+                CreateTupleReconstruction = null,
                 CreateMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty,
                 CreatePostMemberMappings = ImmutableArray<TypeMapperMemberMappingModel>.Empty
             });

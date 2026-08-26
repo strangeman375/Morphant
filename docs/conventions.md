@@ -46,10 +46,23 @@ Only accessible constructors with ordinary by-value parameters participate.
 If no constructor can be selected unambiguously, choose an explicit
 [destination method](api/README.md) or [`Convert`](api/convert.md).
 
+## Tuples
+
+Tuple elements map by semantic name, never by position. Fully or partially
+unnamed elements need explicit rules through their technical `ItemN` names.
+Named tuple members use the same exact, case-sensitive member convention as
+other destinations; logical tuple constructor parameters use the normal
+constructor matching rules.
+
+Tuple construction is intrinsic and does not use `ConstructorSelection`.
+Long tuple plans remain flat and do not expose the BCL `Rest` representation.
+See [Tuple mapping](tuple-mapping.md) for `ValueTuple`, `System.Tuple`, Update,
+and factory behavior.
+
 ## Destination types
 
-Mappings can use classes, structs, records, nullable value types and closed
-generic types. Interfaces, abstract classes and scalar types can also be
+Mappings can use classes, structs, records, tuples, nullable value types and
+closed generic types. Interfaces, abstract classes and scalar types can also be
 destinations, but Create needs an explicit result when Morphant cannot
 construct one.
 

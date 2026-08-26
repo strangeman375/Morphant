@@ -65,7 +65,8 @@ internal static class TypeMapperRuntimeEquality
             left.ConstructedTypeName,
             right.ConstructedTypeName) &&
         AreEquivalent(left.Arguments, right.Arguments) &&
-        AreEquivalent(left.ValueLocals, right.ValueLocals);
+        AreEquivalent(left.ValueLocals, right.ValueLocals) &&
+        AreEquivalent(left.TupleConstruction, right.TupleConstruction);
 
     public static bool AreEquivalent(
         ImmutableArray<TypeMapperMemberMappingModel> left,
@@ -166,6 +167,9 @@ internal static class TypeMapperRuntimeEquality
                AreEquivalent(
                    leftMapping.CreateConstructor,
                    rightMapping.CreateConstructor) &&
+               AreEquivalent(
+                   leftMapping.CreateTupleReconstruction,
+                   rightMapping.CreateTupleReconstruction) &&
                leftMapping.UpdateKind == rightMapping.UpdateKind &&
                AreEquivalent(
                    leftMapping.CreateMemberMappings,
@@ -605,7 +609,11 @@ internal static class TypeMapperRuntimeEquality
                     rightArgument.DependencyExpression) ||
                 !AreEquivalent(
                     leftArgument.EvaluationLocals,
-                    rightArgument.EvaluationLocals))
+                    rightArgument.EvaluationLocals) ||
+                leftArgument.TupleElementOrdinal !=
+                    rightArgument.TupleElementOrdinal ||
+                leftArgument.DeclarativeOrder !=
+                    rightArgument.DeclarativeOrder)
             {
                 return false;
             }
@@ -648,7 +656,84 @@ internal static class TypeMapperRuntimeEquality
                    right.DependencyExpression) &&
                AreEquivalent(
                    left.EvaluationLocals,
-                   right.EvaluationLocals);
+                   right.EvaluationLocals) &&
+               AreEquivalent(
+                   left.InvocationArgumentLocals,
+                   right.InvocationArgumentLocals) &&
+               StringComparer.Ordinal.Equals(
+                   left.DestinationAccessPath,
+                   right.DestinationAccessPath);
+    }
+
+    private static bool AreEquivalent(
+        TypeMapperTupleConstructionModel? left,
+        TypeMapperTupleConstructionModel? right)
+    {
+        if (!left.HasValue || !right.HasValue)
+        {
+            return left.HasValue == right.HasValue;
+        }
+
+        if (left.Value.Kind != right.Value.Kind ||
+            left.Value.ElementTypeNames.Length !=
+                right.Value.ElementTypeNames.Length ||
+            left.Value.ElementNames.Length !=
+                right.Value.ElementNames.Length)
+        {
+            return false;
+        }
+
+        for (var index = 0;
+             index < left.Value.ElementTypeNames.Length;
+             index++)
+        {
+            if (!StringComparer.Ordinal.Equals(
+                    left.Value.ElementTypeNames[index],
+                    right.Value.ElementTypeNames[index]) ||
+                !StringComparer.Ordinal.Equals(
+                    left.Value.ElementNames[index],
+                    right.Value.ElementNames[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static bool AreEquivalent(
+        TypeMapperTupleReconstructionModel? left,
+        TypeMapperTupleReconstructionModel? right)
+    {
+        if (!left.HasValue || !right.HasValue)
+        {
+            return left.HasValue == right.HasValue;
+        }
+
+        if (!AreEquivalent(
+                (TypeMapperTupleConstructionModel?)left.Value.Construction,
+                right.Value.Construction) ||
+            left.Value.Elements.Length != right.Value.Elements.Length)
+        {
+            return false;
+        }
+
+        for (var index = 0;
+             index < left.Value.Elements.Length;
+             index++)
+        {
+            if (!StringComparer.Ordinal.Equals(
+                    left.Value.Elements[index].Name,
+                    right.Value.Elements[index].Name) ||
+                !StringComparer.Ordinal.Equals(
+                    left.Value.Elements[index].AccessPath,
+                    right.Value.Elements[index].AccessPath))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool AreEquivalent(
