@@ -444,6 +444,45 @@ presentation — contextual type и доступные имена в callback. �
 генерируются для destination presentation, а не только для underlying
 `ValueTuple` original definition.
 
+### Отложенный mapper-scoped escape hatch
+
+Первая реализация не добавляет новый public API ради редкого
+presentation conflict. Если real-world usage покажет, что `MORPH0056`
+мешает полезным scenarios, preferred escape hatch — compile-time mapper scope,
+а не overload-resolution tricks:
+
+```csharp
+builder.Map<(int X, int Y), (int Left, int Top)>()
+    .ForMapper(this)
+    .Members(source => new()
+    {
+        Left = source.X,
+        Top = source.Y
+    });
+```
+
+`ForMapper` — рабочее имя, а не утверждённый API. Mapper type,
+выведенный из `this`, войдёт только в compile-time builder identity,
+например `MapperBuilder<TMapper, TSource, TDestination>`. Это даст
+каждому mapper свой exact tuple presentation и generated DSL surface.
+Runtime pair identity, `ITypeMapper<,>`, DI lookup и mapping behavior не
+изменятся.
+
+Такой scope понадобится только conflicting registrations. Обычный
+`Map<TSource, TDestination>()` и общий surface останутся default API.
+После добавления scope `MORPH0056` должен означать только
+conflicting *unscoped* presentations и предлагать этот direct fix.
+
+Отдельно исследован source-generic surface, где `TSource` выводится
+из receiver и поэтому сохраняет tuple names текущего call site.
+Это тоже не входит в первую реализацию: C# не позволяет
+ограничить generic parameter одной physical tuple shape, поэтому
+метод становится destination-wide и применим к другим source pairs.
+Он также должен точно воспроизвести declarative/manual source
+normalization для nullable reference types, `Nullable<T>` и `dynamic`. Это
+отдельный рефакторинг generated surface architecture, а не часть
+tuple mapping contract.
+
 ## Settings и diagnostics
 
 Tuple mapping не добавляет public setting. Existing settings действуют в
@@ -546,7 +585,8 @@ tuple-aware target names.
 - deterministic incremental generation и readable C# 9 output.
 
 Не входят runtime positional mapping arbitrary `ITuple`, projection semantics,
-collection element mapping и отдельная tuple matching setting.
+collection element mapping, отдельная tuple matching setting, mapper-scoped
+DSL surface и source-generic surface refactoring.
 
 ## Black-box acceptance matrix
 
