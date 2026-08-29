@@ -14,6 +14,53 @@ The last mapping swaps the physical fields because `X` maps to `X` and `Y`
 maps to `Y`. Equal underlying `ValueTuple` types do not trigger an identity
 shortcut.
 
+## Combining sources, destinations, and user state
+
+Tuples are Morphant's typed composition mechanism when all inputs and outputs
+are known at compile time. A tuple source can combine several input objects
+into a multi-source mapping or carry call-specific user state that is not
+stored on those objects:
+
+```csharp
+builder.Map<
+    (Order Order, Customer Customer, decimal TaxRate),
+    OrderDto>()
+    .Members(source => new()
+    {
+        CustomerName = source.Customer.Name,
+        Total = source.Order.Subtotal * (1m + source.TaxRate)
+    });
+
+var dto = mapper.Map<
+    (Order Order, Customer Customer, decimal TaxRate),
+    OrderDto>((order, customer, taxRate));
+```
+
+A tuple destination can return several mapped results from one call:
+
+```csharp
+builder.Map<Order, (OrderDto Order, AuditDto Audit)>()
+    .Members(source => new()
+    {
+        Order = Map<OrderDto>(source),
+        Audit = Map<AuditDto>(source)
+    });
+
+var (orderDto, auditDto) = mapper.Map<
+    Order,
+    (OrderDto Order, AuditDto Audit)>(order);
+```
+
+In both cases, Morphant treats the complete tuple as one statically registered
+source/destination pair. It does not automatically merge existing mappings or
+fan out to every tuple element. Configure that composition explicitly; nested
+`Map` rules can reuse independently registered element mappings. User state
+must likewise be included in the source tuple of each nested mapping that
+needs it rather than being propagated as ambient context.
+
+Root null-handling settings apply to the complete tuple. Null tuple elements
+follow the ordinary member-nullability and explicit-rule behavior.
+
 ## Named and unnamed elements
 
 A named destination element follows the normal member convention: it needs one

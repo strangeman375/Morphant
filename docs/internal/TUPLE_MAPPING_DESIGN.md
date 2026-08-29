@@ -564,8 +564,15 @@ tuple-aware target names.
   features.
 - Tuple support не вводит positional mode, reverse mapping или runtime shape
   discovery.
-- Multi-source mapping не становится first-class feature только из-за
-  того, что tuple может выступить обычным source type.
+- Source и destination tuples являются каноническим typed composition для
+  статически известных multi-source, multi-destination и per-call user-state
+  сценариев. Mapping при этом остаётся одной зарегистрированной парой типов.
+- Existing element mappings не объединяются и не запускаются автоматически:
+  composition задаётся explicit nested rules. State передаётся в nested
+  mapping как часть его source tuple, а не через ambient mutable context.
+- Отдельные public APIs для этих сценариев сейчас не требуются. Их имеет смысл
+  рассматривать только если понадобится дополнительная ergonomics или
+  automatic state propagation с отдельным публичным контрактом.
 
 ## First implementation scope
 

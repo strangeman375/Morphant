@@ -85,6 +85,9 @@ configure construction and members explicitly, call other registered
 mappings, explicitly route derived runtime source types, or use `Convert` for
 an ordinary synchronous C# algorithm.
 
+First-class tuple mappings can combine multiple inputs, return multiple
+outputs or carry call-specific state as one statically typed mapping pair.
+
 Continue with the
 [Quick start](https://github.com/strangeman375/Morphant/blob/main/docs/quick-start.md),
 [choose a configuration method](https://github.com/strangeman375/Morphant/blob/main/docs/api/README.md),
