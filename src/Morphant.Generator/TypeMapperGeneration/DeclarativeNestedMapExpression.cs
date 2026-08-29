@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.TypeMapperGeneration;
@@ -1145,7 +1146,7 @@ internal static class DeclarativeNestedMapExpression
     {
         return StringComparer.Ordinal.Equals(
                    type.ContainingNamespace.ToDisplayString(),
-                   "Morphant.Generated.Tuples") &&
+                   BclTuplePlanNaming.Namespace) &&
                type.Name.StartsWith(
                    "SystemTuple",
                    StringComparison.Ordinal) &&

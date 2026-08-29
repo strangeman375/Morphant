@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using Morphant;
 using Morphant.Context;
-using Morphant.Generated.Tuples;
+using Morphant.Generated;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition_a7b10002
 {

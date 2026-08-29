@@ -5,6 +5,8 @@ namespace Morphant.Generator;
 
 internal static class GeneratedPlanNaming
 {
+    public const string RootNamespace = "Morphant.Generated";
+
     public static string BuildNamespace(
         INamedTypeSymbol destinationDefinition)
     {
@@ -13,7 +15,7 @@ internal static class GeneratedPlanNaming
                 ? string.Empty
                 : destinationDefinition.ContainingNamespace.ToDisplayString();
         var planNamespace = string.IsNullOrEmpty(destinationNamespace)
-            ? "Morphant.Generated"
+            ? RootNamespace
             : destinationNamespace + ".Morphant.Generated";
 
         if (destinationDefinition.ContainingType is null)

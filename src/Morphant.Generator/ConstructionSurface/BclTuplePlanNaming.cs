@@ -5,7 +5,7 @@ namespace Morphant.Generator.ConstructionSurface;
 
 internal static class BclTuplePlanNaming
 {
-    public const string Namespace = "Morphant.Generated.Tuples";
+    public const string Namespace = GeneratedPlanNaming.RootNamespace;
 
     public static string BuildStableIdentity(BclTupleShape shape)
     {

@@ -29,9 +29,9 @@
   `Morphant.Generated.<ArtifactKind>.<StableIdentity>.g.cs`, with a singular
   artifact kind. Add a stable hash suffix only for an actual case-insensitive
   collision after sanitization.
-- A destination in the global namespace uses `Morphant.Generated`, referenced
-  as `global::Morphant.Generated`; never synthesize a `Global` namespace
-  segment.
+- A destination in the global namespace and BCL tuple plans use
+  `Morphant.Generated`, referenced as `global::Morphant.Generated`; never
+  synthesize a `Global` or tuple-specific namespace segment.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes or compatibility branches without a user-facing need.
 - Keep generated invocations readable. Materialize synthetic `switch`,
