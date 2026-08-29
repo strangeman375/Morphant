@@ -47,15 +47,8 @@ var address = previous.TryGetValue(out var destination)
 Configuration methods such as `Auto`, `Ignore`, `Value`, `Map`, `Create` and
 `Update` are not used inside `Convert`; its body is normal C#.
 
-Collections and delegates can be mapped as whole values with custom code:
-
-```csharp
-builder.Map<IReadOnlyList<OrderDto>, List<Order>>()
-    .Convert((source, _, context) =>
-        source is null
-            ? new List<Order>()
-            : source.Select(context.Mapper.Map<OrderDto, Order>).ToList());
-```
+`Convert` can also map a collection as a whole. See the
+[collection recipe](recipes.md#map-a-collection-with-custom-code).
 
 Tuples support first-class convention-based and explicit mapping. Use `Convert`
 for a tuple only when the entire transformation is clearer as custom code;

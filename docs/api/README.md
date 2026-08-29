@@ -22,10 +22,10 @@ inside `TypeMapper.Configure`. For application-side `IMapper.Map`, see
 
 If `Construct` or `Resolve` is absent, use a `Using` method or `Convert`.
 If `Members` is absent, the destination has no member Morphant can assign or
-update through a declarative plan.
+update through declarative configuration.
 
-For BCL tuples, generated construction and member plans expose flat logical
-elements and never expose `Rest`. See [Tuple mapping](../tuple-mapping.md).
+For BCL tuples, `Construct` and `Members` configure tuple elements directly.
+See [Tuple mapping](../tuple-mapping.md).
 
 ## Combine methods
 
@@ -42,8 +42,8 @@ compatible delegates. Callbacks may reference constants and accessible mapper
 or static members, but not non-constant locals or local functions declared
 inside `Configure`.
 
-Inside declarative callbacks, use
-[`Auto`, `Ignore`, `Value`, `ByConvention`, `Map`, `Create`, and `Update`](declarative-expressions.md).
+Inside declarative callbacks, use [`Auto`, `Ignore`, `Value`, `ByConvention`,
+`Map`, `Create`, and `Update`](declarative-expressions.md).
 
 ## Settings
 

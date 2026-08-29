@@ -4,9 +4,9 @@ namespace Morphant.Delegates;
 /// Describes destination member mappings from a non-null source.
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
-/// <typeparam name="TMembers">The member plan type.</typeparam>
+/// <typeparam name="TMembers">The destination-member rules type.</typeparam>
 /// <param name="source">The non-null source.</param>
-/// <returns>The destination member plan.</returns>
+/// <returns>The destination-member rules.</returns>
 public delegate TMembers Members<in TSource, out TMembers>(TSource source);
 
 /// <summary>
@@ -15,10 +15,10 @@ public delegate TMembers Members<in TSource, out TMembers>(TSource source);
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TPrevious">The existing destination value type.</typeparam>
-/// <typeparam name="TMembers">The member plan type.</typeparam>
+/// <typeparam name="TMembers">The destination-member rules type.</typeparam>
 /// <param name="source">The non-null source.</param>
 /// <param name="previous">The optional existing destination.</param>
-/// <returns>The destination member plan.</returns>
+/// <returns>The destination-member rules.</returns>
 public delegate TMembers Members<in TSource, TPrevious, out TMembers>(
     TSource source,
     Option<TPrevious> previous);
@@ -30,11 +30,11 @@ public delegate TMembers Members<in TSource, TPrevious, out TMembers>(
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TPrevious">The existing destination value type.</typeparam>
 /// <typeparam name="TResult">The selected mapping result type.</typeparam>
-/// <typeparam name="TMembers">The member plan type.</typeparam>
+/// <typeparam name="TMembers">The destination-member rules type.</typeparam>
 /// <param name="source">The non-null source.</param>
 /// <param name="previous">The optional existing destination.</param>
 /// <param name="result">The non-null selected mapping result.</param>
-/// <returns>The destination member plan.</returns>
+/// <returns>The destination-member rules.</returns>
 public delegate TMembers Members<
     in TSource,
     TPrevious,
@@ -52,12 +52,12 @@ public delegate TMembers Members<
 /// <typeparam name="TPrevious">The existing destination value type.</typeparam>
 /// <typeparam name="TResult">The selected mapping result type.</typeparam>
 /// <typeparam name="TContext">The mapping context type.</typeparam>
-/// <typeparam name="TMembers">The member plan type.</typeparam>
+/// <typeparam name="TMembers">The destination-member rules type.</typeparam>
 /// <param name="source">The non-null source.</param>
 /// <param name="previous">The optional existing destination.</param>
 /// <param name="result">The non-null selected mapping result.</param>
 /// <param name="context">The current mapping context.</param>
-/// <returns>The destination member plan.</returns>
+/// <returns>The destination-member rules.</returns>
 public delegate TMembers Members<
     in TSource,
     TPrevious,

@@ -139,7 +139,7 @@ public abstract class TypeMapper
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Uses an explicit value in a declarative plan.
+    /// Uses an explicit value for the current target.
     /// </summary>
     /// <typeparam name="T">The target value type.</typeparam>
     /// <param name="value">The value expression.</param>

@@ -2,14 +2,16 @@
 
 ## Cause
 
-Two registrations in the same compilation describe the same CLR source and
-destination types with different tuple element names. Tuple names are not part
-of CLR type identity, but they do define Morphant's generated declarative API
-and name-based mapping plan.
+Two registrations in the same compilation have the same underlying source and
+destination types but use different tuple element names on at least one side.
+C# treats tuple types that differ only by element names as the same runtime
+type, but the names remain available to Morphant configuration and name-based
+conventions.
 
 ## Fix
 
-Use one consistent source and destination tuple presentation for that physical
-mapping pair. If the same CLR pair needs different meanings, introduce
-distinct wrapper types. Mapper-scoped tuple surfaces are not currently part of
-the API.
+Use one consistent set of source and destination tuple element names for that
+mapping pair. If the same underlying pair needs different meanings, introduce
+distinct wrapper types.
+
+[All diagnostics](../diagnostics.md)

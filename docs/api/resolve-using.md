@@ -43,11 +43,10 @@ already be initialized in the returned result. Configuring it in `Members`
 produces [`MORPH0042`](../diagnostics/MORPH0042.md). `ResolveUsing` cannot be
 combined with another destination method or `Convert`.
 
-For `System.Tuple`, identity with `previous` is not classified specially: every
-non-null callback result is returned as that exact instance. Scalar element
-rules produce `MORPH0042`; Morphant does not reconstruct either a reused or a
-replacement instance. Writable `ValueTuple` fields and eligible nested
-`Update` statements can still run.
+For `System.Tuple`, the returned instance remains selected whether it reuses
+`previous` or replaces it. Scalar element rules produce `MORPH0042`; writable
+`ValueTuple` elements and eligible nested `Update` statements can still run.
+See [Tuple mapping](../tuple-mapping.md).
 
 Related: [`Resolve`](resolve.md),
 [dependency injection and `IMapper`](../runtime-dispatch.md).

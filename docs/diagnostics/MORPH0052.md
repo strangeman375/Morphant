@@ -9,6 +9,6 @@ same pair would recurse instead of selecting a derived branch.
 
 Remove the link or replace its source with a genuinely derived class,
 implementation or compatible value type. The exact base source already uses
-the base plan.
+the base mapping.
 
 [All diagnostics](../diagnostics.md)

@@ -38,10 +38,12 @@ result. Morphant can assign settable members or run an eligible nested `Update`;
 an `init`-only member must already be initialized in the returned result.
 Configuring it in `Members` produces
 [`MORPH0042`](../diagnostics/MORPH0042.md).
-The same diagnostic applies to a scalar rule for a read-only `System.Tuple`
-element. Morphant never reconstructs a tuple returned by the callback;
-writable `ValueTuple` fields and eligible nested `Update` statements remain
-applicable.
+
+For tuple destinations, writable `ValueTuple` elements and eligible nested
+`Update` statements remain applicable. A scalar rule for a read-only
+`System.Tuple` element produces `MORPH0042`. See
+[Tuple mapping](../tuple-mapping.md).
+
 `ConstructUsing` cannot be combined with another destination method or
 `Convert`.
 

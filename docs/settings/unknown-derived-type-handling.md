@@ -19,9 +19,9 @@ Configure a mapper default with
 `builder.UnknownDerivedTypeHandling(...)`. Configure an assembly default with
 `MorphantUnknownDerivedTypeHandling`.
 
-An exact concrete base instance always uses the base plan. A null source uses
-the base null-source policy. `Throw` also applies to a pair with an empty
-dispatch table.
+An exact concrete base instance always uses the base mapping. A null source
+uses the base null-source policy. `Throw` also applies to a pair with no
+`ForDerived` links.
 
 See the [settings overview](README.md) for precedence and
 [runtime polymorphism](../runtime-polymorphism.md) for branch selection.

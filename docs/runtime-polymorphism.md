@@ -32,15 +32,17 @@ Registration order is not a priority. If several incomparable interface
 branches are equally specific, Morphant throws
 `AmbiguousPolymorphicMappingException`.
 
-The selected pair is resolved through the current `MappingContext.Mapper`.
-It may belong to another registered mapper. Missing or duplicate derived-pair
-registrations produce the normal `MappingNotFoundException` or
-`AmbiguousMappingException`; there is no base fallback after a link matched.
+The selected pair uses the same lookup rules as an explicit nested mapping. A
+pair declared by the same generated mapper is available without DI; a pair
+declared by another mapper must be registered with the application `IMapper`.
+Missing or duplicate derived-pair registrations produce the normal
+`MappingNotFoundException` or `AmbiguousMappingException`; there is no base
+fallback after a link matched.
 
 ## Unknown runtime types
 
-The default `UnknownDerivedTypeHandling.UseBaseMapping` executes the base plan
-when no link matches. Choose `Throw` for a closed hierarchy:
+The default `UnknownDerivedTypeHandling.UseBaseMapping` executes the base
+mapping when no link matches. Choose `Throw` for a closed hierarchy:
 
 ```csharp
 builder.Map<Animal, AnimalDto>()
@@ -61,11 +63,11 @@ the derived destination can represent null, so that pair applies its own
 `NullDestinationHandling`.
 
 An incompatible non-null destination, or null for a non-nullable value-type
-branch, throws `PolymorphicDestinationTypeMismatchException`. The dispatcher
-does not silently replace it or fall back to the base mapping. The selected
+branch, throws `PolymorphicDestinationTypeMismatchException`. Morphant does
+not silently replace it or fall back to the base mapping. The selected
 derived Update may still return a replacement according to its normal rules.
 
-Class, interface and CLR-compatible value-type branches are supported.
+Class, interface and compatible value-type branches are supported.
 Runtime dispatch also applies to explicit nested mapping calls. It is not a
 projection feature and does not scan assemblies for derived registrations.
 

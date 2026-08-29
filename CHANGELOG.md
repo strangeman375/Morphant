@@ -4,7 +4,17 @@ Morphant follows Semantic Versioning. Patch releases within a `0.x` minor
 line preserve compatibility. Until `1.0`, minor releases may contain
 documented breaking changes.
 
+See [current limitations](docs/limitations.md) for functionality that remains
+unsupported.
+
 ## [Unreleased]
+
+### Added
+
+- Add first-class `ValueTuple` and `System.Tuple` mappings, including named,
+  unnamed, long and nullable forms, Create and Update behavior, typed
+  composition of multiple inputs and outputs, call-specific state, and a
+  diagnostic for conflicting tuple element names.
 
 ## [0.4.0]
 
@@ -64,9 +74,6 @@ Initial stable release.
 - C# 9 and newer consumer support on Roslyn 4.4.0 or later.
 - Strong-named runtime and generator assemblies with public key token
   `ba27fb6be8f80649`.
-
-See [current limitations](docs/limitations.md) for functionality outside the
-0.1 release.
 
 [Unreleased]: https://github.com/strangeman375/Morphant/compare/v0.4.0...HEAD
 [0.4.0]: https://github.com/strangeman375/Morphant/compare/v0.3.0...v0.4.0

@@ -22,8 +22,8 @@ services.AddScoped<IMapper, Mapper>();
 All registrations for one generated mapper should resolve the same concrete
 scoped instance. The mapper can use ordinary constructor injection.
 
-Mappings from several assemblies are registered in the same way. Morphant 0.1
-does not include assembly scanning or automatic registration.
+Mappings from several assemblies are registered in the same way. Morphant does
+not scan assemblies or generate DI registrations.
 
 A custom service provider must resolve
 `IEnumerable<ITypeMapper<TSource, TDestination>>`; Morphant uses the collection

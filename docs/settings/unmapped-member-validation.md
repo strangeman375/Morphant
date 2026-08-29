@@ -25,7 +25,7 @@ rules count according to their actual use. `Ignore()` deliberately occupies a
 destination member.
 
 For [`IncludeMembers`](../include-members.md), the selected path counts as
-used and the included readable-member surface is checked.
+used and the readable members of the included object are checked.
 
 A `Construct`, `Resolve` or `Members` lambda can acknowledge an intentionally
 unused source member without reading it when the mapping runs:
@@ -45,7 +45,7 @@ unused source member without reading it when the mapping runs:
 The discard must appear as a statement on its own in the lambda body. It can
 refer to a direct source member, one nested member exposed by
 `IncludeMembers`, or an included source object to acknowledge its complete
-member surface. The getters on that path are not invoked.
+set of readable members. The getters on that path are not invoked.
 
 `Convert` is a manual algorithm, so unmapped-member validation does not apply
 to it.

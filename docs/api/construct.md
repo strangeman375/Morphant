@@ -12,9 +12,8 @@ types, scalar destinations, or factory-based creation, use
 [`ConstructUsing`](construct-using.md), [`ResolveUsing`](resolve-using.md), or
 [`Convert`](convert.md).
 
-It is also available for BCL tuple destinations. Their generated plan exposes
-one intrinsic logical constructor with one flat parameter per element, even
-when the CLR representation uses `Rest`.
+It is also available for BCL tuple destinations, with one callback parameter
+for each tuple element, including long tuples.
 
 ## Overloads
 

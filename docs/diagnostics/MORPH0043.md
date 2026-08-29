@@ -3,7 +3,7 @@
 ## Cause
 
 A reachable path through `Members` returns `null` or `default`. Morphant cannot
-obtain a member plan from that path.
+obtain member rules from that path.
 
 ## Fix
 

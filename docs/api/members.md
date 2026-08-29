@@ -17,10 +17,10 @@ builder. The callback must be an inline lambda.
 
 | Callback | Available information |
 |---|---|
-| `source => plan` | Source |
-| `(source, previous) => plan` | Source and existing destination |
-| `(source, previous, result) => plan` | Source, existing destination, and selected result |
-| `(source, previous, result, context) => plan` | All of the above plus current operation |
+| `source => rules` | Source |
+| `(source, previous) => rules` | Source and existing destination |
+| `(source, previous, result) => rules` | Source, existing destination, and selected result |
+| `(source, previous, result, context) => rules` | All of the above plus current operation |
 
 | Callback value | Description |
 |---|---|
@@ -51,11 +51,9 @@ reconstructed. Its settable members and eligible readable nested members remain
 available, but an `init`-only rule produces
 [`MORPH0042`](../diagnostics/MORPH0042.md).
 
-For tuples, the plan contains one flat property per logical element and never
-contains `Rest`. Rules can supply final constructor values as well as writable
-`ValueTuple` updates. Existing `System.Tuple` instances are not reconstructed
-for scalar rules; eligible nested `Update` statements on referenced elements
-remain valid. See [Tuple mapping](../tuple-mapping.md).
+For tuple destinations, `Members` configures tuple elements. See
+[Tuple mapping](../tuple-mapping.md) for construction, Update, and factory
+behavior for `ValueTuple` and `System.Tuple`.
 
 Related: [declarative expressions](declarative-expressions.md),
 [nested mapping](../nested-mapping.md).

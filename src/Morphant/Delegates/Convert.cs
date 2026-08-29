@@ -8,8 +8,9 @@ namespace Morphant.Delegates;
 /// <param name="source">The original source.</param>
 /// <returns>The mapping result.</returns>
 /// <remarks>
-/// The callback receives the original source. Null handling and the
-/// declarative mapping pipeline are bypassed.
+/// The callback receives the original source. Morphant does not apply null
+/// handling, constructor selection, member conventions, or <c>Members</c>
+/// around it.
 /// </remarks>
 public delegate TResult Convert<in TSource, out TResult>(TSource source);
 
@@ -25,8 +26,8 @@ public delegate TResult Convert<in TSource, out TResult>(TSource source);
 /// <returns>The mapping result.</returns>
 /// <remarks>
 /// The callback receives the original source. An absent destination is
-/// <see cref="Option{TPrevious}.None"/>. Null handling and the declarative
-/// mapping pipeline are bypassed.
+/// <see cref="Option{TPrevious}.None"/>. Morphant does not apply null handling,
+/// constructor selection, member conventions, or <c>Members</c> around it.
 /// </remarks>
 public delegate TResult Convert<in TSource, TPrevious, out TResult>(
     TSource source,
@@ -46,8 +47,8 @@ public delegate TResult Convert<in TSource, TPrevious, out TResult>(
 /// <returns>The mapping result.</returns>
 /// <remarks>
 /// The callback receives the original source. An absent destination is
-/// <see cref="Option{TPrevious}.None"/>. Null handling and the declarative
-/// mapping pipeline are bypassed.
+/// <see cref="Option{TPrevious}.None"/>. Morphant does not apply null handling,
+/// constructor selection, member conventions, or <c>Members</c> around it.
 /// </remarks>
 public delegate TResult Convert<
     in TSource,

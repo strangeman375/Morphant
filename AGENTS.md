@@ -45,6 +45,33 @@
   its generic interfaces can unify; independent legal pairs in the same mapper
   must still generate.
 
+## User documentation
+
+- Public documentation, including Markdown guides, XML IntelliSense comments,
+  diagnostic help and release or package text, is task- and contract-oriented.
+  Include only information users need to choose, configure, understand, test,
+  or troubleshoot observable behavior.
+- Keep planner, lowering, emitter, hashing, generated namespace/layout, and
+  other implementation details in `docs/internal` unless a detail is directly
+  actionable for consumers. `docs/generated-code.md` explains how to view,
+  snapshot, and review generated code; it is not an inventory of generator
+  internals.
+- Describe public behavior in API terms and examples. Avoid internal terms such
+  as plans, physical representations, dispatch tables, or canonical lowering
+  when a direct behavioral statement is sufficient.
+- Keep detailed behavior on one canonical page. Overview, API, settings, and
+  diagnostic pages should state only what is needed in their own context and
+  link to that page instead of duplicating feature-specific explanations.
+- Keep evergreen documentation version-neutral. Use version numbers only for
+  historical changelog/release material or an actual version-specific
+  compatibility requirement.
+- For every user-visible change, review the documentation index, relevant API
+  and settings pages, diagnostics, limitations, and `CHANGELOG.md`. Remove stale
+  statements instead of layering new exceptions onto them.
+- Before publishing documentation, reread every changed page in full, search
+  all public docs for contradictory or obsolete wording, validate relative
+  links, and run `git diff --check`.
+
 ## Settings documentation
 
 - Every settings implementation must update public XML documentation and

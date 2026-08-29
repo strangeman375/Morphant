@@ -62,8 +62,9 @@ not unwrap `Nullable<T>`.
 [`IncludeBase`](api/include-base.md) inherits included objects.
 `IncludeMembers` cannot be combined with [`Convert`](api/convert.md).
 
-Source-side `UnmappedMemberValidation` checks the included member surface. A
-compile-time discard can acknowledge one member or the complete object:
+Source-side `UnmappedMemberValidation` checks readable members of included
+objects. A compile-time discard can acknowledge one member or the complete
+object:
 
 ```csharp
 .Members(source =>

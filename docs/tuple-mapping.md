@@ -10,9 +10,9 @@ builder.Map<(int Id, string Name), CustomerDto>();
 builder.Map<(int X, int Y), (int Y, int X)>();
 ```
 
-The last mapping swaps the physical fields because `X` maps to `X` and `Y`
-maps to `Y`. Equal underlying `ValueTuple` types do not trigger an identity
-shortcut.
+The last mapping swaps the values because `X` maps to `X` and `Y` maps to `Y`.
+The source and destination have the same underlying `ValueTuple<int, int>`
+type, but element names still control mapping behavior.
 
 ## Combining sources, destinations, and user state
 
@@ -64,13 +64,11 @@ follow the ordinary member-nullability and explicit-rule behavior.
 ## Named and unnamed elements
 
 A named destination element follows the normal member convention: it needs one
-compatible source member with the exact, case-sensitive name. Logical tuple
-constructor parameters also allow the normal unique case-insensitive
-constructor match.
+compatible source member with the exact, case-sensitive name. Constructor
+conventions also allow the normal unique case-insensitive match.
 
-An unnamed element has only its technical `ItemN` storage name. Morphant does
-not treat that name as semantic information, so it never guesses a positional
-mapping. Configure the element explicitly:
+An unnamed element has no semantic name. Use its `ItemN` name in an explicit
+rule; Morphant never treats `ItemN` as a positional convention:
 
 ```csharp
 builder.Map<Source, (int, string)>()
@@ -87,10 +85,10 @@ turn `ItemN` into a semantic name.
 
 ## Construction
 
-For a tuple destination, `Construct` and `Resolve` expose one logical
-constructor with one flat parameter per element. Morphant already knows how to
-lower that plan to the required BCL representation, including tuples longer
-than seven elements. `Rest` is not part of the public plan.
+For a tuple destination, `Construct` and `Resolve` expose one parameter per
+element. Long tuples use the same flat callback shape; their eighth and later
+elements remain directly addressable by name or as `ItemN`. `Rest` is never
+configured.
 
 ```csharp
 builder.Map<Source, (int Id, string Name)>()
@@ -110,13 +108,13 @@ builder.Map<Source, (int Id, string Name)>()
     });
 ```
 
-When `Construct` or a construction branch of `Resolve` overlaps `Members`,
-Morphant builds one final element plan. An overridden expression is not
+When `Construct` or a construction branch of `Resolve` overlaps `Members`, the
+`Members` rule wins for that element and the overridden expression is not
 evaluated. Surviving expressions keep declarative evaluation order and run
-once. A rule that reads `result` first materializes the initial tuple, because
-that value is observable.
+once. If a rule reads `result`, Morphant creates that initial tuple first
+because the value is observable.
 
-Tuple construction is intrinsic, not a choice among CLR constructors.
+Tuple construction is intrinsic, not a choice among declared constructors.
 An explicit pair-level `ConstructorSelection` therefore produces
 [`MORPH0023`](diagnostics/MORPH0023.md); inherited defaults have no effect.
 
@@ -137,14 +135,13 @@ mutable destinations.
 `System.Tuple` elements are read-only. A normal Update preserves the existing
 tuple instance and does not reconstruct it for scalar rules. An explicit nested
 `Update` may still mutate an eligible referenced object stored in an element.
-A construction or replacement path can use scalar rules because Morphant can
-pass their final values to the canonical tuple constructor.
+Scalar rules can apply while Morphant creates or replaces the tuple.
 
 ## Runtime factories
 
 `ConstructUsing` and `ResolveUsing` return an authoritative result. Morphant
-does not reconstruct it, compare it with `previous`, or replace it with a
-canonical tuple. A non-null result receives only member operations that can run
+does not compare it with `previous` or create another tuple to apply read-only
+element rules. A non-null result receives only member operations that can run
 on that result:
 
 - writable `ValueTuple` fields may be assigned;
@@ -170,15 +167,14 @@ use an explicit expression or `Convert` for indexer access.
 
 ## Presentation conflicts
 
-Tuple element names are erased from CLR type identity but are part of
-Morphant's declarative API. All registrations of one physical source and
-destination pair in a compilation must therefore use the same recursive tuple
-presentation. A conflicting presentation produces
+C# tuple element names do not create different runtime types, but they define
+the names available in Morphant configuration. All registrations with the
+same underlying source and destination types must therefore use the same
+recursive tuple element names. A conflict produces
 [`MORPH0056`](diagnostics/MORPH0056.md).
 
-Use one consistent presentation, or introduce wrapper types when the same CLR
-pair needs different meanings. Mapper-scoped tuple surfaces are not currently
-part of the API.
+Use one consistent presentation, or introduce wrapper types when the same
+underlying pair needs different meanings.
 
 Related: [Conventions](conventions.md),
 [Create and Update](create-and-update.md), and

@@ -27,7 +27,7 @@ The optional settings are:
 
 | Setting | Default | Purpose |
 |---|---|---|
-| `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include the complete generated surface. |
+| `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include all Morphant-generated files. |
 | `MorphantGitSnapshotTargetFrameworks` | Last declared TFM | Semicolon-separated subset of the project's TFMs; use `$(TargetFrameworks)` to select all. |
 | `MorphantGitSnapshotPath` | `Generated/Morphant` | Dedicated snapshot directory inside the project. |
 
@@ -35,7 +35,7 @@ In multi-target projects, list `TargetFrameworks` from oldest to newest. For
 example, `net8.0;net10.0` selects only `net10.0` by default. Every explicitly
 selected TFM must also be declared by the project.
 
-Example with the complete generated surface for every TFM:
+Example with all generated files for every TFM:
 
 ```xml
 <PropertyGroup>
@@ -60,7 +60,7 @@ An up-to-date build may skip compilation and therefore may not repair the
 snapshot. Change mappings or models instead of editing generated files.
 
 Debug and Release update the same snapshot; if their output differs, the last
-successful build wins. Build the canonical configuration before committing.
+successful build wins. Build the intended configuration before committing.
 Changing `MorphantGitSnapshotPath` does not delete the old directory.
 
 For stable line endings across platforms, add:
@@ -71,10 +71,5 @@ For stable line endings across platforms, add:
 
 Morphant removes obsolete generated files after a successful compilation and
 preserves unrelated files in the snapshot directory.
-
-Tuple construction and member plans are emitted under
-`Morphant.Generated.Tuples`. Their readable prefix contains tuple kind and
-logical arity; a stable suffix distinguishes physical element types and tuple
-presentations. Long tuple plans are flat and hide the BCL `Rest` chain.
 
 See [Testing mappings](testing.md) for generated-diff checks.

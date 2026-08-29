@@ -8,7 +8,7 @@ be reported alongside this diagnostic.
 
 ## Fix
 
-Use a CLR-assignable source and destination pair, or move the link to a base
+Use an assignable source and destination pair, or move the link to a base
 mapping with compatible types.
 
 [All diagnostics](../diagnostics.md)

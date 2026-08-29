@@ -56,12 +56,13 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-Register the `AddressDto -> Address` mapping with DI as well. See
-[Nested mapping](nested-mapping.md) for Create and Update selection.
+When using the application `IMapper`, register the `AddressDto -> Address`
+mapping with DI as well. See [Nested mapping](nested-mapping.md) for Create and
+Update selection.
 
 ## Map a collection with custom code
 
-Morphant 0.1 has no automatic collection mapping. A
+Morphant does not automatically map collection elements. A
 [`Convert`](api/convert.md) mapping can map a collection as a whole:
 
 ```csharp

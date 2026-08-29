@@ -102,7 +102,7 @@ public abstract class MapperBuilderBase<T>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures validation of members omitted from the mapping plan.
+    /// Configures validation of unmapped source and destination members.
     /// </summary>
     /// <param name="unmappedMemberValidation">
     /// The compile-time constant policy.
@@ -202,9 +202,10 @@ public sealed class MapperBuilder<TSource, TDestination> : MapperBuilderBase<Map
     /// <remarks>
     /// Local settings and rules take precedence. A mapping declared in a base
     /// mapper is available only through <c>base.Configure(builder)</c>. A
-    /// different pair contributes settings, included source scopes and
-    /// explicit member rules, but not its result or <c>Convert</c> plan; the
-    /// exact same pair contributes its full plan.
+    /// different pair contributes settings, included source members and
+    /// explicit member rules, but not its destination-selection or
+    /// <c>Convert</c> behavior. The exact same pair contributes all of its
+    /// configuration.
     /// </remarks>
     /// <returns>This mapping builder.</returns>
     public MapperBuilder<TSource, TDestination>

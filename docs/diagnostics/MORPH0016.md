@@ -10,8 +10,7 @@ mapper is compiled in another assembly.
 
 Keep reusable base configuration in the same project as the derived mapper, or
 remove the base call and declare the required mappings and settings in the
-current mapper. Cross-assembly configuration inheritance is not supported in
-Morphant 0.1.
+current mapper. Cross-assembly configuration inheritance is not supported.
 
 See [Configuration inheritance](../configuration-inheritance.md).
 

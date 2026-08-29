@@ -49,15 +49,14 @@ If no constructor can be selected unambiguously, choose an explicit
 ## Tuples
 
 Tuple elements map by semantic name, never by position. Fully or partially
-unnamed elements need explicit rules through their technical `ItemN` names.
-Named tuple members use the same exact, case-sensitive member convention as
-other destinations; logical tuple constructor parameters use the normal
-constructor matching rules.
+unnamed elements need explicit rules through their `ItemN` names. Named tuple
+members use the same exact, case-sensitive member convention as other
+destinations. Constructor conventions use the normal exact-then-unique-
+case-insensitive matching rules.
 
 Tuple construction is intrinsic and does not use `ConstructorSelection`.
-Long tuple plans remain flat and do not expose the BCL `Rest` representation.
 See [Tuple mapping](tuple-mapping.md) for `ValueTuple`, `System.Tuple`, Update,
-and factory behavior.
+long tuples, and factory behavior.
 
 ## Destination types
 
