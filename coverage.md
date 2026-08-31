@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/29/2026 - 15:30:17 |
-| Coverage date: | 08/29/2026 - 15:28:50 - 08/29/2026 - 15:30:12 |
+| Generated on: | 08/31/2026 - 08:38:46 |
+| Coverage date: | 08/31/2026 - 08:36:55 - 08/31/2026 - 08:38:41 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 356 |
 | Files: | 183 |
-| **Line coverage:** | 86.4% (34766 of 40223) |
-| Covered lines: | 34766 |
-| Uncovered lines: | 5457 |
-| Coverable lines: | 40223 |
-| Total lines: | 67077 |
-| **Branch coverage:** | 76.6% (11624 of 15166) |
-| Covered branches: | 11624 |
-| Total branches: | 15166 |
+| **Line coverage:** | 86.4% (34882 of 40344) |
+| Covered lines: | 34882 |
+| Uncovered lines: | 5462 |
+| Coverable lines: | 40344 |
+| Total lines: | 67311 |
+| **Branch coverage:** | 76.7% (11676 of 15218) |
+| Covered branches: | 11676 |
+| Total branches: | 15218 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -65,11 +65,11 @@
 |Morphant.Build.Tasks.SnapshotException|100%||
 
 </details>
-<details><summary>Morphant.Generator - 86.3%</summary>
+<details><summary>Morphant.Generator - 86.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**86.3%**|**76.7%**|
+|**Morphant.Generator**|**86.4%**|**76.7%**|
 |Morphant.Generator.CodeWriter|100%|100%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -79,7 +79,7 @@
 |Morphant.Generator.CompilationContext|100%||
 |Morphant.Generator.CompilationContextPipeline|100%|100%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanModelBuilder|100%|90%|
-|Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|100%|100%|
+|Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|87.2%|82.7%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterFieldModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterModel|100%||
@@ -88,7 +88,7 @@
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elBuilder|82.9%|69%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResult|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResultComparer|94.6%|91.6%|
-|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanPip<br/>eline|86.7%|97.2%|
+|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanPip<br/>eline|87.3%|97.3%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionTypePar<br/>ameterModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionSurfacePipeline|98.8%|95.4%|
 |Morphant.Generator.ConstructionSurface.GeneratedTypeNameBuilder|96.8%|94.4%|
@@ -103,7 +103,7 @@
 |Morphant.Generator.GeneratedPlanNaming|100%|90%|
 |Morphant.Generator.GeneratedSourceHintName|100%||
 |Morphant.Generator.HintNameHelper|100%|100%|
-|Morphant.Generator.HintNamePartAllocator|60%|75%|
+|Morphant.Generator.HintNamePartAllocator|61.9%|75%|
 |Morphant.Generator.Incrementality.DestinationPlanCandidate|100%||
 |Morphant.Generator.Incrementality.DestinationPlanCoordination|100%|50%|
 |Morphant.Generator.Incrementality.DestinationPlanCoordinationBuilder|100%|100%|
@@ -128,7 +128,7 @@
 |Morphant.Generator.MapperDeclaration.MapperContainingTypeIssue|100%||
 |Morphant.Generator.MapperDeclaration.MapperContractAnalysis|100%|100%|
 |Morphant.Generator.MapperDeclaration.MapperContractConflict|100%||
-|Morphant.Generator.MapperDeclaration.MapperContractDisplay|83.1%|77.7%|
+|Morphant.Generator.MapperDeclaration.MapperContractDisplay|87.3%|84.1%|
 |Morphant.Generator.MapperDeclaration.MapperContractPipeline|98.7%|100%|
 |Morphant.Generator.MapperDeclaration.MapperDeclarationDiagnosticDescriptors|100%||
 |Morphant.Generator.MapperDeclaration.MapperDeclarationDiagnosticPipeline|93.2%|81.8%|
@@ -137,7 +137,7 @@
 |Morphant.Generator.MapperTypeSubstitution|92.5%|85.2%|
 |Morphant.Generator.MappingPair.BclTupleElement|100%|100%|
 |Morphant.Generator.MappingPair.BclTupleShape|100%||
-|Morphant.Generator.MappingPair.BclTupleShapePolicy|81.8%|72.8%|
+|Morphant.Generator.MappingPair.BclTupleShapePolicy|85.1%|75.7%|
 |Morphant.Generator.MappingPair.CanonicalMappingPairCandidate|100%||
 |Morphant.Generator.MappingPair.CanonicalMappingPairPipeline|92.6%|88.8%|
 |Morphant.Generator.MappingPair.CanonicalMappingPairSelector|96.3%|88.8%|
@@ -167,7 +167,7 @@
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelBuilder|94%|80.4%|
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelResult|100%||
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelResultComparer|94.2%|90.9%|
-|Morphant.Generator.MemberSurface.MemberPlan.MemberPlanPipeline|86.8%|97.3%|
+|Morphant.Generator.MemberSurface.MemberPlan.MemberPlanPipeline|87.3%|97.5%|
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanPropertyModel|100%||
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanTypeParameterModel|100%||
 |Morphant.Generator.MemberSurface.MemberSurfacePipeline|98.8%|95.8%|
@@ -227,7 +227,7 @@
 |Morphant.Generator.TypeMapperConfigure.TypeMapperConfigurePipeline|98.1%|92.8%|
 |Morphant.Generator.TypeMapperGeneration.BasicMembersMappingPlanner|86.6%|69.3%|
 |Morphant.Generator.TypeMapperGeneration.BasicMembersMappingResult|100%||
-|Morphant.Generator.TypeMapperGeneration.BclTupleMappingPlanner|63.5%|52.2%|
+|Morphant.Generator.TypeMapperGeneration.BclTupleMappingPlanner|63.6%|52.8%|
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticAnalyzer|82.5%|78.5%|
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticCandidate|81.8%||
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticDescriptors|100%||
@@ -278,7 +278,7 @@
 |Morphant.Generator.TypeMapperGeneration.DeclarativeMemberValueLeafSyntaxNod<br/>e|100%||
 |Morphant.Generator.TypeMapperGeneration.DeclarativeMemberValueSwitchSection<br/>Syntax|0%||
 |Morphant.Generator.TypeMapperGeneration.DeclarativeMemberValueSwitchSyntaxN<br/>ode|0%||
-|Morphant.Generator.TypeMapperGeneration.DeclarativeNestedMapExpression|93.1%|80.5%|
+|Morphant.Generator.TypeMapperGeneration.DeclarativeNestedMapExpression|93.1%|80.6%|
 |Morphant.Generator.TypeMapperGeneration.DeclarativeNestedMapTargetContext|100%||
 |Morphant.Generator.TypeMapperGeneration.DeclarativeNestedMapUsageRegistry|100%|95%|
 |Morphant.Generator.TypeMapperGeneration.DeclarativeObjectArgumentSyntax|100%||
@@ -402,4 +402,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #71](https://github.com/strangeman375/Morphant/actions/runs/33260268956).
+Full HTML report: download the **coverage** artifact from [CI run #72](https://github.com/strangeman375/Morphant/actions/runs/33373523040).
