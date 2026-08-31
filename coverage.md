@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/31/2026 - 08:38:46 |
-| Coverage date: | 08/31/2026 - 08:36:55 - 08/31/2026 - 08:38:41 |
+| Generated on: | 08/31/2026 - 09:07:21 |
+| Coverage date: | 08/31/2026 - 09:05:34 - 08/31/2026 - 09:07:16 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 356 |
 | Files: | 183 |
-| **Line coverage:** | 86.4% (34882 of 40344) |
-| Covered lines: | 34882 |
+| **Line coverage:** | 86.4% (34900 of 40362) |
+| Covered lines: | 34900 |
 | Uncovered lines: | 5462 |
-| Coverable lines: | 40344 |
-| Total lines: | 67311 |
-| **Branch coverage:** | 76.7% (11676 of 15218) |
-| Covered branches: | 11676 |
-| Total branches: | 15218 |
+| Coverable lines: | 40362 |
+| Total lines: | 67333 |
+| **Branch coverage:** | 76.7% (11680 of 15222) |
+| Covered branches: | 11680 |
+| Total branches: | 15222 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -69,7 +69,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**86.4%**|**76.7%**|
+|**Morphant.Generator**|**86.4%**|**76.8%**|
 |Morphant.Generator.CodeWriter|100%|100%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -79,7 +79,7 @@
 |Morphant.Generator.CompilationContext|100%||
 |Morphant.Generator.CompilationContextPipeline|100%|100%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanModelBuilder|100%|90%|
-|Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|87.2%|82.7%|
+|Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|88.6%|83.8%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterFieldModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterModel|100%||
@@ -402,4 +402,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #72](https://github.com/strangeman375/Morphant/actions/runs/33373523040).
+Full HTML report: download the **coverage** artifact from [CI run #73](https://github.com/strangeman375/Morphant/actions/runs/33375760122).
