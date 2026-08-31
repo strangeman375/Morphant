@@ -56,9 +56,15 @@ internal sealed class HintNamePartAllocator
 
     public string Allocate(string stableIdentity)
     {
-        var readableHintNamePart =
-            HintNameHelper.ToHintNamePart(stableIdentity);
+        return Allocate(
+            stableIdentity,
+            HintNameHelper.ToHintNamePart(stableIdentity));
+    }
 
+    public string Allocate(
+        string stableIdentity,
+        string readableHintNamePart)
+    {
         if (_usedHintNameParts.Add(readableHintNamePart))
         {
             return readableHintNamePart;

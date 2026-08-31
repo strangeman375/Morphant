@@ -16,6 +16,11 @@ unsupported.
   composition of multiple inputs and outputs, call-specific state, and a
   diagnostic for conflicting tuple element names.
 
+### Changed
+
+- Give generated tuple templates readable namespaces and type names based on
+  tuple kind, logical arity, element types, and element names.
+
 ## [0.4.0]
 
 ### Added

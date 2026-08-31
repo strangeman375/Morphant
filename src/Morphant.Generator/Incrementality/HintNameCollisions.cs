@@ -25,7 +25,9 @@ internal static class HintNameCollisions
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var allocatedPart = allocator.Allocate(identity.StableIdentity);
+            var allocatedPart = allocator.Allocate(
+                identity.StableIdentity,
+                identity.ReadableHintNamePart);
 
             if (!StringComparer.Ordinal.Equals(
                     allocatedPart,
@@ -45,6 +47,17 @@ internal static class HintNameCollisions
         HintNameAllocations allocations,
         string stableIdentity)
     {
+        return Resolve(
+            allocations,
+            stableIdentity,
+            HintNameHelper.ToHintNamePart(stableIdentity));
+    }
+
+    public static string Resolve(
+        HintNameAllocations allocations,
+        string stableIdentity,
+        string readableHintNamePart)
+    {
         foreach (var allocation in allocations.Items)
         {
             if (StringComparer.Ordinal.Equals(
@@ -55,7 +68,7 @@ internal static class HintNameCollisions
             }
         }
 
-        return HintNameHelper.ToHintNamePart(stableIdentity);
+        return readableHintNamePart;
     }
 }
 

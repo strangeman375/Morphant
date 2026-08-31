@@ -6,7 +6,10 @@ using System;
 using System.Collections.Generic;
 using Morphant;
 using Morphant.Context;
-using Morphant.Generated;
+using FusionTupleMembers =
+    Morphant.Generated.Tuples.ValueTuple2_Int32_String.Tuple_Id_Name_Members;
+using MixedTupleMembers =
+    Morphant.Generated.Tuples.Tuple2_Type_Morphant_Generator_IntegrationTests_CSharp9_Scenarios_TupleComposition__a7b10002_MutablePayload_String.TupleMembers;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition_a7b10002
 {
@@ -48,7 +51,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
                 .Construct(source => new(
                     InitialId(source),
                     InitialName(source)))
-                .Members(source => new()
+                .Members(source => new FusionTupleMembers
                 {
                     Id = FinalId(source)
                 })
@@ -101,7 +104,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
                 .Members((source, _, result) =>
                 {
                     var members =
-                        new SystemTuple2_9cb55bbc53eafb9bMembers
+                        new MixedTupleMembers
                         {
                             Item2 = source.Text + ":" + result.Item1.Value
                         };

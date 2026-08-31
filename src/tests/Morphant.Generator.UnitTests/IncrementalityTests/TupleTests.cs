@@ -9,19 +9,19 @@ internal sealed class TupleTests
 {
     private const string OldConstruction =
         "Morphant.Generated.Construction.Tuple_" +
-        "ValueTuple2_6a518f7e7fb5607c.g.cs";
+        "ValueTuple2_Int32_String_Tuple_Id_Name.g.cs";
 
     private const string NewConstruction =
         "Morphant.Generated.Construction.Tuple_" +
-        "ValueTuple2_77f96889121eca12.g.cs";
+        "ValueTuple2_Int32_String_Tuple_Code_Name.g.cs";
 
     private const string OldMember =
         "Morphant.Generated.Member.Tuple_" +
-        "ValueTuple2_6a518f7e7fb5607c.g.cs";
+        "ValueTuple2_Int32_String_Tuple_Id_Name.g.cs";
 
     private const string NewMember =
         "Morphant.Generated.Member.Tuple_" +
-        "ValueTuple2_77f96889121eca12.g.cs";
+        "ValueTuple2_Int32_String_Tuple_Code_Name.g.cs";
 
     private const string TupleMappingExtension =
         "Morphant.Generated.MappingExtension." +

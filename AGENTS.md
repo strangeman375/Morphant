@@ -29,9 +29,18 @@
   `Morphant.Generated.<ArtifactKind>.<StableIdentity>.g.cs`, with a singular
   artifact kind. Add a stable hash suffix only for an actual case-insensitive
   collision after sanitization.
-- A destination in the global namespace and BCL tuple plans use
-  `Morphant.Generated`, referenced as `global::Morphant.Generated`; never
-  synthesize a `Global` or tuple-specific namespace segment.
+- A destination in the global namespace uses `Morphant.Generated`, referenced
+  as `global::Morphant.Generated`; never synthesize a `Global` namespace
+  segment.
+- BCL tuple plans use
+  `Morphant.Generated.Tuples.<tuple-kind-and-type-contract>`. The namespace
+  carries tuple kind, logical arity and recursive type-argument contracts.
+  `ValueTuple` plan type names carry the current tuple level's element names;
+  `System.Tuple` uses the fixed `TupleConstructorParameters`,
+  `TupleConstruction` and `TupleMembers` names. Preserve this separation so
+  tuple implementation identities do not leak into user-facing type names.
+  Prefix non-special named type contracts with `Type_`; this keeps a global
+  user type such as `Int32` distinct from the CLR special type `int`.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes or compatibility branches without a user-facing need.
 - Keep generated invocations readable. Materialize synthetic `switch`,

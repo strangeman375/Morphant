@@ -445,6 +445,51 @@ presentation — contextual type и доступные имена в callback. �
 генерируются для destination presentation, а не только для underlying
 `ValueTuple` original definition.
 
+### Naming declarative surface
+
+Tuple plan types находятся под `Morphant.Generated.Tuples`. Namespace
+кодирует tuple kind, logical arity и recursive type-argument contract:
+
+```text
+Morphant.Generated.Tuples.ValueTuple2_Int32_String
+Morphant.Generated.Tuples.Tuple2_Int32_String
+```
+
+Для `ValueTuple` имена элементов текущего уровня входят в user-facing type
+name:
+
+```text
+Tuple_Key_Item2_ConstructorParameters
+Tuple_Key_Item2_Construction
+Tuple_Key_Item2_Members
+```
+
+Для `System.Tuple`, у которого нет semantic aliases, используются fixed names:
+
+```text
+TupleConstructorParameters
+TupleConstruction
+TupleMembers
+```
+
+Presentation вложенного `ValueTuple` является частью contract внешнего type
+argument и поэтому рекурсивно входит в namespace. Например,
+`Tuple<(int X, int Y)>` получает namespace, оканчивающийся на
+`Tuple1_ValueTuple2_Int32_Int32_Tuple_X_Y`, и по-прежнему использует
+`TupleMembers`. Это позволяет нескольким independently valid physical pairs
+иметь разные nested presentations без hash в template type name.
+
+Non-special named type arguments получают префикс `Type_` и включают qualified
+type name, nullable contracts, generic arguments и array shape. Префикс, в
+частности, не даёт global user type `Int32` совпасть с CLR special type `int`.
+Long tuple namespace использует logical arity и flat elements, без public
+`Rest` representation. Hint names повторяют readable tuple contract; stable
+suffix добавляется только при реальной case-insensitive collision.
+
+Эта схема разделяет plan declarations, но не extension methods: их receiver
+по-прежнему определяется physical pair. Поэтому она не отменяет `MORPH0056`.
+Mapper-scoped receiver остаётся отдельным отложенным API.
+
 ### Отложенный mapper-scoped escape hatch
 
 Первая реализация не добавляет новый public API ради редкого
@@ -537,8 +582,9 @@ tuple-aware target names.
 - `System.Tuple` не требует explicit factory, если все required values доступны.
 - Long tuples понижаются в required nested BCL representation, но
   generated declarative surface и diagnostics остаются плоскими.
-- Generated tuple-plan names используют стабильную source-level type identity
-  и не зависят от того, предоставил тип reference или runtime assembly.
+- Generated tuple-plan namespaces и type names используют readable
+  source-level contracts и не зависят от того, предоставил тип reference или
+  runtime assembly. Stable hashes не входят в template type names.
 - Value tuple Update изменяет текущий selected tuple value и возвращает его.
   Обычно это сам by-value `destination` parameter; отдельный local создаётся
   только при необходимости. Caller-owned value не изменяется по ссылке.
@@ -669,8 +715,10 @@ DSL surface и source-generic surface refactoring.
     independent. A direct duplicate in one mapper produces only `MORPH0013`.
 27. Mapper contracts, DI ambiguity and standalone lookup continue to use physical
     CLR pair identity.
-28. Generated snapshots preserve aliases, evaluation order, readable locals,
-    authoritative factory identity, C# 9 syntax and deterministic CRLF output.
+28. Generated snapshots preserve aliases, friendly tuple plan namespaces and
+    type names, logical long-tuple arity, recursive presentations, evaluation
+    order, readable locals, authoritative factory identity, C# 9 syntax and
+    deterministic CRLF output.
 29. Adding, removing or renaming a tuple element invalidates only affected
     incremental outputs and diagnostics.
 

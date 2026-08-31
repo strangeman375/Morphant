@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Morphant.Generator.MappingPair;
 
@@ -5,7 +6,15 @@ namespace Morphant.Generator.ConstructionSurface;
 
 internal static class BclTuplePlanNaming
 {
-    public const string Namespace = GeneratedPlanNaming.RootNamespace;
+    private const string RootNamespace = "Morphant.Generated.Tuples";
+
+    public static string BuildNamespace(BclTupleShape shape)
+    {
+        return RootNamespace + "." +
+               BuildTupleContractName(
+                   shape,
+                   includePresentation: false);
+    }
 
     public static string BuildStableIdentity(BclTupleShape shape)
     {
@@ -29,18 +38,18 @@ internal static class BclTuplePlanNaming
 
     public static string BuildConstructionTypeName(BclTupleShape shape)
     {
-        return BuildStableIdentity(shape) + "Construction";
+        return BuildPlanTypeName(shape, "Construction");
     }
 
     public static string BuildConstructorParametersTypeName(
         BclTupleShape shape)
     {
-        return BuildStableIdentity(shape) + "ConstructorParameters";
+        return BuildPlanTypeName(shape, "ConstructorParameters");
     }
 
     public static string BuildMembersTypeName(BclTupleShape shape)
     {
-        return BuildStableIdentity(shape) + "Members";
+        return BuildPlanTypeName(shape, "Members");
     }
 
     public static string BuildPlanTypeReference(
@@ -53,7 +62,7 @@ internal static class BclTuplePlanNaming
             shape.Type);
 
         return "global::" +
-               Namespace +
+               BuildNamespace(shape) +
                "." +
                typeName +
                (typeParameters.IsEmpty
@@ -70,7 +79,26 @@ internal static class BclTuplePlanNaming
 
     public static string BuildHintIdentity(BclTupleShape shape)
     {
-        return BuildStableIdentity(shape);
+        return BuildTupleContractName(
+                   shape,
+                   includePresentation: false) +
+               "." +
+               BuildPlanTypeName(shape, suffix: string.Empty);
+    }
+
+    public static bool IsSystemTuplePlanNamespace(string value)
+    {
+        const string prefix = RootNamespace + ".Tuple";
+
+        if (!value.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var arityStart = prefix.Length;
+
+        return value.Length > arityStart &&
+               char.IsDigit(value[arityStart]);
     }
 
     private static string BuildReadablePrefix(BclTupleShape shape)
@@ -80,5 +108,179 @@ internal static class BclTuplePlanNaming
                 : "SystemTuple") +
                shape.Elements.Length.ToString(
                    System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static string BuildPlanTypeName(
+        BclTupleShape shape,
+        string suffix)
+    {
+        if (shape.Kind == BclTupleKind.SystemTuple ||
+            shape.Elements.IsEmpty)
+        {
+            return "Tuple" + suffix;
+        }
+
+        var presentation = BuildValueTuplePresentationName(shape);
+
+        return suffix.Length == 0
+            ? presentation
+            : presentation + "_" + suffix;
+    }
+
+    private static string BuildTupleContractName(
+        BclTupleShape shape,
+        bool includePresentation)
+    {
+        var result = new StringBuilder();
+
+        result.Append(
+                shape.Kind == BclTupleKind.ValueTuple
+                    ? "ValueTuple"
+                    : "Tuple")
+            .Append(shape.Elements.Length.ToString(
+                System.Globalization.CultureInfo.InvariantCulture));
+
+        foreach (var element in shape.Elements)
+        {
+            result.Append('_')
+                .Append(BuildTypeContractName(element.Type));
+        }
+
+        if (includePresentation &&
+            shape.Kind == BclTupleKind.ValueTuple &&
+            !shape.Elements.IsEmpty)
+        {
+            result.Append('_')
+                .Append(BuildValueTuplePresentationName(shape));
+        }
+
+        return result.ToString();
+    }
+
+    private static string BuildValueTuplePresentationName(
+        BclTupleShape shape)
+    {
+        return "Tuple_" +
+               string.Join(
+                   "_",
+                   shape.Elements.Select(static element => element.Name));
+    }
+
+    private static string BuildTypeContractName(ITypeSymbol type)
+    {
+        if (type is IDynamicTypeSymbol)
+        {
+            return AddNullableSuffix(type, "Dynamic");
+        }
+
+        if (type is IArrayTypeSymbol array)
+        {
+            var kind = array.IsSZArray ? "Array" : "MdArray";
+            var value = kind +
+                        array.Rank.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture) +
+                        "_" +
+                        BuildTypeContractName(array.ElementType);
+
+            return AddNullableSuffix(type, value);
+        }
+
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            return AddNullableSuffix(type, typeParameter.Name);
+        }
+
+        if (type is not INamedTypeSymbol namedType)
+        {
+            return AddNullableSuffix(
+                type,
+                HintNameHelper.ToHintNamePart(type.ToDisplayString()));
+        }
+
+        if (namedType.OriginalDefinition.SpecialType ==
+            SpecialType.System_Nullable_T)
+        {
+            return BuildTypeContractName(namedType.TypeArguments[0]) +
+                   "Nullable";
+        }
+
+        if (BclTupleShapePolicy.TryCreate(namedType) is { } tuple)
+        {
+            return AddNullableSuffix(
+                type,
+                BuildTupleContractName(
+                    tuple,
+                    includePresentation: true));
+        }
+
+        var name = namedType.SpecialType == SpecialType.None
+            ? BuildNamedTypeContractName(namedType)
+            : namedType.Name;
+
+        return AddNullableSuffix(type, name);
+    }
+
+    private static string BuildNamedTypeContractName(INamedTypeSymbol type)
+    {
+        var typeParts = new Stack<string>();
+
+        for (var current = type;
+             current is not null;
+             current = current.ContainingType)
+        {
+            var part = EscapeName(current.Name) +
+                       (current.Arity == 0
+                           ? string.Empty
+                           : current.Arity.ToString(
+                               System.Globalization.CultureInfo.InvariantCulture));
+
+            if (!current.TypeArguments.IsEmpty)
+            {
+                part += "_" +
+                        string.Join(
+                            "_",
+                            current.TypeArguments.Select(
+                                BuildTypeContractName));
+            }
+
+            typeParts.Push(part);
+        }
+
+        var parts = new List<string>();
+
+        if (!type.ContainingNamespace.IsGlobalNamespace)
+        {
+            var namespaceParts = new Stack<string>();
+
+            for (var current = type.ContainingNamespace;
+                 !current.IsGlobalNamespace;
+                 current = current.ContainingNamespace)
+            {
+                namespaceParts.Push(EscapeName(current.Name));
+            }
+
+            foreach (var part in namespaceParts)
+            {
+                parts.Add(part);
+            }
+        }
+
+        parts.AddRange(typeParts);
+
+        return "Type_" + string.Join("_", parts);
+    }
+
+    private static string AddNullableSuffix(
+        ITypeSymbol type,
+        string value)
+    {
+        return type.NullableAnnotation == NullableAnnotation.Annotated
+            ? value + "Nullable"
+            : value;
+    }
+
+    private static string EscapeName(string value)
+    {
+        return value.Replace("_", "__");
     }
 }

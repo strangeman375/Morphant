@@ -1145,14 +1145,10 @@ internal static class DeclarativeNestedMapExpression
         INamedTypeSymbol type)
     {
         return StringComparer.Ordinal.Equals(
-                   type.ContainingNamespace.ToDisplayString(),
-                   BclTuplePlanNaming.Namespace) &&
-               type.Name.StartsWith(
-                   "SystemTuple",
-                   StringComparison.Ordinal) &&
-               type.Name.EndsWith(
-                   "Members",
-                   StringComparison.Ordinal);
+                   type.Name,
+                   "TupleMembers") &&
+               BclTuplePlanNaming.IsSystemTuplePlanNamespace(
+                   type.ContainingNamespace.ToDisplayString());
     }
 
     private static bool IsDeclarativeResultLocal(

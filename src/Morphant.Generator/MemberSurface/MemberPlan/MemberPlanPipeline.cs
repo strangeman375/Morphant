@@ -73,6 +73,11 @@ internal static class MemberPlanPipeline
         var metadataName = tuple is null
             ? SymbolNameHelper.GetFullMetadataName(definition)
             : "Tuple." + planIdentity;
+        var hintStableIdentity = metadataName;
+        var readableHintNamePart = tuple is null
+            ? HintNameHelper.ToHintNamePart(metadataName)
+            : HintNameHelper.ToHintNamePart(
+                "Tuple." + BclTuplePlanNaming.BuildHintIdentity(tuple));
 
         return new MemberPlanCandidate(
             new DestinationPlanCandidate(
@@ -82,6 +87,8 @@ internal static class MemberPlanPipeline
                     : "tuple|" + planIdentity,
                 assemblyIdentity,
                 metadataName,
+                hintStableIdentity,
+                readableHintNamePart,
                 candidate.Pair.Capabilities.StructuredConstruction),
             definition,
             tuple is not null,
@@ -101,7 +108,8 @@ internal static class MemberPlanPipeline
                     "Member",
                     HintNameCollisions.Resolve(
                         coordination.HintNameAllocations,
-                        candidate.Coordination.MetadataName)),
+                        candidate.Coordination.HintStableIdentity,
+                        candidate.Coordination.ReadableHintNamePart)),
                 candidate.Destination,
                 candidate.IsTuple,
                 candidate.PlanIdentity)

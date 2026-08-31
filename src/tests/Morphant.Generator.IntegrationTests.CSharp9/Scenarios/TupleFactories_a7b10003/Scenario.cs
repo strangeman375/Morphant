@@ -6,7 +6,8 @@ using System;
 using System.Collections.Generic;
 using Morphant;
 using Morphant.Context;
-using Morphant.Generated;
+using OuterTupleMembers =
+    Morphant.Generated.Tuples.Tuple1_Type_System_Collections_Generic_List1_Int32.TupleMembers;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleFactories_a7b10003
 {
@@ -84,8 +85,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleFactories_a
                 .ConstructUsing(CreateOuterTuple)
                 .Members((source, _) =>
                 {
-                    var members =
-                        new SystemTuple1_3cd5ddb341fc3fa8Members();
+                    var members = new OuterTupleMembers();
 
                     Update<List<int>>(source.Child, members.Item1);
                     return members;

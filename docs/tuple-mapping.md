@@ -118,6 +118,21 @@ Tuple construction is intrinsic, not a choice among declared constructors.
 An explicit pair-level `ConstructorSelection` therefore produces
 [`MORPH0023`](diagnostics/MORPH0023.md); inherited defaults have no effect.
 
+When a statement-bodied callback needs to instantiate its generated result
+type explicitly, tuple templates have readable names. For example:
+
+```csharp
+using ResultMembers =
+    Morphant.Generated.Tuples.ValueTuple2_Int32_String
+        .Tuple_Id_Name_Members;
+```
+
+The namespace identifies tuple kind, logical arity, and element types. A
+`ValueTuple` template name identifies its element names; a `System.Tuple`
+template uses `TupleConstructorParameters`, `TupleConstruction`, or
+`TupleMembers`. Nested tuple contracts are represented recursively. Prefer IDE
+completion instead of constructing these names by hand.
+
 ## Update
 
 `ValueTuple` fields are mutable. Update changes the selected tuple value and

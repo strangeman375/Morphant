@@ -32,9 +32,8 @@ internal static class DestinationPlanCoordinationBuilder
 
             hintNameIdentities[candidate.DestinationIdentity] =
                 new HintNameIdentity(
-                    candidate.MetadataName,
-                    HintNameHelper.ToHintNamePart(
-                        candidate.MetadataName));
+                    candidate.HintStableIdentity,
+                    candidate.ReadableHintNamePart);
         }
 
         var orderedOwners = owners.Values
@@ -62,6 +61,8 @@ internal readonly record struct DestinationPlanCandidate(
     string DestinationIdentity,
     string AssemblyIdentity,
     string MetadataName,
+    string HintStableIdentity,
+    string ReadableHintNamePart,
     bool IncludeInitOnlyProperties);
 
 internal readonly record struct DestinationPlanOwner(
