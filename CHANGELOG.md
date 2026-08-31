@@ -19,7 +19,8 @@ unsupported.
 ### Changed
 
 - Give generated tuple templates readable namespaces and type names based on
-  tuple kind, logical arity, element types, and element names.
+  tuple kind, logical arity, element types, and element names, with distinct
+  `ValueTupleN` and `SystemTupleN` prefixes and consistent type qualification.
 
 ## [0.4.0]
 

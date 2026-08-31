@@ -34,13 +34,16 @@
   segment.
 - BCL tuple plans use
   `Morphant.Generated.Tuples.<tuple-kind-and-type-contract>`. The namespace
-  carries tuple kind, logical arity and recursive type-argument contracts.
+  starts with `ValueTupleN` or `SystemTupleN` and carries logical arity and
+  recursive type-argument contracts.
   `ValueTuple` plan type names carry the current tuple level's element names;
   `System.Tuple` uses the fixed `TupleConstructorParameters`,
   `TupleConstruction` and `TupleMembers` names. Preserve this separation so
   tuple implementation identities do not leak into user-facing type names.
-  Prefix non-special named type contracts with `Type_`; this keeps a global
-  user type such as `Int32` distinct from the CLR special type `int`.
+  Omit qualification only for C# predefined scalar types. Prefix every other
+  named type contract with `Type_` and include its complete namespace and
+  containing-type path; do not use Roslyn's broader `SpecialType` category as
+  the shortening rule.
 - Keep generated surface and binary size small. Do not add generated members,
   attributes or compatibility branches without a user-facing need.
 - Keep generated invocations readable. Materialize synthetic `switch`,

@@ -88,7 +88,7 @@ internal static class BclTuplePlanNaming
 
     public static bool IsSystemTuplePlanNamespace(string value)
     {
-        const string prefix = RootNamespace + ".Tuple";
+        const string prefix = RootNamespace + ".SystemTuple";
 
         if (!value.StartsWith(prefix, StringComparison.Ordinal))
         {
@@ -136,7 +136,7 @@ internal static class BclTuplePlanNaming
         result.Append(
                 shape.Kind == BclTupleKind.ValueTuple
                     ? "ValueTuple"
-                    : "Tuple")
+                    : "SystemTuple")
             .Append(shape.Elements.Length.ToString(
                 System.Globalization.CultureInfo.InvariantCulture));
 
@@ -213,11 +213,33 @@ internal static class BclTuplePlanNaming
                     includePresentation: true));
         }
 
-        var name = namedType.SpecialType == SpecialType.None
-            ? BuildNamedTypeContractName(namedType)
-            : namedType.Name;
+        var name = IsPredefinedScalarType(namedType.SpecialType)
+            ? namedType.Name
+            : BuildNamedTypeContractName(namedType);
 
         return AddNullableSuffix(type, name);
+    }
+
+    private static bool IsPredefinedScalarType(SpecialType type)
+    {
+        return type is
+            SpecialType.System_Object or
+            SpecialType.System_Boolean or
+            SpecialType.System_Char or
+            SpecialType.System_SByte or
+            SpecialType.System_Byte or
+            SpecialType.System_Int16 or
+            SpecialType.System_UInt16 or
+            SpecialType.System_Int32 or
+            SpecialType.System_UInt32 or
+            SpecialType.System_Int64 or
+            SpecialType.System_UInt64 or
+            SpecialType.System_IntPtr or
+            SpecialType.System_UIntPtr or
+            SpecialType.System_Single or
+            SpecialType.System_Double or
+            SpecialType.System_Decimal or
+            SpecialType.System_String;
     }
 
     private static string BuildNamedTypeContractName(INamedTypeSymbol type)

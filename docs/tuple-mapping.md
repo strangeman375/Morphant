@@ -127,7 +127,9 @@ using ResultMembers =
         .Tuple_Id_Name_Members;
 ```
 
-The namespace identifies tuple kind, logical arity, and element types. A
+The namespace starts with `ValueTupleN` or `SystemTupleN` and identifies the
+element types. C# predefined scalar types use short CLR names such as `Int32`;
+every other named type uses `Type_` followed by its fully qualified name. A
 `ValueTuple` template name identifies its element names; a `System.Tuple`
 template uses `TupleConstructorParameters`, `TupleConstruction`, or
 `TupleMembers`. Nested tuple contracts are represented recursively. Prefer IDE

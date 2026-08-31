@@ -452,7 +452,7 @@ Tuple plan types находятся под `Morphant.Generated.Tuples`. Namespac
 
 ```text
 Morphant.Generated.Tuples.ValueTuple2_Int32_String
-Morphant.Generated.Tuples.Tuple2_Int32_String
+Morphant.Generated.Tuples.SystemTuple2_Int32_String
 ```
 
 Для `ValueTuple` имена элементов текущего уровня входят в user-facing type
@@ -475,13 +475,21 @@ TupleMembers
 Presentation вложенного `ValueTuple` является частью contract внешнего type
 argument и поэтому рекурсивно входит в namespace. Например,
 `Tuple<(int X, int Y)>` получает namespace, оканчивающийся на
-`Tuple1_ValueTuple2_Int32_Int32_Tuple_X_Y`, и по-прежнему использует
+`SystemTuple1_ValueTuple2_Int32_Int32_Tuple_X_Y`, и по-прежнему использует
 `TupleMembers`. Это позволяет нескольким independently valid physical pairs
 иметь разные nested presentations без hash в template type name.
 
-Non-special named type arguments получают префикс `Type_` и включают qualified
-type name, nullable contracts, generic arguments и array shape. Префикс, в
-частности, не даёт global user type `Int32` совпасть с CLR special type `int`.
+C# predefined scalar types используют короткие CLR names (`Int32`, `String`,
+`Object` и остальные keyword-backed scalars). `dynamic` использует
+`Dynamic`. Все прочие named type arguments получают префикс `Type_` и полное
+qualified type name; правило не зависит от Roslyn `SpecialType` или assembly,
+в котором объявлен тип. Поэтому `DateTime` получает `Type_System_DateTime`,
+`IEnumerable<string>` —
+`Type_System_Collections_Generic_IEnumerable1_String`, а global user type
+`Int32` — `Type_Int32` и не совпадает с CLR `int`.
+
+Nullable contracts, generic arguments и array shape также входят в type
+contract.
 Long tuple namespace использует logical arity и flat elements, без public
 `Rest` representation. Hint names повторяют readable tuple contract; stable
 suffix добавляется только при реальной case-insensitive collision.

@@ -9,7 +9,7 @@ using Morphant.Context;
 using FusionTupleMembers =
     Morphant.Generated.Tuples.ValueTuple2_Int32_String.Tuple_Id_Name_Members;
 using MixedTupleMembers =
-    Morphant.Generated.Tuples.Tuple2_Type_Morphant_Generator_IntegrationTests_CSharp9_Scenarios_TupleComposition__a7b10002_MutablePayload_String.TupleMembers;
+    Morphant.Generated.Tuples.SystemTuple2_Type_Morphant_Generator_IntegrationTests_CSharp9_Scenarios_TupleComposition__a7b10002_MutablePayload_String.TupleMembers;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition_a7b10002
 {
