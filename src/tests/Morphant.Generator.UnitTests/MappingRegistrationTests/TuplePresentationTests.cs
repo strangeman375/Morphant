@@ -89,10 +89,14 @@ public partial class SecondMapper : TypeMapper
 
         var result = MappingRegistrationGeneratorTest.Run(source);
 
-        Assert.That(
-            result.Diagnostics.Where(static diagnostic =>
-                diagnostic.Id == "MORPH0056"),
-            Is.Empty);
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                result.Diagnostics.Where(static diagnostic =>
+                    diagnostic.Id == "MORPH0056"),
+                Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
     }
 
     [Test]
