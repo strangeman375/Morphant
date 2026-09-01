@@ -10,14 +10,20 @@ namespace Morphant.Generator.MapperDeclaration;
 internal static class MapperContractPipeline
 {
     public static IncrementalValuesProvider<MapperContractAnalysis> Build(
+        IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<MapperPairConfigurationModel> configurations)
     {
-        return configurations
-            .Select(static (configuration, cancellationToken) =>
-                BuildAnalysis(
-                    configuration,
-                    configuration.Declaration.Compilation,
-                    cancellationToken))
+        return GeneratorStageGuard.Select(
+                context,
+                configurations,
+                MorphantGeneratorStageNames.BuildMapperContractAnalyses,
+                static (configuration, cancellationToken) =>
+                    BuildAnalysis(
+                        configuration,
+                        configuration.Declaration.Compilation,
+                        cancellationToken),
+                static configuration => configuration.Declaration
+                    .AttributedDeclaration.Identifier.GetLocation())
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildMapperContractAnalyses);
     }

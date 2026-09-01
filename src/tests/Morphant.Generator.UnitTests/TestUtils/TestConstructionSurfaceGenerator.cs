@@ -14,8 +14,10 @@ internal sealed class TestConstructionSurfaceGenerator :
     {
         var configureInfos = TypeMapperConfigurePipeline.Build(context);
         var pairConfigurations = PairConfigurationPipeline.Build(
+            context,
             configureInfos);
         var canonicalPairs = CanonicalMappingPairPipeline.Build(
+            context,
             pairConfigurations);
 
         ConstructionSurfacePipeline.Register(

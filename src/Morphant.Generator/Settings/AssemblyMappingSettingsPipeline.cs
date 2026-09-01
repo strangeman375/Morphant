@@ -32,58 +32,73 @@ internal static class AssemblyMappingSettingsPipeline
     public static IncrementalValueProvider<MappingSettings> Build(
         IncrementalGeneratorInitializationContext context)
     {
-        return context.AnalyzerConfigOptionsProvider
-            .Select(static (options, _) =>
-            {
-                var globalOptions = options.GlobalOptions;
-                var mappingMode = ParseNamedValue<MappingModeValue>(
-                    GetValue(globalOptions, MappingModePropertyName));
-                var nullSource = ParseNamedValue<NullSourceHandlingValue>(
-                    GetValue(globalOptions, NullSourceHandlingPropertyName));
-                var nullDestination =
-                    ParseNamedValue<NullDestinationHandlingValue>(
+        return GeneratorStageGuard
+            .Select(
+                context,
+                context.AnalyzerConfigOptionsProvider,
+                MorphantGeneratorStageNames.BuildAssemblyMappingSettings,
+                static (options, _) =>
+                {
+                    var globalOptions = options.GlobalOptions;
+                    var mappingMode = ParseNamedValue<MappingModeValue>(
                         GetValue(
                             globalOptions,
-                            NullDestinationHandlingPropertyName));
-                var unknownDerived =
-                    ParseNamedValue<UnknownDerivedTypeHandlingValue>(
+                            MappingModePropertyName));
+                    var nullSource =
+                        ParseNamedValue<NullSourceHandlingValue>(
+                            GetValue(
+                                globalOptions,
+                                NullSourceHandlingPropertyName));
+                    var nullDestination =
+                        ParseNamedValue<NullDestinationHandlingValue>(
+                            GetValue(
+                                globalOptions,
+                                NullDestinationHandlingPropertyName));
+                    var unknownDerived =
+                        ParseNamedValue<UnknownDerivedTypeHandlingValue>(
+                            GetValue(
+                                globalOptions,
+                                UnknownDerivedTypeHandlingPropertyName));
+                    var constructor =
+                        ParseNamedValue<ConstructorSelectionValue>(
+                            GetValue(
+                                globalOptions,
+                                ConstructorSelectionPropertyName));
+                    var member = ParseNamedValue<MemberSelectionValue>(
                         GetValue(
                             globalOptions,
-                            UnknownDerivedTypeHandlingPropertyName));
-                var constructor =
-                    ParseNamedValue<ConstructorSelectionValue>(
-                        GetValue(
-                            globalOptions,
-                            ConstructorSelectionPropertyName));
-                var member = ParseNamedValue<MemberSelectionValue>(
-                    GetValue(globalOptions, MemberSelectionPropertyName));
-                var flattening = ParseNamedValue<FlatteningValue>(
-                    GetValue(globalOptions, FlatteningPropertyName));
-                var validation =
-                    ParseNamedValue<UnmappedMemberValidationValue>(
-                        GetValue(
-                            globalOptions,
-                            UnmappedMemberValidationPropertyName));
+                            MemberSelectionPropertyName));
+                    var flattening =
+                        ParseNamedValue<FlatteningValue>(
+                            GetValue(
+                                globalOptions,
+                                FlatteningPropertyName));
+                    var validation =
+                        ParseNamedValue<UnmappedMemberValidationValue>(
+                            GetValue(
+                                globalOptions,
+                                UnmappedMemberValidationPropertyName));
 
-                return new MappingSettings(
-                    mappingMode.Value,
-                    nullSource.Value,
-                    nullDestination.Value,
-                    unknownDerived.Value,
-                    constructor.Value,
-                    member.Value,
-                    flattening.Value,
-                    validation.Value,
-                    new InvalidMsBuildSettingValues(
-                        mappingMode.InvalidValue,
-                        nullSource.InvalidValue,
-                        nullDestination.InvalidValue,
-                        unknownDerived.InvalidValue,
-                        constructor.InvalidValue,
-                        member.InvalidValue,
-                        flattening.InvalidValue,
-                        validation.InvalidValue));
-            })
+                    return new MappingSettings(
+                        mappingMode.Value,
+                        nullSource.Value,
+                        nullDestination.Value,
+                        unknownDerived.Value,
+                        constructor.Value,
+                        member.Value,
+                        flattening.Value,
+                        validation.Value,
+                        new InvalidMsBuildSettingValues(
+                            mappingMode.InvalidValue,
+                            nullSource.InvalidValue,
+                            nullDestination.InvalidValue,
+                            unknownDerived.InvalidValue,
+                            constructor.InvalidValue,
+                            member.InvalidValue,
+                            flattening.InvalidValue,
+                            validation.InvalidValue));
+                },
+                MappingSettings.Default)
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildAssemblyMappingSettings);
     }

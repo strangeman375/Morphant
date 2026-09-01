@@ -19,8 +19,10 @@ internal sealed class TestBasicMembersTypeMapperGenerator
             AssemblyMappingSettingsPipeline.Build(context);
         var configureInfos = TypeMapperConfigurePipeline.Build(context);
         var pairConfigurations = PairConfigurationPipeline.Build(
+            context,
             configureInfos);
         var canonicalPairs = CanonicalMappingPairPipeline.Build(
+            context,
             pairConfigurations);
 
         ConstructionSurfacePipeline.Register(

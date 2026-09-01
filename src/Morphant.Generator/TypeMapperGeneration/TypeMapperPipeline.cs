@@ -18,7 +18,7 @@ internal static class TypeMapperPipeline
         Register(
             context,
             assemblySettings,
-            MapperContractPipeline.Build(mapperConfigurations));
+            MapperContractPipeline.Build(context, mapperConfigurations));
     }
 
     public static void Register(
@@ -26,12 +26,17 @@ internal static class TypeMapperPipeline
         IncrementalValueProvider<MappingSettings> assemblySettings,
         IncrementalValuesProvider<MapperContractAnalysis> contractAnalyses)
     {
-        var models = contractAnalyses
-            .Combine(assemblySettings)
-            .Select(static (source, cancellationToken) =>
-                TypeMapperModelBuilder.TryBuild(
-                    (source.Left, source.Right),
-                    cancellationToken))
+        var models = GeneratorStageGuard
+            .Select(
+                context,
+                contractAnalyses.Combine(assemblySettings),
+                MorphantGeneratorStageNames.BuildTypeMapperModels,
+                static (source, cancellationToken) =>
+                    TypeMapperModelBuilder.TryBuild(
+                        (source.Left, source.Right),
+                        cancellationToken),
+                static source => source.Left.Configuration.Declaration
+                    .AttributedDeclaration.Identifier.GetLocation())
             .WhereHasValue()
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildTypeMapperModels);
@@ -44,12 +49,18 @@ internal static class TypeMapperPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<TypeMapperGenerationInput> models)
     {
-        var diagnostics = models
-            .Collect()
-            .Select(static (inputs, cancellationToken) =>
-                BuildDiagnostics(inputs, cancellationToken));
+        var diagnostics = GeneratorStageGuard.Select(
+            context,
+            models.Collect(),
+            "BuildTypeMapperDiagnostics",
+            static (inputs, cancellationToken) =>
+                BuildDiagnostics(inputs, cancellationToken),
+            ImmutableArray<Diagnostic>.Empty);
 
-        DiagnosticPipeline.Register(context, diagnostics);
+        DiagnosticPipeline.Register(
+            context,
+            diagnostics,
+            "TypeMapperDiagnostics");
     }
 
     private static ImmutableArray<Diagnostic> BuildDiagnostics(
@@ -91,27 +102,36 @@ internal static class TypeMapperPipeline
         IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<TypeMapperGenerationInput> models)
     {
-        var hintNameAllocations = models
+        var hintNameIdentities = models
             .Select(static (model, _) =>
                 new HintNameIdentity(
                     model.StableIdentity,
                     HintNameHelper.ToHintNamePart(
-                        model.StableIdentity)))
-            .Collect()
-            .Select(static (identities, cancellationToken) =>
-                HintNameCollisions.Build(
-                    identities,
-                    cancellationToken))
+                        model.StableIdentity)));
+        var hintNameAllocations = GeneratorStageGuard.Select(
+                context,
+                hintNameIdentities.Collect(),
+                "AllocateTypeMapperHintNames",
+                static (identities, cancellationToken) =>
+                    HintNameCollisions.Build(
+                        identities,
+                        cancellationToken),
+                new HintNameAllocations(
+                    ImmutableArray<HintNameAllocation>.Empty))
             .WithComparer(HintNameAllocationsComparer.Instance);
-        var requests = models
-            .Combine(hintNameAllocations)
-            .Select(static (source, _) =>
-                BuildRequest(source.Left, source.Right))
-            .WithTrackingName(
-                MorphantGeneratorStageNames.BuildTypeMapperRequests);
+        var requests = GeneratorStageGuard.SelectTrackedSourceRequest(
+                context,
+                models.Combine(hintNameAllocations),
+                MorphantGeneratorStageNames.BuildTypeMapperRequests,
+                static (source, _) =>
+                    BuildRequest(source.Left, source.Right),
+                static _ => Location.None);
 
-        context.RegisterSourceOutput(
+        GeneratorStageGuard.RegisterSourceOutput(
+            context,
             requests,
+            "AddTypeMapperSource",
+            static request => request.HintName,
             static (context, request) =>
                 context.AddSource(
                     request.HintName,

@@ -14,6 +14,7 @@ internal sealed class TestConventionTypeMapperGenerator : IIncrementalGenerator
             AssemblyMappingSettingsPipeline.Build(context);
         var configureInfos = TypeMapperConfigurePipeline.Build(context);
         var pairConfigurations = PairConfigurationPipeline.Build(
+            context,
             configureInfos);
 
         TypeMapperPipeline.Register(

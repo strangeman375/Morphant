@@ -11,40 +11,72 @@ internal static class ConstructionPlanPipeline
 {
     public static IncrementalValuesProvider<ConstructionPlanModelResult>
         BuildModels(
+            IncrementalGeneratorInitializationContext context,
             IncrementalValuesProvider<CanonicalMappingPairCandidate>
                 canonicalPairs)
     {
-        var candidates = canonicalPairs
-            .Where(static candidate =>
-                candidate.Pair.Capabilities.StructuredConstruction)
-            .Select(static (candidate, _) => BuildCandidate(candidate));
-        var coordination = candidates
+        var candidates = GeneratorStageGuard.Select(
+            context,
+            canonicalPairs.Where(static candidate =>
+                candidate.Pair.Capabilities.StructuredConstruction),
+            "BuildConstructionPlanCandidates",
+            static (candidate, _) => BuildCandidate(candidate),
+            static candidate =>
+                candidate.Pair.Registration.Syntax.GetLocation());
+        var coordinationInputs = candidates
             .Select(static (candidate, _) => candidate.Coordination)
-            .Collect()
-            .Select(static (values, cancellationToken) =>
-                DestinationPlanCoordinationBuilder.Build(
-                    values,
-                    cancellationToken))
+            .Collect();
+        var coordination = GeneratorStageGuard.Select(
+                context,
+                coordinationInputs,
+                "CoordinateConstructionPlans",
+                static (values, cancellationToken) =>
+                    DestinationPlanCoordinationBuilder.Build(
+                        values,
+                        cancellationToken),
+                EmptyCoordination())
             .WithComparer(DestinationPlanCoordinationComparer.Instance);
-        var generationInputs = candidates
-            .Combine(coordination)
-            .Select(static (source, _) =>
-                BuildGenerationInput(source.Left, source.Right))
+        var generationInputs = GeneratorStageGuard
+            .Select(
+                context,
+                candidates.Combine(coordination),
+                "BuildConstructionPlanGenerationInputs",
+                static (source, _) =>
+                    BuildGenerationInput(source.Left, source.Right),
+                static _ => Location.None)
             .WhereHasValue();
-        var modelInputs = generationInputs
-            .Select(static (generationInput, cancellationToken) =>
-                TryBuildModelInput(
-                    generationInput,
-                    cancellationToken))
+        var modelInputs = GeneratorStageGuard
+            .Select(
+                context,
+                generationInputs,
+                "BuildConstructionPlanModelInputs",
+                static (generationInput, cancellationToken) =>
+                    TryBuildModelInput(
+                        generationInput,
+                        cancellationToken),
+                static _ => Location.None)
             .WhereHasValue()
             .WithComparer(ConstructionPlanModelInputComparer.Instance);
 
-        return modelInputs
-            .Select(static (input, cancellationToken) =>
-                BuildModel(input, cancellationToken))
+        return GeneratorStageGuard
+            .Select(
+                context,
+                modelInputs,
+                MorphantGeneratorStageNames.BuildConstructionPlanModels,
+                static (input, cancellationToken) =>
+                    BuildModel(input, cancellationToken),
+                static _ => Location.None)
             .WithComparer(ConstructionPlanModelResultComparer.Instance)
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildConstructionPlanModels);
+    }
+
+    private static DestinationPlanCoordination EmptyCoordination()
+    {
+        return new DestinationPlanCoordination(
+            ImmutableArray<DestinationPlanOwner>.Empty,
+            new HintNameAllocations(
+                ImmutableArray<HintNameAllocation>.Empty));
     }
 
     private static ConstructionPlanCandidate BuildCandidate(

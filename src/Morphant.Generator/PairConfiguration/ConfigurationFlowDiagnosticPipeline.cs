@@ -16,16 +16,21 @@ internal static class ConfigurationFlowDiagnosticPipeline
         IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
             contractAnalyses)
     {
-        var diagnostics = configureDeclarations
-            .Collect()
-            .Combine(contractAnalyses)
-            .Select(static (source, cancellationToken) =>
+        var diagnostics = GeneratorStageGuard.Select(
+            context,
+            configureDeclarations.Collect().Combine(contractAnalyses),
+            "BuildConfigurationFlowDiagnostics",
+            static (source, cancellationToken) =>
                 BuildDiagnostics(
                     source.Left,
                     source.Right,
-                    cancellationToken));
+                    cancellationToken),
+            ImmutableArray<Diagnostic>.Empty);
 
-        DiagnosticPipeline.Register(context, diagnostics);
+        DiagnosticPipeline.Register(
+            context,
+            diagnostics,
+            "ConfigurationFlowDiagnostics");
     }
 
     private static ImmutableArray<Diagnostic> BuildDiagnostics(

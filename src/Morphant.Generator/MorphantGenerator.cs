@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.Compatibility;
@@ -17,10 +18,30 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterSourceOutput(
+        try
+        {
+            InitializeCore(context);
+        }
+        catch (Exception exception) when (GeneratorStageGuard.CanReport(
+                   exception,
+                   CancellationToken.None))
+        {
+            GeneratorStageGuard.RegisterInitializationFailure(
+                context,
+                "Initialize",
+                exception);
+        }
+    }
+
+    private static void InitializeCore(
+        IncrementalGeneratorInitializationContext context)
+    {
+        var compatibilityDiagnostics = GeneratorStageGuard.Select(
+            context,
             context.CompilationProvider.Combine(
                 context.ParseOptionsProvider),
-            static (productionContext, source) =>
+            "DetectCompilationCompatibility",
+            static (source, _) =>
             {
                 var compilation = (CSharpCompilation)source.Left;
                 var languageVersion =
@@ -30,24 +51,26 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
                         compilation,
                         languageVersion);
 
-                foreach (var diagnostic in
-                         compatibility.CreateDiagnostics(languageVersion))
-                {
-                    productionContext.ReportDiagnostic(diagnostic);
-                }
-            });
+                return compatibility.CreateDiagnostics(languageVersion);
+            },
+            ImmutableArray<Diagnostic>.Empty);
+        DiagnosticPipeline.Register(
+            context,
+            compatibilityDiagnostics,
+            "CompatibilityDiagnostics");
         var assemblySettings =
             AssemblyMappingSettingsPipeline.Build(context);
         var mapperDeclarations = MapperDeclarationPipeline.Build(context);
         var configureDeclarations =
             TypeMapperConfigurePipeline.BuildDeclarations(
+                context,
                 mapperDeclarations);
         var configureInfos = TypeMapperConfigurePipeline.Build(
             configureDeclarations);
         var pairConfigurations =
-            PairConfigurationPipeline.Build(configureInfos);
+            PairConfigurationPipeline.Build(context, configureInfos);
         var contractAnalyses =
-            MapperContractPipeline.Build(pairConfigurations);
+            MapperContractPipeline.Build(context, pairConfigurations);
         var contractAnalysisCollection = contractAnalyses.Collect();
 
         MapperDeclarationDiagnosticPipeline.Register(
@@ -75,6 +98,7 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
             context,
             contractAnalysisCollection);
         var canonicalSurfacePairs = CanonicalMappingPairPipeline.Build(
+            context,
             pairConfigurations);
         ConstructionSurfacePipeline.Register(
             context,

@@ -11,11 +11,19 @@ internal static class PairConfigurationDiscoveryPipeline
 {
     public static IncrementalValuesProvider<PairConfigurationDiscoveryModel>
         Build(
+            IncrementalGeneratorInitializationContext context,
             IncrementalValuesProvider<TypeMapperConfigureInfo> configureInfos)
     {
-        return configureInfos
-            .Select(static (configureInfo, cancellationToken) =>
-                TryBuild(configureInfo, cancellationToken))
+        return GeneratorStageGuard
+            .Select(
+                context,
+                configureInfos,
+                MorphantGeneratorStageNames
+                    .BuildPairConfigurationDiscoveryModels,
+                static (configureInfo, cancellationToken) =>
+                    TryBuild(configureInfo, cancellationToken),
+                static configureInfo =>
+                    configureInfo.Syntax.Identifier.GetLocation())
             .WhereHasValue()
             .WithTrackingName(
                 MorphantGeneratorStageNames

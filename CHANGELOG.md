@@ -15,6 +15,9 @@ unsupported.
   unnamed, long and nullable forms, Create and Update behavior, typed
   composition of multiple inputs and outputs, call-specific state, and a
   diagnostic for conflicting tuple element names.
+- Report unexpected generator exceptions as `MORPH0057` in compiler and IDE
+  diagnostics, with a generated failure report containing the full stack
+  trace while independent generation continues where possible.
 
 ### Changed
 
@@ -25,9 +28,11 @@ unsupported.
 
 ### Fixed
 
-- Prevent incremental generator crashes when IDEs replace syntax trees or
-  expose referenced projects as source-backed compilations, so live generated
-  documents remain available after solution and editor updates.
+- Prevent incremental generator crashes when IDEs replace syntax trees,
+  expose referenced projects as source-backed compilations, or ask newer
+  Roslyn hosts to filter a cached diagnostic whose source tree was replaced,
+  so live generated documents remain available after solution and editor
+  updates.
 
 ## [0.4.0]
 

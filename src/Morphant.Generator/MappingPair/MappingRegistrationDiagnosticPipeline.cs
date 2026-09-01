@@ -12,11 +12,18 @@ internal static class MappingRegistrationDiagnosticPipeline
         IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
             contractAnalyses)
     {
-        var diagnostics = contractAnalyses
-            .Select(static (analyses, cancellationToken) =>
-                BuildDiagnostics(analyses, cancellationToken));
+        var diagnostics = GeneratorStageGuard.Select(
+            context,
+            contractAnalyses,
+            "BuildMappingRegistrationDiagnostics",
+            static (analyses, cancellationToken) =>
+                BuildDiagnostics(analyses, cancellationToken),
+            ImmutableArray<Diagnostic>.Empty);
 
-        DiagnosticPipeline.Register(context, diagnostics);
+        DiagnosticPipeline.Register(
+            context,
+            diagnostics,
+            "MappingRegistrationDiagnostics");
     }
 
     private static ImmutableArray<Diagnostic> BuildDiagnostics(

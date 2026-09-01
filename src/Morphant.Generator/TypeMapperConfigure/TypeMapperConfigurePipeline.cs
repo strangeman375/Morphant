@@ -18,16 +18,24 @@ internal static class TypeMapperConfigurePipeline
         IncrementalGeneratorInitializationContext context)
     {
         return BuildDeclarations(
+            context,
             MapperDeclarationPipeline.Build(context));
     }
 
     public static IncrementalValuesProvider<MapperConfigureDeclarationInfo>
         BuildDeclarations(
+        IncrementalGeneratorInitializationContext context,
         IncrementalValuesProvider<MapperDeclarationInfo> mapperDeclarations)
     {
-        return mapperDeclarations
-            .Select(static (declaration, cancellationToken) =>
-                TryBuildDeclaration(declaration, cancellationToken))
+        return GeneratorStageGuard
+            .Select(
+                context,
+                mapperDeclarations,
+                MorphantGeneratorStageNames.BuildTypeMapperConfigureInfos,
+                static (declaration, cancellationToken) =>
+                    TryBuildDeclaration(declaration, cancellationToken),
+                static declaration => declaration.AttributedDeclaration
+                    .Identifier.GetLocation())
             .Where(static declaration => declaration is not null)
             .Select(static (declaration, _) => declaration!)
             .WithTrackingName(

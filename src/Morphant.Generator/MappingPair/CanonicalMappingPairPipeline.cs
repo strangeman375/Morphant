@@ -9,15 +9,27 @@ internal static class CanonicalMappingPairPipeline
 {
     public static IncrementalValuesProvider<CanonicalMappingPairCandidate>
         Build(
+            IncrementalGeneratorInitializationContext context,
             IncrementalValuesProvider<MapperPairConfigurationModel>
                 configurations)
     {
-        var candidates = configurations.SelectMany(
-            static (configuration, _) => BuildCandidates(configuration));
-        var coordination = candidates
-            .Collect()
-            .Select(static (values, cancellationToken) =>
-                BuildCoordination(values, cancellationToken))
+        var candidateCollections = GeneratorStageGuard.Select(
+            context,
+            configurations,
+            "BuildCanonicalMappingPairCandidates",
+            static (configuration, _) => BuildCandidates(configuration),
+            static configuration => configuration.Declaration
+                .AttributedDeclaration.Identifier.GetLocation());
+        var candidates = candidateCollections.SelectMany(
+            static (values, _) => values);
+        var coordination = GeneratorStageGuard.Select(
+                context,
+                candidates.Collect(),
+                "BuildCanonicalMappingPairCoordination",
+                static (values, cancellationToken) =>
+                    BuildCoordination(values, cancellationToken),
+                new CanonicalPairCoordination(
+                    ImmutableArray<string>.Empty))
             .WithComparer(CanonicalPairCoordinationComparer.Instance);
 
         return candidates

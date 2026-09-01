@@ -13,8 +13,10 @@ internal sealed class TestMemberSurfaceGenerator : IIncrementalGenerator
     {
         var configureInfos = TypeMapperConfigurePipeline.Build(context);
         var pairConfigurations = PairConfigurationPipeline.Build(
+            context,
             configureInfos);
         var canonicalPairs = CanonicalMappingPairPipeline.Build(
+            context,
             pairConfigurations);
 
         MemberSurfacePipeline.Register(

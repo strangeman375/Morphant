@@ -19,53 +19,74 @@ internal static class MemberSurfacePipeline
             canonicalPairs)
     {
         var planModels = MemberPlanPipeline.BuildModels(
+            context,
             canonicalPairs);
-        var planRequests = planModels
-            .Select(static (model, _) =>
-                new MemberSurfaceRequest(
-                    model.HintName,
-                    MemberPlanEmitter.Emit(model.Model)))
-            .WithTrackingName(
-                MorphantGeneratorStageNames.BuildMemberPlanRequests);
-        var extensionModels = canonicalPairs
-            .Where(static candidate => candidate.Pair.Capabilities.Members)
-            .Select(static (candidate, _) =>
-                BuildPairConfigurationModel(
-                    candidate,
-                    candidate.Compilation))
+        var planRequests = GeneratorStageGuard.SelectTrackedSourceRequest(
+                context,
+                planModels,
+                MorphantGeneratorStageNames.BuildMemberPlanRequests,
+                static (model, _) =>
+                    new MemberSurfaceRequest(
+                        model.HintName,
+                        MemberPlanEmitter.Emit(model.Model)),
+                static _ => Location.None);
+        var extensionModels = GeneratorStageGuard.Select(
+                context,
+                canonicalPairs.Where(static candidate =>
+                    candidate.Pair.Capabilities.Members),
+                MorphantGeneratorStageNames.BuildMemberExtensionModels,
+                static (candidate, _) =>
+                    BuildPairConfigurationModel(
+                        candidate,
+                        candidate.Compilation),
+                static candidate =>
+                    candidate.Pair.Registration.Syntax.GetLocation())
             .WithComparer(MemberExtensionModelResultComparer.Instance)
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildMemberExtensionModels);
-        var extensionHintNameAllocations = extensionModels
+        var extensionHintNameIdentities = extensionModels
             .Select(static (model, _) =>
                 new HintNameIdentity(
                     model.StableIdentity,
                     HintNameHelper.ToHintNamePart(
-                        model.StableIdentity)))
-            .Collect()
-            .Select(static (identities, cancellationToken) =>
-                HintNameCollisions.Build(
-                    identities,
-                    cancellationToken))
+                        model.StableIdentity)));
+        var extensionHintNameAllocations = GeneratorStageGuard.Select(
+                context,
+                extensionHintNameIdentities.Collect(),
+                "AllocateMemberExtensionHintNames",
+                static (identities, cancellationToken) =>
+                    HintNameCollisions.Build(
+                        identities,
+                        cancellationToken),
+                new HintNameAllocations(
+                    ImmutableArray<HintNameAllocation>.Empty))
             .WithComparer(HintNameAllocationsComparer.Instance);
-        var extensionRequests = extensionModels
-            .Combine(extensionHintNameAllocations)
-            .Select(static (source, _) =>
-                new MemberSurfaceRequest(
-                    GeneratedSourceHintName.Create(
-                        "MemberExtension",
-                        HintNameCollisions.Resolve(
-                            source.Right,
-                            source.Left.StableIdentity)),
-                    MemberConfigurationEmitter.Emit(source.Left.Model)))
-            .WithTrackingName(
-                MorphantGeneratorStageNames.BuildMemberExtensionRequests);
+        var extensionRequests =
+            GeneratorStageGuard.SelectTrackedSourceRequest(
+                context,
+                extensionModels.Combine(extensionHintNameAllocations),
+                MorphantGeneratorStageNames.BuildMemberExtensionRequests,
+                static (source, _) =>
+                    new MemberSurfaceRequest(
+                        GeneratedSourceHintName.Create(
+                            "MemberExtension",
+                            HintNameCollisions.Resolve(
+                                source.Right,
+                                source.Left.StableIdentity)),
+                        MemberConfigurationEmitter.Emit(source.Left.Model)),
+                static _ => Location.None);
 
-        context.RegisterSourceOutput(
+        GeneratorStageGuard.RegisterSourceOutput(
+            context,
             planRequests,
+            "AddMemberPlanSource",
+            static request => request.HintName,
             AddSource);
-        context.RegisterSourceOutput(
+        GeneratorStageGuard.RegisterSourceOutput(
+            context,
             extensionRequests,
+            "AddMemberExtensionSource",
+            static request => request.HintName,
             AddSource);
     }
 
@@ -273,5 +294,5 @@ internal static class MemberSurfacePipeline
 
     internal readonly record struct MemberSurfaceRequest(
         string HintName,
-        string Source);
+        string Source) : IGeneratedSourceRequest;
 }

@@ -9,6 +9,11 @@ current generated output and requires no project settings.
 stale output, run **Restart Roslyn Analyzers and Source Generators** and reopen
 the generated file.
 
+If Morphant catches an internal exception, the **Problems** window reports
+[`MORPH0057`](diagnostics/MORPH0057.md) with the failed stage and exception.
+Open the named `Morphant.Generated.GeneratorFailure.*.g.cs` file under **Source
+Generators** to read the complete stack trace without searching IDE logs.
+
 ## Save generated code to Git
 
 Enable the snapshot in the consumer project:

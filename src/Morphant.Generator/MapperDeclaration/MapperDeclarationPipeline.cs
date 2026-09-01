@@ -35,23 +35,37 @@ internal static class MapperDeclarationPipeline
     public static IncrementalValuesProvider<MapperDeclarationInfo> Build(
         IncrementalGeneratorInitializationContext context)
     {
-        var semanticInputs = context.SyntaxProvider
+        var semanticResults = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 MetadataNames.MorphantMapperAttribute,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (attributeContext, cancellationToken) =>
-                    TryBuildSemanticInput(
+                    GeneratorStageGuard.Execute(
                         attributeContext,
-                        cancellationToken))
+                        MorphantGeneratorStageNames
+                            .FindMorphantMapperDeclarations,
+                        static (source, token) => TryBuildSemanticInput(
+                            source,
+                            token),
+                        static source => source.TargetNode.GetLocation(),
+                        cancellationToken));
+        var semanticInputs = GeneratorStageGuard
+            .Unwrap(context, semanticResults)
             .Where(static input => input is not null)
             .Select(static (input, _) => input!.Value)
             .WithTrackingName(
                 MorphantGeneratorStageNames.FindMorphantMapperDeclarations)
             .WithComparer(MapperSemanticInputComparer.Instance);
 
-        return semanticInputs
-            .Select(static (input, cancellationToken) =>
-                TryBuild(input, cancellationToken))
+        return GeneratorStageGuard
+            .Select(
+                context,
+                semanticInputs,
+                MorphantGeneratorStageNames.BuildMapperDeclarationInfos,
+                static (input, cancellationToken) =>
+                    TryBuild(input, cancellationToken),
+                static input =>
+                    input.AttributedDeclaration.Identifier.GetLocation())
             .Where(static info => info is not null)
             .Select(static (info, _) => info!)
             .WithTrackingName(

@@ -4,4 +4,4 @@ internal readonly record struct TypeMapperRequest
 (
     string HintName,
     string Source
-);
+) : IGeneratedSourceRequest;

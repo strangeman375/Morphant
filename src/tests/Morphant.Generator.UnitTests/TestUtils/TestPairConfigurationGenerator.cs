@@ -27,7 +27,9 @@ internal sealed class TestPairConfigurationGenerator :
         var assemblySettings =
             AssemblyMappingSettingsPipeline.Build(context);
         var configureInfos = TypeMapperConfigurePipeline.Build(context);
-        var configurations = PairConfigurationPipeline.Build(configureInfos)
+        var configurations = PairConfigurationPipeline.Build(
+                context,
+                configureInfos)
             .Collect()
             .Combine(assemblySettings);
 

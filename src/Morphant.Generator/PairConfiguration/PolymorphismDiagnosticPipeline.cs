@@ -12,11 +12,18 @@ internal static class PolymorphismDiagnosticPipeline
         IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
             contractAnalyses)
     {
-        var diagnostics = contractAnalyses.Select(
+        var diagnostics = GeneratorStageGuard.Select(
+            context,
+            contractAnalyses,
+            "BuildPolymorphismDiagnostics",
             static (analyses, cancellationToken) =>
-                BuildDiagnostics(analyses, cancellationToken));
+                BuildDiagnostics(analyses, cancellationToken),
+            ImmutableArray<Diagnostic>.Empty);
 
-        DiagnosticPipeline.Register(context, diagnostics);
+        DiagnosticPipeline.Register(
+            context,
+            diagnostics,
+            "PolymorphismDiagnostics");
     }
 
     private static ImmutableArray<Diagnostic> BuildDiagnostics(

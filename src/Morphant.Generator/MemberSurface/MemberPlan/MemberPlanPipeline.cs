@@ -11,39 +11,72 @@ internal static class MemberPlanPipeline
 {
     public static IncrementalValuesProvider<MemberPlanModelResult>
         BuildModels(
+            IncrementalGeneratorInitializationContext context,
             IncrementalValuesProvider<CanonicalMappingPairCandidate>
                 canonicalPairs)
     {
-        var candidates = canonicalPairs
-            .Where(static candidate => candidate.Pair.Capabilities.Members)
-            .Select(static (candidate, _) => BuildCandidate(candidate));
-        var coordination = candidates
+        var candidates = GeneratorStageGuard.Select(
+            context,
+            canonicalPairs.Where(static candidate =>
+                candidate.Pair.Capabilities.Members),
+            "BuildMemberPlanCandidates",
+            static (candidate, _) => BuildCandidate(candidate),
+            static candidate =>
+                candidate.Pair.Registration.Syntax.GetLocation());
+        var coordinationInputs = candidates
             .Select(static (candidate, _) => candidate.Coordination)
-            .Collect()
-            .Select(static (values, cancellationToken) =>
-                DestinationPlanCoordinationBuilder.Build(
-                    values,
-                    cancellationToken))
+            .Collect();
+        var coordination = GeneratorStageGuard.Select(
+                context,
+                coordinationInputs,
+                "CoordinateMemberPlans",
+                static (values, cancellationToken) =>
+                    DestinationPlanCoordinationBuilder.Build(
+                        values,
+                        cancellationToken),
+                EmptyCoordination())
             .WithComparer(DestinationPlanCoordinationComparer.Instance);
-        var generationInputs = candidates
-            .Combine(coordination)
-            .Select(static (source, _) =>
-                BuildGenerationInput(source.Left, source.Right))
+        var generationInputs = GeneratorStageGuard
+            .Select(
+                context,
+                candidates.Combine(coordination),
+                "BuildMemberPlanGenerationInputs",
+                static (source, _) =>
+                    BuildGenerationInput(source.Left, source.Right),
+                static _ => Location.None)
             .WhereHasValue();
-        var modelInputs = generationInputs
-            .Select(static (generationInput, cancellationToken) =>
-                TryBuildModelInput(
-                    generationInput,
-                    cancellationToken))
+        var modelInputs = GeneratorStageGuard
+            .Select(
+                context,
+                generationInputs,
+                "BuildMemberPlanModelInputs",
+                static (generationInput, cancellationToken) =>
+                    TryBuildModelInput(
+                        generationInput,
+                        cancellationToken),
+                static _ => Location.None)
             .WhereHasValue()
             .WithComparer(MemberPlanModelInputComparer.Instance);
 
-        return modelInputs
-            .Select(static (input, cancellationToken) =>
-                BuildModel(input, cancellationToken))
+        return GeneratorStageGuard
+            .Select(
+                context,
+                modelInputs,
+                MorphantGeneratorStageNames.BuildMemberPlanModels,
+                static (input, cancellationToken) =>
+                    BuildModel(input, cancellationToken),
+                static _ => Location.None)
             .WithComparer(MemberPlanModelResultComparer.Instance)
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildMemberPlanModels);
+    }
+
+    private static DestinationPlanCoordination EmptyCoordination()
+    {
+        return new DestinationPlanCoordination(
+            ImmutableArray<DestinationPlanOwner>.Empty,
+            new HintNameAllocations(
+                ImmutableArray<HintNameAllocation>.Empty));
     }
 
     private static MemberPlanCandidate BuildCandidate(

@@ -67,6 +67,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0054](diagnostics/MORPH0054.md) | Polymorphism | Error | A branch source or destination is incompatible with the base pair. |
 | [MORPH0055](diagnostics/MORPH0055.md) | Polymorphism | Error | A branch type is inaccessible to generated code. |
 | [MORPH0056](diagnostics/MORPH0056.md) | Registration | Error | The same underlying mapping pair is registered with conflicting tuple element names. |
+| [MORPH0057](diagnostics/MORPH0057.md) | Generator | Error | Morphant caught an unexpected internal generator exception. |
 
 ## Configure severity
 
