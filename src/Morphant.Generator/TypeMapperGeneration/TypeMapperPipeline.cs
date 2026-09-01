@@ -30,13 +30,7 @@ internal static class TypeMapperPipeline
             .Combine(assemblySettings)
             .Select(static (source, cancellationToken) =>
                 TypeMapperModelBuilder.TryBuild(
-                    (
-                        (
-                            source.Left,
-                            source.Left.Configuration.Declaration.Context
-                        ),
-                        source.Right
-                    ),
+                    (source.Left, source.Right),
                     cancellationToken))
             .WhereHasValue()
             .WithTrackingName(

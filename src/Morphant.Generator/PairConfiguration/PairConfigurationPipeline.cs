@@ -25,17 +25,19 @@ internal static class PairConfigurationPipeline
         PairConfigurationDiscoveryModel discovery,
         CancellationToken cancellationToken)
     {
-        var context = discovery.ConfigureInfo.Context;
+        var compilation = discovery.ConfigureInfo.Declaration?.Compilation ??
+            throw new InvalidOperationException(
+                "The root mapper configuration must have a declaration model.");
         var mappingPairs = MappingPairPipeline.BuildModel(
             discovery.MappingRegistrations,
-            context,
+            compilation,
             cancellationToken);
 
         return mappingPairs is { } model
             ? PairConfigurationModelBuilder.Build(
                 discovery,
                 model,
-                context,
+                compilation,
                 cancellationToken)
             : null;
     }

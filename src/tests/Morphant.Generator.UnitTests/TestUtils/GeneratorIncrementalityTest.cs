@@ -197,6 +197,28 @@ internal static class GeneratorIncrementalityTest
             RecreateSyntaxTrees: false);
     }
 
+    public static GeneratorIncrementalityStep
+        StepWithRecreatedSyntaxTreesAndReferences(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<MetadataReference> additionalReferences,
+        IReadOnlyCollection<string> generatedHintNames,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            additionalReferences.ToImmutableArray(),
+            ImmutableDictionary<string, string>.Empty,
+            NullableContextOptions.Enable,
+            [],
+            null,
+            generatedHintNames.ToImmutableArray(),
+            [],
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: true);
+    }
+
     public static GeneratorIncrementalityStep StepWithReferencesAndDiagnostics(
         string name,
         IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,

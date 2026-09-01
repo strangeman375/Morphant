@@ -7,5 +7,4 @@ namespace Morphant.Generator.TypeMapperConfigure;
 internal readonly record struct TypeMapperConfigureInfo(
     MethodDeclarationSyntax Syntax,
     INamedTypeSymbol MapperType,
-    MapperDeclarationInfo? Declaration,
-    CompilationContext Context);
+    MapperDeclarationInfo? Declaration);

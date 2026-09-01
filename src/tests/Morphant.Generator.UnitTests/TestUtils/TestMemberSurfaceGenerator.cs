@@ -11,11 +11,7 @@ internal sealed class TestMemberSurfaceGenerator : IIncrementalGenerator
     public void Initialize(
         IncrementalGeneratorInitializationContext context)
     {
-        var compilationContext =
-            CompilationContextPipeline.Build(context);
-        var configureInfos = TypeMapperConfigurePipeline.Build(
-            context,
-            compilationContext);
+        var configureInfos = TypeMapperConfigurePipeline.Build(context);
         var pairConfigurations = PairConfigurationPipeline.Build(
             configureInfos);
         var canonicalPairs = CanonicalMappingPairPipeline.Build(
@@ -23,7 +19,6 @@ internal sealed class TestMemberSurfaceGenerator : IIncrementalGenerator
 
         MemberSurfacePipeline.Register(
             context,
-            compilationContext,
             canonicalPairs);
     }
 }

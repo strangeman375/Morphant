@@ -40,24 +40,21 @@ internal static class TypeMapperModelBuilder
 
     public static TypeMapperGenerationInput? TryBuild(
         (
-            (
-                MapperContractAnalysis Analysis,
-                CompilationContext Context
-            ) Input,
+            MapperContractAnalysis Analysis,
             MappingSettings AssemblySettings
         ) source,
         CancellationToken cancellationToken)
     {
-        var ((analysis, context), assemblySettings) = source;
+        var (analysis, assemblySettings) = source;
         var configuration = analysis.Configuration;
         var configureSyntax = configuration.MappingPairs.ConfigureSyntax;
         var mapperDeclaration =
             configuration.Declaration.AttributedDeclaration;
         var mapperType = configuration.Declaration.MapperType;
+        var compilation = configuration.Declaration.Compilation;
 
         if (!configuration.Declaration.CanGenerateExecutableArtifact ||
-            !IsSupportedAccessibility(mapperType.DeclaredAccessibility) ||
-            context.Compilation is not CSharpCompilation compilation)
+            !IsSupportedAccessibility(mapperType.DeclaredAccessibility))
         {
             return null;
         }

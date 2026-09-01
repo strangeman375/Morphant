@@ -15,12 +15,10 @@ internal static class MemberSurfacePipeline
 {
     public static void Register(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValuesProvider<CanonicalMappingPairCandidate>
             canonicalPairs)
     {
         var planModels = MemberPlanPipeline.BuildModels(
-            compilationContext,
             canonicalPairs);
         var planRequests = planModels
             .Select(static (model, _) =>
@@ -31,11 +29,10 @@ internal static class MemberSurfacePipeline
                 MorphantGeneratorStageNames.BuildMemberPlanRequests);
         var extensionModels = canonicalPairs
             .Where(static candidate => candidate.Pair.Capabilities.Members)
-            .Combine(compilationContext)
-            .Select(static (source, _) =>
+            .Select(static (candidate, _) =>
                 BuildPairConfigurationModel(
-                    source.Left,
-                    source.Right.Compilation))
+                    candidate,
+                    candidate.Compilation))
             .WithComparer(MemberExtensionModelResultComparer.Instance)
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildMemberExtensionModels);

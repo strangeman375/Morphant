@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
+using Morphant.Generator.Compatibility;
 
 namespace Morphant.Generator.Incrementality;
 
@@ -16,30 +17,36 @@ internal readonly record struct MapperSemanticInput(
     ClassDeclarationSyntax AttributedDeclaration,
     AttributeSyntax Attribute,
     INamedTypeSymbol MapperType,
-    CompilationContext Context,
+    CSharpCompilation Compilation,
     MapperSemanticFingerprint Fingerprint);
 
-// Narrows the global CompilationProvider to the declarations and semantic
-// contracts that can affect one mapper. An equal fingerprint deliberately
-// keeps the matching CompilationContext alive for the cached mapper pipeline.
+// Narrows the semantic cohort supplied by ForAttributeWithMetadataName to the
+// declarations and contracts that can affect one mapper. An equal fingerprint
+// deliberately keeps that entire, internally consistent cohort alive.
 internal static class MapperSemanticFingerprintBuilder
 {
     public static MapperSemanticFingerprint Build(
         ClassDeclarationSyntax attributedDeclaration,
         AttributeSyntax attribute,
         INamedTypeSymbol mapperType,
-        CompilationContext context,
+        CSharpCompilation compilation,
+        LanguageVersion languageVersion,
+        CompilationCompatibility compatibility,
         CancellationToken cancellationToken)
     {
         var signature = new StringBuilder();
         var dependencyTypes = new DependencyTypeSet();
+        var syntaxTrees = new SyntaxTreeOrdering(
+            compilation.SyntaxTrees);
         dependencyTypes.Add(mapperType);
 
-        AppendCompilationContext(
+        AppendCompilationInputs(
             signature,
             attributedDeclaration,
             attribute,
-            context);
+            compilation,
+            languageVersion,
+            compatibility);
 
         for (var current = mapperType;
              current is not null;
@@ -53,13 +60,13 @@ internal static class MapperSemanticFingerprintBuilder
             }
 
             foreach (var declaration in current.DeclaringSyntaxReferences
-                         .Where(reference => context.SyntaxTrees.Contains(
+                         .Where(reference => syntaxTrees.Contains(
                              reference.SyntaxTree))
                          .Select(reference =>
                              reference.GetSyntax(cancellationToken))
                          .OfType<TypeDeclarationSyntax>()
                          .OrderBy(declaration =>
-                             context.SyntaxTrees.GetOrder(
+                             syntaxTrees.GetOrder(
                                  declaration.SyntaxTree))
                          .ThenBy(static declaration =>
                              declaration.SpanStart))
@@ -67,7 +74,7 @@ internal static class MapperSemanticFingerprintBuilder
                 AppendDeclaration(
                     signature,
                     declaration,
-                    context,
+                    compilation,
                     mapperType,
                     dependencyTypes,
                     cancellationToken);
@@ -77,7 +84,7 @@ internal static class MapperSemanticFingerprintBuilder
         var dependencies = dependencyTypes.Types
             .SelectMany(type => TypeContractDependencies.Build(
                 type,
-                context.Compilation,
+                compilation,
                 cancellationToken))
             .GroupBy(
                 static dependency => dependency.Identity,
@@ -93,13 +100,15 @@ internal static class MapperSemanticFingerprintBuilder
             dependencies);
     }
 
-    private static void AppendCompilationContext(
+    private static void AppendCompilationInputs(
         StringBuilder result,
         ClassDeclarationSyntax attributedDeclaration,
         AttributeSyntax attribute,
-        CompilationContext context)
+        CSharpCompilation compilation,
+        LanguageVersion languageVersion,
+        CompilationCompatibility compatibility)
     {
-        var options = context.Compilation.Options;
+        var options = compilation.Options;
 
         result
             .Append(attributedDeclaration.SyntaxTree.FilePath)
@@ -108,9 +117,9 @@ internal static class MapperSemanticFingerprintBuilder
             .Append('|')
             .Append(attribute.Span.Length)
             .Append('|')
-            .Append(context.Compilation.Assembly.Identity)
+            .Append(compilation.Assembly.Identity)
             .Append('|')
-            .Append(context.LanguageVersion)
+            .Append(languageVersion)
             .Append('|')
             .Append(options.NullableContextOptions)
             .Append('|')
@@ -124,23 +133,23 @@ internal static class MapperSemanticFingerprintBuilder
             .Append('|')
             .Append(options.Platform)
             .Append('|')
-            .Append(context.Compatibility.IsLanguageCompatible)
+            .Append(compatibility.IsLanguageCompatible)
             .Append('|')
-            .Append(context.Compatibility.RuntimeContract.Kind)
+            .Append(compatibility.RuntimeContract.Kind)
             .Append('|')
-            .Append(context.Compatibility.RuntimeContract.Reason)
+            .Append(compatibility.RuntimeContract.Reason)
             .AppendLine();
     }
 
     private static void AppendDeclaration(
         StringBuilder result,
         TypeDeclarationSyntax declaration,
-        CompilationContext context,
+        CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         DependencyTypeSet dependencyTypes,
         CancellationToken cancellationToken)
     {
-        var semanticModel = context.Compilation.GetSemanticModel(
+        var semanticModel = compilation.GetSemanticModel(
             declaration.SyntaxTree);
 
         result
@@ -194,7 +203,7 @@ internal static class MapperSemanticFingerprintBuilder
                 AppendOperations(
                     result,
                     operation,
-                    context.Compilation,
+                    compilation,
                     mapperType,
                     dependencyTypes,
                     cancellationToken);

@@ -8,19 +8,17 @@ namespace Morphant.Generator.TypeMapperConfigure;
 internal static class TypeMapperConfigurePipeline
 {
     public static IncrementalValuesProvider<TypeMapperConfigureInfo> Build(
-        IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext)
+        IncrementalGeneratorInitializationContext context)
     {
-        return Build(BuildDeclarations(context, compilationContext));
+        return Build(BuildDeclarations(context));
     }
 
     public static IncrementalValuesProvider<MapperConfigureDeclarationInfo>
         BuildDeclarations(
-        IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext)
+        IncrementalGeneratorInitializationContext context)
     {
         return BuildDeclarations(
-            MapperDeclarationPipeline.Build(context, compilationContext));
+            MapperDeclarationPipeline.Build(context));
     }
 
     public static IncrementalValuesProvider<MapperConfigureDeclarationInfo>
@@ -48,8 +46,7 @@ internal static class TypeMapperConfigurePipeline
                 new TypeMapperConfigureInfo(
                     declaration.Syntax!,
                     declaration.Declaration.MapperType,
-                    declaration.Declaration,
-                    declaration.Declaration.Context));
+                    declaration.Declaration));
     }
 
     private static MapperConfigureDeclarationInfo? TryBuildDeclaration(
@@ -58,12 +55,16 @@ internal static class TypeMapperConfigurePipeline
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var context = declaration.Context;
+        var compilation = declaration.Compilation;
+        var knownSymbols = KnownSymbols.TryCreate(compilation);
 
-        if (context.KnownSymbols is not { } knownSymbols)
+        if (knownSymbols is null)
         {
             return null;
         }
+
+        var syntaxTrees = new SyntaxTreeOrdering(
+            compilation.SyntaxTrees);
 
         if (!declaration.DerivesFromTypeMapper)
         {
@@ -81,7 +82,8 @@ internal static class TypeMapperConfigurePipeline
         {
             var malformedAttempt = FindMalformedConfigureAttempt(
                 mapperType,
-                context,
+                compilation,
+                syntaxTrees,
                 cancellationToken);
 
             return new MapperConfigureDeclarationInfo(
@@ -99,7 +101,7 @@ internal static class TypeMapperConfigurePipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!context.SyntaxTrees.Contains(syntaxReference.SyntaxTree) ||
+            if (!syntaxTrees.Contains(syntaxReference.SyntaxTree) ||
                 syntaxReference.GetSyntax(cancellationToken)
                     is not MethodDeclarationSyntax configureSyntax)
             {
@@ -126,11 +128,12 @@ internal static class TypeMapperConfigurePipeline
 
     private static MethodDeclarationSyntax? FindMalformedConfigureAttempt(
         INamedTypeSymbol mapperType,
-        CompilationContext context,
+        CSharpCompilation compilation,
+        SyntaxTreeOrdering syntaxTrees,
         CancellationToken cancellationToken)
     {
         return mapperType.DeclaringSyntaxReferences
-            .Where(reference => context.SyntaxTrees.Contains(
+            .Where(reference => syntaxTrees.Contains(
                 reference.SyntaxTree))
             .Select(reference => reference.GetSyntax(cancellationToken))
             .OfType<ClassDeclarationSyntax>()
@@ -139,13 +142,13 @@ internal static class TypeMapperConfigurePipeline
             .Where(static method =>
                 method.Identifier.ValueText == "Configure" &&
                 method.Modifiers.Any(SyntaxKind.OverrideKeyword))
-            .Where(method => context.Compilation
+            .Where(method => compilation
                 .GetSemanticModel(method.SyntaxTree)
                 .GetDiagnostics(method.Span, cancellationToken)
                 .Any(static diagnostic =>
                     diagnostic.Severity == DiagnosticSeverity.Error))
             .OrderBy(method =>
-                context.SyntaxTrees.GetOrder(method.SyntaxTree))
+                syntaxTrees.GetOrder(method.SyntaxTree))
             .ThenBy(static method => method.SpanStart)
             .FirstOrDefault();
     }

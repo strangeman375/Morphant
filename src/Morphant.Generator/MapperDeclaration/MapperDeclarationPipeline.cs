@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Morphant.Generator.Compatibility;
 using Morphant.Generator.Incrementality;
 
 namespace Morphant.Generator.MapperDeclaration;
@@ -32,29 +33,20 @@ internal static class MapperDeclarationPipeline
             "CS1722"); // Base class must precede interfaces.
 
     public static IncrementalValuesProvider<MapperDeclarationInfo> Build(
-        IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext)
+        IncrementalGeneratorInitializationContext context)
     {
-        var candidates = context.SyntaxProvider
+        var semanticInputs = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 MetadataNames.MorphantMapperAttribute,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (attributeContext, cancellationToken) =>
-                    CreateCandidate(attributeContext, cancellationToken))
-            .Where(static candidate => candidate is not null)
-            .Select(static (candidate, _) => candidate!.Value)
-            .WithTrackingName(
-                MorphantGeneratorStageNames.FindMorphantMapperDeclarations);
-
-        var semanticInputs = candidates
-            .Combine(compilationContext)
-            .Select(static (source, cancellationToken) =>
-                TryBuildSemanticInput(
-                    source.Left,
-                    source.Right,
-                    cancellationToken))
+                    TryBuildSemanticInput(
+                        attributeContext,
+                        cancellationToken))
             .Where(static input => input is not null)
             .Select(static (input, _) => input!.Value)
+            .WithTrackingName(
+                MorphantGeneratorStageNames.FindMorphantMapperDeclarations)
             .WithComparer(MapperSemanticInputComparer.Instance);
 
         return semanticInputs
@@ -67,40 +59,19 @@ internal static class MapperDeclarationPipeline
     }
 
     private static MapperSemanticInput? TryBuildSemanticInput(
-        MapperDeclarationCandidate candidate,
-        CompilationContext context,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var semanticModel = context.Compilation.GetSemanticModel(
-            candidate.Declaration.SyntaxTree);
-
-        if (semanticModel.GetDeclaredSymbol(
-                candidate.Declaration,
-                cancellationToken) is not INamedTypeSymbol mapperType)
-        {
-            return null;
-        }
-
-        return new MapperSemanticInput(
-            candidate.Declaration,
-            candidate.Attribute,
-            mapperType,
-            context,
-            MapperSemanticFingerprintBuilder.Build(
-                candidate.Declaration,
-                candidate.Attribute,
-                mapperType,
-                context,
-                cancellationToken));
-    }
-
-    private static MapperDeclarationCandidate? CreateCandidate(
         GeneratorAttributeSyntaxContext context,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        if (context.TargetNode is not
+                ClassDeclarationSyntax attributedDeclaration ||
+            context.TargetSymbol is not INamedTypeSymbol mapperType ||
+            context.SemanticModel.Compilation is not
+                CSharpCompilation compilation)
+        {
+            return null;
+        }
 
         var attribute = context.Attributes
             .Select(attributeData =>
@@ -110,11 +81,32 @@ internal static class MapperDeclarationPipeline
             .OrderBy(static syntax => syntax.SpanStart)
             .FirstOrDefault();
 
-        return attribute is null
-            ? null
-            : new MapperDeclarationCandidate(
-                (ClassDeclarationSyntax)context.TargetNode,
-                attribute);
+        if (attribute is null ||
+            attributedDeclaration.SyntaxTree.Options is not
+                CSharpParseOptions parseOptions)
+        {
+            return null;
+        }
+
+        var compatibility = CompilationCompatibilityDetector.Detect(
+            compilation,
+            parseOptions.LanguageVersion);
+
+        return compatibility.CanGenerate
+            ? new MapperSemanticInput(
+                attributedDeclaration,
+                attribute,
+                mapperType,
+                compilation,
+                MapperSemanticFingerprintBuilder.Build(
+                    attributedDeclaration,
+                    attribute,
+                    mapperType,
+                    compilation,
+                    parseOptions.LanguageVersion,
+                    compatibility,
+                    cancellationToken))
+            : null;
     }
 
     private static MapperDeclarationInfo? TryBuild(
@@ -123,18 +115,21 @@ internal static class MapperDeclarationPipeline
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var context = input.Context;
+        var compilation = input.Compilation;
+        var knownSymbols = KnownSymbols.TryCreate(compilation);
 
-        if (context.KnownSymbols is not { } knownSymbols)
+        if (knownSymbols is null)
         {
             return null;
         }
 
         var mapperType = input.MapperType;
+        var syntaxTrees = new SyntaxTreeOrdering(
+            compilation.SyntaxTrees);
 
         var mapperDeclarations = GetDeclarations<ClassDeclarationSyntax>(
             mapperType,
-            context.SyntaxTrees,
+            syntaxTrees,
             cancellationToken);
         var allMapperDeclarationsPartial =
             mapperDeclarations.All(IsPartial);
@@ -157,7 +152,7 @@ internal static class MapperDeclarationPipeline
 
             var declarations = GetDeclarations<TypeDeclarationSyntax>(
                 current,
-                context.SyntaxTrees,
+                syntaxTrees,
                 cancellationToken);
 
             if (current.IsFileLocal &&
@@ -201,7 +196,7 @@ internal static class MapperDeclarationPipeline
             derivesFromTypeMapper,
             !derivesFromTypeMapper && HasMalformedBaseDeclaration(
                 mapperDeclarations,
-                context.Compilation,
+                compilation,
                 cancellationToken),
             mapperPartialIssue,
             allMapperDeclarationsPartial,
@@ -211,9 +206,9 @@ internal static class MapperDeclarationPipeline
             FindConflictingSupportsMethods(
                 mapperType,
                 knownSymbols.SystemType,
-                context.SyntaxTrees,
+                syntaxTrees,
                 cancellationToken),
-            context);
+            compilation);
     }
 
     private static ImmutableArray<TSyntax> GetDeclarations<TSyntax>(
@@ -325,8 +320,4 @@ internal static class MapperDeclarationPipeline
     {
         return declaration.Modifiers.Any(SyntaxKind.FileKeyword);
     }
-
-    private readonly record struct MapperDeclarationCandidate(
-        ClassDeclarationSyntax Declaration,
-        AttributeSyntax Attribute);
 }

@@ -18,7 +18,7 @@ internal static class PairConfigurationModelBuilder
     public static MapperPairConfigurationModel Build(
         PairConfigurationDiscoveryModel discovery,
         MapperMappingPairModel mappingPairs,
-        CompilationContext context,
+        CSharpCompilation compilation,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -27,26 +27,11 @@ internal static class PairConfigurationModelBuilder
             throw new InvalidOperationException(
                 "The root mapper configuration must have a declaration model.");
 
-        if (context.Compilation is not CSharpCompilation compilation)
-        {
-            return new MapperPairConfigurationModel(
-                mapperDeclaration,
-                mappingPairs,
-                ImmutableArray.Create<MapperMappingPairModel>(mappingPairs),
-                PairConfigurationSettings.Empty,
-                ImmutableArray<PairConfigurationSettings>.Empty,
-                ImmutableArray<DuplicateBaseConfigurationCallModel>.Empty,
-                ImmutableArray<PairConfigurationModel>.Empty,
-                HasInvalidBaseConfiguration: false,
-                discovery.UnavailableBaseConfigurations,
-                discovery.FlowBreaks);
-        }
-
         var bindingMapperModels = discovery.Levels
             .Select(level =>
                 MappingPairPipeline.BuildModel(
                     level.BindingRegistrations,
-                    context,
+                    compilation,
                     cancellationToken))
             .Where(static model => model.HasValue)
             .Select(static model => model!.Value)
@@ -103,7 +88,7 @@ internal static class PairConfigurationModelBuilder
                     : level.ConfigureInfo.MapperType;
             var localMappingPairs = MappingPairPipeline.BuildModel(
                 level.InstantiatedRegistrations,
-                context,
+                compilation,
                 cancellationToken);
             var localPairs =
                 ImmutableArray.CreateBuilder<PairConfigurationModel>();

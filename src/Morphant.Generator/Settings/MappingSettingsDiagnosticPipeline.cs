@@ -87,7 +87,8 @@ internal static class MappingSettingsDiagnosticPipeline
                     pair,
                     declaration,
                     assemblySettings,
-                    declaration.Context.SyntaxTrees,
+                    new SyntaxTreeOrdering(
+                        declaration.Compilation.SyntaxTrees),
                     cSharpOrigins,
                     msBuildOrigins,
                     inapplicable,

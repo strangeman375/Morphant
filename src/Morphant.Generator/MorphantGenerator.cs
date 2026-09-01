@@ -1,4 +1,6 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Morphant.Generator.Compatibility;
 using Morphant.Generator.ConstructionSurface;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.MapperDeclaration;
@@ -15,23 +17,28 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var compilationContext = CompilationContextPipeline.Build(context);
         context.RegisterSourceOutput(
-            compilationContext,
-            static (productionContext, compilation) =>
+            context.CompilationProvider.Combine(
+                context.ParseOptionsProvider),
+            static (productionContext, source) =>
             {
+                var compilation = (CSharpCompilation)source.Left;
+                var languageVersion =
+                    ((CSharpParseOptions)source.Right).LanguageVersion;
+                var compatibility =
+                    CompilationCompatibilityDetector.Detect(
+                        compilation,
+                        languageVersion);
+
                 foreach (var diagnostic in
-                         compilation.Compatibility.CreateDiagnostics(
-                             compilation.LanguageVersion))
+                         compatibility.CreateDiagnostics(languageVersion))
                 {
                     productionContext.ReportDiagnostic(diagnostic);
                 }
             });
         var assemblySettings =
             AssemblyMappingSettingsPipeline.Build(context);
-        var mapperDeclarations = MapperDeclarationPipeline.Build(
-            context,
-            compilationContext);
+        var mapperDeclarations = MapperDeclarationPipeline.Build(context);
         var configureDeclarations =
             TypeMapperConfigurePipeline.BuildDeclarations(
                 mapperDeclarations);
@@ -71,11 +78,9 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
             pairConfigurations);
         ConstructionSurfacePipeline.Register(
             context,
-            compilationContext,
             canonicalSurfacePairs);
         MemberSurfacePipeline.Register(
             context,
-            compilationContext,
             canonicalSurfacePairs);
 
         TypeMapperPipeline.Register(

@@ -13,12 +13,10 @@ internal static class ConstructionSurfacePipeline
 {
     public static void Register(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValuesProvider<CanonicalMappingPairCandidate>
             canonicalPairs)
     {
         var planModels = ConstructionPlanPipeline.BuildModels(
-            compilationContext,
             canonicalPairs);
         var planRequests = planModels
             .Select(static (model, _) =>
@@ -29,11 +27,10 @@ internal static class ConstructionSurfacePipeline
                 MorphantGeneratorStageNames
                     .BuildConstructionPlanRequests);
         var extensionModels = canonicalPairs
-            .Combine(compilationContext)
-            .Select(static (source, _) =>
+            .Select(static (candidate, _) =>
                 BuildPairConfigurationModel(
-                    source.Left,
-                    source.Right.Compilation))
+                    candidate,
+                    candidate.Compilation))
             .WithComparer(MappingExtensionModelResultComparer.Instance)
             .WithTrackingName(
                 MorphantGeneratorStageNames

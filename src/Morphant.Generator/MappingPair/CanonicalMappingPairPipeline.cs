@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Morphant.Generator.PairConfiguration;
 
 namespace Morphant.Generator.MappingPair;
@@ -55,9 +56,10 @@ internal static class CanonicalMappingPairPipeline
                 if (identities.Add(candidateIdentity))
                 {
                     result.Add(
-                    new CanonicalMappingPairCandidate(
+                        new CanonicalMappingPairCandidate(
                             candidateIdentity,
-                            pair));
+                            pair,
+                            configuration.Declaration.Compilation));
                 }
             }
         }
@@ -168,4 +170,5 @@ internal static class CanonicalMappingPairPipeline
 
 internal readonly record struct CanonicalMappingPairCandidate(
     string CandidateIdentity,
-    MappingPairModel Pair);
+    MappingPairModel Pair,
+    CSharpCompilation Compilation);

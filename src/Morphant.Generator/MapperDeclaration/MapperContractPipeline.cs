@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.PairConfiguration;
@@ -15,7 +16,7 @@ internal static class MapperContractPipeline
             .Select(static (configuration, cancellationToken) =>
                 BuildAnalysis(
                     configuration,
-                    configuration.Declaration.Context,
+                    configuration.Declaration.Compilation,
                     cancellationToken))
             .WithTrackingName(
                 MorphantGeneratorStageNames.BuildMapperContractAnalyses);
@@ -23,13 +24,15 @@ internal static class MapperContractPipeline
 
     private static MapperContractAnalysis BuildAnalysis(
         MapperPairConfigurationModel configuration,
-        CompilationContext context,
+        CSharpCompilation compilation,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        var knownSymbols = KnownSymbols.TryCreate(compilation);
+
         if (!configuration.Declaration.CanGenerateExecutableArtifact ||
-            context.KnownSymbols is not { } knownSymbols)
+            knownSymbols is null)
         {
             return new MapperContractAnalysis(
                 configuration,
@@ -40,8 +43,8 @@ internal static class MapperContractPipeline
         var interfaceGraphs = FindDirectInterfaceGraphs(
             configuration.Declaration.MapperType,
             knownSymbols.TypeMapperInterface,
-            context.Compilation,
-            context.SyntaxTrees,
+            compilation,
+            new SyntaxTreeOrdering(compilation.SyntaxTrees),
             cancellationToken);
         var conflicts =
             ImmutableArray.CreateBuilder<MapperContractConflict>();

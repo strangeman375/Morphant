@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Morphant.Generator.MapperDeclaration;
@@ -16,7 +17,7 @@ internal sealed record MapperDeclarationInfo(
     bool AllContainingDeclarationsPartial,
     ImmutableArray<MapperContainingTypeIssue> FileLocalIssues,
     ImmutableArray<MethodDeclarationSyntax> ConflictingSupportsMethods,
-    CompilationContext Context)
+    CSharpCompilation Compilation)
 {
     public bool HasMissingTypeMapperDiagnostic =>
         !DerivesFromTypeMapper && !HasMalformedBaseDeclaration;

@@ -172,36 +172,49 @@ internal sealed class ReferenceAndSettingsTests
                 files,
                 [unrelatedChange],
                 GeneratedHints,
-                [
-                    .. EarlyPipeline(
-                        Reason(IncrementalStepRunReason.Cached, 2)),
-                    Stage(
-                        "BuildConstructionPlanRequests",
-                        Expected(
-                            ExternalConstruction,
-                            IncrementalStepRunReason.Cached),
-                        Expected(
-                            StableConstruction,
-                            IncrementalStepRunReason.Cached)),
-                    Stage(
-                        "BuildMemberPlanRequests",
-                        Expected(
-                            ExternalMember,
-                            IncrementalStepRunReason.Cached),
-                        Expected(
-                            StableMember,
-                            IncrementalStepRunReason.Cached)),
-                    Stage(
-                        "BuildTypeMapperRequests",
-                        Expected(
-                            ExternalMapper,
-                            IncrementalStepRunReason.Cached),
-                        Expected(
-                            StableMapper,
-                            IncrementalStepRunReason.Cached))
-                ]),
+                UnrelatedReferenceStages()),
             StepWithReferences(
                 "source-backed destination changed",
+                files,
+                [referenceV2],
+                GeneratedHints,
+                ChangedReferenceStages()));
+    }
+
+    [Test]
+    public void Keeps_recreated_trees_and_source_backed_references_aligned()
+    {
+        var referenceV1 = CreateCompilationReference(
+            "ExternalModels",
+            BuildSourceBackedReference("Int32", 1));
+        var unrelatedChange = CreateCompilationReference(
+            "ExternalModels",
+            BuildSourceBackedReference("Int32", 2));
+        var referenceV2 = CreateCompilationReference(
+            "ExternalModels",
+            BuildSourceBackedReference("Int64", 3));
+        var files = new[]
+        {
+            SourceFile("ExternalMapper.cs", ExternalMapperSource),
+            SourceFile("StableMapper.cs", StableMapperSource)
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            StepWithReferences(
+                "initial source-backed compilation",
+                files,
+                [referenceV1],
+                GeneratedHints),
+            StepWithRecreatedSyntaxTreesAndReferences(
+                "all trees and unrelated referenced source recreated",
+                files,
+                [unrelatedChange],
+                GeneratedHints,
+                UnrelatedReferenceStages()),
+            StepWithRecreatedSyntaxTreesAndReferences(
+                "all trees and referenced contract recreated",
                 files,
                 [referenceV2],
                 GeneratedHints,
@@ -333,6 +346,39 @@ internal sealed class ReferenceAndSettingsTests
                     IncrementalStepRunReason.Cached),
                 Expected(
                     StableMapper,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildTypeMapperRequests",
+                Expected(
+                    ExternalMapper,
+                    IncrementalStepRunReason.Cached),
+                Expected(
+                    StableMapper,
+                    IncrementalStepRunReason.Cached))
+        ];
+    }
+
+    private static ExpectedIncrementalStage[] UnrelatedReferenceStages()
+    {
+        return
+        [
+            .. EarlyPipeline(
+                Reason(IncrementalStepRunReason.Cached, 2)),
+            Stage(
+                "BuildConstructionPlanRequests",
+                Expected(
+                    ExternalConstruction,
+                    IncrementalStepRunReason.Cached),
+                Expected(
+                    StableConstruction,
+                    IncrementalStepRunReason.Cached)),
+            Stage(
+                "BuildMemberPlanRequests",
+                Expected(
+                    ExternalMember,
+                    IncrementalStepRunReason.Cached),
+                Expected(
+                    StableMember,
                     IncrementalStepRunReason.Cached)),
             Stage(
                 "BuildTypeMapperRequests",

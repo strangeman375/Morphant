@@ -213,7 +213,8 @@ internal static class MapperDeclarationDiagnosticPipeline
     {
         return declarations
             .OrderBy(declaration =>
-                declaration.Context.SyntaxTrees.GetOrder(
+                new SyntaxTreeOrdering(
+                    declaration.Compilation.SyntaxTrees).GetOrder(
                     declaration.AttributedDeclaration.SyntaxTree))
             .ThenBy(static declaration =>
                 declaration.AttributedDeclaration.SpanStart);
@@ -254,7 +255,8 @@ internal static class MapperDeclarationDiagnosticPipeline
     {
         return new OrderedDiagnostic(
             diagnostic,
-            declaration.Context.SyntaxTrees.GetOrderOrDefault(
+            new SyntaxTreeOrdering(
+                declaration.Compilation.SyntaxTrees).GetOrderOrDefault(
                 diagnostic.Location.SourceTree));
     }
 

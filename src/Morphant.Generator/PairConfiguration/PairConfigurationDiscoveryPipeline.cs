@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.MappingPair;
 using Morphant.Generator.TypeMapperConfigure;
@@ -27,12 +28,22 @@ internal static class PairConfigurationDiscoveryPipeline
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var context = configureInfo.Context;
+        var compilation = configureInfo.Declaration?.Compilation;
 
-        if (context.KnownSymbols is not { } knownSymbols)
+        if (compilation is null)
         {
             return null;
         }
+
+        var knownSymbols = KnownSymbols.TryCreate(compilation);
+
+        if (knownSymbols is null)
+        {
+            return null;
+        }
+
+        var syntaxTrees = new SyntaxTreeOrdering(
+            compilation.SyntaxTrees);
 
         var levels =
             ImmutableArray.CreateBuilder<PairConfigurationDiscoveryLevel>();
@@ -53,7 +64,7 @@ internal static class PairConfigurationDiscoveryPipeline
             if (!TryBuildLevel(
                     currentInfo,
                     currentConstructedType,
-                    context,
+                    compilation,
                     knownSymbols,
                     cancellationToken,
                     out var level))
@@ -81,7 +92,7 @@ internal static class PairConfigurationDiscoveryPipeline
 
             if (!TryResolveConnectedBaseConfigure(
                     level,
-                    context.Compilation,
+                    compilation,
                     cancellationToken,
                     out var baseMethod,
                     out var constructedBaseType))
@@ -92,7 +103,8 @@ internal static class PairConfigurationDiscoveryPipeline
 
             if (!TryGetSourceConfigureInfo(
                     baseMethod,
-                    context,
+                    compilation,
+                    syntaxTrees,
                     cancellationToken,
                     out var baseInfo))
             {
@@ -127,7 +139,7 @@ internal static class PairConfigurationDiscoveryPipeline
     private static bool TryBuildLevel(
         TypeMapperConfigureInfo configureInfo,
         INamedTypeSymbol constructedMapperType,
-        CompilationContext context,
+        CSharpCompilation compilation,
         KnownSymbols knownSymbols,
         CancellationToken cancellationToken,
         out PairConfigurationDiscoveryLevel level)
@@ -138,7 +150,7 @@ internal static class PairConfigurationDiscoveryPipeline
             return false;
         }
 
-        var semanticModel = context.Compilation.GetSemanticModel(
+        var semanticModel = compilation.GetSemanticModel(
             configureInfo.Syntax.SyntaxTree);
         var builderParameterSyntax =
             configureInfo.Syntax.ParameterList.Parameters[0];
@@ -167,11 +179,11 @@ internal static class PairConfigurationDiscoveryPipeline
                     SourceType = MapperTypeSubstitution.Substitute(
                         registration.SourceType,
                         substitutions,
-                        context.Compilation),
+                        compilation),
                     DestinationType = MapperTypeSubstitution.Substitute(
                         registration.DestinationType,
                         substitutions,
-                        context.Compilation)
+                        compilation)
                 })
             .ToImmutableArray();
         var instantiatedByInvocation = instantiatedRegistrations
@@ -243,7 +255,8 @@ internal static class PairConfigurationDiscoveryPipeline
 
     private static bool TryGetSourceConfigureInfo(
         IMethodSymbol method,
-        CompilationContext context,
+        CSharpCompilation compilation,
+        SyntaxTreeOrdering syntaxTrees,
         CancellationToken cancellationToken,
         out TypeMapperConfigureInfo configureInfo)
     {
@@ -251,7 +264,7 @@ internal static class PairConfigurationDiscoveryPipeline
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!context.SyntaxTrees.Contains(syntaxReference.SyntaxTree) ||
+            if (!syntaxTrees.Contains(syntaxReference.SyntaxTree) ||
                 syntaxReference.GetSyntax(cancellationToken) is not
                     MethodDeclarationSyntax syntax ||
                 syntax.Body is null && syntax.ExpressionBody is null)
@@ -259,7 +272,7 @@ internal static class PairConfigurationDiscoveryPipeline
                 continue;
             }
 
-            var semanticModel = context.Compilation.GetSemanticModel(
+            var semanticModel = compilation.GetSemanticModel(
                 syntax.SyntaxTree);
 
             if (syntax.Parent is ClassDeclarationSyntax declaration &&
@@ -270,8 +283,7 @@ internal static class PairConfigurationDiscoveryPipeline
                 configureInfo = new TypeMapperConfigureInfo(
                     syntax,
                     mapperType,
-                    Declaration: null,
-                    Context: context);
+                    Declaration: null);
                 return true;
             }
         }

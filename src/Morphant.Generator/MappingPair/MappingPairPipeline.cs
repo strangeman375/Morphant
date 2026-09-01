@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Morphant.Generator.MappingPair;
@@ -8,11 +9,11 @@ internal static class MappingPairPipeline
 {
     internal static MapperMappingPairModel? BuildModel(
         MapperMappingRegistrationModel mappingInfo,
-        CompilationContext context,
+        CSharpCompilation compilation,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var semanticModel = context.Compilation.GetSemanticModel(
+        var semanticModel = compilation.GetSemanticModel(
             mappingInfo.ConfigureSyntax.SyntaxTree);
 
         if (mappingInfo.ConfigureSyntax.Parent is not
@@ -43,11 +44,11 @@ internal static class MappingPairPipeline
             var sourceNameability =
                 MappingTypeEligibilityPolicy.GetNameability(
                     registration.SourceType,
-                    context.Compilation);
+                    compilation);
             var destinationNameability =
                 MappingTypeEligibilityPolicy.GetNameability(
                     registration.DestinationType,
-                    context.Compilation);
+                    compilation);
 
             if (sourceNameability == MappingTypeNameability.CompilerOwned ||
                 destinationNameability ==
@@ -149,7 +150,7 @@ internal static class MappingPairPipeline
                 DestinationCapabilityPolicy.Build(
                     registration.SourceType,
                     registration.DestinationType,
-                    context.Compilation,
+                    compilation,
                     cancellationToken)));
         }
 

@@ -10,12 +10,9 @@ internal sealed class TestConventionTypeMapperGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var compilationContext = CompilationContextPipeline.Build(context);
         var assemblySettings =
             AssemblyMappingSettingsPipeline.Build(context);
-        var configureInfos = TypeMapperConfigurePipeline.Build(
-            context,
-            compilationContext);
+        var configureInfos = TypeMapperConfigurePipeline.Build(context);
         var pairConfigurations = PairConfigurationPipeline.Build(
             configureInfos);
 

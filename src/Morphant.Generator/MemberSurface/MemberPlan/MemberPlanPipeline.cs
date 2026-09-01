@@ -11,17 +11,12 @@ internal static class MemberPlanPipeline
 {
     public static IncrementalValuesProvider<MemberPlanModelResult>
         BuildModels(
-            IncrementalValueProvider<CompilationContext> compilationContext,
             IncrementalValuesProvider<CanonicalMappingPairCandidate>
                 canonicalPairs)
     {
         var candidates = canonicalPairs
             .Where(static candidate => candidate.Pair.Capabilities.Members)
-            .Combine(compilationContext)
-            .Select(static (source, _) =>
-                BuildCandidate(
-                    source.Left,
-                    source.Right.Compilation));
+            .Select(static (candidate, _) => BuildCandidate(candidate));
         var coordination = candidates
             .Select(static (candidate, _) => candidate.Coordination)
             .Collect()
@@ -36,11 +31,9 @@ internal static class MemberPlanPipeline
                 BuildGenerationInput(source.Left, source.Right))
             .WhereHasValue();
         var modelInputs = generationInputs
-            .Combine(compilationContext)
-            .Select(static (source, cancellationToken) =>
+            .Select(static (generationInput, cancellationToken) =>
                 TryBuildModelInput(
-                    source.Left,
-                    source.Right,
+                    generationInput,
                     cancellationToken))
             .WhereHasValue()
             .WithComparer(MemberPlanModelInputComparer.Instance);
@@ -54,9 +47,9 @@ internal static class MemberPlanPipeline
     }
 
     private static MemberPlanCandidate BuildCandidate(
-        CanonicalMappingPairCandidate candidate,
-        CSharpCompilation compilation)
+        CanonicalMappingPairCandidate candidate)
     {
+        var compilation = candidate.Compilation;
         var destination = DestinationCapabilityPolicy
             .GetDestinationType(
                 candidate.Pair.DestinationType,
@@ -92,7 +85,10 @@ internal static class MemberPlanPipeline
                 candidate.Pair.Capabilities.StructuredConstruction),
             definition,
             tuple is not null,
-            planIdentity);
+            planIdentity,
+            compilation,
+            ((CSharpParseOptions)candidate.Pair.Registration.Syntax
+                .SyntaxTree.Options).LanguageVersion);
     }
 
     private static MemberPlanGenerationInput? BuildGenerationInput(
@@ -112,19 +108,21 @@ internal static class MemberPlanPipeline
                         candidate.Coordination.ReadableHintNamePart)),
                 candidate.Destination,
                 candidate.IsTuple,
-                candidate.PlanIdentity)
+                candidate.PlanIdentity,
+                candidate.Compilation,
+                candidate.LanguageVersion)
             : null;
     }
 
     private static MemberPlanModelInput? TryBuildModelInput(
         MemberPlanGenerationInput generationInput,
-        CompilationContext context,
         CancellationToken cancellationToken)
     {
+        var compilation = generationInput.Compilation;
         var destination = generationInput.IsTuple
             ? generationInput.Destination
             : TypeContractDependencies.ResolveType(
-                context.Compilation,
+                compilation,
                 generationInput.AssemblyIdentity,
                 generationInput.MetadataName);
 
@@ -136,15 +134,15 @@ internal static class MemberPlanPipeline
         return new MemberPlanModelInput(
             generationInput,
             destination,
-            context.Compilation,
+            compilation,
             TypeContractDependencies.Build(
                 destination,
-                context.Compilation,
+                compilation,
                 cancellationToken),
-            context.LanguageVersion,
-            context.Compilation.Assembly.Identity.ToString(),
-            context.Compilation.Options.NullableContextOptions,
-            context.Compilation.Options.MetadataImportOptions);
+            generationInput.LanguageVersion,
+            compilation.Assembly.Identity.ToString(),
+            compilation.Options.NullableContextOptions,
+            compilation.Options.MetadataImportOptions);
     }
 
     private static MemberPlanModelResult BuildModel(
@@ -175,13 +173,17 @@ internal static class MemberPlanPipeline
         string HintName,
         INamedTypeSymbol Destination,
         bool IsTuple,
-        string PlanIdentity);
+        string PlanIdentity,
+        CSharpCompilation Compilation,
+        LanguageVersion LanguageVersion);
 
     private readonly record struct MemberPlanCandidate(
         DestinationPlanCandidate Coordination,
         INamedTypeSymbol Destination,
         bool IsTuple,
-        string PlanIdentity);
+        string PlanIdentity,
+        CSharpCompilation Compilation,
+        LanguageVersion LanguageVersion);
 
     private readonly record struct MemberPlanModelInput(
         MemberPlanGenerationInput GenerationInput,

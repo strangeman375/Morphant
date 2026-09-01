@@ -14,13 +14,9 @@ internal sealed class TestStructuredConstructTypeMapperGenerator
     public void Initialize(
         IncrementalGeneratorInitializationContext context)
     {
-        var compilationContext =
-            CompilationContextPipeline.Build(context);
         var assemblySettings =
             AssemblyMappingSettingsPipeline.Build(context);
-        var configureInfos = TypeMapperConfigurePipeline.Build(
-            context,
-            compilationContext);
+        var configureInfos = TypeMapperConfigurePipeline.Build(context);
         var pairConfigurations = PairConfigurationPipeline.Build(
             configureInfos);
         var canonicalPairs = CanonicalMappingPairPipeline.Build(
@@ -28,7 +24,6 @@ internal sealed class TestStructuredConstructTypeMapperGenerator
 
         ConstructionSurfacePipeline.Register(
             context,
-            compilationContext,
             canonicalPairs);
         TypeMapperPipeline.Register(
             context,

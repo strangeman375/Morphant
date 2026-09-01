@@ -24,12 +24,9 @@ internal sealed class TestPairConfigurationGenerator :
     public void Initialize(
         IncrementalGeneratorInitializationContext context)
     {
-        var compilationContext = CompilationContextPipeline.Build(context);
         var assemblySettings =
             AssemblyMappingSettingsPipeline.Build(context);
-        var configureInfos = TypeMapperConfigurePipeline.Build(
-            context,
-            compilationContext);
+        var configureInfos = TypeMapperConfigurePipeline.Build(context);
         var configurations = PairConfigurationPipeline.Build(configureInfos)
             .Collect()
             .Combine(assemblySettings);

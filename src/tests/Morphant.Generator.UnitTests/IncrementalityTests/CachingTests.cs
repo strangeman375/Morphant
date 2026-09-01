@@ -121,7 +121,7 @@ internal sealed class CachingTests
                         "BuildMappingExtensionModels",
                         Expected(
                             MappingExtensionHint,
-                            IncrementalStepRunReason.Unchanged)),
+                            IncrementalStepRunReason.Cached)),
                     Stage(
                         "BuildMappingExtensionRequests",
                         Expected(
@@ -141,7 +141,7 @@ internal sealed class CachingTests
                         "BuildMemberExtensionModels",
                         Expected(
                             MemberExtensionHint,
-                            IncrementalStepRunReason.Unchanged)),
+                            IncrementalStepRunReason.Cached)),
                     Stage(
                         "BuildMemberExtensionRequests",
                         Expected(
