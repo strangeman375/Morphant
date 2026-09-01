@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 08/31/2026 - 09:07:21 |
-| Coverage date: | 08/31/2026 - 09:05:34 - 08/31/2026 - 09:07:16 |
+| Generated on: | 09/01/2026 - 07:29:53 |
+| Coverage date: | 09/01/2026 - 07:28:19 - 09/01/2026 - 07:29:49 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 356 |
 | Files: | 183 |
-| **Line coverage:** | 86.4% (34900 of 40362) |
-| Covered lines: | 34900 |
-| Uncovered lines: | 5462 |
-| Coverable lines: | 40362 |
-| Total lines: | 67333 |
-| **Branch coverage:** | 76.7% (11680 of 15222) |
-| Covered branches: | 11680 |
-| Total branches: | 15222 |
+| **Line coverage:** | 86.4% (34953 of 40416) |
+| Covered lines: | 34953 |
+| Uncovered lines: | 5463 |
+| Coverable lines: | 40416 |
+| Total lines: | 67449 |
+| **Branch coverage:** | 76.7% (11708 of 15252) |
+| Covered branches: | 11708 |
+| Total branches: | 15252 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -79,7 +79,7 @@
 |Morphant.Generator.CompilationContext|100%||
 |Morphant.Generator.CompilationContextPipeline|100%|100%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanModelBuilder|100%|90%|
-|Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|88.6%|83.8%|
+|Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|89.1%|83.8%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterFieldModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterModel|100%||
@@ -101,8 +101,8 @@
 |Morphant.Generator.Diagnostics.DiagnosticHelpLink|100%||
 |Morphant.Generator.Extensions|100%|100%|
 |Morphant.Generator.GeneratedPlanNaming|100%|90%|
-|Morphant.Generator.GeneratedSourceHintName|100%||
-|Morphant.Generator.HintNameHelper|100%|100%|
+|Morphant.Generator.GeneratedSourceHintName|100%|94.4%|
+|Morphant.Generator.HintNameHelper|96.6%|94.4%|
 |Morphant.Generator.HintNamePartAllocator|61.9%|75%|
 |Morphant.Generator.Incrementality.DestinationPlanCandidate|100%||
 |Morphant.Generator.Incrementality.DestinationPlanCoordination|100%|50%|
@@ -402,4 +402,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #73](https://github.com/strangeman375/Morphant/actions/runs/33375760122).
+Full HTML report: download the **coverage** artifact from [CI run #74](https://github.com/strangeman375/Morphant/actions/runs/33482069705).
