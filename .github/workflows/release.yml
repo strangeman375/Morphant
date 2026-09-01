@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        uses: actions/setup-dotnet@bbbb8c9ab609f9ab643834ffe948a0f577bc4c0c # v6
         with:
           global-json-file: global.json
 
@@ -99,7 +99,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        uses: actions/setup-dotnet@bbbb8c9ab609f9ab643834ffe948a0f577bc4c0c # v6
         with:
           global-json-file: global.json
 
@@ -187,7 +187,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        uses: actions/setup-dotnet@bbbb8c9ab609f9ab643834ffe948a0f577bc4c0c # v6
         with:
           global-json-file: global.json
 
@@ -221,7 +221,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        uses: actions/setup-dotnet@bbbb8c9ab609f9ab643834ffe948a0f577bc4c0c # v6
         with:
           global-json-file: global.json
 
@@ -265,7 +265,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up minimum .NET SDK
-        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        uses: actions/setup-dotnet@bbbb8c9ab609f9ab643834ffe948a0f577bc4c0c # v6
         with:
           dotnet-version: 7.0.100
 
@@ -317,7 +317,7 @@ jobs:
           fetch-tags: true
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@e92112b014ac3813e580e9016b71957ab59a800d # v6
+        uses: actions/setup-dotnet@bbbb8c9ab609f9ab643834ffe948a0f577bc4c0c # v6
         with:
           global-json-file: global.json
 
