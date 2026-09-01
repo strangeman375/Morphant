@@ -249,11 +249,20 @@ internal static class GeneratorStageGuard
         Location location,
         Exception exception)
     {
-        return location.IsInSource
-            ? (location.SourceTree?.FilePath ?? string.Empty) + "|" +
-              location.SourceSpan.Start + "|" +
-              location.SourceSpan.Length
-            : exception.ToString();
+        if (!location.IsInSource)
+        {
+            return exception.ToString();
+        }
+
+        var lineSpan = location.GetLineSpan();
+        var start = lineSpan.StartLinePosition;
+        var end = lineSpan.EndLinePosition;
+
+        return lineSpan.Path.Replace('\\', '/') + "|" +
+               start.Line + "|" +
+               start.Character + "|" +
+               end.Line + "|" +
+               end.Character;
     }
 
     private static void ExecuteSourceOutput<TSource>(

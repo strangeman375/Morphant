@@ -16,7 +16,7 @@ internal sealed class BehaviorTests
 
     private const string TransformFailureHintName =
         "Morphant.Generated.GeneratorFailure." +
-        "TestTransform__9d576022e03e2ca4.g.cs";
+        "TestTransform__e9212180604c97fd.g.cs";
 
     private const string OutputFailureHintName =
         "Morphant.Generated.GeneratorFailure." +
@@ -281,6 +281,36 @@ CommentTerminatorException: before * / after
     }
 
     [Test]
+    public void Failure_hint_is_stable_across_platform_source_forms()
+    {
+        const string lfSource =
+            "#nullable enable\n" +
+            "class BrokenMapper { }\n" +
+            "class HealthyMapper { }\n";
+        var crlfSource = lfSource.Replace("\n", "\r\n");
+
+        var lf = Run(
+            lfSource,
+            new TransformFailureGenerator(),
+            sourcePath: "folder/TestCase.cs");
+        var crlf = Run(
+            crlfSource,
+            new TransformFailureGenerator(),
+            sourcePath: @"folder\TestCase.cs");
+
+        var lfHint = lf.Result.Diagnostics.Single().Properties[
+            "ReportHintName"];
+        var crlfHint = crlf.Result.Diagnostics.Single().Properties[
+            "ReportHintName"];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(lfHint, Is.Not.Null);
+            Assert.That(crlfHint, Is.EqualTo(lfHint));
+        });
+    }
+
+    [Test]
     public void Reports_an_output_failure_when_its_identity_also_fails()
     {
         var run = Run(
@@ -499,13 +529,14 @@ CommentTerminatorException: before * / after
     private static TestRun Run(
         string source,
         IIncrementalGenerator generator,
-        GeneratorDriver? driver = null)
+        GeneratorDriver? driver = null,
+        string sourcePath = "TestCase.cs")
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp9);
         var syntaxTree = CSharpSyntaxTree.ParseText(
             SourceText.From(source, Encoding.UTF8),
             parseOptions,
-            "TestCase.cs");
+            sourcePath);
         var compilation = CSharpCompilation.Create(
             "GeneratorFailureTests",
             [syntaxTree],
