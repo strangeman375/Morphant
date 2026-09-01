@@ -28,6 +28,12 @@ internal sealed class PlanCompositionTests
     }
 
     [Test]
+    public void Reuses_destination_base_ignores_for_unrelated_sources_across_mappers()
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_ba5e1001.Scenario.Verify();
+    }
+
+    [Test]
     public void Does_not_include_result_policy_and_recomputes_derived_construction()
     {
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_07647072.Scenario.Verify();
