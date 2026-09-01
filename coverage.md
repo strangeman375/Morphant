@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/01/2026 - 08:50:14 |
-| Coverage date: | 09/01/2026 - 08:48:16 - 09/01/2026 - 08:50:08 |
+| Generated on: | 09/01/2026 - 09:52:22 |
+| Coverage date: | 09/01/2026 - 09:50:32 - 09/01/2026 - 09:52:17 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 356 |
 | Files: | 183 |
-| **Line coverage:** | 86.4% (34953 of 40416) |
-| Covered lines: | 34953 |
+| **Line coverage:** | 86.4% (34965 of 40428) |
+| Covered lines: | 34965 |
 | Uncovered lines: | 5463 |
-| Coverable lines: | 40416 |
-| Total lines: | 67449 |
-| **Branch coverage:** | 76.7% (11708 of 15252) |
-| Covered branches: | 11708 |
-| Total branches: | 15252 |
+| Coverable lines: | 40428 |
+| Total lines: | 67471 |
+| **Branch coverage:** | 76.7% (11717 of 15262) |
+| Covered branches: | 11717 |
+| Total branches: | 15262 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -369,7 +369,7 @@
 |Morphant.Generator.TypeMapperGeneration.TypeMapperDependencyExpressionModel|100%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperDependencyExpressionNodeM<br/>odel|100%|100%|
 |Morphant.Generator.TypeMapperGeneration.TypeMapperDerivedMappingModel|100%||
-|Morphant.Generator.TypeMapperGeneration.TypeMapperEmitter|85.6%|81.3%|
+|Morphant.Generator.TypeMapperGeneration.TypeMapperEmitter|85.7%|81.5%|
 |Morphant.Generator.TypeMapperGeneration.TypeMapperFactoryMappingModel|100%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperGenerationInput|100%||
 |Morphant.Generator.TypeMapperGeneration.TypeMapperLocalValueModel|100%||
@@ -402,4 +402,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #79](https://github.com/strangeman375/Morphant/actions/runs/33488672705).
+Full HTML report: download the **coverage** artifact from [CI run #80](https://github.com/strangeman375/Morphant/actions/runs/33494100202).
