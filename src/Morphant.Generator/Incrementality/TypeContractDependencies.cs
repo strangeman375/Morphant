@@ -183,8 +183,15 @@ internal static class TypeContractDependencies
             .ThenBy(
                 static syntaxReference => syntaxReference.Span.Start)
             .ToArray();
+        var sourceCompilation = FindSourceCompilation(
+            type,
+            compilation);
 
-        if (syntaxReferences.Length > 0)
+        if (syntaxReferences.Length > 0 &&
+            sourceCompilation is not null &&
+            syntaxReferences.All(reference =>
+                sourceCompilation.ContainsSyntaxTree(
+                    reference.SyntaxTree)))
         {
             var partIndicesByPath = new Dictionary<string, int>(
                 StringComparer.Ordinal);
@@ -200,12 +207,14 @@ internal static class TypeContractDependencies
                     new TypeContractDependency(
                         metadataName +
                         "|source|" +
+                        type.ContainingAssembly.Identity +
+                        "|" +
                         path +
                         "|" +
                         partIndex.ToString(CultureInfo.InvariantCulture),
                         BuildSourceVersion(
                             syntaxReference,
-                            compilation,
+                            sourceCompilation,
                             cancellationToken)));
             }
 
@@ -224,6 +233,34 @@ internal static class TypeContractDependencies
                     type.ContainingAssembly.Identity,
                     metadataReference));
         }
+    }
+
+    private static CSharpCompilation? FindSourceCompilation(
+        INamedTypeSymbol type,
+        CSharpCompilation compilation)
+    {
+        if (SymbolEqualityComparer.Default.Equals(
+                type.ContainingAssembly,
+                compilation.Assembly))
+        {
+            return compilation;
+        }
+
+        foreach (var reference in compilation.References)
+        {
+            if (reference is CompilationReference
+                {
+                    Compilation: CSharpCompilation sourceCompilation
+                } &&
+                SymbolEqualityComparer.Default.Equals(
+                    compilation.GetAssemblyOrModuleSymbol(reference),
+                    type.ContainingAssembly))
+            {
+                return sourceCompilation;
+            }
+        }
+
+        return null;
     }
 
     private static TypeContractSourceVersion BuildSourceVersion(

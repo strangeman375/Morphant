@@ -23,6 +23,12 @@ unsupported.
   `ValueTupleN` and `SystemTupleN` prefixes, consistent type qualification and
   deterministic bounded fallbacks for compiler and filesystem limits.
 
+### Fixed
+
+- Prevent incremental generator crashes when IDEs replace syntax trees or
+  expose referenced projects as source-backed compilations, so live generated
+  documents remain available after solution and editor updates.
+
 ## [0.4.0]
 
 ### Added

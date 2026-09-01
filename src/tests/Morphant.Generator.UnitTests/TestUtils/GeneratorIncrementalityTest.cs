@@ -109,7 +109,50 @@ internal static class GeneratorIncrementalityTest
             null,
             generatedHintNames.ToImmutableArray(),
             [],
-            stages.ToImmutableArray());
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: false);
+    }
+
+    public static GeneratorIncrementalityStep StepWithRecreatedSyntaxTrees(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<string> generatedHintNames,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            [],
+            ImmutableDictionary<string, string>.Empty,
+            NullableContextOptions.Enable,
+            [],
+            null,
+            generatedHintNames.ToImmutableArray(),
+            [],
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: true);
+    }
+
+    public static GeneratorIncrementalityStep
+        StepWithRecreatedSyntaxTreesAndDiagnostics(
+        string name,
+        IReadOnlyCollection<GeneratorIncrementalitySourceFile> sourceFiles,
+        IReadOnlyCollection<string> generatedHintNames,
+        IReadOnlyCollection<ExpectedCompilerDiagnostic> expectedDiagnostics,
+        params ExpectedIncrementalStage[] stages)
+    {
+        return new GeneratorIncrementalityStep(
+            name,
+            sourceFiles.ToImmutableArray(),
+            [],
+            ImmutableDictionary<string, string>.Empty,
+            NullableContextOptions.Enable,
+            [],
+            null,
+            generatedHintNames.ToImmutableArray(),
+            expectedDiagnostics.ToImmutableArray(),
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: true);
     }
 
     public static GeneratorIncrementalityStep ExecutableStep(
@@ -129,7 +172,8 @@ internal static class GeneratorIncrementalityTest
             scenarioTypeName,
             generatedHintNames.ToImmutableArray(),
             [],
-            stages.ToImmutableArray());
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: false);
     }
 
     public static GeneratorIncrementalityStep StepWithReferences(
@@ -149,7 +193,8 @@ internal static class GeneratorIncrementalityTest
             null,
             generatedHintNames.ToImmutableArray(),
             [],
-            stages.ToImmutableArray());
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: false);
     }
 
     public static GeneratorIncrementalityStep StepWithReferencesAndDiagnostics(
@@ -170,7 +215,8 @@ internal static class GeneratorIncrementalityTest
             null,
             generatedHintNames.ToImmutableArray(),
             expectedDiagnostics.ToImmutableArray(),
-            stages.ToImmutableArray());
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: false);
     }
 
     public static GeneratorIncrementalityStep StepWithOptions(
@@ -191,7 +237,8 @@ internal static class GeneratorIncrementalityTest
             null,
             generatedHintNames.ToImmutableArray(),
             [],
-            stages.ToImmutableArray());
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: false);
     }
 
     public static GeneratorIncrementalityStep StepWithOptionsAndDiagnostics(
@@ -213,7 +260,8 @@ internal static class GeneratorIncrementalityTest
             null,
             generatedHintNames.ToImmutableArray(),
             expectedDiagnostics.ToImmutableArray(),
-            stages.ToImmutableArray());
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: false);
     }
 
     public static GeneratorIncrementalityStep StepWithCompilerInputs(
@@ -234,7 +282,8 @@ internal static class GeneratorIncrementalityTest
             null,
             generatedHintNames.ToImmutableArray(),
             [],
-            stages.ToImmutableArray());
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: false);
     }
 
     public static GeneratorIncrementalityStep StepWithDiagnostics(
@@ -254,7 +303,8 @@ internal static class GeneratorIncrementalityTest
             null,
             generatedHintNames.ToImmutableArray(),
             expectedDiagnostics.ToImmutableArray(),
-            stages.ToImmutableArray());
+            stages.ToImmutableArray(),
+            RecreateSyntaxTrees: false);
     }
 
     public static PortableExecutableReference CreateReference(
@@ -285,6 +335,33 @@ internal static class GeneratorIncrementalityTest
             emitResult.Diagnostics);
 
         return MetadataReference.CreateFromImage(stream.ToArray());
+    }
+
+    public static MetadataReference CreateCompilationReference(
+        string assemblyName,
+        string source)
+    {
+        var parseOptions = new CSharpParseOptions(
+            LanguageVersion.CSharp9,
+            DocumentationMode.Diagnose);
+        var compilation = CSharpCompilation.Create(
+            assemblyName,
+            [
+                CSharpSyntaxTree.ParseText(
+                    SourceText.From(source, Encoding.UTF8),
+                    parseOptions,
+                    assemblyName + ".cs")
+            ],
+            DefaultReferences,
+            new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: NullableContextOptions.Enable));
+
+        AssertNoWarningsOrErrors(
+            $"Compilation reference '{assemblyName}'",
+            compilation.GetDiagnostics());
+
+        return compilation.ToMetadataReference();
     }
 
     public static void RunAndAssert(
@@ -398,7 +475,8 @@ internal static class GeneratorIncrementalityTest
             var previousTree = compilation.SyntaxTrees.SingleOrDefault(
                 tree => tree.FilePath == sourceFile.Path);
 
-            if (previousTree is not null &&
+            if (!step.RecreateSyntaxTrees &&
+                previousTree is not null &&
                 previousTree.GetText().ToString() == sourceFile.Source &&
                 previousTree.Options.Equals(parseOptions))
             {
@@ -519,15 +597,6 @@ internal static class GeneratorIncrementalityTest
                     diagnostic.IsSuppressed,
                     SnapshotLocations(diagnostic.AdditionalLocations),
                     SnapshotProperties(diagnostic.Properties)))
-            .OrderBy(static diagnostic => diagnostic.Id, StringComparer.Ordinal)
-            .ThenBy(
-                static diagnostic => diagnostic.Path,
-                StringComparer.Ordinal)
-            .ThenBy(static diagnostic => diagnostic.Start)
-            .ThenBy(static diagnostic => diagnostic.Length)
-            .ThenBy(
-                static diagnostic => diagnostic.Message,
-                StringComparer.Ordinal)
             .ToArray();
     }
 
@@ -787,7 +856,8 @@ internal sealed record GeneratorIncrementalityStep(
     string? ScenarioTypeName,
     ImmutableArray<string> GeneratedHintNames,
     ImmutableArray<ExpectedCompilerDiagnostic> ExpectedDiagnostics,
-    ImmutableArray<ExpectedIncrementalStage> ExpectedStages);
+    ImmutableArray<ExpectedIncrementalStage> ExpectedStages,
+    bool RecreateSyntaxTrees);
 
 internal sealed record GeneratorIncrementalitySourceFile(
     string Path,

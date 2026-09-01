@@ -31,18 +31,15 @@ internal static class MappingSettingsDiagnosticPipeline
 
     public static void Register(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValueProvider<MappingSettings> assemblySettings,
         IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
             contractAnalyses)
     {
         var diagnostics = contractAnalyses
             .Combine(assemblySettings)
-            .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
                 BuildDiagnostics(
-                    source.Left.Left,
-                    source.Left.Right,
+                    source.Left,
                     source.Right,
                     cancellationToken));
 
@@ -52,7 +49,6 @@ internal static class MappingSettingsDiagnosticPipeline
     private static ImmutableArray<Diagnostic> BuildDiagnostics(
         ImmutableArray<MapperContractAnalysis> analyses,
         MappingSettings assemblySettings,
-        CompilationContext compilationContext,
         CancellationToken cancellationToken)
     {
         var cSharpOrigins = new Dictionary<CSharpOriginKey,
@@ -62,8 +58,6 @@ internal static class MappingSettingsDiagnosticPipeline
             ImmutableArray.CreateBuilder<InapplicableCandidate>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
-        var syntaxTreeOrder = compilationContext.SyntaxTrees;
-
         foreach (var analysis in analyses)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -93,7 +87,7 @@ internal static class MappingSettingsDiagnosticPipeline
                     pair,
                     declaration,
                     assemblySettings,
-                    syntaxTreeOrder,
+                    declaration.Context.SyntaxTrees,
                     cSharpOrigins,
                     msBuildOrigins,
                     inapplicable,

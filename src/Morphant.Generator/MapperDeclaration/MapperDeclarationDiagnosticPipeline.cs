@@ -9,7 +9,6 @@ internal static class MapperDeclarationDiagnosticPipeline
 {
     public static void Register(
         IncrementalGeneratorInitializationContext context,
-        IncrementalValueProvider<CompilationContext> compilationContext,
         IncrementalValuesProvider<MapperDeclarationInfo> declarations,
         IncrementalValueProvider<ImmutableArray<MapperContractAnalysis>>
             contractAnalyses)
@@ -17,11 +16,9 @@ internal static class MapperDeclarationDiagnosticPipeline
         var diagnostics = declarations
             .Collect()
             .Combine(contractAnalyses)
-            .Combine(compilationContext)
             .Select(static (source, cancellationToken) =>
                 BuildDiagnostics(
-                    source.Left.Left,
-                    source.Left.Right,
+                    source.Left,
                     source.Right,
                     cancellationToken));
 
@@ -31,18 +28,24 @@ internal static class MapperDeclarationDiagnosticPipeline
     private static ImmutableArray<Diagnostic> BuildDiagnostics(
         ImmutableArray<MapperDeclarationInfo> declarations,
         ImmutableArray<MapperContractAnalysis> contractAnalyses,
-        CompilationContext context,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var missingTypeMapper = ImmutableArray.CreateBuilder<Diagnostic>();
-        var mapperPartial = ImmutableArray.CreateBuilder<Diagnostic>();
-        var containingPartial = ImmutableArray.CreateBuilder<Diagnostic>();
-        var fileLocal = ImmutableArray.CreateBuilder<Diagnostic>();
-        var exactContracts = ImmutableArray.CreateBuilder<Diagnostic>();
-        var unifiableContracts = ImmutableArray.CreateBuilder<Diagnostic>();
-        var supportsConflicts = ImmutableArray.CreateBuilder<Diagnostic>();
+        var missingTypeMapper =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
+        var mapperPartial =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
+        var containingPartial =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
+        var fileLocal =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
+        var exactContracts =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
+        var unifiableContracts =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
+        var supportsConflicts =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
         var seenPartialContainers = new HashSet<ISymbol>(
@@ -50,9 +53,7 @@ internal static class MapperDeclarationDiagnosticPipeline
         var seenFileLocalTypes = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
 
-        foreach (var declaration in OrderDeclarations(
-                     declarations,
-                     context.SyntaxTrees))
+        foreach (var declaration in OrderDeclarations(declarations))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -63,11 +64,13 @@ internal static class MapperDeclarationDiagnosticPipeline
 
             if (declaration.HasMissingTypeMapperDiagnostic)
             {
-                missingTypeMapper.Add(Diagnostic.Create(
-                    MapperDeclarationDiagnosticDescriptors
-                        .MissingTypeMapperBase,
-                    declaration.Attribute.Name.GetLocation(),
-                    declaration.MapperDisplayName));
+                missingTypeMapper.Add(CreateOrderedDiagnostic(
+                    Diagnostic.Create(
+                        MapperDeclarationDiagnosticDescriptors
+                            .MissingTypeMapperBase,
+                        declaration.Attribute.Name.GetLocation(),
+                        declaration.MapperDisplayName),
+                    declaration));
                 continue;
             }
 
@@ -78,10 +81,13 @@ internal static class MapperDeclarationDiagnosticPipeline
 
             if (declaration.MapperPartialIssue is { } partialIssue)
             {
-                mapperPartial.Add(Diagnostic.Create(
-                    MapperDeclarationDiagnosticDescriptors.MapperMustBePartial,
-                    partialIssue.Identifier.GetLocation(),
-                    declaration.MapperDisplayName));
+                mapperPartial.Add(CreateOrderedDiagnostic(
+                    Diagnostic.Create(
+                        MapperDeclarationDiagnosticDescriptors
+                            .MapperMustBePartial,
+                        partialIssue.Identifier.GetLocation(),
+                        declaration.MapperDisplayName),
+                    declaration));
             }
 
             foreach (var issue in declaration.ContainingPartialIssues)
@@ -91,11 +97,13 @@ internal static class MapperDeclarationDiagnosticPipeline
                     continue;
                 }
 
-                containingPartial.Add(Diagnostic.Create(
-                    MapperDeclarationDiagnosticDescriptors
-                        .ContainingTypeMustBePartial,
-                    issue.Declaration.Identifier.GetLocation(),
-                    issue.DisplayName));
+                containingPartial.Add(CreateOrderedDiagnostic(
+                    Diagnostic.Create(
+                        MapperDeclarationDiagnosticDescriptors
+                            .ContainingTypeMustBePartial,
+                        issue.Declaration.Identifier.GetLocation(),
+                        issue.DisplayName),
+                    declaration));
             }
 
             foreach (var issue in declaration.FileLocalIssues)
@@ -105,27 +113,32 @@ internal static class MapperDeclarationDiagnosticPipeline
                     continue;
                 }
 
-                fileLocal.Add(Diagnostic.Create(
-                    MapperDeclarationDiagnosticDescriptors.FileLocalType,
-                    issue.Declaration.Modifiers
-                        .First(static modifier =>
-                            modifier.IsKind(SyntaxKind.FileKeyword))
-                        .GetLocation(),
-                    issue.DisplayName));
+                fileLocal.Add(CreateOrderedDiagnostic(
+                    Diagnostic.Create(
+                        MapperDeclarationDiagnosticDescriptors.FileLocalType,
+                        issue.Declaration.Modifiers
+                            .First(static modifier =>
+                                modifier.IsKind(SyntaxKind.FileKeyword))
+                            .GetLocation(),
+                        issue.DisplayName),
+                    declaration));
             }
 
             if (!declaration.ConflictingSupportsMethods.IsEmpty)
             {
-                supportsConflicts.Add(Diagnostic.Create(
-                    MapperDeclarationDiagnosticDescriptors.SupportsConflict,
-                    declaration.ConflictingSupportsMethods[0]
-                        .Identifier.GetLocation(),
-                    declaration.ConflictingSupportsMethods
-                        .Skip(1)
-                        .Select(static method =>
-                            method.Identifier.GetLocation()),
-                    properties: null,
-                    declaration.MapperDisplayName));
+                supportsConflicts.Add(CreateOrderedDiagnostic(
+                    Diagnostic.Create(
+                        MapperDeclarationDiagnosticDescriptors
+                            .SupportsConflict,
+                        declaration.ConflictingSupportsMethods[0]
+                            .Identifier.GetLocation(),
+                        declaration.ConflictingSupportsMethods
+                            .Skip(1)
+                            .Select(static method =>
+                                method.Identifier.GetLocation()),
+                        properties: null,
+                        declaration.MapperDisplayName),
+                    declaration));
             }
         }
 
@@ -150,14 +163,18 @@ internal static class MapperDeclarationDiagnosticPipeline
                         MapperContractConflictKind.Exact
                     ? MapperDeclarationDiagnosticDescriptors.ExactContract
                     : MapperDeclarationDiagnosticDescriptors.UnifiableContract;
-                var diagnostic = Diagnostic.Create(
-                    descriptor,
-                    GetMapIdentifierLocation(conflict.Registration.Syntax),
-                    conflict.InterfaceSyntaxes.Select(static syntax =>
-                        syntax.GetLocation()),
-                    properties: null,
-                    conflict.ContractDisplayName,
-                    analysis.Configuration.Declaration.MapperDisplayName);
+                var diagnostic = CreateOrderedDiagnostic(
+                    Diagnostic.Create(
+                        descriptor,
+                        GetMapIdentifierLocation(
+                            conflict.Registration.Syntax),
+                        conflict.InterfaceSyntaxes.Select(static syntax =>
+                            syntax.GetLocation()),
+                        properties: null,
+                        conflict.ContractDisplayName,
+                        analysis.Configuration.Declaration
+                            .MapperDisplayName),
+                    analysis.Configuration.Declaration);
 
                 if (conflict.Kind == MapperContractConflictKind.Exact)
                 {
@@ -170,8 +187,7 @@ internal static class MapperDeclarationDiagnosticPipeline
             }
         }
 
-        var comparer = new DiagnosticSourceOrderComparer(
-            context.SyntaxTrees);
+        var comparer = DiagnosticSourceOrderComparer.Instance;
         var result = ImmutableArray.CreateBuilder<Diagnostic>(
             missingTypeMapper.Count +
             mapperPartial.Count +
@@ -193,12 +209,11 @@ internal static class MapperDeclarationDiagnosticPipeline
     }
 
     private static IEnumerable<MapperDeclarationInfo> OrderDeclarations(
-        ImmutableArray<MapperDeclarationInfo> declarations,
-        SyntaxTreeOrdering syntaxTrees)
+        ImmutableArray<MapperDeclarationInfo> declarations)
     {
         return declarations
             .OrderBy(declaration =>
-                syntaxTrees.GetOrder(
+                declaration.Context.SyntaxTrees.GetOrder(
                     declaration.AttributedDeclaration.SyntaxTree))
             .ThenBy(static declaration =>
                 declaration.AttributedDeclaration.SpanStart);
@@ -224,51 +239,46 @@ internal static class MapperDeclarationDiagnosticPipeline
 
     private static void AddOrdered(
         ImmutableArray<Diagnostic>.Builder destination,
-        ImmutableArray<Diagnostic>.Builder source,
-        IComparer<Diagnostic> comparer)
+        ImmutableArray<OrderedDiagnostic>.Builder source,
+        IComparer<OrderedDiagnostic> comparer)
     {
-        destination.AddRange(source.ToImmutable().Sort(comparer));
+        destination.AddRange(
+            source.ToImmutable()
+                .Sort(comparer)
+                .Select(static diagnostic => diagnostic.Diagnostic));
     }
 
-    private sealed class DiagnosticSourceOrderComparer : IComparer<Diagnostic>
+    private static OrderedDiagnostic CreateOrderedDiagnostic(
+        Diagnostic diagnostic,
+        MapperDeclarationInfo declaration)
     {
-        private readonly SyntaxTreeOrdering _syntaxTrees;
+        return new OrderedDiagnostic(
+            diagnostic,
+            declaration.Context.SyntaxTrees.GetOrderOrDefault(
+                diagnostic.Location.SourceTree));
+    }
 
-        public DiagnosticSourceOrderComparer(SyntaxTreeOrdering syntaxTrees)
+    private sealed class DiagnosticSourceOrderComparer :
+        IComparer<OrderedDiagnostic>
+    {
+        public static DiagnosticSourceOrderComparer Instance { get; } = new();
+
+        private DiagnosticSourceOrderComparer()
         {
-            _syntaxTrees = syntaxTrees;
         }
 
-        public int Compare(Diagnostic? left, Diagnostic? right)
+        public int Compare(OrderedDiagnostic left, OrderedDiagnostic right)
         {
-            if (ReferenceEquals(left, right))
-            {
-                return 0;
-            }
-
-            if (left is null)
-            {
-                return -1;
-            }
-
-            if (right is null)
-            {
-                return 1;
-            }
-
-            var leftTreeIndex = GetTreeIndex(left.Location.SourceTree);
-            var rightTreeIndex = GetTreeIndex(right.Location.SourceTree);
-            var comparison = leftTreeIndex.CompareTo(rightTreeIndex);
+            var comparison = left.TreeOrder.CompareTo(right.TreeOrder);
 
             return comparison != 0
                 ? comparison
-                : left.Location.SourceSpan.Start.CompareTo(
-                    right.Location.SourceSpan.Start);
-        }
-
-        private int GetTreeIndex(SyntaxTree? syntaxTree)
-        {
-            return _syntaxTrees.GetOrderOrDefault(syntaxTree);
+                : left.Diagnostic.Location.SourceSpan.Start.CompareTo(
+                    right.Diagnostic.Location.SourceSpan.Start);
         }
     }
+
+    private readonly record struct OrderedDiagnostic(
+        Diagnostic Diagnostic,
+        int TreeOrder);
 }

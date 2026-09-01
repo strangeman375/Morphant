@@ -142,6 +142,73 @@ internal sealed class ReferenceAndSettingsTests
     }
 
     [Test]
+    public void Tracks_contracts_from_source_backed_project_references()
+    {
+        var referenceV1 = CreateCompilationReference(
+            "ExternalModels",
+            BuildSourceBackedReference("Int32", 1));
+        var unrelatedChange = CreateCompilationReference(
+            "ExternalModels",
+            BuildSourceBackedReference("Int32", 2));
+        var referenceV2 = CreateCompilationReference(
+            "ExternalModels",
+            BuildSourceBackedReference("Int64", 2));
+        var files = new[]
+        {
+            SourceFile("ExternalMapper.cs", ExternalMapperSource),
+            SourceFile("StableMapper.cs", StableMapperSource)
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            StepWithReferences(
+                "source-backed reference v1",
+                files,
+                [referenceV1],
+                GeneratedHints),
+            StepWithReferences(
+                "unrelated referenced source changed",
+                files,
+                [unrelatedChange],
+                GeneratedHints,
+                [
+                    .. EarlyPipeline(
+                        Reason(IncrementalStepRunReason.Cached, 2)),
+                    Stage(
+                        "BuildConstructionPlanRequests",
+                        Expected(
+                            ExternalConstruction,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableConstruction,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberPlanRequests",
+                        Expected(
+                            ExternalMember,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableMember,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildTypeMapperRequests",
+                        Expected(
+                            ExternalMapper,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableMapper,
+                            IncrementalStepRunReason.Cached))
+                ]),
+            StepWithReferences(
+                "source-backed destination changed",
+                files,
+                [referenceV2],
+                GeneratedHints,
+                ChangedReferenceStages()));
+    }
+
+    [Test]
     public void Assembly_setting_rebuilds_only_mapper_artifacts()
     {
         var files = new[]
@@ -322,6 +389,18 @@ internal sealed class ReferenceAndSettingsTests
         return ExternalReferenceSource.Replace("__VALUE_TYPE__", valueType);
     }
 
+    private static string BuildSourceBackedReference(
+        string valueType,
+        int unrelatedValue)
+    {
+        return SourceBackedReferenceSource
+            .Replace("__VALUE_TYPE__", valueType)
+            .Replace(
+                "__UNRELATED_VALUE__",
+                unrelatedValue.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     // lang=c#
     private const string ExternalReferenceSource =
 """
@@ -348,6 +427,30 @@ namespace ExternalModels
 namespace UnusedModels
 {
     public sealed class Value { }
+}
+""";
+
+    // lang=c#
+    private const string SourceBackedReferenceSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using ContractValue = System.__VALUE_TYPE__;
+
+namespace ExternalModels
+{
+    public sealed class Destination
+    {
+        public Destination(ContractValue value) => Value = value;
+
+        public ContractValue Value { get; set; }
+    }
+
+    public static class Unrelated
+    {
+        public const int Value = __UNRELATED_VALUE__;
+    }
 }
 """;
 

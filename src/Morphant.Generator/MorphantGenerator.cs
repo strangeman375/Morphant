@@ -45,7 +45,6 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
 
         MapperDeclarationDiagnosticPipeline.Register(
             context,
-            compilationContext,
             mapperDeclarations,
             contractAnalysisCollection);
         MappingRegistrationDiagnosticPipeline.Register(
@@ -60,7 +59,6 @@ internal sealed class MorphantGenerator : IIncrementalGenerator
             contractAnalysisCollection);
         MappingSettingsDiagnosticPipeline.Register(
             context,
-            compilationContext,
             assemblySettings,
             contractAnalysisCollection);
         PolymorphismDiagnosticPipeline.Register(
