@@ -8,12 +8,13 @@ internal static class BclTuplePlanNaming
 {
     private const string RootNamespace = "Morphant.Generated.Tuples";
 
+    // The root plus two identifiers at this limit stays below C#'s
+    // 1024-character fully-qualified type-name limit.
+    private const int MaxGeneratedIdentifierLength = 480;
+
     public static string BuildNamespace(BclTupleShape shape)
     {
-        return RootNamespace + "." +
-               BuildTupleContractName(
-                   shape,
-                   includePresentation: false);
+        return RootNamespace + "." + BuildNamespaceContractName(shape);
     }
 
     public static string BuildStableIdentity(BclTupleShape shape)
@@ -79,9 +80,7 @@ internal static class BclTuplePlanNaming
 
     public static string BuildHintIdentity(BclTupleShape shape)
     {
-        return BuildTupleContractName(
-                   shape,
-                   includePresentation: false) +
+        return BuildNamespaceContractName(shape) +
                "." +
                BuildPlanTypeName(shape, suffix: string.Empty);
     }
@@ -121,10 +120,27 @@ internal static class BclTuplePlanNaming
         }
 
         var presentation = BuildValueTuplePresentationName(shape);
+        var typeSuffix = suffix.Length == 0
+            ? string.Empty
+            : "_" + suffix;
+        var boundedPresentation = HintNameHelper.LimitWithStableHash(
+            presentation,
+            presentation,
+            MaxGeneratedIdentifierLength - typeSuffix.Length);
 
-        return suffix.Length == 0
-            ? presentation
-            : presentation + "_" + suffix;
+        return boundedPresentation + typeSuffix;
+    }
+
+    private static string BuildNamespaceContractName(BclTupleShape shape)
+    {
+        var contract = BuildTupleContractName(
+            shape,
+            includePresentation: false);
+
+        return HintNameHelper.LimitWithStableHash(
+            contract,
+            contract,
+            MaxGeneratedIdentifierLength);
     }
 
     private static string BuildTupleContractName(

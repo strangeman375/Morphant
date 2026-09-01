@@ -20,7 +20,8 @@ unsupported.
 
 - Give generated tuple templates readable namespaces and type names based on
   tuple kind, logical arity, element types, and element names, with distinct
-  `ValueTupleN` and `SystemTupleN` prefixes and consistent type qualification.
+  `ValueTupleN` and `SystemTupleN` prefixes, consistent type qualification and
+  deterministic bounded fallbacks for compiler and filesystem limits.
 
 ## [0.4.0]
 

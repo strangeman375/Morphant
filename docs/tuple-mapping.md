@@ -133,7 +133,9 @@ every other named type uses `Type_` followed by its fully qualified name. A
 `ValueTuple` template name identifies its element names; a `System.Tuple`
 template uses `TupleConstructorParameters`, `TupleConstruction`, or
 `TupleMembers`. Nested tuple contracts are represented recursively. Prefer IDE
-completion instead of constructing these names by hand.
+completion instead of constructing these names by hand. Exceptionally long
+names are shortened deterministically; suffixes such as `Construction` and
+`Members` remain readable.
 
 ## Update
 

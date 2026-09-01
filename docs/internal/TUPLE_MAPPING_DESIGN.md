@@ -491,8 +491,21 @@ qualified type name; правило не зависит от Roslyn `SpecialType
 Nullable contracts, generic arguments и array shape также входят в type
 contract.
 Long tuple namespace использует logical arity и flat elements, без public
-`Rest` representation. Hint names повторяют readable tuple contract; stable
-suffix добавляется только при реальной case-insensitive collision.
+`Rest` representation.
+
+Обычные readable names не сокращаются. Если namespace contract или plan type
+identifier длиннее 480 UTF-16 code units, generator сохраняет readable prefix,
+добавляет stable 64-bit hash полного имени и оставляет semantic plan suffix
+(`ConstructorParameters`, `Construction` или `Members`) в конце. Два
+ограниченных identifier вместе с `Morphant.Generated.Tuples` дают fully
+qualified type name короче C#-лимита в 1024 символа.
+
+Hint names повторяют readable tuple contract, пока полное имя файла занимает
+не более 220 UTF-8 bytes. При переполнении identity сокращается на границе
+Unicode scalar и получает stable hash полного несокращённого hint name. Запас
+до распространённого 255-byte filesystem component limit оставлен для
+инструментов, которые могут дополнять filename. Case-insensitive collision
+после sanitization по-прежнему получает собственный stable suffix.
 
 Эта схема разделяет plan declarations, но не extension methods: их receiver
 по-прежнему определяется physical pair. Поэтому она не отменяет `MORPH0056`.

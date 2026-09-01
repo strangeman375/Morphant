@@ -47,6 +47,40 @@ internal static class HintNameHelper
                 CultureInfo.InvariantCulture);
         }
     }
+
+    internal static string LimitWithStableHash(
+        string readableName,
+        string stableIdentity,
+        int maxLength)
+    {
+        if (readableName.Length <= maxLength)
+        {
+            return readableName;
+        }
+
+        var hashSuffix = "__" + GetStableHash(stableIdentity);
+
+        if (maxLength <= hashSuffix.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxLength));
+        }
+
+        var prefixLength = maxLength - hashSuffix.Length;
+
+        if (prefixLength > 0 &&
+            prefixLength < readableName.Length &&
+            char.IsHighSurrogate(readableName[prefixLength - 1]) &&
+            char.IsLowSurrogate(readableName[prefixLength]))
+        {
+            prefixLength--;
+        }
+
+        var prefix = readableName
+            .Substring(0, prefixLength)
+            .TrimEnd('_');
+
+        return prefix + hashSuffix;
+    }
 }
 
 internal sealed class HintNamePartAllocator
