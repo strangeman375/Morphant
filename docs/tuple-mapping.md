@@ -154,6 +154,11 @@ destination type.
 
 ## `System.Tuple` and `ITuple`
 
+First-class support includes empty and singleton `ValueTuple` forms and
+standard long `ValueTuple` and `System.Tuple` chains. A non-standard generic
+form whose `TRest` is not another matching BCL tuple is not flattened; Morphant
+maps its declared members like any other type.
+
 `System.Tuple<T...>` has no semantic element names. Its `ItemN` elements can be
 used in explicit `Construct`, `Resolve`, or `Members` rules, and Morphant can
 create the result whenever every required element has a final value. A factory
