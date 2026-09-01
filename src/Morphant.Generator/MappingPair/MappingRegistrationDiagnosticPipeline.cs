@@ -180,14 +180,6 @@ internal static class MappingRegistrationDiagnosticPipeline
             .ToImmutableArray();
     }
 
-    // Tuple aliases are absent from the receiver's CLR identity, so the
-    // pair-scoped DSL cannot represent two presentations. If this diagnostic
-    // proves too restrictive, the agreed extension point is an optional
-    // mapper-scoped builder (working concept: ForMapper(this)) whose receiver
-    // also carries the mapper type. Runtime pair identity and DI lookup must
-    // remain unchanged. A generic-source surface is not a tuple-local
-    // substitute because it becomes destination-wide and complicates source
-    // normalization.
     private static void AddTuplePresentationDiagnostics(
         ImmutableArray<TuplePresentationRegistration> registrations,
         ImmutableArray<DiagnosticCandidate>.Builder candidates,

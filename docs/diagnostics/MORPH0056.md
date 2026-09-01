@@ -14,4 +14,12 @@ Use one consistent set of source and destination tuple element names for that
 mapping pair. If the same underlying pair needs different meanings, introduce
 distinct wrapper types.
 
+## Possible future direction
+
+If this limitation becomes restrictive in practice, Morphant may add an
+opt-in mapper-scoped builder. The working API idea is `.ForMapper(this)`, which
+would let each mapper use its own tuple presentation while leaving runtime
+lookup and DI behavior unchanged. This API is not currently available and is
+not a roadmap commitment.
+
 [All diagnostics](../diagnostics.md)

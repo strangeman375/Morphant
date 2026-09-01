@@ -33,6 +33,9 @@ below, but not every feature expected from a general-purpose mapper.
 - distinguishing missing, null and default values for patch/merge mappings;
 - automatic immutable Update reconstruction;
 - keyed mappings or discriminator-based dispatch;
+- mapper-scoped tuple presentations; registrations for the same underlying
+  mapping pair currently need one consistent set of element names
+  ([`MORPH0056`](diagnostics/MORPH0056.md));
 - preserving shared object references or mapping cycles;
 - cross-assembly configuration inheritance;
 - generated DI registration;
