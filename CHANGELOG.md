@@ -14,17 +14,16 @@ unsupported.
 - Add first-class `ValueTuple` and `System.Tuple` mappings, including named,
   unnamed, long and nullable forms, Create and Update behavior, typed
   composition of multiple inputs and outputs, call-specific state, and a
-  diagnostic for conflicting tuple element names.
+  diagnostic for conflicting tuple presentations.
 - Report unexpected generator exceptions as `MORPH0057` in compiler and IDE
   diagnostics, with a generated failure report containing the full stack
   trace while independent generation continues where possible.
 
 ### Changed
 
-- Give generated tuple templates readable namespaces and type names based on
-  tuple kind, logical arity, element types, and element names, with distinct
-  `ValueTupleN` and `SystemTupleN` prefixes, consistent type qualification and
-  deterministic bounded fallbacks for compiler and filesystem limits.
+- Give generated tuple templates compact identity-based namespaces and the
+  fixed leaf names `TupleConstructorParameters`, `TupleConstruction` and
+  `TupleMembers`.
 
 ### Fixed
 

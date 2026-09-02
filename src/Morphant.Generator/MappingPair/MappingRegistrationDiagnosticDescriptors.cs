@@ -40,7 +40,7 @@ internal static class MappingRegistrationDiagnosticDescriptors
             "MORPH0056",
             "Tuple presentation is conflicting",
             "Mapping '{0}' uses tuple presentation '{1}', which conflicts " +
-            "with the presentation '{2}' of the same physical mapping pair.");
+            "with the presentation '{2}' of the same underlying mapping pair.");
 
     private static DiagnosticDescriptor Create(
         string id,

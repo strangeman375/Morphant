@@ -9,19 +9,19 @@ internal sealed class TupleTests
 {
     private const string OldConstruction =
         "Morphant.Generated.Construction.Tuple_" +
-        "ValueTuple2_Int32_String_Tuple_Id_Name.g.cs";
+        "V2_a51caaf0c27a1203d7dd02a67a0a5455.g.cs";
 
     private const string NewConstruction =
         "Morphant.Generated.Construction.Tuple_" +
-        "ValueTuple2_Int32_String_Tuple_Code_Name.g.cs";
+        "V2_0b27a687eedd668df8361ccda86185ba.g.cs";
 
     private const string OldMember =
         "Morphant.Generated.Member.Tuple_" +
-        "ValueTuple2_Int32_String_Tuple_Id_Name.g.cs";
+        "V2_a51caaf0c27a1203d7dd02a67a0a5455.g.cs";
 
     private const string NewMember =
         "Morphant.Generated.Member.Tuple_" +
-        "ValueTuple2_Int32_String_Tuple_Code_Name.g.cs";
+        "V2_0b27a687eedd668df8361ccda86185ba.g.cs";
 
     private const string TupleMappingExtension =
         "Morphant.Generated.MappingExtension." +
@@ -73,6 +73,14 @@ internal sealed class TupleTests
             StableMemberExtension,
             StableMapper
         };
+        var newHints = stableHints.Concat(new[]
+        {
+            NewConstruction,
+            TupleMappingExtension,
+            NewMember,
+            TupleMemberExtension,
+            TupleMapper
+        }).ToArray();
 
         RunAndAssert(
             LanguageVersion.CSharp9,
@@ -91,14 +99,7 @@ internal sealed class TupleTests
             Step(
                 "tuple element renamed",
                 [models, stable, newTuple],
-                stableHints.Concat(new[]
-                {
-                    NewConstruction,
-                    TupleMappingExtension,
-                    NewMember,
-                    TupleMemberExtension,
-                    TupleMapper
-                }).ToArray(),
+                newHints,
                 Stage(
                     "BuildConstructionPlanRequests",
                     Expected(
@@ -138,7 +139,55 @@ internal sealed class TupleTests
                         IncrementalStepRunReason.Modified),
                     Expected(
                         StableMapper,
-                        IncrementalStepRunReason.Cached))));
+                        IncrementalStepRunReason.Cached))),
+            StepWithRecreatedSyntaxTrees(
+                "same tuple compilation recreated",
+                [models, stable, newTuple],
+                newHints,
+                [
+                    .. EarlyPipeline(
+                        Reason(IncrementalStepRunReason.Cached, 2)),
+                    Stage(
+                        "BuildConstructionPlanRequests",
+                        Expected(
+                            NewConstruction,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableConstruction,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberPlanRequests",
+                        Expected(
+                            NewMember,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableMember,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMappingExtensionRequests",
+                        Expected(
+                            TupleMappingExtension,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableMappingExtension,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildMemberExtensionRequests",
+                        Expected(
+                            TupleMemberExtension,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableMemberExtension,
+                            IncrementalStepRunReason.Cached)),
+                    Stage(
+                        "BuildTypeMapperRequests",
+                        Expected(
+                            TupleMapper,
+                            IncrementalStepRunReason.Cached),
+                        Expected(
+                            StableMapper,
+                            IncrementalStepRunReason.Cached))
+                ]));
     }
 
     private static string BuildTupleMapper(string elementName) =>

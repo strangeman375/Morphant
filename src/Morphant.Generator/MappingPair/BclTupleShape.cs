@@ -16,9 +16,6 @@ internal sealed record BclTupleShape(
     ImmutableArray<BclTupleElement> Elements)
 {
     public bool IsValueTuple => Kind == BclTupleKind.ValueTuple;
-
-    public string PlanIdentity =>
-        BclTupleShapePolicy.BuildPlanIdentity(this);
 }
 
 internal sealed record BclTupleElement(
@@ -58,7 +55,10 @@ internal static class BclTupleShapePolicy
     public static string BuildPresentationKey(ITypeSymbol type)
     {
         var result = new StringBuilder();
-        AppendPresentation(type, result);
+        var typeParameters =
+            new Dictionary<ITypeParameterSymbol, int>(
+                TypeParameterComparer.Instance);
+        AppendPresentation(type, result, typeParameters);
         return result.ToString();
     }
 
@@ -66,8 +66,16 @@ internal static class BclTupleShapePolicy
         ITypeSymbol sourceType,
         ITypeSymbol destinationType)
     {
-        return BuildPresentationKey(sourceType) + "->" +
-               BuildPresentationKey(destinationType);
+        var result = new StringBuilder();
+        var typeParameters =
+            new Dictionary<ITypeParameterSymbol, int>(
+                TypeParameterComparer.Instance);
+
+        AppendPresentation(sourceType, result, typeParameters);
+        result.Append("->");
+        AppendPresentation(destinationType, result, typeParameters);
+
+        return result.ToString();
     }
 
     public static bool ContainsTuplePresentation(ITypeSymbol type)
@@ -117,24 +125,6 @@ internal static class BclTupleShapePolicy
         return TryCreate(tupleType)?.Elements.FirstOrDefault(candidate =>
             AreSameLogicalElement(candidate.Symbol, member) ||
             StringComparer.Ordinal.Equals(candidate.Name, member.Name));
-    }
-
-    internal static string BuildPlanIdentity(BclTupleShape shape)
-    {
-        var result = new StringBuilder();
-        result.Append(shape.Kind == BclTupleKind.ValueTuple ? 'V' : 'T')
-            .Append(shape.Elements.Length)
-            .Append('[');
-
-        foreach (var element in shape.Elements)
-        {
-            AppendLengthPrefixed(
-                result,
-                element.SemanticName ?? string.Empty);
-        }
-
-        result.Append(']');
-        return result.ToString();
     }
 
     private static bool TryCreateValueTuple(
@@ -344,12 +334,28 @@ internal static class BclTupleShapePolicy
 
     private static void AppendPresentation(
         ITypeSymbol type,
-        StringBuilder result)
+        StringBuilder result,
+        Dictionary<ITypeParameterSymbol, int> typeParameters)
     {
+        result.Append(type.NullableAnnotation switch
+        {
+            NullableAnnotation.Annotated => '?',
+            _ => '!'
+        });
+
+        if (type is IDynamicTypeSymbol)
+        {
+            result.Append('D');
+            return;
+        }
+
         if (type is IArrayTypeSymbol arrayType)
         {
             result.Append("A").Append(arrayType.Rank).Append('[');
-            AppendPresentation(arrayType.ElementType, result);
+            AppendPresentation(
+                arrayType.ElementType,
+                result,
+                typeParameters);
             result.Append(']');
             return;
         }
@@ -366,10 +372,25 @@ internal static class BclTupleShapePolicy
                 AppendLengthPrefixed(
                     result,
                     element.SemanticName ?? string.Empty);
-                AppendPresentation(element.Type, result);
+                AppendPresentation(
+                    element.Type,
+                    result,
+                    typeParameters);
             }
 
             result.Append(']');
+            return;
+        }
+
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            if (!typeParameters.TryGetValue(typeParameter, out var ordinal))
+            {
+                ordinal = typeParameters.Count;
+                typeParameters.Add(typeParameter, ordinal);
+            }
+
+            result.Append('P').Append(ordinal).Append(';');
             return;
         }
 
@@ -383,12 +404,18 @@ internal static class BclTupleShapePolicy
 
         if (namedType.ContainingType is { } containingType)
         {
-            AppendPresentation(containingType, result);
+            AppendPresentation(
+                containingType,
+                result,
+                typeParameters);
         }
 
         foreach (var typeArgument in namedType.TypeArguments)
         {
-            AppendPresentation(typeArgument, result);
+            AppendPresentation(
+                typeArgument,
+                result,
+                typeParameters);
         }
 
         result.Append(']');
@@ -507,4 +534,22 @@ internal static class BclTupleShapePolicy
     private readonly record struct TupleElementIdentity(
         string TupleTypeKey,
         int Ordinal);
+
+    private sealed class TypeParameterComparer :
+        IEqualityComparer<ITypeParameterSymbol>
+    {
+        public static TypeParameterComparer Instance { get; } = new();
+
+        public bool Equals(
+            ITypeParameterSymbol? left,
+            ITypeParameterSymbol? right)
+        {
+            return SymbolEqualityComparer.Default.Equals(left, right);
+        }
+
+        public int GetHashCode(ITypeParameterSymbol typeParameter)
+        {
+            return SymbolEqualityComparer.Default.GetHashCode(typeParameter);
+        }
+    }
 }

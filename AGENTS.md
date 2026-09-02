@@ -34,22 +34,15 @@
 - A destination in the global namespace uses `Morphant.Generated`, referenced
   as `global::Morphant.Generated`; never synthesize a `Global` namespace
   segment.
-- BCL tuple plans use
-  `Morphant.Generated.Tuples.<tuple-kind-and-type-contract>`. The namespace
-  starts with `ValueTupleN` or `SystemTupleN` and carries logical arity and
-  recursive type-argument contracts.
-  `ValueTuple` plan type names carry the current tuple level's element names;
-  `System.Tuple` uses the fixed `TupleConstructorParameters`,
-  `TupleConstruction` and `TupleMembers` names. Preserve this separation so
-  tuple implementation identities do not leak into user-facing type names.
-  Omit qualification only for C# predefined scalar types. Prefix every other
-  named type contract with `Type_` and include its complete namespace and
-  containing-type path; do not use Roslyn's broader `SpecialType` category as
-  the shortening rule. Keep each generated tuple namespace or plan-type
-  identifier at most 480 UTF-16 code units. On overflow, retain a readable
-  prefix and stable hash while preserving the plan suffix
-  (`ConstructorParameters`, `Construction`, or `Members`). This keeps the full
-  generated type name below C#'s 1024-character limit.
+- BCL tuple plans use a compact stable namespace of the form
+  `Morphant.Generated.Tuples.V<arity>_<identity>` or
+  `Morphant.Generated.Tuples.S<arity>_<identity>`. The identity covers the
+  physical tuple contract and its complete recursive presentation, including
+  element names, nullable annotations and `dynamic`. The identity must not
+  depend on dependency versions or target-framework facade assemblies. All
+  tuple plan leaf types use the fixed names `TupleConstructorParameters`,
+  `TupleConstruction` and `TupleMembers`; never encode tuple contracts or
+  element names into those identifiers.
 - Generated-name tests must cover the unchanged readable form, deterministic
   overflow fallback, suffix preservation, Unicode UTF-8 accounting and an
   actual filesystem write. Generated-surface snapshots must use complete

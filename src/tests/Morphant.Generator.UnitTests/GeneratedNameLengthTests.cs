@@ -6,6 +6,14 @@ namespace Morphant.Generator.UnitTests;
 internal sealed class GeneratedNameLengthTests
 {
     [Test]
+    public void Creates_a_stable_lowercase_128_bit_identity_hash()
+    {
+        Assert.That(
+            HintNameHelper.GetStableHash128("Morphant tuple identity"),
+            Is.EqualTo("5f7d6028f7cede391ce9731ad53c155e"));
+    }
+
+    [Test]
     public void Bounds_identifiers_and_preserves_complete_unicode_scalars()
     {
         var exactLimit = new string('A', 480);

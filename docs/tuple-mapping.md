@@ -172,14 +172,15 @@ use an explicit expression or `Convert` for indexer access.
 
 ## Presentation conflicts
 
-C# tuple element names do not create different runtime types, but they define
-the names available in Morphant configuration. All registrations with the
-same underlying source and destination types must therefore use the same
-recursive tuple element names. A conflict produces
+C# tuple element names, nullable annotations and `dynamic` do not create
+different runtime types, but they affect the API available in Morphant
+configuration. All registrations with the same underlying source and
+destination types must therefore use the same recursive presentation. A
+conflict produces
 [`MORPH0056`](diagnostics/MORPH0056.md).
 
 Use one consistent presentation, or introduce wrapper types when the same
-underlying pair needs different meanings.
+underlying pair needs different meanings or nullable contracts.
 
 Related: [Conventions](conventions.md),
 [Create and Update](create-and-update.md), and

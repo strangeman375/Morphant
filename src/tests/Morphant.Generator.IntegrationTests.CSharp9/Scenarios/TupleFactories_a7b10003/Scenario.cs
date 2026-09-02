@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using Morphant;
 using Morphant.Context;
 using OuterTupleMembers =
-    Morphant.Generated.Tuples.SystemTuple1_Type_System_Collections_Generic_List1_Int32.TupleMembers;
+    Morphant.Generated.Tuples.S1_c417af7ffe8af4b899b5c5a17adbfba5.TupleMembers;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleFactories_a7b10003
 {

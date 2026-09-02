@@ -34,7 +34,8 @@ below, but not every feature expected from a general-purpose mapper.
 - automatic immutable Update reconstruction;
 - keyed mappings or discriminator-based dispatch;
 - mapper-scoped tuple presentations; registrations for the same underlying
-  mapping pair currently need one consistent set of element names
+  mapping pair currently need one consistent set of element names, nullable
+  annotations and `dynamic`/`object` choices
   ([`MORPH0056`](diagnostics/MORPH0056.md));
 - preserving shared object references or mapping cycles;
 - cross-assembly configuration inheritance;
