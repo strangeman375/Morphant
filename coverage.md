@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/01/2026 - 16:02:37 |
-| Coverage date: | 09/01/2026 - 16:00:46 - 09/01/2026 - 16:02:31 |
+| Generated on: | 09/02/2026 - 06:18:27 |
+| Coverage date: | 09/02/2026 - 06:16:48 - 09/02/2026 - 06:18:22 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 357 |
 | Files: | 184 |
-| **Line coverage:** | 86.6% (35561 of 41042) |
-| Covered lines: | 35561 |
-| Uncovered lines: | 5481 |
-| Coverable lines: | 41042 |
-| Total lines: | 68377 |
-| **Branch coverage:** | 76.8% (11815 of 15376) |
-| Covered branches: | 11815 |
-| Total branches: | 15376 |
+| **Line coverage:** | 86.6% (35472 of 40951) |
+| Covered lines: | 35472 |
+| Uncovered lines: | 5479 |
+| Coverable lines: | 40951 |
+| Total lines: | 68214 |
+| **Branch coverage:** | 76.7% (11771 of 15332) |
+| Covered branches: | 11771 |
+| Total branches: | 15332 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -65,11 +65,11 @@
 |Morphant.Build.Tasks.SnapshotException|100%||
 
 </details>
-<details><summary>Morphant.Generator - 86.6%</summary>
+<details><summary>Morphant.Generator - 86.5%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**86.6%**|**76.9%**|
+|**Morphant.Generator**|**86.5%**|**76.8%**|
 |Morphant.Generator.CodeWriter|100%|100%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -77,7 +77,7 @@
 |Morphant.Generator.Compatibility.RuntimeContractCompatibility|100%||
 |Morphant.Generator.Compatibility.RuntimeContractManifest|99.7%|66.3%|
 |Morphant.Generator.ConstructionSurface.BclTuplePlanModelBuilder|100%|90%|
-|Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|89.1%|83.8%|
+|Morphant.Generator.ConstructionSurface.BclTuplePlanNaming|76.9%|28.5%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterFieldModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterModel|100%||
@@ -103,7 +103,7 @@
 |Morphant.Generator.GeneratedPlanNaming|100%|90%|
 |Morphant.Generator.GeneratedSourceHintName|100%|94.4%|
 |Morphant.Generator.GeneratorStageGuard|99.1%|84%|
-|Morphant.Generator.HintNameHelper|96.6%|94.4%|
+|Morphant.Generator.HintNameHelper|97.4%|95%|
 |Morphant.Generator.HintNamePartAllocator|61.9%|75%|
 |Morphant.Generator.Incrementality.DestinationPlanCandidate|100%||
 |Morphant.Generator.Incrementality.DestinationPlanCoordination|100%|50%|
@@ -138,10 +138,10 @@
 |Morphant.Generator.MapperTypeSubstitution|92.5%|85.2%|
 |Morphant.Generator.MappingPair.BclTupleElement|100%|100%|
 |Morphant.Generator.MappingPair.BclTupleShape|100%||
-|Morphant.Generator.MappingPair.BclTupleShapePolicy|85.1%|75.7%|
+|Morphant.Generator.MappingPair.BclTupleShapePolicy|83.7%|75.3%|
 |Morphant.Generator.MappingPair.CanonicalMappingPairCandidate|100%||
 |Morphant.Generator.MappingPair.CanonicalMappingPairPipeline|93.6%|88.8%|
-|Morphant.Generator.MappingPair.CanonicalMappingPairSelector|96.3%|88.8%|
+|Morphant.Generator.MappingPair.CanonicalMappingPairSelector|97.5%|91.6%|
 |Morphant.Generator.MappingPair.DestinationCapabilityPolicy|98.2%|89.6%|
 |Morphant.Generator.MappingPair.DestinationMemberPolicy|100%|99.1%|
 |Morphant.Generator.MappingPair.DuplicateMappingPairRegistrationModel|100%||
@@ -403,4 +403,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #85](https://github.com/strangeman375/Morphant/actions/runs/33528958940).
+Full HTML report: download the **coverage** artifact from [CI run #89](https://github.com/strangeman375/Morphant/actions/runs/33597974125).
