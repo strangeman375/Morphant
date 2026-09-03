@@ -34,7 +34,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StandaloneDispat
         public ChildDestination Child { get; }
     }
 
-    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    [MorphantMapper]
+    public abstract partial class BaseMapper<TMapper> : TypeMapper<TMapper>
         where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
