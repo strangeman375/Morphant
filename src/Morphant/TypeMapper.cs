@@ -76,10 +76,33 @@ public interface ITypeMapper<in TSource, TDestination>
 }
 
 /// <summary>
+/// Runtime metadata implemented by generated mapper declarations.
+/// </summary>
+/// <remarks>
+/// This contract supports Morphant runtime dispatch and is not a
+/// configuration entry point.
+/// </remarks>
+[global::System.ComponentModel.EditorBrowsable(
+    global::System.ComponentModel.EditorBrowsableState.Never)]
+public interface IMapperDeclaration
+{
+    /// <summary>
+    /// Checks whether the mapper declares an exact mapping pair.
+    /// </summary>
+    bool Supports(
+        global::System.Type sourceType,
+        global::System.Type destinationType);
+}
+
+/// <summary>
 /// Base class for compile-time mapper declarations.
 /// </summary>
+/// <typeparam name="TMapper">
+/// The concrete mapper at the end of the configuration hierarchy.
+/// </typeparam>
 [ExcludeFromCodeCoverage]
-public abstract class TypeMapper
+public abstract class TypeMapper<TMapper> : IMapperDeclaration
+    where TMapper : TypeMapper<TMapper>
 {
     /// <summary>
     /// Checks whether this mapper declares an exact mapping pair.
@@ -95,6 +118,11 @@ public abstract class TypeMapper
         global::System.Type sourceType,
         global::System.Type destinationType) =>
         false;
+
+    bool IMapperDeclaration.Supports(
+        global::System.Type sourceType,
+        global::System.Type destinationType) =>
+        Supports(sourceType, destinationType);
 
     /// <summary>
     /// Declares mappings for this mapper.
@@ -222,4 +250,49 @@ public abstract class TypeMapper
         object? source,
         object? destination) =>
         throw new RuntimeInvocationNotSupportedException();
+
+    /// <summary>
+    /// Configures mappings declared by this mapper.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    protected sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
+    {
+        private MapperBuilder()
+        {
+        }
+
+        /// <summary>
+        /// Configures the default operations for this mapper.
+        /// </summary>
+        /// <param name="mappingMode">
+        /// The compile-time constant operations to generate.
+        /// <see cref="Morphant.MappingMode.Default"/> inherits the setting;
+        /// the fallback is
+        /// <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
+        /// </param>
+        /// <returns>This builder.</returns>
+        public MapperBuilder MappingMode(MappingMode mappingMode) =>
+            throw new RuntimeInvocationNotSupportedException();
+
+        /// <summary>
+        /// Registers a mapping from <typeparamref name="TSource"/> to
+        /// <typeparamref name="TDestination"/> in this mapper scope.
+        /// </summary>
+        /// <typeparam name="TSource">The source type.</typeparam>
+        /// <typeparam name="TDestination">The destination type.</typeparam>
+        /// <param name="mappingMode">
+        /// The compile-time constant operations to generate.
+        /// <see cref="Morphant.MappingMode.Default"/> continues through
+        /// normal setting precedence; the fallback is
+        /// <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
+        /// </param>
+        /// <returns>The builder for the registered mapping.</returns>
+        public global::Morphant.MappingBuilder<
+            TMapper,
+            TSource,
+            TDestination> Map<TSource, TDestination>(
+                MappingMode mappingMode =
+                    Morphant.MappingMode.Default) =>
+            throw new RuntimeInvocationNotSupportedException();
+    }
 }
