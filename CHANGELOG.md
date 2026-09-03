@@ -18,23 +18,18 @@ unsupported.
 - Report unexpected generator exceptions as `MORPH0057` in compiler and IDE
   diagnostics, with a generated failure report containing the full stack
   trace while independent generation continues where possible.
-- Generate stable shared, mapper-scoped, and mapper-family-scoped fluent
-  surfaces so unrelated mappers can use different erased C# presentations of
-  one CLR mapping pair.
 - Report an invalid mapper self type as `MORPH0058` and an inaccessible mapper
   declaration as `MORPH0059`.
 
 ### Changed
 
-- Give generated tuple templates compact identity-based namespaces and the
-  fixed leaf names `TupleConstructorParameters`, `TupleConstruction` and
-  `TupleMembers`.
 - Replace the non-generic `TypeMapper` and two-argument mapping builder with
   the self-typed `TypeMapper<TMapper>` and
   `MappingBuilder<TMapper, TSource, TDestination>` API.
-- Scope conflicting tuple presentations to one effective mapper. Unrelated
-  mapper families may now use different tuple names, nullable annotations, or
-  `dynamic`/`object` presentations for the same physical CLR pair.
+- Isolate generated fluent configuration by mapper family when tuple names,
+  nullable annotations, `dynamic`, or type parameters require it. Unrelated
+  mapper families may use different presentations of the same physical CLR
+  pair without changing one another's generated API.
 
 ### Fixed
 
@@ -43,6 +38,8 @@ unsupported.
   Roslyn hosts to filter a cached diagnostic whose source tree was replaced,
   so live generated documents remain available after solution and editor
   updates.
+- Reject loosely constrained reusable mapper bases with `MORPH0058` before
+  their mapper-family configuration methods can leak into unrelated scopes.
 
 ## [0.4.0]
 

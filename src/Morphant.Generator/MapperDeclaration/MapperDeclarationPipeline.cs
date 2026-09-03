@@ -216,26 +216,22 @@ internal static class MapperDeclarationPipeline
             mapperType,
             knownSymbols.TypeMapper);
         var derivesFromTypeMapper = typeMapperBase is not null;
-        var mapperSelfType = typeMapperBase?.TypeArguments[0];
-        var invalidSelfTypeLocation =
-            mapperSelfType is not null &&
-            !IsValidMapperSelfType(mapperType, mapperSelfType)
-                ? FindTypeMapperArgumentLocation(
-                      mapperType,
-                      knownSymbols.TypeMapper,
-                      syntaxTrees,
-                      compilation,
-                      cancellationToken) ??
-                  input.AttributedDeclaration.Identifier.GetLocation()
-                : null;
+        var invalidSelfTypeIssue = derivesFromTypeMapper
+            ? FindInvalidSelfTypeIssue(
+                mapperType,
+                knownSymbols.TypeMapper,
+                syntaxTrees,
+                compilation,
+                input.AttributedDeclaration.Identifier.GetLocation(),
+                cancellationToken)
+            : null;
 
         return new MapperDeclarationInfo(
             input.AttributedDeclaration,
             input.Attribute,
             mapperType,
             derivesFromTypeMapper,
-            mapperSelfType,
-            invalidSelfTypeLocation,
+            invalidSelfTypeIssue,
             !derivesFromTypeMapper && HasMalformedBaseDeclaration(
                 mapperDeclarations,
                 compilation,
@@ -252,6 +248,71 @@ internal static class MapperDeclarationPipeline
                 syntaxTrees,
                 cancellationToken),
             compilation);
+    }
+
+    private static MapperSelfTypeIssue? FindInvalidSelfTypeIssue(
+        INamedTypeSymbol mapperType,
+        INamedTypeSymbol typeMapper,
+        SyntaxTreeOrdering syntaxTrees,
+        CSharpCompilation compilation,
+        Location fallbackLocation,
+        CancellationToken cancellationToken)
+    {
+        var seenTypes = new HashSet<ISymbol>(
+            SymbolEqualityComparer.Default);
+
+        for (var current = mapperType;
+             current is not null;
+             current = current.BaseType)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var configurationType = current.OriginalDefinition;
+
+            if (!seenTypes.Add(configurationType) ||
+                SymbolEqualityComparer.Default.Equals(
+                    configurationType,
+                    typeMapper.OriginalDefinition))
+            {
+                continue;
+            }
+
+            var configurationTypeMapper = FindBaseType(
+                configurationType,
+                typeMapper);
+
+            if (configurationTypeMapper is null)
+            {
+                continue;
+            }
+
+            var selfType = configurationTypeMapper.TypeArguments[0];
+            var isEffectiveMapper = SymbolEqualityComparer.Default.Equals(
+                current,
+                mapperType);
+            var requiresRecursiveConstraint =
+                isEffectiveMapper || selfType is ITypeParameterSymbol;
+
+            if (!requiresRecursiveConstraint ||
+                IsValidMapperSelfType(configurationType, selfType))
+            {
+                continue;
+            }
+
+            return new MapperSelfTypeIssue(
+                configurationType,
+                selfType,
+                FindMapperSelfTypeLocation(
+                    configurationType,
+                    selfType,
+                    typeMapper,
+                    syntaxTrees,
+                    compilation,
+                    cancellationToken) ??
+                fallbackLocation);
+        }
+
+        return null;
     }
 
     private static bool IsValidMapperSelfType(
@@ -372,6 +433,40 @@ internal static class MapperDeclarationPipeline
         }
 
         return null;
+    }
+
+    private static Location? FindMapperSelfTypeLocation(
+        INamedTypeSymbol mapperType,
+        ITypeSymbol mapperSelfType,
+        INamedTypeSymbol typeMapper,
+        SyntaxTreeOrdering syntaxTrees,
+        CSharpCompilation compilation,
+        CancellationToken cancellationToken)
+    {
+        if (mapperSelfType is ITypeParameterSymbol typeParameter &&
+            SymbolEqualityComparer.Default.Equals(
+                typeParameter.ContainingSymbol,
+                mapperType))
+        {
+            return typeParameter.DeclaringSyntaxReferences
+                .Where(reference => syntaxTrees.Contains(
+                    reference.SyntaxTree))
+                .Select(reference => reference.GetSyntax(
+                    cancellationToken))
+                .OfType<TypeParameterSyntax>()
+                .OrderBy(syntax => syntaxTrees.GetOrder(
+                    syntax.SyntaxTree))
+                .ThenBy(static syntax => syntax.SpanStart)
+                .Select(static syntax => syntax.Identifier.GetLocation())
+                .FirstOrDefault();
+        }
+
+        return FindTypeMapperArgumentLocation(
+            mapperType,
+            typeMapper,
+            syntaxTrees,
+            compilation,
+            cancellationToken);
     }
 
     private static bool HasMalformedBaseDeclaration(

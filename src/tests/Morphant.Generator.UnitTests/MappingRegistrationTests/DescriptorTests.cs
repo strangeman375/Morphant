@@ -35,6 +35,14 @@ internal sealed class DescriptorTests
             "Mappings may become identical",
             "Mappings '{0}' and '{1}' may become identical for some generic " +
             "type arguments in mapper '{2}'.");
+        yield return Case(
+            MappingRegistrationDiagnosticDescriptors
+                .ConflictingTuplePresentation,
+            "MORPH0056",
+            "Tuple presentation is conflicting",
+            "Mapping '{0}' uses tuple presentation '{1}', which conflicts " +
+            "with the presentation '{2}' of the same underlying mapping " +
+            "pair.");
     }
 
     [TestCaseSource(nameof(Descriptors))]

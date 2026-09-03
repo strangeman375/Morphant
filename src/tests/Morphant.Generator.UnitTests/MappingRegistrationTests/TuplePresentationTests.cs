@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis;
+
 namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 
 [TestFixture]
@@ -279,8 +281,8 @@ public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
-        builder.Map<(int X, int Y), (int Left, int Top)>();
-        builder.Map<(int A, int B), (int Width, int Height)>();
+        builder.Map<(int X, int Y), int>().Convert(_ => 1);
+        builder.Map<(int A, int B), int>().Convert(_ => 2);
     }
 }
 """;
@@ -293,6 +295,60 @@ public partial class TestMapper : TypeMapper<TestMapper>
                     "MORPH0013" or "MORPH0056")
                 .Select(static diagnostic => diagnostic.Id),
             Is.EqualTo(new[] { "MORPH0056" }));
+    }
+
+    [Test]
+    public void MORPH0056_honors_suppression_and_severity_without_changing_authority()
+    {
+        // lang=c#
+        const string source =
+"""
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase;
+
+[MorphantMapper]
+public partial class TestMapper : TypeMapper<TestMapper>
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        builder.Map<(int X, int Y), int>().Convert(_ => 1);
+        builder.Map<(int A, int B), int>().Convert(_ => 2);
+    }
+}
+""";
+
+        var suppressed = MappingRegistrationGeneratorTest.Run(
+            source,
+            diagnosticOptions: new Dictionary<string, ReportDiagnostic>
+            {
+                ["MORPH0056"] = ReportDiagnostic.Suppress
+            });
+        var warning = MappingRegistrationGeneratorTest.Run(
+            source,
+            diagnosticOptions: new Dictionary<string, ReportDiagnostic>
+            {
+                ["MORPH0056"] = ReportDiagnostic.Warn
+            });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(suppressed.EffectiveDiagnostics, Is.Empty);
+            Assert.That(suppressed.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(
+                warning.EffectiveDiagnostics.Single().Severity,
+                Is.EqualTo(DiagnosticSeverity.Warning));
+            Assert.That(warning.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(
+                warning.GeneratedSources.Select(static generated =>
+                    (generated.HintName, generated.SourceText.ToString())),
+                Is.EqualTo(
+                    suppressed.GeneratedSources.Select(static generated =>
+                        (generated.HintName,
+                            generated.SourceText.ToString()))));
+        });
     }
 
     [Test]

@@ -39,9 +39,11 @@ If `base.Configure(builder)` is not called, base configuration is not
 included.
 
 The recursive constraint on `TMapper` is required. It identifies one mapper
-family so inherited generated fluent methods keep the final mapper scope. A
-concrete mapper must close that family with itself; an unrelated self type
-produces [`MORPH0058`](diagnostics/MORPH0058.md).
+family so inherited generated fluent methods keep the final mapper scope.
+Every reusable generic layer that carries the self type must constrain it back
+to that layer, rather than only to `TypeMapper<TMapper>` or an earlier base. A
+concrete mapper must close that family with itself; an invalid layer or
+unrelated self type produces [`MORPH0058`](diagnostics/MORPH0058.md).
 
 ## Include mapping rules
 

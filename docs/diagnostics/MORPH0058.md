@@ -2,8 +2,8 @@
 
 ## Cause
 
-An attributed mapper closes `TypeMapper<TMapper>` with a type that does not
-represent that mapper's configuration family.
+A mapper or reusable configuration base closes `TypeMapper<TMapper>` with a
+type that does not represent that mapper's configuration family.
 
 For a concrete mapper, `TMapper` must be the mapper itself. A reusable generic
 base may use a CRTP self type only when that type parameter is constrained back
@@ -16,8 +16,10 @@ public partial class OrderMapper : TypeMapper<CustomerMapper>
 }
 ```
 
-Using an unrelated self type would make generated fluent methods belong to the
-wrong mapper scope, so Morphant does not generate the mapper.
+Using an unrelated self type, or constraining a reusable base only to
+`TypeMapper<TMapper>`, would make generated fluent methods belong to the wrong
+mapper scope. Morphant therefore validates every configuration class in the
+inheritance chain and does not generate the affected mapper.
 
 ## Fix
 
@@ -33,7 +35,7 @@ public partial class OrderMapper : TypeMapper<OrderMapper>
 For reusable configuration, use a correctly constrained CRTP base:
 
 ```csharp
-public abstract partial class CommonMapper<TMapper> : TypeMapper<TMapper>
+public abstract class CommonMapper<TMapper> : TypeMapper<TMapper>
     where TMapper : CommonMapper<TMapper>
 {
 }

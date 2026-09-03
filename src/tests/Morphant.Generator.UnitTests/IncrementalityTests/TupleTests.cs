@@ -56,6 +56,22 @@ internal sealed class TupleTests
     private const string StableMapper =
         "Morphant.Generated.TypeMapper.TestCase_StableMapper.g.cs";
 
+    private const string FirstScopedMappingExtension =
+        "Morphant.Generated.MappingExtension." +
+        "System_ValueTuple_System_Int32__System_Int32___System_Int32__" +
+        "TestCase_FirstMapper.g.cs";
+
+    private const string SecondScopedMappingExtension =
+        "Morphant.Generated.MappingExtension." +
+        "System_ValueTuple_System_Int32__System_Int32___System_Int32__" +
+        "TestCase_SecondMapper.g.cs";
+
+    private const string FirstScopedMapper =
+        "Morphant.Generated.TypeMapper.TestCase_FirstMapper.g.cs";
+
+    private const string SecondScopedMapper =
+        "Morphant.Generated.TypeMapper.TestCase_SecondMapper.g.cs";
+
     [Test]
     public void Renaming_a_tuple_element_invalidates_only_affected_outputs()
     {
@@ -192,6 +208,71 @@ internal sealed class TupleTests
                 ]));
     }
 
+    [Test]
+    public void Adding_an_unrelated_tuple_presentation_keeps_existing_scope_cached()
+    {
+        var first = SourceFile("FirstMapper.cs", FirstScopedMapperSource);
+        var second = SourceFile("SecondMapper.cs", SecondScopedMapperSource);
+        var firstHints = new[]
+        {
+            FirstScopedMappingExtension,
+            FirstScopedMapper
+        };
+        var bothHints = firstHints.Concat(new[]
+        {
+            SecondScopedMappingExtension,
+            SecondScopedMapper
+        }).ToArray();
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step(
+                "first tuple scope",
+                [first],
+                firstHints),
+            Step(
+                "unrelated tuple presentation added",
+                [first, second],
+                bothHints,
+                Stage(
+                    "BuildMappingExtensionRequests",
+                    Expected(
+                        FirstScopedMappingExtension,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        SecondScopedMappingExtension,
+                        IncrementalStepRunReason.New)),
+                Stage(
+                    "BuildTypeMapperRequests",
+                    Expected(
+                        FirstScopedMapper,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        SecondScopedMapper,
+                        IncrementalStepRunReason.New))),
+            Step(
+                "unrelated tuple presentation removed",
+                [first],
+                firstHints,
+                Stage(
+                    "BuildMappingExtensionRequests",
+                    Expected(
+                        FirstScopedMappingExtension,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        SecondScopedMappingExtension,
+                        IncrementalStepRunReason.Removed)),
+                Stage(
+                    "BuildTypeMapperRequests",
+                    Expected(
+                        FirstScopedMapper,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        SecondScopedMapper,
+                        IncrementalStepRunReason.Removed))));
+    }
+
     private static string BuildTupleMapper(string elementName) =>
         TupleMapperSource.Replace("__ELEMENT__", elementName);
 
@@ -258,6 +339,46 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<StableSource, StableDestination>();
+    }
+}
+""";
+
+    // lang=c#
+    private const string FirstScopedMapperSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class FirstMapper : TypeMapper<FirstMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<(int X, int Y), int>()
+                .Convert(source => source.X + source.Y);
+    }
+}
+""";
+
+    // lang=c#
+    private const string SecondScopedMapperSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class SecondMapper : TypeMapper<SecondMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<(int A, int B), int>()
+                .Convert(source => source.A * source.B);
     }
 }
 """;

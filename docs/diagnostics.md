@@ -68,7 +68,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0055](diagnostics/MORPH0055.md) | Polymorphism | Error | A branch type is inaccessible to generated code. |
 | [MORPH0056](diagnostics/MORPH0056.md) | Registration | Error | The same underlying mapping pair is registered with conflicting tuple presentations. |
 | [MORPH0057](diagnostics/MORPH0057.md) | Generator | Error | Morphant caught an unexpected internal generator exception. |
-| [MORPH0058](diagnostics/MORPH0058.md) | Declaration | Error | A mapper closes `TypeMapper<TMapper>` with an invalid self type. |
+| [MORPH0058](diagnostics/MORPH0058.md) | Declaration | Error | A mapper or reusable configuration base has an invalid self type. |
 | [MORPH0059](diagnostics/MORPH0059.md) | Declaration | Error | A mapper or containing type is inaccessible to generated namespace-level code. |
 
 ## Configure severity

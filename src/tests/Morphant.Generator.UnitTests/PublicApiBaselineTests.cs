@@ -79,6 +79,9 @@ internal sealed class PublicApiBaselineTests
         var mapMethod = mapperBuilderType
             .GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Single(method => method.Name == "Map");
+        var configureMethod = typeMapperType.GetMethod(
+            "Configure",
+            BindingFlags.NonPublic | BindingFlags.Instance)!;
         var supportsMethod = typeMapperType.GetMethod(
             "Supports",
             BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -152,6 +155,12 @@ internal sealed class PublicApiBaselineTests
             Assert.That(
                 mapMethod.GetParameters().Single().DefaultValue,
                 Is.EqualTo(MappingMode.Default));
+            Assert.That(configureMethod.IsFamily, Is.True);
+            Assert.That(configureMethod.IsAbstract, Is.True);
+            Assert.That(
+                configureMethod.GetParameters().Single().ParameterType
+                    .GetGenericTypeDefinition(),
+                Is.EqualTo(mapperBuilderType.GetGenericTypeDefinition()));
             Assert.That(supportsMethod.IsPublic, Is.False);
             Assert.That(supportsMethod.IsFamilyOrAssembly, Is.True);
             Assert.That(supportsMethod.IsVirtual, Is.True);
@@ -441,7 +450,7 @@ T Morphant.TypeMapper<TMapper>
   M Morphant.Markers.MapMarker<T> Update<T>(System.Object, System.Object)
   M Morphant.Markers.ValueMarker<T> Value<T>(T)
   M System.Boolean Supports(System.Type, System.Type)
-  M System.Void Configure(Morphant.TypeMapper<TMapper>)
+  M System.Void Configure(Morphant.TypeMapper<TMapper>.MapperBuilder)
 T Morphant.UnknownDerivedTypeHandling
   V Default, UseBaseMapping, Throw
 T Morphant.UnmappedMemberValidation
@@ -615,6 +624,31 @@ T Morphant.UnmappedMemberValidation
         if (type.IsGenericParameter)
         {
             return type.Name;
+        }
+
+        if (type.IsNested)
+        {
+            var declaringType = type.DeclaringType!;
+            var declaringArgumentCount = declaringType.IsGenericType
+                ? declaringType.GetGenericArguments().Length
+                : 0;
+            var ownArguments = type.IsGenericType
+                ? type.GetGenericArguments().Skip(
+                    declaringArgumentCount).ToArray()
+                : [];
+            var nestedName = type.Name;
+            var aritySeparator = nestedName.IndexOf((char)96);
+
+            if (aritySeparator >= 0)
+            {
+                nestedName = nestedName[..aritySeparator];
+            }
+
+            return FormatType(declaringType) + "." + nestedName +
+                   (ownArguments.Length == 0
+                       ? string.Empty
+                       : "<" + string.Join(", ",
+                           ownArguments.Select(FormatType)) + ">");
         }
 
         if (!type.IsGenericType)

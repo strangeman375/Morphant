@@ -57,6 +57,8 @@ internal static class MapperDeclarationDiagnosticPipeline
             ImmutableArray.CreateBuilder<OrderedDiagnostic>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
+        var seenInvalidSelfTypeOwners = new HashSet<ISymbol>(
+            SymbolEqualityComparer.Default);
         var seenPartialContainers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
         var seenFileLocalTypes = new HashSet<ISymbol>(
@@ -90,15 +92,21 @@ internal static class MapperDeclarationDiagnosticPipeline
                 continue;
             }
 
-            if (declaration.HasInvalidSelfTypeDiagnostic)
+            if (declaration.InvalidSelfTypeIssue is { } selfTypeIssue)
             {
-                invalidSelfTypes.Add(CreateOrderedDiagnostic(
-                    Diagnostic.Create(
-                        MapperDeclarationDiagnosticDescriptors.InvalidSelfType,
-                        declaration.InvalidSelfTypeLocation,
-                        declaration.MapperDisplayName,
-                        declaration.MapperSelfTypeDisplayName),
-                    declaration));
+                if (seenInvalidSelfTypeOwners.Add(
+                        selfTypeIssue.MapperType))
+                {
+                    invalidSelfTypes.Add(CreateOrderedDiagnostic(
+                        Diagnostic.Create(
+                            MapperDeclarationDiagnosticDescriptors
+                                .InvalidSelfType,
+                            selfTypeIssue.Location,
+                            selfTypeIssue.MapperDisplayName,
+                            selfTypeIssue.SelfTypeDisplayName),
+                        declaration));
+                }
+
                 continue;
             }
 

@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Morphant.Generator.UnitTests.GeneratorFailureDiagnosticsTests;
@@ -526,11 +527,53 @@ CommentTerminatorException: before * / after
         });
     }
 
+    [Test]
+    public void Diagnostic_options_change_only_the_failure_presentation()
+    {
+        var suppressed = Run(
+            BrokenSource,
+            new TransformFailureGenerator(),
+            diagnosticOptions: new Dictionary<string, ReportDiagnostic>
+            {
+                ["MORPH0057"] = ReportDiagnostic.Suppress
+            });
+        var warning = Run(
+            BrokenSource,
+            new TransformFailureGenerator(),
+            diagnosticOptions: new Dictionary<string, ReportDiagnostic>
+            {
+                ["MORPH0057"] = ReportDiagnostic.Warn
+            });
+
+        var suppressedDiagnostics =
+            CompilationWithAnalyzers.GetEffectiveDiagnostics(
+                suppressed.Result.Diagnostics,
+                suppressed.OutputCompilation);
+        var warningDiagnostic =
+            CompilationWithAnalyzers.GetEffectiveDiagnostics(
+                    warning.Result.Diagnostics,
+                    warning.OutputCompilation)
+                .Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(suppressedDiagnostics, Is.Empty);
+            Assert.That(
+                warningDiagnostic.Severity,
+                Is.EqualTo(DiagnosticSeverity.Warning));
+            Assert.That(
+                SnapshotSources(suppressed.Result),
+                Is.EqualTo(SnapshotSources(warning.Result)));
+        });
+    }
+
     private static TestRun Run(
         string source,
         IIncrementalGenerator generator,
         GeneratorDriver? driver = null,
-        string sourcePath = "TestCase.cs")
+        string sourcePath = "TestCase.cs",
+        IReadOnlyDictionary<string, ReportDiagnostic>? diagnosticOptions =
+            null)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp9);
         var syntaxTree = CSharpSyntaxTree.ParseText(
@@ -543,7 +586,11 @@ CommentTerminatorException: before * / after
             FrameworkReferences,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
-                nullableContextOptions: NullableContextOptions.Enable));
+                nullableContextOptions: NullableContextOptions.Enable,
+                specificDiagnosticOptions: diagnosticOptions is null
+                    ? null
+                    : diagnosticOptions.ToImmutableDictionary(
+                        StringComparer.Ordinal)));
         driver ??= CSharpGeneratorDriver.Create(
             [generator.AsSourceGenerator()],
             parseOptions: parseOptions);
@@ -563,7 +610,11 @@ CommentTerminatorException: before * / after
                 diagnostic.Severity is
                     DiagnosticSeverity.Warning or DiagnosticSeverity.Error));
 
-        return new TestRun(driver, result, syntaxTree);
+        return new TestRun(
+            driver,
+            result,
+            syntaxTree,
+            outputCompilation);
     }
 
     private static void AssertFatalFailure(Exception exception)
@@ -845,7 +896,8 @@ CommentTerminatorException: before * / after
     private readonly record struct TestRun(
         GeneratorDriver Driver,
         GeneratorRunResult Result,
-        SyntaxTree InputTree);
+        SyntaxTree InputTree,
+        Compilation OutputCompilation);
 
     private readonly record struct GeneratedSource(
         string HintName,

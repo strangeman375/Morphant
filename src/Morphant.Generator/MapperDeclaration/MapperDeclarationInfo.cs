@@ -10,8 +10,7 @@ internal sealed record MapperDeclarationInfo(
     AttributeSyntax Attribute,
     INamedTypeSymbol MapperType,
     bool DerivesFromTypeMapper,
-    ITypeSymbol? MapperSelfType,
-    Location? InvalidSelfTypeLocation,
+    MapperSelfTypeIssue? InvalidSelfTypeIssue,
     bool HasMalformedBaseDeclaration,
     ClassDeclarationSyntax? MapperPartialIssue,
     bool AllMapperDeclarationsPartial,
@@ -26,7 +25,7 @@ internal sealed record MapperDeclarationInfo(
         !DerivesFromTypeMapper && !HasMalformedBaseDeclaration;
 
     public bool HasInvalidSelfTypeDiagnostic =>
-        InvalidSelfTypeLocation is not null;
+        InvalidSelfTypeIssue is not null;
 
     public bool CanGenerateExecutableArtifact =>
         DerivesFromTypeMapper &&
@@ -42,11 +41,18 @@ internal sealed record MapperDeclarationInfo(
 
     public string MapperIdentity =>
         SymbolNameHelper.GetFullMetadataName(MapperType);
+}
 
-    public string MapperSelfTypeDisplayName =>
-        MapperSelfType is null
-            ? string.Empty
-            : MapperContractDisplay.CreateType(MapperSelfType);
+internal readonly record struct MapperSelfTypeIssue(
+    INamedTypeSymbol MapperType,
+    ITypeSymbol SelfType,
+    Location Location)
+{
+    public string MapperDisplayName =>
+        MapperContractDisplay.CreateType(MapperType);
+
+    public string SelfTypeDisplayName =>
+        MapperContractDisplay.CreateType(SelfType);
 }
 
 internal readonly record struct MapperContainingTypeIssue(
