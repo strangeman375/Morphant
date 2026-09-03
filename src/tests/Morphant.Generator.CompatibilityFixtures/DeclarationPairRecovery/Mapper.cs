@@ -18,7 +18,7 @@ public sealed class IndependentDestination
 
 [MorphantMapper]
 public partial class RecoveryMapper :
-    TypeMapper,
+    TypeMapper<RecoveryMapper>,
     ITypeMapper<Source, ConflictDestination>
 {
     protected override void Configure(MapperBuilder builder)

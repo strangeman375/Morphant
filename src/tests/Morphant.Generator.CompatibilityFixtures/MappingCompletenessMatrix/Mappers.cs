@@ -161,7 +161,8 @@ namespace MappingCompletenessMatrix
         }
     }
 
-    public abstract class IncludedBaseMapper : TypeMapper<IncludedBaseMapper>
+    public abstract class IncludedBaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : IncludedBaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<IncludedSource, IncludedDestination>()
@@ -175,7 +176,7 @@ namespace MappingCompletenessMatrix
     }
 
     [MorphantMapper]
-    public partial class IncludedMapper : IncludedBaseMapper
+    public partial class IncludedMapper : IncludedBaseMapper<IncludedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -188,7 +189,8 @@ namespace MappingCompletenessMatrix
         }
     }
 
-    public abstract class ConnectedBaseMapper : TypeMapper<ConnectedBaseMapper>
+    public abstract class ConnectedBaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : ConnectedBaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.UnmappedMemberValidation(
@@ -196,7 +198,7 @@ namespace MappingCompletenessMatrix
     }
 
     [MorphantMapper]
-    public partial class ConnectedMapper : ConnectedBaseMapper
+    public partial class ConnectedMapper : ConnectedBaseMapper<ConnectedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

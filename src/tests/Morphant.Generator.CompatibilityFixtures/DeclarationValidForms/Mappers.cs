@@ -74,9 +74,10 @@ public partial class MapperContainer
     }
 }
 
-public abstract class ContractBaseMapper :
-    TypeMapper<ContractBaseMapper>,
+public abstract class ContractBaseMapper<TMapper> :
+    TypeMapper<TMapper>,
     ITypeMapper<Source, InheritedDestination>
+    where TMapper : ContractBaseMapper<TMapper>
 {
     public InheritedDestination Create(
         Source? source,
@@ -91,13 +92,15 @@ public abstract class ContractBaseMapper :
 }
 
 [MorphantMapper]
-public partial class DerivedContractMapper : ContractBaseMapper
+public partial class DerivedContractMapper :
+    ContractBaseMapper<DerivedContractMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, InheritedDestination>();
 }
 
-public abstract class SupportsBaseMapper : TypeMapper<SupportsBaseMapper>
+public abstract class SupportsBaseMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : SupportsBaseMapper<TMapper>
 {
     protected override bool Supports(
         Type sourceType,
@@ -106,7 +109,8 @@ public abstract class SupportsBaseMapper : TypeMapper<SupportsBaseMapper>
 }
 
 [MorphantMapper]
-public partial class DerivedSupportsMapper : SupportsBaseMapper
+public partial class DerivedSupportsMapper :
+    SupportsBaseMapper<DerivedSupportsMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, SupportsDestination>();

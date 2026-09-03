@@ -19,7 +19,8 @@ public abstract partial class MissingMapper : TypeMapper<MissingMapper>
 }
 
 [MorphantMapper]
-public partial class UnavailableBaseMapper : MetadataConfigurationBase
+public partial class UnavailableBaseMapper :
+    MetadataConfigurationBase<UnavailableBaseMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
