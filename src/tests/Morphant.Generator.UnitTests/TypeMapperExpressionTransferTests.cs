@@ -24,16 +24,17 @@ namespace Morphant
     // remains the better candidate after generation.
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static global::Morphant.MapperBuilder<
+        public static global::Morphant.MappingBuilder<TMapper,
             global::TestCase.Source,
-            global::TestCase.Destination> Convert(
-                this global::Morphant.MapperBuilder<
+            global::TestCase.Destination> Convert<TMapper>(
+                this global::Morphant.MappingBuilder<TMapper,
                     global::TestCase.Source,
                     global::TestCase.Destination> builder,
                 global::Morphant.Delegates.Convert<
                     global::TestCase.Source?,
                     global::TestCase.Destination> mapping,
-                int testOnly = 0) =>
+                int testOnly = 0)
+            where TMapper : global::Morphant.TypeMapper<TMapper> =>
             throw new global::Morphant.Exceptions
                 .RuntimeInvocationNotSupportedException();
     }
@@ -133,16 +134,17 @@ namespace Morphant
     // remains the better candidate after generation.
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static global::Morphant.MapperBuilder<
+        public static global::Morphant.MappingBuilder<TMapper,
             global::TestCase.Source,
-            global::System.Threading.Tasks.Task<int>> Convert(
-                this global::Morphant.MapperBuilder<
+            global::System.Threading.Tasks.Task<int>> Convert<TMapper>(
+                this global::Morphant.MappingBuilder<TMapper,
                     global::TestCase.Source,
                     global::System.Threading.Tasks.Task<int>> builder,
                 global::Morphant.Delegates.Convert<
                     global::TestCase.Source?,
                     global::System.Threading.Tasks.Task<int>> mapping,
-                int testOnly = 0) =>
+                int testOnly = 0)
+            where TMapper : global::Morphant.TypeMapper<TMapper> =>
             throw new global::Morphant.Exceptions
                 .RuntimeInvocationNotSupportedException();
     }
@@ -251,16 +253,17 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static global::Morphant.MapperBuilder<
+        public static global::Morphant.MappingBuilder<TMapper,
             global::TestCase.Source,
-            int> ConstructUsing(
-                this global::Morphant.MapperBuilder<
+            int> ConstructUsing<TMapper>(
+                this global::Morphant.MappingBuilder<TMapper,
                     global::TestCase.Source,
                     int> builder,
                 global::Morphant.Delegates.ConstructUsing<
                     global::TestCase.Source,
                     int> construct,
-                int testOnly = 0) =>
+                int testOnly = 0)
+            where TMapper : global::Morphant.TypeMapper<TMapper> =>
             throw new global::Morphant.Exceptions
                 .RuntimeInvocationNotSupportedException();
     }
