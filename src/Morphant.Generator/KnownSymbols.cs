@@ -16,8 +16,9 @@ internal sealed record KnownSymbols(
         var typeMapper = compilation.GetTypeByMetadataName(
             MetadataNames.TypeMapper);
 
-        var mapperBuilder = compilation.GetTypeByMetadataName(
-            MetadataNames.MapperBuilder);
+        var mapperBuilder = typeMapper?
+            .GetTypeMembers("MapperBuilder")
+            .SingleOrDefault();
 
         var mapperBuilderBase = compilation.GetTypeByMetadataName(
             MetadataNames.MapperBuilderBase);
@@ -46,9 +47,10 @@ internal sealed record KnownSymbols(
                 method.ReturnsVoid &&
                 method.TypeParameters.Length == 0 &&
                 method.Parameters.Length == 1 &&
+                method.Parameters[0].Type is INamedTypeSymbol parameterType &&
                 SymbolEqualityComparer.Default.Equals(
-                    method.Parameters[0].Type,
-                    mapperBuilder));
+                    parameterType.OriginalDefinition,
+                    mapperBuilder.OriginalDefinition));
 
         if (configureMethod is null)
         {

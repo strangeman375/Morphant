@@ -13,7 +13,8 @@ internal static class MapperDeclarationDiagnosticDescriptors
         Create(
             "MORPH0005",
             "Mapper must derive from TypeMapper",
-            "Mapper '{0}' must derive from 'Morphant.TypeMapper'.");
+            "Mapper '{0}' must derive from " +
+            "'Morphant.TypeMapper<{0}>'.");
 
     public static readonly DiagnosticDescriptor MapperMustBePartial =
         Create(
@@ -53,6 +54,13 @@ internal static class MapperDeclarationDiagnosticDescriptors
             "Mapper member conflicts with generated Supports",
             "Mapper '{0}' declares 'Supports(System.Type, System.Type)', " +
             "which conflicts with the generated mapper.");
+
+    public static readonly DiagnosticDescriptor InvalidSelfType =
+        Create(
+            "MORPH0058",
+            "Mapper self type is invalid",
+            "Mapper '{0}' must close 'Morphant.TypeMapper<TMapper>' with " +
+            "its own type instead of '{1}'.");
 
     private static DiagnosticDescriptor Create(
         string id,

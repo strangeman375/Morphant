@@ -199,15 +199,32 @@ internal static class MapperDeclarationPipeline
             }
         }
 
-        var derivesFromTypeMapper = DerivesFrom(
+        var typeMapperBase = FindBaseType(
             mapperType,
             knownSymbols.TypeMapper);
+        var derivesFromTypeMapper = typeMapperBase is not null;
+        var mapperSelfType = typeMapperBase?.TypeArguments[0];
+        var invalidSelfTypeLocation =
+            mapperSelfType is not null &&
+            !SymbolEqualityComparer.Default.Equals(
+                mapperSelfType,
+                mapperType)
+                ? FindTypeMapperArgumentLocation(
+                      mapperType,
+                      knownSymbols.TypeMapper,
+                      syntaxTrees,
+                      compilation,
+                      cancellationToken) ??
+                  input.AttributedDeclaration.Identifier.GetLocation()
+                : null;
 
         return new MapperDeclarationInfo(
             input.AttributedDeclaration,
             input.Attribute,
             mapperType,
             derivesFromTypeMapper,
+            mapperSelfType,
+            invalidSelfTypeLocation,
             !derivesFromTypeMapper && HasMalformedBaseDeclaration(
                 mapperDeclarations,
                 compilation,
@@ -239,7 +256,7 @@ internal static class MapperDeclarationPipeline
             .ToImmutableArray();
     }
 
-    private static bool DerivesFrom(
+    private static INamedTypeSymbol? FindBaseType(
         INamedTypeSymbol mapperType,
         INamedTypeSymbol expectedBaseType)
     {
@@ -251,11 +268,80 @@ internal static class MapperDeclarationPipeline
                     current.OriginalDefinition,
                     expectedBaseType.OriginalDefinition))
             {
-                return true;
+                return current;
             }
         }
 
-        return false;
+        return null;
+    }
+
+    private static Location? FindTypeMapperArgumentLocation(
+        INamedTypeSymbol mapperType,
+        INamedTypeSymbol typeMapper,
+        SyntaxTreeOrdering syntaxTrees,
+        CSharpCompilation compilation,
+        CancellationToken cancellationToken)
+    {
+        for (var current = mapperType;
+             current is not null;
+             current = current.BaseType)
+        {
+            foreach (var declaration in current.OriginalDefinition
+                         .DeclaringSyntaxReferences
+                         .Where(reference => syntaxTrees.Contains(
+                             reference.SyntaxTree))
+                         .Select(reference =>
+                             reference.GetSyntax(cancellationToken))
+                         .OfType<ClassDeclarationSyntax>())
+            {
+                if (declaration.BaseList is not { } baseList)
+                {
+                    continue;
+                }
+
+                var semanticModel = compilation.GetSemanticModel(
+                    declaration.SyntaxTree);
+
+                foreach (var baseType in baseList.Types)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (semanticModel.GetTypeInfo(
+                            baseType.Type,
+                            cancellationToken).Type is not
+                            INamedTypeSymbol resolved ||
+                        !SymbolEqualityComparer.Default.Equals(
+                            resolved.OriginalDefinition,
+                            typeMapper.OriginalDefinition))
+                    {
+                        continue;
+                    }
+
+                    return baseType.Type
+                        .DescendantNodesAndSelf()
+                        .OfType<GenericNameSyntax>()
+                        .Where(static name =>
+                            name.TypeArgumentList.Arguments.Count == 1)
+                        .Select(name => new
+                        {
+                            Name = name,
+                            Type = semanticModel.GetTypeInfo(
+                                name,
+                                cancellationToken).Type
+                        })
+                        .Where(candidate => candidate.Type is
+                            INamedTypeSymbol named &&
+                            SymbolEqualityComparer.Default.Equals(
+                                named.OriginalDefinition,
+                                typeMapper.OriginalDefinition))
+                        .Select(static candidate => candidate.Name
+                            .TypeArgumentList.Arguments[0].GetLocation())
+                        .FirstOrDefault() ?? baseType.Type.GetLocation();
+                }
+            }
+        }
+
+        return null;
     }
 
     private static bool HasMalformedBaseDeclaration(

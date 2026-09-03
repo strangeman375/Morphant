@@ -41,6 +41,8 @@ internal static class MapperDeclarationDiagnosticPipeline
             ImmutableArray.CreateBuilder<OrderedDiagnostic>();
         var mapperPartial =
             ImmutableArray.CreateBuilder<OrderedDiagnostic>();
+        var invalidSelfTypes =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
         var containingPartial =
             ImmutableArray.CreateBuilder<OrderedDiagnostic>();
         var fileLocal =
@@ -81,6 +83,18 @@ internal static class MapperDeclarationDiagnosticPipeline
 
             if (!declaration.DerivesFromTypeMapper)
             {
+                continue;
+            }
+
+            if (declaration.HasInvalidSelfTypeDiagnostic)
+            {
+                invalidSelfTypes.Add(CreateOrderedDiagnostic(
+                    Diagnostic.Create(
+                        MapperDeclarationDiagnosticDescriptors.InvalidSelfType,
+                        declaration.InvalidSelfTypeLocation,
+                        declaration.MapperDisplayName,
+                        declaration.MapperSelfTypeDisplayName),
+                    declaration));
                 continue;
             }
 
@@ -195,6 +209,7 @@ internal static class MapperDeclarationDiagnosticPipeline
         var comparer = DiagnosticSourceOrderComparer.Instance;
         var result = ImmutableArray.CreateBuilder<Diagnostic>(
             missingTypeMapper.Count +
+            invalidSelfTypes.Count +
             mapperPartial.Count +
             containingPartial.Count +
             fileLocal.Count +
@@ -203,6 +218,7 @@ internal static class MapperDeclarationDiagnosticPipeline
             supportsConflicts.Count);
 
         AddOrdered(result, missingTypeMapper, comparer);
+        AddOrdered(result, invalidSelfTypes, comparer);
         AddOrdered(result, mapperPartial, comparer);
         AddOrdered(result, containingPartial, comparer);
         AddOrdered(result, fileLocal, comparer);

@@ -1880,7 +1880,7 @@ internal static class PairConfigurationModelBuilder
                StringComparer.Ordinal.Equals(
                    SymbolNameHelper.GetFullMetadataName(
                        method.ContainingType.OriginalDefinition),
-                   "Morphant.MapperBuilder`2");
+                   MetadataNames.PairMapperBuilder);
     }
 
     private static bool IsForDerivedMethod(IMethodSymbol method)
@@ -2042,8 +2042,8 @@ internal static class PairConfigurationModelBuilder
                method.Parameters.Length == 1 &&
                method.TypeArguments.Length == 2 &&
                SymbolEqualityComparer.Default.Equals(
-                   method.ContainingType,
-                   knownSymbols.MapperBuilder);
+                   method.ContainingType.OriginalDefinition,
+                   knownSymbols.MapperBuilder.OriginalDefinition);
     }
 
     private static bool IsMapperBuilderMappingModeMethod(
@@ -2056,8 +2056,8 @@ internal static class PairConfigurationModelBuilder
                method.Parameters.Length == 1 &&
                method.TypeArguments.Length == 0 &&
                SymbolEqualityComparer.Default.Equals(
-                   method.ContainingType,
-                   knownSymbols.MapperBuilder);
+                   method.ContainingType.OriginalDefinition,
+                   knownSymbols.MapperBuilder.OriginalDefinition);
     }
 
     private static bool IsMapperBuilderBaseSettingMethod(

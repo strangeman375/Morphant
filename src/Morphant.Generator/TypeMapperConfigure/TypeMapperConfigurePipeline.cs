@@ -74,7 +74,8 @@ internal static class TypeMapperConfigurePipeline
         var syntaxTrees = new SyntaxTreeOrdering(
             compilation.SyntaxTrees);
 
-        if (!declaration.DerivesFromTypeMapper)
+        if (!declaration.DerivesFromTypeMapper ||
+            declaration.HasInvalidSelfTypeDiagnostic)
         {
             return null;
         }
@@ -192,9 +193,11 @@ internal static class TypeMapperConfigurePipeline
             !method.ReturnsVoid ||
             method.TypeParameters.Length != 0 ||
             method.Parameters.Length != 1 ||
+            method.Parameters[0].Type is not
+                INamedTypeSymbol builderType ||
             !SymbolEqualityComparer.Default.Equals(
-                method.Parameters[0].Type,
-                knownSymbols.MapperBuilder))
+                builderType.OriginalDefinition,
+                knownSymbols.MapperBuilder.OriginalDefinition))
         {
             return false;
         }

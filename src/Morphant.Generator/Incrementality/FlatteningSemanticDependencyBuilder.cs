@@ -110,14 +110,14 @@ internal static class FlatteningSemanticDependencyBuilder
             method.MethodKind == MethodKind.Ordinary &&
             !method.IsStatic &&
             method.Parameters.Length == 1 &&
-            containingType.TypeArguments.Length == 2 &&
+            containingType.TypeArguments.Length == 3 &&
             StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
                     containingType.OriginalDefinition),
                 MetadataNames.PairMapperBuilder))
         {
-            source = containingType.TypeArguments[0];
-            destination = containingType.TypeArguments[1];
+            source = containingType.TypeArguments[1];
+            destination = containingType.TypeArguments[2];
             return true;
         }
 

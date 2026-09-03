@@ -1210,8 +1210,8 @@ internal static class BuilderFlowAnalyzer
             TypeArguments.Length: 2
         } &&
         SymbolEqualityComparer.Default.Equals(
-            method.ContainingType,
-            knownSymbols.MapperBuilder);
+            method.ContainingType.OriginalDefinition,
+            knownSymbols.MapperBuilder.OriginalDefinition);
     }
 
     private static bool IsTypeMapperConfigureOverride(
@@ -1223,9 +1223,11 @@ internal static class BuilderFlowAnalyzer
             !method.ReturnsVoid ||
             method.TypeParameters.Length != 0 ||
             method.Parameters.Length != 1 ||
+            method.Parameters[0].Type is not
+                INamedTypeSymbol builderType ||
             !SymbolEqualityComparer.Default.Equals(
-                method.Parameters[0].Type,
-                knownSymbols.MapperBuilder))
+                builderType.OriginalDefinition,
+                knownSymbols.MapperBuilder.OriginalDefinition))
         {
             return false;
         }
