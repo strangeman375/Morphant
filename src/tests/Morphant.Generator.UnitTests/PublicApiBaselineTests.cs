@@ -372,6 +372,8 @@ T Morphant.Flattening
 T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource)
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
+T Morphant.IMapperDeclaration
+  M System.Boolean Supports(System.Type, System.Type)
 T Morphant.ITypeMapper<TSource, TDestination>
   M TDestination Create(TSource, Morphant.Context.MappingContext)
   M TDestination Update(TSource, TDestination, Morphant.Context.MappingContext)
@@ -379,21 +381,18 @@ T Morphant.Mapper
   C .ctor(System.IServiceProvider)
   M TDestination Map<TSource, TDestination>(TSource)
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
-T Morphant.MapperBuilder
-  M Morphant.MapperBuilder MappingMode(Morphant.MappingMode)
-  M Morphant.MapperBuilder<TSource, TDestination> Map<TSource, TDestination>(Morphant.MappingMode)
-T Morphant.MapperBuilderBase<T>
-  M T ConstructorSelection(Morphant.ConstructorSelection)
-  M T Flattening(Morphant.Flattening)
-  M T MemberSelection(Morphant.MemberSelection)
-  M T NullDestinationHandling(Morphant.NullDestinationHandling)
-  M T NullSourceHandling(Morphant.NullSourceHandling)
-  M T UnknownDerivedTypeHandling(Morphant.UnknownDerivedTypeHandling)
-  M T UnmappedMemberValidation(Morphant.UnmappedMemberValidation)
-T Morphant.MapperBuilder<TSource, TDestination>
-  M Morphant.MapperBuilder<TSource, TDestination> ForDerived<TDerivedSource, TDerivedDestination>()
-  M Morphant.MapperBuilder<TSource, TDestination> IncludeBase<TBaseSource, TBaseDestination>()
-  M Morphant.MapperBuilder<TSource, TDestination> IncludeMembers(System.Func<TSource, System.Object>)
+T Morphant.MapperBuilderBase<TBuilder>
+  M TBuilder ConstructorSelection(Morphant.ConstructorSelection)
+  M TBuilder Flattening(Morphant.Flattening)
+  M TBuilder MemberSelection(Morphant.MemberSelection)
+  M TBuilder NullDestinationHandling(Morphant.NullDestinationHandling)
+  M TBuilder NullSourceHandling(Morphant.NullSourceHandling)
+  M TBuilder UnknownDerivedTypeHandling(Morphant.UnknownDerivedTypeHandling)
+  M TBuilder UnmappedMemberValidation(Morphant.UnmappedMemberValidation)
+T Morphant.MappingBuilder<TMapper, TSource, TDestination>
+  M Morphant.MappingBuilder<TMapper, TSource, TDestination> ForDerived<TDerivedSource, TDerivedDestination>()
+  M Morphant.MappingBuilder<TMapper, TSource, TDestination> IncludeBase<TBaseSource, TBaseDestination>()
+  M Morphant.MappingBuilder<TMapper, TSource, TDestination> IncludeMembers(System.Func<TSource, System.Object>)
 T Morphant.MappingMode
   V Default, Create, Update, CreateAndUpdate
 T Morphant.Markers.AutoMarker
@@ -422,7 +421,10 @@ T Morphant.Option<T>
   P T Value { get; }
   M Morphant.Option<T> Some(T)
   M System.Boolean TryGetValue(T&)
-T Morphant.TypeMapper
+T Morphant.TypeMapperExtensions
+  M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
+  M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)
+T Morphant.TypeMapper<TMapper>
   C .ctor()
   M Morphant.Markers.AutoMarker Auto()
   M Morphant.Markers.AutoMarker<T> Auto<T>()
@@ -439,10 +441,7 @@ T Morphant.TypeMapper
   M Morphant.Markers.MapMarker<T> Update<T>(System.Object, System.Object)
   M Morphant.Markers.ValueMarker<T> Value<T>(T)
   M System.Boolean Supports(System.Type, System.Type)
-  M System.Void Configure(Morphant.MapperBuilder)
-T Morphant.TypeMapperExtensions
-  M TDestination Create<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource)
-  M TDestination Update<TSource, TDestination>(Morphant.ITypeMapper<TSource, TDestination>, TSource, TDestination)
+  M System.Void Configure(Morphant.TypeMapper<TMapper>)
 T Morphant.UnknownDerivedTypeHandling
   V Default, UseBaseMapping, Throw
 T Morphant.UnmappedMemberValidation
