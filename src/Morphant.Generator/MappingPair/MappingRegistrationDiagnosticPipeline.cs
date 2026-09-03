@@ -51,12 +51,21 @@ internal static class MappingRegistrationDiagnosticPipeline
 
             var model = configuration.MappingPairs;
 
-            foreach (var pair in model.Pairs)
+            var surfaceCandidates = CanonicalMappingPairPipeline
+                .BuildCandidates(
+                    model.MapperIdentity,
+                    declaration.MapperType,
+                    configuration.SurfaceMappingPairs,
+                    declaration.Compilation);
+
+            foreach (var surfaceCandidate in surfaceCandidates)
             {
+                var pair = surfaceCandidate.Pair;
+
                 if (!BclTupleShapePolicy.ContainsTuplePresentation(
-                        pair.SourceType) &&
+                        surfaceCandidate.EffectiveSourceType) &&
                     !BclTupleShapePolicy.ContainsTuplePresentation(
-                        pair.DestinationType))
+                        surfaceCandidate.EffectiveDestinationType))
                 {
                     continue;
                 }
@@ -65,13 +74,15 @@ internal static class MappingRegistrationDiagnosticPipeline
                     new TuplePresentationRegistration(
                         MappingTypeIdentityPolicy
                             .CreateAlphaEquivalentPairKey(
-                                pair.SourceType,
-                                pair.DestinationType),
+                                surfaceCandidate.EffectiveSourceType,
+                                surfaceCandidate.EffectiveDestinationType),
                         BclTupleShapePolicy.BuildPairPresentationKey(
-                            pair.SourceType,
-                            pair.DestinationType),
+                            surfaceCandidate.EffectiveSourceType,
+                            surfaceCandidate.EffectiveDestinationType),
                         pair,
-                        declaration.MapperIdentity));
+                        declaration.MapperIdentity,
+                        surfaceCandidate.EffectiveSourceType,
+                        surfaceCandidate.EffectiveDestinationType));
             }
 
             foreach (var pair in model.UnavailablePairs)
@@ -282,10 +293,14 @@ internal static class MappingRegistrationDiagnosticPipeline
                                 first.Pair.Registration.Syntax)],
                             properties: null,
                             MapperContractDisplay.Create(
-                                registration.Pair.SourceType,
-                                registration.Pair.DestinationType),
-                            BuildTuplePresentationDisplay(registration.Pair),
-                            BuildTuplePresentationDisplay(first.Pair))));
+                                registration.EffectiveSourceType,
+                                registration.EffectiveDestinationType),
+                            BuildTuplePresentationDisplay(
+                                registration.EffectiveSourceType,
+                                registration.EffectiveDestinationType),
+                            BuildTuplePresentationDisplay(
+                                first.EffectiveSourceType,
+                                first.EffectiveDestinationType))));
                 }
             }
         }
@@ -325,10 +340,19 @@ internal static class MappingRegistrationDiagnosticPipeline
     private static string BuildTuplePresentationDisplay(
         MappingPairRegistrationModel registration)
     {
-        return registration.SourceType.ToDisplayString(
+        return BuildTuplePresentationDisplay(
+            registration.SourceType,
+            registration.DestinationType);
+    }
+
+    private static string BuildTuplePresentationDisplay(
+        ITypeSymbol sourceType,
+        ITypeSymbol destinationType)
+    {
+        return sourceType.ToDisplayString(
                    SymbolDisplayFormats.FullyQualifiedNullable) +
                " -> " +
-               registration.DestinationType.ToDisplayString(
+               destinationType.ToDisplayString(
                    SymbolDisplayFormats.FullyQualifiedNullable);
     }
 
@@ -388,5 +412,7 @@ internal static class MappingRegistrationDiagnosticPipeline
         string PhysicalPairKey,
         string PresentationKey,
         MappingPairModel Pair,
-        string MapperIdentity);
+        string MapperIdentity,
+        ITypeSymbol EffectiveSourceType,
+        ITypeSymbol EffectiveDestinationType);
 }
