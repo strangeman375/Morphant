@@ -62,11 +62,12 @@ internal static class MappingSurfacePolicy
         var containsValueTuple =
             ContainsValueTuple(pair.SourceType) ||
             ContainsValueTuple(pair.DestinationType);
-        var kind = containsTypeParameter ||
-                   mapperSelfType is ITypeParameterSymbol
+        var kind = containsTypeParameter
             ? MappingSurfaceKind.MapperFamilyScoped
             : containsValueTuple
-                ? MappingSurfaceKind.MapperScoped
+                ? mapperSelfType is ITypeParameterSymbol
+                    ? MappingSurfaceKind.MapperFamilyScoped
+                    : MappingSurfaceKind.MapperScoped
                 : MappingSurfaceKind.Shared;
 
         return new MappingSurfaceModel(

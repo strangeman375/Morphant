@@ -17,7 +17,8 @@ using Morphant;
 
 namespace TestCase;
 
-public abstract class BaseMapper<T> : TypeMapper<BaseMapper<T>>
+public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : BaseMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -48,7 +49,7 @@ public sealed class Destination
 }
 
 [MorphantMapper]
-public partial class DerivedMapper : BaseMapper<int>
+public partial class DerivedMapper : BaseMapper<DerivedMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -92,7 +93,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class DerivedMapper : ExternalBase<int>
+public partial class DerivedMapper : ExternalBase<DerivedMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -114,7 +115,8 @@ public partial class DerivedMapper : ExternalBase<int>
                 diagnostic.GetMessage(),
                 Is.EqualTo(
                     "Morphant cannot read Configure for base mapper " +
-                    "'Shared.ExternalBase<int>' while analyzing mapper " +
+                    "'Shared.ExternalBase<TestCase.DerivedMapper>' while " +
+                    "analyzing mapper " +
                     "'TestCase.DerivedMapper'."));
             Assert.That(
                 MapperConfigurationGeneratorTest.SourceText(
@@ -146,7 +148,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class DerivedMapper : ExternalBase<int>
+public partial class DerivedMapper : ExternalBase<DerivedMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -177,7 +179,8 @@ using Morphant;
 
 namespace Shared;
 
-public abstract class ExternalBase<T> : TypeMapper<ExternalBase<T>>
+public abstract class ExternalBase<TMapper> : TypeMapper<TMapper>
+    where TMapper : ExternalBase<TMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

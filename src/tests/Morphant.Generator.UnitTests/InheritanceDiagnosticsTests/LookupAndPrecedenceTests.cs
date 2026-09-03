@@ -32,13 +32,15 @@ namespace TestCase
     {
     }
 
-    public abstract class FarMapper : TypeMapper<FarMapper>
+    public abstract class FarMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : FarMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Animal, AnimalDto>();
     }
 
-    public abstract class NearMapper : FarMapper
+    public abstract class NearMapper<TMapper> : FarMapper<TMapper>
+        where TMapper : NearMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -59,7 +61,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class NearestMapper : NearMapper
+    public partial class NearestMapper : NearMapper<NearestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -70,7 +72,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class SamePairMapper : NearMapper
+    public partial class SamePairMapper : NearMapper<SamePairMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -301,7 +303,8 @@ namespace TestCase
     {
     }
 
-    public abstract class GenericMapper<T> : TypeMapper<GenericMapper<T>>
+    public abstract class GenericMapper<TMapper, T> : TypeMapper<TMapper>
+        where TMapper : GenericMapper<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source<T>, Destination<T>>()
@@ -309,7 +312,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class IntMapper : GenericMapper<int>
+    public partial class IntMapper : GenericMapper<IntMapper, int>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -320,7 +323,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class StringMapper : GenericMapper<string>
+    public partial class StringMapper : GenericMapper<StringMapper, string>
     {
         protected override void Configure(MapperBuilder builder)
         {

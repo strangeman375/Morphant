@@ -96,7 +96,7 @@ public partial class RootFlowMapper : TypeMapper<RootFlowMapper>
 }
 
 [MorphantMapper]
-public partial class UnavailableMapper : MetadataBaseMapper
+public partial class UnavailableMapper : MetadataBaseMapper<UnavailableMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -309,7 +309,8 @@ using Morphant;
 
 namespace SharedConfiguration;
 
-public abstract class MetadataBaseMapper : TypeMapper<MetadataBaseMapper>
+public abstract class MetadataBaseMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : MetadataBaseMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -385,7 +386,7 @@ namespace TestCase;
 public sealed class Source { }
 public sealed class Destination { }
 [MorphantMapper]
-public partial class TestMapper : MetadataBaseMapper
+public partial class TestMapper : MetadataBaseMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

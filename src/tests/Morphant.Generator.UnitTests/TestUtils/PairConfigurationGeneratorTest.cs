@@ -13,8 +13,9 @@ internal sealed class PairConfigurationGeneratorTest :
     // The production pipeline binds against its in-memory generated surface.
     // This test-only fallback keeps the final verification compilation valid
     // without adding unrelated surface snapshots to this model category.
-    // The exact generated overloads are non-generic and win overload
-    // resolution while the semantic model is built.
+    // The generated overloads bind the mapping pair and win overload
+    // resolution over this fully generic fallback while the semantic model
+    // is built.
     private const string CompilerFallbackSource =
 """
 #nullable enable
@@ -26,72 +27,87 @@ namespace Morphant
 {
     internal static partial class MorphantGeneratedMappingExtensions
     {
-        public static MapperBuilder<TSource, TDestination> Construct<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
-            Construct<TSource, object> construct) => builder;
+        public static MappingBuilder<TMapper, TSource, TDestination> Construct<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            Construct<TSource, object> construct)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Construct<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
-            Construct<TSource, MappingContextMarker, object> construct) => builder;
+        public static MappingBuilder<TMapper, TSource, TDestination> Construct<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            Construct<TSource, MappingContextMarker, object> construct)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Resolve<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
-            Resolve<TSource, TDestination, object> resolve) => builder;
+        public static MappingBuilder<TMapper, TSource, TDestination> Resolve<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            Resolve<TSource, TDestination, object> resolve)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Resolve<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
-            Resolve<TSource, TDestination, MappingContextMarker, object> resolve) => builder;
+        public static MappingBuilder<TMapper, TSource, TDestination> Resolve<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            Resolve<TSource, TDestination, MappingContextMarker, object> resolve)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> ConstructUsing<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
+        public static MappingBuilder<TMapper, TSource, TDestination> ConstructUsing<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
             ConstructUsing<TSource, TDestination> construct,
-            bool compilerFallback = false) => builder;
+            bool compilerFallback = false)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> ConstructUsing<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
+        public static MappingBuilder<TMapper, TSource, TDestination> ConstructUsing<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
             ConstructUsing<TSource, MappingContext, TDestination> construct,
-            bool compilerFallback = false) => builder;
+            bool compilerFallback = false)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> ResolveUsing<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
+        public static MappingBuilder<TMapper, TSource, TDestination> ResolveUsing<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
             ResolveUsing<TSource, TDestination, TDestination> resolve,
-            bool compilerFallback = false) => builder;
+            bool compilerFallback = false)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> ResolveUsing<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
+        public static MappingBuilder<TMapper, TSource, TDestination> ResolveUsing<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
             ResolveUsing<TSource, TDestination, MappingContext, TDestination> resolve,
-            bool compilerFallback = false) => builder;
+            bool compilerFallback = false)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
-            Members<TSource, object> members) => builder;
+        public static MappingBuilder<TMapper, TSource, TDestination> Members<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            Members<TSource, object> members)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
-            Members<TSource, TDestination, object> members) => builder;
+        public static MappingBuilder<TMapper, TSource, TDestination> Members<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            Members<TSource, TDestination, object> members)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
-            Members<TSource, TDestination, TDestination, object> members) => builder;
+        public static MappingBuilder<TMapper, TSource, TDestination> Members<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            Members<TSource, TDestination, TDestination, object> members)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Members<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
-            Members<TSource, TDestination, TDestination, MappingContextMarker, object> members) => builder;
+        public static MappingBuilder<TMapper, TSource, TDestination> Members<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            Members<TSource, TDestination, TDestination, MappingContextMarker, object> members)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Convert<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
+        public static MappingBuilder<TMapper, TSource, TDestination> Convert<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
             Convert<TSource, TDestination> convert,
-            bool compilerFallback = false) => builder;
+            bool compilerFallback = false)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Convert<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
+        public static MappingBuilder<TMapper, TSource, TDestination> Convert<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
             Convert<TSource, TDestination, TDestination> convert,
-            bool compilerFallback = false) => builder;
+            bool compilerFallback = false)
+            where TMapper : TypeMapper<TMapper> => builder;
 
-        public static MapperBuilder<TSource, TDestination> Convert<TSource, TDestination>(
-            this MapperBuilder<TSource, TDestination> builder,
+        public static MappingBuilder<TMapper, TSource, TDestination> Convert<TMapper, TSource, TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
             Convert<TSource, TDestination, MappingContext, TDestination> convert,
-            bool compilerFallback = false) => builder;
+            bool compilerFallback = false)
+            where TMapper : TypeMapper<TMapper> => builder;
     }
 }
 """;

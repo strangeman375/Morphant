@@ -58,7 +58,8 @@ namespace TestCase
         public string Value { get; }
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         private static string Secret(string value) => "secret:" + value;
 
@@ -86,7 +87,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DerivedMapper : BaseMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -202,7 +203,8 @@ namespace TestCase
         public string Value { get; set; } = "";
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         private static string Secret(string value) => "secret:" + value;
         protected static string Visible(string value) => "visible:" + value;
@@ -229,7 +231,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DerivedMapper : BaseMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -286,7 +288,8 @@ namespace TestCase
         public string Second { get; set; } = "";
     }
 
-    public abstract class SupportMapper : TypeMapper<SupportMapper>
+    public abstract class SupportMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : SupportMapper<TMapper>
     {
         protected string Decorate(string value) => value;
 
@@ -295,7 +298,8 @@ namespace TestCase
         }
     }
 
-    public abstract class BaseMapper : SupportMapper
+    public abstract class BaseMapper<TMapper> : SupportMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         private static string Secret(string value) => value;
 
@@ -309,7 +313,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DerivedMapper : BaseMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -361,7 +365,8 @@ namespace TestCase
     public sealed class Destination2 { public string Value { get; set; } = ""; }
     public sealed class Destination3 { public string Value { get; set; } = ""; }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         public static string Public(string value) => value;
         internal static string Internal(string value) => value;
@@ -388,7 +393,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DerivedMapper : BaseMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -438,7 +443,8 @@ namespace TestCase
         public string Second { get; set; } = "";
     }
 
-    public abstract class FarMapper : TypeMapper<FarMapper>
+    public abstract class FarMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : FarMapper<TMapper>
     {
         private static string FarSecret(string value) => value;
 
@@ -450,7 +456,8 @@ namespace TestCase
                 });
     }
 
-    public abstract class NearMapper : FarMapper
+    public abstract class NearMapper<TMapper> : FarMapper<TMapper>
+        where TMapper : NearMapper<TMapper>
     {
         private static string NearSecret(string value) => value;
 
@@ -467,7 +474,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : NearMapper
+    public partial class DerivedMapper : NearMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

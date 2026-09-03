@@ -203,7 +203,7 @@ public partial class TestMapper : TypeMapper<TestMapper>
     }
 
     [Test]
-    public void Reports_a_third_party_root_method_at_its_name()
+    public void Reports_a_helper_root_transfer_at_the_builder_argument()
     {
         // lang=c#
         const string source =
@@ -219,16 +219,13 @@ namespace TestCase;
 public sealed class Source { }
 public sealed class Destination { }
 
-public static class Extensions
-{
-    public static MapperBuilder Tap(this MapperBuilder builder) => builder;
-}
-
 [MorphantMapper]
 public partial class TestMapper : TypeMapper<TestMapper>
 {
+    private static MapperBuilder Tap(MapperBuilder builder) => builder;
+
     protected override void Configure(MapperBuilder builder) =>
-        builder.Tap().Map<Source, Destination>();
+        Tap(builder).Map<Source, Destination>();
 }
 """;
 
@@ -241,7 +238,7 @@ public partial class TestMapper : TypeMapper<TestMapper>
             Assert.That(
                 MapperConfigurationGeneratorTest.SourceText(
                     diagnostic.Location),
-                Is.EqualTo("Tap"));
+                Is.EqualTo("builder"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
@@ -410,10 +407,12 @@ public sealed class Destination { }
 
 public static class Extensions
 {
-    public static MapperBuilder<TSource, TDestination> Tap<
+    public static MappingBuilder<TMapper, TSource, TDestination> Tap<
+        TMapper,
         TSource,
         TDestination>(
-        this MapperBuilder<TSource, TDestination> builder) => builder;
+        this MappingBuilder<TMapper, TSource, TDestination> builder)
+        where TMapper : TypeMapper<TMapper> => builder;
 }
 
 [MorphantMapper]

@@ -43,7 +43,7 @@ internal sealed class DescriptorTests
             ConfigurationFlowDiagnosticDescriptors.MissingConfigure,
             "MORPH0015",
             "Mapper must declare Configure",
-            "Mapper '{0}' must override 'Configure(Morphant.MapperBuilder)' " +
+            "Mapper '{0}' must override 'Configure(MapperBuilder)' " +
             "with a readable method body.");
         yield return new DescriptorCase(
             ConfigurationFlowDiagnosticDescriptors.UnavailableBaseConfigure,

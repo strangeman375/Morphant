@@ -83,7 +83,7 @@ public abstract partial class MissingMapper : TypeMapper<MissingMapper>
                 diagnostic.GetMessage(),
                 Is.EqualTo(
                     "Mapper 'TestCase.MissingMapper' must override " +
-                    "'Configure(Morphant.MapperBuilder)' with a readable " +
+                    "'Configure(MapperBuilder)' with a readable " +
                     "method body."));
             Assert.That(
                 MapperConfigurationGeneratorTest.SourceText(
@@ -144,7 +144,8 @@ using Morphant;
 
 namespace TestCase;
 
-public abstract class BaseMapper : TypeMapper<BaseMapper>
+public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : BaseMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -152,7 +153,7 @@ public abstract class BaseMapper : TypeMapper<BaseMapper>
 }
 
 [MorphantMapper]
-public partial class DerivedMapper : BaseMapper
+public partial class DerivedMapper : BaseMapper<DerivedMapper>
 {
 }
 """;

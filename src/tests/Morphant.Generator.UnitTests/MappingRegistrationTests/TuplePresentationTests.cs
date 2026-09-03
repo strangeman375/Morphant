@@ -4,7 +4,7 @@ namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 internal sealed class TuplePresentationTests
 {
     [Test]
-    public void Reports_one_conflict_for_different_presentations_of_one_pair()
+    public void Allows_different_presentations_in_unrelated_mappers()
     {
         // lang=c#
         const string source =
@@ -31,28 +31,13 @@ public partial class SecondMapper : TypeMapper<SecondMapper>
 """;
 
         var result = MappingRegistrationGeneratorTest.Run(source);
-        var diagnostic = result.Diagnostics.Single(candidate =>
-            candidate.Id == "MORPH0056");
-
         Assert.Multiple(() =>
         {
             Assert.That(
-                diagnostic.GetMessage(),
-                Is.EqualTo(
-                    "Mapping 'System.ValueTuple<int, int> -> " +
-                    "System.ValueTuple<int, int>' uses tuple presentation " +
-                    "'(int A, int B) -> (int Width, int Height)', which " +
-                    "conflicts with the presentation '(int X, int Y) -> " +
-                    "(int Left, int Top)' of the same underlying mapping " +
-                    "pair."));
-            Assert.That(
-                MappingRegistrationGeneratorTest.SourceText(
-                    diagnostic.Location),
-                Is.EqualTo("Map"));
-            Assert.That(
-                MappingRegistrationGeneratorTest.SourceText(
-                    diagnostic.AdditionalLocations.Single()),
-                Is.EqualTo("Map"));
+                result.Diagnostics.Where(static diagnostic =>
+                    diagnostic.Id == "MORPH0056"),
+                Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
 
@@ -112,21 +97,17 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper<FirstMapper>
+public partial class TestMapper : TypeMapper<TestMapper>
 {
-    protected override void Configure(MapperBuilder builder) =>
+    protected override void Configure(MapperBuilder builder)
+    {
         builder.Map<
             ((int X, int Y) Point, int Count),
             (int Count, (int X, int Y) Point)>();
-}
-
-[MorphantMapper]
-public partial class SecondMapper : TypeMapper<SecondMapper>
-{
-    protected override void Configure(MapperBuilder builder) =>
         builder.Map<
             ((int Left, int Top) Point, int Count),
             (int Count, (int X, int Y) Point)>();
+    }
 }
 """;
 
@@ -155,21 +136,17 @@ namespace TestCase;
 public sealed class Source { }
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper<FirstMapper>
+public partial class TestMapper : TypeMapper<TestMapper>
 {
-    protected override void Configure(MapperBuilder builder) =>
+    protected override void Configure(MapperBuilder builder)
+    {
         builder.Map<
             Source,
             (List<string?> Values, int Count)>();
-}
-
-[MorphantMapper]
-public partial class SecondMapper : TypeMapper<SecondMapper>
-{
-    protected override void Configure(MapperBuilder builder) =>
         builder.Map<
             Source,
             (List<string> Values, int Count)>();
+    }
 }
 """;
 
@@ -209,17 +186,13 @@ namespace TestCase;
 public sealed class Source { }
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper<FirstMapper>
+public partial class TestMapper : TypeMapper<TestMapper>
 {
-    protected override void Configure(MapperBuilder builder) =>
+    protected override void Configure(MapperBuilder builder)
+    {
         builder.Map<Source, (dynamic Value, int Count)>();
-}
-
-[MorphantMapper]
-public partial class SecondMapper : TypeMapper<SecondMapper>
-{
-    protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, (object Value, int Count)>();
+    }
 }
 """;
 
@@ -290,7 +263,7 @@ public partial class NonNullableMapper : TypeMapper<NonNullableMapper>
     }
 
     [Test]
-    public void Direct_duplicate_keeps_only_the_duplicate_diagnostic()
+    public void Different_presentations_replace_the_duplicate_diagnostic()
     {
         // lang=c#
         const string source =
@@ -319,7 +292,7 @@ public partial class TestMapper : TypeMapper<TestMapper>
                 .Where(static diagnostic => diagnostic.Id is
                     "MORPH0013" or "MORPH0056")
                 .Select(static diagnostic => diagnostic.Id),
-            Is.EqualTo(new[] { "MORPH0013" }));
+            Is.EqualTo(new[] { "MORPH0056" }));
     }
 
     [Test]
@@ -404,9 +377,10 @@ public partial class TestMapper : TypeMapper<TestMapper>
 
     private static string BuildActualizationSource(bool includeConflict) =>
         ActualizationSource.Replace(
-            "__SECOND_MAPPER__",
+            "__SECOND_REGISTRATION__",
             includeConflict
-                ? SecondMapperSource
+                ? "builder.Map<(int A, int B), " +
+                  "(int Width, int Height)>();"
                 : string.Empty);
 
     // lang=c#
@@ -421,21 +395,11 @@ namespace TestCase;
 [MorphantMapper]
 public partial class FirstMapper : TypeMapper<FirstMapper>
 {
-    protected override void Configure(MapperBuilder builder) =>
+    protected override void Configure(MapperBuilder builder)
+    {
         builder.Map<(int X, int Y), (int Left, int Top)>();
-}
-
-__SECOND_MAPPER__
-""";
-
-    // lang=c#
-    private const string SecondMapperSource =
-"""
-[MorphantMapper]
-public partial class SecondMapper : TypeMapper<SecondMapper>
-{
-    protected override void Configure(MapperBuilder builder) =>
-        builder.Map<(int A, int B), (int Width, int Height)>();
+        __SECOND_REGISTRATION__
+    }
 }
 """;
 
@@ -448,8 +412,8 @@ using Morphant;
 
 namespace TestCase;
 
-[MorphantMapper]
-public partial class AuthoritativeMapper : TypeMapper<AuthoritativeMapper>
+public abstract class AuthoritativeMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : AuthoritativeMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int X, int Y), (int Left, int Top)>();
@@ -466,10 +430,14 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class ConflictMapper : TypeMapper<ConflictMapper>
+public partial class ConflictMapper :
+    AuthoritativeMapper<ConflictMapper>
 {
-    protected override void Configure(MapperBuilder builder) =>
+    protected override void Configure(MapperBuilder builder)
+    {
+        base.Configure(builder);
         builder.Map<(int A, int B), (int Width, int Height)>();
+    }
 }
 """;
 }

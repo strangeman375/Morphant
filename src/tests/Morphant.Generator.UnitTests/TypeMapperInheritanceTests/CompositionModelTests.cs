@@ -119,7 +119,8 @@ namespace TestCase
     {
     }
 
-    public abstract class FarMapper : TypeMapper<FarMapper>
+    public abstract class FarMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : FarMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -135,7 +136,8 @@ namespace TestCase
         }
     }
 
-    public abstract class NearMapper : FarMapper
+    public abstract class NearMapper<TMapper> : FarMapper<TMapper>
+        where TMapper : NearMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -155,7 +157,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class DogMapper : NearMapper
+    public partial class DogMapper : NearMapper<DogMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
