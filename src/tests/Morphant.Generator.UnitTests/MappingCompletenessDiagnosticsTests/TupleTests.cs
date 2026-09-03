@@ -24,7 +24,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<(int Id, string Name), Destination>()
@@ -63,7 +63,7 @@ namespace TestCase
     public sealed record Source(int Discarded, string Kept, int Replacement);
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, (int, string)>()
@@ -122,7 +122,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<(int, string), Destination>()

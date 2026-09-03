@@ -22,7 +22,7 @@ namespace TestCase
     public sealed record Source(int Value, string Text);
 
     [MorphantMapper]
-    public partial class SourceOnlyMapper : TypeMapper
+    public partial class SourceOnlyMapper : TypeMapper<SourceOnlyMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int?>()
@@ -30,7 +30,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class PreviousMapper : TypeMapper
+    public partial class PreviousMapper : TypeMapper<PreviousMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int?>()
@@ -41,7 +41,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class CreateOnlyMapper : TypeMapper
+    public partial class CreateOnlyMapper : TypeMapper<CreateOnlyMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int?>(MappingMode.Create)
@@ -49,7 +49,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class UpdateOnlyMapper : TypeMapper
+    public partial class UpdateOnlyMapper : TypeMapper<UpdateOnlyMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int?>(MappingMode.Update)

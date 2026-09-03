@@ -26,7 +26,7 @@ public sealed class ResolveUsingDestination { }
 public sealed class ConvertDestination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     private static bool SelectFirst => true;
 
@@ -120,7 +120,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -162,7 +162,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     private static void Consume(MapperBuilder value) { }
 
@@ -225,7 +225,7 @@ public static class Extensions
 }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Tap().Map<Source, Destination>();
@@ -266,7 +266,7 @@ public sealed class SourceB { }
 public sealed class DestinationB { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     private static bool Condition => true;
 
@@ -321,7 +321,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder?.Map<Source, Destination>();
@@ -360,7 +360,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -417,7 +417,7 @@ public static class Extensions
 }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -458,7 +458,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()?
@@ -502,7 +502,7 @@ public sealed class OtherBuilder
 }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -541,7 +541,7 @@ public sealed class DestinationA { }
 public sealed class DestinationB { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -604,7 +604,7 @@ public sealed class SourceC { }
 public sealed class DestinationC { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

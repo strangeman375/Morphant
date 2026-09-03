@@ -52,7 +52,7 @@ namespace TestCase
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -76,14 +76,14 @@ namespace TestCase
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class FirstMapper : TypeMapper
+    public partial class FirstMapper : TypeMapper<FirstMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
     }
 
     [MorphantMapper]
-    public partial class SecondMapper : TypeMapper
+    public partial class SecondMapper : TypeMapper<SecondMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<AlternativeSource, Destination>();
@@ -115,7 +115,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -137,7 +137,7 @@ namespace TestCase
     public enum Destination { None }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();

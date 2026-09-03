@@ -76,7 +76,7 @@ public sealed class SourceC { }
 public sealed class DestinationC { }
 
 [MorphantMapper]
-public partial class PairFlowMapper : TypeMapper
+public partial class PairFlowMapper : TypeMapper<PairFlowMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -86,7 +86,7 @@ public partial class PairFlowMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class RootFlowMapper : TypeMapper
+public partial class RootFlowMapper : TypeMapper<RootFlowMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -106,7 +106,7 @@ public partial class UnavailableMapper : MetadataBaseMapper
 }
 
 [MorphantMapper]
-public abstract partial class MissingMapper : TypeMapper
+public abstract partial class MissingMapper : TypeMapper<MissingMapper>
 {
 }
 """;
@@ -150,7 +150,7 @@ public sealed class SourceB { }
 public sealed class DestinationB { }
 
 [MorphantMapper]
-public partial class IndependentReasonsMapper : TypeMapper
+public partial class IndependentReasonsMapper : TypeMapper<IndependentReasonsMapper>
 {
     private static void Observe(MapperBuilder builder) { }
 
@@ -163,7 +163,7 @@ public partial class IndependentReasonsMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class DuplicateMapper : TypeMapper
+public partial class DuplicateMapper : TypeMapper<DuplicateMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -215,7 +215,7 @@ public partial class Container
     private sealed class HiddenSource { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -309,7 +309,7 @@ using Morphant;
 
 namespace SharedConfiguration;
 
-public abstract class MetadataBaseMapper : TypeMapper
+public abstract class MetadataBaseMapper : TypeMapper<MetadataBaseMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -331,7 +331,7 @@ using Morphant;
 #pragma warning disable CS1591
 namespace TestCase;
 [MorphantMapper]
-public abstract partial class TestMapper : TypeMapper { }
+public abstract partial class TestMapper : TypeMapper<TestMapper> { }
 """;
 
     // lang=c#
@@ -344,7 +344,7 @@ namespace TestCase;
 public sealed class Source { }
 public sealed class Destination { }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -364,7 +364,7 @@ namespace TestCase;
 public sealed class Source { }
 public sealed class Destination { }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -405,7 +405,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();

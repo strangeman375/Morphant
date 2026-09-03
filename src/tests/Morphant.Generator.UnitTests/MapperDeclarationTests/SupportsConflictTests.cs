@@ -21,7 +21,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     private new int Supports(Type sourceType, Type destinationType) => 0;
 
@@ -68,7 +68,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override bool Supports(Type sourceType, Type destinationType) =>
         false;
@@ -89,7 +89,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     private static new bool Supports(
         Type sourceType,
@@ -129,7 +129,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     private new bool Supports(Type sourceType, Type destinationType) => false;
 
@@ -191,7 +191,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     private new bool Supports<T>(Type sourceType, Type destinationType) => false;
     private new bool Supports(Type sourceType) => false;
@@ -237,8 +237,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public abstract partial class TestMapper :
-    TypeMapper,
+public abstract partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<Source, Destination>
 {
     private new bool Supports(Type sourceType, Type destinationType) => false;

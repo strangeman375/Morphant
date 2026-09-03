@@ -31,7 +31,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper
+    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
         where T : class
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -61,7 +61,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper
+    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
         where T : struct
     {
         protected override void Configure(MapperBuilder builder) =>

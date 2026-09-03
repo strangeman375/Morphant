@@ -30,7 +30,7 @@ public sealed class ConstructMembersDestination : Destination { }
 public sealed class MembersResolveDestination : Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

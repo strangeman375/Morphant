@@ -15,7 +15,7 @@ internal sealed class DescriptorTests
             MapperDeclarationDiagnosticDescriptors.MissingTypeMapperBase,
             "MORPH0005",
             "Mapper must derive from TypeMapper",
-            "Mapper '{0}' must derive from 'Morphant.TypeMapper'.");
+            "Mapper '{0}' must derive from 'Morphant.TypeMapper<{0}>'.");
         yield return Case(
             MapperDeclarationDiagnosticDescriptors.MapperMustBePartial,
             "MORPH0006",

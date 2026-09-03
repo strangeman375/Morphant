@@ -21,7 +21,7 @@ namespace TestCase
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         private const MappingMode Combined =
             MappingMode.Create | MappingMode.Update;
@@ -103,7 +103,7 @@ namespace TestCase
     public sealed class Destination7 { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -210,7 +210,7 @@ namespace TestCase
     public sealed class Destination14 { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -298,7 +298,7 @@ namespace TestCase
     public sealed class DestinationB { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -347,7 +347,7 @@ namespace TestCase
     public sealed class DestinationC { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -397,7 +397,7 @@ namespace TestCase
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

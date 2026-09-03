@@ -135,7 +135,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class URLMapper : TypeMapper
+    public partial class URLMapper : TypeMapper<URLMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, URL>();
@@ -154,7 +154,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class UrlMapper : TypeMapper
+    public partial class UrlMapper : TypeMapper<UrlMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Url>();
@@ -173,7 +173,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class StableMapper : TypeMapper
+    public partial class StableMapper : TypeMapper<StableMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -79,7 +79,7 @@ namespace Initial
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -125,7 +125,7 @@ namespace Renamed
     }
 
     [MorphantMapper]
-    public partial class MapperV2 : TypeMapper
+    public partial class MapperV2 : TypeMapper<MapperV2>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceV2, DestinationV2>();

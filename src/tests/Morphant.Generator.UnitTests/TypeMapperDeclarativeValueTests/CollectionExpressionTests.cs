@@ -44,7 +44,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ConstructMapper : TypeMapper
+    public partial class ConstructMapper : TypeMapper<ConstructMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()
@@ -69,7 +69,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ResolveMapper : TypeMapper
+    public partial class ResolveMapper : TypeMapper<ResolveMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

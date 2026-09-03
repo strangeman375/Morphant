@@ -317,7 +317,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class MapperOne : TypeMapper
+    public partial class MapperOne : TypeMapper<MapperOne>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceOne, SharedDestination>();
@@ -335,7 +335,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class MapperTwo : TypeMapper
+    public partial class MapperTwo : TypeMapper<MapperTwo>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SourceTwo, SharedDestination>();
@@ -353,7 +353,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class StableMapper : TypeMapper
+    public partial class StableMapper : TypeMapper<StableMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<StableSource, StableDestination>();

@@ -41,7 +41,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -800,7 +800,7 @@ namespace TestCase
     public sealed class Url { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -1188,7 +1188,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<@class> : TypeMapper
+    public partial class TestMapper<@class> : TypeMapper<TestMapper<@class>>
         where @class : class
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -1443,28 +1443,28 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class NullableMapper : TypeMapper
+    public partial class NullableMapper : TypeMapper<NullableMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source<string?>, Destination<string?>>();
     }
 
     [MorphantMapper]
-    public partial class NonNullableMapper : TypeMapper
+    public partial class NonNullableMapper : TypeMapper<NonNullableMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source<string>, Destination<string>>();
     }
 
     [MorphantMapper]
-    public partial class DynamicMapper : TypeMapper
+    public partial class DynamicMapper : TypeMapper<DynamicMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source<dynamic>, Destination<dynamic>>();
     }
 
     [MorphantMapper]
-    public partial class ObjectMapper : TypeMapper
+    public partial class ObjectMapper : TypeMapper<ObjectMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source<object>, Destination<object>>();

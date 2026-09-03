@@ -24,7 +24,7 @@ namespace TestCase
     {
     }
 
-    public abstract class RootMapper<T> : TypeMapper
+    public abstract class RootMapper<T> : TypeMapper<RootMapper<T>>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -116,7 +116,7 @@ namespace TestCase
     {
     }
 
-    public abstract class FarMapper : TypeMapper
+    public abstract class FarMapper : TypeMapper<FarMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -162,7 +162,7 @@ using Morphant;
 
 namespace Shared;
 
-public abstract class ExternalBase : TypeMapper
+public abstract class ExternalBase : TypeMapper<ExternalBase>
 {
     protected override void Configure(MapperBuilder builder)
     {

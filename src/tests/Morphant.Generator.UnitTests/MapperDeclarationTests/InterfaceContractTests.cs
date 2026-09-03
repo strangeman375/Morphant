@@ -21,8 +21,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public abstract partial class TestMapper :
-    TypeMapper,
+public abstract partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<Source, Destination>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -73,7 +72,7 @@ public interface IFirst : ITypeMapper<Source, Destination> { }
 public interface ISecond : IFirst { }
 
 [MorphantMapper]
-public abstract partial class TestMapper : TypeMapper, IFirst, ISecond
+public abstract partial class TestMapper : TypeMapper<TestMapper>, IFirst, ISecond
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
@@ -109,7 +108,7 @@ public interface IFirst : ITypeMapper<Source, Destination> { }
 public interface ISecond : ITypeMapper<Source, Destination> { }
 
 [MorphantMapper]
-public abstract partial class TestMapper : TypeMapper, IFirst
+public abstract partial class TestMapper : TypeMapper<TestMapper>, IFirst
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
@@ -156,9 +155,9 @@ namespace TestCase;
 public sealed class Source { }
 public sealed class Destination { }
 
-public abstract class BaseMapper :
-    TypeMapper,
+public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>,
     ITypeMapper<Source, Destination>
+    where TMapper : BaseMapper<TMapper>
 {
     public Destination Create(
         Source? source,
@@ -173,7 +172,7 @@ public abstract class BaseMapper :
 }
 
 [MorphantMapper]
-public partial class TestMapper : BaseMapper
+public partial class TestMapper : BaseMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
@@ -204,8 +203,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public abstract partial class TestMapper<T> :
-    TypeMapper,
+public abstract partial class TestMapper<T> : TypeMapper<TestMapper<T>>,
     ITypeMapper<T, Destination>
     where T : struct
 {
@@ -253,8 +251,7 @@ public sealed class Wrapper<T>
 public sealed class Destination { }
 
 [MorphantMapper]
-public abstract partial class TestMapper<T> :
-    TypeMapper,
+public abstract partial class TestMapper<T> : TypeMapper<TestMapper<T>>,
     ITypeMapper<Wrapper<T>.Nested, Destination>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -283,8 +280,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public abstract partial class TestMapper :
-    TypeMapper,
+public abstract partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<int, Destination>
 {
     public abstract Destination Create(
@@ -327,8 +323,7 @@ public interface IExact : ITypeMapper<Source, Destination> { }
 public interface IGeneric<T> : ITypeMapper<T, Destination> { }
 
 [MorphantMapper]
-public abstract partial class TestMapper<T> :
-    TypeMapper,
+public abstract partial class TestMapper<T> : TypeMapper<TestMapper<T>>,
     IExact,
     IGeneric<T>
 {
@@ -365,8 +360,7 @@ public sealed class ConflictDestination { }
 public sealed class IndependentDestination { }
 
 [MorphantMapper]
-public abstract partial class TestMapper :
-    TypeMapper,
+public abstract partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<Source, ConflictDestination>
 {
     protected override void Configure(MapperBuilder builder)
@@ -420,8 +414,7 @@ public sealed class Source { }
 public interface IDestination { }
 
 [MorphantMapper]
-public abstract partial class TestMapper :
-    TypeMapper,
+public abstract partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<Source, IDestination>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -453,8 +446,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public abstract partial class TestMapper :
-    TypeMapper,
+public abstract partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<object, (int, string)>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -487,8 +479,7 @@ public sealed class @event { }
 public sealed class @struct { }
 
 [MorphantMapper]
-public abstract partial class TestMapper :
-    TypeMapper,
+public abstract partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<@event, @struct>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -521,8 +512,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public abstract partial class TestMapper :
-    TypeMapper,
+public abstract partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<Source, Destination>
 {
     protected override void Configure(MapperBuilder builder)

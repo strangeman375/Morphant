@@ -28,7 +28,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -225,7 +225,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ReferenceMapper<T> : TypeMapper
+    public partial class ReferenceMapper<T> : TypeMapper<ReferenceMapper<T>>
         where T : class
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -233,7 +233,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ValueMapper<T> : TypeMapper
+    public partial class ValueMapper<T> : TypeMapper<ValueMapper<T>>
         where T : struct
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -379,7 +379,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<TValue> : TypeMapper
+    public partial class TestMapper<TValue> : TypeMapper<TestMapper<TValue>>
         where TValue : class, IContract
     {
         protected override void Configure(MapperBuilder builder) =>

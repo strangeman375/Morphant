@@ -21,7 +21,7 @@ public sealed class Destination { }
 public abstract class MissingBase : ITypeMapper<Source, Destination> { }
 
 [MorphantMapper]
-public class NonPartialMapper : TypeMapper
+public class NonPartialMapper : TypeMapper<NonPartialMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
@@ -30,7 +30,7 @@ public class NonPartialMapper : TypeMapper
 public class NonPartialContainer
 {
     [MorphantMapper]
-    public partial class NestedMapper : TypeMapper
+    public partial class NestedMapper : TypeMapper<NestedMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -38,15 +38,14 @@ public class NonPartialContainer
 }
 
 [MorphantMapper]
-file partial class FileMapper : TypeMapper
+file partial class FileMapper : TypeMapper<FileMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
 }
 
 [MorphantMapper]
-public abstract partial class ExactMapper :
-    TypeMapper,
+public abstract partial class ExactMapper : TypeMapper<ExactMapper>,
     ITypeMapper<Source, Destination>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -54,8 +53,7 @@ public abstract partial class ExactMapper :
 }
 
 [MorphantMapper]
-public abstract partial class UnifiableMapper<T> :
-    TypeMapper,
+public abstract partial class UnifiableMapper<T> : TypeMapper<UnifiableMapper<T>>,
     ITypeMapper<T, Destination>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -63,7 +61,7 @@ public abstract partial class UnifiableMapper<T> :
 }
 
 [MorphantMapper]
-public partial class SupportsMapper : TypeMapper
+public partial class SupportsMapper : TypeMapper<SupportsMapper>
 {
     private new bool Supports(Type sourceType, Type destinationType) => false;
 

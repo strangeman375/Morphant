@@ -176,7 +176,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -206,7 +206,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper
+    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
         where T : class, System.IComparable<T>
     {
         protected override void Configure(MapperBuilder builder) =>

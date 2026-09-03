@@ -25,7 +25,7 @@ public partial class Container
     private sealed class PrivateDestination { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<PrivateSource?, PrivateDestination?>();
@@ -91,7 +91,7 @@ public partial class Container
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -138,7 +138,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -185,7 +185,7 @@ public partial class Container
     protected internal sealed class ProtectedInternalSource { }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -223,7 +223,7 @@ public partial class Container
     public sealed class Destination { }
 
     [MorphantMapper]
-    public class TestMapper : TypeMapper
+    public class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<PrivateSource, Destination>();
@@ -253,7 +253,7 @@ namespace TestCase;
 public sealed class Destination { }
 
 [MorphantMapper]
-public unsafe partial class TestMapper : TypeMapper
+public unsafe partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<int*, Destination>();

@@ -16,14 +16,14 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper
+public partial class FirstMapper : TypeMapper<FirstMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int X, int Y), (int Left, int Top)>();
 }
 
 [MorphantMapper]
-public partial class SecondMapper : TypeMapper
+public partial class SecondMapper : TypeMapper<SecondMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int A, int B), (int Width, int Height)>();
@@ -69,7 +69,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper
+public partial class FirstMapper : TypeMapper<FirstMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<
@@ -78,7 +78,7 @@ public partial class FirstMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class SecondMapper : TypeMapper
+public partial class SecondMapper : TypeMapper<SecondMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<
@@ -112,7 +112,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper
+public partial class FirstMapper : TypeMapper<FirstMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<
@@ -121,7 +121,7 @@ public partial class FirstMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class SecondMapper : TypeMapper
+public partial class SecondMapper : TypeMapper<SecondMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<
@@ -155,7 +155,7 @@ namespace TestCase;
 public sealed class Source { }
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper
+public partial class FirstMapper : TypeMapper<FirstMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<
@@ -164,7 +164,7 @@ public partial class FirstMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class SecondMapper : TypeMapper
+public partial class SecondMapper : TypeMapper<SecondMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<
@@ -209,14 +209,14 @@ namespace TestCase;
 public sealed class Source { }
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper
+public partial class FirstMapper : TypeMapper<FirstMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, (dynamic Value, int Count)>();
 }
 
 [MorphantMapper]
-public partial class SecondMapper : TypeMapper
+public partial class SecondMapper : TypeMapper<SecondMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, (object Value, int Count)>();
@@ -261,7 +261,7 @@ public sealed class Source { }
 #nullable disable annotations
 
 [MorphantMapper]
-public partial class ObliviousMapper : TypeMapper
+public partial class ObliviousMapper : TypeMapper<ObliviousMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, (string Value, int Count)>();
@@ -270,7 +270,7 @@ public partial class ObliviousMapper : TypeMapper
 #nullable enable annotations
 
 [MorphantMapper]
-public partial class NonNullableMapper : TypeMapper
+public partial class NonNullableMapper : TypeMapper<NonNullableMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, (string Value, int Count)>();
@@ -302,7 +302,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -419,7 +419,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class FirstMapper : TypeMapper
+public partial class FirstMapper : TypeMapper<FirstMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int X, int Y), (int Left, int Top)>();
@@ -432,7 +432,7 @@ __SECOND_MAPPER__
     private const string SecondMapperSource =
 """
 [MorphantMapper]
-public partial class SecondMapper : TypeMapper
+public partial class SecondMapper : TypeMapper<SecondMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int A, int B), (int Width, int Height)>();
@@ -449,7 +449,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class AuthoritativeMapper : TypeMapper
+public partial class AuthoritativeMapper : TypeMapper<AuthoritativeMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int X, int Y), (int Left, int Top)>();
@@ -466,7 +466,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class ConflictMapper : TypeMapper
+public partial class ConflictMapper : TypeMapper<ConflictMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int A, int B), (int Width, int Height)>();

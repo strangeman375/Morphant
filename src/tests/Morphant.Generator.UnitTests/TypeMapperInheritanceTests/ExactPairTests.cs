@@ -37,7 +37,7 @@ namespace TestCase
         public string Name { get; set; } = string.Empty;
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>()

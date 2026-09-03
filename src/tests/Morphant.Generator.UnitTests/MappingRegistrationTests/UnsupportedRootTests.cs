@@ -18,7 +18,7 @@ using Morphant;
 namespace TestCase;
 
 [MorphantMapper]
-public partial class TestMapper<TSource, TDestination> : TypeMapper
+public partial class TestMapper<TSource, TDestination> : TypeMapper<TestMapper<TSource, TDestination>>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<TSource, TDestination>();
@@ -66,7 +66,7 @@ namespace TestCase;
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper<T> : TypeMapper
+public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
     where T : struct
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -106,7 +106,7 @@ public sealed class Envelope<T> { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper<T> : TypeMapper
+public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Envelope<T>, Destination>();
@@ -141,7 +141,7 @@ namespace TestCase;
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -188,7 +188,7 @@ namespace TestCase;
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper<T> : TypeMapper
+public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<T, Destination>();

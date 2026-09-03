@@ -17,7 +17,7 @@ using Morphant;
 
 namespace TestCase;
 
-public abstract class BaseMapper<T> : TypeMapper
+public abstract class BaseMapper<T> : TypeMapper<BaseMapper<T>>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -177,7 +177,7 @@ using Morphant;
 
 namespace Shared;
 
-public abstract class ExternalBase<T> : TypeMapper
+public abstract class ExternalBase<T> : TypeMapper<ExternalBase<T>>
 {
     protected override void Configure(MapperBuilder builder)
     {

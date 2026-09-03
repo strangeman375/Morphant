@@ -36,7 +36,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         private readonly global::Morphant.Delegates.ResolveUsing<
             Source,
@@ -286,7 +286,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         private readonly Func<Destination> _factory = Create;
 

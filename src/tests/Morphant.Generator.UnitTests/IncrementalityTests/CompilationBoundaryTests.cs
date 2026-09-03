@@ -182,7 +182,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -206,7 +206,7 @@ namespace First
     public sealed class PaddingTwo { }
 
     [MorphantMapper]
-    public class FirstMapper : TypeMapper
+    public class FirstMapper : TypeMapper<FirstMapper>
     {
         protected override void Configure(MapperBuilder builder) { }
     }
@@ -222,7 +222,7 @@ using Morphant;
 namespace Second
 {
     [MorphantMapper]
-    public class SecondMapper : TypeMapper
+    public class SecondMapper : TypeMapper<SecondMapper>
     {
         protected override void Configure(MapperBuilder builder) { }
     }
@@ -248,7 +248,7 @@ namespace First
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class FirstMapper : TypeMapper
+    public partial class FirstMapper : TypeMapper<FirstMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -271,7 +271,7 @@ namespace Second
     public sealed class Source { }
     public sealed class Destination { }
     [MorphantMapper]
-    public partial class SecondMapper : TypeMapper
+    public partial class SecondMapper : TypeMapper<SecondMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

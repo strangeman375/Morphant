@@ -23,7 +23,7 @@ public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -84,7 +84,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -131,7 +131,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -178,7 +178,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -223,7 +223,7 @@ public sealed class SourceB { }
 public sealed class DestinationB { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -270,7 +270,7 @@ public class BaseDestination { public int Value { get; set; } }
 public sealed class Destination : BaseDestination { }
 
 [MorphantMapper]
-public partial class BaseMapper : TypeMapper
+public partial class BaseMapper : TypeMapper<BaseMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<BaseSource, BaseDestination>()
@@ -320,7 +320,7 @@ public sealed class SourceB { }
 public sealed class DestinationB { }
 
 [MorphantMapper]
-public partial class RootFlowMapper : TypeMapper
+public partial class RootFlowMapper : TypeMapper<RootFlowMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -334,7 +334,7 @@ public partial class RootFlowMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class PairFlowMapper : TypeMapper
+public partial class PairFlowMapper : TypeMapper<PairFlowMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -375,7 +375,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public class TestMapper : TypeMapper
+public class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -410,7 +410,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper,
+public partial class TestMapper : TypeMapper<TestMapper>,
     ITypeMapper<Source, Destination>
 {
     protected override void Configure(MapperBuilder builder) =>
@@ -457,7 +457,7 @@ namespace TestCase;
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper<T> : TypeMapper
+public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<T, Destination>();
@@ -489,7 +489,7 @@ public sealed class Box<T> { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper<T> : TypeMapper
+public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -528,7 +528,7 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

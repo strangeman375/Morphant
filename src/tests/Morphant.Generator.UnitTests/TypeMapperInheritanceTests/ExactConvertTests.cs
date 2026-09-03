@@ -21,7 +21,7 @@ namespace TestCase
 {
     public sealed record Source(int Value);
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, int?>()

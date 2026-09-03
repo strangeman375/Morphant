@@ -37,7 +37,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -437,7 +437,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class FirstMapper<T> : TypeMapper
+    public partial class FirstMapper<T> : TypeMapper<FirstMapper<T>>
         where T : class, IFirst
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -445,7 +445,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class SecondMapper<U> : TypeMapper
+    public partial class SecondMapper<U> : TypeMapper<SecondMapper<U>>
         where U : class, ISecond
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -703,7 +703,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ReferenceMapper<T> : TypeMapper
+    public partial class ReferenceMapper<T> : TypeMapper<ReferenceMapper<T>>
         where T : class
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -711,7 +711,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class ValueMapper<T> : TypeMapper
+    public partial class ValueMapper<T> : TypeMapper<ValueMapper<T>>
         where T : struct
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -962,7 +962,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<TValue, TDependency> : TypeMapper
+    public partial class TestMapper<TValue, TDependency> : TypeMapper<TestMapper<TValue, TDependency>>
         where TValue : class, IMarker<TDependency>
         where TDependency : class, new()
     {
@@ -1261,7 +1261,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<TOuter, TValue> : TypeMapper
+    public partial class TestMapper<TOuter, TValue> : TypeMapper<TestMapper<TOuter, TValue>>
         where TOuter : class
         where TValue : TOuter
     {
@@ -1550,7 +1550,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper<TValue> : TypeMapper
+    public partial class TestMapper<TValue> : TypeMapper<TestMapper<TValue>>
         where TValue : IMarker<int>
     {
         protected override void Configure(MapperBuilder builder) =>
@@ -1812,7 +1812,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Outer<string>.Destination<int>>();

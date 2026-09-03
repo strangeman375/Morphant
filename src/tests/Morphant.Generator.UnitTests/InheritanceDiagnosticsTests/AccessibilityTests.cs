@@ -58,7 +58,7 @@ namespace TestCase
         public string Value { get; }
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         private static string Secret(string value) => "secret:" + value;
 
@@ -202,7 +202,7 @@ namespace TestCase
         public string Value { get; set; } = "";
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         private static string Secret(string value) => "secret:" + value;
         protected static string Visible(string value) => "visible:" + value;
@@ -286,7 +286,7 @@ namespace TestCase
         public string Second { get; set; } = "";
     }
 
-    public abstract class SupportMapper : TypeMapper
+    public abstract class SupportMapper : TypeMapper<SupportMapper>
     {
         protected string Decorate(string value) => value;
 
@@ -361,7 +361,7 @@ namespace TestCase
     public sealed class Destination2 { public string Value { get; set; } = ""; }
     public sealed class Destination3 { public string Value { get; set; } = ""; }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         public static string Public(string value) => value;
         internal static string Internal(string value) => value;
@@ -438,7 +438,7 @@ namespace TestCase
         public string Second { get; set; } = "";
     }
 
-    public abstract class FarMapper : TypeMapper
+    public abstract class FarMapper : TypeMapper<FarMapper>
     {
         private static string FarSecret(string value) => value;
 

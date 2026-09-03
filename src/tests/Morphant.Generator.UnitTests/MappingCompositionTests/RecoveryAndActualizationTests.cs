@@ -23,7 +23,7 @@ public sealed class Source { }
 public sealed class Destination { }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -377,7 +377,7 @@ public sealed class DestinationB { public int Value { get; set; } }
 public sealed class DestinationZ { public int Value { get; set; } }
 
 [MorphantMapper]
-public partial class ZMapper : TypeMapper
+public partial class ZMapper : TypeMapper<ZMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, DestinationZ>()
@@ -386,7 +386,7 @@ public partial class ZMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class AMapper : TypeMapper
+public partial class AMapper : TypeMapper<AMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -479,7 +479,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -497,7 +497,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -516,7 +516,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -535,7 +535,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -554,7 +554,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -573,7 +573,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -592,7 +592,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -611,7 +611,7 @@ namespace TestCase;
 public sealed class Source { public int Value { get; set; } }
 public sealed class Destination { public int Value { get; set; } }
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
