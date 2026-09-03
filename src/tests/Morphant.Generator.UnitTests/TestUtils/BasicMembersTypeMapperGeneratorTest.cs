@@ -18,7 +18,7 @@ internal sealed class BasicMembersTypeMapperGeneratorTest
     {
         _languageVersion = languageVersion;
         CompilerDiagnostics = CompilerDiagnostics.Warnings;
-        TestState.AdditionalReferences.Add(typeof(TypeMapper).Assembly);
+        TestState.AdditionalReferences.Add(typeof(TypeMapper<>).Assembly);
         TestState.AdditionalReferences.Add(
             typeof(ReferencedNestedSource).Assembly);
     }

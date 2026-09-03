@@ -53,7 +53,7 @@ internal static class GeneratorTestDriver
             .ToImmutableArray();
         var references = FrameworkReferences.Add(
             MetadataReference.CreateFromFile(
-                typeof(TypeMapper).Assembly.Location));
+                typeof(TypeMapper<>).Assembly.Location));
 
         if (additionalReferences is not null)
         {
@@ -233,7 +233,7 @@ internal static class GeneratorTestDriver
             [CSharpSyntaxTree.ParseText(source)],
             FrameworkReferences.Add(
                 MetadataReference.CreateFromFile(
-                    typeof(TypeMapper).Assembly.Location)),
+                    typeof(TypeMapper<>).Assembly.Location)),
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: NullableContextOptions.Enable));

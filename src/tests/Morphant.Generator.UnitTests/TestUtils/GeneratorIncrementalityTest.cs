@@ -837,7 +837,7 @@ internal static class GeneratorIncrementalityTest
                 "Trusted platform assemblies are unavailable.");
         var referencePaths = trustedPlatformAssemblies
             .Split(Path.PathSeparator)
-            .Append(typeof(TypeMapper).Assembly.Location)
+            .Append(typeof(TypeMapper<>).Assembly.Location)
             .Distinct(StringComparer.OrdinalIgnoreCase);
 
         return referencePaths

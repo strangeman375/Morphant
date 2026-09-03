@@ -12,7 +12,7 @@ internal static class CompatibilityGeneratorTest
         FrameworkReferences = BuildFrameworkReferences();
 
     public static PortableExecutableReference ActualRuntimeReference =>
-        MetadataReference.CreateFromFile(typeof(TypeMapper).Assembly.Location);
+        MetadataReference.CreateFromFile(typeof(TypeMapper<>).Assembly.Location);
 
     public static CompatibilityGeneratorResult Run(
         LanguageVersion languageVersion,

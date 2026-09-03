@@ -20,6 +20,10 @@ internal sealed class PublicApiBaselineTests
     [Test]
     public void Runtime_public_API_preserves_modifiers_inheritance_and_metadata()
     {
+        var typeMapperType = typeof(TypeMapper<>);
+        var mapperBuilderType = typeMapperType.GetNestedType(
+            "MapperBuilder",
+            BindingFlags.NonPublic)!;
         var sealedTypes = new[]
         {
             typeof(Mapper),
@@ -33,8 +37,8 @@ internal sealed class PublicApiBaselineTests
             typeof(ValueMarker<>),
             typeof(Member<>),
             typeof(ConstructorParameter<>),
-            typeof(MapperBuilder),
-            typeof(MapperBuilder<,>),
+            mapperBuilderType,
+            typeof(MappingBuilder<,,>),
             typeof(AmbiguousMappingException),
             typeof(AmbiguousPolymorphicMappingException),
             typeof(InvalidMappingContextException),
@@ -59,7 +63,7 @@ internal sealed class PublicApiBaselineTests
             typeof(MapMarker),
             typeof(global::Morphant.Context.MappingContextMarker),
             typeof(MapperBuilderBase<>),
-            typeof(TypeMapper),
+            typeMapperType,
             typeof(MorphantException),
             typeof(MappingException)
         };
@@ -72,13 +76,13 @@ internal sealed class PublicApiBaselineTests
             .GetGenericArguments();
         var extensionMethods = typeof(TypeMapperExtensions)
             .GetMethods(BindingFlags.Public | BindingFlags.Static);
-        var mapMethod = typeof(MapperBuilder)
+        var mapMethod = mapperBuilderType
             .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-            .Single(method => method.Name == nameof(MapperBuilder.Map));
-        var supportsMethod = typeof(TypeMapper).GetMethod(
+            .Single(method => method.Name == "Map");
+        var supportsMethod = typeMapperType.GetMethod(
             "Supports",
             BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var forDerivedMethod = typeof(MapperBuilder<,>)
+        var forDerivedMethod = typeof(MappingBuilder<,,>)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Single(method => method.Name == "ForDerived");
         var mapperAttributeUsage =
@@ -160,8 +164,9 @@ internal sealed class PublicApiBaselineTests
                     .Select(parameter => parameter
                         .GetGenericParameterConstraints()
                         .Single()),
-                Is.EqualTo(typeof(MapperBuilder<,>)
-                    .GetGenericArguments()));
+                Is.EqualTo(typeof(MappingBuilder<,,>)
+                    .GetGenericArguments()
+                    .Skip(1)));
             Assert.That(
                 GetImplicitOperatorCount(typeof(AutoMarker<>)),
                 Is.EqualTo(1));

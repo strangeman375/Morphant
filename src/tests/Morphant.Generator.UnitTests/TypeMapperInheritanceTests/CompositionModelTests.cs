@@ -9,7 +9,7 @@ internal sealed class CompositionModelTests
     [Test]
     public void Exposes_only_the_typed_IncludeBase_API()
     {
-        var method = typeof(global::Morphant.MapperBuilder<,>)
+        var method = typeof(global::Morphant.MappingBuilder<,,>)
             .GetMethods()
             .Single(candidate => candidate.Name == "IncludeBase");
 

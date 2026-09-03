@@ -37,7 +37,7 @@ internal sealed class StrongNameIdentityTests
     [Test]
     public void Product_and_friend_assemblies_use_the_Morphant_strong_name()
     {
-        var runtime = typeof(TypeMapper).Assembly.GetName();
+        var runtime = typeof(TypeMapper<>).Assembly.GetName();
         var generator = typeof(MorphantGenerator).Assembly.GetName();
         var unitTests = typeof(StrongNameIdentityTests).Assembly.GetName();
         var testAssets = typeof(ReferencedDestination).Assembly.GetName();
