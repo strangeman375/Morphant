@@ -236,6 +236,67 @@ public partial class TestMapper : TestMapperFeature
     }
 
     [Test]
+    public void Concrete_intermediate_base_can_configure_a_scoped_tuple_surface()
+    {
+        // lang=c#
+        const string source =
+"""
+using Morphant;
+
+namespace TestCase;
+
+public sealed class Source
+{
+    public int Id { get; init; }
+
+    public string Name { get; init; } = string.Empty;
+}
+
+public abstract class CommonMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : CommonMapper<TMapper>
+{
+    protected override void Configure(MapperBuilder builder) { }
+}
+
+public abstract class TestMapperFeature : CommonMapper<TestMapper>
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        base.Configure(builder);
+        builder.Map<Source, (int Id, string Name)>()
+            .Members(value => new()
+            {
+                Id = value.Id,
+                Name = value.Name
+            });
+    }
+}
+
+[MorphantMapper]
+public partial class TestMapper : TestMapperFeature
+{
+    protected override void Configure(MapperBuilder builder) =>
+        base.Configure(builder);
+}
+""";
+
+        var result = MapperDeclarationGeneratorTest.Run(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Diagnostics, Is.Empty);
+            Assert.That(result.CompilerErrors, Is.Empty);
+            Assert.That(
+                result.HasGeneratedFile(
+                    "Morphant.Generated.MemberExtension." +
+                    "TestCase_Source__" +
+                    "System_ValueTuple_System_Int32__System_String___" +
+                    "TestCase_TestMapper.g.cs"),
+                Is.True);
+        });
+    }
+
+    [Test]
     public void Shared_invalid_configuration_base_reports_once()
     {
         // lang=c#
