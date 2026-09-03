@@ -305,7 +305,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
         }
     }
 
-    public abstract class GenericMapper<T> : TypeMapper<GenericMapper<T>>
+    public abstract class GenericMapper<TMapper, T> : TypeMapper<TMapper>
+        where TMapper : GenericMapper<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<GenericSourceBase<T>, GenericDestinationBase<T>>()
@@ -313,7 +314,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
     }
 
     [MorphantMapper]
-    public sealed partial class ClosedGenericMapper : GenericMapper<string>
+    public sealed partial class ClosedGenericMapper :
+        GenericMapper<ClosedGenericMapper, string>
     {
         protected override void Configure(MapperBuilder builder)
         {

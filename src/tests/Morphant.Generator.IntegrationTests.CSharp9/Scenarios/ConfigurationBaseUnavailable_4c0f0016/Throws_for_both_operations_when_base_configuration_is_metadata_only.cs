@@ -22,7 +22,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationBas
     }
 
     [MorphantMapper]
-    public partial class TestMapper : MetadataConfigurationBase
+    public partial class TestMapper : MetadataConfigurationBase<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

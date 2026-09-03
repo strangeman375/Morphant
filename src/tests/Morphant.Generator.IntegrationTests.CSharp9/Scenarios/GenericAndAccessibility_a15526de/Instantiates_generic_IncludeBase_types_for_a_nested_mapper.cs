@@ -29,7 +29,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
         public string Extra { get; set; } = string.Empty;
     }
 
-    public abstract class GenericBaseMapper<T> : TypeMapper<GenericBaseMapper<T>>
+    public abstract class GenericBaseMapper<TMapper, T> : TypeMapper<TMapper>
+        where TMapper : GenericBaseMapper<TMapper, T>
     {
         protected static string FormatValue(object? value) =>
             "base:" + value;
@@ -46,7 +47,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
     public partial class Container<T>
     {
         [MorphantMapper]
-        public partial class Mapper : GenericBaseMapper<T>
+        public partial class Mapper : GenericBaseMapper<Mapper, T>
         {
             protected override void Configure(MapperBuilder builder)
             {

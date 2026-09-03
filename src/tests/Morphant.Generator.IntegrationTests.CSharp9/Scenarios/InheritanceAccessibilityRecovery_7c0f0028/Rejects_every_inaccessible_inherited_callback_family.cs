@@ -67,7 +67,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritanceAcces
         public int Value { get; set; }
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         private static string Secret(string value) => "secret:" + value;
 
@@ -99,7 +100,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritanceAcces
         }
     }
 
-    public abstract class MiddleMapper : BaseMapper
+    public abstract class MiddleMapper<TMapper> : BaseMapper<TMapper>
+        where TMapper : MiddleMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -110,7 +112,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritanceAcces
     }
 
     [MorphantMapper]
-    public partial class TestMapper : MiddleMapper
+    public partial class TestMapper : MiddleMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

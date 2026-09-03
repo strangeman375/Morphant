@@ -37,7 +37,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
         public string Breed { get; set; } = string.Empty;
     }
 
-    public abstract class FarMapper : TypeMapper<FarMapper>
+    public abstract class FarMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : FarMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -56,7 +57,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
         }
     }
 
-    public abstract class NearMapper : FarMapper
+    public abstract class NearMapper<TMapper> : FarMapper<TMapper>
+        where TMapper : NearMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -71,7 +73,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
     }
 
     [MorphantMapper]
-    public partial class DogMapper : NearMapper
+    public partial class DogMapper : NearMapper<DogMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

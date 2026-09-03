@@ -43,7 +43,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
     {
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -62,7 +63,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DerivedMapper : BaseMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

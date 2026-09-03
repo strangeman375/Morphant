@@ -35,7 +35,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
     {
     }
 
-    public abstract class MapperSupport : TypeMapper<MapperSupport>
+    public abstract class MapperSupport<TMapper> : TypeMapper<TMapper>
+        where TMapper : MapperSupport<TMapper>
     {
         protected string Decorate(string value) => "support:" + value;
 
@@ -44,7 +45,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
         }
     }
 
-    public abstract class BaseMapper : MapperSupport
+    public abstract class BaseMapper<TMapper> : MapperSupport<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         private static string Secret(string value) => "secret:" + value;
 
@@ -64,7 +66,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DerivedMapper : BaseMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

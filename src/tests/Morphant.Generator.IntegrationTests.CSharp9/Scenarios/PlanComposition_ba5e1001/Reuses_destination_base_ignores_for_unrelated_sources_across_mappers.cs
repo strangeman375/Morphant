@@ -54,7 +54,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
         public string Number { get; set; }
     }
 
-    public abstract class EntityMapper : TypeMapper<EntityMapper>
+    public abstract class EntityMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : EntityMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<object, BaseEntity>()
@@ -68,7 +69,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
     }
 
     [MorphantMapper]
-    public partial class CustomerMapper : EntityMapper
+    public partial class CustomerMapper : EntityMapper<CustomerMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -79,7 +80,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
     }
 
     [MorphantMapper]
-    public partial class OrderMapper : EntityMapper
+    public partial class OrderMapper : EntityMapper<OrderMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

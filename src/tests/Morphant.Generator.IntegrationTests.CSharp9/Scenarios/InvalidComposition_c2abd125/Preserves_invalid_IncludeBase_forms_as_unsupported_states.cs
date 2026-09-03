@@ -44,14 +44,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     {
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Animal, AnimalDto>();
     }
 
     [MorphantMapper]
-    public partial class NoChainMapper : BaseMapper
+    public partial class NoChainMapper : BaseMapper<NoChainMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Dog, DogDto>()
@@ -59,7 +60,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     }
 
     [MorphantMapper]
-    public partial class MissingPairMapper : BaseMapper
+    public partial class MissingPairMapper : BaseMapper<MissingPairMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -70,7 +71,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     }
 
     [MorphantMapper]
-    public partial class IncompatibleSourceMapper : BaseMapper
+    public partial class IncompatibleSourceMapper : BaseMapper<IncompatibleSourceMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -81,7 +82,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     }
 
     [MorphantMapper]
-    public partial class IncompatibleDestinationMapper : BaseMapper
+    public partial class IncompatibleDestinationMapper : BaseMapper<IncompatibleDestinationMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -92,7 +93,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     }
 
     [MorphantMapper]
-    public partial class DuplicateIncludeMapper : BaseMapper
+    public partial class DuplicateIncludeMapper : BaseMapper<DuplicateIncludeMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

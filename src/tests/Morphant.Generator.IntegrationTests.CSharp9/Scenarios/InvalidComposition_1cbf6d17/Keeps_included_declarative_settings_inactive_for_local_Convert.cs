@@ -30,7 +30,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
         }
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Animal, AnimalDto>()
@@ -40,7 +41,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     }
 
     [MorphantMapper]
-    public partial class DogMapper : BaseMapper
+    public partial class DogMapper : BaseMapper<DogMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

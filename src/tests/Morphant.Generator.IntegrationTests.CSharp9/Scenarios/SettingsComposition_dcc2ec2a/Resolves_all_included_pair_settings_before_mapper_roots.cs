@@ -56,7 +56,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsComposit
         public int Value { get; set; }
     }
 
-    public abstract class FarMapper : TypeMapper<FarMapper>
+    public abstract class FarMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : FarMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -78,7 +79,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsComposit
         }
     }
 
-    public abstract class NearMapper : FarMapper
+    public abstract class NearMapper<TMapper> : FarMapper<TMapper>
+        where TMapper : NearMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -110,7 +112,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.SettingsComposit
     }
 
     [MorphantMapper]
-    public partial class DogMapper : NearMapper
+    public partial class DogMapper : NearMapper<DogMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

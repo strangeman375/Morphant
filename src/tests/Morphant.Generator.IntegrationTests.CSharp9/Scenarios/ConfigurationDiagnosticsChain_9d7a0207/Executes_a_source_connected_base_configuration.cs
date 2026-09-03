@@ -27,7 +27,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationDia
         public int Value { get; set; }
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -37,7 +38,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationDia
     }
 
     [MorphantMapper]
-    public partial class ConnectedMapper : BaseMapper
+    public partial class ConnectedMapper : BaseMapper<ConnectedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

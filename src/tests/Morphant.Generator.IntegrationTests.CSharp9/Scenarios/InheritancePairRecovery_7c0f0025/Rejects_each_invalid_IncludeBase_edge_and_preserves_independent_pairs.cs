@@ -81,7 +81,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritancePairR
         }
     }
 
-    public abstract class InvalidBaseMapper : TypeMapper<InvalidBaseMapper>
+    public abstract class InvalidBaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : InvalidBaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Animal, AnimalDto>()
@@ -89,7 +90,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritancePairR
     }
 
     [MorphantMapper]
-    public partial class TransitiveMapper : InvalidBaseMapper
+    public partial class TransitiveMapper : InvalidBaseMapper<TransitiveMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

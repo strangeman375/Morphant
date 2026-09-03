@@ -30,7 +30,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
         }
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         private static string Secret(int value) => "secret:" + value;
 
@@ -40,7 +41,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DerivedMapper : BaseMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

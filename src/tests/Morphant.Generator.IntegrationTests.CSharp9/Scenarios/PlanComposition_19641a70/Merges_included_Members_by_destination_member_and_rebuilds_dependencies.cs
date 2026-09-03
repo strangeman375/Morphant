@@ -37,7 +37,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
         public string Extra { get; set; } = string.Empty;
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected static string ObsoleteName(Animal source) =>
             throw new InvalidOperationException(
@@ -56,7 +57,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
     }
 
     [MorphantMapper]
-    public partial class DogMapper : BaseMapper
+    public partial class DogMapper : BaseMapper<DogMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

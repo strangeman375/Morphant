@@ -17,7 +17,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
         public T Value { get; set; } = default!;
     }
 
-    public abstract class GenericBaseMapper<T> : TypeMapper<GenericBaseMapper<T>>
+    public abstract class GenericBaseMapper<TMapper, T> : TypeMapper<TMapper>
+        where TMapper : GenericBaseMapper<TMapper, T>
     {
         protected static TValue Identity<TValue>(TValue value) => value;
 
@@ -38,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
     }
 
     [MorphantMapper]
-    public partial class ClosedMapper : GenericBaseMapper<int>
+    public partial class ClosedMapper : GenericBaseMapper<ClosedMapper, int>
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -24,14 +24,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InvalidCompositi
     {
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : BaseMapper
+    public partial class DerivedMapper : BaseMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -132,7 +132,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DeclarativeValue
     {
     }
 
-    public abstract class GenericValueMapper<T> : TypeMapper<GenericValueMapper<T>>
+    public abstract class GenericValueMapper<TMapper, T> : TypeMapper<TMapper>
+        where TMapper : GenericValueMapper<TMapper, T>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<GenericSource<T>, GenericDestination<T>>()
@@ -143,7 +144,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DeclarativeValue
     }
 
     [MorphantMapper]
-    public partial class ClosedValueMapper : GenericValueMapper<int>
+    public partial class ClosedValueMapper :
+        GenericValueMapper<ClosedValueMapper, int>
     {
         protected override void Configure(MapperBuilder builder)
         {

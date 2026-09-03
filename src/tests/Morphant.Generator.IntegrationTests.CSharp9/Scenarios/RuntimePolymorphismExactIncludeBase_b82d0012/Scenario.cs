@@ -12,7 +12,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
     public class AnimalDto { }
     public sealed class DogDto : AnimalDto { }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -25,7 +26,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
     }
 
     [MorphantMapper]
-    public partial class TestMapper : BaseMapper
+    public partial class TestMapper : BaseMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
