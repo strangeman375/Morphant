@@ -100,6 +100,15 @@
 
 - Preserve unrelated changes and work only in the canonical
   `/workspace/Morphant` checkout; scratch locations are disposable.
+- **Hard checkpoint rule:** every completed implementation stage and every
+  meaningful intermediate checkpoint must be committed and published directly
+  to remote `main` before the next stage starts. Never leave completed progress
+  only in the worktree, in the index, or in local-only commits. This rule still
+  applies when the checkpoint does not build, tests fail, or the repository is
+  temporarily inconsistent; record that state clearly in the commit message
+  and publish it anyway. Do not postpone publication until validation, cleanup,
+  a later stage, or the end of the task. After each publication, verify that the
+  checkpoint is present on remote `main`.
 - Persist agreed design decisions and completion criteria before a long
   implementation when the repository does not already contain them.
 - Split long work into coherent checkpoints and publish verified progress
