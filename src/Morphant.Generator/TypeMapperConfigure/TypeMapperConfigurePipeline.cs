@@ -75,7 +75,8 @@ internal static class TypeMapperConfigurePipeline
             compilation.SyntaxTrees);
 
         if (!declaration.DerivesFromTypeMapper ||
-            declaration.HasInvalidSelfTypeDiagnostic)
+            declaration.HasInvalidSelfTypeDiagnostic ||
+            !declaration.InaccessibleTypeIssues.IsEmpty)
         {
             return null;
         }

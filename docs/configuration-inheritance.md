@@ -10,7 +10,8 @@ Morphant has two explicit reuse mechanisms:
 ## Connect a base mapper
 
 ```csharp
-public abstract class CommonMapper : TypeMapper
+public abstract class CommonMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : CommonMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -20,7 +21,7 @@ public abstract class CommonMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class ApplicationMapper : CommonMapper
+public partial class ApplicationMapper : CommonMapper<ApplicationMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -37,10 +38,16 @@ implemented by `ApplicationMapper`.
 If `base.Configure(builder)` is not called, base configuration is not
 included.
 
+The recursive constraint on `TMapper` is required. It identifies one mapper
+family so inherited generated fluent methods keep the final mapper scope. A
+concrete mapper must close that family with itself; an unrelated self type
+produces [`MORPH0058`](diagnostics/MORPH0058.md).
+
 ## Include mapping rules
 
 ```csharp
-public abstract class AnimalMapper : TypeMapper
+public abstract class AnimalMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : AnimalMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Animal, AnimalDto>()
@@ -51,7 +58,7 @@ public abstract class AnimalMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class DogMapper : AnimalMapper
+public partial class DogMapper : AnimalMapper<DogMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -92,5 +99,8 @@ Each setting is resolved independently. See the
 
 - Include base configuration only once at each level.
 - Reused rules may only reference members accessible from the derived mapper.
+- A mapper and all its containing types must be accessible to generated
+  namespace-level code. See
+  [Generated code](generated-code.md#mapper-accessibility).
 - Cross-assembly configuration inheritance is not supported. Mappings from
   another assembly can still be registered independently with DI.

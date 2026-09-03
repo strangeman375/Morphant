@@ -2,7 +2,7 @@
 
 Start with [`Map`](map.md). A bare mapping uses conventions; add a method only
 when the mapping needs an explicit rule. This reference covers configuration
-inside `TypeMapper.Configure`. For application-side `IMapper.Map`, see
+inside `TypeMapper<TMapper>.Configure`. For application-side `IMapper.Map`, see
 [Create and Update](../create-and-update.md).
 
 ## Choose a method

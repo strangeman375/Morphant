@@ -14,7 +14,8 @@ type that contains the mapper, or move the mapper to the top level.
 public partial class Container
 {
     [MorphantMapper]
-    public sealed partial class ApplicationMapper : TypeMapper
+    public sealed partial class ApplicationMapper :
+        TypeMapper<ApplicationMapper>
     {
     }
 }

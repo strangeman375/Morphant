@@ -25,7 +25,7 @@ public sealed class CustomerDto
 }
 
 [MorphantMapper]
-public sealed partial class ApplicationMapper : TypeMapper
+public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Customer, CustomerDto>();
@@ -35,6 +35,9 @@ public sealed partial class ApplicationMapper : TypeMapper
 The generated `ApplicationMapper` implements
 `ITypeMapper<Customer, CustomerDto>`. Exact, case-sensitive member names are
 mapped when C# provides a warning-free implicit conversion.
+
+The mapper is its own `TypeMapper<TMapper>` argument. This self type keeps
+generated fluent methods attached to the correct mapper configuration.
 
 ## Register it with DI
 
@@ -98,7 +101,8 @@ builder.Map<string, Uri>()
 
 Continue with [Choose a configuration method](api/README.md),
 [Create and Update](create-and-update.md), [Conventions](conventions.md), or
-[Dependency injection and `IMapper`](runtime-dispatch.md).
+[Dependency injection and `IMapper`](runtime-dispatch.md). For reusable mapper
+bases, see [Configuration inheritance](configuration-inheritance.md).
 
 ## Calling without DI
 

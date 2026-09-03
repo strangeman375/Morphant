@@ -374,6 +374,169 @@ public partial interface InterfaceContainer
     }
 
     [Test]
+    public void Inaccessible_nested_mappers_report_MORPH0059_without_CS0122()
+    {
+        // lang=c#
+        const string source =
+"""
+using Morphant;
+
+namespace TestCase;
+
+public partial class Container
+{
+    [MorphantMapper]
+    private partial class PrivateMapper : TypeMapper<PrivateMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<(int X, int Y), int>();
+    }
+
+    [MorphantMapper]
+    protected partial class ProtectedMapper : TypeMapper<ProtectedMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<(int X, int Y), long>();
+    }
+
+    [MorphantMapper]
+    private protected partial class PrivateProtectedMapper :
+        TypeMapper<PrivateProtectedMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<(int X, int Y), short>();
+    }
+}
+""";
+
+        var result = MapperDeclarationGeneratorTest.Run(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                result.Diagnostics.Select(diagnostic => diagnostic.Id),
+                Is.EqualTo(new[]
+                {
+                    "MORPH0059",
+                    "MORPH0059",
+                    "MORPH0059"
+                }));
+            Assert.That(
+                result.Diagnostics.Select(diagnostic =>
+                    MapperDeclarationGeneratorTest.SourceText(
+                        diagnostic.Location)),
+                Is.EqualTo(new[] { "private", "protected", "private" }));
+            Assert.That(
+                result.Diagnostics.Select(diagnostic =>
+                    diagnostic.GetMessage()),
+                Is.EqualTo(new[]
+                {
+                    "Type 'TestCase.Container.PrivateMapper' cannot declare " +
+                    "or contain a Morphant mapper because it is not " +
+                    "accessible to generated namespace-level code.",
+                    "Type 'TestCase.Container.ProtectedMapper' cannot " +
+                    "declare or contain a Morphant mapper because it is " +
+                    "not accessible to generated namespace-level code.",
+                    "Type 'TestCase.Container.PrivateProtectedMapper' " +
+                    "cannot declare or contain a Morphant mapper because " +
+                    "it is not accessible to generated namespace-level " +
+                    "code."
+                }));
+            Assert.That(result.CompilerErrors, Is.Empty);
+            Assert.That(result.GeneratedSources, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Inaccessible_container_reports_MORPH0059_on_the_container()
+    {
+        // lang=c#
+        const string source =
+"""
+using Morphant;
+
+namespace TestCase;
+
+public partial class Outer
+{
+    private partial class Hidden
+    {
+        [MorphantMapper]
+        public partial class TestMapper : TypeMapper<TestMapper>
+        {
+            protected override void Configure(MapperBuilder builder) =>
+                builder.Map<(int X, int Y), int>();
+        }
+    }
+}
+""";
+
+        var result = MapperDeclarationGeneratorTest.Run(source);
+        var diagnostic = result.Diagnostics.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0059"));
+            Assert.That(
+                MapperDeclarationGeneratorTest.SourceText(
+                    diagnostic.Location),
+                Is.EqualTo("private"));
+            Assert.That(
+                diagnostic.GetMessage(),
+                Does.StartWith("Type 'TestCase.Outer.Hidden'"));
+            Assert.That(result.CompilerErrors, Is.Empty);
+            Assert.That(result.GeneratedSources, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Protected_internal_nested_mapper_is_namespace_accessible()
+    {
+        // lang=c#
+        const string source =
+"""
+using Morphant;
+
+namespace TestCase;
+
+public sealed class Source
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public partial class Container
+{
+    [MorphantMapper]
+    protected internal partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, (int Id, string Name)>()
+                .Members(source => new()
+                {
+                    Id = source.Id,
+                    Name = source.Name
+                });
+    }
+}
+""";
+
+        var result = MapperDeclarationGeneratorTest.Run(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Diagnostics, Is.Empty);
+            Assert.That(result.CompilerErrors, Is.Empty);
+            Assert.That(
+                result.GeneratedSources.Any(generated =>
+                    generated.HintName.Contains(
+                        ".TypeMapper.",
+                        StringComparison.Ordinal)),
+                Is.True);
+        });
+    }
+
+    [Test]
     public void File_local_mapper_reports_MORPH0008_on_the_file_keyword()
     {
         // lang=c#

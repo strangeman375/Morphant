@@ -60,14 +60,15 @@ public partial class ClosedGenericMapper<T> : TypeMapper<ClosedGenericMapper<T>>
 public partial class MapperContainer
 {
     [MorphantMapper]
-    protected partial class ProtectedMapper : TypeMapper<ProtectedMapper>
+    protected internal partial class ProtectedInternalMapper :
+        TypeMapper<ProtectedInternalMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, DestinationC>();
     }
 
     [MorphantMapper]
-    private partial class PrivateMapper : TypeMapper<PrivateMapper>
+    internal partial class InternalMapper : TypeMapper<InternalMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, DestinationD>();

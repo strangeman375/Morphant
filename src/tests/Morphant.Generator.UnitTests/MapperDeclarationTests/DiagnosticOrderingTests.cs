@@ -68,6 +68,17 @@ public partial class SupportsMapper : TypeMapper<SupportsMapper>
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
 }
+
+public partial class AccessibilityContainer
+{
+    [MorphantMapper]
+    private partial class InaccessibleMapper :
+        TypeMapper<InaccessibleMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>();
+    }
+}
 """;
 
         var result = MapperDeclarationGeneratorTest.Run(source);
@@ -82,7 +93,8 @@ public partial class SupportsMapper : TypeMapper<SupportsMapper>
                 "MORPH0008",
                 "MORPH0009",
                 "MORPH0010",
-                "MORPH0034"
+                "MORPH0034",
+                "MORPH0059"
             }));
     }
 }

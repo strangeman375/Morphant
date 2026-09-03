@@ -12,7 +12,7 @@ make every declaration partial.
 
 ```csharp
 [MorphantMapper]
-public sealed partial class ApplicationMapper : TypeMapper
+public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
 {
 }
 ```

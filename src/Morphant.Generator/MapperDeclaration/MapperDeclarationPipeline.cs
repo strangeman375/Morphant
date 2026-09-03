@@ -157,6 +157,8 @@ internal static class MapperDeclarationPipeline
         var allContainingDeclarationsPartial = true;
         var fileLocalIssues =
             ImmutableArray.CreateBuilder<MapperContainingTypeIssue>();
+        var inaccessibleTypeIssues =
+            ImmutableArray.CreateBuilder<MapperContainingTypeIssue>();
 
         for (var current = mapperType;
              current is not null;
@@ -177,6 +179,17 @@ internal static class MapperDeclarationPipeline
                     new MapperContainingTypeIssue(
                         current,
                         fileLocalDeclaration));
+            }
+
+            if (!IsAccessibleFromNamespaceLevel(
+                    current.DeclaredAccessibility) &&
+                declarations.FirstOrDefault() is
+                    { } inaccessibleDeclaration)
+            {
+                inaccessibleTypeIssues.Add(
+                    new MapperContainingTypeIssue(
+                        current,
+                        inaccessibleDeclaration));
             }
 
             if (SymbolEqualityComparer.Default.Equals(
@@ -232,6 +245,7 @@ internal static class MapperDeclarationPipeline
             containingPartialIssues.ToImmutable(),
             allContainingDeclarationsPartial,
             fileLocalIssues.ToImmutable(),
+            inaccessibleTypeIssues.ToImmutable(),
             FindConflictingSupportsMethods(
                 mapperType,
                 knownSymbols.SystemType,
@@ -435,5 +449,14 @@ internal static class MapperDeclarationPipeline
     private static bool HasFileModifier(TypeDeclarationSyntax declaration)
     {
         return declaration.Modifiers.Any(SyntaxKind.FileKeyword);
+    }
+
+    private static bool IsAccessibleFromNamespaceLevel(
+        Accessibility accessibility)
+    {
+        return accessibility is
+            Accessibility.Public or
+            Accessibility.Internal or
+            Accessibility.ProtectedOrInternal;
     }
 }

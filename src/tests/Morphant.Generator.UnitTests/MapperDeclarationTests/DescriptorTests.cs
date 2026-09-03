@@ -49,6 +49,12 @@ internal sealed class DescriptorTests
             "Mapper member conflicts with generated Supports",
             "Mapper '{0}' declares 'Supports(System.Type, System.Type)', " +
             "which conflicts with the generated mapper.");
+        yield return Case(
+            MapperDeclarationDiagnosticDescriptors.InaccessibleMapperType,
+            "MORPH0059",
+            "Mapper type is inaccessible to generated code",
+            "Type '{0}' cannot declare or contain a Morphant mapper because " +
+            "it is not accessible to generated namespace-level code.");
     }
 
     [TestCaseSource(nameof(Descriptors))]

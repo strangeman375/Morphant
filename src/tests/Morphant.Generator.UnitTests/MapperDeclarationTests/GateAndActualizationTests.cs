@@ -216,6 +216,78 @@ public partial class TestMapper : TypeMapper<TestMapper>
     }
 
     [Test]
+    public void Making_a_nested_mapper_accessible_removes_MORPH0059()
+    {
+        // lang=c#
+        const string invalidSource =
+"""
+using Morphant;
+
+namespace TestCase;
+
+public sealed class Destination
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+}
+
+public partial class Container
+{
+    [MorphantMapper]
+    private partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<(int X, int Y), Destination>();
+    }
+}
+""";
+        var invalid = MapperDeclarationGeneratorTest.Run(invalidSource);
+
+        // lang=c#
+        const string validSource =
+"""
+using Morphant;
+
+namespace TestCase;
+
+public sealed class Destination
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+}
+
+public partial class Container
+{
+    [MorphantMapper]
+    internal partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<(int X, int Y), Destination>();
+    }
+}
+""";
+        var valid = MapperDeclarationGeneratorTest.Run(
+            validSource,
+            driver: invalid.Driver);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                invalid.Diagnostics.Select(diagnostic => diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0059" }));
+            Assert.That(invalid.GeneratedSources, Is.Empty);
+            Assert.That(valid.Diagnostics, Is.Empty);
+            Assert.That(valid.CompilerErrors, Is.Empty);
+            Assert.That(
+                valid.GeneratedSources.Any(generated =>
+                    generated.HintName.Contains(
+                        ".TypeMapper.",
+                        StringComparison.Ordinal)),
+                Is.True);
+        });
+    }
+
+    [Test]
     public void Removing_direct_interface_restores_the_excluded_pair()
     {
         // lang=c#

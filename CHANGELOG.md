@@ -18,12 +18,23 @@ unsupported.
 - Report unexpected generator exceptions as `MORPH0057` in compiler and IDE
   diagnostics, with a generated failure report containing the full stack
   trace while independent generation continues where possible.
+- Generate stable shared, mapper-scoped, and mapper-family-scoped fluent
+  surfaces so unrelated mappers can use different erased C# presentations of
+  one CLR mapping pair.
+- Report an invalid mapper self type as `MORPH0058` and an inaccessible mapper
+  declaration as `MORPH0059`.
 
 ### Changed
 
 - Give generated tuple templates compact identity-based namespaces and the
   fixed leaf names `TupleConstructorParameters`, `TupleConstruction` and
   `TupleMembers`.
+- Replace the non-generic `TypeMapper` and two-argument mapping builder with
+  the self-typed `TypeMapper<TMapper>` and
+  `MappingBuilder<TMapper, TSource, TDestination>` API.
+- Scope conflicting tuple presentations to one effective mapper. Unrelated
+  mapper families may now use different tuple names, nullable annotations, or
+  `dynamic`/`object` presentations for the same physical CLR pair.
 
 ### Fixed
 

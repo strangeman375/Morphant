@@ -18,6 +18,7 @@ internal sealed record MapperDeclarationInfo(
     ImmutableArray<MapperContainingTypeIssue> ContainingPartialIssues,
     bool AllContainingDeclarationsPartial,
     ImmutableArray<MapperContainingTypeIssue> FileLocalIssues,
+    ImmutableArray<MapperContainingTypeIssue> InaccessibleTypeIssues,
     ImmutableArray<MethodDeclarationSyntax> ConflictingSupportsMethods,
     CSharpCompilation Compilation)
 {
@@ -33,6 +34,7 @@ internal sealed record MapperDeclarationInfo(
         AllMapperDeclarationsPartial &&
         AllContainingDeclarationsPartial &&
         FileLocalIssues.IsEmpty &&
+        InaccessibleTypeIssues.IsEmpty &&
         ConflictingSupportsMethods.IsEmpty;
 
     public string MapperDisplayName =>

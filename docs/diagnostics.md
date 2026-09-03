@@ -15,7 +15,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0002](diagnostics/MORPH0002.md) | Compatibility | Error | Required Morphant runtime types are missing. |
 | [MORPH0003](diagnostics/MORPH0003.md) | Compatibility | Error | Required Morphant runtime types are defined more than once. |
 | [MORPH0004](diagnostics/MORPH0004.md) | Compatibility | Error | The Morphant runtime and source generator are incompatible. |
-| [MORPH0005](diagnostics/MORPH0005.md) | Declaration | Error | An attributed mapper does not derive from `TypeMapper`. |
+| [MORPH0005](diagnostics/MORPH0005.md) | Declaration | Error | An attributed mapper does not derive from `TypeMapper<TMapper>`. |
 | [MORPH0006](diagnostics/MORPH0006.md) | Declaration | Error | The mapper declaration is not partial. |
 | [MORPH0007](diagnostics/MORPH0007.md) | Declaration | Error | A containing type required by a nested mapper is not partial. |
 | [MORPH0008](diagnostics/MORPH0008.md) | Declaration | Error | A mapper or required containing type is file-local. |
@@ -69,6 +69,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0056](diagnostics/MORPH0056.md) | Registration | Error | The same underlying mapping pair is registered with conflicting tuple presentations. |
 | [MORPH0057](diagnostics/MORPH0057.md) | Generator | Error | Morphant caught an unexpected internal generator exception. |
 | [MORPH0058](diagnostics/MORPH0058.md) | Declaration | Error | A mapper closes `TypeMapper<TMapper>` with an invalid self type. |
+| [MORPH0059](diagnostics/MORPH0059.md) | Declaration | Error | A mapper or containing type is inaccessible to generated namespace-level code. |
 
 ## Configure severity
 

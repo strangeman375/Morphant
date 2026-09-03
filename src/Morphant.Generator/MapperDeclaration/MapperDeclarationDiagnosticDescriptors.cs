@@ -63,6 +63,13 @@ internal static class MapperDeclarationDiagnosticDescriptors
             "its own type or a correctly constrained CRTP self type instead " +
             "of '{1}'.");
 
+    public static readonly DiagnosticDescriptor InaccessibleMapperType =
+        Create(
+            "MORPH0059",
+            "Mapper type is inaccessible to generated code",
+            "Type '{0}' cannot declare or contain a Morphant mapper because " +
+            "it is not accessible to generated namespace-level code.");
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

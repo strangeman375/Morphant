@@ -53,11 +53,15 @@ internal static class MapperDeclarationDiagnosticPipeline
             ImmutableArray.CreateBuilder<OrderedDiagnostic>();
         var supportsConflicts =
             ImmutableArray.CreateBuilder<OrderedDiagnostic>();
+        var inaccessibleTypes =
+            ImmutableArray.CreateBuilder<OrderedDiagnostic>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
         var seenPartialContainers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
         var seenFileLocalTypes = new HashSet<ISymbol>(
+            SymbolEqualityComparer.Default);
+        var seenInaccessibleTypes = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
 
         foreach (var declaration in OrderDeclarations(declarations))
@@ -159,6 +163,22 @@ internal static class MapperDeclarationDiagnosticPipeline
                         declaration.MapperDisplayName),
                     declaration));
             }
+
+            foreach (var issue in declaration.InaccessibleTypeIssues)
+            {
+                if (!seenInaccessibleTypes.Add(issue.Type))
+                {
+                    continue;
+                }
+
+                inaccessibleTypes.Add(CreateOrderedDiagnostic(
+                    Diagnostic.Create(
+                        MapperDeclarationDiagnosticDescriptors
+                            .InaccessibleMapperType,
+                        GetAccessibilityLocation(issue.Declaration),
+                        issue.DisplayName),
+                    declaration));
+            }
         }
 
         var seenPairConflicts = new HashSet<string>(StringComparer.Ordinal);
@@ -215,7 +235,8 @@ internal static class MapperDeclarationDiagnosticPipeline
             fileLocal.Count +
             exactContracts.Count +
             unifiableContracts.Count +
-            supportsConflicts.Count);
+            supportsConflicts.Count +
+            inaccessibleTypes.Count);
 
         AddOrdered(result, missingTypeMapper, comparer);
         AddOrdered(result, invalidSelfTypes, comparer);
@@ -225,6 +246,7 @@ internal static class MapperDeclarationDiagnosticPipeline
         AddOrdered(result, exactContracts, comparer);
         AddOrdered(result, unifiableContracts, comparer);
         AddOrdered(result, supportsConflicts, comparer);
+        AddOrdered(result, inaccessibleTypes, comparer);
 
         return result.ToImmutable();
     }
@@ -257,6 +279,19 @@ internal static class MapperDeclarationDiagnosticPipeline
         };
 
         return name.Identifier.GetLocation();
+    }
+
+    private static Location GetAccessibilityLocation(
+        TypeDeclarationSyntax declaration)
+    {
+        var modifier = declaration.Modifiers
+            .FirstOrDefault(static candidate =>
+                candidate.IsKind(SyntaxKind.PrivateKeyword) ||
+                candidate.IsKind(SyntaxKind.ProtectedKeyword));
+
+        return modifier.RawKind == 0
+            ? declaration.Identifier.GetLocation()
+            : modifier.GetLocation();
     }
 
     private static void AddOrdered(

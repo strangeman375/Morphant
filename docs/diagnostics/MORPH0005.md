@@ -2,7 +2,8 @@
 
 ## Cause
 
-A type marked with `[MorphantMapper]` does not derive from `TypeMapper`.
+A type marked with `[MorphantMapper]` does not derive from
+`TypeMapper<TMapper>` with the mapper as its self type.
 
 ## Fix
 
@@ -11,7 +12,7 @@ Morphant mapper:
 
 ```csharp
 [MorphantMapper]
-public sealed partial class ApplicationMapper : TypeMapper
+public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
 {
 }
 ```

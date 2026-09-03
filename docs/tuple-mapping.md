@@ -174,13 +174,21 @@ use an explicit expression or `Convert` for indexer access.
 
 C# tuple element names, nullable annotations and `dynamic` do not create
 different runtime types, but they affect the API available in Morphant
-configuration. All registrations with the same underlying source and
-destination types must therefore use the same recursive presentation. A
-conflict produces
-[`MORPH0056`](diagnostics/MORPH0056.md).
+configuration. Within one effective mapper, including connected base
+configuration, all registrations with the same underlying source and
+destination types must use the same recursive presentation. A conflict
+produces [`MORPH0056`](diagnostics/MORPH0056.md).
 
-Use one consistent presentation, or introduce wrapper types when the same
-underlying pair needs different meanings or nullable contracts.
+Unrelated mappers may use different presentations of the same physical pair;
+Morphant scopes their generated configuration methods automatically. This does
+not create keyed mappings: `ITypeMapper<,>` and DI still see the physical CLR
+pair, so registering both implementations in one runtime scope retains the
+usual service ambiguity.
+
+Use one consistent presentation inside a mapper family, or introduce wrapper
+types when one effective mapper needs different meanings or nullable
+contracts. See [Generated code](generated-code.md#configuration-surfaces) for
+the complete surface-selection rule.
 
 Related: [Conventions](conventions.md),
 [Create and Update](create-and-update.md), and
