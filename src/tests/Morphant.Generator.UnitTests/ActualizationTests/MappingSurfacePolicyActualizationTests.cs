@@ -8,6 +8,111 @@ namespace Morphant.Generator.UnitTests.ActualizationTests;
 internal sealed class MappingSurfacePolicyActualizationTests
 {
     [Test]
+    public void Shares_reference_surface_across_nullable_presentations()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public string Value { get; init; } = string.Empty;
+    }
+
+    public sealed class Destination
+    {
+        public string Value { get; set; } = string.Empty;
+    }
+
+    [MorphantMapper]
+    public partial class NullableMapper : TypeMapper<NullableMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source?, Destination>()
+                .Members(source => new()
+                {
+                    Value = source?.Value ?? string.Empty
+                });
+    }
+
+    [MorphantMapper]
+    public partial class NonNullableMapper : TypeMapper<NonNullableMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Members(source => new()
+                {
+                    Value = source.Value
+                });
+    }
+}
+""";
+
+        var result = GeneratorTestDriver.Run(
+            "ReferenceNullablePresentations",
+            source,
+            LanguageVersion.CSharp9);
+
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
+    [Test]
+    public void Shares_SystemTuple_surface_across_nullable_presentations()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source
+    {
+        public string? Value { get; init; }
+    }
+
+    [MorphantMapper]
+    public partial class NullableMapper : TypeMapper<NullableMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, System.Tuple<string?>>()
+                .Members(source => new()
+                {
+                    Item1 = source.Value
+                });
+    }
+
+    [MorphantMapper]
+    public partial class NonNullableMapper : TypeMapper<NonNullableMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, System.Tuple<string>>()
+                .Members(source => new()
+                {
+                    Item1 = source.Value ?? string.Empty
+                });
+    }
+}
+""";
+
+        var result = GeneratorTestDriver.Run(
+            "SystemTupleNullablePresentations",
+            source,
+            LanguageVersion.CSharp9);
+
+        Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+    }
+
+    [Test]
     public async Task Generates_independent_concrete_ValueTuple_scopes()
     {
         await ConstructionSurfaceGeneratorTest.RunAndAssert(
