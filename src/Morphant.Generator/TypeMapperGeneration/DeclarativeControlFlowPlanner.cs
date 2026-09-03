@@ -26,7 +26,7 @@ internal static class DeclarativeControlFlowPlanner
         "Morphant.Markers.MemberMarker";
 
     private const string TypeMapperMetadataName =
-        "Morphant.TypeMapper";
+        MetadataNames.TypeMapper;
 
     public static DeclarativeControlFlowBuildResult? Build(
         LambdaExpressionSyntax lambda,

@@ -948,14 +948,14 @@ internal static class CallbackDiagnosticAnalyzer
                     memberAccess.Expression)
                 .Type is INamedTypeSymbol
                 {
-                    TypeArguments.Length: 2
+                    TypeArguments.Length: 3
                 } builderType &&
             StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
                     builderType.OriginalDefinition),
-                "Morphant.MapperBuilder`2"))
+                MetadataNames.PairMapperBuilder))
         {
-            return (builderType.TypeArguments[0], builderType.TypeArguments[1]);
+            return (builderType.TypeArguments[1], builderType.TypeArguments[2]);
         }
 
         return (fallback.Pair.SourceType, fallback.Pair.DestinationType);

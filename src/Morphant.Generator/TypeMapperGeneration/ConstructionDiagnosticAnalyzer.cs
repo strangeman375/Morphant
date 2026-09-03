@@ -1229,16 +1229,16 @@ internal static class ConstructionDiagnosticAnalyzer
                     memberAccess.Expression)
                 .Type is INamedTypeSymbol
                 {
-                    TypeArguments.Length: 2
+                    TypeArguments.Length: 3
                 } builderType &&
             StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
                     builderType.OriginalDefinition),
-                "Morphant.MapperBuilder`2"))
+                MetadataNames.PairMapperBuilder))
         {
             return MapperContractDisplay.Create(
-                builderType.TypeArguments[0],
-                builderType.TypeArguments[1]);
+                builderType.TypeArguments[1],
+                builderType.TypeArguments[2]);
         }
 
         return MapperContractDisplay.Create(

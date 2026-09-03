@@ -1558,18 +1558,18 @@ internal static class BasicMembersMappingPlanner
                     cancellationToken)
                 .Type is not INamedTypeSymbol
                 {
-                    TypeArguments.Length: 2
+                    TypeArguments.Length: 3
                 } builderType ||
             !StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
                     builderType.OriginalDefinition),
-                "Morphant.MapperBuilder`2"))
+                MetadataNames.PairMapperBuilder))
         {
             return null;
         }
 
         return MappingTypeNormalization.NormalizePreviousDestination(
-            builderType.TypeArguments[1],
+            builderType.TypeArguments[2],
             configuration.Expression.SemanticModel.Compilation);
     }
 

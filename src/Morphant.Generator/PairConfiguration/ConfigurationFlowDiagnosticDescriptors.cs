@@ -12,7 +12,7 @@ internal static class ConfigurationFlowDiagnosticDescriptors
     public static readonly DiagnosticDescriptor MissingConfigure = Create(
         "MORPH0015",
         "Mapper must declare Configure",
-        "Mapper '{0}' must override 'Configure(Morphant.MapperBuilder)' " +
+        "Mapper '{0}' must override 'Configure(MapperBuilder)' " +
         "with a readable method body.");
 
     public static readonly DiagnosticDescriptor UnavailableBaseConfigure =
