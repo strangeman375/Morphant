@@ -34,21 +34,27 @@ generic substitution. It never depends on other mappers in the compilation.
 
 | Declared pair | Surface |
 |---|---|
-| Fully closed and contains no `ValueTuple` | Shared |
+| Fully closed, canonical presentation, and contains no `ValueTuple` | Shared |
+| Fully closed and contains an explicitly nullable reference or `dynamic` at any depth | Mapper-scoped |
 | Fully closed and contains `ValueTuple` at any depth | Mapper-scoped |
 | Contains a type parameter | Mapper-family-scoped |
 
 An open pair remains mapper-family-scoped after a leaf mapper closes its type
 parameters. `System.Tuple` does not itself require mapper scope, but a nested
-`ValueTuple` or type parameter does. An unnamed `ValueTuple` still requires
-mapper scope because another declaration can give the same CLR type element
-names.
+`ValueTuple`, nullable reference annotation, `dynamic`, or type parameter does.
+An unnamed `ValueTuple` still requires mapper scope because another declaration
+can give the same CLR type element names. Nullable value types remain shared:
+`Nullable<T>` is a distinct physical CLR type rather than an erased
+presentation.
 
-Shared extensions are generic directly over `TMapper` and use
-`MappingBuilder<TMapper, TSource, TDestination>` as their receiver. There is no
-`IMappingBuilder<,>` marker. Mapper-scoped extensions name an accessible mapper
-type. Mapper-family-scoped extensions constrain `TMapper` to the declaring
-CRTP family.
+Shared extensions are generic directly over `TMapper`, return
+`MappingBuilder<TMapper, TSource, TDestination>`, and use its existing
+`MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>>` base as a
+fallback receiver. The base conversion lets an exact mapper-scoped overload
+win when the same physical CLR pair also has a presentation-specific surface.
+There is no `IMappingBuilder<,>` marker. Mapper-scoped extensions name an
+accessible mapper type. Mapper-family-scoped extensions constrain `TMapper` to
+the declaring CRTP family.
 
 Overlapping base and derived mapper scopes produce one most-general applicable
 surface. Unrelated mapper families remain independent. Adding or removing an

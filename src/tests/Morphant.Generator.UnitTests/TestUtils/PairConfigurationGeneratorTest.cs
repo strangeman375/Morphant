@@ -28,86 +28,101 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         public static MappingBuilder<TMapper, TSource, TDestination> Construct<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Construct<TSource, object> construct)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Construct<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Construct<TSource, MappingContextMarker, object> construct)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Resolve<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Resolve<TSource, TDestination, object> resolve)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Resolve<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Resolve<TSource, TDestination, MappingContextMarker, object> resolve)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> ConstructUsing<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             ConstructUsing<TSource, TDestination> construct,
             bool compilerFallback = false)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> ConstructUsing<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             ConstructUsing<TSource, MappingContext, TDestination> construct,
             bool compilerFallback = false)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> ResolveUsing<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             ResolveUsing<TSource, TDestination, TDestination> resolve,
             bool compilerFallback = false)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> ResolveUsing<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             ResolveUsing<TSource, TDestination, MappingContext, TDestination> resolve,
             bool compilerFallback = false)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Members<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Members<TSource, object> members)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Members<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Members<TSource, TDestination, object> members)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Members<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Members<TSource, TDestination, TDestination, object> members)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Members<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Members<TSource, TDestination, TDestination, MappingContextMarker, object> members)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Convert<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Convert<TSource, TDestination> convert,
             bool compilerFallback = false)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Convert<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Convert<TSource, TDestination, TDestination> convert,
             bool compilerFallback = false)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         public static MappingBuilder<TMapper, TSource, TDestination> Convert<TMapper, TSource, TDestination>(
-            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            this MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>> builder,
             Convert<TSource, TDestination, MappingContext, TDestination> convert,
             bool compilerFallback = false)
-            where TMapper : TypeMapper<TMapper> => builder;
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
 """;

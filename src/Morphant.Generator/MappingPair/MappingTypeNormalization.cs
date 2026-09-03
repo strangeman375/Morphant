@@ -15,9 +15,13 @@ internal static class MappingTypeNormalization
 
     public static ITypeSymbol NormalizeDeclarativeSource(
         ITypeSymbol type,
-        Compilation compilation)
+        Compilation compilation,
+        bool normalizeDynamic = true)
     {
-        type = NormalizeDynamic(type, compilation);
+        if (normalizeDynamic)
+        {
+            type = NormalizeDynamic(type, compilation);
+        }
 
         if (IsNullableValue(type))
         {
@@ -32,9 +36,13 @@ internal static class MappingTypeNormalization
 
     public static ITypeSymbol NormalizeManualSource(
         ITypeSymbol type,
-        Compilation compilation)
+        Compilation compilation,
+        bool normalizeDynamic = true)
     {
-        type = NormalizeDynamic(type, compilation);
+        if (normalizeDynamic)
+        {
+            type = NormalizeDynamic(type, compilation);
+        }
 
         return type.IsReferenceType
             ? type.WithNullableAnnotation(
@@ -44,9 +52,13 @@ internal static class MappingTypeNormalization
 
     public static ITypeSymbol NormalizePreviousDestination(
         ITypeSymbol type,
-        Compilation compilation)
+        Compilation compilation,
+        bool normalizeDynamic = true)
     {
-        type = NormalizeDynamic(type, compilation);
+        if (normalizeDynamic)
+        {
+            type = NormalizeDynamic(type, compilation);
+        }
 
         if (IsNullableValue(type))
         {

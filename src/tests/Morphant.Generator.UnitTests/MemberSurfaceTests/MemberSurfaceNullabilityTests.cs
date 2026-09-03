@@ -166,53 +166,45 @@ namespace Morphant
         /// <summary>
         /// Defines destination member mappings.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>
         /// <returns>The same mapping builder.</returns>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> Members<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationMembers> members)
-            where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Defines member mappings using the optional existing destination.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>
         /// <returns>The same mapping builder.</returns>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> Members<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationMembers> members)
-            where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Defines member mappings using the selected result.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>
         /// <returns>The same mapping builder.</returns>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> Members<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationMembers> members)
-            where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
         /// Defines member mappings with access to the selected result and current mapping context.
         /// </summary>
-        /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
         /// <param name="members">The member plan.</param>
         /// <returns>The same mapping builder.</returns>
-        public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> Members<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
+        public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> Members(
+            this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationMembers> members)
-            where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
     }
 }
@@ -226,7 +218,7 @@ namespace Morphant
                 members
             ),
             (
-                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination.g.cs",
+                "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
                 extension
             ));
     }
@@ -312,7 +304,7 @@ namespace Morphant
         /// <param name="members">The member plan.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> Members<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Morphant.Generated.DestinationMembers> members)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -325,7 +317,7 @@ namespace Morphant
         /// <param name="members">The member plan.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> Members<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationMembers> members)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -338,7 +330,7 @@ namespace Morphant
         /// <param name="members">The member plan.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> Members<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::TestCase.Morphant.Generated.DestinationMembers> members)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -351,7 +343,7 @@ namespace Morphant
         /// <param name="members">The member plan.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> Members<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::TestCase.Source?, global::TestCase.Destination?>> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::TestCase.Morphant.Generated.DestinationMembers> members)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();

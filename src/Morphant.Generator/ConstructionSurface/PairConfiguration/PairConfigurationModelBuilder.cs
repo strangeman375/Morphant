@@ -16,35 +16,37 @@ internal static class PairConfigurationModelBuilder
         var typeParameterNames =
             GeneratedTypeNameBuilder.AllocateTypeParameterNames(
                 typeParameters);
-        var sourceType = MappingTypeNormalization.NormalizeDynamic(
-            pair.SourceType,
-            compilation);
-        var destinationType = MappingTypeNormalization.NormalizeDynamic(
-            pair.DestinationType,
-            compilation);
+        var sourceType = pair.SourceType;
+        var destinationType = pair.DestinationType;
         var declarativeSourceType =
             MappingTypeNormalization.NormalizeDeclarativeSource(
                 sourceType,
-                compilation);
+                compilation,
+                normalizeDynamic: false);
         var manualSourceType =
             MappingTypeNormalization.NormalizeManualSource(
                 sourceType,
-                compilation);
+                compilation,
+                normalizeDynamic: false);
         var previousDestinationType =
             MappingTypeNormalization.NormalizePreviousDestination(
                 destinationType,
-                compilation);
+                compilation,
+                normalizeDynamic: false);
         var sourceTypeName = GeneratedTypeNameBuilder.Build(
             sourceType,
-            typeParameterNames);
+            typeParameterNames,
+            normalizeDynamic: false);
         var destinationTypeName = GeneratedTypeNameBuilder.Build(
             destinationType,
-            typeParameterNames);
+            typeParameterNames,
+            normalizeDynamic: false);
         var mapperTypeName = surface.Kind == MappingSurfaceKind.Shared
             ? "TMapper"
             : GeneratedTypeNameBuilder.Build(
                 surface.MapperSelfType,
-                typeParameterNames);
+                typeParameterNames,
+                normalizeDynamic: false);
         var builderTypeName =
             "global::Morphant.MappingBuilder<" +
             mapperTypeName +
@@ -53,6 +55,11 @@ internal static class PairConfigurationModelBuilder
             ", " +
             destinationTypeName +
             ">";
+        var receiverTypeName = surface.Kind == MappingSurfaceKind.Shared
+            ? "global::Morphant.MapperBuilderBase<" +
+              builderTypeName +
+              ">"
+            : builderTypeName;
         var tupleShape = BclTupleShapePolicy.TryCreate(
             previousDestinationType);
         var typeParameterModels = PairTypeParameterModelBuilder.Build(
@@ -77,16 +84,20 @@ internal static class PairConfigurationModelBuilder
 
         return new PairConfigurationModel(
             builderTypeName,
+            receiverTypeName,
             GeneratedTypeNameBuilder.Build(
                 declarativeSourceType,
-                typeParameterNames),
+                typeParameterNames,
+                normalizeDynamic: false),
             GeneratedTypeNameBuilder.Build(
                 manualSourceType,
-                typeParameterNames),
+                typeParameterNames,
+                normalizeDynamic: false),
             destinationTypeName,
             GeneratedTypeNameBuilder.Build(
                 previousDestinationType,
-                typeParameterNames),
+                typeParameterNames,
+                normalizeDynamic: false),
             pair.Capabilities.StructuredConstruction,
             pair.Capabilities.StructuredConstruction
                 ? tupleShape is { } constructionTuple
@@ -151,9 +162,10 @@ internal static class PairConfigurationModelBuilder
                      string.Join(
                          ", ",
                          arguments.Select(argument =>
-                             GeneratedTypeNameBuilder.Build(
-                                 argument,
-                                 typeParameterNames))) +
+                            GeneratedTypeNameBuilder.Build(
+                                argument,
+                                typeParameterNames,
+                                normalizeDynamic: false))) +
                      ">");
     }
 

@@ -272,6 +272,110 @@ internal sealed class IncrementalLifecycleTests
                 remainingHints));
     }
 
+    [Test]
+    public void Keeps_shared_surface_cached_when_nullable_scope_is_added_and_removed()
+    {
+        const string construction =
+            "Morphant.Generated.Construction." +
+            "TestCase_SurfaceDestination.g.cs";
+        const string member =
+            "Morphant.Generated.Member." +
+            "TestCase_SurfaceDestination.g.cs";
+        const string sharedMapping =
+            "Morphant.Generated.MappingExtension." +
+            "TestCase_SurfaceSource__TestCase_SurfaceDestination.g.cs";
+        const string nullableMapping =
+            "Morphant.Generated.MappingExtension." +
+            "TestCase_SurfaceSource__TestCase_SurfaceDestination__" +
+            "TestCase_NullablePresentationMapper.g.cs";
+        const string sharedMember =
+            "Morphant.Generated.MemberExtension." +
+            "TestCase_SurfaceSource__TestCase_SurfaceDestination.g.cs";
+        const string nullableMember =
+            "Morphant.Generated.MemberExtension." +
+            "TestCase_SurfaceSource__TestCase_SurfaceDestination__" +
+            "TestCase_NullablePresentationMapper.g.cs";
+        const string sharedMapper =
+            "Morphant.Generated.TypeMapper.TestCase_SharedSurfaceMapper.g.cs";
+        const string nullableMapper =
+            "Morphant.Generated.TypeMapper." +
+            "TestCase_NullablePresentationMapper.g.cs";
+        var models = SourceFile("SurfaceModels.cs", SurfaceModelsSource);
+        var shared = SourceFile(
+            "SharedSurfaceMapper.cs",
+            SharedSurfaceMapperSource);
+        var nullable = SourceFile(
+            "NullablePresentationMapper.cs",
+            NullablePresentationMapperSource);
+        var sharedHints = new[]
+        {
+            construction,
+            sharedMapping,
+            member,
+            sharedMember,
+            sharedMapper
+        };
+        var bothHints = new[]
+        {
+            construction,
+            sharedMapping,
+            nullableMapping,
+            member,
+            sharedMember,
+            nullableMember,
+            sharedMapper,
+            nullableMapper
+        };
+
+        RunAndAssert(
+            LanguageVersion.CSharp9,
+            static () => new MorphantGenerator(),
+            Step(
+                "shared canonical presentation",
+                [models, shared],
+                sharedHints),
+            Step(
+                "nullable mapper scope added",
+                [models, shared, nullable],
+                bothHints,
+                Stage(
+                    "BuildMappingExtensionRequests",
+                    Expected(
+                        sharedMapping,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        nullableMapping,
+                        IncrementalStepRunReason.New)),
+                Stage(
+                    "BuildMemberExtensionRequests",
+                    Expected(
+                        sharedMember,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        nullableMember,
+                        IncrementalStepRunReason.New))),
+            Step(
+                "nullable mapper scope removed",
+                [models, shared],
+                sharedHints,
+                Stage(
+                    "BuildMappingExtensionRequests",
+                    Expected(
+                        sharedMapping,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        nullableMapping,
+                        IncrementalStepRunReason.Removed)),
+                Stage(
+                    "BuildMemberExtensionRequests",
+                    Expected(
+                        sharedMember,
+                        IncrementalStepRunReason.Cached),
+                    Expected(
+                        nullableMember,
+                        IncrementalStepRunReason.Removed))));
+    }
+
     // lang=c#
     private const string ModelsSource =
 """
@@ -357,6 +461,66 @@ namespace TestCase
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<StableSource, StableDestination>();
+    }
+}
+""";
+
+    // lang=c#
+    private const string SurfaceModelsSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    public sealed class SurfaceSource
+    {
+        public int Value { get; init; }
+    }
+
+    public sealed class SurfaceDestination
+    {
+        public int Value { get; set; }
+    }
+}
+""";
+
+    // lang=c#
+    private const string SharedSurfaceMapperSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class SharedSurfaceMapper :
+        TypeMapper<SharedSurfaceMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<SurfaceSource, SurfaceDestination>();
+    }
+}
+""";
+
+    // lang=c#
+    private const string NullablePresentationMapperSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class NullablePresentationMapper :
+        TypeMapper<NullablePresentationMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<SurfaceSource?, SurfaceDestination?>();
     }
 }
 """;

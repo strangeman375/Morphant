@@ -8,7 +8,7 @@ namespace Morphant.Generator.UnitTests.ActualizationTests;
 internal sealed class MappingSurfacePolicyActualizationTests
 {
     [Test]
-    public void Shares_reference_surface_across_nullable_presentations()
+    public void Resolves_shared_and_nullable_scoped_reference_surfaces_without_warnings()
     {
         // lang=c#
         const string source =
@@ -63,7 +63,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Shares_SystemTuple_surface_across_nullable_presentations()
+    public void Resolves_shared_and_nullable_scoped_SystemTuple_surfaces_without_warnings()
     {
         // lang=c#
         const string source =
@@ -292,7 +292,7 @@ namespace Morphant
         /// <param name="construct">The construction callback.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> ConstructUsing<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int>> builder,
             global::Morphant.Delegates.ConstructUsing<global::System.Tuple<int, int>, int> construct)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -305,7 +305,7 @@ namespace Morphant
         /// <param name="construct">The construction callback.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> ConstructUsing<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int>> builder,
             global::Morphant.Delegates.ConstructUsing<global::System.Tuple<int, int>, global::Morphant.Context.MappingContext, int> construct)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -318,7 +318,7 @@ namespace Morphant
         /// <param name="resolve">The result callback.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> ResolveUsing<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int>> builder,
             global::Morphant.Delegates.ResolveUsing<global::System.Tuple<int, int>, int, int> resolve)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -331,7 +331,7 @@ namespace Morphant
         /// <param name="resolve">The result callback.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> ResolveUsing<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int>> builder,
             global::Morphant.Delegates.ResolveUsing<global::System.Tuple<int, int>, int, global::Morphant.Context.MappingContext, int> resolve)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -344,7 +344,7 @@ namespace Morphant
         /// <param name="mapping">The mapping callback.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> Convert<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int>> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<int, int>?, int> mapping)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -357,7 +357,7 @@ namespace Morphant
         /// <param name="mapping">The mapping callback.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> Convert<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int>> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<int, int>?, int, int> mapping)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
@@ -370,7 +370,7 @@ namespace Morphant
         /// <param name="mapping">The mapping callback.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> Convert<TMapper>(
-            this global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> builder,
+            this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int>> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<int, int>?, int, global::Morphant.Context.MappingContext, int> mapping)
             where TMapper : global::Morphant.TypeMapper<TMapper>
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();

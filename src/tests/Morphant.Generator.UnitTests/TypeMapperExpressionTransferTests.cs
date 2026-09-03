@@ -27,9 +27,10 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<TMapper,
             global::TestCase.Source,
             global::TestCase.Destination> Convert<TMapper>(
-                this global::Morphant.MappingBuilder<TMapper,
-                    global::TestCase.Source,
-                    global::TestCase.Destination> builder,
+                this global::Morphant.MapperBuilderBase<
+                    global::Morphant.MappingBuilder<TMapper,
+                        global::TestCase.Source,
+                        global::TestCase.Destination>> builder,
                 global::Morphant.Delegates.Convert<
                     global::TestCase.Source?,
                     global::TestCase.Destination> mapping,
@@ -137,9 +138,10 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<TMapper,
             global::TestCase.Source,
             global::System.Threading.Tasks.Task<int>> Convert<TMapper>(
-                this global::Morphant.MappingBuilder<TMapper,
-                    global::TestCase.Source,
-                    global::System.Threading.Tasks.Task<int>> builder,
+                this global::Morphant.MapperBuilderBase<
+                    global::Morphant.MappingBuilder<TMapper,
+                        global::TestCase.Source,
+                        global::System.Threading.Tasks.Task<int>>> builder,
                 global::Morphant.Delegates.Convert<
                     global::TestCase.Source?,
                     global::System.Threading.Tasks.Task<int>> mapping,
@@ -256,9 +258,10 @@ namespace Morphant
         public static global::Morphant.MappingBuilder<TMapper,
             global::TestCase.Source,
             int> ConstructUsing<TMapper>(
-                this global::Morphant.MappingBuilder<TMapper,
-                    global::TestCase.Source,
-                    int> builder,
+                this global::Morphant.MapperBuilderBase<
+                    global::Morphant.MappingBuilder<TMapper,
+                        global::TestCase.Source,
+                        int>> builder,
                 global::Morphant.Delegates.ConstructUsing<
                     global::TestCase.Source,
                     int> construct,

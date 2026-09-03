@@ -206,7 +206,7 @@ internal static class PairConfigurationEmitter
             methodName +
             BuildTypeParameterList(model.TypeParameters) +
             "(");
-        writer.Line($"    this {model.BuilderTypeName} builder,");
+        writer.Line($"    this {model.ReceiverTypeName} builder,");
         writer.Line($"    {delegateTypeName} {callbackName})");
         WriteMethodEnd(writer, model.TypeParameters);
     }

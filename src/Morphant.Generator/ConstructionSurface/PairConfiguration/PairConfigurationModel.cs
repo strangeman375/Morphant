@@ -5,6 +5,7 @@ namespace Morphant.Generator.ConstructionSurface.PairConfiguration;
 
 internal sealed record PairConfigurationModel(
     string BuilderTypeName,
+    string ReceiverTypeName,
     string DeclarativeSourceTypeName,
     string ManualSourceTypeName,
     string DestinationTypeName,

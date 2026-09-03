@@ -62,9 +62,12 @@ internal static class MappingSurfacePolicy
         var containsValueTuple =
             ContainsValueTuple(pair.SourceType) ||
             ContainsValueTuple(pair.DestinationType);
+        var containsMapperSpecificPresentation =
+            ContainsMapperSpecificPresentation(pair.SourceType) ||
+            ContainsMapperSpecificPresentation(pair.DestinationType);
         var kind = containsTypeParameter
             ? MappingSurfaceKind.MapperFamilyScoped
-            : containsValueTuple
+            : containsValueTuple || containsMapperSpecificPresentation
                 ? mapperSelfType is ITypeParameterSymbol
                     ? MappingSurfaceKind.MapperFamilyScoped
                     : MappingSurfaceKind.MapperScoped
@@ -166,5 +169,46 @@ internal static class MappingSurfacePolicy
         return namedType.ContainingType is { } containingType &&
                ContainsValueTuple(containingType) ||
                namedType.TypeArguments.Any(ContainsValueTuple);
+    }
+
+    private static bool ContainsMapperSpecificPresentation(ITypeSymbol type)
+    {
+        if (type is IDynamicTypeSymbol ||
+            type.IsReferenceType &&
+            type.NullableAnnotation == NullableAnnotation.Annotated)
+        {
+            return true;
+        }
+
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            return ContainsMapperSpecificPresentation(arrayType.ElementType);
+        }
+
+        if (type is IPointerTypeSymbol pointerType)
+        {
+            return ContainsMapperSpecificPresentation(
+                pointerType.PointedAtType);
+        }
+
+        if (type is IFunctionPointerTypeSymbol functionPointerType)
+        {
+            return ContainsMapperSpecificPresentation(
+                       functionPointerType.Signature.ReturnType) ||
+                   functionPointerType.Signature.Parameters.Any(
+                       static parameter =>
+                           ContainsMapperSpecificPresentation(
+                               parameter.Type));
+        }
+
+        if (type is not INamedTypeSymbol namedType)
+        {
+            return false;
+        }
+
+        return namedType.ContainingType is { } containingType &&
+               ContainsMapperSpecificPresentation(containingType) ||
+               namedType.TypeArguments.Any(
+                   ContainsMapperSpecificPresentation);
     }
 }

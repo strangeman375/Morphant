@@ -93,7 +93,7 @@ internal static class MemberConfigurationEmitter
             " Members" +
             BuildTypeParameterList(model.TypeParameters) +
             "(");
-        writer.Line($"    this {model.BuilderTypeName} builder,");
+        writer.Line($"    this {model.ReceiverTypeName} builder,");
         writer.Line($"    {delegateTypeName} members)");
         WriteMethodEnd(writer, model.TypeParameters);
     }
