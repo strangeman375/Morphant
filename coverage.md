@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/03/2026 - 13:52:04 |
-| Coverage date: | 09/03/2026 - 13:50:10 - 09/03/2026 - 13:51:59 |
+| Generated on: | 09/03/2026 - 15:55:23 |
+| Coverage date: | 09/03/2026 - 15:53:31 - 09/03/2026 - 15:55:18 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
-| Classes: | 359 |
+| Classes: | 360 |
 | Files: | 185 |
-| **Line coverage:** | 86.7% (35968 of 41471) |
-| Covered lines: | 35968 |
-| Uncovered lines: | 5503 |
-| Coverable lines: | 41471 |
-| Total lines: | 69018 |
-| **Branch coverage:** | 76.8% (11956 of 15558) |
-| Covered branches: | 11956 |
-| Total branches: | 15558 |
+| **Line coverage:** | 86.7% (36027 of 41529) |
+| Covered lines: | 36027 |
+| Uncovered lines: | 5502 |
+| Coverable lines: | 41529 |
+| Total lines: | 69127 |
+| **Branch coverage:** | 76.8% (11973 of 15572) |
+| Covered branches: | 11973 |
+| Total branches: | 15572 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -132,9 +132,10 @@
 |Morphant.Generator.MapperDeclaration.MapperContractDisplay|87.3%|84.1%|
 |Morphant.Generator.MapperDeclaration.MapperContractPipeline|97.5%|100%|
 |Morphant.Generator.MapperDeclaration.MapperDeclarationDiagnosticDescriptors|100%||
-|Morphant.Generator.MapperDeclaration.MapperDeclarationDiagnosticPipeline|96.6%|89.5%|
-|Morphant.Generator.MapperDeclaration.MapperDeclarationInfo|100%|93.7%|
-|Morphant.Generator.MapperDeclaration.MapperDeclarationPipeline|97.9%|88.4%|
+|Morphant.Generator.MapperDeclaration.MapperDeclarationDiagnosticPipeline|96.7%|90%|
+|Morphant.Generator.MapperDeclaration.MapperDeclarationInfo|100%|100%|
+|Morphant.Generator.MapperDeclaration.MapperDeclarationPipeline|98.2%|90.6%|
+|Morphant.Generator.MapperDeclaration.MapperSelfTypeIssue|100%||
 |Morphant.Generator.MapperTypeSubstitution|92.5%|85.2%|
 |Morphant.Generator.MappingPair.BclTupleElement|100%|100%|
 |Morphant.Generator.MappingPair.BclTupleShape|100%||
@@ -201,7 +202,7 @@
 |Morphant.Generator.PairConfiguration.PairConfigurationCompositionModel|100%||
 |Morphant.Generator.PairConfiguration.PairConfigurationDiscoveryLevel|100%||
 |Morphant.Generator.PairConfiguration.PairConfigurationDiscoveryModel|87.5%||
-|Morphant.Generator.PairConfiguration.PairConfigurationDiscoveryPipeline|89.9%|73.9%|
+|Morphant.Generator.PairConfiguration.PairConfigurationDiscoveryPipeline|90.4%|76%|
 |Morphant.Generator.PairConfiguration.PairConfigurationInvocationChain|100%||
 |Morphant.Generator.PairConfiguration.PairConfigurationModel|100%||
 |Morphant.Generator.PairConfiguration.PairConfigurationModelBuilder|95.3%|86.2%|
@@ -405,4 +406,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #116](https://github.com/strangeman375/Morphant/actions/runs/33762998409).
+Full HTML report: download the **coverage** artifact from [CI run #117](https://github.com/strangeman375/Morphant/actions/runs/33774941149).
