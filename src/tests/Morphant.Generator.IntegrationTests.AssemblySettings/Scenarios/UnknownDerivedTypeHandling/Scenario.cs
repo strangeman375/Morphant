@@ -13,7 +13,7 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.Unknown
     public sealed class Unknown : IAnimal { }
 
     [MorphantMapper]
-    public partial class AssemblyMapper : TypeMapper
+    public partial class AssemblyMapper : TypeMapper<AssemblyMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<IAnimal, object>(global::Morphant.MappingMode.Create)
@@ -22,7 +22,7 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.Unknown
     }
 
     [MorphantMapper]
-    public partial class MapperOverride : TypeMapper
+    public partial class MapperOverride : TypeMapper<MapperOverride>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -35,7 +35,7 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.Unknown
     }
 
     [MorphantMapper]
-    public partial class PairOverride : TypeMapper
+    public partial class PairOverride : TypeMapper<PairOverride>
     {
         protected override void Configure(MapperBuilder builder)
         {

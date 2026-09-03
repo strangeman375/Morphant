@@ -39,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.OpaquePlan_11696
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int FactoryCount { get; private set; }
 

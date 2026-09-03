@@ -45,7 +45,7 @@ public sealed class CollectionExpressionMembersDestination
 }
 
 [MorphantMapper]
-public sealed partial class CollectionExpressionMapper : TypeMapper
+public sealed partial class CollectionExpressionMapper : TypeMapper<CollectionExpressionMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

@@ -36,7 +36,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
     {
     }
 
-    public abstract class GenericBaseMapper<T> : TypeMapper
+    public abstract class GenericBaseMapper<T> : TypeMapper<GenericBaseMapper<T>>
     {
         protected override void Configure(MapperBuilder builder)
         {

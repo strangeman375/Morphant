@@ -29,7 +29,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ByConvention_d77
     }
 
     [MorphantMapper]
-    public partial class OuterMapper : TypeMapper
+    public partial class OuterMapper : TypeMapper<OuterMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<OuterSource, OuterDestination>()

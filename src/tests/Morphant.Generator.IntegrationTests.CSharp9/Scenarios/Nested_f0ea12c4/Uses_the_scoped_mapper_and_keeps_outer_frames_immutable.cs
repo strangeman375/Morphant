@@ -28,7 +28,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Nested_f0ea12c4
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static List<Frame> Frames { get; } = new();
 

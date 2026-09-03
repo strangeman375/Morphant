@@ -25,7 +25,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PathSensitivity_
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int ConditionCount { get; private set; }
 

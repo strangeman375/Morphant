@@ -76,7 +76,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionDiag
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int InvalidRuleReads { get; private set; }
 

@@ -19,7 +19,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
     }
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper
+    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
     {
         protected override void Configure(MapperBuilder builder)
         {

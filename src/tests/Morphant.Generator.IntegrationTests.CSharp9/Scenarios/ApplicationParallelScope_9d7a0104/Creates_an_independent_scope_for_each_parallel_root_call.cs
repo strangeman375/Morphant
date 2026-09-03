@@ -34,7 +34,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ApplicationParal
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static ConcurrentDictionary<int, IMapper> CapturedMappers
             { get; } = new();

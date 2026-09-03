@@ -6,11 +6,11 @@ using Morphant;
 namespace ConfigurationMissing;
 
 [MorphantMapper]
-public abstract partial class MissingMapper : TypeMapper
+public abstract partial class MissingMapper : TypeMapper<MissingMapper>
 {
 }
 
-public abstract class ConcreteBaseMapper : TypeMapper
+public abstract class ConcreteBaseMapper : TypeMapper<ConcreteBaseMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

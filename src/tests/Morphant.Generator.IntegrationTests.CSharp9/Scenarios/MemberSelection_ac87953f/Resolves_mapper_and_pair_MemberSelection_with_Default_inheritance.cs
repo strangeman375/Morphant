@@ -44,7 +44,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberSelection_
     }
 
     [MorphantMapper]
-    public partial class ExplicitMapper : TypeMapper
+    public partial class ExplicitMapper : TypeMapper<ExplicitMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -73,7 +73,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberSelection_
     }
 
     [MorphantMapper]
-    public partial class LibraryDefaultMapper : TypeMapper
+    public partial class LibraryDefaultMapper : TypeMapper<LibraryDefaultMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, LibraryDefaultDestination>()

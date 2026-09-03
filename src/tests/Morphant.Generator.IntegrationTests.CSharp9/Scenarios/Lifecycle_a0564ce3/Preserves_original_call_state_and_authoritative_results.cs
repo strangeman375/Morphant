@@ -33,7 +33,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_a0564c
         bool PreviousHasValue);
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static List<Call> Calls { get; } = new();
 

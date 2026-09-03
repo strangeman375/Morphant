@@ -28,7 +28,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Body_56292116
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         private readonly int _offset = 3;
 

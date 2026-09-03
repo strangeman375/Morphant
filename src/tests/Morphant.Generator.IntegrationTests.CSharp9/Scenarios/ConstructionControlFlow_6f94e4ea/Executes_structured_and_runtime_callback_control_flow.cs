@@ -49,7 +49,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructionCont
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int LocalCount { get; private set; }
 

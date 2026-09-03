@@ -21,7 +21,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationCha
         public string Code { get; set; } = string.Empty;
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

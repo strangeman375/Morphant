@@ -23,7 +23,7 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.MemberS
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

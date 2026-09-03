@@ -38,7 +38,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.EvaluationOrder_
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static string Order { get; private set; } = string.Empty;
 

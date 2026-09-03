@@ -30,7 +30,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
         }
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         private static string Secret(int value) => "secret:" + value;
 

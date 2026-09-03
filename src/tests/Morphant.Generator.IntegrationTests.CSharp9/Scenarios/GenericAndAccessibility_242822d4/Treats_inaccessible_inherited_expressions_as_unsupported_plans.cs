@@ -35,7 +35,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
     {
     }
 
-    public abstract class MapperSupport : TypeMapper
+    public abstract class MapperSupport : TypeMapper<MapperSupport>
     {
         protected string Decorate(string value) => "support:" + value;
 

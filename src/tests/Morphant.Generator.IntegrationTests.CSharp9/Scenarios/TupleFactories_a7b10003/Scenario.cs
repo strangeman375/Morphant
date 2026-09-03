@@ -31,7 +31,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleFactories_a
     public sealed record OuterSource(ListSource Child);
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int ValueFactoryCalls { get; private set; }
 

@@ -42,7 +42,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.OverloadIdentity
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static Resolver Service { get; } = new();
 

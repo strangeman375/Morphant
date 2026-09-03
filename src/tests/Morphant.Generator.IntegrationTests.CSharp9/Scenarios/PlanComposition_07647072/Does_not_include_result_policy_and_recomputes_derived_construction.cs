@@ -37,7 +37,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
         public string Breed { get; set; } = string.Empty;
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         private static AnimalDto CreateBase(int seed) => new(seed + 1000);
 

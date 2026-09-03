@@ -30,7 +30,7 @@ public sealed class MutationDestination
 public sealed class MarkerDestination { }
 
 [MorphantMapper]
-public partial class CallbackMapper : TypeMapper
+public partial class CallbackMapper : TypeMapper<CallbackMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

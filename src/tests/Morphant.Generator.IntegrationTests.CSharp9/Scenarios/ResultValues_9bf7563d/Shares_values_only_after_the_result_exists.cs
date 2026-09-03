@@ -25,7 +25,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResultValues_9bf
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int InvocationCount { get; private set; }
 

@@ -916,7 +916,7 @@ namespace MultiTarget
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, Destination>();
@@ -961,7 +961,7 @@ namespace Morphant.Generator.PackageTests.Consumer
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

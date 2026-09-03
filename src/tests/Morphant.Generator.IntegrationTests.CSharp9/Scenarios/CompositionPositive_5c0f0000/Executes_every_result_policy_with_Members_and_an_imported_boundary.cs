@@ -49,7 +49,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CompositionPosit
 
     public sealed class DerivedDestination : BaseDestination { }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<BaseSource, BaseDestination>()

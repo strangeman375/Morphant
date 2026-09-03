@@ -37,7 +37,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
         public string Extra { get; set; } = string.Empty;
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         protected static string ObsoleteName(Animal source) =>
             throw new InvalidOperationException(

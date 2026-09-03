@@ -25,7 +25,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Capture_744a52a8
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         private readonly int result = 1;
 

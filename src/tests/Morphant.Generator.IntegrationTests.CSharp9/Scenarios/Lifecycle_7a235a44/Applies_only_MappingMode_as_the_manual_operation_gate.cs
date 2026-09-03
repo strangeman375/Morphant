@@ -15,7 +15,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Lifecycle_7a235a
     public sealed record UpdateDestination(int Value);
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int CreateCalls { get; private set; }
 

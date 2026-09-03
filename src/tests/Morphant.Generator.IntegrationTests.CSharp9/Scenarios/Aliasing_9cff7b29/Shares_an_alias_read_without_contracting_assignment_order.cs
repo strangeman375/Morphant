@@ -18,7 +18,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Aliasing_9cff7b2
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int ReadCount { get; private set; }
 

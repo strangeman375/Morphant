@@ -12,7 +12,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
     public class AnimalDto { }
     public sealed class DogDto : AnimalDto { }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -14,7 +14,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
     public sealed class Dog : IDog { }
 
     [MorphantMapper]
-    public partial class BaseMapper : TypeMapper
+    public partial class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<IAnimal, object>()
@@ -23,7 +23,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
     }
 
     [MorphantMapper]
-    public partial class DerivedMapper : TypeMapper
+    public partial class DerivedMapper : TypeMapper<DerivedMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<IDog, string>()

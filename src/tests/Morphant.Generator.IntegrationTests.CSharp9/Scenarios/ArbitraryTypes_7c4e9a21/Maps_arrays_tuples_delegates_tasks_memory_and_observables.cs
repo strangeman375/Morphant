@@ -23,7 +23,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ArbitraryTypes_7
     }
 
     [MorphantMapper]
-    public partial class ArbitraryTypeMapper : TypeMapper
+    public partial class ArbitraryTypeMapper : TypeMapper<ArbitraryTypeMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

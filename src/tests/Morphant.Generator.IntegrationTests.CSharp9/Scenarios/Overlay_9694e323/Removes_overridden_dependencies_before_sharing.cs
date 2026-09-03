@@ -26,7 +26,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Overlay_9694e323
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int SharedCount { get; private set; }
 

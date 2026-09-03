@@ -104,7 +104,7 @@ namespace MappingCompletenessMatrix
     }
 
     [MorphantMapper]
-    public partial class AssemblyMapper : TypeMapper
+    public partial class AssemblyMapper : TypeMapper<AssemblyMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<AssemblySource, AssemblyDestination>()
@@ -116,7 +116,7 @@ namespace MappingCompletenessMatrix
     }
 
     [MorphantMapper]
-    public partial class ValidationMapper : TypeMapper
+    public partial class ValidationMapper : TypeMapper<ValidationMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -161,7 +161,7 @@ namespace MappingCompletenessMatrix
         }
     }
 
-    public abstract class IncludedBaseMapper : TypeMapper
+    public abstract class IncludedBaseMapper : TypeMapper<IncludedBaseMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<IncludedSource, IncludedDestination>()
@@ -188,7 +188,7 @@ namespace MappingCompletenessMatrix
         }
     }
 
-    public abstract class ConnectedBaseMapper : TypeMapper
+    public abstract class ConnectedBaseMapper : TypeMapper<ConnectedBaseMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.UnmappedMemberValidation(

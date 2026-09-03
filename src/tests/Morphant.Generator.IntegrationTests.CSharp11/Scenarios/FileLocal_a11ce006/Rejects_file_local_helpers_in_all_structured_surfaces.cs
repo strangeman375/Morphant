@@ -39,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.FileLocal_a11ce
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

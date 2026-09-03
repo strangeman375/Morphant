@@ -79,7 +79,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DeferredInputs_a
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

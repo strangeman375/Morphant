@@ -36,7 +36,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritanceMappe
         public int Value { get; set; }
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -56,7 +56,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritanceMappe
     }
 
     [MorphantMapper]
-    public partial class ValidMapper : TypeMapper
+    public partial class ValidMapper : TypeMapper<ValidMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<ValidSource, ValidDestination>();

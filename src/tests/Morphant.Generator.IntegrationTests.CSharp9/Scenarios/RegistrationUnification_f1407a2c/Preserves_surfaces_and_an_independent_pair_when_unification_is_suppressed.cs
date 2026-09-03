@@ -18,7 +18,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RegistrationUnif
     public sealed record IndependentDestination(int Value);
 
     [MorphantMapper]
-    public partial class TestMapper<T> : TypeMapper
+    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
     {
         protected override void Configure(MapperBuilder builder)
         {

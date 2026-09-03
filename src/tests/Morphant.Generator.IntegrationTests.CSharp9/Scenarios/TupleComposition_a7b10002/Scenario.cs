@@ -41,7 +41,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         private static readonly List<string> Events = new List<string>();
 

@@ -229,7 +229,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -305,7 +305,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.IncludeMembers_7
         }
     }
 
-    public abstract class GenericMapper<T> : TypeMapper
+    public abstract class GenericMapper<T> : TypeMapper<GenericMapper<T>>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<GenericSourceBase<T>, GenericDestinationBase<T>>()

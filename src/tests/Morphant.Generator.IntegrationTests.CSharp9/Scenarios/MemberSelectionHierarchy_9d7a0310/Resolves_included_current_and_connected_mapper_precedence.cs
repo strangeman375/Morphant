@@ -25,7 +25,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberSelectionH
 
     public sealed class CurrentRootDestination : Destination { }
 
-    public abstract class IncludedBaseMapper : TypeMapper
+    public abstract class IncludedBaseMapper : TypeMapper<IncludedBaseMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -52,7 +52,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MemberSelectionH
         }
     }
 
-    public abstract class RootBaseMapper : TypeMapper
+    public abstract class RootBaseMapper : TypeMapper<RootBaseMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

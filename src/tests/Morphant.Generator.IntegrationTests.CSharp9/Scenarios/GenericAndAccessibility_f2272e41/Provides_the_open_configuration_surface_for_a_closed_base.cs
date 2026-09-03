@@ -17,7 +17,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericAndAccess
         public T Value { get; set; } = default!;
     }
 
-    public abstract class GenericBaseMapper<T> : TypeMapper
+    public abstract class GenericBaseMapper<T> : TypeMapper<GenericBaseMapper<T>>
     {
         protected static TValue Identity<TValue>(TValue value) => value;
 

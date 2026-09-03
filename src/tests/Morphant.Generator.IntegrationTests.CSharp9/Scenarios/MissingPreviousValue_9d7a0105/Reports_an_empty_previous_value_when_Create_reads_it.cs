@@ -10,7 +10,7 @@ using Morphant.Exceptions;
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.MissingPreviousValue_9d7a0105
 {
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<int, int>()

@@ -15,7 +15,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RegistrationUnsu
     public sealed class Destination { }
 
     [MorphantMapper]
-    public partial class TestMapper<TSource, TDestination> : TypeMapper
+    public partial class TestMapper<TSource, TDestination> : TypeMapper<TestMapper<TSource, TDestination>>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<TSource, TDestination>();

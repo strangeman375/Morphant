@@ -44,7 +44,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.ExplicitRules_3
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int ValueCount { get; private set; }
 

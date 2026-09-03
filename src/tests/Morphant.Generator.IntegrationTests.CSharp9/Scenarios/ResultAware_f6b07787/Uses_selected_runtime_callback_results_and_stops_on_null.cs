@@ -53,7 +53,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResultAware_f6b0
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int AssignmentCount { get; private set; }
 

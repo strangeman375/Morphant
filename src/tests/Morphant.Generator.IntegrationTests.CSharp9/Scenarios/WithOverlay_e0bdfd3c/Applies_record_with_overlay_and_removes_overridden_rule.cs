@@ -30,7 +30,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.WithOverlay_e0bd
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int OverriddenCount { get; private set; }
 

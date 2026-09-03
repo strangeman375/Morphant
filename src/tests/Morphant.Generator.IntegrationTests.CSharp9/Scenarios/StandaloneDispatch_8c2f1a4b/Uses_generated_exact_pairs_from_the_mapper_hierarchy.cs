@@ -35,7 +35,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.StandaloneDispat
     }
 
     [MorphantMapper]
-    public partial class BaseMapper : TypeMapper
+    public partial class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<ChildSource, ChildDestination>();

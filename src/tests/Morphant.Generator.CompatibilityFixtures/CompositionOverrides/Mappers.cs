@@ -10,7 +10,7 @@ public sealed class DuplicateDestination { public int Value { get; set; } }
 public sealed class MixedDestination { public int Value { get; set; } }
 
 [MorphantMapper]
-public partial class TestMapper : TypeMapper
+public partial class TestMapper : TypeMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

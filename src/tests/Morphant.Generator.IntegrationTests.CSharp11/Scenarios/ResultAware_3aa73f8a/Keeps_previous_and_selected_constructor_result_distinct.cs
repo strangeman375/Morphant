@@ -46,7 +46,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.ResultAware_3aa
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int InitialCount { get; private set; }
 

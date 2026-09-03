@@ -37,21 +37,21 @@ public sealed class Box<T>
 }
 
 [MorphantMapper]
-public abstract partial class AbstractMapper : TypeMapper
+public abstract partial class AbstractMapper : TypeMapper<AbstractMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, DestinationA>();
 }
 
 [MorphantMapper]
-public partial class NonSealedMapper : TypeMapper
+public partial class NonSealedMapper : TypeMapper<NonSealedMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, DestinationB>();
 }
 
 [MorphantMapper]
-public partial class ClosedGenericMapper<T> : TypeMapper
+public partial class ClosedGenericMapper<T> : TypeMapper<ClosedGenericMapper<T>>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Box<int>, Box<string>>();
@@ -60,14 +60,14 @@ public partial class ClosedGenericMapper<T> : TypeMapper
 public partial class MapperContainer
 {
     [MorphantMapper]
-    protected partial class ProtectedMapper : TypeMapper
+    protected partial class ProtectedMapper : TypeMapper<ProtectedMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, DestinationC>();
     }
 
     [MorphantMapper]
-    private partial class PrivateMapper : TypeMapper
+    private partial class PrivateMapper : TypeMapper<PrivateMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<Source, DestinationD>();
@@ -75,7 +75,7 @@ public partial class MapperContainer
 }
 
 public abstract class ContractBaseMapper :
-    TypeMapper,
+    TypeMapper<ContractBaseMapper>,
     ITypeMapper<Source, InheritedDestination>
 {
     public InheritedDestination Create(
@@ -97,7 +97,7 @@ public partial class DerivedContractMapper : ContractBaseMapper
         builder.Map<Source, InheritedDestination>();
 }
 
-public abstract class SupportsBaseMapper : TypeMapper
+public abstract class SupportsBaseMapper : TypeMapper<SupportsBaseMapper>
 {
     protected override bool Supports(
         Type sourceType,

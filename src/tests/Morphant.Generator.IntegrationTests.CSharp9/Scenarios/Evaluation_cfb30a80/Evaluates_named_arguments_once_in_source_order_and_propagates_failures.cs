@@ -30,7 +30,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Evaluation_cfb30
     }
 
     [MorphantMapper]
-    public partial class OuterMapper : TypeMapper
+    public partial class OuterMapper : TypeMapper<OuterMapper>
     {
         public static List<string> Events { get; } = new();
 

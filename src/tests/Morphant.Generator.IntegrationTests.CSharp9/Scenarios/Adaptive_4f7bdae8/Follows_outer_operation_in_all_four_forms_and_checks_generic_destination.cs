@@ -62,7 +62,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Adaptive_4f7bdae
     }
 
     [MorphantMapper]
-    public partial class OuterMapper : TypeMapper
+    public partial class OuterMapper : TypeMapper<OuterMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

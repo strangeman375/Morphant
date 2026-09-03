@@ -20,7 +20,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Throw_8f7cf658
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int SelectorCount { get; private set; }
 

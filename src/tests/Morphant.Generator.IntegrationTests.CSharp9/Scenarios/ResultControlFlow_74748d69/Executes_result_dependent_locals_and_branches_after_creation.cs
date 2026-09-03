@@ -31,7 +31,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ResultControlFlo
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int ObserveCount { get; private set; }
 

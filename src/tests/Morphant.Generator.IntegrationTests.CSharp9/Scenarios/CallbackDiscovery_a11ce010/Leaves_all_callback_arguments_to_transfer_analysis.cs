@@ -39,7 +39,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiscover
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         private static bool SelectFirst => true;
 

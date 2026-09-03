@@ -15,7 +15,7 @@ public sealed class MissingSource { }
 public sealed class MissingDestination { }
 public sealed class UnrelatedSource { }
 
-public abstract class DuplicateConfigureBase : TypeMapper
+public abstract class DuplicateConfigureBase : TypeMapper<DuplicateConfigureBase>
 {
     protected override void Configure(MapperBuilder builder) { }
 }
@@ -31,7 +31,7 @@ public partial class DuplicateConfigureMapper : DuplicateConfigureBase
 }
 
 [MorphantMapper]
-public partial class DuplicateIncludeMapper : TypeMapper
+public partial class DuplicateIncludeMapper : TypeMapper<DuplicateIncludeMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -43,7 +43,7 @@ public partial class DuplicateIncludeMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class MissingIncludeMapper : TypeMapper
+public partial class MissingIncludeMapper : TypeMapper<MissingIncludeMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>()
@@ -51,7 +51,7 @@ public partial class MissingIncludeMapper : TypeMapper
 }
 
 [MorphantMapper]
-public partial class IncompatibleIncludeMapper : TypeMapper
+public partial class IncompatibleIncludeMapper : TypeMapper<IncompatibleIncludeMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
@@ -61,7 +61,7 @@ public partial class IncompatibleIncludeMapper : TypeMapper
     }
 }
 
-public abstract class InaccessibleCallbackBase : TypeMapper
+public abstract class InaccessibleCallbackBase : TypeMapper<InaccessibleCallbackBase>
 {
     private static string Secret(string value) => value;
 

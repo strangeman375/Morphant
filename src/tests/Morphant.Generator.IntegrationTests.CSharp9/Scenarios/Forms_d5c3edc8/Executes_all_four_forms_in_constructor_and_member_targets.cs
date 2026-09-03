@@ -65,7 +65,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Forms_d5c3edc8
     }
 
     [MorphantMapper]
-    public partial class OuterMapper : TypeMapper
+    public partial class OuterMapper : TypeMapper<OuterMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

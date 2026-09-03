@@ -30,7 +30,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Sharing_9c1bfd0d
     }
 
     [MorphantMapper]
-    public partial class OuterMapper : TypeMapper
+    public partial class OuterMapper : TypeMapper<OuterMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<OuterSource, OuterDestination>()

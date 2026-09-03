@@ -122,7 +122,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NestedMappingDia
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         public static int ChildArgumentReads { get; private set; }
 

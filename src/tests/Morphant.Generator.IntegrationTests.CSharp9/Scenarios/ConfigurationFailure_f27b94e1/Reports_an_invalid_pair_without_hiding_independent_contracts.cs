@@ -21,7 +21,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationFai
     public sealed class IndependentDestination { }
 
     [MorphantMapper]
-    public partial class InvalidPlanMapper : TypeMapper
+    public partial class InvalidPlanMapper : TypeMapper<InvalidPlanMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -32,7 +32,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConfigurationFai
     }
 
     [MorphantMapper]
-    public partial class GenericMapper<T> : TypeMapper
+    public partial class GenericMapper<T> : TypeMapper<GenericMapper<T>>
     {
         protected override void Configure(MapperBuilder builder)
         {

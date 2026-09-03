@@ -50,7 +50,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimeCallback_
     }
 
     [MorphantMapper]
-    public partial class TestMapper : TypeMapper
+    public partial class TestMapper : TypeMapper<TestMapper>
     {
         private readonly ConstructUsing<Source, DelegateDestination> _factory;
 

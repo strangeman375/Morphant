@@ -37,7 +37,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PlanComposition_
         public string Breed { get; set; } = string.Empty;
     }
 
-    public abstract class FarMapper : TypeMapper
+    public abstract class FarMapper : TypeMapper<FarMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

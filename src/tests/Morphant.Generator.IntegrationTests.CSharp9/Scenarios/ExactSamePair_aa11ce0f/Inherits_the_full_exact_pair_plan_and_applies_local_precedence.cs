@@ -67,7 +67,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ExactSamePair_aa
         public int Value { get; set; }
     }
 
-    public abstract class BaseMapper : TypeMapper
+    public abstract class BaseMapper : TypeMapper<BaseMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
