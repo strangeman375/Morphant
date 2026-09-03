@@ -153,7 +153,8 @@ namespace TestCase
         public int Unmapped { get; set; }
     }
 
-    public abstract class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.UnmappedMemberValidation(
@@ -161,7 +162,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : BaseMapper
+    public partial class TestMapper : BaseMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

@@ -269,8 +269,8 @@ public sealed class Source : BaseSource { }
 public class BaseDestination { public int Value { get; set; } }
 public sealed class Destination : BaseDestination { }
 
-[MorphantMapper]
-public partial class BaseMapper : TypeMapper<BaseMapper>
+public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : BaseMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<BaseSource, BaseDestination>()
@@ -278,7 +278,7 @@ public partial class BaseMapper : TypeMapper<BaseMapper>
 }
 
 [MorphantMapper]
-public partial class TestMapper : BaseMapper
+public partial class TestMapper : BaseMapper<TestMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {

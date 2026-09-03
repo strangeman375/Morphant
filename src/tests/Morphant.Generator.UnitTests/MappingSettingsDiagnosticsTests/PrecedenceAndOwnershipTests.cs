@@ -85,8 +85,8 @@ namespace TestCase
     public sealed class SourceB { }
     public sealed class DestinationB { }
 
-    [MorphantMapper]
-    public partial class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -108,7 +108,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : BaseMapper
+    public partial class TestMapper : BaseMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -170,8 +170,8 @@ namespace TestCase
     public sealed class SourceB { }
     public sealed class DestinationB { }
 
-    [MorphantMapper]
-    public partial class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -181,7 +181,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : BaseMapper
+    public partial class TestMapper : BaseMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -224,8 +224,8 @@ namespace TestCase
     public sealed class Source { }
     public sealed class Destination { }
 
-    [MorphantMapper]
-    public partial class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -248,7 +248,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : BaseMapper
+    public partial class TestMapper : BaseMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -292,8 +292,8 @@ namespace TestCase
     public sealed class Source { }
     public sealed class Destination { }
 
-    [MorphantMapper]
-    public partial class BaseMapper : TypeMapper<BaseMapper>
+    public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+        where TMapper : BaseMapper<TMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {
@@ -309,7 +309,7 @@ namespace TestCase
     }
 
     [MorphantMapper]
-    public partial class TestMapper : BaseMapper
+    public partial class TestMapper : BaseMapper<TestMapper>
     {
         protected override void Configure(MapperBuilder builder)
         {

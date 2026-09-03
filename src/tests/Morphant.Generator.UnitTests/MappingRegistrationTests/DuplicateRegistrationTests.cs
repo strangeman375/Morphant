@@ -109,7 +109,8 @@ public partial class TestMapper : TypeMapper<TestMapper>
                 "MORPH0011" or
                 "MORPH0012" or
                 "MORPH0013" or
-                "MORPH0014")
+                "MORPH0014" or
+                "MORPH0056")
             .ToArray();
 
         Assert.Multiple(() =>
@@ -120,7 +121,7 @@ public partial class TestMapper : TypeMapper<TestMapper>
                 {
                     "MORPH0013",
                     "MORPH0013",
-                    "MORPH0013"
+                    "MORPH0056"
                 }));
             Assert.That(
                 diagnostics.Select(static diagnostic =>
@@ -130,12 +131,16 @@ public partial class TestMapper : TypeMapper<TestMapper>
                     "Mapping 'System.IntPtr -> TestCase.Destination' is " +
                     "registered more than once in mapper " +
                     "'TestCase.TestMapper'.",
-                    "Mapping 'System.ValueTuple<int, string> -> " +
-                    "TestCase.Destination' is registered more than once in " +
-                    "mapper 'TestCase.TestMapper'.",
                     "Mapping 'object -> TestCase.Destination' is registered " +
                     "more than once in mapper " +
-                    "'TestCase.TestMapper'."
+                    "'TestCase.TestMapper'.",
+                    "Mapping 'System.ValueTuple<int, string> -> " +
+                    "TestCase.Destination' uses tuple presentation " +
+                    "'(int, string) -> global::TestCase.Destination?', " +
+                    "which " +
+                    "conflicts with the presentation '(int Id, string? " +
+                    "Name) -> global::TestCase.Destination' of the same " +
+                    "underlying mapping pair."
                 }));
         });
     }
@@ -185,14 +190,15 @@ namespace TestCase;
 public sealed class Source { }
 public sealed class Destination { }
 
-public abstract class BaseMapper : TypeMapper<BaseMapper>
+public abstract class BaseMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : BaseMapper<TMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<Source, Destination>();
 }
 
 [MorphantMapper]
-public partial class DerivedMapper : BaseMapper
+public partial class DerivedMapper : BaseMapper<DerivedMapper>
 {
     protected override void Configure(MapperBuilder builder)
     {
