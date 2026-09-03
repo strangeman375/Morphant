@@ -58,12 +58,11 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.Unknown
             AssertThrows(new PairOverride());
         }
 
-        private static void AssertThrows(TypeMapper mapper)
+        private static void AssertThrows(ITypeMapper<IAnimal, object> mapper)
         {
             try
             {
-                ((ITypeMapper<IAnimal, object>)mapper)
-                    .Create(new Unknown());
+                mapper.Create(new Unknown());
                 throw new InvalidOperationException(
                     "Unknown derived source was accepted.");
             }
@@ -72,11 +71,10 @@ namespace Morphant.Generator.IntegrationTests.AssemblySettings.Scenarios.Unknown
             }
         }
 
-        private static void AssertUsesBase(TypeMapper mapper)
+        private static void AssertUsesBase(ITypeMapper<IAnimal, object> mapper)
         {
             if (!Equals(
-                    ((ITypeMapper<IAnimal, object>)mapper)
-                        .Create(new Unknown()),
+                    mapper.Create(new Unknown()),
                     "base"))
             {
                 throw new InvalidOperationException(
