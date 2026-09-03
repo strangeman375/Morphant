@@ -100,10 +100,12 @@ internal sealed class CompilerInputTests
             "Morphant.Generated.Construction." +
             "TestCase_Destination_1.g.cs",
             "Morphant.Generated.MappingExtension." +
-            "TestCase_Source_T___TestCase_Destination_T_.g.cs",
+            "TestCase_Source_T___TestCase_Destination_T___" +
+            "TestCase_TestMapper_T_.g.cs",
             "Morphant.Generated.Member.TestCase_Destination_1.g.cs",
             "Morphant.Generated.MemberExtension." +
-            "TestCase_Source_T___TestCase_Destination_T_.g.cs",
+            "TestCase_Source_T___TestCase_Destination_T___" +
+            "TestCase_TestMapper_T_.g.cs",
             "Morphant.Generated.TypeMapper.TestCase_TestMapper_1.g.cs"
         ];
     }

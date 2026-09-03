@@ -26,12 +26,14 @@ internal sealed class TupleTests
     private const string TupleMappingExtension =
         "Morphant.Generated.MappingExtension." +
         "TestCase_TupleSource__" +
-        "System_ValueTuple_System_Int32__System_String_.g.cs";
+        "System_ValueTuple_System_Int32__System_String___" +
+        "TestCase_TupleMapper.g.cs";
 
     private const string TupleMemberExtension =
         "Morphant.Generated.MemberExtension." +
         "TestCase_TupleSource__" +
-        "System_ValueTuple_System_Int32__System_String_.g.cs";
+        "System_ValueTuple_System_Int32__System_String___" +
+        "TestCase_TupleMapper.g.cs";
 
     private const string TupleMapper =
         "Morphant.Generated.TypeMapper.TestCase_TupleMapper.g.cs";
