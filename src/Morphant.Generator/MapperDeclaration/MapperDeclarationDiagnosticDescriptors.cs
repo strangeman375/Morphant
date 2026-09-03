@@ -60,7 +60,8 @@ internal static class MapperDeclarationDiagnosticDescriptors
             "MORPH0058",
             "Mapper self type is invalid",
             "Mapper '{0}' must close 'Morphant.TypeMapper<TMapper>' with " +
-            "its own type instead of '{1}'.");
+            "its own type or a correctly constrained CRTP self type instead " +
+            "of '{1}'.");
 
     private static DiagnosticDescriptor Create(
         string id,

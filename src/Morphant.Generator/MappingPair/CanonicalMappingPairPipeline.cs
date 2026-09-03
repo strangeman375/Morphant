@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Morphant.Generator.PairConfiguration;
 
 namespace Morphant.Generator.MappingPair;
@@ -44,16 +45,39 @@ internal static class CanonicalMappingPairPipeline
     private static ImmutableArray<CanonicalMappingPairCandidate>
         BuildCandidates(MapperPairConfigurationModel configuration)
     {
+        return BuildCandidates(
+            configuration.MappingPairs.MapperIdentity,
+            configuration.Declaration.MapperType,
+            configuration.SurfaceMappingPairs,
+            configuration.Declaration.Compilation);
+    }
+
+    internal static ImmutableArray<CanonicalMappingPairCandidate>
+        BuildCandidates(
+            string targetMapperIdentity,
+            INamedTypeSymbol targetMapperType,
+            ImmutableArray<MapperMappingPairModel> mapperModels,
+            CSharpCompilation compilation)
+    {
         var result =
             ImmutableArray.CreateBuilder<CanonicalMappingPairCandidate>();
         var identities = new HashSet<string>(StringComparer.Ordinal);
 
         for (var modelIndex = 0;
-             modelIndex < configuration.SurfaceMappingPairs.Length;
+             modelIndex < mapperModels.Length;
              modelIndex++)
         {
-            var mapperModel =
-                configuration.SurfaceMappingPairs[modelIndex];
+            var mapperModel = mapperModels[modelIndex];
+            var semanticModel = compilation.GetSemanticModel(
+                mapperModel.ConfigureSyntax.SyntaxTree);
+
+            if (mapperModel.ConfigureSyntax.Parent is not
+                    TypeDeclarationSyntax declaration ||
+                semanticModel.GetDeclaredSymbol(declaration) is not
+                    INamedTypeSymbol declaringMapperType)
+            {
+                continue;
+            }
 
             for (var pairIndex = 0;
                  pairIndex < mapperModel.Pairs.Length;
@@ -61,7 +85,7 @@ internal static class CanonicalMappingPairPipeline
             {
                 var pair = mapperModel.Pairs[pairIndex];
                 var candidateIdentity = BuildCandidateIdentity(
-                    configuration.MappingPairs.MapperIdentity,
+                    targetMapperIdentity,
                     mapperModel.MapperIdentity,
                     pair);
 
@@ -70,8 +94,13 @@ internal static class CanonicalMappingPairPipeline
                     result.Add(
                         new CanonicalMappingPairCandidate(
                             candidateIdentity,
+                            targetMapperIdentity,
+                            targetMapperType,
                             pair,
-                            configuration.Declaration.Compilation));
+                            MappingSurfacePolicy.Create(
+                                pair,
+                                declaringMapperType),
+                            compilation));
                 }
             }
         }
@@ -94,7 +123,8 @@ internal static class CanonicalMappingPairPipeline
             var key = MappingTypeIdentityPolicy
                 .CreateAlphaEquivalentPairKey(
                     candidate.Pair.SourceType,
-                    candidate.Pair.DestinationType);
+                    candidate.Pair.DestinationType) + "|" +
+                candidate.Surface.CoordinationIdentity;
 
             if (!selected.TryGetValue(key, out var current) ||
                 Compare(candidate, current) < 0)
@@ -108,6 +138,21 @@ internal static class CanonicalMappingPairPipeline
                 .Select(static candidate => candidate.CandidateIdentity)
                 .OrderBy(static identity => identity, StringComparer.Ordinal)
                 .ToImmutableArray());
+    }
+
+    internal static ImmutableArray<CanonicalMappingPairCandidate>
+        SelectCandidates(
+            ImmutableArray<CanonicalMappingPairCandidate> candidates,
+            CancellationToken cancellationToken)
+    {
+        var coordination = BuildCoordination(
+            candidates,
+            cancellationToken);
+
+        return candidates
+            .Where(candidate => coordination.Contains(
+                candidate.CandidateIdentity))
+            .ToImmutableArray();
     }
 
     private static int Compare(
@@ -182,5 +227,8 @@ internal static class CanonicalMappingPairPipeline
 
 internal readonly record struct CanonicalMappingPairCandidate(
     string CandidateIdentity,
+    string TargetMapperIdentity,
+    INamedTypeSymbol TargetMapperType,
     MappingPairModel Pair,
+    MappingSurfaceModel Surface,
     CSharpCompilation Compilation);

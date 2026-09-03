@@ -656,7 +656,8 @@ internal sealed class MapperRuntimeTests
             _update(source, destination, context);
     }
 
-    private sealed class StandaloneTypeMapper : TypeMapper,
+    private sealed class StandaloneTypeMapper :
+        TypeMapper<StandaloneTypeMapper>,
         ITypeMapper<Source, Destination>,
         ITypeMapper<ChildSource, ChildDestination>
     {
@@ -723,7 +724,8 @@ internal sealed class MapperRuntimeTests
             destination ?? new ChildDestination(source?.Value ?? -1);
     }
 
-    private sealed class ContravariantTypeMapper : TypeMapper,
+    private sealed class ContravariantTypeMapper :
+        TypeMapper<ContravariantTypeMapper>,
         ITypeMapper<BaseSource, Destination>
     {
         public int CallCount { get; private set; }

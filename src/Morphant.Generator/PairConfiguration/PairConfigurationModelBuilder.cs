@@ -36,10 +36,15 @@ internal static class PairConfigurationModelBuilder
             .Where(static model => model.HasValue)
             .Select(static model => model!.Value)
             .ToImmutableArray();
+        var targetMapperType = compilation.GetTypeByMetadataName(
+                SymbolNameHelper.GetFullMetadataName(
+                    discovery.ConfigureInfo.MapperType)) ??
+            discovery.ConfigureInfo.MapperType;
         var augmentedCompilation = RequiresAugmentedCompilation(discovery)
             ? BuildAugmentedCompilation(
                 compilation,
                 bindingMapperModels,
+                targetMapperType,
                 cancellationToken)
             : compilation;
         var knownSymbols = KnownSymbols.TryCreate(augmentedCompilation);
@@ -62,10 +67,10 @@ internal static class PairConfigurationModelBuilder
         var levels =
             ImmutableArray.CreateBuilder<LocalMapperConfigurationLevel>(
                 discovery.Levels.Length);
-        var targetMapperType = augmentedCompilation.GetTypeByMetadataName(
+        targetMapperType = augmentedCompilation.GetTypeByMetadataName(
                 SymbolNameHelper.GetFullMetadataName(
                     discovery.ConfigureInfo.MapperType)) ??
-            discovery.ConfigureInfo.MapperType;
+            targetMapperType;
 
         for (var levelOrder = 0;
              levelOrder < discovery.Levels.Length;
@@ -160,18 +165,24 @@ internal static class PairConfigurationModelBuilder
     private static CSharpCompilation BuildAugmentedCompilation(
         CSharpCompilation compilation,
         ImmutableArray<MapperMappingPairModel> mapperModels,
+        INamedTypeSymbol targetMapperType,
         CancellationToken cancellationToken)
     {
-        var pairs = CanonicalMappingPairSelector.Select(
+        var candidates = CanonicalMappingPairPipeline.BuildCandidates(
+            SymbolNameHelper.GetFullMetadataName(targetMapperType),
+            targetMapperType,
             mapperModels,
+            compilation);
+        candidates = CanonicalMappingPairPipeline.SelectCandidates(
+            candidates,
             cancellationToken);
         var constructionRequests =
             ConstructionSurfacePipeline.BuildRequests(
-                pairs,
+                candidates,
                 compilation,
                 cancellationToken);
         var memberRequests = MemberSurfacePipeline.BuildRequests(
-            pairs,
+            candidates,
             compilation,
             cancellationToken);
         var parseOptions = (mapperModels.IsEmpty

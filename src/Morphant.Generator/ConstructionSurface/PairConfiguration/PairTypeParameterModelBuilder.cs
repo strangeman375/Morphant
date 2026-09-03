@@ -12,7 +12,8 @@ internal static class PairTypeParameterModelBuilder
         ITypeSymbol destinationType,
         ImmutableArray<ITypeParameterSymbol> typeParameters,
         IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterNames,
-        Compilation compilation)
+        Compilation compilation,
+        bool includeDeclarationConstraints = false)
     {
         var constraints =
             new Dictionary<ITypeParameterSymbol, ConstraintAccumulator>(
@@ -23,6 +24,16 @@ internal static class PairTypeParameterModelBuilder
             constraints.Add(
                 typeParameter,
                 new ConstraintAccumulator(compilation));
+        }
+
+        if (includeDeclarationConstraints)
+        {
+            foreach (var typeParameter in typeParameters)
+            {
+                constraints[typeParameter].Add(
+                    typeParameter,
+                    typeParameterNames);
+            }
         }
 
         AddDefinitionConstraints(

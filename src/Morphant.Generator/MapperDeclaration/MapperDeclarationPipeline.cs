@@ -206,9 +206,7 @@ internal static class MapperDeclarationPipeline
         var mapperSelfType = typeMapperBase?.TypeArguments[0];
         var invalidSelfTypeLocation =
             mapperSelfType is not null &&
-            !SymbolEqualityComparer.Default.Equals(
-                mapperSelfType,
-                mapperType)
+            !IsValidMapperSelfType(mapperType, mapperSelfType)
                 ? FindTypeMapperArgumentLocation(
                       mapperType,
                       knownSymbols.TypeMapper,
@@ -240,6 +238,24 @@ internal static class MapperDeclarationPipeline
                 syntaxTrees,
                 cancellationToken),
             compilation);
+    }
+
+    private static bool IsValidMapperSelfType(
+        INamedTypeSymbol mapperType,
+        ITypeSymbol mapperSelfType)
+    {
+        if (SymbolEqualityComparer.Default.Equals(
+                mapperSelfType,
+                mapperType))
+        {
+            return true;
+        }
+
+        return mapperSelfType is ITypeParameterSymbol typeParameter &&
+               typeParameter.ConstraintTypes.Any(constraint =>
+                   SymbolEqualityComparer.Default.Equals(
+                       constraint,
+                       mapperType));
     }
 
     private static ImmutableArray<TSyntax> GetDeclarations<TSyntax>(

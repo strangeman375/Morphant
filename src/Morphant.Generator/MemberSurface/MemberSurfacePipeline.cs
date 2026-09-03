@@ -104,15 +104,15 @@ internal static class MemberSurfacePipeline
         Compilation compilation)
     {
         var pair = candidate.Pair;
-        var stableIdentity =
-            RemoveGlobalAlias(pair.Identity.Source.DisplayName) +
-            "__" +
-            RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
+        var stableIdentity = BuildExtensionStableIdentity(candidate);
 
         return new MemberExtensionModelResult(
             candidate.CandidateIdentity,
             stableIdentity,
-            PairConfigurationModelBuilder.Build(pair, compilation));
+            PairConfigurationModelBuilder.Build(
+                pair,
+                candidate.Surface,
+                compilation));
     }
 
     private sealed class MemberExtensionModelResultComparer :
@@ -150,11 +150,14 @@ internal static class MemberSurfacePipeline
     }
 
     internal static ImmutableArray<MemberSurfaceRequest> BuildRequests(
-        ImmutableArray<MappingPairModel> pairs,
+        ImmutableArray<CanonicalMappingPairCandidate> candidates,
         Compilation compilation,
         CancellationToken cancellationToken)
     {
         var requests = ImmutableArray.CreateBuilder<MemberSurfaceRequest>();
+        var pairs = candidates
+            .Select(static candidate => candidate.Pair)
+            .ToImmutableArray();
 
         AddMemberPlanRequests(
             pairs,
@@ -162,7 +165,7 @@ internal static class MemberSurfacePipeline
             requests,
             cancellationToken);
         AddPairConfigurationRequests(
-            pairs,
+            candidates,
             compilation,
             requests,
             cancellationToken);
@@ -248,31 +251,29 @@ internal static class MemberSurfacePipeline
     }
 
     private static void AddPairConfigurationRequests(
-        ImmutableArray<MappingPairModel> pairs,
+        ImmutableArray<CanonicalMappingPairCandidate> candidates,
         Compilation compilation,
         ImmutableArray<MemberSurfaceRequest>.Builder requests,
         CancellationToken cancellationToken)
     {
         var hintNameAllocator = new HintNamePartAllocator();
 
-        foreach (var pair in pairs)
+        foreach (var candidate in candidates)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (!pair.Capabilities.Members)
+            if (!candidate.Pair.Capabilities.Members)
             {
                 continue;
             }
 
-            var stableIdentity =
-                RemoveGlobalAlias(pair.Identity.Source.DisplayName) +
-                "__" +
-                RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
+            var stableIdentity = BuildExtensionStableIdentity(candidate);
             var hintName = GeneratedSourceHintName.Create(
                 "MemberExtension",
                 hintNameAllocator.Allocate(stableIdentity));
             var model = PairConfigurationModelBuilder.Build(
-                pair,
+                candidate.Pair,
+                candidate.Surface,
                 compilation);
 
             requests.Add(
@@ -285,6 +286,22 @@ internal static class MemberSurfacePipeline
     private static string RemoveGlobalAlias(string value)
     {
         return value.Replace("global::", string.Empty);
+    }
+
+    private static string BuildExtensionStableIdentity(
+        CanonicalMappingPairCandidate candidate)
+    {
+        var pair = candidate.Pair;
+        var pairIdentity =
+            RemoveGlobalAlias(pair.Identity.Source.DisplayName) +
+            "__" +
+            RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
+
+        return candidate.Surface.Kind == MappingSurfaceKind.Shared
+            ? pairIdentity
+            : pairIdentity + "__" +
+              RemoveGlobalAlias(
+                  candidate.Surface.ReadableScopeIdentity);
     }
 
     private readonly record struct MemberPlanDefinition(

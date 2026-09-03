@@ -100,18 +100,18 @@ internal static class ConstructionSurfacePipeline
     private static MappingExtensionModelResult
         BuildPairConfigurationModel(
             CanonicalMappingPairCandidate candidate,
-            Compilation compilation)
+        Compilation compilation)
     {
         var pair = candidate.Pair;
-        var stableIdentity =
-            RemoveGlobalAlias(pair.Identity.Source.DisplayName) +
-            "__" +
-            RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
+        var stableIdentity = BuildExtensionStableIdentity(candidate);
 
         return new MappingExtensionModelResult(
             candidate.CandidateIdentity,
             stableIdentity,
-            PairConfigurationModelBuilder.Build(pair, compilation));
+            PairConfigurationModelBuilder.Build(
+                pair,
+                candidate.Surface,
+                compilation));
     }
 
     private sealed class MappingExtensionModelResultComparer :
@@ -149,12 +149,15 @@ internal static class ConstructionSurfacePipeline
     }
 
     internal static ImmutableArray<ConstructionSurfaceRequest> BuildRequests(
-        ImmutableArray<MappingPairModel> pairs,
+        ImmutableArray<CanonicalMappingPairCandidate> candidates,
         Compilation compilation,
         CancellationToken cancellationToken)
     {
         var requests =
             ImmutableArray.CreateBuilder<ConstructionSurfaceRequest>();
+        var pairs = candidates
+            .Select(static candidate => candidate.Pair)
+            .ToImmutableArray();
 
         AddConstructionPlanRequests(
             pairs,
@@ -162,7 +165,7 @@ internal static class ConstructionSurfacePipeline
             requests,
             cancellationToken);
         AddPairConfigurationRequests(
-            pairs,
+            candidates,
             compilation,
             requests,
             cancellationToken);
@@ -250,26 +253,24 @@ internal static class ConstructionSurfacePipeline
     }
 
     private static void AddPairConfigurationRequests(
-        ImmutableArray<MappingPairModel> pairs,
+        ImmutableArray<CanonicalMappingPairCandidate> candidates,
         Compilation compilation,
         ImmutableArray<ConstructionSurfaceRequest>.Builder requests,
         CancellationToken cancellationToken)
     {
         var hintNameAllocator = new HintNamePartAllocator();
 
-        foreach (var pair in pairs)
+        foreach (var candidate in candidates)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var stableIdentity =
-                RemoveGlobalAlias(pair.Identity.Source.DisplayName) +
-                "__" +
-                RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
+            var stableIdentity = BuildExtensionStableIdentity(candidate);
             var hintName = GeneratedSourceHintName.Create(
                 "MappingExtension",
                 hintNameAllocator.Allocate(stableIdentity));
             var model = PairConfigurationModelBuilder.Build(
-                pair,
+                candidate.Pair,
+                candidate.Surface,
                 compilation);
 
             requests.Add(
@@ -282,6 +283,22 @@ internal static class ConstructionSurfacePipeline
     private static string RemoveGlobalAlias(string value)
     {
         return value.Replace("global::", string.Empty);
+    }
+
+    private static string BuildExtensionStableIdentity(
+        CanonicalMappingPairCandidate candidate)
+    {
+        var pair = candidate.Pair;
+        var pairIdentity =
+            RemoveGlobalAlias(pair.Identity.Source.DisplayName) +
+            "__" +
+            RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
+
+        return candidate.Surface.Kind == MappingSurfaceKind.Shared
+            ? pairIdentity
+            : pairIdentity + "__" +
+              RemoveGlobalAlias(
+                  candidate.Surface.ReadableScopeIdentity);
     }
 
     internal readonly record struct ConstructionSurfaceRequest(
