@@ -105,6 +105,11 @@ namespace Morphant
             TDestination? destination);
     }
 
+    public interface IMapperDeclaration
+    {
+        bool Supports(Type sourceType, Type destinationType);
+    }
+
     public sealed class Mapper : IMapper
     {
         public Mapper(IServiceProvider serviceProvider)
@@ -134,13 +139,18 @@ namespace Morphant
         }
     }
 
-    public abstract class TypeMapper
+    public abstract class TypeMapper<TMapper> : IMapperDeclaration
+        where TMapper : TypeMapper<TMapper>
     {
         protected internal virtual bool Supports(
             Type sourceType,
             Type destinationType) => false;
 
         protected abstract void Configure(MapperBuilder builder);
+
+        bool IMapperDeclaration.Supports(
+            Type sourceType,
+            Type destinationType) => Supports(sourceType, destinationType);
 
         protected static Markers.ByConventionMarker ByConvention() =>
             throw new NotSupportedException();
@@ -187,6 +197,18 @@ namespace Morphant
             object? source,
             object? destination) =>
             throw new NotSupportedException();
+
+        protected sealed class MapperBuilder :
+            MapperBuilderBase<MapperBuilder>
+        {
+            public MapperBuilder MappingMode(MappingMode value) =>
+                throw new NotSupportedException();
+
+            public MappingBuilder<TMapper, TSource, TDestination>
+                Map<TSource, TDestination>(
+                    MappingMode value = Morphant.MappingMode.Default) =>
+                throw new NotSupportedException();
+        }
     }
 
     public abstract class MapperBuilderBase<T>
@@ -215,29 +237,20 @@ namespace Morphant
             throw new NotSupportedException();
     }
 
-    public sealed class MapperBuilder : MapperBuilderBase<MapperBuilder>
+    public sealed class MappingBuilder<TMapper, TSource, TDestination> :
+        MapperBuilderBase<
+            MappingBuilder<TMapper, TSource, TDestination>>
+        where TMapper : TypeMapper<TMapper>
     {
-        public MapperBuilder MappingMode(MappingMode value) =>
-            throw new NotSupportedException();
-
-        public MapperBuilder<TSource, TDestination>
-            Map<TSource, TDestination>(
-                MappingMode value = Morphant.MappingMode.Default) =>
-            throw new NotSupportedException();
-    }
-
-    public sealed class MapperBuilder<TSource, TDestination> :
-        MapperBuilderBase<MapperBuilder<TSource, TDestination>>
-    {
-        public MapperBuilder<TSource, TDestination>
+        public MappingBuilder<TMapper, TSource, TDestination>
             IncludeMembers(Func<TSource, object?> selector) =>
             throw new NotSupportedException();
 
-        public MapperBuilder<TSource, TDestination>
+        public MappingBuilder<TMapper, TSource, TDestination>
             IncludeBase<TBaseSource, TBaseDestination>() =>
             throw new NotSupportedException();
 
-        public MapperBuilder<TSource, TDestination>
+        public MappingBuilder<TMapper, TSource, TDestination>
             ForDerived<TDerivedSource, TDerivedDestination>()
             where TDerivedSource : TSource
             where TDerivedDestination : TDestination =>
