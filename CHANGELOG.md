@@ -40,8 +40,8 @@ unsupported.
   Morphant configuration code.
 - Report `extern alias`-only mapping types and required constraints as
   inaccessible instead of emitting invalid `global::` references and cascaded
-  compiler errors; reject globally ambiguous aliased types for the same
-  reason.
+  compiler errors; reject globally ambiguous aliased types and namespace/type
+  path collisions for the same reason.
 - Prevent incremental generator crashes when IDEs replace syntax trees,
   expose referenced projects as source-backed compilations, or ask newer
   Roslyn hosts to filter a cached diagnostic whose source tree was replaced,

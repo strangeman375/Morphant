@@ -267,13 +267,6 @@ internal static class MappingTypeEligibilityPolicy
         INamedTypeSymbol type,
         Compilation compilation)
     {
-        if (SymbolEqualityComparer.Default.Equals(
-                type.ContainingAssembly,
-                compilation.Assembly))
-        {
-            return true;
-        }
-
         var definition = NormalizeGlobalDefinition(type);
         var resolved = compilation.GetTypeByMetadataName(
             SymbolNameHelper.GetFullMetadataName(definition));
@@ -281,7 +274,125 @@ internal static class MappingTypeEligibilityPolicy
         return resolved is not null &&
                SymbolEqualityComparer.Default.Equals(
                    NormalizeGlobalDefinition(resolved),
-                   definition);
+                   definition) &&
+               HasUnambiguousNamespaceAndTypePath(
+                   definition,
+                   compilation);
+    }
+
+    private static bool HasUnambiguousNamespaceAndTypePath(
+        INamedTypeSymbol definition,
+        Compilation compilation)
+    {
+        var namespaceNames = new Stack<string>();
+
+        for (var currentNamespace = definition.ContainingNamespace;
+             !currentNamespace.IsGlobalNamespace;
+             currentNamespace = currentNamespace.ContainingNamespace)
+        {
+            namespaceNames.Push(currentNamespace.Name);
+        }
+
+        var namespaceScope = compilation.GlobalNamespace;
+
+        while (namespaceNames.Count > 0)
+        {
+            var name = namespaceNames.Pop();
+
+            if (GetGloballyVisibleTypes(
+                    namespaceScope,
+                    name,
+                    arity: 0,
+                    compilation).Any())
+            {
+                return false;
+            }
+
+            namespaceScope = namespaceScope
+                .GetNamespaceMembers()
+                .FirstOrDefault(candidate =>
+                    StringComparer.Ordinal.Equals(
+                        candidate.Name,
+                        name));
+
+            if (namespaceScope is null)
+            {
+                return false;
+            }
+        }
+
+        var containingTypes = new Stack<INamedTypeSymbol>();
+
+        for (var currentType = definition;
+             currentType is not null;
+             currentType = currentType.ContainingType)
+        {
+            containingTypes.Push(currentType.OriginalDefinition);
+        }
+
+        INamespaceOrTypeSymbol typeScope = namespaceScope;
+
+        while (containingTypes.Count > 0)
+        {
+            var expected = containingTypes.Pop();
+
+            if (typeScope is INamespaceSymbol currentNamespace &&
+                expected.Arity == 0 &&
+                currentNamespace.GetNamespaceMembers().Any(candidate =>
+                    StringComparer.Ordinal.Equals(
+                        candidate.Name,
+                        expected.Name) &&
+                    IsAvailableThroughGlobalAlias(
+                        candidate,
+                        compilation)))
+            {
+                return false;
+            }
+
+            var candidates = GetGloballyVisibleTypes(
+                    typeScope,
+                    expected.Name,
+                    expected.Arity,
+                    compilation)
+                .ToArray();
+
+            if (candidates.Length != 1 ||
+                !SymbolEqualityComparer.Default.Equals(
+                    candidates[0].OriginalDefinition,
+                    expected))
+            {
+                return false;
+            }
+
+            typeScope = candidates[0];
+        }
+
+        return true;
+    }
+
+    private static IEnumerable<INamedTypeSymbol> GetGloballyVisibleTypes(
+        INamespaceOrTypeSymbol scope,
+        string name,
+        int arity,
+        Compilation compilation)
+    {
+        return scope.GetTypeMembers(name, arity)
+            .Where(candidate =>
+                compilation.IsSymbolAccessibleWithin(
+                    candidate,
+                    compilation.Assembly) &&
+                IsAvailableThroughGlobalAlias(
+                    candidate.ContainingAssembly,
+                    compilation));
+    }
+
+    private static bool IsAvailableThroughGlobalAlias(
+        INamespaceSymbol @namespace,
+        Compilation compilation)
+    {
+        return @namespace.ConstituentNamespaces.Any(candidate =>
+            candidate.ContainingAssembly is { } assembly &&
+            IsAvailableThroughGlobalAlias(assembly, compilation));
     }
 
     private static INamedTypeSymbol NormalizeGlobalDefinition(

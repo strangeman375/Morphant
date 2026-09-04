@@ -7,6 +7,59 @@ namespace Morphant.Generator.UnitTests;
 internal sealed class GeneratedExtensionCollisionTests
 {
     [Test]
+    public void User_extension_with_a_generated_signature_is_reported_instead_of_lowered()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+
+    internal static class UserExtensions
+    {
+        public static MappingBuilder<TMapper, TSource, TDestination> Convert<
+            TMapper,
+            TSource,
+            TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            global::Morphant.Delegates.Convert<TSource?, TDestination> mapping)
+            where TMapper : TypeMapper<TMapper> => builder;
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Convert(_ => new Destination());
+    }
+}
+""";
+
+        var result = GeneratorTestDriver.Run(
+            "UserExtensionCollision",
+            source,
+            LanguageVersion.CSharp9);
+        var diagnostic = result.EffectiveDiagnostics.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0018"));
+            Assert.That(
+                GeneratorTestDriver.GetSourceText(diagnostic.Location),
+                Is.EqualTo("Convert"));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
     public void User_method_in_reserved_partial_container_is_not_trusted_as_generated()
     {
         // lang=c#

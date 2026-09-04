@@ -357,6 +357,110 @@ namespace TestCase
     }
 
     [Test]
+    public void Namespace_and_type_segments_with_the_same_global_spelling_are_unavailable()
+    {
+        // lang=c#
+        const string namespaceReferenceSource =
+"""
+namespace Collision.Container
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+}
+""";
+        // lang=c#
+        const string typeReferenceSource =
+"""
+namespace Collision
+{
+    public sealed class Container
+    {
+        public sealed class Source { }
+        public sealed class Destination { }
+    }
+}
+""";
+        // lang=c#
+        const string source =
+"""
+extern alias NamespaceModels;
+extern alias TypeModels;
+
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class NamespaceMapper : TypeMapper<NamespaceMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<
+                NamespaceModels::Collision.Container.Source,
+                NamespaceModels::Collision.Container.Destination>();
+    }
+
+    [MorphantMapper]
+    public partial class TypeMapper : Morphant.TypeMapper<TypeMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<
+                TypeModels::Collision.Container.Source,
+                TypeModels::Collision.Container.Destination>();
+    }
+}
+""";
+        var namespaceReference = GeneratorTestDriver
+            .CompileReference(
+                "NamespaceModels",
+                namespaceReferenceSource)
+            .WithProperties(
+                MetadataReferenceProperties.Assembly.WithAliases(
+                    ImmutableArray.Create("global", "NamespaceModels")));
+        var typeReference = GeneratorTestDriver
+            .CompileReference(
+                "TypeModels",
+                typeReferenceSource)
+            .WithProperties(
+                MetadataReferenceProperties.Assembly.WithAliases(
+                    ImmutableArray.Create("global", "TypeModels")));
+
+        var result = GeneratorTestDriver.Run(
+            "NamespaceTypeCollisionMapping",
+            source,
+            LanguageVersion.CSharp9,
+            additionalReferences: [namespaceReference, typeReference]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                result.EffectiveDiagnostics.Select(static diagnostic =>
+                    diagnostic.Id),
+                Is.EqualTo(new[]
+                {
+                    "MORPH0011",
+                    "MORPH0011",
+                    "MORPH0011",
+                    "MORPH0011"
+                }));
+            Assert.That(
+                result.EffectiveDiagnostics.Select(diagnostic =>
+                    GeneratorTestDriver.GetSourceText(
+                        diagnostic.Location)),
+                Is.EqualTo(new[]
+                {
+                    "NamespaceModels::Collision.Container.Source",
+                    "NamespaceModels::Collision.Container.Destination",
+                    "TypeModels::Collision.Container.Source",
+                    "TypeModels::Collision.Container.Destination"
+                }));
+            Assert.That(result.GeneratedSources, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
     public void Internal_friend_type_with_one_global_name_remains_available()
     {
         // lang=c#

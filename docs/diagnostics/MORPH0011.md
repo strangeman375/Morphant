@@ -5,9 +5,10 @@
 The registered source or destination type cannot be named from generated
 mapper code. The inaccessible part may be the type itself, a containing type,
 one of its generic type arguments, or a required generic constraint. A type
-that is available only through a non-global `extern alias`, or whose fully
-qualified name is ambiguous between referenced assemblies, also cannot be
-named by the generated mapper.
+that is available only through a non-global `extern alias`, whose fully
+qualified name is ambiguous between referenced assemblies, or whose qualified
+path can denote both a namespace and a type also cannot be named by the
+generated mapper.
 
 ## Fix
 

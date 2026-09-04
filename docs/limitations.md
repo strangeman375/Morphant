@@ -40,8 +40,8 @@ below, but not every feature expected from a general-purpose mapper.
 - cross-assembly configuration inheritance;
 - mapping-contract types or required generic constraints that are available
   only through a non-global `extern alias` or have an ambiguous `global::`
-  name; the referenced assembly must also be available unambiguously through
-  `global` for generated code;
+  name, including a namespace/type path collision; the referenced assembly
+  must also be available unambiguously through `global` for generated code;
 - generated DI registration;
 - configurable enum mapping, reverse mapping, before/after hooks or async
   mapping.
