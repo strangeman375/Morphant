@@ -7,6 +7,9 @@ internal static class PairConfigurationModelEquality
         PairConfigurationModel right)
     {
         return StringComparer.Ordinal.Equals(
+                   left.ExtensionContainerTypeName,
+                   right.ExtensionContainerTypeName) &&
+               StringComparer.Ordinal.Equals(
                    left.BuilderTypeName,
                    right.BuilderTypeName) &&
                StringComparer.Ordinal.Equals(

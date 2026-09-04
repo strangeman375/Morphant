@@ -16,7 +16,7 @@ internal static class MemberConfigurationEmitter
         writer.OpenBlock("namespace Morphant");
         writer.OpenBlock(
             "internal static partial class " +
-            "MorphantGeneratedMappingExtensions");
+            model.ExtensionContainerTypeName);
 
         WriteMethod(
             writer,

@@ -1252,10 +1252,8 @@ internal static class BuilderFlowAnalyzer
         var definition = method.ReducedFrom ?? method;
 
         return CallbackMethodNames.Contains(method.Name) &&
-               StringComparer.Ordinal.Equals(
-                   SymbolNameHelper.GetFullMetadataName(
-                       definition.ContainingType),
-                   MetadataNames.GeneratedMappingExtensions);
+               GeneratedMappingExtensionNaming.IsContainer(
+                   definition.ContainingType);
     }
 
     private static bool IsIncludeMembersMethod(IMethodSymbol method)

@@ -36,6 +36,12 @@ internal sealed class CompiledConsumerTests
     }
 
     [Test]
+    public void CSharp9_unrelated_CRTP_families_compile_and_execute()
+    {
+        CSharp9Consumer.ExtensionCollisionScenario.Verify();
+    }
+
+    [Test]
     public void CSharp11_required_member_consumer_compiles_and_executes()
     {
         var mapper = (ITypeMapper<

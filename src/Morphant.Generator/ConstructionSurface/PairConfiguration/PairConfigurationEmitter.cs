@@ -15,7 +15,7 @@ internal static class PairConfigurationEmitter
         writer.OpenBlock("namespace Morphant");
         writer.OpenBlock(
             "internal static partial class " +
-            "MorphantGeneratedMappingExtensions");
+            model.ExtensionContainerTypeName);
 
         var hasPreviousMethod = false;
 

@@ -2037,10 +2037,8 @@ internal static class PairConfigurationModelBuilder
                    "ResolveUsing" or
                    "Members" or
                    "Convert" &&
-               StringComparer.Ordinal.Equals(
-                   SymbolNameHelper.GetFullMetadataName(
-                       definition.ContainingType),
-                   MetadataNames.GeneratedMappingExtensions);
+               GeneratedMappingExtensionNaming.IsContainer(
+                   definition.ContainingType);
     }
 
     private static bool IsMapperBuilderMapMethod(

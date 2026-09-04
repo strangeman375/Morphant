@@ -23,9 +23,6 @@ internal static class MetadataNames
     public const string MapperDeclaration =
         "Morphant.IMapperDeclaration";
 
-    public const string GeneratedMappingExtensions =
-        "Morphant.MorphantGeneratedMappingExtensions";
-
     public const string Member =
         "Morphant.Members.Member`1";
 

@@ -39,7 +39,7 @@ mapping pairs и их presentation. Кортежи и mapper-scoped API увел
 - сгенерированные mapping methods и вся необходимая им runtime metadata
   остаются без изменений;
 - generated construction plans, constructor-parameter plans, member plans и
-  `MorphantGeneratedMappingExtensions` отсутствуют;
+  все `MorphantGeneratedMappingExtensions*` containers отсутствуют;
 - `Configure` остаётся как минимальный override, потому что базовый contract
   абстрактный, но его declarative тело и исключительно принадлежащие ему
   compiler-synthesized artifacts отсутствуют;
@@ -64,8 +64,8 @@ compile/runtime contract. Удаляется раздувающая каждую
 |---|---|---|---|
 | `ConstructionPlanEmitter` | `*Construction`, `*ConstructorParameters`, tuple equivalents | Target-typed `new(...)`, выбор constructor-а и его аргументов внутри DSL | Удалить |
 | `MemberPlanEmitter` | `*Members`, `TupleMembers` | Target-typed object initializer для `Members(...)` | Удалить |
-| `PairConfigurationEmitter` | partial `MorphantGeneratedMappingExtensions` с `Construct`, `Resolve`, `Convert` и callback-вариантами | Типизированная pair-specific fluent surface | Удалить |
-| `MemberConfigurationEmitter` | partial `MorphantGeneratedMappingExtensions` с `Members` overloads | Типизированная member surface | Удалить |
+| `PairConfigurationEmitter` | partial extension containers с `Construct`, `Resolve`, `Convert` и callback-вариантами | Типизированная pair-specific fluent surface | Удалить |
+| `MemberConfigurationEmitter` | те же partial extension containers с `Members` overloads | Типизированная member surface | Удалить |
 | `TypeMapperEmitter` | partial mapper, реализации `ITypeMapper<,>`, runtime mapping methods | Исполнение mapping-а | Сохранить |
 | C# compiler | lambda/local-function methods, closure types, delegate caches из `Configure` | Физическая реализация declarative C#-тела | Удалять только при доказанной exclusive ownership |
 | User source | override `Configure(MapperBuilder)` | Корень декларации, одновременно обязательный override abstract member-а | Заменить тело безопасным stub-ом, сам method сохранить |
@@ -76,11 +76,15 @@ tuple plans — под `Morphant.Generated.Tuples.V...` или
 не является metadata ownership boundary, а будущие emitters и пользовательский
 код могут легально получить похожие имена.
 
-`MorphantGeneratedMappingExtensions` собирается из многих partial declarations
-в один metadata type. Это важно для marker-а: атрибут нельзя бездумно ставить
-на каждую часть, а mapper partial вообще нельзя помечать compile-time-only —
-атрибут относится к объединённому mapper type и тем самым пометил бы runtime
-реализацию на удаление.
+Обычные surfaces собираются в общий `MorphantGeneratedMappingExtensions`.
+CRTP family-scoped surfaces с bare self-type собираются в отдельный стабильный
+container на mapper family: иначе методы разных family различались бы только
+generic constraints, которые не входят в C# signature, и получали бы
+`CS0111`. Каждый из этих metadata types всё равно состоит из многих partial
+declarations. Это важно для marker-а: атрибут нельзя бездумно ставить на каждую
+часть, а mapper partial вообще нельзя помечать compile-time-only — атрибут
+относится к объединённому mapper type и тем самым пометил бы runtime реализацию
+на удаление.
 
 ## 3. Измеренная стоимость на крупном consumer-е
 
@@ -252,13 +256,13 @@ Cleaner не должен переписывать official output in place. О�
 - `*ConstructorParameters`;
 - `*Members`;
 - tuple plan equivalents;
-- объединённый `MorphantGeneratedMappingExtensions`;
+- общий и family-specific `MorphantGeneratedMappingExtensions*` containers;
 - сама служебная marker/manifest surface, если она представлена TypeDef-ами.
 
-Для partial extensions нужен один dedicated anchor source, который один раз
-объявляет partial type с marker-ом. Ставить marker на каждую emitted partial
-часть нельзя: это либо создаст повторные attributes, либо потребует
-`AllowMultiple`, скрывая ошибку ownership.
+Для partial extensions нужен один dedicated anchor source, который ровно один
+раз объявляет с marker-ом каждый фактически emitted extension container.
+Ставить marker на каждую pair/member partial-часть нельзя: это либо создаст
+повторные attributes, либо потребует `AllowMultiple`, скрывая ошибку ownership.
 
 Mapper partial не помечается никогда. Все partial declarations образуют один
 metadata type, поэтому attribute на «generated части mapper-а» фактически
@@ -433,9 +437,9 @@ configuration graph.
 - interface implementations и method semantics;
 - manifest/marker carrier metadata.
 
-Удаление отдельных methods `MorphantGeneratedMappingExtensions` при сохранении
-пустого type-а не выполняет целевой контракт. В assembly не должен оставаться
-и сам container.
+Удаление отдельных methods из `MorphantGeneratedMappingExtensions*` при
+сохранении пустых type-ов не выполняет целевой контракт. В assembly не должен
+оставаться ни один такой container.
 
 ### 9.5. Symbols, XML docs и SourceLink
 
@@ -582,9 +586,9 @@ tuple identity нужна generator-у при compilation, но не runtime ass
 ### Mapper-scoped и shared surfaces
 
 Ownership не выводится из того, была surface mapper-scoped, family-scoped или
-shared. Все disposable metadata identities перечисляются явно. Один shared
-extension container всё равно удаляется целиком, когда manifest подтверждает
-все его partial contributions.
+shared. Все disposable metadata identities перечисляются явно. Общий и каждый
+family-specific extension container удаляются целиком, когда manifest
+подтверждает все их partial contributions.
 
 ### Configuration inheritance
 
@@ -626,11 +630,19 @@ Cleaner работает раньше этих этапов и уменьшае�
 
 ### `InternalsVisibleTo` и accidental dependencies
 
-Generated helpers имеют `internal` accessibility, но friend assembly
-теоретически могла на них сослаться. Это не поддерживаемый API: после очистки
-reference assembly такая compilation должна перестать собираться. Изменение
-нужно явно отметить в release notes при включении default, но поддерживать
-generated internals как compatibility contract нельзя.
+Generated helpers имеют `internal` accessibility, но
+`InternalsVisibleTo` делает их частью lookup friend assembly. Компиляционная
+проба подтвердила, что metadata-only reference сохраняет эти internals: если
+friend assembly генерирует ту же shared pair surface, её `Convert`/`Members`
+и остальные методы становятся неоднозначны с импортированными overloads.
+Cleaner устраняет не только metadata-мусор, но и эту реальную cross-assembly
+коллизию, если очищает implementation, `ref` и `refint` согласованно.
+
+Прямые ссылки пользовательского кода на generated internals не являются
+поддерживаемым API: после очистки reference assembly такая compilation должна
+перестать собираться. Изменение нужно явно отметить в release notes при
+включении default, но поддерживать generated internals как compatibility
+contract нельзя.
 
 ## 13. Test matrix
 
@@ -642,6 +654,7 @@ generated internals как compatibility contract нельзя.
 - точные metadata identities для ordinary, nested, generic и BCL tuple plans;
 - shared, mapper-scoped и mapper-family-scoped surfaces;
 - несколько mappers и partial extension contributions;
+- общий и несколько family-specific extension containers;
 - source-defined base/derived Configure chains;
 - отсутствие marker-а на mapper partial;
 - incremental caching при нерелевантном edit;
@@ -667,6 +680,8 @@ generated internals как compatibility contract нельзя.
 - audit находит точные ожидаемые counts без mutation;
 - implementation, `ref` и `refint` после cleaner-а не содержат disposable
   TypeDefs/MethodDefs/Properties;
+- friend assembly с пересекающейся shared pair не получает competing
+  extensions из очищенной reference assembly;
 - Configure body содержит только выбранный exception stub;
 - closure, lambda method и delegate cache удаляются, если exclusive;
 - shared compiler-generated artifact вызывает предсказуемый отказ;
@@ -705,7 +720,8 @@ generated internals как compatibility contract нельзя.
 
 ### Этап 1. Контракт без удаления
 
-1. Добавить internal marker и single extension anchor.
+1. Добавить internal marker и единый anchor source для всех extension
+   containers.
 2. Добавить отдельно versioned manifest.
 3. Добавить complete generated-source и incremental tests.
 4. Добавить DSL escape diagnostic и её help/test coverage.

@@ -386,7 +386,7 @@ namespace Morphant
 
 namespace Morphant
 {
-    internal static partial class MorphantGeneratedMappingExtensions
+    internal static partial class MorphantGeneratedMappingExtensions__Family_c70c6973881836dc94f5f8cf0f020280
     {
         /// <summary>
         /// Uses a callback to construct a destination when none exists.

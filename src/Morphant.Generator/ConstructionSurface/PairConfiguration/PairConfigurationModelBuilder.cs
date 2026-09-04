@@ -83,6 +83,7 @@ internal static class PairConfigurationModelBuilder
         }
 
         return new PairConfigurationModel(
+            GeneratedMappingExtensionNaming.BuildContainerTypeName(surface),
             builderTypeName,
             receiverTypeName,
             GeneratedTypeNameBuilder.Build(
