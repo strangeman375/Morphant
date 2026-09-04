@@ -286,6 +286,128 @@ namespace TestCase
     }
 
     [Test]
+    public void Ambiguous_global_name_behind_extern_alias_is_unavailable()
+    {
+        // lang=c#
+        const string referencedSource =
+"""
+namespace ExternalModel
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+}
+""";
+        // lang=c#
+        const string source =
+"""
+extern alias First;
+extern alias Second;
+
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<
+                First::ExternalModel.Source,
+                First::ExternalModel.Destination>();
+    }
+}
+""";
+        var firstReference = GeneratorTestDriver
+            .CompileReference("FirstExternalModels", referencedSource)
+            .WithProperties(
+                MetadataReferenceProperties.Assembly.WithAliases(
+                    ImmutableArray.Create("global", "First")));
+        var secondReference = GeneratorTestDriver
+            .CompileReference("SecondExternalModels", referencedSource)
+            .WithProperties(
+                MetadataReferenceProperties.Assembly.WithAliases(
+                    ImmutableArray.Create("global", "Second")));
+
+        var result = GeneratorTestDriver.Run(
+            "AmbiguousGlobalMapping",
+            source,
+            LanguageVersion.CSharp9,
+            additionalReferences: [firstReference, secondReference]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                result.EffectiveDiagnostics.Select(static diagnostic =>
+                    diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0011", "MORPH0011" }));
+            Assert.That(
+                result.EffectiveDiagnostics.Select(diagnostic =>
+                    GeneratorTestDriver.GetSourceText(
+                        diagnostic.Location)),
+                Is.EqualTo(new[]
+                {
+                    "First::ExternalModel.Source",
+                    "First::ExternalModel.Destination"
+                }));
+            Assert.That(result.GeneratedSources, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Internal_friend_type_with_one_global_name_remains_available()
+    {
+        // lang=c#
+        const string referencedSource =
+"""
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("FriendMapping")]
+
+namespace ExternalModel
+{
+    internal sealed class Source { }
+    internal sealed class Destination { }
+}
+""";
+        // lang=c#
+        const string source =
+"""
+using ExternalModel;
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>();
+    }
+}
+""";
+        var reference = GeneratorTestDriver.CompileReference(
+            "FriendModels",
+            referencedSource);
+
+        var result = GeneratorTestDriver.Run(
+            "FriendMapping",
+            source,
+            LanguageVersion.CSharp9,
+            additionalReferences: [reference]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
     public void Extern_alias_only_constraint_reports_unavailable_pair()
     {
         // lang=c#

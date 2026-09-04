@@ -163,6 +163,9 @@ internal static class MappingTypeEligibilityPolicy
                          compilation.Assembly) ||
                      !IsAvailableThroughGlobalAlias(
                          namedType.ContainingAssembly,
+                         compilation) ||
+                     !IsUnambiguouslyAvailableThroughGlobalName(
+                         namedType,
                          compilation)
             ? MappingTypeNameability.Unavailable
             : MappingTypeNameability.Available;
@@ -258,6 +261,46 @@ internal static class MappingTypeEligibilityPolicy
         return aliases is { } values &&
                (values.IsDefaultOrEmpty ||
                 values.Contains("global", StringComparer.Ordinal));
+    }
+
+    private static bool IsUnambiguouslyAvailableThroughGlobalName(
+        INamedTypeSymbol type,
+        Compilation compilation)
+    {
+        if (SymbolEqualityComparer.Default.Equals(
+                type.ContainingAssembly,
+                compilation.Assembly))
+        {
+            return true;
+        }
+
+        var definition = NormalizeGlobalDefinition(type);
+        var resolved = compilation.GetTypeByMetadataName(
+            SymbolNameHelper.GetFullMetadataName(definition));
+
+        return resolved is not null &&
+               SymbolEqualityComparer.Default.Equals(
+                   NormalizeGlobalDefinition(resolved),
+                   definition);
+    }
+
+    private static INamedTypeSymbol NormalizeGlobalDefinition(
+        INamedTypeSymbol type)
+    {
+        if (type.IsTupleType &&
+            type.TupleUnderlyingType is { } tupleUnderlyingType)
+        {
+            type = tupleUnderlyingType;
+        }
+
+        if (type.IsNativeIntegerType &&
+            type.NativeIntegerUnderlyingType is
+                { } nativeIntegerUnderlyingType)
+        {
+            type = nativeIntegerUnderlyingType;
+        }
+
+        return type.OriginalDefinition;
     }
 
     private static ITypeSymbol UnwrapNullableValueType(ITypeSymbol type)
