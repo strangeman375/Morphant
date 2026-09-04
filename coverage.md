@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/04/2026 - 14:32:37 |
-| Coverage date: | 09/04/2026 - 14:31:10 - 09/04/2026 - 14:32:32 |
+| Generated on: | 09/04/2026 - 16:10:40 |
+| Coverage date: | 09/04/2026 - 16:09:22 - 09/04/2026 - 16:10:36 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 361 |
 | Files: | 186 |
-| **Line coverage:** | 86.7% (36160 of 41664) |
-| Covered lines: | 36160 |
-| Uncovered lines: | 5504 |
-| Coverable lines: | 41664 |
-| Total lines: | 69411 |
-| **Branch coverage:** | 76.9% (12044 of 15648) |
-| Covered branches: | 12044 |
-| Total branches: | 15648 |
+| **Line coverage:** | 86.8% (36415 of 41924) |
+| Covered lines: | 36415 |
+| Uncovered lines: | 5509 |
+| Coverable lines: | 41924 |
+| Total lines: | 69867 |
+| **Branch coverage:** | 77% (12207 of 15834) |
+| Covered branches: | 12207 |
+| Total branches: | 15834 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -65,11 +65,11 @@
 |Morphant.Build.Tasks.SnapshotException|100%||
 
 </details>
-<details><summary>Morphant.Generator - 86.7%</summary>
+<details><summary>Morphant.Generator - 86.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**86.7%**|**77%**|
+|**Morphant.Generator**|**86.8%**|**77.1%**|
 |Morphant.Generator.CodeWriter|100%|100%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -146,7 +146,7 @@
 |Morphant.Generator.MappingPair.DestinationCapabilityPolicy|98.3%|89.6%|
 |Morphant.Generator.MappingPair.DestinationMemberPolicy|100%|99.1%|
 |Morphant.Generator.MappingPair.DuplicateMappingPairRegistrationModel|100%||
-|Morphant.Generator.MappingPair.GeneratedMappingExtensionNaming|93.7%|78.5%|
+|Morphant.Generator.MappingPair.GeneratedMappingExtensionNaming|95.8%|83.8%|
 |Morphant.Generator.MappingPair.MapperMappingPairModel|100%||
 |Morphant.Generator.MappingPair.MapperMappingRegistrationModel|100%||
 |Morphant.Generator.MappingPair.MappingPairCapabilities|71.4%||
@@ -158,7 +158,7 @@
 |Morphant.Generator.MappingPair.MappingRegistrationDiagnosticPipeline|99.6%|95.8%|
 |Morphant.Generator.MappingPair.MappingSurfaceModel|82.1%|60%|
 |Morphant.Generator.MappingPair.MappingSurfacePolicy|76.4%|77.7%|
-|Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|97.5%|86.1%|
+|Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|97.4%|85.5%|
 |Morphant.Generator.MappingPair.MappingTypeIdentity|100%||
 |Morphant.Generator.MappingPair.MappingTypeIdentityPolicy|91%|80.7%|
 |Morphant.Generator.MappingPair.MappingTypeNormalization|96.4%|95%|
@@ -179,7 +179,7 @@
 |Morphant.Generator.MemberSurface.PairConfiguration.MemberConfigurationEmitt<br/>er|100%|83.3%|
 |Morphant.Generator.MorphantGenerator|90.5%||
 |Morphant.Generator.PairConfiguration.BoundConfigurationExpression|100%||
-|Morphant.Generator.PairConfiguration.BuilderFlowAnalyzer|96%|85.8%|
+|Morphant.Generator.PairConfiguration.BuilderFlowAnalyzer|96.4%|86.4%|
 |Morphant.Generator.PairConfiguration.BuilderFlowBreakModel|100%||
 |Morphant.Generator.PairConfiguration.BuilderFlowLevelAnalysis|100%||
 |Morphant.Generator.PairConfiguration.ConfigurationFlowDiagnosticDescriptors|100%||
@@ -206,7 +206,7 @@
 |Morphant.Generator.PairConfiguration.PairConfigurationDiscoveryPipeline|90.4%|76%|
 |Morphant.Generator.PairConfiguration.PairConfigurationInvocationChain|100%||
 |Morphant.Generator.PairConfiguration.PairConfigurationModel|100%||
-|Morphant.Generator.PairConfiguration.PairConfigurationModelBuilder|95.3%|86.2%|
+|Morphant.Generator.PairConfiguration.PairConfigurationModelBuilder|95.3%|86.3%|
 |Morphant.Generator.PairConfiguration.PairConfigurationOriginModel|100%||
 |Morphant.Generator.PairConfiguration.PairConfigurationPipeline|93.3%|50%|
 |Morphant.Generator.PairConfiguration.PairConfigurationSetting`1|100%||
@@ -407,4 +407,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #123](https://github.com/strangeman375/Morphant/actions/runs/33883811846).
+Full HTML report: download the **coverage** artifact from [CI run #126](https://github.com/strangeman375/Morphant/actions/runs/33893235112).
