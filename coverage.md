@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/04/2026 - 13:39:10 |
-| Coverage date: | 09/04/2026 - 13:37:51 - 09/04/2026 - 13:39:06 |
+| Generated on: | 09/04/2026 - 14:10:35 |
+| Coverage date: | 09/04/2026 - 14:08:35 - 09/04/2026 - 14:10:29 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 361 |
 | Files: | 186 |
-| **Line coverage:** | 86.7% (36060 of 41562) |
-| Covered lines: | 36060 |
-| Uncovered lines: | 5502 |
-| Coverable lines: | 41562 |
-| Total lines: | 69203 |
-| **Branch coverage:** | 76.9% (12001 of 15602) |
-| Covered branches: | 12001 |
-| Total branches: | 15602 |
+| **Line coverage:** | 86.7% (36138 of 41641) |
+| Covered lines: | 36138 |
+| Uncovered lines: | 5503 |
+| Coverable lines: | 41641 |
+| Total lines: | 69360 |
+| **Branch coverage:** | 76.9% (12030 of 15634) |
+| Covered branches: | 12030 |
+| Total branches: | 15634 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -69,7 +69,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**86.7%**|**76.9%**|
+|**Morphant.Generator**|**86.7%**|**77%**|
 |Morphant.Generator.CodeWriter|100%|100%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -143,7 +143,7 @@
 |Morphant.Generator.MappingPair.CanonicalMappingPairCandidate|88.8%||
 |Morphant.Generator.MappingPair.CanonicalMappingPairPipeline|95.7%|86.1%|
 |Morphant.Generator.MappingPair.CanonicalMappingPairSelector|71%|47.2%|
-|Morphant.Generator.MappingPair.DestinationCapabilityPolicy|98.2%|89.6%|
+|Morphant.Generator.MappingPair.DestinationCapabilityPolicy|98.3%|89.6%|
 |Morphant.Generator.MappingPair.DestinationMemberPolicy|100%|99.1%|
 |Morphant.Generator.MappingPair.DuplicateMappingPairRegistrationModel|100%||
 |Morphant.Generator.MappingPair.GeneratedMappingExtensionNaming|93.7%|78.5%|
@@ -158,7 +158,7 @@
 |Morphant.Generator.MappingPair.MappingRegistrationDiagnosticPipeline|99.6%|95.8%|
 |Morphant.Generator.MappingPair.MappingSurfaceModel|82.1%|60%|
 |Morphant.Generator.MappingPair.MappingSurfacePolicy|76.4%|77.7%|
-|Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|97.3%|83.9%|
+|Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|97.8%|85.5%|
 |Morphant.Generator.MappingPair.MappingTypeIdentity|100%||
 |Morphant.Generator.MappingPair.MappingTypeIdentityPolicy|91%|80.7%|
 |Morphant.Generator.MappingPair.MappingTypeNormalization|96.4%|95%|
@@ -407,4 +407,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #120](https://github.com/strangeman375/Morphant/actions/runs/33878843920).
+Full HTML report: download the **coverage** artifact from [CI run #121](https://github.com/strangeman375/Morphant/actions/runs/33881621878).
