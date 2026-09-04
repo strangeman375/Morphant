@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/04/2026 - 14:10:35 |
-| Coverage date: | 09/04/2026 - 14:08:35 - 09/04/2026 - 14:10:29 |
+| Generated on: | 09/04/2026 - 14:32:37 |
+| Coverage date: | 09/04/2026 - 14:31:10 - 09/04/2026 - 14:32:32 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 361 |
 | Files: | 186 |
-| **Line coverage:** | 86.7% (36138 of 41641) |
-| Covered lines: | 36138 |
-| Uncovered lines: | 5503 |
-| Coverable lines: | 41641 |
-| Total lines: | 69360 |
-| **Branch coverage:** | 76.9% (12030 of 15634) |
-| Covered branches: | 12030 |
-| Total branches: | 15634 |
+| **Line coverage:** | 86.7% (36160 of 41664) |
+| Covered lines: | 36160 |
+| Uncovered lines: | 5504 |
+| Coverable lines: | 41664 |
+| Total lines: | 69411 |
+| **Branch coverage:** | 76.9% (12044 of 15648) |
+| Covered branches: | 12044 |
+| Total branches: | 15648 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -100,7 +100,7 @@
 |Morphant.Generator.Diagnostics.DiagnosticHelpLink|100%||
 |Morphant.Generator.Diagnostics.GeneratorFailureDiagnosticDescriptors|100%||
 |Morphant.Generator.Extensions|100%|100%|
-|Morphant.Generator.GeneratedPlanNaming|100%|90%|
+|Morphant.Generator.GeneratedPlanNaming|100%|100%|
 |Morphant.Generator.GeneratedSourceHintName|100%|94.4%|
 |Morphant.Generator.GeneratorStageGuard|99.1%|84%|
 |Morphant.Generator.HintNameHelper|97.4%|95%|
@@ -158,7 +158,7 @@
 |Morphant.Generator.MappingPair.MappingRegistrationDiagnosticPipeline|99.6%|95.8%|
 |Morphant.Generator.MappingPair.MappingSurfaceModel|82.1%|60%|
 |Morphant.Generator.MappingPair.MappingSurfacePolicy|76.4%|77.7%|
-|Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|97.8%|85.5%|
+|Morphant.Generator.MappingPair.MappingTypeEligibilityPolicy|97.5%|86.1%|
 |Morphant.Generator.MappingPair.MappingTypeIdentity|100%||
 |Morphant.Generator.MappingPair.MappingTypeIdentityPolicy|91%|80.7%|
 |Morphant.Generator.MappingPair.MappingTypeNormalization|96.4%|95%|
@@ -407,4 +407,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #121](https://github.com/strangeman375/Morphant/actions/runs/33881621878).
+Full HTML report: download the **coverage** artifact from [CI run #123](https://github.com/strangeman375/Morphant/actions/runs/33883811846).
