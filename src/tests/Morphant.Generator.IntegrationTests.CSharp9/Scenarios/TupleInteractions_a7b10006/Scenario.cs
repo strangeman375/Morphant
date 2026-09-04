@@ -30,6 +30,38 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleInteraction
         public string Tag { get; set; } = string.Empty;
     }
 
+    public sealed class GenericTupleSource<T>
+    {
+        public T Value { get; init; } = default!;
+
+        public int Count { get; init; }
+    }
+
+    public abstract class GenericTupleFamily<TMapper, T> :
+        TypeMapper<TMapper>
+        where TMapper : GenericTupleFamily<TMapper, T>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<GenericTupleSource<T>, (T Value, int Count)>()
+                .Convert(source => (source!.Value, source.Count));
+    }
+
+    [MorphantMapper]
+    public partial class StringTupleMapper :
+        GenericTupleFamily<StringTupleMapper, string>
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            base.Configure(builder);
+            builder.Map<
+                    GenericTupleSource<string>,
+                    (string Value, int Count)>()
+                .IncludeBase<
+                    GenericTupleSource<string>,
+                    (string Value, int Count)>();
+        }
+    }
+
     [MorphantMapper]
     public partial class TestMapper : TypeMapper<TestMapper>
     {
@@ -105,6 +137,18 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleInteraction
             var updated = mapper.Map(
                 (Id: 23, Name: "Linus"),
                 previous);
+            var genericMapper =
+                (ITypeMapper<
+                    GenericTupleSource<string>,
+                    (string Value, int Count)>)
+                new StringTupleMapper();
+            var generic = genericMapper.Create(
+                new GenericTupleSource<string>
+                {
+                    Value = "tuple",
+                    Count = 31
+                },
+                default);
 
             if (summary != (Name: "Ada", Kind: "collie") ||
                 created.Id != 17 ||
@@ -113,7 +157,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleInteraction
                 !ReferenceEquals(previous, updated) ||
                 updated.Id != 23 ||
                 updated.Name != "Linus" ||
-                updated.Tag != "Linus:tag")
+                updated.Tag != "Linus:tag" ||
+                generic != (Value: "tuple", Count: 31))
             {
                 throw new InvalidOperationException(
                     "Tuple composition, runtime dispatch, or DI routing " +

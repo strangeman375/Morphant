@@ -57,6 +57,9 @@ unsupported.
   updates.
 - Reject loosely constrained reusable mapper bases with `MORPH0058` before
   their mapper-family configuration methods can leak into unrelated scopes.
+- Preserve tuple element names and nullable annotations when generic mapper
+  family types are closed, avoiding false `MORPH0056` conflicts during
+  configuration inheritance.
 
 ## [0.4.0]
 

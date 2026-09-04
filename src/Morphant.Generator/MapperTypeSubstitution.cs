@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
 namespace Morphant.Generator;
@@ -114,8 +115,54 @@ internal static class MapperTypeSubstitution
             ? definition
             : definition.Construct(arguments);
 
+        if (named.IsTupleType)
+        {
+            constructed = RestoreTuplePresentation(
+                named,
+                constructed,
+                substitutions,
+                compilation);
+        }
+
         return constructed.WithNullableAnnotation(
             type.NullableAnnotation);
+    }
+
+    private static INamedTypeSymbol RestoreTuplePresentation(
+        INamedTypeSymbol original,
+        INamedTypeSymbol substitutedUnderlyingType,
+        IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol> substitutions,
+        Compilation compilation)
+    {
+        var elements = original.TupleElements;
+        var hasExplicitNames = elements.Any(static element =>
+            element.IsExplicitlyNamedTupleElement);
+        var names = hasExplicitNames
+            ? elements.Select(static element =>
+                    element.IsExplicitlyNamedTupleElement
+                        ? element.Name
+                        : (string?)null)
+                .ToImmutableArray()
+            : ImmutableArray<string?>.Empty;
+        var locations = hasExplicitNames
+            ? elements.Select(static element =>
+                    (Location?)(element.Locations.FirstOrDefault() ??
+                        Location.None))
+                .ToImmutableArray()
+            : ImmutableArray<Location?>.Empty;
+        var nullableAnnotations = elements
+            .Select(element =>
+                Substitute(
+                    element.Type,
+                    substitutions,
+                    compilation).NullableAnnotation)
+            .ToImmutableArray();
+
+        return compilation.CreateTupleTypeSymbol(
+            substitutedUnderlyingType,
+            names,
+            locations,
+            nullableAnnotations);
     }
 
     private static void AddTypeAndContainingTypes(

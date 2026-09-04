@@ -414,6 +414,239 @@ public partial class TestMapper : TypeMapper<TestMapper>
         });
     }
 
+    [Test]
+    public void Preserves_a_named_tuple_when_closing_a_mapper_family()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase;
+
+public sealed class Source<T>
+{
+    public T Value { get; init; } = default!;
+    public int Count { get; init; }
+}
+
+public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+    where TMapper : Family<TMapper, T>
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Source<T>, (T Value, int Count)>();
+}
+
+[MorphantMapper]
+public partial class StringMapper : Family<StringMapper, string>
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        base.Configure(builder);
+        builder.Map<Source<string>, (string Value, int Count)>()
+            .IncludeBase<Source<string>, (string Value, int Count)>();
+    }
+}
+""";
+
+        var result = MappingRegistrationGeneratorTest.Run(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Diagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Preserves_nested_nullable_and_long_tuple_presentation()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase;
+
+public sealed class Source<T>
+{
+    public T Value { get; init; } = default!;
+}
+
+public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+    where TMapper : Family<TMapper, T>
+    where T : class
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<
+                Source<T>,
+                (
+                    T? Maybe,
+                    (T Item, string? Label) Nested,
+                    int A,
+                    int B,
+                    int C,
+                    int D,
+                    int E,
+                    int F,
+                    dynamic Payload)>()
+            .Convert(source =>
+                (
+                    source!.Value,
+                    (source!.Value, null),
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    source!.Value));
+}
+
+[MorphantMapper]
+public partial class StringMapper : Family<StringMapper, string>
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        base.Configure(builder);
+        builder.Map<
+                Source<string>,
+                (
+                    string? Maybe,
+                    (string Item, string? Label) Nested,
+                    int A,
+                    int B,
+                    int C,
+                    int D,
+                    int E,
+                    int F,
+                    dynamic Payload)>()
+            .IncludeBase<
+                Source<string>,
+                (
+                    string? Maybe,
+                    (string Item, string? Label) Nested,
+                    int A,
+                    int B,
+                    int C,
+                    int D,
+                    int E,
+                    int F,
+                    dynamic Payload)>();
+    }
+}
+""";
+
+        var result = MappingRegistrationGeneratorTest.Run(source);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Diagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Reports_a_real_name_conflict_after_family_substitution()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase;
+
+public sealed class Source<T>
+{
+    public T Value { get; init; } = default!;
+    public int Count { get; init; }
+}
+
+public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+    where TMapper : Family<TMapper, T>
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Source<T>, (T Value, int Count)>()
+            .Convert(source => (source!.Value, source.Count));
+}
+
+[MorphantMapper]
+public partial class StringMapper : Family<StringMapper, string>
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        base.Configure(builder);
+        builder.Map<Source<string>, (string Text, int Count)>()
+            .Convert(source => (source!.Value, source.Count));
+    }
+}
+""";
+
+        var result = MappingRegistrationGeneratorTest.Run(source);
+        var diagnostic = result.Diagnostics.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0056"));
+            Assert.That(
+                diagnostic.GetMessage(),
+                Is.EqualTo(
+                    "Mapping 'TestCase.Source<string> -> " +
+                    "System.ValueTuple<string, int>' uses tuple " +
+                    "presentation 'global::TestCase.Source<string> -> " +
+                    "(string Text, int Count)', which conflicts with the " +
+                    "presentation 'global::TestCase.Source<string> -> " +
+                    "(string Value, int Count)' of the same underlying " +
+                    "mapping pair."));
+            Assert.That(
+                MappingRegistrationGeneratorTest.SourceText(
+                    diagnostic.Location),
+                Is.EqualTo("Map"));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Actualizes_a_substituted_family_tuple_presentation()
+    {
+        var valid = MappingRegistrationGeneratorTest.Run(
+            FamilyActualizationSource.Replace("__NAME__", "Value"));
+        var conflicting = MappingRegistrationGeneratorTest.Run(
+            FamilyActualizationSource.Replace("__NAME__", "Text"),
+            driver: valid.Driver);
+        var restored = MappingRegistrationGeneratorTest.Run(
+            FamilyActualizationSource.Replace("__NAME__", "Value"),
+            driver: conflicting.Driver);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(valid.Diagnostics, Is.Empty);
+            Assert.That(
+                conflicting.Diagnostics.Select(static diagnostic =>
+                    diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0056" }));
+            Assert.That(restored.Diagnostics, Is.Empty);
+            Assert.That(
+                restored.GeneratedSources.Select(static generated =>
+                    (generated.HintName, generated.SourceText.ToString())),
+                Is.EqualTo(valid.GeneratedSources.Select(static generated =>
+                    (generated.HintName,
+                        generated.SourceText.ToString()))));
+            Assert.That(valid.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(conflicting.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(restored.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
     private static void AssertAuthority(
         MappingRegistrationGeneratorResult result)
     {
@@ -493,6 +726,42 @@ public partial class ConflictMapper :
     {
         base.Configure(builder);
         builder.Map<(int A, int B), (int Width, int Height)>();
+    }
+}
+""";
+
+    // lang=c#
+    private const string FamilyActualizationSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase;
+
+public sealed class Source<T>
+{
+    public T Value { get; init; } = default!;
+    public int Count { get; init; }
+}
+
+public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+    where TMapper : Family<TMapper, T>
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Source<T>, (T __NAME__, int Count)>()
+            .Convert(source => (source!.Value, source.Count));
+}
+
+[MorphantMapper]
+public partial class StringMapper : Family<StringMapper, string>
+{
+    protected override void Configure(MapperBuilder builder)
+    {
+        base.Configure(builder);
+        builder.Map<Source<string>, (string Value, int Count)>()
+            .Convert(source => (source!.Value, source.Count));
     }
 }
 """;
