@@ -130,6 +130,9 @@ internal static class ConfigurationFlowDiagnosticPipeline
                     IsDiscardedDuplicate(
                         configuration,
                         registration) ||
+                    IsInvalidMapperFamilyPair(
+                        configuration,
+                        registration) ||
                     IsCompilerOwned(registration, configuration))
                 {
                     continue;
@@ -191,12 +194,25 @@ internal static class ConfigurationFlowDiagnosticPipeline
                 registration.Syntax));
     }
 
+    private static bool IsInvalidMapperFamilyPair(
+        MapperPairConfigurationModel configuration,
+        MappingPairRegistrationModel registration)
+    {
+        return configuration.SurfaceMappingPairs.Any(model =>
+            model.InvalidMapperFamilyPairs.Any(pair =>
+                IsSameInvocation(
+                    pair.Registration.Syntax,
+                    registration.Syntax)));
+    }
+
     private static IEnumerable<MappingPairRegistrationModel>
         EnumerateRegistrations(MapperMappingPairModel model)
     {
         return model.Pairs
             .Select(static pair => pair.Registration)
             .Concat(model.UnsupportedPairs.Select(static pair =>
+                pair.Registration))
+            .Concat(model.InvalidMapperFamilyPairs.Select(static pair =>
                 pair.Registration))
             .Concat(model.UnavailablePairs.Select(static pair =>
                 pair.Registration))

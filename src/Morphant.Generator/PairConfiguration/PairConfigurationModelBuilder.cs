@@ -94,7 +94,8 @@ internal static class PairConfigurationModelBuilder
             var localMappingPairs = MappingPairPipeline.BuildModel(
                 level.InstantiatedRegistrations,
                 compilation,
-                cancellationToken);
+                cancellationToken,
+                level.BindingRegistrations);
             var localPairs =
                 ImmutableArray.CreateBuilder<PairConfigurationModel>();
 
@@ -1075,6 +1076,7 @@ internal static class PairConfigurationModelBuilder
             PairConfigurationCandidateModel>(
             model.Pairs.Length +
             model.UnsupportedPairs.Length +
+            model.InvalidMapperFamilyPairs.Length +
             model.UnavailablePairs.Length);
 
         foreach (var pair in model.Pairs)
@@ -1088,6 +1090,14 @@ internal static class PairConfigurationModelBuilder
         }
 
         foreach (var pair in model.UnsupportedPairs)
+        {
+            result.Add(new PairConfigurationCandidateModel(
+                MappingPairKey.Create(pair.SourceType, pair.DestinationType),
+                Configuration: null,
+                IsCategory3Invalid: true));
+        }
+
+        foreach (var pair in model.InvalidMapperFamilyPairs)
         {
             result.Add(new PairConfigurationCandidateModel(
                 MappingPairKey.Create(pair.SourceType, pair.DestinationType),

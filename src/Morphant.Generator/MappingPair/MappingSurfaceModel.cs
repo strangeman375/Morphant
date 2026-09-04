@@ -79,7 +79,7 @@ internal static class MappingSurfacePolicy
             mapperSelfType);
     }
 
-    private static ITypeSymbol? FindMapperSelfType(
+    internal static ITypeSymbol? FindMapperSelfType(
         INamedTypeSymbol mapperType)
     {
         for (var current = mapperType.BaseType;

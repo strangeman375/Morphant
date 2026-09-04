@@ -204,9 +204,34 @@ public partial class Container
         var unifiable = MappingRegistrationGeneratorTest.Run(
             unifiableSource,
             driver: duplicate.Driver);
+
+        // lang=c#
+        const string familyParameterSource =
+"""
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase;
+
+public sealed class Source { }
+public sealed class Destination { }
+
+[MorphantMapper]
+public abstract partial class TestMapper<TMapper, TState> :
+    TypeMapper<TMapper>
+    where TMapper : TestMapper<TMapper, TState>
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Source, Destination>();
+}
+""";
+        var familyParameter = MappingRegistrationGeneratorTest.Run(
+            familyParameterSource,
+            driver: unifiable.Driver);
         var restored = MappingRegistrationGeneratorTest.Run(
             validSource,
-            driver: unifiable.Driver);
+            driver: familyParameter.Driver);
 
         Assert.Multiple(() =>
         {
@@ -227,6 +252,10 @@ public partial class Container
                 unifiable.Diagnostics.Select(static diagnostic =>
                     diagnostic.Id),
                 Is.EqualTo(new[] { "MORPH0014" }));
+            Assert.That(
+                familyParameter.Diagnostics.Select(static diagnostic =>
+                    diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0060" }));
             Assert.That(restored.Diagnostics, Is.Empty);
             Assert.That(restored.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -235,6 +264,7 @@ public partial class Container
     [TestCase("MORPH0011")]
     [TestCase("MORPH0013")]
     [TestCase("MORPH0014")]
+    [TestCase("MORPH0060")]
     public void Suppression_and_severity_are_effective(string id)
     {
         var source = SourceFor(id);
@@ -323,6 +353,22 @@ public partial class Container
             builder.Map<Envelope<int>, Destination>();
         }
     }
+}
+""",
+            "MORPH0060" =>
+"""
+using Morphant;
+#pragma warning disable CS1591
+namespace TestCase;
+public sealed class Source { }
+public sealed class Destination { }
+[MorphantMapper]
+public abstract partial class TestMapper<TMapper, TState> :
+    TypeMapper<TMapper>
+    where TMapper : TestMapper<TMapper, TState>
+{
+    protected override void Configure(MapperBuilder builder) =>
+        builder.Map<Source, Destination>();
 }
 """,
             _ => throw new ArgumentOutOfRangeException(nameof(id))

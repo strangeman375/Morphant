@@ -35,6 +35,8 @@ internal static class MappingRegistrationDiagnosticPipeline
             ImmutableArray.CreateBuilder<TuplePresentationRegistration>();
         var seenMappers = new HashSet<ISymbol>(
             SymbolEqualityComparer.Default);
+        var seenMapperFamilyParameterIssues =
+            new HashSet<MapperFamilyParameterIssueKey>();
 
         foreach (var analysis in analyses)
         {
@@ -129,6 +131,55 @@ internal static class MappingRegistrationDiagnosticPipeline
                             MapperContractDisplay.CreateType(
                                 unsupported.Type),
                             unsupported.Reason)));
+                }
+            }
+
+            foreach (var surfaceModel in configuration.SurfaceMappingPairs)
+            {
+                foreach (var pair in
+                         surfaceModel.InvalidMapperFamilyPairs)
+                {
+                    foreach (var typeParameter in
+                             pair.MissingTypeParameters)
+                    {
+                        var key = new MapperFamilyParameterIssueKey(
+                            pair.Registration.Syntax.SyntaxTree,
+                            pair.Registration.Syntax.SpanStart,
+                            pair.Registration.Syntax.Span.Length,
+                            BuildTypeParameterIdentity(typeParameter));
+
+                        if (!seenMapperFamilyParameterIssues.Add(key))
+                        {
+                            continue;
+                        }
+
+                        var parameterLocation = typeParameter.Locations
+                            .FirstOrDefault(static location =>
+                                location.IsInSource);
+                        var additionalLocations = parameterLocation is null
+                            ? ImmutableArray<Location>.Empty
+                            : ImmutableArray.Create(parameterLocation);
+
+                        candidates.Add(new DiagnosticCandidate(
+                            IdOrder: 60,
+                            surfaceModel.MapperIdentity,
+                            PairKey(pair.Identity),
+                            RoleOrder: 0,
+                            pair.Registration.Syntax.SpanStart,
+                            SecondaryKey:
+                                BuildTypeParameterIdentity(typeParameter),
+                            Diagnostic.Create(
+                                MappingRegistrationDiagnosticDescriptors
+                                    .MapperFamilyParameterMissingFromPair,
+                                GetMapIdentifierLocation(
+                                    pair.Registration.Syntax),
+                                additionalLocations,
+                                properties: null,
+                                typeParameter.Name,
+                                MapperContractDisplay.Create(
+                                    pair.SourceType,
+                                    pair.DestinationType))));
+                    }
                 }
             }
 
@@ -389,6 +440,17 @@ internal static class MappingRegistrationDiagnosticPipeline
         return identity.Source.Key + "->" + identity.Destination.Key;
     }
 
+    private static string BuildTypeParameterIdentity(
+        ITypeParameterSymbol typeParameter)
+    {
+        return typeParameter.ContainingSymbol.ToDisplayString(
+                   SymbolDisplayFormats.FullyQualifiedNullable) +
+               "|" +
+               typeParameter.TypeParameterKind +
+               "|" +
+               typeParameter.Ordinal;
+    }
+
     private static int RoleOrder(MappingTypeRole role)
     {
         return role == MappingTypeRole.Source ? 0 : 1;
@@ -415,4 +477,10 @@ internal static class MappingRegistrationDiagnosticPipeline
         string MapperIdentity,
         ITypeSymbol EffectiveSourceType,
         ITypeSymbol EffectiveDestinationType);
+
+    private readonly record struct MapperFamilyParameterIssueKey(
+        SyntaxTree SyntaxTree,
+        int Start,
+        int Length,
+        string TypeParameterIdentity);
 }

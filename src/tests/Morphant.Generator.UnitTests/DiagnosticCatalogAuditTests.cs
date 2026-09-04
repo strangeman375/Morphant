@@ -70,7 +70,8 @@ internal sealed class DiagnosticCatalogAuditTests
         new("MORPH0056", "Morphant.Registration", DiagnosticSeverity.Error),
         new("MORPH0057", "Morphant.Generator", DiagnosticSeverity.Error),
         new("MORPH0058", "Morphant.Declaration", DiagnosticSeverity.Error),
-        new("MORPH0059", "Morphant.Declaration", DiagnosticSeverity.Error)
+        new("MORPH0059", "Morphant.Declaration", DiagnosticSeverity.Error),
+        new("MORPH0060", "Morphant.Registration", DiagnosticSeverity.Error)
     };
 
     [Test]

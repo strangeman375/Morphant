@@ -45,6 +45,12 @@ to that layer, rather than only to `TypeMapper<TMapper>` or an earlier base. A
 concrete mapper must close that family with itself; an invalid layer or
 unrelated self type produces [`MORPH0058`](diagnostics/MORPH0058.md).
 
+Each other generic parameter of a reusable mapper family must occur in the
+source or destination type of every mapping declared by that family. Put a
+mapping that does not vary with the family parameters in a separate
+non-generic reusable base. Morphant reports
+[`MORPH0060`](diagnostics/MORPH0060.md) when this boundary is crossed.
+
 ## Include mapping rules
 
 ```csharp

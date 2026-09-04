@@ -1,6 +1,7 @@
 using System;
 using Morphant;
 using Morphant.Context;
+using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9
 {
@@ -68,6 +69,49 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
         }
     }
 
+    public sealed class ErasedSource<T>
+    {
+        public T Value { get; set; } = default(T)!;
+    }
+
+    public sealed class ErasedDestination<T>
+    {
+        public ErasedDestination(T value)
+        {
+            Value = value;
+        }
+
+        public T Value { get; set; }
+    }
+
+    [MorphantMapper]
+    public sealed partial class SharedObjectMapper :
+        TypeMapper<SharedObjectMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<ErasedSource<object>, ErasedDestination<object>>();
+    }
+
+#pragma warning disable MORPH0060
+    [MorphantMapper]
+    public abstract partial class InvalidMapperFamily<TMapper, TState> :
+        TypeMapper<TMapper>
+        where TMapper : InvalidMapperFamily<TMapper, TState>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<
+                    ErasedSource<dynamic>,
+                    ErasedDestination<dynamic>>()
+                .Convert(_ =>
+                    new ErasedDestination<dynamic>("invalid callback"));
+    }
+#pragma warning restore MORPH0060
+
+    public sealed class InvalidFamilyMapper :
+        InvalidMapperFamily<InvalidFamilyMapper, string>
+    {
+    }
+
     public static class ExtensionCollisionScenario
     {
         public static void Verify()
@@ -90,6 +134,32 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
             {
                 throw new InvalidOperationException(
                     "Mapper-family callbacks were not applied.");
+            }
+
+            var invalid =
+                (ITypeMapper<
+                    ErasedSource<object>,
+                    ErasedDestination<object>>)
+                new InvalidFamilyMapper();
+
+            try
+            {
+                invalid.Create(
+                    new ErasedSource<object> { Value = "source" },
+                    default(MappingContext));
+                throw new InvalidOperationException(
+                    "An invalid mapper-family callback was transferred.");
+            }
+            catch (MappingConfigurationException exception)
+            {
+                if (!exception.Message.Contains(
+                        "type parameter 'TState'",
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "The invalid mapper-family stub lost its reason.",
+                        exception);
+                }
             }
         }
     }

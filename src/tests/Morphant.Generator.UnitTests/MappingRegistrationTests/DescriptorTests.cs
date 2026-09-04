@@ -43,6 +43,13 @@ internal sealed class DescriptorTests
             "Mapping '{0}' uses tuple presentation '{1}', which conflicts " +
             "with the presentation '{2}' of the same underlying mapping " +
             "pair.");
+        yield return Case(
+            MappingRegistrationDiagnosticDescriptors
+                .MapperFamilyParameterMissingFromPair,
+            "MORPH0060",
+            "Mapper family parameter is absent from mapping",
+            "Mapper family type parameter '{0}' must occur in the source " +
+            "or destination type of mapping '{1}'.");
     }
 
     [TestCaseSource(nameof(Descriptors))]

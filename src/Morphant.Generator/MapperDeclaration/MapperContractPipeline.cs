@@ -232,6 +232,15 @@ internal static class MapperContractPipeline
                 pair.SourceType,
                 pair.DestinationType);
         }
+
+        foreach (var pair in model.InvalidMapperFamilyPairs)
+        {
+            yield return new RegisteredPair(
+                pair.Registration,
+                pair.Identity,
+                pair.SourceType,
+                pair.DestinationType);
+        }
     }
 
     private static bool IsExactContract(

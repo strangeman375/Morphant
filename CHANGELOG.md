@@ -20,6 +20,8 @@ unsupported.
   trace while independent generation continues where possible.
 - Report an invalid mapper self type as `MORPH0058` and an inaccessible mapper
   declaration as `MORPH0059`.
+- Report a reusable mapper-family parameter that is absent from a declared
+  mapping pair as `MORPH0060`.
 
 ### Changed
 
