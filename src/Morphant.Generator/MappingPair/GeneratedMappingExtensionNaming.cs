@@ -4,6 +4,12 @@ namespace Morphant.Generator.MappingPair;
 
 internal static class GeneratedMappingExtensionNaming
 {
+    private const string MappingExtensionHintPrefix =
+        "Morphant.Generated.MappingExtension.";
+
+    private const string MemberExtensionHintPrefix =
+        "Morphant.Generated.MemberExtension.";
+
     public const string CommonContainerTypeName =
         "MorphantGeneratedMappingExtensions";
 
@@ -71,5 +77,31 @@ internal static class GeneratedMappingExtensionNaming
         }
 
         return true;
+    }
+
+    public static bool IsGeneratedMethod(IMethodSymbol method)
+    {
+        var definition = method.ReducedFrom ?? method;
+
+        if (!IsContainer(definition.ContainingType))
+        {
+            return false;
+        }
+
+        return definition.DeclaringSyntaxReferences.Any(reference =>
+        {
+            var fileName = Path.GetFileName(
+                reference.SyntaxTree.FilePath);
+
+            return fileName.EndsWith(
+                       ".g.cs",
+                       StringComparison.Ordinal) &&
+                   (fileName.StartsWith(
+                        MappingExtensionHintPrefix,
+                        StringComparison.Ordinal) ||
+                    fileName.StartsWith(
+                        MemberExtensionHintPrefix,
+                        StringComparison.Ordinal));
+        });
     }
 }

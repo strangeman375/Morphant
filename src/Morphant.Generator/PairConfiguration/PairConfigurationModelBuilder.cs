@@ -2037,8 +2037,8 @@ internal static class PairConfigurationModelBuilder
                    "ResolveUsing" or
                    "Members" or
                    "Convert" &&
-               GeneratedMappingExtensionNaming.IsContainer(
-                   definition.ContainingType);
+               GeneratedMappingExtensionNaming.IsGeneratedMethod(
+                   definition);
     }
 
     private static bool IsMapperBuilderMapMethod(

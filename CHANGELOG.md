@@ -36,6 +36,8 @@ unsupported.
 - Keep generated plan type names distinct for otherwise ambiguous nested
   destination shapes such as `Outer<T>.Destination` and
   `Outer1.Destination<T>`.
+- Do not mistake a user-authored method in a generated extension container for
+  Morphant configuration code.
 - Report `extern alias`-only mapping types and required constraints as
   inaccessible instead of emitting invalid `global::` references and cascaded
   compiler errors; reject globally ambiguous aliased types for the same
