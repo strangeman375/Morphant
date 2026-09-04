@@ -7,23 +7,31 @@ internal static class GeneratedPlanNaming
 {
     public const string RootNamespace = "Morphant.Generated";
 
+    private const string TypePlansRootNamespace =
+        RootNamespace + ".Types";
+
     public static string BuildNamespace(
         INamedTypeSymbol destinationDefinition)
     {
-        var destinationNamespace =
-            destinationDefinition.ContainingNamespace.IsGlobalNamespace
-                ? string.Empty
-                : destinationDefinition.ContainingNamespace.ToDisplayString();
-        var planNamespace = string.IsNullOrEmpty(destinationNamespace)
-            ? RootNamespace
-            : destinationNamespace + ".Morphant.Generated";
+        var namespaceScopes = new Stack<string>();
 
-        if (destinationDefinition.ContainingType is null)
+        for (var containingNamespace =
+                 destinationDefinition.ContainingNamespace;
+             !containingNamespace.IsGlobalNamespace;
+             containingNamespace = containingNamespace.ContainingNamespace)
         {
-            return planNamespace;
+            namespaceScopes.Push(
+                "N_" + EscapeScopeName(containingNamespace.Name));
         }
 
-        var scopes = new Stack<string>();
+        var scopes = new List<string>(namespaceScopes.Count);
+
+        while (namespaceScopes.Count > 0)
+        {
+            scopes.Add(namespaceScopes.Pop());
+        }
+
+        var containingTypeScopes = new Stack<string>();
 
         for (var containingType = destinationDefinition.ContainingType;
              containingType is not null;
@@ -34,20 +42,28 @@ internal static class GeneratedPlanNaming
                 : "_A" + containingType.Arity.ToString(
                     CultureInfo.InvariantCulture);
 
-            scopes.Push(
+            containingTypeScopes.Push(
+                "T_" +
                 EscapeScopeName(containingType.Name) +
-                aritySuffix +
-                "Scope");
+                aritySuffix);
         }
 
-        return planNamespace + "." + string.Join(".", scopes);
+        while (containingTypeScopes.Count > 0)
+        {
+            scopes.Add(containingTypeScopes.Pop());
+        }
+
+        return TypePlansRootNamespace +
+               (scopes.Count == 0
+                   ? string.Empty
+                   : "." + string.Join(".", scopes)) +
+               ".Plans";
     }
 
     private static string EscapeScopeName(string name)
     {
-        // A single underscore introduces the generated arity suffix. Doubling
-        // user underscores keeps the encoding injective for otherwise legal
-        // pairs such as Outer<T> and Outer_A1.
+        // A single underscore introduces generated scope metadata. Doubling
+        // user underscores keeps the encoding injective.
         return name.Replace("_", "__");
     }
 

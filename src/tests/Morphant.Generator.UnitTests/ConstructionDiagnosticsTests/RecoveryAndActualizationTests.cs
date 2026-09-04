@@ -215,7 +215,7 @@ namespace TestCase
             builder.Map<Source, Destination>()
                 .Construct(Build);
 
-        private static global::TestCase.Morphant.Generated.DestinationConstruction
+        private static global::Morphant.Generated.Types.N_TestCase.Plans.DestinationConstruction
             Build(Source source) => null!;
     }
 }

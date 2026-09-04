@@ -155,11 +155,50 @@ internal static class PairConfigurationModelBuilder
             levels.ToImmutable(),
             discovery.HasInvalidBaseConfiguration,
             discovery.UnavailableBaseConfigurations,
-            discovery.FlowBreaks,
+            ActualizePotentialCallbackBreaks(
+                discovery.FlowBreaks,
+                augmentedCompilation,
+                knownSymbols,
+                cancellationToken),
             compilation,
             augmentedCompilation,
             targetMapperType,
             cancellationToken);
+    }
+
+    private static ImmutableArray<BuilderFlowBreakModel>
+        ActualizePotentialCallbackBreaks(
+            ImmutableArray<BuilderFlowBreakModel> flowBreaks,
+            CSharpCompilation compilation,
+            KnownSymbols knownSymbols,
+            CancellationToken cancellationToken)
+    {
+        if (flowBreaks.IsEmpty)
+        {
+            return flowBreaks;
+        }
+
+        var result = ImmutableArray.CreateBuilder<BuilderFlowBreakModel>(
+            flowBreaks.Length);
+
+        foreach (var flowBreak in flowBreaks)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var actualized =
+                BuilderFlowAnalyzer.ActualizePotentialCallbackBreak(
+                    flowBreak,
+                    compilation,
+                    knownSymbols,
+                    cancellationToken);
+
+            if (actualized is not null)
+            {
+                result.Add(actualized);
+            }
+        }
+
+        return result.ToImmutable();
     }
 
     private static CSharpCompilation BuildAugmentedCompilation(

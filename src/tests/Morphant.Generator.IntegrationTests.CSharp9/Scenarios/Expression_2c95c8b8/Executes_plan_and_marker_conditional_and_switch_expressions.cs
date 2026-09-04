@@ -5,7 +5,7 @@
 using Morphant;
 using Morphant.Context;
 using Morphant.Members;
-using Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Expression_2c95c8b8.Morphant.Generated;
+using global::Morphant.Generated.Types.N_Morphant.N_Generator.N_IntegrationTests.N_CSharp9.N_Scenarios.N_Expression__2c95c8b8.Plans;
 using System;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.Expression_2c95c8b8

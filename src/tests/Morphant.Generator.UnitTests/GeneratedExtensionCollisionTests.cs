@@ -7,6 +7,130 @@ namespace Morphant.Generator.UnitTests;
 internal sealed class GeneratedExtensionCollisionTests
 {
     [Test]
+    public void Generated_plan_namespace_does_not_shadow_runtime_namespace()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+
+    [Morphant.MorphantMapper]
+    public partial class TestMapper : Morphant.TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>();
+    }
+}
+""";
+
+        var result = GeneratorTestDriver.Run(
+            "GeneratedNamespaceShadowing",
+            source,
+            LanguageVersion.CSharp9);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void User_type_named_Morphant_does_not_collide_with_plan_namespace()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Morphant { }
+    public sealed class Source { }
+    public sealed class Destination { }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>();
+    }
+}
+""";
+
+        var result = GeneratorTestDriver.Run(
+            "UserMorphantType",
+            source,
+            LanguageVersion.CSharp9);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Plan_types_and_encoded_namespace_scopes_cannot_compete()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace A
+{
+    public sealed class Source { }
+    public sealed class N_B { public int Value { get; set; } }
+}
+
+namespace A.BConstruction
+{
+    public sealed class Source { }
+    public sealed class Destination { public int Value { get; set; } }
+}
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<A.Source, A.N_B>();
+            builder.Map<
+                A.BConstruction.Source,
+                A.BConstruction.Destination>();
+        }
+    }
+}
+""";
+
+        var result = GeneratorTestDriver.Run(
+            "GeneratedPlanScopeCollision",
+            source,
+            LanguageVersion.CSharp9);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
     public void User_extension_with_a_generated_signature_is_reported_instead_of_lowered()
     {
         // lang=c#
@@ -102,6 +226,85 @@ namespace TestCase
 
         var result = GeneratorTestDriver.Run(
             "UserReservedContainerMethod",
+            [
+                new GeneratorTestSourceFile(
+                    "Morphant.Generated.MappingExtension.User.g.cs",
+                    source)
+            ],
+            LanguageVersion.CSharp9);
+        var diagnostic = result.EffectiveDiagnostics.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0018"));
+            Assert.That(
+                GeneratorTestDriver.GetSourceText(diagnostic.Location),
+                Is.EqualTo("Convert"));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Layered_competing_extensions_are_not_silently_dropped()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace Morphant
+{
+    internal static partial class MorphantGeneratedMappingExtensions
+    {
+        public static MappingBuilder<
+            TMapper,
+            global::TestCase.Source,
+            global::TestCase.Destination> Convert<TMapper>(
+            this MapperBuilderBase<MappingBuilder<
+                TMapper,
+                global::TestCase.Source,
+                global::TestCase.Destination>> builder,
+            global::Morphant.Delegates.Convert<
+                global::TestCase.Source?,
+                global::TestCase.Destination> mapping,
+            bool compilerFallback = false)
+            where TMapper : TypeMapper<TMapper> =>
+            throw new global::Morphant.Exceptions
+                .RuntimeInvocationNotSupportedException();
+    }
+}
+
+namespace TestCase
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+
+    internal static class UserExtensions
+    {
+        public static MappingBuilder<TMapper, TSource, TDestination> Tap<
+            TMapper,
+            TSource,
+            TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder)
+            where TMapper : TypeMapper<TMapper> => builder;
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Convert(_ => new Destination())
+                .Tap();
+    }
+}
+""";
+
+        var result = GeneratorTestDriver.Run(
+            "LayeredUserExtensionCollision",
             source,
             LanguageVersion.CSharp9);
         var diagnostic = result.EffectiveDiagnostics.Single();
@@ -113,6 +316,103 @@ namespace TestCase
                 GeneratorTestDriver.GetSourceText(diagnostic.Location),
                 Is.EqualTo("Convert"));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Competing_extension_diagnostic_actualizes_when_source_changes()
+    {
+        // lang=c#
+        const string validSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Convert(_ => new Destination());
+    }
+}
+""";
+        // lang=c#
+        const string conflictingSource =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+
+    internal static class UserExtensions
+    {
+        public static MappingBuilder<TMapper, TSource, TDestination> Convert<
+            TMapper,
+            TSource,
+            TDestination>(
+            this MappingBuilder<TMapper, TSource, TDestination> builder,
+            global::Morphant.Delegates.Convert<
+                TSource?,
+                TDestination> mapping)
+            where TMapper : TypeMapper<TMapper> => builder;
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>()
+                .Convert(_ => new Destination());
+    }
+}
+""";
+
+        var valid = GeneratorTestDriver.Run(
+            "ExtensionCollisionActualization",
+            validSource,
+            LanguageVersion.CSharp9);
+        var conflicting = GeneratorTestDriver.Run(
+            "ExtensionCollisionActualization",
+            conflictingSource,
+            LanguageVersion.CSharp9,
+            driver: valid.Driver);
+        var restored = GeneratorTestDriver.Run(
+            "ExtensionCollisionActualization",
+            validSource,
+            LanguageVersion.CSharp9,
+            driver: conflicting.Driver);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(valid.EffectiveDiagnostics, Is.Empty);
+            Assert.That(
+                conflicting.EffectiveDiagnostics.Select(
+                    static diagnostic => diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0018" }));
+            Assert.That(restored.EffectiveDiagnostics, Is.Empty);
+            Assert.That(
+                conflicting.TypeMapperSource,
+                Does.Contain("Morphant cannot analyze this mapping " +
+                    "configuration."));
+            Assert.That(
+                restored.TypeMapperSource,
+                Is.EqualTo(valid.TypeMapperSource));
+            Assert.That(valid.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(conflicting.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(restored.CompilerWarningsAndErrors, Is.Empty);
         });
     }
 

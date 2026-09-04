@@ -995,7 +995,7 @@ namespace Morphant.Generator.PackageTests.Consumer
             if (primary.Value != 17 ||
                 primary.ImplicitOnly != 43 ||
                 second.Value != 29 ||
-                typeof(Morphant.Generated.DestinationMembers).Name !=
+                typeof(global::Morphant.Generated.Types.N_Morphant.N_Generator.N_PackageTests.N_Consumer.Plans.DestinationMembers).Name !=
                 "DestinationMembers")
             {
                 throw new InvalidOperationException(

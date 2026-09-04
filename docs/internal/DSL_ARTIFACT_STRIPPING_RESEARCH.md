@@ -70,8 +70,9 @@ compile/runtime contract. Удаляется раздувающая каждую
 | C# compiler | lambda/local-function methods, closure types, delegate caches из `Configure` | Физическая реализация declarative C#-тела | Удалять только при доказанной exclusive ownership |
 | User source | override `Configure(MapperBuilder)` | Корень декларации, одновременно обязательный override abstract member-а | Заменить тело безопасным stub-ом, сам method сохранить |
 
-Plans для обычных destination располагаются под `*.Morphant.Generated`; BCL
-tuple plans — под `Morphant.Generated.Tuples.V...` или
+Plans для обычных destination располагаются под
+`Morphant.Generated.Types...Plans`; BCL tuple plans — под
+`Morphant.Generated.Tuples.V...` или
 `Morphant.Generated.Tuples.S...`. Удалять namespace по имени нельзя: namespace
 не является metadata ownership boundary, а будущие emitters и пользовательский
 код могут легально получить похожие имена.

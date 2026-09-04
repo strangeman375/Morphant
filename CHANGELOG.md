@@ -33,11 +33,17 @@ unsupported.
 
 ### Fixed
 
+- Keep generated destination plans under the reserved `Morphant.Generated`
+  root so generation cannot introduce a nested `Morphant` namespace that
+  shadows runtime API references in user code.
 - Keep generated plan type names distinct for otherwise ambiguous nested
   destination shapes such as `Outer<T>.Destination` and
   `Outer1.Destination<T>`.
-- Do not mistake a user-authored method in a generated extension container for
-  Morphant configuration code.
+- Authenticate generated configuration methods by their reserved container,
+  canonical signature and generated source name; preserve potentially
+  competing callback calls until generated overload resolution can either
+  select Morphant's method or report `MORPH0018` instead of silently ignoring
+  the configuration.
 - Report `extern alias`-only mapping types and required constraints as
   inaccessible instead of emitting invalid `global::` references and cascaded
   compiler errors; reject globally ambiguous aliased types and namespace/type

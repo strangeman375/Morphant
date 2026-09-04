@@ -31,9 +31,13 @@
   is at most 220 bytes. For a longer file component, retain the readable
   identity prefix and append a stable hash of the complete name. A real
   case-insensitive collision after sanitization also receives a stable hash.
-- A destination in the global namespace uses `Morphant.Generated`, referenced
-  as `global::Morphant.Generated`; never synthesize a `Global` namespace
-  segment.
+- Non-tuple destination plans live below `Morphant.Generated.Types`. Encode
+  namespace scopes with `N_`, containing-type scopes with `T_` plus generic
+  arity, double user underscores, and terminate the scope with `Plans` before
+  declaring plan types. A destination in the global namespace starts directly
+  below `Morphant.Generated.Types`; never synthesize a `Global` namespace
+  segment. This layout must not introduce a `Morphant` namespace below a user
+  namespace or allow generated namespace/type paths to collide.
 - BCL tuple plans use a compact stable namespace of the form
   `Morphant.Generated.Tuples.V<arity>_<identity>` or
   `Morphant.Generated.Tuples.S<arity>_<identity>`. The identity covers the

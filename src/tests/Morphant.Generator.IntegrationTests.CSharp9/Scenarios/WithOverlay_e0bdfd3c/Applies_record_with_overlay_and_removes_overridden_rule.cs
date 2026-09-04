@@ -4,7 +4,7 @@
 
 using Morphant;
 using Morphant.Context;
-using Morphant.Generator.IntegrationTests.CSharp9.Scenarios.WithOverlay_e0bdfd3c.Morphant.Generated;
+using global::Morphant.Generated.Types.N_Morphant.N_Generator.N_IntegrationTests.N_CSharp9.N_Scenarios.N_WithOverlay__e0bdfd3c.Plans;
 using System;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.WithOverlay_e0bdfd3c

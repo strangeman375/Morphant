@@ -691,7 +691,7 @@ namespace TestCase
             builder.Map<Source, Destination>()
                 .Members((source, _) =>
                 {
-                    var members = new global::TestCase.Morphant.Generated
+                    var members = new global::Morphant.Generated.Types.N_TestCase.Plans
                         .DestinationMembers();
                     Update(source.Child, members.Child);
                     return members;

@@ -83,7 +83,8 @@ internal static class GeneratedMappingExtensionNaming
     {
         var definition = method.ReducedFrom ?? method;
 
-        if (!IsContainer(definition.ContainingType))
+        if (!IsContainer(definition.ContainingType) ||
+            !HasGeneratedSignature(definition))
         {
             return false;
         }
@@ -103,5 +104,103 @@ internal static class GeneratedMappingExtensionNaming
                         MemberExtensionHintPrefix,
                         StringComparison.Ordinal));
         });
+    }
+
+    private static bool HasGeneratedSignature(IMethodSymbol method)
+    {
+        if (method.MethodKind != MethodKind.Ordinary ||
+            method.DeclaredAccessibility != Accessibility.Public ||
+            !method.IsStatic ||
+            !method.IsExtensionMethod ||
+            method.Parameters.Length != 2 ||
+            method.Parameters.Any(static parameter =>
+                parameter.RefKind != RefKind.None ||
+                parameter.IsOptional ||
+                parameter.HasExplicitDefaultValue) ||
+            method.ReturnType is not INamedTypeSymbol returnBuilder ||
+            !HasMetadataName(returnBuilder, MetadataNames.PairMapperBuilder) ||
+            !TryGetReceiverBuilder(
+                method.Parameters[0].Type,
+                out var receiverBuilder) ||
+            !SymbolEqualityComparer.Default.Equals(
+                returnBuilder,
+                receiverBuilder) ||
+            method.Parameters[1].Type is not INamedTypeSymbol callback ||
+            callback.TypeKind != TypeKind.Delegate)
+        {
+            return false;
+        }
+
+        var callbackMetadataName =
+            SymbolNameHelper.GetFullMetadataName(
+                callback.OriginalDefinition);
+
+        return method.Name switch
+        {
+            "Construct" => callbackMetadataName is
+                "Morphant.Delegates.Construct`2" or
+                "Morphant.Delegates.Construct`3",
+            "Resolve" => callbackMetadataName is
+                "Morphant.Delegates.Resolve`3" or
+                "Morphant.Delegates.Resolve`4",
+            "ConstructUsing" => callbackMetadataName is
+                "Morphant.Delegates.ConstructUsing`2" or
+                "Morphant.Delegates.ConstructUsing`3",
+            "ResolveUsing" => callbackMetadataName is
+                "Morphant.Delegates.ResolveUsing`3" or
+                "Morphant.Delegates.ResolveUsing`4",
+            "Convert" => callbackMetadataName is
+                "Morphant.Delegates.Convert`2" or
+                "Morphant.Delegates.Convert`3" or
+                "Morphant.Delegates.Convert`4",
+            "Members" => callbackMetadataName is
+                "Morphant.Delegates.Members`2" or
+                "Morphant.Delegates.Members`3" or
+                "Morphant.Delegates.Members`4" or
+                "Morphant.Delegates.Members`5",
+            _ => false
+        };
+    }
+
+    private static bool TryGetReceiverBuilder(
+        ITypeSymbol receiver,
+        out INamedTypeSymbol builder)
+    {
+        if (receiver is INamedTypeSymbol namedReceiver)
+        {
+            if (HasMetadataName(
+                    namedReceiver,
+                    MetadataNames.PairMapperBuilder))
+            {
+                builder = namedReceiver;
+                return true;
+            }
+
+            if (HasMetadataName(
+                    namedReceiver,
+                    MetadataNames.MapperBuilderBase) &&
+                namedReceiver.TypeArguments[0] is
+                    INamedTypeSymbol candidate &&
+                HasMetadataName(
+                    candidate,
+                    MetadataNames.PairMapperBuilder))
+            {
+                builder = candidate;
+                return true;
+            }
+        }
+
+        builder = null!;
+        return false;
+    }
+
+    private static bool HasMetadataName(
+        INamedTypeSymbol type,
+        string metadataName)
+    {
+        return StringComparer.Ordinal.Equals(
+            SymbolNameHelper.GetFullMetadataName(
+                type.OriginalDefinition),
+            metadataName);
     }
 }

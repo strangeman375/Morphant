@@ -192,8 +192,8 @@ namespace TestCase
 // Map: builder.Map<Dog, DogDto>()
 // Map settings: MappingMode=Implicit(Default); NullSourceHandling=Unset; NullDestinationHandling=Unset; ConstructorSelection=Unset; MemberSelection=Unset; Flattening=Unset; UnmappedMemberValidation=Explicit(Strict)
 // Declarative: ResultPolicies=0; Members=2
-// Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Entity, global::Morphant.Option<global::TestCase.EntityDto>); Output=global::TestCase.Morphant.Generated.EntityDtoMembers; Operation=AnonymousFunction; Syntax=(source, _) => default!
-// Members 1: Form=SourcePreviousAndResult; Inputs=(global::TestCase.Animal, global::Morphant.Option<global::TestCase.AnimalDto>, global::TestCase.AnimalDto); Output=global::TestCase.Morphant.Generated.AnimalDtoMembers; Operation=AnonymousFunction; Syntax=(source, _, result) => default!
+// Members 0: Form=SourceAndPrevious; Inputs=(global::TestCase.Entity, global::Morphant.Option<global::TestCase.EntityDto>); Output=global::Morphant.Generated.Types.N_TestCase.Plans.EntityDtoMembers; Operation=AnonymousFunction; Syntax=(source, _) => default!
+// Members 1: Form=SourcePreviousAndResult; Inputs=(global::TestCase.Animal, global::Morphant.Option<global::TestCase.AnimalDto>, global::TestCase.AnimalDto); Output=global::Morphant.Generated.Types.N_TestCase.Plans.AnimalDtoMembers; Operation=AnonymousFunction; Syntax=(source, _, result) => default!
 // Manual: Converts=0
 // IncludeBase: 1
 // IncludeBase 0: global::TestCase.Animal -> global::TestCase.AnimalDto

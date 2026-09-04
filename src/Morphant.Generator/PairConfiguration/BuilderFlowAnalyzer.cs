@@ -73,6 +73,94 @@ internal static class BuilderFlowAnalyzer
             breaks);
     }
 
+    public static BuilderFlowBreakModel? ActualizePotentialCallbackBreak(
+        BuilderFlowBreakModel flowBreak,
+        CSharpCompilation compilation,
+        KnownSymbols knownSymbols,
+        CancellationToken cancellationToken)
+    {
+        if (flowBreak.Kind != BuilderFlowBreakKind.Mapping ||
+            flowBreak.Registration is not { } registration ||
+            flowBreak.Location.SourceTree is not { } syntaxTree ||
+            !compilation.SyntaxTrees.Contains(syntaxTree))
+        {
+            return flowBreak;
+        }
+
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var node = syntaxTree.GetRoot(cancellationToken).FindNode(
+            flowBreak.Location.SourceSpan,
+            getInnermostNodeForTie: true);
+        var invocation = node.FirstAncestorOrSelf<
+            InvocationExpressionSyntax>();
+
+        if (invocation is null ||
+            semanticModel.GetSymbolInfo(
+                invocation,
+                cancellationToken).Symbol is not IMethodSymbol method ||
+            !IsGeneratedConfigurationMethod(method))
+        {
+            return flowBreak;
+        }
+
+        var remainingConflict = FindFirstThirdPartyPairMethodLocation(
+            registration.Syntax,
+            semanticModel,
+            knownSymbols,
+            cancellationToken);
+
+        if (remainingConflict is not null)
+        {
+            return flowBreak with { Location = remainingConflict };
+        }
+
+        return HasOnlyTrustedAugmentedInvocations(
+            registration.Syntax,
+            semanticModel,
+            cancellationToken)
+            ? null
+            : flowBreak;
+    }
+
+    private static bool HasOnlyTrustedAugmentedInvocations(
+        InvocationExpressionSyntax mapInvocation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        SyntaxNode current = mapInvocation;
+
+        while (TryGetOuterReceiverInvocation(current, out var outer))
+        {
+            if (semanticModel.GetSymbolInfo(
+                    outer,
+                    cancellationToken).Symbol is not IMethodSymbol method)
+            {
+                return false;
+            }
+
+            if (!IsGeneratedConfigurationMethod(method) &&
+                !IsIncludeMembersMethod(method))
+            {
+                var containingType =
+                    method.ContainingType.OriginalDefinition;
+                var metadataName = SymbolNameHelper.GetFullMetadataName(
+                    containingType);
+
+                if (!StringComparer.Ordinal.Equals(
+                        metadataName,
+                        MetadataNames.MapperBuilderBase) &&
+                    !IsPairBuilderType(containingType))
+                {
+                    return false;
+                }
+            }
+
+            current = outer;
+        }
+
+        return true;
+    }
+
     private static ImmutableHashSet<SyntaxNode>
         FindOwnedCallbackArguments(
         MethodDeclarationSyntax configureSyntax,
@@ -195,8 +283,22 @@ internal static class BuilderFlowAnalyzer
 
         if (symbol is not null)
         {
-            return IsGeneratedConfigurationMethod(symbol) ||
-                   IsIncludeMembersMethod(symbol);
+            if (IsGeneratedConfigurationMethod(symbol) ||
+                IsIncludeMembersMethod(symbol))
+            {
+                return true;
+            }
+
+            // A user extension can be the only bindable candidate before
+            // Morphant augments the compilation with its generated surface.
+            // Keep callback-shaped pair-builder invocations in the chain so
+            // the augmented pass can select the generated overload or report
+            // the resulting binding conflict instead of silently dropping
+            // the user's configuration.
+            if (!CallbackMethodNames.Contains(symbol.Name))
+            {
+                return false;
+            }
         }
 
         var receiver = GetInvocationReceiver(invocation);
@@ -404,9 +506,10 @@ internal static class BuilderFlowAnalyzer
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (validRegistrationLocations.Contains(
-                    InvocationKey.Create(registration.Syntax)) ||
-                !TryGetDirectRootReference(
+            var isLinear = validRegistrationLocations.Contains(
+                InvocationKey.Create(registration.Syntax));
+
+            if (!TryGetDirectRootReference(
                     registration.Syntax,
                     semanticModel,
                     builderParameter,
@@ -421,11 +524,19 @@ internal static class BuilderFlowAnalyzer
                 continue;
             }
 
-            var location = FindFirstThirdPartyPairMethodLocation(
+            var thirdPartyLocation =
+                FindFirstThirdPartyPairMethodLocation(
                     registration.Syntax,
                     semanticModel,
                     knownSymbols,
-                    cancellationToken) ??
+                    cancellationToken);
+
+            if (isLinear && thirdPartyLocation is null)
+            {
+                continue;
+            }
+
+            var location = thirdPartyLocation ??
                 GetInvocationName(registration.Syntax)?.Identifier
                     .GetLocation() ??
                 registration.Syntax.GetLocation();
@@ -796,6 +907,17 @@ internal static class BuilderFlowAnalyzer
                 outer,
                 cancellationToken).Symbol as IMethodSymbol;
 
+            if (method is not null &&
+                IsPotentialCompetingCallback(
+                    outer,
+                    method,
+                    semanticModel,
+                    cancellationToken))
+            {
+                return GetInvocationName(outer)?.Identifier.GetLocation() ??
+                       outer.GetLocation();
+            }
+
             if (!IsAllowedPairInvocation(
                     outer,
                     method,
@@ -813,6 +935,30 @@ internal static class BuilderFlowAnalyzer
         }
 
         return null;
+    }
+
+    private static bool IsPotentialCompetingCallback(
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (IsGeneratedConfigurationMethod(method) ||
+            !CallbackMethodNames.Contains(method.Name) ||
+            GetInvocationReceiver(invocation) is not { } receiver ||
+            !IsPairBuilderType(semanticModel.GetTypeInfo(
+                receiver,
+                cancellationToken).Type))
+        {
+            return false;
+        }
+
+        var containingType = method.ContainingType.OriginalDefinition;
+
+        return !StringComparer.Ordinal.Equals(
+                   SymbolNameHelper.GetFullMetadataName(containingType),
+                   MetadataNames.MapperBuilderBase) &&
+               !IsPairBuilderType(containingType);
     }
 
     private static bool TryGetOuterReceiverInvocation(
@@ -1023,6 +1169,19 @@ internal static class BuilderFlowAnalyzer
         {
             if (IsGeneratedConfigurationMethod(method))
             {
+                return true;
+            }
+
+            if (CallbackMethodNames.Contains(method.Name) &&
+                GetInvocationReceiver(invocation) is { } callbackReceiver &&
+                IsPairBuilderType(semanticModel.GetTypeInfo(
+                    callbackReceiver,
+                    cancellationToken).Type))
+            {
+                // The pre-augmentation binding may target a competing
+                // extension. The generated overload is introduced only in
+                // the augmented compilation, where normal overload
+                // resolution and flow diagnostics can decide the outcome.
                 return true;
             }
 
