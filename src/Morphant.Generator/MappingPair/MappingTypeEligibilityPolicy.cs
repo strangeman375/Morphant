@@ -53,6 +53,51 @@ internal static class MappingTypeEligibilityPolicy
         ITypeSymbol type,
         Compilation compilation)
     {
+        return GetNameability(
+            type,
+            compilation,
+            inspectTypeParameterConstraints: false,
+            new HashSet<ITypeParameterSymbol>(
+                TypeParameterComparer.Instance));
+    }
+
+    internal static bool CanCopyTypeParameterConstraints(
+        INamedTypeSymbol type,
+        Compilation compilation)
+    {
+        var visited = new HashSet<ITypeParameterSymbol>(
+            TypeParameterComparer.Instance);
+
+        for (var current = type;
+             current is not null;
+             current = current.ContainingType)
+        {
+            foreach (var typeParameter in current.TypeParameters)
+            {
+                foreach (var constraintType in
+                         typeParameter.ConstraintTypes)
+                {
+                    if (GetNameability(
+                            constraintType,
+                            compilation,
+                            inspectTypeParameterConstraints: true,
+                            visited) != MappingTypeNameability.Available)
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static MappingTypeNameability GetNameability(
+        ITypeSymbol type,
+        Compilation compilation,
+        bool inspectTypeParameterConstraints,
+        HashSet<ITypeParameterSymbol> visitedTypeParameters)
+    {
         if (type.TypeKind is
                 TypeKind.Error or
                 TypeKind.Pointer or
@@ -63,8 +108,34 @@ internal static class MappingTypeEligibilityPolicy
             return MappingTypeNameability.CompilerOwned;
         }
 
-        if (type is IDynamicTypeSymbol or ITypeParameterSymbol)
+        if (type is IDynamicTypeSymbol)
         {
+            return MappingTypeNameability.Available;
+        }
+
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            if (!inspectTypeParameterConstraints ||
+                !visitedTypeParameters.Add(typeParameter))
+            {
+                return MappingTypeNameability.Available;
+            }
+
+            foreach (var constraintType in typeParameter.ConstraintTypes)
+            {
+                var constraintNameability = GetNameability(
+                    constraintType,
+                    compilation,
+                    inspectTypeParameterConstraints: true,
+                    visitedTypeParameters);
+
+                if (constraintNameability !=
+                    MappingTypeNameability.Available)
+                {
+                    return constraintNameability;
+                }
+            }
+
             return MappingTypeNameability.Available;
         }
 
@@ -72,7 +143,9 @@ internal static class MappingTypeEligibilityPolicy
         {
             return GetNameability(
                 arrayType.ElementType,
-                compilation);
+                compilation,
+                inspectTypeParameterConstraints: true,
+                visitedTypeParameters);
         }
 
         if (type is not INamedTypeSymbol namedType ||
@@ -87,7 +160,10 @@ internal static class MappingTypeEligibilityPolicy
         var result = namedType.IsFileLocal ||
                      !compilation.IsSymbolAccessibleWithin(
                          namedType,
-                         compilation.Assembly)
+                         compilation.Assembly) ||
+                     !IsAvailableThroughGlobalAlias(
+                         namedType.ContainingAssembly,
+                         compilation)
             ? MappingTypeNameability.Unavailable
             : MappingTypeNameability.Available;
 
@@ -95,7 +171,9 @@ internal static class MappingTypeEligibilityPolicy
         {
             var containingNameability = GetNameability(
                 containingType,
-                compilation);
+                compilation,
+                inspectTypeParameterConstraints: true,
+                visitedTypeParameters);
 
             if (containingNameability != MappingTypeNameability.Available)
             {
@@ -109,11 +187,16 @@ internal static class MappingTypeEligibilityPolicy
             }
         }
 
-        foreach (var typeArgument in namedType.TypeArguments)
+        for (var index = 0;
+             index < namedType.TypeArguments.Length;
+             index++)
         {
+            var typeArgument = namedType.TypeArguments[index];
             var argumentNameability = GetNameability(
                 typeArgument,
-                compilation);
+                compilation,
+                inspectTypeParameterConstraints: true,
+                visitedTypeParameters);
 
             if (argumentNameability == MappingTypeNameability.CompilerOwned)
             {
@@ -124,9 +207,57 @@ internal static class MappingTypeEligibilityPolicy
             {
                 result = MappingTypeNameability.Unavailable;
             }
+
+            if (typeArgument is not ITypeParameterSymbol)
+            {
+                continue;
+            }
+
+            // Pair-specific methods reproduce definition constraints for a
+            // type parameter used directly as a generic argument.
+            foreach (var constraintType in
+                     namedType.TypeParameters[index].ConstraintTypes)
+            {
+                var constraintNameability = GetNameability(
+                    constraintType,
+                    compilation,
+                    inspectTypeParameterConstraints: true,
+                    visitedTypeParameters);
+
+                if (constraintNameability ==
+                    MappingTypeNameability.CompilerOwned)
+                {
+                    return MappingTypeNameability.CompilerOwned;
+                }
+
+                if (constraintNameability ==
+                    MappingTypeNameability.Unavailable)
+                {
+                    result = MappingTypeNameability.Unavailable;
+                }
+            }
         }
 
         return result;
+    }
+
+    private static bool IsAvailableThroughGlobalAlias(
+        IAssemblySymbol assembly,
+        Compilation compilation)
+    {
+        if (SymbolEqualityComparer.Default.Equals(
+                assembly,
+                compilation.Assembly))
+        {
+            return true;
+        }
+
+        var reference = compilation.GetMetadataReference(assembly);
+        var aliases = reference?.Properties.Aliases;
+
+        return aliases is { } values &&
+               (values.IsDefaultOrEmpty ||
+                values.Contains("global", StringComparer.Ordinal));
     }
 
     private static ITypeSymbol UnwrapNullableValueType(ITypeSymbol type)
@@ -233,6 +364,24 @@ internal static class MappingTypeEligibilityPolicy
     {
         return SymbolNameHelper.GetFullMetadataName(
             type.OriginalDefinition);
+    }
+
+    private sealed class TypeParameterComparer :
+        IEqualityComparer<ITypeParameterSymbol>
+    {
+        public static TypeParameterComparer Instance { get; } = new();
+
+        public bool Equals(
+            ITypeParameterSymbol? left,
+            ITypeParameterSymbol? right)
+        {
+            return SymbolEqualityComparer.Default.Equals(left, right);
+        }
+
+        public int GetHashCode(ITypeParameterSymbol typeParameter)
+        {
+            return SymbolEqualityComparer.Default.GetHashCode(typeParameter);
+        }
     }
 }
 

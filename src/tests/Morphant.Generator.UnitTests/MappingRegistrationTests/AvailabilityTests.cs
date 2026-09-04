@@ -1,4 +1,7 @@
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Morphant.Generator.UnitTests.TestUtils;
 
 namespace Morphant.Generator.UnitTests.MappingRegistrationTests;
 
@@ -161,6 +164,264 @@ public partial class TestMapper : TypeMapper<TestMapper>
                 MappingRegistrationGeneratorTest.SourceText(
                     result.Diagnostics.Single().Location),
                 Is.EqualTo("FileSource"));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Extern_alias_only_pair_reports_unavailable_types_without_generation()
+    {
+        // lang=c#
+        const string referencedSource =
+"""
+namespace ExternalModel
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+}
+""";
+        // lang=c#
+        const string source =
+"""
+extern alias Models;
+
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<
+                Models::ExternalModel.Source,
+                Models::ExternalModel.Destination>();
+    }
+}
+""";
+        var reference = GeneratorTestDriver
+            .CompileReference("ExternalModels", referencedSource)
+            .WithProperties(
+                MetadataReferenceProperties.Assembly.WithAliases(
+                    ImmutableArray.Create("Models")));
+
+        var result = GeneratorTestDriver.Run(
+            "ExternAliasOnlyMapping",
+            source,
+            LanguageVersion.CSharp9,
+            additionalReferences: [reference]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                result.EffectiveDiagnostics.Select(static diagnostic =>
+                    diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0011", "MORPH0011" }));
+            Assert.That(
+                result.EffectiveDiagnostics.Select(diagnostic =>
+                    GeneratorTestDriver.GetSourceText(
+                        diagnostic.Location)),
+                Is.EqualTo(new[]
+                {
+                    "Models::ExternalModel.Source",
+                    "Models::ExternalModel.Destination"
+                }));
+            Assert.That(result.GeneratedSources, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Extern_alias_pair_remains_available_with_global_alias()
+    {
+        // lang=c#
+        const string referencedSource =
+"""
+namespace ExternalModel
+{
+    public sealed class Source { }
+    public sealed class Destination { }
+}
+""";
+        // lang=c#
+        const string source =
+"""
+extern alias Models;
+
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<
+                Models::ExternalModel.Source,
+                Models::ExternalModel.Destination>();
+    }
+}
+""";
+        var reference = GeneratorTestDriver
+            .CompileReference("ExternalModels", referencedSource)
+            .WithProperties(
+                MetadataReferenceProperties.Assembly.WithAliases(
+                    ImmutableArray.Create("global", "Models")));
+
+        var result = GeneratorTestDriver.Run(
+            "ExternAndGlobalAliasMapping",
+            source,
+            LanguageVersion.CSharp9,
+            additionalReferences: [reference]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Extern_alias_only_constraint_reports_unavailable_pair()
+    {
+        // lang=c#
+        const string referencedSource =
+"""
+namespace ExternalModel
+{
+    public interface IMarker { }
+}
+""";
+        // lang=c#
+        const string source =
+"""
+extern alias Models;
+
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    public sealed class Source<T>
+        where T : Models::ExternalModel.IMarker
+    {
+        public T Value { get; init; } = default!;
+    }
+
+    public sealed class Destination<T>
+        where T : Models::ExternalModel.IMarker
+    {
+        public Destination(T value) => Value = value;
+
+        public T Value { get; set; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper<T> : TypeMapper<TestMapper<T>>
+        where T : Models::ExternalModel.IMarker
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source<T>, Destination<T>>();
+    }
+}
+""";
+        var reference = GeneratorTestDriver
+            .CompileReference("ExternalModels", referencedSource)
+            .WithProperties(
+                MetadataReferenceProperties.Assembly.WithAliases(
+                    ImmutableArray.Create("Models")));
+
+        var result = GeneratorTestDriver.Run(
+            "ExternAliasConstraintMapping",
+            source,
+            LanguageVersion.CSharp9,
+            additionalReferences: [reference]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                result.EffectiveDiagnostics.Select(static diagnostic =>
+                    diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0011", "MORPH0011" }));
+            Assert.That(
+                result.EffectiveDiagnostics.Select(diagnostic =>
+                    GeneratorTestDriver.GetSourceText(
+                        diagnostic.Location)),
+                Is.EqualTo(new[]
+                {
+                    "Source<T>",
+                    "Destination<T>"
+                }));
+            Assert.That(result.GeneratedSources, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Alias_only_destination_constraints_do_not_emit_broken_plans()
+    {
+        // lang=c#
+        const string referencedSource =
+"""
+namespace ExternalModel
+{
+    public interface IMarker { }
+}
+""";
+        // lang=c#
+        const string source =
+"""
+extern alias Models;
+
+using Morphant;
+
+#pragma warning disable CS1591
+
+namespace TestCase
+{
+    public sealed class Source { }
+
+    public sealed class Value : Models::ExternalModel.IMarker { }
+
+    public sealed class Destination<T>
+        where T : Models::ExternalModel.IMarker
+    {
+        public Destination(T value) => Value = value;
+
+        public T Value { get; set; }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination<Value>>();
+    }
+}
+""";
+        var reference = GeneratorTestDriver
+            .CompileReference("ExternalModels", referencedSource)
+            .WithProperties(
+                MetadataReferenceProperties.Assembly.WithAliases(
+                    ImmutableArray.Create("Models")));
+
+        var result = GeneratorTestDriver.Run(
+            "AliasConstrainedDestinationMapping",
+            source,
+            LanguageVersion.CSharp9,
+            additionalReferences: [reference]);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(
+                result.EffectiveDiagnostics.Select(static diagnostic =>
+                    diagnostic.Id),
+                Is.EqualTo(new[] { "MORPH0035" }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

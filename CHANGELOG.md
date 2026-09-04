@@ -33,6 +33,9 @@ unsupported.
 
 ### Fixed
 
+- Report `extern alias`-only mapping types and required constraints as
+  inaccessible instead of emitting invalid `global::` references and cascaded
+  compiler errors.
 - Prevent incremental generator crashes when IDEs replace syntax trees,
   expose referenced projects as source-backed compilations, or ask newer
   Roslyn hosts to filter a cached diagnostic whose source tree was replaced,

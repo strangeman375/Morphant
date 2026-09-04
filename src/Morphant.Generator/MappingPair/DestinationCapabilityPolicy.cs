@@ -37,14 +37,22 @@ internal static class DestinationCapabilityPolicy
         }
 
         var isOpaque = IsOpaque(destination);
+        // Construction and member plan declarations reproduce the complete
+        // destination type-parameter constraint list.
+        var canGeneratePlans =
+            MappingTypeEligibilityPolicy.CanCopyTypeParameterConstraints(
+                destination,
+                compilation);
         var hasSupportedConstructor =
             !isOpaque &&
+            canGeneratePlans &&
             !GetSupportedConstructors(
                     destination,
                     compilation,
                     cancellationToken)
                 .IsDefaultOrEmpty;
         var hasMembers = !isOpaque &&
+            canGeneratePlans &&
             !DestinationMemberPolicy.GetSupportedMembers(
                 destination,
                 compilation,
