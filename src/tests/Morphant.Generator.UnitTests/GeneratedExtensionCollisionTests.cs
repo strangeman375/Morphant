@@ -7,6 +7,62 @@ namespace Morphant.Generator.UnitTests;
 internal sealed class GeneratedExtensionCollisionTests
 {
     [Test]
+    public void Nested_destinations_with_ambiguous_readable_scopes_use_distinct_plan_names()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class FirstSource { }
+    public sealed class SecondSource { }
+
+    public sealed class Outer<T>
+    {
+        public sealed class Destination
+        {
+            public int Value { get; set; }
+        }
+    }
+
+    public sealed class Outer1
+    {
+        public sealed class Destination<T>
+        {
+            public int Value { get; set; }
+        }
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<FirstSource, Outer<int>.Destination>();
+            builder.Map<SecondSource, Outer1.Destination<int>>();
+        }
+    }
+}
+""";
+
+        var result = GeneratorTestDriver.Run(
+            "NestedPlanNameCollisionProbe",
+            source,
+            LanguageVersion.CSharp9);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
     public void Unrelated_CRTP_families_use_distinct_extension_containers()
     {
         // lang=c#

@@ -31,16 +31,24 @@ internal static class GeneratedPlanNaming
         {
             var aritySuffix = containingType.Arity == 0
                 ? string.Empty
-                : containingType.Arity.ToString(
+                : "_A" + containingType.Arity.ToString(
                     CultureInfo.InvariantCulture);
 
             scopes.Push(
-                containingType.Name +
+                EscapeScopeName(containingType.Name) +
                 aritySuffix +
                 "Scope");
         }
 
         return planNamespace + "." + string.Join(".", scopes);
+    }
+
+    private static string EscapeScopeName(string name)
+    {
+        // A single underscore introduces the generated arity suffix. Doubling
+        // user underscores keeps the encoding injective for otherwise legal
+        // pairs such as Outer<T> and Outer_A1.
+        return name.Replace("_", "__");
     }
 
     public static string BuildConstructionTypeName(
