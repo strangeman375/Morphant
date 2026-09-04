@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/04/2026 - 17:52:54 |
-| Coverage date: | 09/04/2026 - 17:50:56 - 09/04/2026 - 17:52:48 |
+| Generated on: | 09/04/2026 - 18:08:12 |
+| Coverage date: | 09/04/2026 - 18:06:19 - 09/04/2026 - 18:08:06 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 363 |
 | Files: | 187 |
-| **Line coverage:** | 86.8% (36594 of 42114) |
-| Covered lines: | 36594 |
+| **Line coverage:** | 86.9% (36628 of 42148) |
+| Covered lines: | 36628 |
 | Uncovered lines: | 5520 |
-| Coverable lines: | 42114 |
-| Total lines: | 70190 |
-| **Branch coverage:** | 77.1% (12268 of 15900) |
-| Covered branches: | 12268 |
-| Total branches: | 15900 |
+| Coverable lines: | 42148 |
+| Total lines: | 70237 |
+| **Branch coverage:** | 77.1% (12275 of 15910) |
+| Covered branches: | 12275 |
+| Total branches: | 15910 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -136,7 +136,7 @@
 |Morphant.Generator.MapperDeclaration.MapperDeclarationInfo|100%|100%|
 |Morphant.Generator.MapperDeclaration.MapperDeclarationPipeline|98.2%|90.6%|
 |Morphant.Generator.MapperDeclaration.MapperSelfTypeIssue|100%||
-|Morphant.Generator.MapperTypeSubstitution|92.5%|85.2%|
+|Morphant.Generator.MapperTypeSubstitution|94.7%|81.8%|
 |Morphant.Generator.MappingPair.BclTupleElement|100%|100%|
 |Morphant.Generator.MappingPair.BclTupleShape|100%||
 |Morphant.Generator.MappingPair.BclTupleShapePolicy|83.7%|75.3%|
@@ -409,4 +409,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #127](https://github.com/strangeman375/Morphant/actions/runs/33902406889).
+Full HTML report: download the **coverage** artifact from [CI run #128](https://github.com/strangeman375/Morphant/actions/runs/33903733018).
