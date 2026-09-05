@@ -37,7 +37,7 @@ dotnet docs/internal/release-review-stage-03/compiler/bin/Release/net10.0/Compil
 
 Вместо последнего `shared` доступны `nullable`, `tuple`, `family`, `distinct-source`, `same-family`, `same-related-family`, `same-nested-family`, `same-ordinary`. Для каждого режима укажите отдельный каталог результата. Probe сохраняет producer/consumer sources, полные generated files, warning/error diagnostics и `summary.json`.
 
-Первые пять режимов сравнивают source compilation, implementation DLL и reference assembly с IVT и без него. Последние четыре исследуют два маппера или семейства в одной compilation. Общая матрица — 556 случаев; `shared` сохраняется только как историческое имя режима обычной пары. Статус программы 0 означает завершение измерения: нужно отдельно проверить отсутствие diagnostics и исключений в `summary.json`. Там также записаны числа generated files, construction/member-файлов и callback-методов. Исходные отказы сохранены в [results.json](results.json).
+Первые пять режимов сравнивают source compilation, implementation DLL и reference assembly с IVT и без него. Последние четыре исследуют два маппера или семейства в одной compilation. Общая матрица — 556 случаев; `shared` сохраняется только как историческое имя режима обычной пары. Статус программы 0 означает завершение измерения: нужно отдельно проверить отсутствие diagnostics и исключений в `summary.json`. Там также записаны числа generated files, construction/member-файлов и callback-методов. Исходные отказы сохранены в [results.json](results.json), результаты повторной проверки исправлений — в [fix-results.json](fix-results.json).
 
 Отдельный CRTP-вариант:
 

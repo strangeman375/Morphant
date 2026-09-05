@@ -1,0 +1,241 @@
+{
+  "verifiedCommit": "6bb3e090281bb98e543c03c6eafe0006d2cc8c60",
+  "verifiedTree": "28a5e610985a68602c2a267d796e47180c9e8cfa",
+  "productionCodeCommit": "b973e8988d264d57736eeb263ab805309967c04c",
+  "environment": {
+    "localSdk": "10.0.100",
+    "localTargetFramework": "net10.0",
+    "probeRoslyn": "4.4.0",
+    "probeLanguageVersion": "9.0"
+  },
+  "localVerification": {
+    "release": {
+      "warnings": 0,
+      "errors": 0
+    },
+    "unit": {
+      "passed": 836,
+      "skipped": 1,
+      "failed": 0,
+      "trxSha256": "7f086fe98abfe22a97438fef09e8e1bc008ecc58cc485174662d69d1e06afab9"
+    },
+    "integration": "Local repeat stopped without a complete result; use CI evidence."
+  },
+  "ci": {
+    "url": "https://github.com/strangeman375/Morphant/actions/runs/33980981738",
+    "commit": "6bb3e090281bb98e543c03c6eafe0006d2cc8c60",
+    "allJobsSucceeded": true,
+    "ubuntuUnitRoslyn4.4.0": {
+      "passed": 836,
+      "skipped": 1,
+      "failed": 0
+    },
+    "unitRoslyn4.9.2": {
+      "passed": 837,
+      "skipped": 0,
+      "failed": 0
+    },
+    "ubuntuIntegration": {
+      "passed": 268,
+      "skipped": 0,
+      "failed": 0
+    },
+    "validationPlatforms": [
+      "ubuntu-latest",
+      "windows-latest",
+      "macos-latest"
+    ],
+    "packageConsumerSdk": "7.0.100",
+    "packageConsumerMSBuild": "17.4"
+  },
+  "compilerMatrix": {
+    "sourceCommit": "b973e8988d264d57736eeb263ab805309967c04c",
+    "generatorSha256": "c2b6f331b0bfad4058c9d271746bbd54e87dcffe60ce91af07dd1b06d3120d11",
+    "groups": {
+      "shared": {
+        "cases": 108,
+        "failures": 0,
+        "fileCounts": [
+          5
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          15
+        ]
+      },
+      "nullable": {
+        "cases": 96,
+        "failures": 0,
+        "fileCounts": [
+          5
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          15
+        ]
+      },
+      "tuple": {
+        "cases": 96,
+        "failures": 0,
+        "fileCounts": [
+          5
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          15
+        ]
+      },
+      "family": {
+        "cases": 96,
+        "failures": 0,
+        "fileCounts": [
+          5
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          15
+        ]
+      },
+      "distinct-source": {
+        "cases": 96,
+        "failures": 0,
+        "fileCounts": [
+          5
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          15
+        ]
+      },
+      "same-family": {
+        "cases": 16,
+        "failures": 0,
+        "fileCounts": [
+          8
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          30
+        ]
+      },
+      "same-related-family": {
+        "cases": 16,
+        "failures": 0,
+        "fileCounts": [
+          8
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          30
+        ]
+      },
+      "same-nested-family": {
+        "cases": 16,
+        "failures": 0,
+        "fileCounts": [
+          8
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          30
+        ]
+      },
+      "same-ordinary": {
+        "cases": 16,
+        "failures": 0,
+        "fileCounts": [
+          8
+        ],
+        "planFileCounts": [
+          2
+        ],
+        "extensionMethodCounts": [
+          30
+        ]
+      },
+      "variant-abstract": {
+        "cases": 1,
+        "failures": 0,
+        "fileCounts": [
+          8
+        ]
+      },
+      "variant-annotated": {
+        "cases": 1,
+        "failures": 0,
+        "fileCounts": [
+          8
+        ]
+      },
+      "variant-base-call": {
+        "cases": 1,
+        "failures": 0,
+        "fileCounts": [
+          6
+        ]
+      },
+      "variant-same-constraints": {
+        "cases": 1,
+        "failures": 0,
+        "fileCounts": [
+          8
+        ]
+      },
+      "variant-unattributed-leaves": {
+        "cases": 1,
+        "failures": 0,
+        "fileCounts": [
+          6
+        ]
+      }
+    }
+  },
+  "msbuildReproductions": [
+    {
+      "case": "producer",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "case": "consumer-project",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "case": "consumer-dll",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "case": "consumer-ref",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "case": "related-families",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0
+    }
+  ]
+}
