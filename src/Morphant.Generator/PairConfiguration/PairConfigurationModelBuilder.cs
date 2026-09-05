@@ -1206,6 +1206,8 @@ internal static class PairConfigurationModelBuilder
             if (invocationName?.Identifier.ValueText is
                     "Construct" or "Resolve" or "ConstructUsing" or
                     "ResolveUsing" or "Members" or "Convert" &&
+                (boundMethod is not null ||
+                 assignedSurface?.Kind == MappingSurfaceKind.MapperFamilyScoped) &&
                 !GeneratedMappingExtensionBinding.IsAssignedMethod(
                     boundMethod,
                     pair.Registration.Syntax,

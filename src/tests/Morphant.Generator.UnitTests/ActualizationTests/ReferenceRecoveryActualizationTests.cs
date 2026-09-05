@@ -11,11 +11,9 @@ internal sealed class ReferenceRecoveryActualizationTests
     private static readonly string[] GeneratedFiles =
     [
         "Morphant.Generated.Construction.ExternalModels_Destination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__ExternalModels_Destination.g.cs",
+        "Morphant.Generated.MappingExtension.TestCase_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs",
         "Morphant.Generated.Member.ExternalModels_Destination.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__ExternalModels_Destination.g.cs",
+        "Morphant.Generated.MemberExtension.TestCase_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs",
         "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
     ];
 

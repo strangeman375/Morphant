@@ -12,15 +12,13 @@ internal sealed class SemanticDependencyTests
         "Morphant.Generated.Construction.TestCase_Destination.g.cs";
 
     private const string MappingExtension =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs";
 
     private const string Member =
         "Morphant.Generated.Member.TestCase_Destination.g.cs";
 
     private const string MemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs";
 
     private const string Mapper =
         "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs";

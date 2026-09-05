@@ -237,9 +237,12 @@ namespace Morphant
             throw new NotSupportedException();
     }
 
+    public interface IMappingBuilder<out TMapper, TSource, TDestination> { }
+
     public sealed class MappingBuilder<TMapper, TSource, TDestination> :
         MapperBuilderBase<
-            MappingBuilder<TMapper, TSource, TDestination>>
+            MappingBuilder<TMapper, TSource, TDestination>>,
+        IMappingBuilder<TMapper, TSource, TDestination>
         where TMapper : TypeMapper<TMapper>
     {
         public MappingBuilder<TMapper, TSource, TDestination>

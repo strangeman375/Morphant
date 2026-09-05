@@ -177,8 +177,7 @@ namespace TestCase
                 {
                     "Morphant.Generated.Construction." +
                     "TestCase_Destination.g.cs",
-                    "Morphant.Generated.MappingExtension." +
-                    "TestCase_Source__TestCase_Destination.g.cs",
+                    "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
                     "Morphant.Generated.TypeMapper." +
                     "TestCase_TestMapper.g.cs"
                 }));

@@ -14,11 +14,9 @@ internal sealed class ActualizationTests
     private static readonly string[] GeneratedFiles =
     [
         "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs",
+        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
         "Morphant.Generated.Member.TestCase_Destination.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs",
+        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
         Mapper
     ];
 

@@ -18,18 +18,14 @@ internal sealed class ExplicitMappingActualizationTests
         {
             "Morphant.Generated.Construction." +
             "TestCase_ChildDestination.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_ChildSource__TestCase_ChildDestination.g.cs",
+            "Morphant.Generated.MappingExtension.TestCase_ChildSource__TestCase_ChildDestination__TestCase_TestMapper.g.cs",
             "Morphant.Generated.Member." +
             "TestCase_ChildDestination.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_ChildSource__TestCase_ChildDestination.g.cs",
+            "Morphant.Generated.MemberExtension.TestCase_ChildSource__TestCase_ChildDestination__TestCase_TestMapper.g.cs",
             "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_Source__TestCase_Destination.g.cs",
+            "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
             "Morphant.Generated.Member.TestCase_Destination.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_Source__TestCase_Destination.g.cs",
+            "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
             Mapper
         };
 

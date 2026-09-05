@@ -15,15 +15,13 @@ internal sealed class CachingTests
         "Morphant.Generated.Construction.TestCase_Destination.g.cs";
 
     private const string MappingExtensionHint =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs";
 
     private const string MemberHint =
         "Morphant.Generated.Member.TestCase_Destination.g.cs";
 
     private const string MemberExtensionHint =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs";
 
     [Test]
     public void Reports_unrelated_edit_reason()

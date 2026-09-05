@@ -14,11 +14,9 @@ internal sealed class ConfigurationLifecycleActualizationTests
     private static readonly string[] PrimaryGeneratedFiles =
     [
         "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs",
+        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
         "Morphant.Generated.Member.TestCase_Destination.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs",
+        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
         Mapper
     ];
 
@@ -26,11 +24,9 @@ internal sealed class ConfigurationLifecycleActualizationTests
     [
         .. PrimaryGeneratedFiles,
         "Morphant.Generated.Construction.TestCase_SecondDestination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_SecondSource__TestCase_SecondDestination.g.cs",
+        "Morphant.Generated.MappingExtension.TestCase_SecondSource__TestCase_SecondDestination__TestCase_TestMapper.g.cs",
         "Morphant.Generated.Member.TestCase_SecondDestination.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_SecondSource__TestCase_SecondDestination.g.cs"
+        "Morphant.Generated.MemberExtension.TestCase_SecondSource__TestCase_SecondDestination__TestCase_TestMapper.g.cs"
     ];
 
     [Test]

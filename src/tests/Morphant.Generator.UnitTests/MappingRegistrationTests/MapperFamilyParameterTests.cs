@@ -464,7 +464,7 @@ public partial class GenericMapper<TState> :
     }
 
     [Test]
-    public void Invalid_family_callback_cannot_become_a_shared_configuration()
+    public void Invalid_family_callback_cannot_bind_to_another_mapper()
     {
         // lang=c#
         const string source =
@@ -514,7 +514,13 @@ public abstract partial class Family<TMapper, TState> : TypeMapper<TMapper>
                 result.Diagnostics,
                 Has.None.Matches<Diagnostic>(diagnostic =>
                     diagnostic.Id == "MORPH0018"));
-            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(
+                result.CompilerWarningsAndErrors.Select(diagnostic => diagnostic.Id),
+                Is.EqualTo(new[] { "CS1929" }));
+            Assert.That(
+                result.CompilerWarningsAndErrors.Select(diagnostic =>
+                    MappingRegistrationGeneratorTest.SourceText(diagnostic.Location)),
+                Is.EqualTo(new[] { "builder.Map<Source<dynamic>, Destination<dynamic>>()" }));
         });
     }
 
