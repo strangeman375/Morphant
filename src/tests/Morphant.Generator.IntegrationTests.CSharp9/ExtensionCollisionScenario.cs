@@ -85,8 +85,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
     }
 
     [MorphantMapper]
-    public sealed partial class SharedObjectMapper :
-        TypeMapper<SharedObjectMapper>
+    public sealed partial class ObjectMapper :
+        TypeMapper<ObjectMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<ErasedSource<object>, ErasedDestination<object>>();
@@ -101,9 +101,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<
                     ErasedSource<dynamic>,
-                    ErasedDestination<dynamic>>()
-                .Convert(_ =>
-                    new ErasedDestination<dynamic>("invalid callback"));
+                    ErasedDestination<dynamic>>();
     }
 #pragma warning restore MORPH0060
 
@@ -148,7 +146,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9
                     new ErasedSource<object> { Value = "source" },
                     default(MappingContext));
                 throw new InvalidOperationException(
-                    "An invalid mapper-family callback was transferred.");
+                    "An invalid mapper-family mapping was executed.");
             }
             catch (MappingConfigurationException exception)
             {
