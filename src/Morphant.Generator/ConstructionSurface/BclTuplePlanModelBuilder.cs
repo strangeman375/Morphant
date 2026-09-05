@@ -40,7 +40,7 @@ internal static class BclTuplePlanModelBuilder
             .ToImmutableArray();
 
         return new ConstructionPlanModel(
-            BclTuplePlanNaming.BuildNamespace(shape),
+            BclTuplePlanNaming.BuildNamespace(shape, compilation),
             BclTuplePlanNaming.BuildConstructionTypeName(shape),
             BclTuplePlanNaming.BuildConstructorParametersTypeName(shape),
             BuildPhysicalTypeName(shape, typeParameterNames),
@@ -82,7 +82,7 @@ internal static class BclTuplePlanModelBuilder
             .ToImmutableArray();
 
         return new MemberPlanModel(
-            BclTuplePlanNaming.BuildNamespace(shape),
+            BclTuplePlanNaming.BuildNamespace(shape, compilation),
             BclTuplePlanNaming.BuildMembersTypeName(shape),
             memberTypeParameters,
             BuildDestinationCref(shape),

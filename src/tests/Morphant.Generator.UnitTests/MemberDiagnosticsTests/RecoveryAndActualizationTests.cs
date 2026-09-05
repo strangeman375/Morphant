@@ -199,7 +199,7 @@ namespace TestCase
             builder.Map<Source, Destination>()
                 .Members(Build);
 
-        private static global::Morphant.Generated.Types.N_TestCase.Plans.DestinationMembers
+        private static global::Morphant.Generated.Types.A_MemberDiagnosticsConsumer.N_TestCase.Plans.DestinationMembers
             Build(Source source) => null!;
     }
 }

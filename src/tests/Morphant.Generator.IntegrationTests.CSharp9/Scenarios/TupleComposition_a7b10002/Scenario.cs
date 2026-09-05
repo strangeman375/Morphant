@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using Morphant;
 using Morphant.Context;
 using FusionTupleMembers =
-    Morphant.Generated.Tuples.V2_a51caaf0c27a1203d7dd02a67a0a5455.TupleMembers;
+    Morphant.Generated.Tuples.A_Morphant_002EGenerator_002EIntegrationTests_002ECSharp9.V2_a51caaf0c27a1203d7dd02a67a0a5455.TupleMembers;
 using MixedTupleMembers =
-    Morphant.Generated.Tuples.S2_07c16aa828a1cc0400a34298febbe3a6.TupleMembers;
+    Morphant.Generated.Tuples.A_Morphant_002EGenerator_002EIntegrationTests_002ECSharp9.S2_07c16aa828a1cc0400a34298febbe3a6.TupleMembers;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleComposition_a7b10002
 {

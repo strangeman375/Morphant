@@ -36,7 +36,7 @@ namespace TestCase
             builder.Map<Source, BNull>()
                 .Construct(source =>
                 {
-                    global::Morphant.Generated.Types.N_TestCase.Plans.BNullConstruction omitted = null!;
+                    global::Morphant.Generated.Types.A_ConstructionDiagnosticsConsumer.N_TestCase.Plans.BNullConstruction omitted = null!;
                     var alias = omitted;
                     return alias;
                 });

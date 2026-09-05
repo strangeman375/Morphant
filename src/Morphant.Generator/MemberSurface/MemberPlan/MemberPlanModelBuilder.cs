@@ -44,7 +44,7 @@ internal static class MemberPlanModelBuilder
             cancellationToken);
 
         return new MemberPlanModel(
-            GeneratedPlanNaming.BuildNamespace(destinationType),
+            GeneratedPlanNaming.BuildNamespace(destinationType, compilation),
             GeneratedPlanNaming.BuildMembersTypeName(destinationType),
             BuildTypeParameters(
                 typeParameters,

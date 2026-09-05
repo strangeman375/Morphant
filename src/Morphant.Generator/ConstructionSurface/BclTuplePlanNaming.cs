@@ -7,9 +7,13 @@ internal static class BclTuplePlanNaming
 {
     private const string RootNamespace = "Morphant.Generated.Tuples";
 
-    public static string BuildNamespace(BclTupleShape shape)
+    public static string BuildNamespace(
+        BclTupleShape shape,
+        Compilation compilation)
     {
-        return RootNamespace + "." + BuildNamespaceName(shape);
+        return RootNamespace + "." +
+               GeneratedAssemblyNaming.BuildScope(compilation) + "." +
+               BuildNamespaceName(shape);
     }
 
     public static string BuildStableIdentity(BclTupleShape shape)
@@ -40,6 +44,7 @@ internal static class BclTuplePlanNaming
     public static string BuildPlanTypeReference(
         BclTupleShape shape,
         string typeName,
+        Compilation compilation,
         IReadOnlyDictionary<ITypeParameterSymbol, string>
             availableTypeParameterNames)
     {
@@ -47,7 +52,7 @@ internal static class BclTuplePlanNaming
             shape.Type);
 
         return "global::" +
-               BuildNamespace(shape) +
+               BuildNamespace(shape, compilation) +
                "." +
                typeName +
                (typeParameters.IsEmpty
@@ -69,21 +74,29 @@ internal static class BclTuplePlanNaming
 
     public static bool IsSystemTuplePlanNamespace(string value)
     {
-        var prefix = RootNamespace + ".S";
+        var prefix = RootNamespace + ".A_";
 
         if (!value.StartsWith(prefix, StringComparison.Ordinal))
         {
             return false;
         }
 
-        var index = prefix.Length;
+        var shapeStart = value.IndexOf('.', prefix.Length) + 1;
+
+        if (shapeStart == 0 || shapeStart >= value.Length ||
+            value[shapeStart] != 'S')
+        {
+            return false;
+        }
+
+        var index = shapeStart + 1;
 
         while (index < value.Length && char.IsDigit(value[index]))
         {
             index++;
         }
 
-        return index > prefix.Length &&
+        return index > shapeStart + 1 &&
                index < value.Length &&
                value[index] == '_';
     }

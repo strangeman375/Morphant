@@ -31,16 +31,22 @@
   is at most 220 bytes. For a longer file component, retain the readable
   identity prefix and append a stable hash of the complete name. A real
   case-insensitive collision after sanitization also receives a stable hash.
-- Non-tuple destination plans live below `Morphant.Generated.Types`. Encode
+- Scope destination plans by the generating assembly below
+  `Morphant.Generated.Types` and `Morphant.Generated.Tuples`. The `A_` segment
+  preserves ASCII letters/digits, doubles underscores, and encodes other UTF-16
+  code units as an underscore plus four uppercase hexadecimal digits. Append
+  `_K` and the lowercase public key token for signed assemblies. Do not include
+  assembly versions, target frameworks, paths or per-mapper identity.
+- Non-tuple destination plans live below that assembly scope. Encode
   namespace scopes with `N_`, containing-type scopes with `T_` plus generic
   arity, double user underscores, and terminate the scope with `Plans` before
   declaring plan types. A destination in the global namespace starts directly
-  below `Morphant.Generated.Types`; never synthesize a `Global` namespace
+  below its assembly scope; never synthesize a `Global` namespace
   segment. This layout must not introduce a `Morphant` namespace below a user
   namespace or allow generated namespace/type paths to collide.
 - BCL tuple plans use a compact stable namespace of the form
-  `Morphant.Generated.Tuples.V<arity>_<identity>` or
-  `Morphant.Generated.Tuples.S<arity>_<identity>`. The identity covers the
+  `Morphant.Generated.Tuples.A_<assembly>.V<arity>_<identity>` or
+  `Morphant.Generated.Tuples.A_<assembly>.S<arity>_<identity>`. The identity covers the
   physical tuple contract and its complete recursive presentation, including
   element names, nullable annotations and `dynamic`. The identity must not
   depend on dependency versions or target-framework facade assemblies. All

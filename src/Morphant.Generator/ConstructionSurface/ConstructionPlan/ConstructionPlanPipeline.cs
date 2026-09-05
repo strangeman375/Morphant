@@ -190,7 +190,7 @@ internal static class ConstructionPlanPipeline
                 input.Compilation)
             : ConstructionPlanModelBuilder.Build(
                 destination,
-                GeneratedPlanNaming.BuildNamespace(destination),
+                GeneratedPlanNaming.BuildNamespace(destination, input.Compilation),
                 GeneratedPlanNaming.BuildConstructionTypeName(destination),
                 input.Compilation,
                 cancellationToken);

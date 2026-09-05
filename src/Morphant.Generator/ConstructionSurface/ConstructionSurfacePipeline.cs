@@ -236,7 +236,8 @@ internal static class ConstructionSurfacePipeline
                 : ConstructionPlanModelBuilder.Build(
                     definition.Value.DestinationType,
                     GeneratedPlanNaming.BuildNamespace(
-                        definition.Value.DestinationType),
+                        definition.Value.DestinationType,
+                        compilation),
                     GeneratedPlanNaming.BuildConstructionTypeName(
                         definition.Value.DestinationType),
                     compilation,

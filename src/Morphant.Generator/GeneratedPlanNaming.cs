@@ -11,7 +11,8 @@ internal static class GeneratedPlanNaming
         RootNamespace + ".Types";
 
     public static string BuildNamespace(
-        INamedTypeSymbol destinationDefinition)
+        INamedTypeSymbol destinationDefinition,
+        Compilation compilation)
     {
         var namespaceScopes = new Stack<string>();
 
@@ -53,7 +54,8 @@ internal static class GeneratedPlanNaming
             scopes.Add(containingTypeScopes.Pop());
         }
 
-        return TypePlansRootNamespace +
+        return TypePlansRootNamespace + "." +
+               GeneratedAssemblyNaming.BuildScope(compilation) +
                (scopes.Count == 0
                    ? string.Empty
                    : "." + string.Join(".", scopes)) +

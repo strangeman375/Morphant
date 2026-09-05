@@ -35,6 +35,8 @@ unsupported.
 
 ### Fixed
 
+- Keep generated construction and member type names distinct across assemblies
+  that expose their internals to one another.
 - Explain that standalone nested `Update` requires a member selected through
   the generated `Members` callback result, including in `MORPH0046`.
 - Keep generated destination plans under the reserved `Morphant.Generated`
@@ -92,7 +94,8 @@ If your configuration explicitly names builder types, replace
 `MapperBuilder<TSource, TDestination>` with
 `MappingBuilder<TMapper, TSource, TDestination>`. For explicit generated
 callback result types such as `OrderMembers`, update imports to the namespace
-shown by the IDE.
+shown by the IDE for the assembly containing the mapper. Short type names
+remain unchanged.
 
 Every additional generic family parameter must participate in each declared
 pair ([`MORPH0060`](docs/diagnostics/MORPH0060.md)). Nested mappers and their

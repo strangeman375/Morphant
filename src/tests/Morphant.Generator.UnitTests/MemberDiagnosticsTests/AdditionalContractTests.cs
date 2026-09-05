@@ -227,7 +227,7 @@ namespace TestCase
             builder.Map<Source, Destination>()
                 .Members(source =>
                 {
-                    global::Morphant.Generated.Types.N_TestCase.Plans.DestinationMembers
+                    global::Morphant.Generated.Types.A_MemberDiagnosticsConsumer.N_TestCase.Plans.DestinationMembers
                         plan = default!;
                     return plan;
                 });

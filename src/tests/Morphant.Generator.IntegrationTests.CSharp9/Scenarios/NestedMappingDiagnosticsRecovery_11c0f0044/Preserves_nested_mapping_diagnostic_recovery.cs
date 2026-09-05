@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Morphant;
 using Morphant.Context;
 using Morphant.Exceptions;
-using global::Morphant.Generated.Types.N_Morphant.N_Generator.N_IntegrationTests.N_CSharp9.N_Scenarios.N_NestedMappingDiagnosticsRecovery__11c0f0044.Plans;
+using global::Morphant.Generated.Types.A_Morphant_002EGenerator_002EIntegrationTests_002ECSharp9.N_Morphant.N_Generator.N_IntegrationTests.N_CSharp9.N_Scenarios.N_NestedMappingDiagnosticsRecovery__11c0f0044.Plans;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.NestedMappingDiagnosticsRecovery_11c0f0044
 {

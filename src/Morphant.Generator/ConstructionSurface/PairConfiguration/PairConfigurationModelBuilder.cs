@@ -106,11 +106,13 @@ internal static class PairConfigurationModelBuilder
                         constructionTuple,
                         BclTuplePlanNaming.BuildConstructionTypeName(
                             constructionTuple),
+                        compilation,
                         typeParameterNames)
                     : BuildPlanTypeName(
                         (INamedTypeSymbol)previousDestinationType,
                         typeParameterNames,
-                        GeneratedPlanNaming.BuildConstructionTypeName)
+                        GeneratedPlanNaming.BuildConstructionTypeName,
+                        compilation)
                 : destinationTypeName,
             pair.Capabilities.Members
                 ? tupleShape is { } membersTuple
@@ -118,11 +120,13 @@ internal static class PairConfigurationModelBuilder
                         membersTuple,
                         BclTuplePlanNaming.BuildMembersTypeName(
                             membersTuple),
+                        compilation,
                         typeParameterNames)
                     : BuildPlanTypeName(
                         (INamedTypeSymbol)previousDestinationType,
                         typeParameterNames,
-                        GeneratedPlanNaming.BuildMembersTypeName)
+                        GeneratedPlanNaming.BuildMembersTypeName,
+                        compilation)
                 : null,
             typeParameterModels);
     }
@@ -145,11 +149,12 @@ internal static class PairConfigurationModelBuilder
     private static string BuildPlanTypeName(
         INamedTypeSymbol destinationType,
         IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterNames,
-        Func<INamedTypeSymbol, string> buildTypeName)
+        Func<INamedTypeSymbol, string> buildTypeName,
+        Compilation compilation)
     {
         var definition = destinationType.OriginalDefinition;
         var planNamespace =
-            GeneratedPlanNaming.BuildNamespace(definition);
+            GeneratedPlanNaming.BuildNamespace(definition, compilation);
         var planTypeName = buildTypeName(definition);
         var arguments = CollectTypeArguments(destinationType);
 
