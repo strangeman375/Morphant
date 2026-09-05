@@ -122,7 +122,6 @@ internal static class CanonicalMappingPairPipeline
                             declaringMapperDepth,
                             pair,
                             MappingSurfacePolicy.Create(
-                                pair,
                                 declaringMapperType),
                             compilation));
                 }
@@ -147,6 +146,9 @@ internal static class CanonicalMappingPairPipeline
             var key = candidate.TargetMapperIdentity + "|" +
                 MappingTypeIdentityPolicy
                 .CreateAlphaEquivalentPairKey(
+                    candidate.EffectiveSourceType,
+                    candidate.EffectiveDestinationType) + "|" +
+                BclTupleShapePolicy.BuildPairPresentationKey(
                     candidate.EffectiveSourceType,
                     candidate.EffectiveDestinationType);
 

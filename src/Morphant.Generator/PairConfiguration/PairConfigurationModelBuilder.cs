@@ -40,11 +40,18 @@ internal static class PairConfigurationModelBuilder
                 SymbolNameHelper.GetFullMetadataName(
                     discovery.ConfigureInfo.MapperType)) ??
             discovery.ConfigureInfo.MapperType;
+        var assignedSurfaces = CanonicalMappingPairPipeline.SelectCandidates(
+            CanonicalMappingPairPipeline.BuildCandidates(
+                SymbolNameHelper.GetFullMetadataName(targetMapperType),
+                targetMapperType,
+                bindingMapperModels,
+                compilation),
+            cancellationToken);
         var augmentedCompilation = RequiresAugmentedCompilation(discovery)
             ? BuildAugmentedCompilation(
                 compilation,
                 bindingMapperModels,
-                targetMapperType,
+                assignedSurfaces,
                 cancellationToken)
             : compilation;
         var knownSymbols = KnownSymbols.TryCreate(augmentedCompilation);
@@ -64,6 +71,11 @@ internal static class PairConfigurationModelBuilder
                 discovery.FlowBreaks);
         }
 
+        var flowBreaks = ActualizePotentialCallbackBreaks(
+            discovery.FlowBreaks,
+            augmentedCompilation,
+            knownSymbols,
+            cancellationToken).ToBuilder();
         var levels =
             ImmutableArray.CreateBuilder<LocalMapperConfigurationLevel>(
                 discovery.Levels.Length);
@@ -127,6 +139,9 @@ internal static class PairConfigurationModelBuilder
                             declaringMapperType,
                             level.ConstructedMapperType,
                             levelOrder,
+                            GeneratedMappingExtensionBinding.FindAssignedSurface(
+                                pair, assignedSurfaces),
+                            flowBreaks,
                             cancellationToken));
                 }
             }
@@ -156,11 +171,7 @@ internal static class PairConfigurationModelBuilder
             levels.ToImmutable(),
             discovery.HasInvalidBaseConfiguration,
             discovery.UnavailableBaseConfigurations,
-            ActualizePotentialCallbackBreaks(
-                discovery.FlowBreaks,
-                augmentedCompilation,
-                knownSymbols,
-                cancellationToken),
+            flowBreaks.ToImmutable(),
             compilation,
             augmentedCompilation,
             targetMapperType,
@@ -205,17 +216,9 @@ internal static class PairConfigurationModelBuilder
     private static CSharpCompilation BuildAugmentedCompilation(
         CSharpCompilation compilation,
         ImmutableArray<MapperMappingPairModel> mapperModels,
-        INamedTypeSymbol targetMapperType,
+        ImmutableArray<CanonicalMappingPairCandidate> candidates,
         CancellationToken cancellationToken)
     {
-        var candidates = CanonicalMappingPairPipeline.BuildCandidates(
-            SymbolNameHelper.GetFullMetadataName(targetMapperType),
-            targetMapperType,
-            mapperModels,
-            compilation);
-        candidates = CanonicalMappingPairPipeline.SelectCandidates(
-            candidates,
-            cancellationToken);
         var constructionRequests =
             ConstructionSurfacePipeline.BuildRequests(
                 candidates,
@@ -1155,6 +1158,8 @@ internal static class PairConfigurationModelBuilder
         INamedTypeSymbol declaringMapperType,
         INamedTypeSymbol constructedMapperType,
         int levelOrder,
+        MappingSurfaceModel? assignedSurface,
+        ImmutableArray<BuilderFlowBreakModel>.Builder flowBreaks,
         CancellationToken cancellationToken)
     {
         var settings = BuildMapMappingMode(
@@ -1189,9 +1194,42 @@ internal static class PairConfigurationModelBuilder
                 continue;
             }
 
-            if (semanticModel.GetSymbolInfo(
-                    invocation,
-                    cancellationToken).Symbol is not IMethodSymbol method)
+            var boundMethod = semanticModel.GetSymbolInfo(
+                invocation, cancellationToken).Symbol as IMethodSymbol;
+            var invocationName = invocation.Expression switch
+            {
+                MemberAccessExpressionSyntax access => access.Name,
+                SimpleNameSyntax name => name,
+                _ => null
+            };
+
+            if (invocationName?.Identifier.ValueText is
+                    "Construct" or "Resolve" or "ConstructUsing" or
+                    "ResolveUsing" or "Members" or "Convert" &&
+                !GeneratedMappingExtensionBinding.IsAssignedMethod(
+                    boundMethod,
+                    pair.Registration.Syntax,
+                    assignedSurface,
+                    declaringMapperType,
+                    semanticModel,
+                    cancellationToken))
+            {
+                if (!flowBreaks.Any(flowBreak =>
+                        flowBreak.Registration is { } broken &&
+                        broken.Syntax.SyntaxTree == pair.Registration.Syntax.SyntaxTree &&
+                        broken.Syntax.Span == pair.Registration.Syntax.Span))
+                {
+                    flowBreaks.Add(new BuilderFlowBreakModel(
+                        BuilderFlowBreakKind.Mapping,
+                        invocationName.Identifier.GetLocation(),
+                        pair.Registration,
+                        levelOrder));
+                }
+
+                continue;
+            }
+
+            if (boundMethod is not { } method)
             {
                 if (IsPotentialForDerivedInvocation(invocation) &&
                     TryBuildDerivedMappingConfiguration(
@@ -1279,7 +1317,7 @@ internal static class PairConfigurationModelBuilder
                 continue;
             }
 
-            if (!IsGeneratedConfigurationMethod(method))
+            if (!IsGeneratedConfigurationMethod(method, semanticModel.Compilation))
             {
                 continue;
             }
@@ -2075,7 +2113,9 @@ internal static class PairConfigurationModelBuilder
         return false;
     }
 
-    private static bool IsGeneratedConfigurationMethod(IMethodSymbol method)
+    private static bool IsGeneratedConfigurationMethod(
+        IMethodSymbol method,
+        Compilation compilation)
     {
         var definition = method.ReducedFrom ?? method;
 
@@ -2087,7 +2127,7 @@ internal static class PairConfigurationModelBuilder
                    "Members" or
                    "Convert" &&
                GeneratedMappingExtensionNaming.IsGeneratedMethod(
-                   definition);
+                   definition, compilation);
     }
 
     private static bool IsMapperBuilderMapMethod(

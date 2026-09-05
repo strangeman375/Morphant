@@ -4,7 +4,6 @@ namespace Morphant.Generator.MappingPair;
 
 internal enum MappingSurfaceKind
 {
-    Shared,
     MapperScoped,
     MapperFamilyScoped
 }
@@ -16,7 +15,6 @@ internal readonly record struct MappingSurfaceModel(
 {
     public string CoordinationIdentity => Kind switch
     {
-        MappingSurfaceKind.Shared => "shared",
         MappingSurfaceKind.MapperScoped =>
             "mapper|" + BuildMapperIdentity(),
         MappingSurfaceKind.MapperFamilyScoped =>
@@ -27,7 +25,6 @@ internal readonly record struct MappingSurfaceModel(
 
     public string ReadableScopeIdentity => Kind switch
     {
-        MappingSurfaceKind.Shared => string.Empty,
         MappingSurfaceKind.MapperScoped =>
             MapperSelfType.ToDisplayString(
                 SymbolDisplayFormats.FullyQualifiedNullable),
@@ -50,28 +47,14 @@ internal readonly record struct MappingSurfaceModel(
 internal static class MappingSurfacePolicy
 {
     public static MappingSurfaceModel Create(
-        MappingPairModel pair,
         INamedTypeSymbol declaringMapperType)
     {
         var mapperSelfType = FindMapperSelfType(declaringMapperType) ??
             throw new InvalidOperationException(
                 "A mapping declaration must derive from TypeMapper<TMapper>.");
-        var containsTypeParameter =
-            ContainsTypeParameter(pair.SourceType) ||
-            ContainsTypeParameter(pair.DestinationType);
-        var containsValueTuple =
-            ContainsValueTuple(pair.SourceType) ||
-            ContainsValueTuple(pair.DestinationType);
-        var containsMapperSpecificPresentation =
-            ContainsMapperSpecificPresentation(pair.SourceType) ||
-            ContainsMapperSpecificPresentation(pair.DestinationType);
-        var kind = containsTypeParameter
+        var kind = mapperSelfType is ITypeParameterSymbol
             ? MappingSurfaceKind.MapperFamilyScoped
-            : containsValueTuple || containsMapperSpecificPresentation
-                ? mapperSelfType is ITypeParameterSymbol
-                    ? MappingSurfaceKind.MapperFamilyScoped
-                    : MappingSurfaceKind.MapperScoped
-                : MappingSurfaceKind.Shared;
+            : MappingSurfaceKind.MapperScoped;
 
         return new MappingSurfaceModel(
             kind,
@@ -96,119 +79,5 @@ internal static class MappingSurfacePolicy
         }
 
         return null;
-    }
-
-    private static bool ContainsTypeParameter(ITypeSymbol type)
-    {
-        if (type is ITypeParameterSymbol)
-        {
-            return true;
-        }
-
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            return ContainsTypeParameter(arrayType.ElementType);
-        }
-
-        if (type is IPointerTypeSymbol pointerType)
-        {
-            return ContainsTypeParameter(pointerType.PointedAtType);
-        }
-
-        if (type is IFunctionPointerTypeSymbol functionPointerType)
-        {
-            return ContainsTypeParameter(
-                       functionPointerType.Signature.ReturnType) ||
-                   functionPointerType.Signature.Parameters.Any(
-                       static parameter =>
-                           ContainsTypeParameter(parameter.Type));
-        }
-
-        if (type is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        return namedType.ContainingType is { } containingType &&
-               ContainsTypeParameter(containingType) ||
-               namedType.TypeArguments.Any(ContainsTypeParameter);
-    }
-
-    private static bool ContainsValueTuple(ITypeSymbol type)
-    {
-        if (BclTupleShapePolicy.TryCreate(type) is
-            { IsValueTuple: true })
-        {
-            return true;
-        }
-
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            return ContainsValueTuple(arrayType.ElementType);
-        }
-
-        if (type is IPointerTypeSymbol pointerType)
-        {
-            return ContainsValueTuple(pointerType.PointedAtType);
-        }
-
-        if (type is IFunctionPointerTypeSymbol functionPointerType)
-        {
-            return ContainsValueTuple(
-                       functionPointerType.Signature.ReturnType) ||
-                   functionPointerType.Signature.Parameters.Any(
-                       static parameter =>
-                           ContainsValueTuple(parameter.Type));
-        }
-
-        if (type is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        return namedType.ContainingType is { } containingType &&
-               ContainsValueTuple(containingType) ||
-               namedType.TypeArguments.Any(ContainsValueTuple);
-    }
-
-    private static bool ContainsMapperSpecificPresentation(ITypeSymbol type)
-    {
-        if (type is IDynamicTypeSymbol ||
-            type.IsReferenceType &&
-            type.NullableAnnotation == NullableAnnotation.Annotated)
-        {
-            return true;
-        }
-
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            return ContainsMapperSpecificPresentation(arrayType.ElementType);
-        }
-
-        if (type is IPointerTypeSymbol pointerType)
-        {
-            return ContainsMapperSpecificPresentation(
-                pointerType.PointedAtType);
-        }
-
-        if (type is IFunctionPointerTypeSymbol functionPointerType)
-        {
-            return ContainsMapperSpecificPresentation(
-                       functionPointerType.Signature.ReturnType) ||
-                   functionPointerType.Signature.Parameters.Any(
-                       static parameter =>
-                           ContainsMapperSpecificPresentation(
-                               parameter.Type));
-        }
-
-        if (type is not INamedTypeSymbol namedType)
-        {
-            return false;
-        }
-
-        return namedType.ContainingType is { } containingType &&
-               ContainsMapperSpecificPresentation(containingType) ||
-               namedType.TypeArguments.Any(
-                   ContainsMapperSpecificPresentation);
     }
 }

@@ -13,7 +13,8 @@ namespace Morphant;
 /// <typeparam name="TDestination">The destination type.</typeparam>
 [ExcludeFromCodeCoverage]
 public sealed class MappingBuilder<TMapper, TSource, TDestination> :
-    MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>>
+    MapperBuilderBase<MappingBuilder<TMapper, TSource, TDestination>>,
+    IMappingBuilder<TMapper, TSource, TDestination>
     where TMapper : TypeMapper<TMapper>
 {
     private MappingBuilder()

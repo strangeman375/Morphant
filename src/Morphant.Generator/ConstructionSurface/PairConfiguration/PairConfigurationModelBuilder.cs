@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Morphant.Generator.ConstructionSurface.ConstructionPlan;
 using Morphant.Generator.MappingPair;
 
 namespace Morphant.Generator.ConstructionSurface.PairConfiguration;
@@ -41,12 +40,10 @@ internal static class PairConfigurationModelBuilder
             destinationType,
             typeParameterNames,
             normalizeDynamic: false);
-        var mapperTypeName = surface.Kind == MappingSurfaceKind.Shared
-            ? "TMapper"
-            : GeneratedTypeNameBuilder.Build(
-                surface.MapperSelfType,
-                typeParameterNames,
-                normalizeDynamic: false);
+        var mapperTypeName = GeneratedTypeNameBuilder.Build(
+            surface.MapperSelfType,
+            typeParameterNames,
+            normalizeDynamic: false);
         var builderTypeName =
             "global::Morphant.MappingBuilder<" +
             mapperTypeName +
@@ -55,10 +52,14 @@ internal static class PairConfigurationModelBuilder
             ", " +
             destinationTypeName +
             ">";
-        var receiverTypeName = surface.Kind == MappingSurfaceKind.Shared
-            ? "global::Morphant.MapperBuilderBase<" +
-              builderTypeName +
-              ">"
+        var receiverTypeName =
+            surface.Kind == MappingSurfaceKind.MapperFamilyScoped
+            ? "global::Morphant.IMappingBuilder<" +
+              GeneratedTypeNameBuilder.Build(
+                  surface.DeclaringMapperType,
+                  typeParameterNames,
+                  normalizeDynamic: false) +
+              ", " + sourceTypeName + ", " + destinationTypeName + ">"
             : builderTypeName;
         var tupleShape = BclTupleShapePolicy.TryCreate(
             previousDestinationType);
@@ -68,22 +69,10 @@ internal static class PairConfigurationModelBuilder
             typeParameters,
             typeParameterNames,
             compilation,
-            includeDeclarationConstraints:
-                surface.Kind != MappingSurfaceKind.Shared);
-
-        if (surface.Kind == MappingSurfaceKind.Shared)
-        {
-            typeParameterModels = typeParameterModels.Insert(
-                0,
-                new ConstructionTypeParameterModel(
-                    "TMapper",
-                    ImmutableArray.Create(
-                        "global::Morphant.TypeMapper<TMapper>"),
-                    RequiresNullableAnnotationsDisabled: false));
-        }
+            includeDeclarationConstraints: true);
 
         return new PairConfigurationModel(
-            GeneratedMappingExtensionNaming.BuildContainerTypeName(surface),
+            GeneratedMappingExtensionNaming.CommonContainerTypeName,
             builderTypeName,
             receiverTypeName,
             GeneratedTypeNameBuilder.Build(
@@ -135,15 +124,11 @@ internal static class PairConfigurationModelBuilder
         MappingPairModel pair,
         MappingSurfaceModel surface)
     {
-        return surface.Kind == MappingSurfaceKind.Shared
-            ? GeneratedTypeNameBuilder.CollectTypeParameters(
-                pair.SourceType,
-                pair.DestinationType)
-            : GeneratedTypeNameBuilder.CollectTypeParameters(
-                surface.DeclaringMapperType,
-                surface.MapperSelfType,
-                pair.SourceType,
-                pair.DestinationType);
+        return GeneratedTypeNameBuilder.CollectTypeParameters(
+            surface.DeclaringMapperType,
+            surface.MapperSelfType,
+            pair.SourceType,
+            pair.DestinationType);
     }
 
     private static string BuildPlanTypeName(

@@ -28,10 +28,11 @@ unsupported.
 - Replace the non-generic `TypeMapper` and two-argument mapping builder with
   the self-typed `TypeMapper<TMapper>` and
   `MappingBuilder<TMapper, TSource, TDestination>` API.
-- Isolate generated fluent configuration by mapper family when tuple names,
-  nullable annotations, `dynamic`, or type parameters require it. Unrelated
-  mapper families may use different presentations of the same physical CLR
-  pair without changing one another's generated API.
+- Specialize generated fluent configuration for every mapper or reusable
+  mapper family. Independent mappers may configure the same pair without
+  competing extensions, including when their assemblies expose internals to
+  one another. Tuple names, nullable annotations and `dynamic` remain local
+  to the declaring configuration.
 
 ### Fixed
 
@@ -45,11 +46,10 @@ unsupported.
 - Keep generated plan type names distinct for otherwise ambiguous nested
   destination shapes such as `Outer<T>.Destination` and
   `Outer1.Destination<T>`.
-- Authenticate generated configuration methods by their reserved container,
-  canonical signature and generated source name; preserve potentially
-  competing callback calls until generated overload resolution can either
-  select Morphant's method or report `MORPH0018` instead of silently ignoring
-  the configuration.
+- Reject callback bindings to another mapper family or assembly with
+  `MORPH0018`, including an unintended fallback to a base-family overload.
+  Preserve potentially competing callback calls until generated overload
+  resolution can select Morphant's method or explain the invalid configuration.
 - Report `extern alias`-only mapping types and required constraints as
   inaccessible instead of emitting invalid `global::` references and cascaded
   compiler errors; reject globally ambiguous aliased types and namespace/type

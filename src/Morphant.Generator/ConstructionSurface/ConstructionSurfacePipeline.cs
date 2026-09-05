@@ -295,11 +295,8 @@ internal static class ConstructionSurfacePipeline
             "__" +
             RemoveGlobalAlias(pair.Identity.Destination.DisplayName);
 
-        return candidate.Surface.Kind == MappingSurfaceKind.Shared
-            ? pairIdentity
-            : pairIdentity + "__" +
-              RemoveGlobalAlias(
-                  candidate.Surface.ReadableScopeIdentity);
+        return pairIdentity + "__" +
+               RemoveGlobalAlias(candidate.Surface.ReadableScopeIdentity);
     }
 
     internal readonly record struct ConstructionSurfaceRequest(

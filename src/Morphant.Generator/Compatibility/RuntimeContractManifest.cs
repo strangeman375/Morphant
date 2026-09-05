@@ -30,6 +30,14 @@ internal static class RuntimeContractManifest
         // Builder contract, ordered by metadata name. The protected root
         // builder is validated as part of TypeMapper because it is nested.
         Requirement(
+            "Morphant.IMappingBuilder`3",
+            TypeKind.Interface,
+            static symbol =>
+                symbol.TypeParameters.Length == 3 &&
+                symbol.TypeParameters[0].Variance == VarianceKind.Out &&
+                symbol.TypeParameters[1].Variance == VarianceKind.None &&
+                symbol.TypeParameters[2].Variance == VarianceKind.None),
+        Requirement(
             "Morphant.MapperBuilderBase`1",
             TypeKind.Class,
             IsMapperBuilderBase),
@@ -868,6 +876,12 @@ internal static class RuntimeContractManifest
         return symbol.IsSealed &&
                !symbol.IsAbstract &&
                symbol.TypeParameters.Length == 3 &&
+               symbol.AllInterfaces.Any(type =>
+                   Named(
+                       "Morphant.IMappingBuilder`3",
+                       TypeParameter(0),
+                       TypeParameter(1),
+                       TypeParameter(2)).Matches(type)) &&
                symbol.TypeParameters[0].ConstraintTypes.Any(type =>
                    Named(
                        "Morphant.TypeMapper`1",

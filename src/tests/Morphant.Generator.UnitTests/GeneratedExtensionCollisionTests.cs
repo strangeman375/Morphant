@@ -624,7 +624,7 @@ namespace TestCase
     }
 
     [Test]
-    public void Shared_and_erased_scoped_surfaces_select_exact_receivers()
+    public void Erased_presentations_select_their_own_mapper_receivers()
     {
         // lang=c#
         const string source =
@@ -720,7 +720,7 @@ namespace TestCase
 """;
 
         var result = GeneratorTestDriver.Run(
-            "SharedAndScopedExtensionSelection",
+            "MapperExtensionSelection",
             source,
             LanguageVersion.CSharp9);
 

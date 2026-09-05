@@ -177,6 +177,20 @@ internal sealed class PublicApiBaselineTests
                     .GetGenericArguments()
                     .Skip(1)));
             Assert.That(
+                typeof(IMappingBuilder<,,>).GetGenericArguments()
+                    .Select(parameter => parameter.GenericParameterAttributes &
+                        GenericParameterAttributes.VarianceMask),
+                Is.EqualTo(new[]
+                {
+                    GenericParameterAttributes.Covariant,
+                    GenericParameterAttributes.None,
+                    GenericParameterAttributes.None
+                }));
+            Assert.That(
+                typeof(MappingBuilder<,,>).GetInterfaces()
+                    .Select(type => type.GetGenericTypeDefinition()),
+                Is.EqualTo(new[] { typeof(IMappingBuilder<,,>) }));
+            Assert.That(
                 GetImplicitOperatorCount(typeof(AutoMarker<>)),
                 Is.EqualTo(1));
             Assert.That(
@@ -383,6 +397,7 @@ T Morphant.IMapper
   M TDestination Map<TSource, TDestination>(TSource, TDestination)
 T Morphant.IMapperDeclaration
   M System.Boolean Supports(System.Type, System.Type)
+T Morphant.IMappingBuilder<TMapper, TSource, TDestination>
 T Morphant.ITypeMapper<TSource, TDestination>
   M TDestination Create(TSource, Morphant.Context.MappingContext)
   M TDestination Update(TSource, TDestination, Morphant.Context.MappingContext)

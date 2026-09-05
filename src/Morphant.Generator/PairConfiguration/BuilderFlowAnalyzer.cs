@@ -98,7 +98,7 @@ internal static class BuilderFlowAnalyzer
             semanticModel.GetSymbolInfo(
                 invocation,
                 cancellationToken).Symbol is not IMethodSymbol method ||
-            !IsGeneratedConfigurationMethod(method))
+            !IsGeneratedConfigurationMethod(method, semanticModel.Compilation))
         {
             return flowBreak;
         }
@@ -138,7 +138,7 @@ internal static class BuilderFlowAnalyzer
                 return false;
             }
 
-            if (!IsGeneratedConfigurationMethod(method) &&
+            if (!IsGeneratedConfigurationMethod(method, semanticModel.Compilation) &&
                 !IsIncludeMembersMethod(method))
             {
                 var containingType =
@@ -283,7 +283,7 @@ internal static class BuilderFlowAnalyzer
 
         if (symbol is not null)
         {
-            if (IsGeneratedConfigurationMethod(symbol) ||
+            if (IsGeneratedConfigurationMethod(symbol, semanticModel.Compilation) ||
                 IsIncludeMembersMethod(symbol))
             {
                 return true;
@@ -943,7 +943,7 @@ internal static class BuilderFlowAnalyzer
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        if (IsGeneratedConfigurationMethod(method) ||
+        if (IsGeneratedConfigurationMethod(method, semanticModel.Compilation) ||
             !CallbackMethodNames.Contains(method.Name) ||
             GetInvocationReceiver(invocation) is not { } receiver ||
             !IsPairBuilderType(semanticModel.GetTypeInfo(
@@ -1167,7 +1167,7 @@ internal static class BuilderFlowAnalyzer
     {
         if (method is not null)
         {
-            if (IsGeneratedConfigurationMethod(method))
+            if (IsGeneratedConfigurationMethod(method, semanticModel.Compilation))
             {
                 return true;
             }
@@ -1406,13 +1406,15 @@ internal static class BuilderFlowAnalyzer
         return false;
     }
 
-    private static bool IsGeneratedConfigurationMethod(IMethodSymbol method)
+    private static bool IsGeneratedConfigurationMethod(
+        IMethodSymbol method,
+        Compilation compilation)
     {
         var definition = method.ReducedFrom ?? method;
 
         return CallbackMethodNames.Contains(method.Name) &&
                GeneratedMappingExtensionNaming.IsGeneratedMethod(
-                   definition);
+                   definition, compilation);
     }
 
     private static bool IsIncludeMembersMethod(IMethodSymbol method)

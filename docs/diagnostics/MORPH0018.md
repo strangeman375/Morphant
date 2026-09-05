@@ -8,8 +8,10 @@ stored, passed elsewhere, or configured conditionally.
 
 Morphant also reports this diagnostic when a callback call such as `Convert`
 binds to a user-defined or otherwise competing extension method instead of the
-generated Morphant method. Such a call cannot be transferred safely into the
-mapper implementation.
+generated Morphant method for the declared mapping. This includes an unintended
+fallback to a base mapper family's overload when the lambda does not match the
+local mapping. Such a call cannot be transferred safely into the mapper
+implementation.
 
 ## Fix
 
@@ -26,6 +28,7 @@ branch.
 
 If the diagnostic points to a fluent callback method, remove or rename the
 competing extension overload, or call it outside the Morphant configuration
-chain.
+chain. In a reusable mapper family, also check that the callback uses the types
+and tuple element names declared by its own `Map` registration.
 
 [All diagnostics](../diagnostics.md)
