@@ -19,7 +19,7 @@ const string header = "#nullable enable\n#pragma warning disable CS1591\nusing A
 const string runtimeSource = """
 namespace Audit
 {
-    public interface IMappingBuilder<out TOwner, TBuilder> { }
+    public interface IMappingBuilder<out TOwner, S, D> { }
     public abstract class MapperBuilderBase<TBuilder>
     {
         public TBuilder Setting() => throw new System.NotSupportedException();
@@ -34,7 +34,7 @@ namespace Audit
     }
     public sealed class MappingBuilder<TMapper, S, D> :
         MapperBuilderBase<MappingBuilder<TMapper, S, D>>,
-        IMappingBuilder<TMapper, MappingBuilder<TMapper, S, D>>
+        IMappingBuilder<TMapper, S, D>
         where TMapper : TypeMapper<TMapper> { }
 }
 """;
@@ -70,11 +70,11 @@ namespace Shared
 }
 """;
 
-foreach (var variant in new[] { "baseline", "names-only", "marker-only", "selected" })
-foreach (var mode in new[] { "shared", "nullable", "tuple", "family" })
+foreach (var variant in new[] { "specialized" })
+foreach (var mode in new[] { "ordinary", "nullable", "tuple", "family" })
 {
-    if (variant != "selected" && mode != "shared") continue;
-    foreach (var friend in variant == "selected" ? new[] { false, true } : new[] { true })
+
+    foreach (var friend in new[] { false, true })
     {
         var producer = Compile("AuditProducer", CrossSource("Producer", mode, variant, friend), runtimeRef);
         EnsureClean(producer);
@@ -82,40 +82,41 @@ foreach (var mode in new[] { "shared", "nullable", "tuple", "family" })
         {
             var producerRef = shape == "source" ? producer.ToMetadataReference() : Emit(producer, shape == "ref");
             var consumer = Compile("AuditConsumer", CrossSource("Consumer", mode, variant, false), runtimeRef, producerRef);
-            var expected = mode == "shared" ? "object" : mode == "family" ? "Audit.ConsumerMapper<TMapper, T>" : "Audit.ConsumerMapper";
+            var expected = mode == "family" ? "Audit.ConsumerMapper<TMapper, T>" : "Audit.ConsumerMapper";
             Observe($"cross-{variant}-{mode}-{(friend ? "friend" : "isolated")}-{shape}", consumer, expected);
         }
     }
 }
-var legacyProducer = Compile("AuditProducer", CrossSource("Producer", "shared", "baseline", true), runtimeRef);
+var legacyProducer = Compile("AuditProducer", CrossSource("Producer", "ordinary", "baseline", true), runtimeRef);
 EnsureClean(legacyProducer);
 foreach (var shape in new[] { "source", "dll", "ref" })
 {
     var producerRef = shape == "source" ? legacyProducer.ToMetadataReference() : Emit(legacyProducer, shape == "ref");
-    Observe("old-producer-selected-consumer-" + shape,
-        Compile("AuditConsumer", CrossSource("Consumer", "shared", "selected", false), runtimeRef, producerRef), "object");
+    Observe("old-producer-specialized-consumer-" + shape,
+        Compile("AuditConsumer", CrossSource("Consumer", "ordinary", "specialized", false), runtimeRef, producerRef), "Audit.ConsumerMapper");
 }
 foreach (var mode in new[] { "generic", "generic-nested", "same-constraints", "tuple", "dynamic", "nullable" })
-foreach (var variant in new[] { "baseline", "deduplicate", "nominal" })
+foreach (var variant in new[] { "nominal" })
 {
-    if (variant == "deduplicate" && mode != "tuple") continue;
     var family = Compile("AuditFamily", FamilySource(mode, variant), runtimeRef);
     Observe($"related-{mode}-{variant}", family, "by-context");
 }
+foreach (var mode in new[] { "generic", "tuple" })
+    Observe("direct-family-control-" + mode, Compile("AuditFamily", FamilySource(mode, "baseline"), runtimeRef), "by-context");
 var invalidDerivedTuple = Compile("AuditInvalidTuple", FamilySource("tuple", "nominal")
     .Replace("(s.Item1)", "(s.Id)"), runtimeRef);
 Observe("invalid-derived-tuple-falls-back-to-base", invalidDerivedTuple, "by-context");
 var mixedWithoutLocal = Compile("AuditMixedWithoutLocal", MixedSource(includeLocal: false), runtimeRef);
-Observe("shared-derived-without-local-surface", mixedWithoutLocal, "by-context");
+Observe("derived-without-local-surface", mixedWithoutLocal, "by-context");
 var mixed = Compile("AuditMixed", MixedSource(), runtimeRef);
-Observe("non-partial-base-shared-and-local-override", mixed, "by-context");
-var missingRequired = Compile("AuditRequired", CrossSource("Consumer", "shared", "selected", false)
+Observe("non-partial-base-and-local-overrides", mixed, "by-context");
+var missingRequired = Compile("AuditRequired", CrossSource("Consumer", "ordinary", "specialized", false)
     .Replace("new(s.Id)", "new()") + models, runtimeRef);
-Observe("required-construction-argument", missingRequired, "object");
+Observe("required-construction-argument", missingRequired, "Audit.ConsumerMapper");
 
 var unexpected = results.Where(r =>
-    r.Name.StartsWith("cross-selected-") || r.Name.EndsWith("-nominal") ||
-    r.Name == "non-partial-base-shared-and-local-override")
+    r.Name.StartsWith("cross-specialized-") || r.Name.StartsWith("old-producer-specialized-consumer-") || r.Name.EndsWith("-nominal") ||
+    r.Name == "non-partial-base-and-local-overrides")
     .Where(r => r.Diagnostics.Count != 0 || r.BindingMismatches != 0).Select(r => r.Name).ToArray();
 File.WriteAllText(Path.Combine(outputRoot, "summary.json"), JsonSerializer.Serialize(new
 {
@@ -161,12 +162,13 @@ void Observe(string name, CSharpCompilation compilation, string expected)
             var method = model.GetSymbolInfo(x).Symbol as IMethodSymbol;
             var definition = method?.ReducedFrom ?? method;
             var receiver = definition?.Parameters[0].Type as INamedTypeSymbol;
-            var owner = receiver?.Name == "IMappingBuilder" ? receiver.TypeArguments[0].ToDisplayString() : "UNSCOPED";
+            var owner = receiver?.Name is "IMappingBuilder" or "MappingBuilder" ? receiver.TypeArguments[0].ToDisplayString() : "UNSCOPED";
             var expectedOwner = expected == "by-context" ? context switch
             {
                 "Root" => (name.Contains("generic") || name.Contains("same-constraints")) ? "Audit.Root<TMapper, T>" : "Audit.Root<TMapper>",
                 "Derived" => name.Contains("generic") || name.Contains("same-constraints") ? "Audit.Derived<TMapper, T>" : "Audit.Derived<TMapper>",
                 "Local" => "Audit.Local",
+                "Direct" => "Audit.Direct",
                 _ => "object"
             } : expected;
             return new Binding(context, method?.Name ?? "UNBOUND", owner,
@@ -190,7 +192,7 @@ string Extensions(string name, string mapper, string owner, string source, strin
     string generic, string constraints, bool nominal, string field = "Id")
 {
     var builder = $"MappingBuilder<{mapper}, {source}, {destination}>";
-    var receiver = nominal ? $"IMappingBuilder<{owner}, {builder}>" : owner == "object" ? $"MapperBuilderBase<{builder}>" : builder;
+    var receiver = nominal && mapper == "TMapper" ? $"IMappingBuilder<{owner}, {source}, {destination}>" : owner == "object" ? $"MapperBuilderBase<{builder}>" : builder;
     var planArguments = generic.Contains(", T") ? destination["Shared.Destination".Length..] : "";
     var construction = plan + ".DestinationConstruction" + planArguments;
     var members = plan + ".DestinationMembers" + planArguments;
@@ -221,24 +223,23 @@ string Calls(string source, string destination, string plan, bool explicitNames 
 string CrossSource(string side, string mode, string variant, bool friend)
 {
     var family = mode == "family";
-    var names = variant is "selected" or "names-only";
-    var nominal = variant is "selected" or "marker-only";
+    var names = variant == "specialized";
+    var nominal = variant == "specialized";
     var scope = "Audit.Generated.A_" + side;
     var plan = names ? scope + ".Plans" : "Audit.Generated.Plans";
     var source = family ? "Shared.Source<T>" : mode == "tuple" ? "(int Id, int Other)" : "Shared.Source" + (mode == "nullable" ? "?" : "");
     var destination = family ? "Shared.Destination<T>" : mode == "tuple" ? "(int Id, int Other)" : "Shared.Destination" + (mode == "nullable" ? "?" : "");
-    var mapper = mode == "shared" || family ? "TMapper" : side + "Mapper";
-    var owner = mode == "shared" ? "object" : side + "Mapper" + (family ? "<TMapper, T>" : "");
-    var generic = family ? "<TMapper, T>" : mode == "shared" ? "<TMapper>" : "";
+    var mapper = family || mode == "ordinary" && variant == "baseline" ? "TMapper" : side + "Mapper";
+    var owner = mode == "ordinary" && variant == "baseline" ? "object" : side + "Mapper" + (family ? "<TMapper, T>" : "");
+    var generic = family ? "<TMapper, T>" : mode == "ordinary" && variant == "baseline" ? "<TMapper>" : "";
     var constraints = family ? $"where TMapper : {side}Mapper<TMapper, T> where T : class" + (side == "Consumer" ? ", new()" : "")
-        : mode == "shared" ? $"where TMapper : TypeMapper<TMapper>" + (nominal ? $", {scope}.LocalMapper" : "") : "";
+        : mode == "ordinary" && variant == "baseline" ? "where TMapper : TypeMapper<TMapper>" : "";
     return header + (friend ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"AuditConsumer\")]\n" : "") +
         (side == "Producer" ? models : "") + Plans(plan, family) +
-        $"namespace {scope} {{ internal interface LocalMapper {{ }} }}\n" +
-        $"namespace Audit {{ public partial class {side}Mapper{(family ? "<TMapper, T>" : "")} : TypeMapper<{(family ? "TMapper" : side + "Mapper")}>, {scope}.LocalMapper " +
+        $"namespace Audit {{ public partial class {side}Mapper{(family ? "<TMapper, T>" : "")} : TypeMapper<{(family ? "TMapper" : side + "Mapper")}> " +
         (family ? constraints : "") + " { protected override void Configure(MapperBuilder builder) {\n" +
-        Calls(source, destination, plan, mode == "shared") + "\n} } }\n" +
-        Extensions("Extensions", mapper, owner, source, destination, plan, generic, constraints, nominal || mode != "shared");
+        Calls(source, destination, plan, mode == "ordinary") + "\n} } }\n" +
+        Extensions("Extensions", mapper, owner, source, destination, plan, generic, constraints, nominal || mode != "ordinary");
 }
 string FamilySource(string mode, string variant)
 {
@@ -255,17 +256,17 @@ string FamilySource(string mode, string variant)
         $"namespace Audit {{ public abstract class Root{familyArgs} : TypeMapper<TMapper> {rootConstraints} {{ protected override void Configure(MapperBuilder builder) {{ " + Calls(source, destination, plan) + " } }\n" +
         $"public abstract class Derived{familyArgs} : Root{(mode == "generic-nested" ? "<TMapper, System.Collections.Generic.List<T>>" : familyArgs)} {derivedConstraints} {{ protected override void Configure(MapperBuilder builder) {{ " + Calls(localSource, localDestination, plan) + " } } }\n";
     result += Extensions(variant == "baseline" ? "RootExtensions" : "Extensions", "TMapper", "Root" + familyArgs, source, destination, plan, familyArgs, rootConstraints, variant != "baseline");
-    if (variant != "deduplicate") result += Extensions(variant == "baseline" ? "DerivedExtensions" : "Extensions", "TMapper", "Derived" + familyArgs, localSource, localDestination, plan, familyArgs, derivedConstraints, variant != "baseline");
+    result += Extensions(variant == "baseline" ? "DerivedExtensions" : "Extensions", "TMapper", "Derived" + familyArgs, localSource, localDestination, plan, familyArgs, derivedConstraints, variant != "baseline");
     return result;
 }
 string MixedSource(bool includeLocal = true)
 {
     const string plan = "Audit.Generated.Plans";
-    var result = header + models + Plans(plan) + "namespace Audit { internal interface LocalMapper { }\n" +
+    var result = header + models + Plans(plan) + "namespace Audit {\n" +
         "public abstract class Root<TMapper> : TypeMapper<TMapper> where TMapper : Root<TMapper> { protected override void Configure(MapperBuilder builder) { " + Calls("Shared.Source?", "Shared.Destination?", plan) + " } }\n" +
-        "public partial class Local : Root<Local>, LocalMapper { protected override void Configure(MapperBuilder builder) { " + Calls("Shared.Source", "Shared.Destination", plan, true) + " } }\n" +
-        "public partial class Direct : TypeMapper<Direct>, LocalMapper { protected override void Configure(MapperBuilder builder) { " + Calls("Shared.Source", "Shared.Destination", plan, true) + " } } }\n";
-    result += Extensions("Extensions", "TMapper", "object", "Shared.Source", "Shared.Destination", plan, "<TMapper>", "where TMapper : TypeMapper<TMapper>, LocalMapper", true);
+        "public partial class Local : Root<Local> { protected override void Configure(MapperBuilder builder) { " + Calls("Shared.Source", "Shared.Destination", plan, true) + " } }\n" +
+        "public partial class Direct : TypeMapper<Direct> { protected override void Configure(MapperBuilder builder) { " + Calls("Shared.Source", "Shared.Destination", plan, true) + " } } }\n";
+    result += Extensions("Extensions", "Direct", "Direct", "Shared.Source", "Shared.Destination", plan, "", "", true);
     result += Extensions("Extensions", "TMapper", "Root<TMapper>", "Shared.Source?", "Shared.Destination?", plan, "<TMapper>", "where TMapper : Root<TMapper>", true);
     if (includeLocal) result += Extensions("Extensions", "Local", "Local", "Shared.Source", "Shared.Destination", plan, "", "", true);
     return result;

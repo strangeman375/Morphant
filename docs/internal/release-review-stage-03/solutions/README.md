@@ -1,18 +1,19 @@
-# Compiler-прототип решений S03-01–S03-03
+# Compiler-прототип специализированных расширений
 
-Обоснование: [выбранные решения](../../RELEASE_REVIEW_STAGE_03_SOLUTIONS.md).
+Обоснование: [решения S03-01–S03-03](../../RELEASE_REVIEW_STAGE_03_SOLUTIONS.md).
 
-Это исследовательская проверка C# receiver, overload resolution и имён типов.
-Она использует настоящие delegates/context-типы Morphant, но тестовые builders
-из namespace `Audit` и минимальные construction/member-классы. Не запускает
-production generator, не вызывает runtime mapper и не является integration
-harness либо снимком production-generated API.
+Прототип обновлён после замечания пользователя о сложности shared-поверхности.
+Проверяемая схема: прямые `MappingBuilder<ConcreteMapper, S, D>` receivers и
+`IMappingBuilder<Family<TMapper, ...>, S, D>` для bare CRTP self. Сборочного
+маркера нет. Неограниченные shared-методы остаются только в контрольном старом
+producer; два direct-family контроля воспроизводят конфликт без covariance.
 
-`TypeMapper`/`MappingBuilder` в строковом fixture моделируют необходимую для
-binding часть контракта. `Setting()` проверяет сохранение полного builder до и
-после callback-вызова. У construction-класса есть обязательный `int`-аргумент;
-реальные constructor overloads, marker conversions, типы полей и XML здесь не
-моделируются. Их сохранение проверяется production-тестами при внедрении.
+Это compiler-эксперимент: настоящие delegates/context-типы Morphant,
+тестовые builders в namespace `Audit`, минимальные construction/member-классы.
+Production generator и runtime mapper не запускаются. `Setting()` проверяет
+полный fluent-return до и после callback. Обязательный `int`-аргумент
+construction-класса проверяется отдельно; реальные constructor overloads,
+marker conversions, input annotations и XML здесь не моделируются.
 
 ## Запуск
 
@@ -21,54 +22,46 @@ binding часть контракта. `Setting()` проверяет сохра
 ```sh
 dotnet restore docs/internal/release-review-stage-03/solutions/SurfaceProbe.csproj --disable-parallel -m:1 -nodeReuse:false
 dotnet build docs/internal/release-review-stage-03/solutions/SurfaceProbe.csproj -c Release --no-restore -m:1 -nodeReuse:false
-dotnet docs/internal/release-review-stage-03/solutions/bin/Release/net10.0/SurfaceProbe.dll artifacts/release-review/stage-03/solution-matrix
+dotnet docs/internal/release-review-stage-03/solutions/bin/Release/net10.0/SurfaceProbe.dll artifacts/release-review/stage-03/specialized-matrix
 ```
 
-В рабочем окружении этой проверки вместо `dotnet` использовать
-`/workspace/morphant-tools/dotnet`, который задаёт SDK и расположение кешей.
-Single-process MSBuild нужен также при restore: обычный запуск здесь мог
-завершаться с code 1 без опубликованных build errors.
+В текущем рабочем окружении вместо `dotnet` использовать
+`/workspace/morphant-tools/dotnet`; single-process MSBuild требуется и для
+restore. Сохранённый [results.json](results.json) — компактный `summary.json`
+запуска. Исходные consumer fixtures, diagnostics и полные сведения о каждом
+binding воспроизводятся под `artifacts` и не добавляются в git.
 
-Сохранённый [results.json](results.json) — компактный `summary.json` запуска.
-Каталог под `artifacts` содержит все исходные consumer fixtures, diagnostics и
-полные сведения о binding каждого вызова. Эти воспроизводимые промежуточные
-выходы не добавляются в git.
+## Матрица и результаты
 
-## Что проверяется
+39 сравнительных компиляций, C# 9, nullable enabled, Roslyn 4.4.0:
 
-- Все 15 перегрузок и явные имена construction/member-типов.
-- IVT и отсутствие IVT, source-backed reference, DLL и reference assembly.
-- Раздельные причины: старый receiver, только namespace, только маркер,
-  выбранное сочетание. Shared, nullable, tuple и unrelated generic families.
-- Связанные CRTP-семейства без `base.Configure`: одинаковые и разные
-  constraints, вложенная generic-подстановка, разные tuple names,
-  `dynamic`/`object` и recursive nullability.
-- Non-partial база, её локальное переопределение и независимый shared-маппер.
-- Откат ошибочной лямбды к базовому методу, потеря presentation при объединении
-  семейств и отсутствие собственного receiver у производного маппера.
-- Обязательный аргумент construction-класса.
-- Старый producer с неограниченными расширениями и новый consumer.
+- 24 consumer compilation: ordinary/nullable/tuple/unrelated family,
+  IVT on/off, source/DLL/reference assembly.
+- 3 consumer compilation со старой shared-поверхностью producer.
+- 6 related family compilation: generic, вложенная generic-подстановка,
+  одинаковые constraints, tuple names, `dynamic`/`object`, recursive nullability.
+- 1 non-partial nullable-база с собственными local/direct receivers.
+- 5 отрицательных контролей: два прямых family receivers, ошибочная лямбда с
+  откатом к базе, отсутствие local surface и пропущенный required argument.
 
-Входной язык всегда C# 9, nullable enabled; Roslyn 4.4.0. Reference assembly
+Все 34 положительных сценария чистые; проверено 652 callback-binding, включая
+все 15 перегрузок и явные имена construction/member-типов. Shared model types
+в межсборочных проверках объявлены только в producer. Reference assembly
 emitted отдельно с `metadataOnly: true, includePrivateMembers: false`.
-Producer и consumer ссылаются на одни и те же типы моделей; модели определены
-только в producer. Проверка source-backed reference не означает проверку IDE.
+Source-backed reference — `CSharpCompilationReference`, не IDE-проверка.
 
-Всего 53 сравнительных компиляции. 31 положительный сценарий выбранной формы
-прошёл без предупреждений и ошибок; проверен 601 callback-binding. Остальные
-сценарии — сравнительные и отрицательные контроли, а не незакрытые ошибки
-положительной матрицы. В частности, `related-generic-nested-baseline` является
-чистым контролем старой формы.
+`BindingMismatches` сравнивает receiver с ожидаемым владельцем. Прямой
+`MappingBuilder` сообщает конкретный self, ковариантный `IMappingBuilder` —
+номинальное семейство. В direct-family контролях одинаковый bare `TMapper`
+не различает владельцев; C# сообщает `CS0121` в производном теле. Эти результаты
+не считаются дефектами положительной матрицы.
 
-`BindingMismatches` сравнивает выбранный receiver с ожидаемым владельцем новой
-формы. У старой формы owner записывается как `UNSCOPED`; счётчик сам по себе
-не доказывает неправильное поведение baseline. Нативные ошибки сохраняются
-отдельно в `Diagnostics`. У номинальных вариантов несовпадения показывают
-именно другого владельца: 15 при tuple-deduplication, 11 при ошибочном откате к
-базе, 17 при отсутствии локальной поверхности у производного маппера.
+При ошибочной tuple-лямбде 11 вызовов выбирают базу без diagnostics C#; при
+отсутствии local surface 17 вызовов выбирают базу и появляются `CS8620`.
+Пропуск обязательного аргумента даёт `CS7036`. Предлагаемая семантическая
+защита от ошибочного binding в генераторе здесь не реализована.
 
 Программа требует чистой компиляции producer и завершится ошибкой при
 warnings/errors или неверном владельце в положительной матрице. Отрицательные
-контроли сохраняются для отдельного просмотра; отсутствие ошибки C# в них
-может быть исследуемым дефектом, как в случае отката к базе. Предлагаемая
-семантическая проверка генератора в этом прототипе не реализована.
+контроли сохраняются для отдельного просмотра. Это не production integration
+harness, полная проверка input contract или проверка совместимости пакетов.

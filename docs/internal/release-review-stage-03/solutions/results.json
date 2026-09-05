@@ -5,255 +5,166 @@
   "Unexpected": [],
   "Cases": [
     {
-      "Name": "cross-baseline-shared-friend-source",
-      "Diagnostics": {
-        "CS0436": 10,
-        "CS0121": 15
-      },
-      "Bindings": 17,
-      "BindingMismatches": 17
-    },
-    {
-      "Name": "cross-baseline-shared-friend-dll",
-      "Diagnostics": {
-        "CS0436": 10,
-        "CS0121": 15
-      },
-      "Bindings": 17,
-      "BindingMismatches": 17
-    },
-    {
-      "Name": "cross-baseline-shared-friend-ref",
-      "Diagnostics": {
-        "CS0436": 10,
-        "CS0121": 15
-      },
-      "Bindings": 17,
-      "BindingMismatches": 17
-    },
-    {
-      "Name": "cross-names-only-shared-friend-source",
-      "Diagnostics": {
-        "CS0121": 15
-      },
-      "Bindings": 17,
-      "BindingMismatches": 17
-    },
-    {
-      "Name": "cross-names-only-shared-friend-dll",
-      "Diagnostics": {
-        "CS0121": 15
-      },
-      "Bindings": 17,
-      "BindingMismatches": 17
-    },
-    {
-      "Name": "cross-names-only-shared-friend-ref",
-      "Diagnostics": {
-        "CS0121": 15
-      },
-      "Bindings": 17,
-      "BindingMismatches": 17
-    },
-    {
-      "Name": "cross-marker-only-shared-friend-source",
-      "Diagnostics": {
-        "CS0436": 10
-      },
-      "Bindings": 17,
-      "BindingMismatches": 0
-    },
-    {
-      "Name": "cross-marker-only-shared-friend-dll",
-      "Diagnostics": {
-        "CS0436": 10
-      },
-      "Bindings": 17,
-      "BindingMismatches": 0
-    },
-    {
-      "Name": "cross-marker-only-shared-friend-ref",
-      "Diagnostics": {
-        "CS0436": 10
-      },
-      "Bindings": 17,
-      "BindingMismatches": 0
-    },
-    {
-      "Name": "cross-selected-shared-isolated-source",
+      "Name": "cross-specialized-ordinary-isolated-source",
       "Diagnostics": {},
       "Bindings": 17,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-shared-isolated-dll",
+      "Name": "cross-specialized-ordinary-isolated-dll",
       "Diagnostics": {},
       "Bindings": 17,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-shared-isolated-ref",
+      "Name": "cross-specialized-ordinary-isolated-ref",
       "Diagnostics": {},
       "Bindings": 17,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-shared-friend-source",
+      "Name": "cross-specialized-ordinary-friend-source",
       "Diagnostics": {},
       "Bindings": 17,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-shared-friend-dll",
+      "Name": "cross-specialized-ordinary-friend-dll",
       "Diagnostics": {},
       "Bindings": 17,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-shared-friend-ref",
+      "Name": "cross-specialized-ordinary-friend-ref",
       "Diagnostics": {},
       "Bindings": 17,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-nullable-isolated-source",
+      "Name": "cross-specialized-nullable-isolated-source",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-nullable-isolated-dll",
+      "Name": "cross-specialized-nullable-isolated-dll",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-nullable-isolated-ref",
+      "Name": "cross-specialized-nullable-isolated-ref",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-nullable-friend-source",
+      "Name": "cross-specialized-nullable-friend-source",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-nullable-friend-dll",
+      "Name": "cross-specialized-nullable-friend-dll",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-nullable-friend-ref",
+      "Name": "cross-specialized-nullable-friend-ref",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-tuple-isolated-source",
+      "Name": "cross-specialized-tuple-isolated-source",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-tuple-isolated-dll",
+      "Name": "cross-specialized-tuple-isolated-dll",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-tuple-isolated-ref",
+      "Name": "cross-specialized-tuple-isolated-ref",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-tuple-friend-source",
+      "Name": "cross-specialized-tuple-friend-source",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-tuple-friend-dll",
+      "Name": "cross-specialized-tuple-friend-dll",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-tuple-friend-ref",
+      "Name": "cross-specialized-tuple-friend-ref",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-family-isolated-source",
+      "Name": "cross-specialized-family-isolated-source",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-family-isolated-dll",
+      "Name": "cross-specialized-family-isolated-dll",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-family-isolated-ref",
+      "Name": "cross-specialized-family-isolated-ref",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-family-friend-source",
+      "Name": "cross-specialized-family-friend-source",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-family-friend-dll",
+      "Name": "cross-specialized-family-friend-dll",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "cross-selected-family-friend-ref",
+      "Name": "cross-specialized-family-friend-ref",
       "Diagnostics": {},
       "Bindings": 15,
       "BindingMismatches": 0
     },
     {
-      "Name": "old-producer-selected-consumer-source",
-      "Diagnostics": {
-        "CS0121": 15
-      },
+      "Name": "old-producer-specialized-consumer-source",
+      "Diagnostics": {},
       "Bindings": 17,
-      "BindingMismatches": 15
+      "BindingMismatches": 0
     },
     {
-      "Name": "old-producer-selected-consumer-dll",
-      "Diagnostics": {
-        "CS0121": 15
-      },
+      "Name": "old-producer-specialized-consumer-dll",
+      "Diagnostics": {},
       "Bindings": 17,
-      "BindingMismatches": 15
+      "BindingMismatches": 0
     },
     {
-      "Name": "old-producer-selected-consumer-ref",
-      "Diagnostics": {
-        "CS0121": 15
-      },
+      "Name": "old-producer-specialized-consumer-ref",
+      "Diagnostics": {},
       "Bindings": 17,
-      "BindingMismatches": 15
-    },
-    {
-      "Name": "related-generic-baseline",
-      "Diagnostics": {
-        "CS0121": 15
-      },
-      "Bindings": 30,
-      "BindingMismatches": 30
+      "BindingMismatches": 0
     },
     {
       "Name": "related-generic-nominal",
@@ -262,24 +173,10 @@
       "BindingMismatches": 0
     },
     {
-      "Name": "related-generic-nested-baseline",
-      "Diagnostics": {},
-      "Bindings": 30,
-      "BindingMismatches": 30
-    },
-    {
       "Name": "related-generic-nested-nominal",
       "Diagnostics": {},
       "Bindings": 30,
       "BindingMismatches": 0
-    },
-    {
-      "Name": "related-same-constraints-baseline",
-      "Diagnostics": {
-        "CS0121": 15
-      },
-      "Bindings": 30,
-      "BindingMismatches": 30
     },
     {
       "Name": "related-same-constraints-nominal",
@@ -288,32 +185,10 @@
       "BindingMismatches": 0
     },
     {
-      "Name": "related-tuple-baseline",
-      "Diagnostics": {
-        "CS0121": 15
-      },
-      "Bindings": 30,
-      "BindingMismatches": 30
-    },
-    {
-      "Name": "related-tuple-deduplicate",
-      "Diagnostics": {},
-      "Bindings": 30,
-      "BindingMismatches": 15
-    },
-    {
       "Name": "related-tuple-nominal",
       "Diagnostics": {},
       "Bindings": 30,
       "BindingMismatches": 0
-    },
-    {
-      "Name": "related-dynamic-baseline",
-      "Diagnostics": {
-        "CS0121": 15
-      },
-      "Bindings": 30,
-      "BindingMismatches": 30
     },
     {
       "Name": "related-dynamic-nominal",
@@ -322,7 +197,13 @@
       "BindingMismatches": 0
     },
     {
-      "Name": "related-nullable-baseline",
+      "Name": "related-nullable-nominal",
+      "Diagnostics": {},
+      "Bindings": 30,
+      "BindingMismatches": 0
+    },
+    {
+      "Name": "direct-family-control-generic",
       "Diagnostics": {
         "CS0121": 15
       },
@@ -330,10 +211,12 @@
       "BindingMismatches": 30
     },
     {
-      "Name": "related-nullable-nominal",
-      "Diagnostics": {},
+      "Name": "direct-family-control-tuple",
+      "Diagnostics": {
+        "CS0121": 15
+      },
       "Bindings": 30,
-      "BindingMismatches": 0
+      "BindingMismatches": 30
     },
     {
       "Name": "invalid-derived-tuple-falls-back-to-base",
@@ -342,7 +225,7 @@
       "BindingMismatches": 11
     },
     {
-      "Name": "shared-derived-without-local-surface",
+      "Name": "derived-without-local-surface",
       "Diagnostics": {
         "CS8620": 17
       },
@@ -350,7 +233,7 @@
       "BindingMismatches": 17
     },
     {
-      "Name": "non-partial-base-shared-and-local-override",
+      "Name": "non-partial-base-and-local-overrides",
       "Diagnostics": {},
       "Bindings": 49,
       "BindingMismatches": 0
