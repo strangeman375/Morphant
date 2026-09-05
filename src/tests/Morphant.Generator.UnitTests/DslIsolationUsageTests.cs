@@ -170,8 +170,8 @@ public partial class ConsumerMapper : TypeMapper<ConsumerMapper>
         AssertClean(consumer);
     }
 
-    [Test]
-    public void Invalid_derived_tuple_callback_cannot_fall_back_to_the_base_family()
+    [TestCaseSource(nameof(Callbacks))]
+    public void Invalid_derived_tuple_callback_is_rejected_and_recovers_after_edit(string callback)
     {
         // lang=c#
         const string source =
@@ -196,7 +196,7 @@ public abstract class Derived<TMapper> : Root<TMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
         builder.Map<(int Code, int Other), Destination>()
-            .Convert(s => new Destination(s.Id));
+            __CALLBACK__;
 }
 [MorphantMapper]
 public partial class RootMapper : Root<RootMapper>
@@ -209,17 +209,36 @@ public partial class DerivedMapper : Derived<DerivedMapper>
     protected override void Configure(MapperBuilder builder) => base.Configure(builder);
 }
 """;
-        var result = GeneratorTestDriver.Run(
-            "InvalidFamilyCallback", source, LanguageVersion.CSharp9);
-        Assert.Multiple(() =>
+        var invalidSource = source.Replace("__CALLBACK__",
+            callback.Replace("__DESTINATION__", "Destination"));
+        var invalid = GeneratorTestDriver.Run(
+            "InvalidFamilyCallback", invalidSource, LanguageVersion.CSharp9);
+        AssertRejected(invalid);
+
+        var repairedSource = source.Replace("__CALLBACK__",
+            callback.Replace("__DESTINATION__", "Destination").Replace(".Id", ".Code"));
+        var repaired = GeneratorTestDriver.Run(
+            "InvalidFamilyCallback", repairedSource, LanguageVersion.CSharp9,
+            driver: invalid.Driver);
+        AssertClean(repaired);
+
+        var invalidAgain = GeneratorTestDriver.Run(
+            "InvalidFamilyCallback", invalidSource, LanguageVersion.CSharp9,
+            driver: repaired.Driver);
+        AssertRejected(invalidAgain);
+
+        void AssertRejected(GeneratorTestDriverResult result)
         {
-            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
-            Assert.That(result.Diagnostics.Select(diagnostic => diagnostic.Id),
-                Is.EqualTo(new[] { "MORPH0018" }));
-            Assert.That(result.Diagnostics.Select(diagnostic =>
-                    GeneratorTestDriver.GetSourceText(diagnostic.Location)),
-                Is.EqualTo(new[] { "Convert" }));
-        });
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+                Assert.That(result.Diagnostics.Select(diagnostic => diagnostic.Id),
+                    Is.EqualTo(new[] { "MORPH0018" }));
+                Assert.That(result.Diagnostics.Select(diagnostic =>
+                        GeneratorTestDriver.GetSourceText(diagnostic.Location)),
+                    Is.EqualTo(new[] { callback[1..callback.IndexOf('(')] }));
+            });
+        }
     }
 
     private static void AssertClean(GeneratorTestDriverResult result)
