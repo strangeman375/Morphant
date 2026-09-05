@@ -292,17 +292,17 @@ builder.Map<Source, (int Count, int Id)>();
 | ReadOnlyResult: исправленная форма через generated `members.Child` | Build exit 0, 0 warnings/errors; runtime `Child.Id=42`, process exit 0 |
 | SurfaceVolume: две обычные shared и две tuple scoped регистрации | Build exit 0, 0 warnings/errors; измеренные counts и правильные runtime-значения, process exit 0 |
 
-Новые полные unit/integration suite, реальный Rider и новые межсборочные IVT-repro на этом этапе не запускались. Исходный CI и тесты первого этапа не пересчитываются как новые результаты. Native errors в намеренно неверных пробах — ожидаемое наблюдение, а не сломанная основная solution.
+Во время исходного аудита полные unit/integration suite, реальный Rider и новые межсборочные IVT-repro не запускались. Исходный CI и тесты первого этапа не пересчитываются как новые результаты. Native errors в намеренно неверных пробах — ожидаемое наблюдение, а не сломанная основная solution. Проверки согласованных после ревью уточнений приведены в разделе 12.
 
 ## 11. Рекомендации, регрессии и переход к следующим этапам
 
 | ID | Предлагаемое действие | Необходимая проверка | Где продолжить |
 | --- | --- | --- | --- |
 | S02-01 | Решено: сохранить управление nullable-аннотацией через `TDestination`; кратко объяснить ответственность вызывающего кода | Consumer flow analysis вместе с runtime null cases, factories/manual/nested paths | Решение принято; семантическая проверка на этапах 4/8 |
-| S02-02 | Уточнить `MORPH0046`/help для standalone selector; не снимать ограничение автоматически | Ошибочная и правильная формы, точный span, readonly lifecycle и null-skip; отдельные regression tests | Этапы 5/8/9/12 |
-| S02-03 | Прямо объяснить `new(...)` в Construct/Resolve; поправить tuple constructor terminology | Компилируемые примеры правильной формы и expected native errors неправильной; XML consistency | Этапы 4/9/12 |
-| S02-04 | Сделать Destination completeness validation заметной в quick start; default не менять без решения | Включённая/выключенная проверка, несовместимый тип, deliberate Ignore, partial mapping | Этапы 9/12 |
-| S02-05 | Короткая миграция с 0.4.0, включая иерархии и явные builder/plan references | Компилируемые migrated consumers и окончательные package notes/version | Этапы 3/11/12 |
+| S02-02 | Текст `MORPH0046`/help уточнён, регрессии проверены; ограничение формы сохранено | Полная проверка readonly lifecycle и null-skip | Этапы 5/8/9/12 |
+| S02-03 | Синтаксис `new(...)` и tuple constructor terminology уточнены в справочнике и IntelliSense | Полная матрица construction и XML consistency | Этапы 4/9/12 |
+| S02-04 | Destination validation показана в quick start; default сохранён | Полная проверка включённой/выключенной настройки, deliberate Ignore и partial mapping | Этапы 9/12 |
+| S02-05 | Короткая миграция с 0.4.0 добавлена в changelog | Компилируемые migrated consumers и окончательные package notes/version | Этапы 3/11/12 |
 
 Строки F02–F20, F24–F26 исходного реестра рассмотрены здесь на уровне пользовательского дизайна; F04/Q08 дополнены измерением и обоснованием категорий. Q07 дополнен маршрутом миграции. Их implementation-проверка не считается закрытой этим этапом. Q01–Q04 про конкуренцию DSL остаются открытыми; результаты SurfaceVolume внутри одной сборки не отвечают на IVT-вопрос.
 
@@ -316,4 +316,20 @@ builder.Map<Source, (int Count, int Id)>();
 - S02-04: первый пример quick start включает Destination validation и кратко объясняет её назначение и выключенный default.
 - S02-05: краткая миграция с 0.4.0 находится в changelog рядом с release changes и ссылается на подробный inheritance guide.
 
-Контрольная точка: изменения подготовлены; новые проверки ещё не выполнены. Публикация этой точки сохраняет работу перед сборкой. Итоговые результаты будут записаны после проверки.
+Изменения опубликованы контрольной точкой `d2c5f4c8d4051ebde09632c5c1145027fe19d507`. [CI этого коммита](https://github.com/strangeman375/Morphant/actions/runs/33965611910) завершился успешно. Статусы сверены с jobs и их полными журналами:
+
+| Проверка | Результат |
+| --- | --- |
+| Release, Ubuntu / Windows / macOS | Каждая сборка: 0 warnings, 0 errors |
+| Unit, Roslyn 4.4.0, Ubuntu / macOS | На каждой ОС: 733 passed, 1 skipped, 0 failed |
+| Unit, Roslyn 4.4.0, Windows | 731 passed, 3 skipped, 0 failed |
+| Unit, Roslyn 4.9.2 | 734 passed, 0 skipped, 0 failed; сборка без warnings/errors |
+| Integration, Ubuntu / Windows / macOS | На каждой ОС: 266 passed, 0 skipped, 0 failed |
+| Пакет, SDK 7.0.100 / MSBuild 17.4 | Build и выполнение consumer — success |
+| Пороги покрытия | CI gate — success |
+
+Пропуски предусмотрены существующими условиями тестов: collection expressions требуют Roslyn 4.8+ и проверены на 4.9.2; два теста directory symlinks пропущены на Windows и пройдены на Ubuntu/macOS. Это не пропуски новых регрессий.
+
+Локальная Release-попытка остановилась до тестов: старые restore assets ссылались на отсутствующий кеш `/root/.nuget/packages`, тогда как зависимости доступны в `/workspace/.nuget/packages`. Она не учитывается как успешная проверка; итоговые сборочные и тестовые доказательства получены из CI точного опубликованного коммита.
+
+Проверены 63 относительные ссылки и anchors изменённых документов, отсутствие устаревших формулировок в публичных docs и `git diff --check`. Механическая проверка подтвердила: в 29 snapshot-файлах изменились только 244 XML-строки с двумя согласованными подсказками. Уточнения этапа завершены; следующий этап аудита не начат.
