@@ -2,39 +2,23 @@
 
 ## Configuration surfaces
 
-Morphant ships the root `Map` operation and common settings as instance APIs.
-It generates type-specific `Construct`, `Resolve`, and `Members` extension
-methods from each declared mapping pair. A mapper identifies its configuration
-scope by deriving from `TypeMapper<TMapper>` with itself as `TMapper`.
+Morphant ships `Map` and common settings as instance APIs. Callback extensions
+are generated for each mapper or reusable mapper family. Independent mappers
+can configure the same types with different tuple names, nullable annotations,
+or `dynamic`/`object` declarations, including in assemblies that expose their
+internals to one another.
 
-The generated surface is selected recursively from the pair as written at the
-`Map` declaration, before inheritance or generic substitution:
+A mapper identifies its configuration by deriving from `TypeMapper<TMapper>`
+with itself as `TMapper`. A reusable base passes the final mapper type through
+its generic hierarchy; see [Configuration inheritance](configuration-inheritance.md).
 
-| Declared source/destination pair | Generated surface |
-|---|---|
-| Contains any type parameter | Mapper-family-scoped |
-| Otherwise contains `ValueTuple`, an explicitly nullable reference, or `dynamic` at any depth | Mapper-scoped |
-| Otherwise | Shared |
-
-The rule is independent of other mappers in the compilation. Adding or
-removing an unrelated mapper therefore does not change an existing surface.
-An open pair remains family-scoped when a derived mapper supplies closed type
-arguments.
-
-`System.Tuple` alone does not require mapper scope, because it has no C# tuple
-element aliases. A nested `ValueTuple`, nullable reference, `dynamic`, or type
-parameter still does. Nullable value types such as `int?` remain eligible for
-sharing because `Nullable<T>` has a distinct CLR type.
-
-Mapper scope prevents unrelated mappers with different tuple names, nullable
-annotations, or `dynamic`/`object` presentations from colliding in generated
-configuration code. For a tuple-containing pair, one effective mapper,
-including its connected base configuration, must still use one presentation;
-a conflict produces [`MORPH0056`](diagnostics/MORPH0056.md).
+For a tuple-containing pair, one effective mapper, including its connected
+base configuration, must use one presentation. Conflicting declarations
+produce [`MORPH0056`](diagnostics/MORPH0056.md).
 
 ## Mapper accessibility
 
-Mapper-scoped extensions are emitted as namespace-level generated code. A
+Configuration extensions are emitted as namespace-level generated code. A
 type marked with `[MorphantMapper]` and every type containing it must therefore
 be accessible from namespace-level code in the same assembly. `public`,
 `internal`, and `protected internal` declarations satisfy this requirement;

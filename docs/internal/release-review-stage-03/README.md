@@ -1,6 +1,6 @@
 # Воспроизведения этапа 3
 
-Это исследовательские входы и измерения, а не новые тесты поддерживаемого поведения. Отказы зафиксированы в [отчёте](../RELEASE_REVIEW_STAGE_03.md); исправления ещё не выбраны.
+Это исследовательские входы и измерения. Исходные отказы зафиксированы в [отчёте этапа 3](../RELEASE_REVIEW_STAGE_03.md), результаты после исправлений — в [отчёте исправлений](../RELEASE_REVIEW_STAGE_03_FIXES.md). Постоянные compiler- и runtime-регрессии находятся в test projects.
 
 Команды выполняются из корня Morphant. В текущем workspace вместо `dotnet` используется `/workspace/morphant-tools/dotnet`. Требуется SDK 10.0.100; generator и compiler probe используют Roslyn 4.4.0.
 
@@ -10,7 +10,7 @@
 dotnet build docs/internal/release-review-stage-03/msbuild/Consumer/Consumer.csproj -c Release -p:UseSharedCompilation=false -m:1
 ```
 
-Ожидаемый текущий отказ: `CS0121`, `CS0436`, `MORPH0018`. В producer есть bare mapper обычной пары и IVT к consumer. Удаление IVT из `Producer.cs` даёт чистую сборку. Замена `Construct` на bare Map оставляет `CS0436`; явное `new Morphant.Generated.Types.N_Shared.Plans.DestinationConstruction(s.Id)` также оставляет только `CS0436`.
+После исправлений ожидается чистая сборка с IVT и без него. В producer есть bare mapper обычной пары. Явное имя construction-типа consumer теперь имеет вид `Morphant.Generated.Types.A_AuditConsumer.N_Shared.Plans.DestinationConstruction`.
 
 После сборки producer можно проверить отдельные артефакты:
 
@@ -26,7 +26,7 @@ dotnet build docs/internal/release-review-stage-03/msbuild/Consumer/Consumer.csp
 dotnet build docs/internal/release-review-stage-03/msbuild/Single/Single.csproj -c Release -p:UseSharedCompilation=false -m:1
 ```
 
-Ожидается `CS0121`. `Single.cs` содержит пример без `base.Configure`. Направленные варианты находятся в `family-variants`: `base-call.cs` компилируется чисто, остальные четыре воспроизводят неоднозначность. Их можно по одному использовать вместо `Single.cs`; одновременно включать варианты в проект не нужно.
+Ожидается чистая сборка. `Single.cs` содержит пример без `base.Configure`. Направленные варианты находятся в `family-variants`; после исправлений все пять должны компилироваться без предупреждений. Их можно по одному использовать вместо `Single.cs`; одновременно включать варианты в проект не нужно.
 
 ## Матрица compiler references
 
@@ -35,9 +35,9 @@ dotnet build docs/internal/release-review-stage-03/compiler/CompilerProbe.csproj
 dotnet docs/internal/release-review-stage-03/compiler/bin/Release/net10.0/CompilerProbe.dll artifacts/release-review/stage-03/reproduced/shared shared
 ```
 
-Вместо последнего `shared` доступны `nullable`, `tuple`, `family`, `distinct-source`, `same-family`, `same-related-family`, `same-nested-family`. Для каждого режима укажите отдельный каталог результата. Probe сохраняет producer/consumer sources, полные generated files, warning/error diagnostics и `summary.json`.
+Вместо последнего `shared` доступны `nullable`, `tuple`, `family`, `distinct-source`, `same-family`, `same-related-family`, `same-nested-family`, `same-ordinary`. Для каждого режима укажите отдельный каталог результата. Probe сохраняет producer/consumer sources, полные generated files, warning/error diagnostics и `summary.json`.
 
-Первые пять режимов сравнивают source compilation, implementation DLL и reference assembly с IVT и без него. Последние три исследуют два семейства в одной compilation. Общая матрица — 540 случаев; статус программы 0 означает завершение измерения, а не отсутствие diagnostics. Ожидаемые текущие группы результатов сохранены в [results.json](results.json).
+Первые пять режимов сравнивают source compilation, implementation DLL и reference assembly с IVT и без него. Последние четыре исследуют два маппера или семейства в одной compilation. Общая матрица — 556 случаев; `shared` сохраняется только как историческое имя режима обычной пары. Статус программы 0 означает завершение измерения: нужно отдельно проверить отсутствие diagnostics и исключений в `summary.json`. Там также записаны числа generated files, construction/member-файлов и callback-методов. Исходные отказы сохранены в [results.json](results.json).
 
 Отдельный CRTP-вариант:
 

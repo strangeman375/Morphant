@@ -35,8 +35,8 @@ var calls = new Dictionary<string, string>
     ["MembersPrevious"] = ".Members((s, p) => new() { Id = s.Id })",
     ["MembersResult"] = ".Members((s, p, r) => new() { Id = s.Id })",
     ["MembersContext"] = ".Members((s, p, r, c) => new() { Id = s.Id })",
-    ["ExplicitConstruct"] = ".Construct(s => new Morphant.Generated.Types.N_Shared.Plans.DestinationConstruction(s.Id))",
-    ["ExplicitMembers"] = ".Members(s => new Morphant.Generated.Types.N_Shared.Plans.DestinationMembers() { Id = s.Id })"
+    ["ExplicitConstruct"] = ".Construct(s => new Morphant.Generated.Types.A_AuditConsumer.N_Shared.Plans.DestinationConstruction(s.Id))",
+    ["ExplicitMembers"] = ".Members(s => new Morphant.Generated.Types.A_AuditConsumer.N_Shared.Plans.DestinationMembers() { Id = s.Id })"
 };
 var analyzer = new AnalyzerFileReference(Path.GetFullPath("src/Morphant.Generator/bin/Release/netstandard2.0/Morphant.Generator.dll"), new Loader());
 var generators = analyzer.GetGenerators(LanguageNames.CSharp);
@@ -121,7 +121,15 @@ namespace Consumer
             File.WriteAllText(Path.Combine(dir, file.HintName), file.SourceText.ToString());
         summaries.Add(new { name, generatorException = consumer.Run.Exception?.ToString(),
             diagnostics = diagnostics.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.Count()),
-            files = consumer.Run.GeneratedSources.Length });
+            files = consumer.Run.GeneratedSources.Length,
+            planFiles = consumer.Run.GeneratedSources.Count(file =>
+                file.HintName.Contains(".Construction.", StringComparison.Ordinal) ||
+                file.HintName.Contains(".Member.", StringComparison.Ordinal)),
+            extensionMethods = consumer.Run.GeneratedSources
+                .Where(file => file.HintName.Contains(".MappingExtension.", StringComparison.Ordinal) ||
+                    file.HintName.Contains(".MemberExtension.", StringComparison.Ordinal))
+                .Sum(file => CSharpSyntaxTree.ParseText(file.SourceText, parse).GetRoot()
+                    .DescendantNodes().OfType<MethodDeclarationSyntax>().Count()) });
         Console.WriteLine(name + " " + string.Join(",", diagnostics.Select(d => d.Id).Distinct()));
     }
 }
