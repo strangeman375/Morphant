@@ -11,11 +11,9 @@ internal sealed class CompilationBoundaryTests
     private static readonly string[] ValidGeneratedHints =
     [
         "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs",
+        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
         "Morphant.Generated.Member.TestCase_Destination.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__TestCase_Destination.g.cs",
+        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_TestMapper.g.cs",
         "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
     ];
 
@@ -23,10 +21,8 @@ internal sealed class CompilationBoundaryTests
     [
         "Morphant.Generated.Construction.First_Destination.g.cs",
         "Morphant.Generated.Construction.Second_Destination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "First_Source__First_Destination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "Second_Source__Second_Destination.g.cs",
+        "Morphant.Generated.MappingExtension.First_Source__First_Destination__First_FirstMapper.g.cs",
+        "Morphant.Generated.MappingExtension.Second_Source__Second_Destination__Second_SecondMapper.g.cs",
         "Morphant.Generated.TypeMapper.First_FirstMapper.g.cs",
         "Morphant.Generated.TypeMapper.Second_SecondMapper.g.cs"
     ];

@@ -23,18 +23,14 @@ internal sealed class BaseConfigurationActualizationTests
         var generated = new[]
         {
             "Morphant.Generated.Construction.TestCase_Destination.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_Source__TestCase_Destination.g.cs",
+            "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Destination__TestCase_BaseMapper_TMapper_.g.cs",
             "Morphant.Generated.Member.TestCase_Destination.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_Source__TestCase_Destination.g.cs",
+            "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Destination__TestCase_BaseMapper_TMapper_.g.cs",
             "Morphant.Generated.Construction." +
             "TestCase_StableDestination.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_StableSource__TestCase_StableDestination.g.cs",
+            "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs",
             "Morphant.Generated.Member.TestCase_StableDestination.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_StableSource__TestCase_StableDestination.g.cs",
+            "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs",
             DerivedMapper,
             StableMapper
         };

@@ -38,22 +38,18 @@ internal sealed class RenameLifecycleActualizationTests
     private static readonly string[] InitialHints =
     [
         "Morphant.Generated.Construction.Initial_Destination.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "Initial_Source__Initial_Destination.g.cs",
+        "Morphant.Generated.MappingExtension.Initial_Source__Initial_Destination__Initial_TestMapper.g.cs",
         "Morphant.Generated.Member.Initial_Destination.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        "Initial_Source__Initial_Destination.g.cs",
+        "Morphant.Generated.MemberExtension.Initial_Source__Initial_Destination__Initial_TestMapper.g.cs",
         "Morphant.Generated.TypeMapper.Initial_TestMapper.g.cs"
     ];
 
     private static readonly string[] RenamedHints =
     [
         "Morphant.Generated.Construction.Renamed_DestinationV2.g.cs",
-        "Morphant.Generated.MappingExtension." +
-        "Renamed_SourceV2__Renamed_DestinationV2.g.cs",
+        "Morphant.Generated.MappingExtension.Renamed_SourceV2__Renamed_DestinationV2__Renamed_MapperV2.g.cs",
         "Morphant.Generated.Member.Renamed_DestinationV2.g.cs",
-        "Morphant.Generated.MemberExtension." +
-        "Renamed_SourceV2__Renamed_DestinationV2.g.cs",
+        "Morphant.Generated.MemberExtension.Renamed_SourceV2__Renamed_DestinationV2__Renamed_MapperV2.g.cs",
         "Morphant.Generated.TypeMapper.Renamed_MapperV2.g.cs"
     ];
 

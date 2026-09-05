@@ -15,12 +15,10 @@ internal sealed class DependencyIsolationTests
         "Morphant.Generated.Construction.TestCase_DestinationB.g.cs";
 
     private const string MappingExtensionA =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_SourceA__TestCase_DestinationA.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_SourceA__TestCase_DestinationA__TestCase_MapperA.g.cs";
 
     private const string MappingExtensionB =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_SourceB__TestCase_DestinationB.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_SourceB__TestCase_DestinationB__TestCase_MapperB.g.cs";
 
     private const string MemberA =
         "Morphant.Generated.Member.TestCase_DestinationA.g.cs";
@@ -29,12 +27,10 @@ internal sealed class DependencyIsolationTests
         "Morphant.Generated.Member.TestCase_DestinationB.g.cs";
 
     private const string MemberExtensionA =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_SourceA__TestCase_DestinationA.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_SourceA__TestCase_DestinationA__TestCase_MapperA.g.cs";
 
     private const string MemberExtensionB =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_SourceB__TestCase_DestinationB.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_SourceB__TestCase_DestinationB__TestCase_MapperB.g.cs";
 
     private const string MapperA =
         "Morphant.Generated.TypeMapper.TestCase_MapperA.g.cs";

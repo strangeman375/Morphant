@@ -15,12 +15,10 @@ internal sealed class ReferenceAndSettingsTests
         "Morphant.Generated.Construction.TestCase_StableDestination.g.cs";
 
     private const string ExternalMapping =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_ExternalSource__ExternalModels_Destination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_ExternalSource__ExternalModels_Destination__TestCase_ExternalMapper.g.cs";
 
     private const string StableMapping =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
 
     private const string ExternalMember =
         "Morphant.Generated.Member.ExternalModels_Destination.g.cs";
@@ -29,12 +27,10 @@ internal sealed class ReferenceAndSettingsTests
         "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
 
     private const string ExternalMemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_ExternalSource__ExternalModels_Destination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_ExternalSource__ExternalModels_Destination__TestCase_ExternalMapper.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
 
     private const string ExternalMapper =
         "Morphant.Generated.TypeMapper.TestCase_ExternalMapper.g.cs";
@@ -232,16 +228,12 @@ internal sealed class ReferenceAndSettingsTests
         {
             "Morphant.Generated.Construction.TestCase_DestinationA.g.cs",
             "Morphant.Generated.Construction.TestCase_DestinationB.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_SourceA__TestCase_DestinationA.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "TestCase_SourceB__TestCase_DestinationB.g.cs",
+            "Morphant.Generated.MappingExtension.TestCase_SourceA__TestCase_DestinationA__TestCase_MapperA.g.cs",
+            "Morphant.Generated.MappingExtension.TestCase_SourceB__TestCase_DestinationB__TestCase_MapperB.g.cs",
             "Morphant.Generated.Member.TestCase_DestinationA.g.cs",
             "Morphant.Generated.Member.TestCase_DestinationB.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_SourceA__TestCase_DestinationA.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "TestCase_SourceB__TestCase_DestinationB.g.cs",
+            "Morphant.Generated.MemberExtension.TestCase_SourceA__TestCase_DestinationA__TestCase_MapperA.g.cs",
+            "Morphant.Generated.MemberExtension.TestCase_SourceB__TestCase_DestinationB__TestCase_MapperB.g.cs",
             "Morphant.Generated.TypeMapper.TestCase_MapperA.g.cs",
             "Morphant.Generated.TypeMapper.TestCase_MapperB.g.cs"
         };

@@ -43,15 +43,13 @@ internal sealed class TupleTests
         "TestCase_StableDestination.g.cs";
 
     private const string StableMappingExtension =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
 
     private const string StableMember =
         "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
 
     private const string StableMapper =
         "Morphant.Generated.TypeMapper.TestCase_StableMapper.g.cs";

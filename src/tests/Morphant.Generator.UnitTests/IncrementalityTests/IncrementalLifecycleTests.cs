@@ -21,28 +21,22 @@ internal sealed class IncrementalLifecycleTests
         "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
 
     private const string MappingOne =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_SourceOne__TestCase_SharedDestination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_SourceOne__TestCase_SharedDestination__TestCase_MapperOne.g.cs";
 
     private const string MappingTwo =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_SourceTwo__TestCase_SharedDestination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_SourceTwo__TestCase_SharedDestination__TestCase_MapperTwo.g.cs";
 
     private const string StableMapping =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
 
     private const string MemberOne =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_SourceOne__TestCase_SharedDestination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_SourceOne__TestCase_SharedDestination__TestCase_MapperOne.g.cs";
 
     private const string MemberTwo =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_SourceTwo__TestCase_SharedDestination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_SourceTwo__TestCase_SharedDestination__TestCase_MapperTwo.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
 
     private const string MapperOne =
         "Morphant.Generated.TypeMapper.TestCase_MapperOne.g.cs";
@@ -223,7 +217,7 @@ internal sealed class IncrementalLifecycleTests
     }
 
     [Test]
-    public void Preserves_shared_surfaces_when_the_canonical_owner_is_removed()
+    public void Preserves_destination_plans_when_one_mapper_is_removed()
     {
         var models = SourceFile("Models.cs", ModelsSource);
         var stable = SourceFile("StableMapper.cs", StableMapperSource);
@@ -263,17 +257,17 @@ internal sealed class IncrementalLifecycleTests
             LanguageVersion.CSharp9,
             static () => new MorphantGenerator(),
             Step(
-                "two shared surface owners",
+                "two mappers sharing destination plans",
                 [models, stable, first, second],
                 sharedHints),
             Step(
-                "canonical surface owner removed",
+                "first mapper removed",
                 [models, stable, second],
                 remainingHints));
     }
 
     [Test]
-    public void Keeps_shared_surface_cached_when_nullable_scope_is_added_and_removed()
+    public void Keeps_existing_extensions_cached_when_nullable_mapper_is_added_and_removed()
     {
         const string construction =
             "Morphant.Generated.Construction." +
@@ -281,49 +275,49 @@ internal sealed class IncrementalLifecycleTests
         const string member =
             "Morphant.Generated.Member." +
             "TestCase_SurfaceDestination.g.cs";
-        const string sharedMapping =
+        const string nonNullableMapping =
             "Morphant.Generated.MappingExtension." +
-            "TestCase_SurfaceSource__TestCase_SurfaceDestination.g.cs";
+            "TestCase_SurfaceSource__TestCase_SurfaceDestination__TestCase_NonNullableMapper.g.cs";
         const string nullableMapping =
             "Morphant.Generated.MappingExtension." +
             "TestCase_SurfaceSource__TestCase_SurfaceDestination__" +
             "TestCase_NullablePresentationMapper.g.cs";
-        const string sharedMember =
+        const string nonNullableMember =
             "Morphant.Generated.MemberExtension." +
-            "TestCase_SurfaceSource__TestCase_SurfaceDestination.g.cs";
+            "TestCase_SurfaceSource__TestCase_SurfaceDestination__TestCase_NonNullableMapper.g.cs";
         const string nullableMember =
             "Morphant.Generated.MemberExtension." +
             "TestCase_SurfaceSource__TestCase_SurfaceDestination__" +
             "TestCase_NullablePresentationMapper.g.cs";
-        const string sharedMapper =
-            "Morphant.Generated.TypeMapper.TestCase_SharedSurfaceMapper.g.cs";
+        const string nonNullableMapper =
+            "Morphant.Generated.TypeMapper.TestCase_NonNullableMapper.g.cs";
         const string nullableMapper =
             "Morphant.Generated.TypeMapper." +
             "TestCase_NullablePresentationMapper.g.cs";
         var models = SourceFile("SurfaceModels.cs", SurfaceModelsSource);
-        var shared = SourceFile(
-            "SharedSurfaceMapper.cs",
-            SharedSurfaceMapperSource);
+        var nonNullable = SourceFile(
+            "NonNullableMapper.cs",
+            NonNullableMapperSource);
         var nullable = SourceFile(
             "NullablePresentationMapper.cs",
             NullablePresentationMapperSource);
         var sharedHints = new[]
         {
             construction,
-            sharedMapping,
+            nonNullableMapping,
             member,
-            sharedMember,
-            sharedMapper
+            nonNullableMember,
+            nonNullableMapper
         };
         var bothHints = new[]
         {
             construction,
-            sharedMapping,
+            nonNullableMapping,
             nullableMapping,
             member,
-            sharedMember,
+            nonNullableMember,
             nullableMember,
-            sharedMapper,
+            nonNullableMapper,
             nullableMapper
         };
 
@@ -331,17 +325,17 @@ internal sealed class IncrementalLifecycleTests
             LanguageVersion.CSharp9,
             static () => new MorphantGenerator(),
             Step(
-                "shared canonical presentation",
-                [models, shared],
+                "non-nullable mapper",
+                [models, nonNullable],
                 sharedHints),
             Step(
                 "nullable mapper scope added",
-                [models, shared, nullable],
+                [models, nonNullable, nullable],
                 bothHints,
                 Stage(
                     "BuildMappingExtensionRequests",
                     Expected(
-                        sharedMapping,
+                        nonNullableMapping,
                         IncrementalStepRunReason.Cached),
                     Expected(
                         nullableMapping,
@@ -349,19 +343,19 @@ internal sealed class IncrementalLifecycleTests
                 Stage(
                     "BuildMemberExtensionRequests",
                     Expected(
-                        sharedMember,
+                        nonNullableMember,
                         IncrementalStepRunReason.Cached),
                     Expected(
                         nullableMember,
                         IncrementalStepRunReason.New))),
             Step(
                 "nullable mapper scope removed",
-                [models, shared],
+                [models, nonNullable],
                 sharedHints,
                 Stage(
                     "BuildMappingExtensionRequests",
                     Expected(
-                        sharedMapping,
+                        nonNullableMapping,
                         IncrementalStepRunReason.Cached),
                     Expected(
                         nullableMapping,
@@ -369,7 +363,7 @@ internal sealed class IncrementalLifecycleTests
                 Stage(
                     "BuildMemberExtensionRequests",
                     Expected(
-                        sharedMember,
+                        nonNullableMember,
                         IncrementalStepRunReason.Cached),
                     Expected(
                         nullableMember,
@@ -486,7 +480,7 @@ namespace TestCase
 """;
 
     // lang=c#
-    private const string SharedSurfaceMapperSource =
+    private const string NonNullableMapperSource =
 """
 #nullable enable
 #pragma warning disable CS1591
@@ -496,8 +490,8 @@ using Morphant;
 namespace TestCase
 {
     [MorphantMapper]
-    public partial class SharedSurfaceMapper :
-        TypeMapper<SharedSurfaceMapper>
+    public partial class NonNullableMapper :
+        TypeMapper<NonNullableMapper>
     {
         protected override void Configure(MapperBuilder builder) =>
             builder.Map<SurfaceSource, SurfaceDestination>();

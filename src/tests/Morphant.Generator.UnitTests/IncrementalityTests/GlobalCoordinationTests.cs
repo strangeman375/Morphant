@@ -22,20 +22,17 @@ internal sealed class GlobalCoordinationTests
         "Morphant.Generated.Construction.TestCase_StableDestination.g.cs";
 
     private const string UpperMapping =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__TestCase_URL.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_URL__TestCase_CollisionMapper.g.cs";
 
     private const string TitleMapping =
         "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__TestCase_Url__df20b2fbed6d104d.g.cs";
+        "TestCase_Source__TestCase_Url__TestCase_CollisionMapper__0ecfaa219f214344.g.cs";
 
     private const string ReadableTitleMapping =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_Source__TestCase_Url.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_Source__TestCase_Url__TestCase_CollisionMapper.g.cs";
 
     private const string StableMapping =
-        "Morphant.Generated.MappingExtension." +
-        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+        "Morphant.Generated.MappingExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
 
     private const string UpperMember =
         "Morphant.Generated.Member.TestCase_URL.g.cs";
@@ -51,20 +48,17 @@ internal sealed class GlobalCoordinationTests
         "Morphant.Generated.Member.TestCase_StableDestination.g.cs";
 
     private const string UpperMemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__TestCase_URL.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_URL__TestCase_CollisionMapper.g.cs";
 
     private const string TitleMemberExtension =
         "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__TestCase_Url__df20b2fbed6d104d.g.cs";
+        "TestCase_Source__TestCase_Url__TestCase_CollisionMapper__0ecfaa219f214344.g.cs";
 
     private const string ReadableTitleMemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_Source__TestCase_Url.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_Source__TestCase_Url__TestCase_CollisionMapper.g.cs";
 
     private const string StableMemberExtension =
-        "Morphant.Generated.MemberExtension." +
-        "TestCase_StableSource__TestCase_StableDestination.g.cs";
+        "Morphant.Generated.MemberExtension.TestCase_StableSource__TestCase_StableDestination__TestCase_StableMapper.g.cs";
 
     private const string CollisionMapper =
         "Morphant.Generated.TypeMapper.TestCase_CollisionMapper.g.cs";
@@ -214,17 +208,21 @@ internal sealed class GlobalCoordinationTests
         var surfaceHints = new[]
         {
             "Morphant.Generated.Construction.Models_Destination.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "Models_Source__Models_Destination.g.cs",
             "Morphant.Generated.Member.Models_Destination.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "Models_Source__Models_Destination.g.cs"
+            "Morphant.Generated.MappingExtension.Models_Source__Models_Destination__TestCase_StableMapper.g.cs",
+            "Morphant.Generated.MemberExtension.Models_Source__Models_Destination__TestCase_StableMapper.g.cs"
         };
         var initialHints = surfaceHints
+            .Append("Morphant.Generated.MappingExtension.Models_Source__Models_Destination__TestCase_URL.g.cs")
+            .Append("Morphant.Generated.MemberExtension.Models_Source__Models_Destination__TestCase_URL.g.cs")
             .Append(upperHint)
             .Append(stableHint)
             .ToArray();
-        var collisionHints = initialHints.Append(titleHint).ToArray();
+        var collisionHints = initialHints
+            .Append("Morphant.Generated.MappingExtension.Models_Source__Models_Destination__TestCase_Url__33d0b11084c91f51.g.cs")
+            .Append("Morphant.Generated.MemberExtension.Models_Source__Models_Destination__TestCase_Url__33d0b11084c91f51.g.cs")
+            .Append(titleHint)
+            .ToArray();
 
         RunAndAssert(
             LanguageVersion.CSharp9,
@@ -296,11 +294,9 @@ internal sealed class GlobalCoordinationTests
         var surfaceHints = new[]
         {
             "Morphant.Generated.Construction.Models_Destination.g.cs",
-            "Morphant.Generated.MappingExtension." +
-            "Models_Source__Models_Destination.g.cs",
             "Morphant.Generated.Member.Models_Destination.g.cs",
-            "Morphant.Generated.MemberExtension." +
-            "Models_Source__Models_Destination.g.cs"
+            "Morphant.Generated.MappingExtension.Models_Source__Models_Destination__TestCase_StableMapper.g.cs",
+            "Morphant.Generated.MemberExtension.Models_Source__Models_Destination__TestCase_StableMapper.g.cs"
         };
 
         RunAndAssert(
@@ -310,6 +306,10 @@ internal sealed class GlobalCoordinationTests
                 "colliding mapper hints",
                 [models, stable, upper, title],
                 surfaceHints
+                    .Append("Morphant.Generated.MappingExtension.Models_Source__Models_Destination__TestCase_URL.g.cs")
+                    .Append("Morphant.Generated.MemberExtension.Models_Source__Models_Destination__TestCase_URL.g.cs")
+                    .Append("Morphant.Generated.MappingExtension.Models_Source__Models_Destination__TestCase_Url__33d0b11084c91f51.g.cs")
+                    .Append("Morphant.Generated.MemberExtension.Models_Source__Models_Destination__TestCase_Url__33d0b11084c91f51.g.cs")
                     .Append(upperHint)
                     .Append(hashedTitleHint)
                     .Append(stableHint)
@@ -318,6 +318,8 @@ internal sealed class GlobalCoordinationTests
                 "original readable mapper removed",
                 [models, stable, title],
                 surfaceHints
+                    .Append("Morphant.Generated.MappingExtension.Models_Source__Models_Destination__TestCase_Url.g.cs")
+                    .Append("Morphant.Generated.MemberExtension.Models_Source__Models_Destination__TestCase_Url.g.cs")
                     .Append(readableTitleHint)
                     .Append(stableHint)
                     .ToArray()));
