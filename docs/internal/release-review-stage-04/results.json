@@ -1,0 +1,1289 @@
+{
+  "auditDate": "2026-09-05",
+  "sourceCommit": "2695e07429f468243dcfaeb90d5c99ca8ca874ba",
+  "sourceTree": "9551b0e19f015a8ce589a4e84b9e805944eddf94",
+  "recovery": {
+    "originalLocalCommit": "3e3a80b21eb1cf0d9ab62cc60766ea5a49ef0cd5",
+    "originalCommitAndRawLogsAvailable": false,
+    "basis": "Report restored from conversation; consumer inputs reconstructed and executed again. No claim of byte-identical restoration.",
+    "restoredBaseLocalCommit": "66993c9bee1f0e3ad0f6b78108741d8c74c70f0d"
+  },
+  "environment": {
+    "os": "Linux",
+    "sdk": "10.0.100",
+    "targetFramework": "net10.0",
+    "nullable": true,
+    "warningsAsErrors": true,
+    "productionSourcesChanged": false
+  },
+  "generatorSha256": "22a9d4ff714b14a1bcf7617269658f34888e0be786de0856ac2362684da9191a",
+  "msbuildSummary": {
+    "configurations": 19,
+    "positiveConfigurations": 7,
+    "passedChecksInPositiveConfigurations": 86,
+    "note": "Fresh recovery run. Negative research inputs intentionally reproduce findings; they are outside the solution."
+  },
+  "msbuildRuns": [
+    {
+      "name": "naming",
+      "case": "Naming",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 0,
+      "checks": 7,
+      "failed": [],
+      "observations": [
+        {
+          "name": "explicit-short-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "explicit-short-members",
+          "expected": "first",
+          "actual": "first",
+          "passed": true
+        },
+        {
+          "name": "explicit-full-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "nested-generic-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "first-tuple-presentation",
+          "expected": {},
+          "actual": {},
+          "passed": true
+        },
+        {
+          "name": "second-tuple-presentation",
+          "expected": {},
+          "actual": {},
+          "passed": true
+        },
+        {
+          "name": "system-tuple-construction",
+          "expected": {
+            "Item1": 11,
+            "Item2": "first"
+          },
+          "actual": {
+            "Item1": 11,
+            "Item2": "first"
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "modern",
+      "case": "Modern",
+      "define": null,
+      "languageVersion": "11.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 0,
+      "checks": 12,
+      "failed": [],
+      "observations": [
+        {
+          "name": "inherited-required-init-create",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "required-field-create",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "inherited-required-init-update-retains",
+          "expected": 23,
+          "actual": 23,
+          "passed": true
+        },
+        {
+          "name": "required-field-update",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "constructor-only-update-retains",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        },
+        {
+          "name": "sets-required-constructor-result",
+          "expected": 111,
+          "actual": 111,
+          "passed": true
+        },
+        {
+          "name": "explicit-struct-constructor",
+          "expected": 73,
+          "actual": 73,
+          "passed": true
+        },
+        {
+          "name": "explicit-struct-constructor-members",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "null-source-zero-initializes-struct",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "struct-update-retains-default-stamp",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "readonly-record-struct-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "readonly-record-struct-update",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "naming-explicit-tuples",
+      "case": "Naming",
+      "define": "EXPLICIT_TUPLES",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 0,
+      "checks": 7,
+      "failed": [],
+      "observations": [
+        {
+          "name": "explicit-short-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "explicit-short-members",
+          "expected": "first",
+          "actual": "first",
+          "passed": true
+        },
+        {
+          "name": "explicit-full-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "nested-generic-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "first-tuple-presentation",
+          "expected": {},
+          "actual": {},
+          "passed": true
+        },
+        {
+          "name": "second-tuple-presentation",
+          "expected": {},
+          "actual": {},
+          "passed": true
+        },
+        {
+          "name": "system-tuple-construction",
+          "expected": {
+            "Item1": 11,
+            "Item2": "first"
+          },
+          "actual": {
+            "Item1": 11,
+            "Item2": "first"
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "reserved",
+      "case": "ReservedNames",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 1,
+      "checks": 8,
+      "failed": [
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 0,
+          "passed": false
+        }
+      ],
+      "observations": [
+        {
+          "name": "ordinary-property-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "ordinary-property-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 0,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "name": "reserved-strict",
+      "case": "ReservedNames",
+      "define": "STRICT",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 1,
+      "checks": 8,
+      "failed": [
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 0,
+          "passed": false
+        }
+      ],
+      "observations": [
+        {
+          "name": "ordinary-property-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "ordinary-property-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 0,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "name": "reserved-renamed",
+      "case": "ReservedNames",
+      "define": "RENAME_DESTINATION",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 1,
+      "checks": 8,
+      "failed": [
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        }
+      ],
+      "observations": [
+        {
+          "name": "ordinary-property-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        },
+        {
+          "name": "ordinary-property-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 0,
+          "passed": false
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "reserved-explicit",
+      "case": "ReservedNames",
+      "define": "EXPLICIT_MEMBERS",
+      "languageVersion": "9.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "CS0117",
+        "CS0122"
+      ]
+    },
+    {
+      "name": "static-container",
+      "case": "StaticContainer",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 1,
+      "checks": 4,
+      "failed": [
+        {
+          "name": "nested-source-contract",
+          "expected": true,
+          "actual": false,
+          "passed": false
+        },
+        {
+          "name": "nested-destination-contract",
+          "expected": true,
+          "actual": false,
+          "passed": false
+        }
+      ],
+      "observations": [
+        {
+          "name": "control-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "nested-source-contract",
+          "expected": true,
+          "actual": false,
+          "passed": false
+        },
+        {
+          "name": "nested-destination-contract",
+          "expected": true,
+          "actual": false,
+          "passed": false
+        },
+        {
+          "name": "ordinary-pair-remains-working",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "nonstatic-container",
+      "case": "StaticContainer",
+      "define": "NON_STATIC",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 0,
+      "checks": 6,
+      "failed": [],
+      "observations": [
+        {
+          "name": "control-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "nested-source-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "nested-destination-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "ordinary-pair-remains-working",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "nested-source-mapping",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "nested-destination-mapping",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "resolve-csharp9",
+      "case": "ResolveConditional",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "CS1729"
+      ]
+    },
+    {
+      "name": "resolve-csharp11",
+      "case": "ResolveConditional",
+      "define": null,
+      "languageVersion": "11.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "CS1729"
+      ]
+    },
+    {
+      "name": "resolve-latest",
+      "case": "ResolveConditional",
+      "define": null,
+      "languageVersion": "latest",
+      "buildExit": 1,
+      "diagnostics": [
+        "CS1729"
+      ]
+    },
+    {
+      "name": "resolve-explicit",
+      "case": "ResolveConditional",
+      "define": "EXPLICIT_NAME",
+      "languageVersion": "9.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "MORPH0038"
+      ]
+    },
+    {
+      "name": "resolve-tryget-block",
+      "case": "ResolveConditional",
+      "define": "BLOCK_BODY",
+      "languageVersion": "9.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "MORPH0038"
+      ]
+    },
+    {
+      "name": "resolve-nested-tryget",
+      "case": "ResolveConditional",
+      "define": "NESTED_TRYGET",
+      "languageVersion": "9.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "MORPH0038"
+      ]
+    },
+    {
+      "name": "resolve-has-value-target-typed",
+      "case": "ResolveConditional",
+      "define": "HAS_VALUE_TARGET_TYPED",
+      "languageVersion": "9.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "CS1729"
+      ]
+    },
+    {
+      "name": "resolve-ternary-lifecycle",
+      "case": "ResolveConditional",
+      "define": "HAS_VALUE",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 0,
+      "checks": 4,
+      "failed": [],
+      "observations": [
+        {
+          "name": "resolve-conditional-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-reuse",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-null-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-replacement",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "resolve-block-lifecycle",
+      "case": "ResolveConditional",
+      "define": "HAS_VALUE_BLOCK",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 0,
+      "checks": 4,
+      "failed": [],
+      "observations": [
+        {
+          "name": "resolve-conditional-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-reuse",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-null-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-replacement",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "core",
+      "case": "Core",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "runExit": 0,
+      "checks": 46,
+      "failed": [],
+      "observations": [
+        {
+          "name": "constructor-preserves-corresponding-member",
+          "expected": 30,
+          "actual": 30,
+          "passed": true
+        },
+        {
+          "name": "nullable-warning-convention-is-skipped",
+          "expected": "initial",
+          "actual": "initial",
+          "passed": true
+        },
+        {
+          "name": "convention-update-reuses-reference",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "convention-update-maps-constructor-member",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "convention-update-retains-init",
+          "expected": 91,
+          "actual": 91,
+          "passed": true
+        },
+        {
+          "name": "resolve-replacement-identity",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "resolve-replacement-constructor",
+          "expected": 30,
+          "actual": 30,
+          "passed": true
+        },
+        {
+          "name": "resolve-replacement-init",
+          "expected": 4,
+          "actual": 4,
+          "passed": true
+        },
+        {
+          "name": "resolve-replacement-init-count",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "resolve-reuse-identity",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-reuse-init-count",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "resolve-reuse-post-member",
+          "expected": "empty",
+          "actual": "empty",
+          "passed": true
+        },
+        {
+          "name": "factory-preserves-init",
+          "expected": 71,
+          "actual": 71,
+          "passed": true
+        },
+        {
+          "name": "factory-post-convention",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "factory-post-explicit",
+          "expected": "mapped",
+          "actual": "mapped",
+          "passed": true
+        },
+        {
+          "name": "construct-using-existing-reference",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "construct-using-existing-call-count",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "null-update-constructs",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "null-update-operation",
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        },
+        {
+          "name": "factory-null-is-terminal",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "factory-null-skips-members",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "null-source-retains-destination",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "null-source-skips-members",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "readonly-struct-create",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "readonly-struct-update-retains",
+          "expected": 8,
+          "actual": 8,
+          "passed": true
+        },
+        {
+          "name": "option-some-default-result",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "option-some-default-present",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "option-null-result",
+          "expected": 5,
+          "actual": 5,
+          "passed": true
+        },
+        {
+          "name": "option-null-absent",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "record-create-init",
+          "expected": "mapped",
+          "actual": "mapped",
+          "passed": true
+        },
+        {
+          "name": "record-update-retains-identity",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "generic-constructor",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "nullable-struct-null-update-creates",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "nullable-struct-default-is-existing",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "optional-decimal",
+          "expected": 1.25,
+          "actual": 1.25,
+          "passed": true
+        },
+        {
+          "name": "optional-enum",
+          "expected": 5,
+          "actual": 5,
+          "passed": true
+        },
+        {
+          "name": "optional-params-empty",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "allow-null-constructor",
+          "expected": "accepted-null",
+          "actual": "accepted-null",
+          "passed": true
+        },
+        {
+          "name": "not-null-source",
+          "expected": "known",
+          "actual": "known",
+          "passed": true
+        },
+        {
+          "name": "allow-null-setter",
+          "expected": "accepted-null",
+          "actual": "accepted-null",
+          "passed": true
+        },
+        {
+          "name": "interface-retains-box",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "interface-mutates-box",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "abstract-factory-members",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "update-only-null-destination-creates",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "update-only-operation",
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        },
+        {
+          "name": "update-only-rejects-create",
+          "expected": "Morphant.Exceptions.MappingOperationNotSupportedException",
+          "actual": "Morphant.Exceptions.MappingOperationNotSupportedException",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "historicalResults": {
+    "provenance": "Recorded tool output in the earlier conversation. Original scratch/TRX data unavailable after workspace rollback. Not rerun as part of recovery.",
+    "unit": {
+      "passed": 127,
+      "failed": 0,
+      "skipped": 0,
+      "roslynVersion": "4.4.0"
+    },
+    "integration": {
+      "passed": 85,
+      "failed": 0,
+      "skipped": 0
+    },
+    "namingCompilerChecks": {
+      "friendReferences": [
+        "source",
+        "dll",
+        "ref"
+      ],
+      "assemblyNameAndSigningCases": 8,
+      "assemblyVersionStability": true,
+      "allPassed": true
+    },
+    "roslyn44CompileOnly": [
+      {
+        "case": "Core",
+        "diagnostics": []
+      },
+      {
+        "case": "ReservedNames",
+        "diagnostics": [],
+        "observation": "Members omitted from generated mapping"
+      },
+      {
+        "case": "StaticContainer",
+        "diagnostics": [],
+        "observation": "Nested pairs omitted"
+      },
+      {
+        "case": "ResolveConditional",
+        "diagnostics": [
+          "CS1729"
+        ]
+      },
+      {
+        "case": "ResolveConditional/EXPLICIT_NAME",
+        "diagnostics": [
+          "MORPH0038"
+        ]
+      },
+      {
+        "case": "ResolveConditional/HAS_VALUE_BLOCK",
+        "diagnostics": []
+      }
+    ]
+  },
+  "naming": {
+    "fileCount": 22,
+    "artifactCounts": {
+      "Construction": 6,
+      "MappingExtension": 6,
+      "Member": 4,
+      "MemberExtension": 4,
+      "TypeMapper": 2
+    },
+    "callbackMethods": 82,
+    "plans": [
+      {
+        "file": "Morphant.Generated.Construction.Stage04Audit_Cases_Envelope_1_Item.g.cs",
+        "namespace": "Morphant.Generated.Types.A_Audit_002EStage04.N_Stage04Audit.N_Cases.T_Envelope_A1.Plans",
+        "types": [
+          "ItemConstructorParameters",
+          "ItemConstruction"
+        ],
+        "namespaceDepth": 8,
+        "fullNameLengths": {
+          "ItemConstructorParameters": 113,
+          "ItemConstruction": 104
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Stage04Audit_Cases_Order.g.cs",
+        "namespace": "Morphant.Generated.Types.A_Audit_002EStage04.N_Stage04Audit.N_Cases.Plans",
+        "types": [
+          "OrderConstructorParameters",
+          "OrderConstruction"
+        ],
+        "namespaceDepth": 7,
+        "fullNameLengths": {
+          "OrderConstructorParameters": 100,
+          "OrderConstruction": 91
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Stage04Audit_Cases_Other_Order.g.cs",
+        "namespace": "Morphant.Generated.Types.A_Audit_002EStage04.N_Stage04Audit.N_Cases.T_Other.Plans",
+        "types": [
+          "OrderConstructorParameters",
+          "OrderConstruction"
+        ],
+        "namespaceDepth": 8,
+        "fullNameLengths": {
+          "OrderConstructorParameters": 108,
+          "OrderConstruction": 99
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Tuple_S2_ccb1d38f95b5177b3d475773e5a40e78.g.cs",
+        "namespace": "Morphant.Generated.Tuples.A_Audit_002EStage04.S2_ccb1d38f95b5177b3d475773e5a40e78",
+        "types": [
+          "TupleConstructorParameters",
+          "TupleConstruction"
+        ],
+        "namespaceDepth": 5,
+        "fullNameLengths": {
+          "TupleConstructorParameters": 108,
+          "TupleConstruction": 99
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Tuple_V2_24c9520aed1558ff9795890a2808dbb3.g.cs",
+        "namespace": "Morphant.Generated.Tuples.A_Audit_002EStage04.V2_24c9520aed1558ff9795890a2808dbb3",
+        "types": [
+          "TupleConstructorParameters",
+          "TupleConstruction"
+        ],
+        "namespaceDepth": 5,
+        "fullNameLengths": {
+          "TupleConstructorParameters": 108,
+          "TupleConstruction": 99
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Tuple_V2_a51caaf0c27a1203d7dd02a67a0a5455.g.cs",
+        "namespace": "Morphant.Generated.Tuples.A_Audit_002EStage04.V2_a51caaf0c27a1203d7dd02a67a0a5455",
+        "types": [
+          "TupleConstructorParameters",
+          "TupleConstruction"
+        ],
+        "namespaceDepth": 5,
+        "fullNameLengths": {
+          "TupleConstructorParameters": 108,
+          "TupleConstruction": 99
+        }
+      },
+      {
+        "file": "Morphant.Generated.Member.Stage04Audit_Cases_Order.g.cs",
+        "namespace": "Morphant.Generated.Types.A_Audit_002EStage04.N_Stage04Audit.N_Cases.Plans",
+        "types": [
+          "OrderMembers"
+        ],
+        "namespaceDepth": 7,
+        "fullNameLengths": {
+          "OrderMembers": 86
+        }
+      },
+      {
+        "file": "Morphant.Generated.Member.Tuple_S2_ccb1d38f95b5177b3d475773e5a40e78.g.cs",
+        "namespace": "Morphant.Generated.Tuples.A_Audit_002EStage04.S2_ccb1d38f95b5177b3d475773e5a40e78",
+        "types": [
+          "TupleMembers"
+        ],
+        "namespaceDepth": 5,
+        "fullNameLengths": {
+          "TupleMembers": 94
+        }
+      },
+      {
+        "file": "Morphant.Generated.Member.Tuple_V2_24c9520aed1558ff9795890a2808dbb3.g.cs",
+        "namespace": "Morphant.Generated.Tuples.A_Audit_002EStage04.V2_24c9520aed1558ff9795890a2808dbb3",
+        "types": [
+          "TupleMembers"
+        ],
+        "namespaceDepth": 5,
+        "fullNameLengths": {
+          "TupleMembers": 94
+        }
+      },
+      {
+        "file": "Morphant.Generated.Member.Tuple_V2_a51caaf0c27a1203d7dd02a67a0a5455.g.cs",
+        "namespace": "Morphant.Generated.Tuples.A_Audit_002EStage04.V2_a51caaf0c27a1203d7dd02a67a0a5455",
+        "types": [
+          "TupleMembers"
+        ],
+        "namespaceDepth": 5,
+        "fullNameLengths": {
+          "TupleMembers": 94
+        }
+      }
+    ],
+    "helpers": [
+      {
+        "file": "Morphant.Generated.TypeMapper.Stage04Audit_Cases_Mapper.g.cs",
+        "names": [
+          "__Create",
+          "__Update",
+          "__Create1",
+          "__Update1",
+          "__Create2",
+          "__Update2",
+          "__Create3",
+          "__Update3",
+          "__Create4",
+          "__Update4"
+        ],
+        "unreferencedNames": []
+      },
+      {
+        "file": "Morphant.Generated.TypeMapper.Stage04Audit_Cases_OtherMapper.g.cs",
+        "names": [
+          "__Create",
+          "__Update"
+        ],
+        "unreferencedNames": []
+      }
+    ],
+    "hintNameByteLengths": {
+      "min": 55,
+      "max": 146
+    },
+    "privateHelperCount": 12,
+    "planTypeCount": 16
+  },
+  "limitations": [
+    "No fresh full Release/unit/integration or multi-OS CI run.",
+    "No real IDE completion/search/tooltip session.",
+    "Fresh naming consumer uses one assembly; cross-assembly naming checks are historical.",
+    "Full tuple, parsing, inheritance, DI/lifetime and diagnostic matrices remain in their later review stages."
+  ]
+}
