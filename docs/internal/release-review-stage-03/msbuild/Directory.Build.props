@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework><LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors><NuGetAudit>false</NuGetAudit>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>obj/generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../../../src/Morphant/Morphant.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../../../../src/Morphant.Generator/Morphant.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

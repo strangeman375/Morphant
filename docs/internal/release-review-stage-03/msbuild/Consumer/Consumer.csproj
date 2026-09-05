@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>AuditConsumer</AssemblyName><ReviewReferenceKind Condition="'$(ReviewReferenceKind)' == ''">project</ReviewReferenceKind></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Producer/Producer.csproj" Condition="'$(ReviewReferenceKind)' == 'project'" />
+    <Reference Include="AuditProducer" Condition="'$(ReviewReferenceKind)' != 'project'">
+      <HintPath Condition="'$(ReviewReferenceKind)' == 'dll'">../Producer/bin/Release/net10.0/AuditProducer.dll</HintPath>
+      <HintPath Condition="'$(ReviewReferenceKind)' == 'ref'">../Producer/obj/Release/net10.0/ref/AuditProducer.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

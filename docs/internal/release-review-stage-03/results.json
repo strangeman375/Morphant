@@ -1,0 +1,430 @@
+{
+  "compilerCases": 540,
+  "compilerGroups": {
+    "shared-isolated-source": {
+      "cases": 18,
+      "results": {
+        "clean": 18
+      },
+      "generatorExceptions": 0
+    },
+    "shared-isolated-dll": {
+      "cases": 18,
+      "results": {
+        "clean": 18
+      },
+      "generatorExceptions": 0
+    },
+    "shared-isolated-ref": {
+      "cases": 18,
+      "results": {
+        "clean": 18
+      },
+      "generatorExceptions": 0
+    },
+    "shared-friend-source": {
+      "cases": 18,
+      "results": {
+        "CS0436": 3,
+        "CS0121,CS0436": 15
+      },
+      "generatorExceptions": 0
+    },
+    "shared-friend-dll": {
+      "cases": 18,
+      "results": {
+        "CS0436": 3,
+        "CS0121,CS0436,MORPH0018": 15
+      },
+      "generatorExceptions": 0
+    },
+    "shared-friend-ref": {
+      "cases": 18,
+      "results": {
+        "CS0436": 3,
+        "CS0121,CS0436,MORPH0018": 15
+      },
+      "generatorExceptions": 0
+    },
+    "nullable-isolated-source": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "nullable-isolated-dll": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "nullable-isolated-ref": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "nullable-friend-source": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "nullable-friend-dll": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "nullable-friend-ref": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "tuple-isolated-source": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "tuple-isolated-dll": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "tuple-isolated-ref": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "tuple-friend-source": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "tuple-friend-dll": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "tuple-friend-ref": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "family-isolated-source": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "family-isolated-dll": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "family-isolated-ref": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "family-friend-source": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "family-friend-dll": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "family-friend-ref": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "distinct-source-isolated-source": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "distinct-source-isolated-dll": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "distinct-source-isolated-ref": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "distinct-source-friend-source": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "distinct-source-friend-dll": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "distinct-source-friend-ref": {
+      "cases": 16,
+      "results": {
+        "CS0436": 16
+      },
+      "generatorExceptions": 0
+    },
+    "same-family-isolated-source": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    },
+    "same-related-family-isolated-source": {
+      "cases": 16,
+      "results": {
+        "clean": 1,
+        "CS0121": 15
+      },
+      "generatorExceptions": 0
+    },
+    "same-nested-family-isolated-source": {
+      "cases": 16,
+      "results": {
+        "clean": 16
+      },
+      "generatorExceptions": 0
+    }
+  },
+  "familyVariants": {
+    "abstract": {
+      "generatorException": null,
+      "diagnostics": {
+        "CS0121": 1
+      },
+      "files": 8
+    },
+    "annotated": {
+      "generatorException": null,
+      "diagnostics": {
+        "CS0121": 1
+      },
+      "files": 8
+    },
+    "base-call": {
+      "generatorException": null,
+      "diagnostics": {},
+      "files": 6
+    },
+    "same-constraints": {
+      "generatorException": null,
+      "diagnostics": {
+        "CS0121": 1
+      },
+      "files": 8
+    },
+    "unattributed-leaves": {
+      "generatorException": null,
+      "diagnostics": {
+        "CS0121": 1
+      },
+      "files": 6
+    }
+  },
+  "msbuild": [
+    {
+      "name": "distinct-source-friend-project-Construct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "family-friend-project-Construct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "nullable-friend-project-Construct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "shared-friend-dll-Bare",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "shared-friend-dll-Construct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0121",
+        "CS0436",
+        "MORPH0018"
+      ]
+    },
+    {
+      "name": "shared-friend-dll-Convert",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0121",
+        "CS0436",
+        "MORPH0018"
+      ]
+    },
+    {
+      "name": "shared-friend-dll-ExplicitConstruct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "shared-friend-project-Bare",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "shared-friend-project-Construct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0121",
+        "CS0436",
+        "MORPH0018"
+      ]
+    },
+    {
+      "name": "shared-friend-project-Convert",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0121",
+        "CS0436",
+        "MORPH0018"
+      ]
+    },
+    {
+      "name": "shared-friend-project-ExplicitConstruct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "shared-friend-ref-Bare",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "shared-friend-ref-Construct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0121",
+        "CS0436",
+        "MORPH0018"
+      ]
+    },
+    {
+      "name": "shared-friend-ref-Convert",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0121",
+        "CS0436",
+        "MORPH0018"
+      ]
+    },
+    {
+      "name": "shared-friend-ref-ExplicitConstruct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    },
+    {
+      "name": "shared-isolated-project-Construct",
+      "buildSucceeded": true,
+      "diagnostics": []
+    },
+    {
+      "name": "shared-isolated-project-Convert",
+      "buildSucceeded": true,
+      "diagnostics": []
+    },
+    {
+      "name": "single-annotated",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0121"
+      ]
+    },
+    {
+      "name": "single-base-call",
+      "buildSucceeded": true,
+      "diagnostics": []
+    },
+    {
+      "name": "single-unattributed-leaves",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0121"
+      ]
+    },
+    {
+      "name": "tuple-friend-project-Construct",
+      "buildSucceeded": false,
+      "diagnostics": [
+        "CS0436"
+      ]
+    }
+  ]
+}
