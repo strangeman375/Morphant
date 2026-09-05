@@ -536,18 +536,21 @@ public partial class Container
         });
     }
 
-    [Test]
-    public void File_local_mapper_reports_MORPH0008_on_the_file_keyword()
+    [TestCase("file")]
+    [TestCase("public")]
+    public void File_local_mapper_reports_MORPH0008_on_the_file_keyword(string modelVisibility)
     {
         // lang=c#
         const string source =
 """
+#nullable enable
+#pragma warning disable CS1591
 using Morphant;
 
 namespace TestCase;
 
-file sealed class Source { }
-file sealed class Destination { }
+__VISIBILITY__ sealed class Source { }
+__VISIBILITY__ sealed class Destination { }
 
 [MorphantMapper]
 file partial class TestMapper : TypeMapper<TestMapper>
@@ -557,7 +560,7 @@ file partial class TestMapper : TypeMapper<TestMapper>
 }
 """;
 
-        var result = MapperDeclarationGeneratorTest.Run(source);
+        var result = MapperDeclarationGeneratorTest.Run(source.Replace("__VISIBILITY__", modelVisibility));
         var diagnostic = result.Diagnostics.Single();
 
         Assert.Multiple(() =>
@@ -567,12 +570,8 @@ file partial class TestMapper : TypeMapper<TestMapper>
                 MapperDeclarationGeneratorTest.SourceText(
                     diagnostic.Location),
                 Is.EqualTo("file"));
-            Assert.That(
-                result.GeneratedSources.Any(generated =>
-                    generated.HintName.Contains(
-                        ".TypeMapper.",
-                        StringComparison.Ordinal)),
-                Is.False);
+            Assert.That(result.GeneratedSources, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }
 
@@ -582,6 +581,8 @@ file partial class TestMapper : TypeMapper<TestMapper>
         // lang=c#
         const string source =
 """
+#nullable enable
+#pragma warning disable CS1591
 using Morphant;
 
 namespace TestCase;
@@ -613,6 +614,8 @@ file partial class Outer
         Assert.Multiple(() =>
         {
             Assert.That(diagnostic.Id, Is.EqualTo("MORPH0008"));
+            Assert.That(result.GeneratedSources, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(
                 MapperDeclarationGeneratorTest.SourceText(
                     diagnostic.Location),

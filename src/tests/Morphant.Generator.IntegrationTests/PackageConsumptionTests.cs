@@ -23,10 +23,10 @@ internal sealed class PackageConsumptionTests
         "Morphant.Generated.Construction." +
         HintPrefix + "Destination.g.cs",
         "Morphant.Generated.MappingExtension." +
-        HintPrefix + "Source__" + HintPrefix + "Destination.g.cs",
+        HintPrefix + "Source__" + HintPrefix + "Destination__" + HintPrefix + "TestMapper.g.cs",
         "Morphant.Generated.Member." + HintPrefix + "Destination.g.cs",
         "Morphant.Generated.MemberExtension." +
-        HintPrefix + "Source__" + HintPrefix + "Destination.g.cs",
+        HintPrefix + "Source__" + HintPrefix + "Destination__" + HintPrefix + "TestMapper.g.cs",
         "Morphant.Generated.TypeMapper." + HintPrefix + "TestMapper.g.cs"
     ];
 
@@ -37,12 +37,12 @@ internal sealed class PackageConsumptionTests
         HintPrefix + "SecondDestination.g.cs",
         "Morphant.Generated.MappingExtension." +
         HintPrefix + "SecondSource__" +
-        HintPrefix + "SecondDestination.g.cs",
+        HintPrefix + "SecondDestination__" + HintPrefix + "TestMapper.g.cs",
         "Morphant.Generated.Member." +
         HintPrefix + "SecondDestination.g.cs",
         "Morphant.Generated.MemberExtension." +
         HintPrefix + "SecondSource__" +
-        HintPrefix + "SecondDestination.g.cs"
+        HintPrefix + "SecondDestination__" + HintPrefix + "TestMapper.g.cs"
     ];
 
     [Test]

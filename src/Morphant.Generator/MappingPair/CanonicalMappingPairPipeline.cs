@@ -74,7 +74,8 @@ internal static class CanonicalMappingPairPipeline
             if (mapperModel.ConfigureSyntax.Parent is not
                     TypeDeclarationSyntax declaration ||
                 semanticModel.GetDeclaredSymbol(declaration) is not
-                    INamedTypeSymbol declaringMapperType)
+                    INamedTypeSymbol declaringMapperType ||
+                HasFileLocalScope(declaringMapperType))
             {
                 continue;
             }
@@ -129,6 +130,19 @@ internal static class CanonicalMappingPairPipeline
         }
 
         return result.ToImmutable();
+    }
+
+    private static bool HasFileLocalScope(INamedTypeSymbol mapperType)
+    {
+        for (var scope = mapperType; scope is not null; scope = scope.ContainingType)
+        {
+            if (scope.IsFileLocal)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static CanonicalPairCoordination BuildCoordination(

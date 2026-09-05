@@ -37,13 +37,24 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DslFamilyRecover
     [MorphantMapper]
     public partial class RootMapper : Root<RootMapper>
     {
-        protected override void Configure(MapperBuilder builder) => base.Configure(builder);
+        protected override void Configure(MapperBuilder builder)
+        {
+            base.Configure(builder);
+            builder.Map<(int Id, int Other), Destination>()
+                .IncludeBase<(int Id, int Other), Destination>();
+        }
     }
 
     [MorphantMapper]
     public partial class DerivedMapper : Derived<DerivedMapper>
     {
-        protected override void Configure(MapperBuilder builder) => base.Configure(builder);
+        protected override void Configure(MapperBuilder builder)
+        {
+            base.Configure(builder);
+            builder.Map<(int Code, int Other), Destination>()
+                .IncludeBase<(int Code, int Other), Destination>();
+            builder.Map<int, int>().IncludeBase<int, int>();
+        }
     }
 
     public static class Scenario

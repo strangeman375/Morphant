@@ -12,6 +12,7 @@ internal sealed class CrossPairIncludeTests
         // lang=c#
         const string source =
 """
+#nullable enable
 #pragma warning disable CS1591
 
 using Morphant;
@@ -473,7 +474,6 @@ namespace Morphant.Generated.Types.A_TestProject.N_TestCase.Plans
             set { }
         }
 
-        #nullable disable annotations
         /// <summary>
         /// Maps <see cref="global::TestCase.DogDto.Breed"/>.
         /// </summary>
@@ -482,7 +482,6 @@ namespace Morphant.Generated.Types.A_TestProject.N_TestCase.Plans
             get => null!;
             set { }
         }
-        #nullable enable annotations
 
         public bool Equals(DogDtoMembers? other) => false;
 
