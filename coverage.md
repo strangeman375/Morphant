@@ -3,17 +3,17 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/05/2026 - 13:00:28 |
-| Coverage date: | 09/05/2026 - 12:58:59 - 09/05/2026 - 13:00:24 |
+| Generated on: | 09/05/2026 - 13:37:13 |
+| Coverage date: | 09/05/2026 - 13:35:24 - 09/05/2026 - 13:37:08 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 363 |
 | Files: | 187 |
-| **Line coverage:** | 86.9% (36643 of 42154) |
-| Covered lines: | 36643 |
+| **Line coverage:** | 86.9% (36639 of 42150) |
+| Covered lines: | 36639 |
 | Uncovered lines: | 5511 |
-| Coverable lines: | 42154 |
-| Total lines: | 70255 |
+| Coverable lines: | 42150 |
+| Total lines: | 70251 |
 | **Branch coverage:** | 77.1% (12282 of 15910) |
 | Covered branches: | 12282 |
 | Total branches: | 15910 |
@@ -409,4 +409,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #134](https://github.com/strangeman375/Morphant/actions/runs/33967433359).
+Full HTML report: download the **coverage** artifact from [CI run #136](https://github.com/strangeman375/Morphant/actions/runs/33969132805).
