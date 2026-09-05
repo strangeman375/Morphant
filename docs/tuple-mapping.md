@@ -85,10 +85,10 @@ turn `ItemN` into a semantic name.
 
 ## Construction
 
-For a tuple destination, `Construct` and `Resolve` expose one parameter per
-element. Long tuples use the same flat callback shape; their eighth and later
-elements remain directly addressable by name or as `ItemN`. `Rest` is never
-configured.
+For a tuple destination, `new(...)` inside `Construct` or `Resolve` accepts one
+argument per element. Long tuples use the same flat argument list; their
+eighth and later elements remain directly addressable by name or as `ItemN`.
+`Rest` is never configured.
 
 ```csharp
 builder.Map<Source, (int Id, string Name)>()

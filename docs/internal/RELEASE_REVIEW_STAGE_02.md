@@ -2,13 +2,13 @@
 
 Дата: 2026-09-05. План: [RELEASE_REVIEW_PLAN.md](RELEASE_REVIEW_PLAN.md). Исходная инвентаризация: [этап 1](RELEASE_REVIEW_STAGE_01.md).
 
-Статус: этап выполнен; отчёт ожидает оценки пользователя. Этап 3 не начат. Изменения публичного контракта, реализации и пользовательской документации этим отчётом не утверждаются.
+Статус: пользователь оценил этап и разрешил исправить пояснения API и диагностики. Nullable return contract сохраняется по его решению; подробности ниже. Этап 3 не начат.
 
 ## 1. Результат
 
 Основное разделение API обосновано: регистрация точной пары, выбор destination, правила членов и полный пользовательский алгоритм отвечают разным задачам. Кортежи вписываются в ту же модель пары и операций; отдельный multi-source/state API для рассмотренных сценариев не нужен. Оснований объединять `Construct` с `ConstructUsing`, убирать `ConstructorParameters`, заменять member record на struct или переносить хелперы в `ITypeMapper.Update` не найдено.
 
-Обнаружена подтверждённая несогласованность nullable-контракта общих точек входа: при допустимом `null` source результат может быть `null`, хотя C# считает его non-nullable. Потребитель компилируется без nullable warnings и получает `NullReferenceException`. Это вопрос к существующему дизайну, а не регрессия, специфичная для новых кортежей.
+Подтверждено, что при допустимом `null` source результат может быть `null`, хотя C# считает его non-nullable. Потребитель компилируется без nullable warnings и получает `NullReferenceException`. После обсуждения пользователь выбрал сохранить управление аннотацией через `TDestination`: обязательные предупреждения во всех обычных вызовах ухудшили бы UX. Это осознанный компромисс существующего API, а не регрессия кортежей.
 
 Также установлены трудности с объяснением синтаксиса `Construct`, диагностики standalone nested `Update` и миграции с 0.4.0. Отдельно отмечено намеренное, но легко пропускаемое поведение: неполный convention-маппинг по умолчанию не вызывает completeness warning.
 
@@ -36,7 +36,7 @@
 | Переименование/вычисление членов | `Members(s => new() { ... })`, `Auto`, `Ignore`, `Value<T>` | Основной сценарий удобен. Дополнительные формы `previous`, `result`, `context` нужны для разных зависимостей; не требуют знания generated namespace |
 | Изменение вложенного get-only объекта | Standalone `Update(source.Child, members.Child)` через локальный member-план | Возможность есть и работает, но здесь пользователь должен явно назвать сгенерированный тип. Отказ близкой формы через `result.Child` объяснён недостаточно; S02-02 |
 | Произвольный алгоритм | `Convert`, исходный nullable source, `Option` previous, настоящий context | Самостоятельный режим с ясной ответственностью за null/loops/mutation/order. Смешение с destination/member rules было бы неоднозначным, текущий запрет обоснован |
-| Необязательные значения и null | Отдельные source/destination policies; `Option` previous | Runtime-правила описаны. Nullable-аннотации возвращаемого результата с ними не согласованы; S02-01 |
+| Необязательные значения и null | Отдельные source/destination policies; `Option` previous | Runtime-правила описаны. Аннотацию результата выбирает вызывающий код; это принятое ограничение S02-01 |
 | Настройки | 8 настроек, assembly → mapper → pair с явным приоритетом include/base; `Default` продолжает поиск | Сложность в основном соответствует возможностям. Важны локальность overrides и независимость от порядка `Map`/mapper settings. Реализация матрицы остаётся этапу 6 |
 | Наследование конфигурации | CRTP layers, `base.Configure`, затем явный `IncludeBase` | Повторение self-constraints усложняет иерархии, но граница сформулирована. `base.Configure` не регистрирует все base pairs в derived mapper; это явно объяснено в guide |
 | `IncludeBase` разных/одинаковых пар | Разные пары делят настройки/member rules, одинаковая пара может импортировать destination rule | Различие необходимо: создание базового destination нельзя автоматически использовать как создание производного. Правила и dispatch остаются отдельными |
@@ -50,9 +50,9 @@
 
 Декларативные lambdas описывают зависимости и правила, а не произвольную последовательность C# statements. Пропущенное правило или перекрытое выражение может не вычисляться; `result` нельзя читать до его создания. Документация описывает эту границу, но при улучшении IntelliSense следует дать короткую ссылку на неё из `Construct`/`Resolve`/`Members`, чтобы пользователь не узнавал о различии только из длинного guide. Для полного обычного алгоритма уже есть `Convert`; ещё один режим не предлагается.
 
-## 4. S02-01 — nullable-аннотация результата обещает больше, чем runtime
+## 4. S02-01 — nullable-аннотацией результата управляет вызывающий код
 
-Классификация: **подтверждённая несогласованность дизайна**, высокая важность; требуется решение пользователя. Поведение реализации соответствует нынешнему описанию null policies и имеющимся тестам.
+Классификация после обсуждения: **принятый компромисс дизайна**. Поведение реализации соответствует null policies и имеющимся тестам. Non-nullable `TDestination` выражает ожидание вызывающего кода, а не проверяемую Morphant гарантию результата.
 
 Минимальный пример для console consumer с nullable enabled и warnings as errors:
 
@@ -92,7 +92,7 @@ namespace Example
 
 `null` является допустимым аргументом: API объявляет `TSource?`. При `NullSourceHandling.ReturnNull` возвращается `default(TDestination)`. Но метод возвращает `TDestination` без `MaybeNull`, и при `TDestination=Destination` C# разрешает разыменование без `CS8602`.
 
-В выполненной пробе подтверждены три пути: direct `Create(null).Name`, direct `Update(null, new Destination()).Name`, `IMapper.Map<Source, Destination>(null).Name`. Сборка: 0 warnings, 0 errors; каждый путь получает `NullReferenceException`. Исключения перехватывались самой пробой для фиксации результата. Ошибкой является обещание статического контракта, а не невыполнение заданной null policy.
+В выполненной пробе подтверждены три пути: direct `Create(null).Name`, direct `Update(null, new Destination()).Name`, `IMapper.Map<Source, Destination>(null).Name`. Сборка: 0 warnings, 0 errors; каждый путь получает `NullReferenceException`. Исключения перехватывались самой пробой для фиксации результата. Этот риск сохраняется при неверно выбранной пользователем nullable-аннотации; заданная null policy выполняется корректно.
 
 Источники: [IMapper](../../src/Morphant/Mapper.cs), [ITypeMapper](../../src/Morphant/TypeMapper.cs), [direct extensions](../../src/Morphant/TypeMapperExtensions.cs), [null-source emission](../../src/Morphant.Generator/TypeMapperGeneration/TypeMapperEmitter.cs), [null handling](../settings/null-handling.md). Общие сигнатуры были такими же в `v0.4.0`; проблема не ограничена mapper-scoped API или кортежами.
 
@@ -104,9 +104,9 @@ namespace Example
 | Изменить runtime-контракт: для определённых non-nullable mappings возвращать только non-null либо бросать исключение | Может дать более сильную гарантию, но меняет null policies и требует отдельной модели nullable registrations/CLR identity, factories и `Convert`. Это существенно больший redesign |
 | Оставить только пояснение в документации | Сохраняет удобство текущих вызовов, но compiler flow analysis продолжает не видеть реальный риск |
 
-Рекомендация: выбрать консервативный статический контракт общих точек входа, сохранив согласованную runtime-семантику. Не менять одновременно default null policies и callback lifecycle. Точную форму аннотаций и достаточность гарантий для всех путей подтвердить на этапах 4/8 перед реализацией. Условная аннотация только по non-null source не должна объявляться достаточной без проверки factories, `Convert` и runtime lookup.
+Решение пользователя от 2026-09-05: сохранить возвращаемый `TDestination` без безусловного `MaybeNull`. Пользователь выбирает, например, `IMapper.Map<Source, Destination?>`, если допускает null-результат. Приоритет — отсутствие лишних предупреждений в обычных сценариях; аннотация не меняет runtime null policies. Первоначальное предложение консервативно аннотировать все результаты не принято и не является задачей следующих этапов. Согласовано краткое пояснение в null-handling guide и XML-документации.
 
-Покрытие сейчас фиксирует обе стороны отдельно: [MappingInterfaceNullabilityTests](../../src/tests/Morphant.Generator.UnitTests/MappingInterfaceNullabilityTests.cs) требует non-nullable return metadata, а [TypeMapperNullHandlingTests](../../src/tests/Morphant.Generator.UnitTests/TypeMapperNullHandlingTests.cs) подтверждает возврат default. При согласованном изменении нужны consumer-тесты flow analysis и runtime-тесты на одной модели: Create/Update, null source, nullable/non-nullable reference destination, value destination, policies, factory/manual result. Изменение одних snapshots без такой связи проблему не закрывает.
+Покрытие сохраняет обе стороны принятого контракта: [MappingInterfaceNullabilityTests](../../src/tests/Morphant.Generator.UnitTests/MappingInterfaceNullabilityTests.cs) проверяет return metadata без принудительной nullable-аннотации, а [TypeMapperNullHandlingTests](../../src/tests/Morphant.Generator.UnitTests/TypeMapperNullHandlingTests.cs) подтверждает возврат default. На этапах 4/8 остаётся проверить фактическую семантику policies, factories/manual/nested paths и выбор nullable destination вызывающим кодом; менять общий return contract для этого не требуется.
 
 ## 5. S02-02 — standalone nested Update требует неочевидной формы
 
@@ -298,7 +298,7 @@ builder.Map<Source, (int Count, int Id)>();
 
 | ID | Предлагаемое действие | Необходимая проверка | Где продолжить |
 | --- | --- | --- | --- |
-| S02-01 | Согласовать правдивый nullable-контракт; рекомендован консервативный return contract общих APIs | Consumer flow analysis вместе с runtime null cases, factories/manual/nested paths; влияние на existing callers | Решение по дизайну, затем этапы 4/8/12 |
+| S02-01 | Решено: сохранить управление nullable-аннотацией через `TDestination`; кратко объяснить ответственность вызывающего кода | Consumer flow analysis вместе с runtime null cases, factories/manual/nested paths | Решение принято; семантическая проверка на этапах 4/8 |
 | S02-02 | Уточнить `MORPH0046`/help для standalone selector; не снимать ограничение автоматически | Ошибочная и правильная формы, точный span, readonly lifecycle и null-skip; отдельные regression tests | Этапы 5/8/9/12 |
 | S02-03 | Прямо объяснить `new(...)` в Construct/Resolve; поправить tuple constructor terminology | Компилируемые примеры правильной формы и expected native errors неправильной; XML consistency | Этапы 4/9/12 |
 | S02-04 | Сделать Destination completeness validation заметной в quick start; default не менять без решения | Включённая/выключенная проверка, несовместимый тип, deliberate Ignore, partial mapping | Этапы 9/12 |
@@ -306,4 +306,14 @@ builder.Map<Source, (int Count, int Id)>();
 
 Строки F02–F20, F24–F26 исходного реестра рассмотрены здесь на уровне пользовательского дизайна; F04/Q08 дополнены измерением и обоснованием категорий. Q07 дополнен маршрутом миграции. Их implementation-проверка не считается закрытой этим этапом. Q01–Q04 про конкуренцию DSL остаются открытыми; результаты SurfaceVolume внутри одной сборки не отвечают на IVT-вопрос.
 
-Основные ранее выбранные решения предлагается сохранить. Существенный вопрос для обсуждения сейчас — nullable return contract; исправления текстов и регрессионные тесты перечислены конкретно, но ещё не внесены. После оценки отчёта и команды пользователя следующий этап плана — **3: объявления мапперов, пары и изоляция DSL**, начиная с воспроизведения межсборочной конкуренции.
+Основные ранее выбранные решения сохраняются. Вопрос nullable return contract закрыт решением пользователя. Следующий этап плана — **3: объявления мапперов, пары и изоляция DSL**, начиная с воспроизведения межсборочной конкуренции; для его начала по-прежнему нужна команда пользователя.
+
+## 12. Согласованные уточнения после ревью
+
+- S02-01: описан выбор nullable результата в null handling, добавлена ссылка из runtime guide и короткие XML-пояснения. Сигнатуры и runtime-семантика сохранены.
+- S02-02: уточнён текст `MORPH0046`, help и пояснение к существующему примеру nested Update. Добавлена регрессия для `result.Child`, усилена проверка неправильного selector; положительный случай уже есть в той же группе.
+- S02-03: уточнены `new(...)` и выбор `Using` в справочнике, исправлена терминология tuple construction. Пояснение синтаксиса также появляется в IntelliSense; полные ожидаемые generated sources обновлены только в соответствующих XML-строках.
+- S02-04: первый пример quick start включает Destination validation и кратко объясняет её назначение и выключенный default.
+- S02-05: краткая миграция с 0.4.0 находится в changelog рядом с release changes и ссылается на подробный inheritance guide.
+
+Контрольная точка: изменения подготовлены; новые проверки ещё не выполнены. Публикация этой точки сохраняет работу перед сборкой. Итоговые результаты будут записаны после проверки.

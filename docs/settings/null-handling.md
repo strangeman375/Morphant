@@ -50,4 +50,18 @@ Manual `Convert` mappings bypass both settings. They receive the original
 source and an `Option<TDestination>` that indicates whether an existing
 destination is available. See [Manual mapping](../manual-mapping.md).
 
+## Result nullability
+
+The caller chooses the result's nullable annotation through `TDestination`.
+Use a nullable destination when your inputs and mapping can produce null:
+
+```csharp
+var order = mapper.Map<OrderDto, Order?>(orderDto);
+```
+
+A non-nullable destination expresses your expectation; Morphant does not add
+a null-result check. Reference-type nullable annotations do not change the
+registered mapping or its null-handling settings. Direct `Create` and `Update`
+calls use the destination annotation of `ITypeMapper<TSource, TDestination>`.
+
 See the [settings overview](README.md) for levels and precedence.

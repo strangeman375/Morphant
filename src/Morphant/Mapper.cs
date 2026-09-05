@@ -12,7 +12,10 @@ public interface IMapper
     /// Maps the specified source without a supplied destination.
     /// </summary>
     /// <typeparam name="TSource">The source type.</typeparam>
-    /// <typeparam name="TDestination">The destination type.</typeparam>
+    /// <typeparam name="TDestination">
+    /// The destination type. Use a nullable reference type when the mapping
+    /// can return null.
+    /// </typeparam>
     /// <param name="source">The source to map.</param>
     /// <returns>
     /// The mapping result, which may be <see langword="default"/> when allowed
@@ -27,7 +30,10 @@ public interface IMapper
     /// Maps the specified source with a supplied destination.
     /// </summary>
     /// <typeparam name="TSource">The source type.</typeparam>
-    /// <typeparam name="TDestination">The destination type.</typeparam>
+    /// <typeparam name="TDestination">
+    /// The destination type. Use a nullable reference type when the mapping
+    /// can return null.
+    /// </typeparam>
     /// <param name="source">The source to map.</param>
     /// <param name="destination">The supplied destination.</param>
     /// <returns>

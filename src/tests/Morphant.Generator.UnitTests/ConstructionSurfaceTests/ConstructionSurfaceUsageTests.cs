@@ -214,7 +214,7 @@ namespace Morphant
         /// Defines destination construction when none exists.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction plan.</param>
+        /// <param name="construct">An inline lambda using new(...) without a type name.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> Construct(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
@@ -225,7 +225,7 @@ namespace Morphant
         /// Defines destination construction with access to the current mapping context.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction plan.</param>
+        /// <param name="construct">An inline lambda using new(...) without a type name.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> Construct(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
@@ -236,7 +236,7 @@ namespace Morphant
         /// Defines how to select or construct the destination.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result plan.</param>
+        /// <param name="resolve">An inline lambda returning previous or using new(...) without a type name.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,
@@ -247,7 +247,7 @@ namespace Morphant
         /// Defines destination resolution with access to the current mapping context.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result plan.</param>
+        /// <param name="resolve">An inline lambda returning previous or using new(...) without a type name.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> Resolve(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source?, global::TestCase.Destination?> builder,

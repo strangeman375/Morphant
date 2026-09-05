@@ -28,13 +28,18 @@ public sealed class CustomerDto
 public sealed partial class ApplicationMapper : TypeMapper<ApplicationMapper>
 {
     protected override void Configure(MapperBuilder builder) =>
-        builder.Map<Customer, CustomerDto>();
+        builder.Map<Customer, CustomerDto>()
+            .UnmappedMemberValidation(UnmappedMemberValidation.Destination);
 }
 ```
 
 The generated `ApplicationMapper` implements
 `ITypeMapper<Customer, CustomerDto>`. Exact, case-sensitive member names are
 mapped when C# provides a warning-free implicit conversion.
+
+The example enables [destination validation](settings/unmapped-member-validation.md)
+to report destination members that cannot be mapped. This check is disabled
+by default.
 
 The mapper is its own `TypeMapper<TMapper>` argument. This self type keeps
 generated fluent methods attached to the correct mapper configuration.

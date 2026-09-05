@@ -431,8 +431,10 @@ internal static class NestedMappingDiagnosticAnalyzer
                                .Distinct(StringComparer.Ordinal));
 
             case NestedMappingFailureKind.ReadOnlyProxyInvalid:
-                return "Update requires a readable reference-type " +
-                       "destination member here";
+                return "standalone Update requires a readable " +
+                       "reference-type member selected through the " +
+                       "generated Members callback result, such as " +
+                       "members.Child";
 
             default:
                 return string.Empty;

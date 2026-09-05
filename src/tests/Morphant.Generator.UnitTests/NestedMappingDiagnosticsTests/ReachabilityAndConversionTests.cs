@@ -647,13 +647,101 @@ namespace TestCase
                 Is.EqualTo(new[] { "MORPH0046" }));
             Assert.That(
                 result.NestedMappingDiagnostics.Single().GetMessage(),
-                Does.Contain(
-                    "Update requires a readable reference-type destination " +
-                    "member here"));
+                Is.EqualTo(
+                    "Destination for nested 'Update' is invalid in mapping " +
+                    "'TestCase.Source -> TestCase.Destination': standalone " +
+                    "Update requires a readable reference-type member " +
+                    "selected through the generated Members callback " +
+                    "result, such as members.Child. Affected cases: Create; " +
+                    "Update without an existing destination; Update with " +
+                    "an existing destination."));
+            Assert.That(
+                NestedMappingDiagnosticsGeneratorTest.SourceText(
+                    result.NestedMappingDiagnostics.Single().Location),
+                Is.EqualTo("members.Child"));
             Assert.That(
                 result.NestedMappingDiagnostics.Single()
                     .AdditionalLocations.Select(
                         NestedMappingDiagnosticsGeneratorTest.SourceText),
+                Is.EqualTo(new[] { "Update" }));
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Explains_why_a_standalone_Update_cannot_use_the_result_member()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+
+using Morphant;
+
+namespace TestCase
+{
+    public sealed class ChildSource { }
+    public sealed class ChildDestination { }
+
+    public sealed class Source
+    {
+        public ChildSource Child { get; } = new();
+    }
+
+    public sealed class Destination
+    {
+        public ChildDestination Child { get; } = new();
+    }
+
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            builder.Map<ChildSource, ChildDestination>();
+            builder.Map<Source, Destination>()
+                .Members((source, previous, result) =>
+                {
+                    Update(source.Child, result.Child);
+                    return new();
+                });
+        }
+    }
+}
+""";
+
+        var result = NestedMappingDiagnosticsGeneratorTest.Run(source);
+        Assert.That(result.EffectiveDiagnostics, Has.Length.EqualTo(1));
+        var diagnostic = result.EffectiveDiagnostics.Single();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Id, Is.EqualTo("MORPH0046"));
+            Assert.That(diagnostic.Severity,
+                Is.EqualTo(Microsoft.CodeAnalysis.DiagnosticSeverity.Error));
+            Assert.That(
+                diagnostic.GetMessage(),
+                Is.EqualTo(
+                    "Destination for nested 'Update' is invalid in mapping " +
+                    "'TestCase.Source -> TestCase.Destination': standalone " +
+                    "Update requires a readable reference-type member " +
+                    "selected through the generated Members callback " +
+                    "result, such as members.Child. Affected cases: Create; " +
+                    "Update without an existing destination; Update with " +
+                    "an existing destination."));
+            Assert.That(
+                NestedMappingDiagnosticsGeneratorTest.SourceText(
+                    diagnostic.Location),
+                Is.EqualTo("result.Child"));
+            Assert.That(
+                diagnostic.Location.SourceSpan,
+                Is.EqualTo(new Microsoft.CodeAnalysis.Text.TextSpan(
+                    source.IndexOf("result.Child", StringComparison.Ordinal),
+                    "result.Child".Length)));
+            Assert.That(
+                diagnostic.AdditionalLocations.Select(
+                    NestedMappingDiagnosticsGeneratorTest.SourceText),
                 Is.EqualTo(new[] { "Update" }));
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
@@ -704,7 +792,7 @@ namespace TestCase
 
         Assert.Multiple(() =>
         {
-            Assert.That(result.NestedMappingDiagnostics, Is.Empty);
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
         });
     }

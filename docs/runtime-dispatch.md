@@ -69,7 +69,9 @@ supplied destination or replace it:
 destination = mapper.Map(source, destination);
 ```
 
-See [Create and Update](create-and-update.md) for operation-specific behavior.
+See [Create and Update](create-and-update.md) for operation-specific behavior
+and [result nullability](settings/null-handling.md#result-nullability) for
+choosing a nullable destination type.
 
 ## Calling without DI
 

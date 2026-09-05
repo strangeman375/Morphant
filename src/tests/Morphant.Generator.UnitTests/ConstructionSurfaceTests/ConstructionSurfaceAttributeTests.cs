@@ -124,7 +124,7 @@ namespace Morphant
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction plan.</param>
+        /// <param name="construct">An inline lambda using new(...) without a type name.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> Construct<TMapper>(
             this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, {|CS0618:global::TestCase.Destination|}>> builder,
@@ -137,7 +137,7 @@ namespace Morphant
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction plan.</param>
+        /// <param name="construct">An inline lambda using new(...) without a type name.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> Construct<TMapper>(
             this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, {|CS0618:global::TestCase.Destination|}>> builder,
@@ -150,7 +150,7 @@ namespace Morphant
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result plan.</param>
+        /// <param name="resolve">An inline lambda returning previous or using new(...) without a type name.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> Resolve<TMapper>(
             this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, {|CS0618:global::TestCase.Destination|}>> builder,
@@ -163,7 +163,7 @@ namespace Morphant
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result plan.</param>
+        /// <param name="resolve">An inline lambda returning previous or using new(...) without a type name.</param>
         /// <returns>The same mapping builder.</returns>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, {|CS0618:global::TestCase.Destination|}> Resolve<TMapper>(
             this global::Morphant.MapperBuilderBase<global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, {|CS0618:global::TestCase.Destination|}>> builder,

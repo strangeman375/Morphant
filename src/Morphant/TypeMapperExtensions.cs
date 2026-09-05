@@ -16,7 +16,10 @@ public static class TypeMapperExtensions
     /// Maps the specified source without a supplied destination.
     /// </summary>
     /// <typeparam name="TSource">The source type.</typeparam>
-    /// <typeparam name="TDestination">The destination type.</typeparam>
+    /// <typeparam name="TDestination">
+    /// The destination type. Use a nullable reference type when the mapping
+    /// can return null.
+    /// </typeparam>
     /// <param name="mapper">The mapper to invoke.</param>
     /// <param name="source">The source to map.</param>
     /// <returns>
@@ -57,7 +60,10 @@ public static class TypeMapperExtensions
     /// Maps the specified source with a supplied destination.
     /// </summary>
     /// <typeparam name="TSource">The source type.</typeparam>
-    /// <typeparam name="TDestination">The destination type.</typeparam>
+    /// <typeparam name="TDestination">
+    /// The destination type. Use a nullable reference type when the mapping
+    /// can return null.
+    /// </typeparam>
     /// <param name="mapper">The mapper to invoke.</param>
     /// <param name="source">The source to map.</param>
     /// <param name="destination">The supplied destination.</param>

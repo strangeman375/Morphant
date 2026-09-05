@@ -25,7 +25,7 @@ builder. The callback must be an inline lambda.
 | `source` | Non-null source after null-source handling |
 | `previous` | `Option<TDestination>` containing the existing destination, when available |
 | `context` | Declarative context; `Operation` is Create or Update |
-| Return value | `previous` or a supported destination constructor expression |
+| Return value | `previous` or a constructor expression using `new(...)` without a type name |
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -34,6 +34,9 @@ builder.Map<OrderDto, Order>()
             ? previous
             : new(source.Id));
 ```
+
+Use [`ResolveUsing`](resolve-using.md) to return an ordinary object such as
+`new Order(source.Id)` instead.
 
 `Resolve` can be combined with [`Members`](members.md), but not with another
 destination method or `Convert`.

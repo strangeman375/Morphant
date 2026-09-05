@@ -10,7 +10,10 @@ namespace Morphant;
 /// <typeparamref name="TDestination"/>.
 /// </summary>
 /// <typeparam name="TSource">The source type.</typeparam>
-/// <typeparam name="TDestination">The destination type.</typeparam>
+/// <typeparam name="TDestination">
+/// The destination type. Use a nullable reference type when the mapping can
+/// return null.
+/// </typeparam>
 /// <remarks>
 /// Morphant generates one implementation per configured mapping. Prefer
 /// <see cref="IMapper"/> or the context-free extension methods for direct use.

@@ -35,6 +35,8 @@ unsupported.
 
 ### Fixed
 
+- Explain that standalone nested `Update` requires a member selected through
+  the generated `Members` callback result, including in `MORPH0046`.
 - Keep generated destination plans under the reserved `Morphant.Generated`
   root so generation cannot introduce a nested `Morphant` namespace that
   shadows runtime API references in user code.
@@ -60,6 +62,45 @@ unsupported.
 - Preserve tuple element names and nullable annotations when generic mapper
   family types are closed, avoiding false `MORPH0056` conflicts during
   configuration inheritance.
+
+### Migrating from 0.4.0
+
+Give each concrete mapper its own self type:
+
+```csharp
+// Before
+public partial class OrderMapper : TypeMapper
+
+// After
+public partial class OrderMapper : TypeMapper<OrderMapper>
+```
+
+Keep `[MorphantMapper]` and the `Configure(MapperBuilder builder)` override.
+If you use a reusable base, pass the final mapper type through every layer:
+
+```csharp
+public abstract class CommonMapper<TMapper> : TypeMapper<TMapper>
+    where TMapper : CommonMapper<TMapper>
+```
+
+The concrete mapper then inherits `CommonMapper<OrderMapper>`. Keep the
+`base.Configure` and `IncludeBase` calls described in
+[Configuration inheritance](docs/configuration-inheritance.md).
+
+If your configuration explicitly names builder types, replace
+`Morphant.MapperBuilder` with the inherited `MapperBuilder`, and
+`MapperBuilder<TSource, TDestination>` with
+`MappingBuilder<TMapper, TSource, TDestination>`. For explicit generated
+callback result types such as `OrderMembers`, update imports to the namespace
+shown by the IDE.
+
+Every additional generic family parameter must participate in each declared
+pair ([`MORPH0060`](docs/diagnostics/MORPH0060.md)). Nested mappers and their
+containing types must be accessible to generated code
+([`MORPH0059`](docs/diagnostics/MORPH0059.md)).
+
+Application-side `IMapper.Map`, direct `Create`/`Update` calls and DI
+registration keep their existing form.
 
 ## [0.4.0]
 

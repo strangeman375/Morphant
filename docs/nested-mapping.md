@@ -54,7 +54,8 @@ A readable reference-type member can be updated in place even without a
 setter when its current value can be passed to a nested Update:
 
 `OrderMembers` below is the generated callback result type; import the
-namespace shown for it by the IDE.
+namespace shown for it by the IDE. Pass a member selected through this object
+(`members.Address`), not through the callback's `result` destination.
 
 ```csharp
 .Members((source, _) =>
