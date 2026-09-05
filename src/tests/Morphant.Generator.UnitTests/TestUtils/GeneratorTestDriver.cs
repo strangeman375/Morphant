@@ -20,7 +20,8 @@ internal static class GeneratorTestDriver
             null,
         IReadOnlyDictionary<string, string>? globalOptions = null,
         GeneratorDriver? driver = null,
-        IEnumerable<MetadataReference>? additionalReferences = null)
+        IEnumerable<MetadataReference>? additionalReferences = null,
+        CSharpCompilationOptions? compilationOptions = null)
     {
         return Run(
             assemblyName,
@@ -29,7 +30,8 @@ internal static class GeneratorTestDriver
             diagnosticOptions,
             globalOptions,
             driver,
-            additionalReferences);
+            additionalReferences,
+            compilationOptions);
     }
 
     public static GeneratorTestDriverResult Run(
@@ -40,7 +42,8 @@ internal static class GeneratorTestDriver
             null,
         IReadOnlyDictionary<string, string>? globalOptions = null,
         GeneratorDriver? driver = null,
-        IEnumerable<MetadataReference>? additionalReferences = null)
+        IEnumerable<MetadataReference>? additionalReferences = null,
+        CSharpCompilationOptions? compilationOptions = null)
     {
         var parseOptions = new CSharpParseOptions(
             languageVersion,
@@ -64,7 +67,7 @@ internal static class GeneratorTestDriver
             assemblyName,
             syntaxTrees,
             references,
-            new CSharpCompilationOptions(
+            compilationOptions ?? new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: NullableContextOptions.Enable,
                 specificDiagnosticOptions: diagnosticOptions is null
