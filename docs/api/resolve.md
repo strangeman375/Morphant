@@ -25,7 +25,7 @@ builder. The callback must be an inline lambda.
 | `source` | Non-null source after null-source handling |
 | `previous` | `Option<TDestination>` containing the existing destination, when available |
 | `context` | Declarative context; `Operation` is Create or Update |
-| Return value | `previous` or a constructor expression using `new(...)` without a type name |
+| Return value | `previous` or a constructor expression as in [`Construct`](construct.md); an explicit generated type name is also supported |
 
 ```csharp
 builder.Map<OrderDto, Order>()

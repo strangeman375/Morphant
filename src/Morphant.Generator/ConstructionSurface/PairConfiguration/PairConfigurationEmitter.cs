@@ -38,7 +38,8 @@ internal static class PairConfigurationEmitter
                 "Construct",
                 "construct",
                 "Defines destination construction when none exists.",
-                "An inline lambda using new(...) without a type name.",
+                "An inline lambda using new(...); an explicit generated " +
+                "type name is also supported.",
                 "global::Morphant.Delegates.Construct<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.ConstructionResultTypeName + ">");
@@ -50,7 +51,8 @@ internal static class PairConfigurationEmitter
                 "construct",
                 "Defines destination construction with access to the " +
                 "current mapping context.",
-                "An inline lambda using new(...) without a type name.",
+                "An inline lambda using new(...); an explicit generated " +
+                "type name is also supported.",
                 "global::Morphant.Delegates.Construct<" +
                 model.DeclarativeSourceTypeName + ", " +
                 "global::Morphant.Context.MappingContextMarker, " +
@@ -62,8 +64,8 @@ internal static class PairConfigurationEmitter
                 "Resolve",
                 "resolve",
                 "Defines how to select or construct the destination.",
-                "An inline lambda returning previous or using new(...) " +
-                "without a type name.",
+                "An inline lambda returning previous or using new(...); " +
+                "an explicit generated type name is also supported.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.PreviousDestinationTypeName + ", " +
@@ -76,8 +78,8 @@ internal static class PairConfigurationEmitter
                 "resolve",
                 "Defines destination resolution with access to the current " +
                 "mapping context.",
-                "An inline lambda returning previous or using new(...) " +
-                "without a type name.",
+                "An inline lambda returning previous or using new(...); " +
+                "an explicit generated type name is also supported.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.PreviousDestinationTypeName + ", " +

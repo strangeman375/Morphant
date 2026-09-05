@@ -29,15 +29,16 @@ builder. The callback must be an inline lambda.
 |---|---|
 | `source` | Non-null source after null-source handling |
 | `context` | Declarative context; `Operation` is Create or Update |
-| Return value | A constructor expression using `new(...)` without a type name |
+| Return value | A constructor expression, e.g. `new(source.Id)` or `new OrderConstruction(source.Id)` |
 
 ```csharp
 builder.Map<OrderDto, Order>()
     .Construct(source => new(source.Id));
 ```
 
-Use [`ConstructUsing`](construct-using.md) to return an ordinary object such
-as `new Order(source.Id)` instead.
+The explicit name refers to the generated construction type, such as
+`OrderConstruction`. To return an ordinary object such as
+`new Order(source.Id)`, use [`ConstructUsing`](construct-using.md).
 
 `Construct` runs for Create and for Update when no usable destination exists.
 It can be combined with [`Members`](members.md), but not with another
