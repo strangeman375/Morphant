@@ -1120,7 +1120,11 @@ internal static class DeclarativeNestedMapExpression
                     } memberMarkerType
                 } property ||
             (property.SetMethod is not null &&
-             !IsGeneratedSystemTupleMemberPlan(property.ContainingType)) ||
+             !IsGeneratedSystemTupleMemberPlan(
+                 invocation,
+                 property.ContainingType,
+                 semanticModel,
+                 cancellationToken)) ||
             !StringComparer.Ordinal.Equals(
                 SymbolNameHelper.GetFullMetadataName(
                     memberMarkerType.OriginalDefinition),
@@ -1142,13 +1146,35 @@ internal static class DeclarativeNestedMapExpression
     }
 
     private static bool IsGeneratedSystemTupleMemberPlan(
-        INamedTypeSymbol type)
+        InvocationExpressionSyntax invocation,
+        INamedTypeSymbol type,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
-        return StringComparer.Ordinal.Equals(
-                   type.Name,
-                   "TupleMembers") &&
-               BclTuplePlanNaming.IsSystemTuplePlanNamespace(
-                   type.ContainingNamespace.ToDisplayString());
+        var lambda = invocation.Ancestors()
+            .OfType<LambdaExpressionSyntax>()
+            .FirstOrDefault();
+        var configuration = lambda?.Ancestors()
+            .OfType<InvocationExpressionSyntax>()
+            .FirstOrDefault();
+
+        if (configuration is null ||
+            semanticModel.GetSymbolInfo(configuration, cancellationToken)
+                .Symbol is not IMethodSymbol
+                {
+                    ReturnType: INamedTypeSymbol { TypeArguments.Length: 3 } builder
+                } ||
+            SymbolNameHelper.GetFullMetadataName(builder.OriginalDefinition) !=
+                "Morphant.MappingBuilder`3" ||
+            BclTupleShapePolicy.TryCreate(builder.TypeArguments[2]) is not
+                { Kind: BclTupleKind.SystemTuple } shape)
+        {
+            return false;
+        }
+
+        return type.Name == "TupleMembers" &&
+               type.ContainingNamespace.ToDisplayString() ==
+               BclTuplePlanNaming.BuildNamespace(shape, semanticModel.Compilation);
     }
 
     private static bool IsDeclarativeResultLocal(

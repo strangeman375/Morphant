@@ -7,66 +7,30 @@ internal static class GeneratedPlanNaming
 {
     public const string RootNamespace = "Morphant.Generated";
 
-    private const string TypePlansRootNamespace =
-        RootNamespace + ".Types";
-
     public static string BuildNamespace(
         INamedTypeSymbol destinationDefinition,
         Compilation compilation)
     {
-        var namespaceScopes = new Stack<string>();
-
-        for (var containingNamespace =
-                 destinationDefinition.ContainingNamespace;
-             !containingNamespace.IsGlobalNamespace;
-             containingNamespace = containingNamespace.ContainingNamespace)
-        {
-            namespaceScopes.Push(
-                "N_" + EscapeScopeName(containingNamespace.Name));
-        }
-
-        var scopes = new List<string>(namespaceScopes.Count);
-
-        while (namespaceScopes.Count > 0)
-        {
-            scopes.Add(namespaceScopes.Pop());
-        }
-
-        var containingTypeScopes = new Stack<string>();
-
-        for (var containingType = destinationDefinition.ContainingType;
-             containingType is not null;
-             containingType = containingType.ContainingType)
-        {
-            var aritySuffix = containingType.Arity == 0
-                ? string.Empty
-                : "_A" + containingType.Arity.ToString(
-                    CultureInfo.InvariantCulture);
-
-            containingTypeScopes.Push(
-                "T_" +
-                EscapeScopeName(containingType.Name) +
-                aritySuffix);
-        }
-
-        while (containingTypeScopes.Count > 0)
-        {
-            scopes.Add(containingTypeScopes.Pop());
-        }
-
-        return TypePlansRootNamespace + "." +
-               GeneratedAssemblyNaming.BuildScope(compilation) +
-               (scopes.Count == 0
-                   ? string.Empty
-                   : "." + string.Join(".", scopes)) +
-               ".Plans";
+        // Eligible destinations have an unambiguous global metadata name.
+        // Definition identity preserves one generic plan across substitutions.
+        return BuildNamespace(
+            "type:" + SymbolNameHelper.GetFullMetadataName(
+                destinationDefinition.OriginalDefinition),
+            compilation);
     }
 
-    private static string EscapeScopeName(string name)
+    public static string BuildNamespace(
+        string destinationIdentity,
+        Compilation compilation)
     {
-        // A single underscore introduces generated scope metadata. Doubling
-        // user underscores keeps the encoding injective.
-        return name.Replace("_", "__");
+        var assembly = compilation.Assembly.Identity;
+        var token = string.Concat(assembly.PublicKeyToken.Select(
+            static value => value.ToString("x2", CultureInfo.InvariantCulture)));
+        var identity = assembly.Name.Length.ToString(CultureInfo.InvariantCulture) +
+                       ":" + assembly.Name + ":" + token + ":" +
+                       destinationIdentity;
+
+        return RootNamespace + ".N_" + HintNameHelper.GetStableHash128(identity);
     }
 
     public static string BuildConstructionTypeName(

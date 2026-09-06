@@ -779,7 +779,7 @@ namespace TestCase
             builder.Map<Source, Destination>()
                 .Members((source, _) =>
                 {
-                    var members = new global::Morphant.Generated.Types.A_NestedMappingDiagnosticsConsumer.N_TestCase.Plans
+                    var members = new global::Morphant.Generated.N_6ff0eb9ccb4b93bb829508b177fc86e7
                         .DestinationMembers();
                     Update(source.Child, members.Child);
                     return members;

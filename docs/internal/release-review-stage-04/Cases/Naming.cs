@@ -1,10 +1,10 @@
 using System;
 using Morphant;
-using Morphant.Generated.Types.A_Audit_002EStage04.N_Stage04Audit.N_Cases.Plans;
+using Morphant.Generated.N_04410b8797eac248bdacd41fcd44b4e7;
 #if EXPLICIT_TUPLES
-using IdNameConstruction = Morphant.Generated.Tuples.A_Audit_002EStage04.V2_a51caaf0c27a1203d7dd02a67a0a5455.TupleConstruction;
-using IdNameMembers = Morphant.Generated.Tuples.A_Audit_002EStage04.V2_a51caaf0c27a1203d7dd02a67a0a5455.TupleMembers;
-using CodeLabelConstruction = Morphant.Generated.Tuples.A_Audit_002EStage04.V2_24c9520aed1558ff9795890a2808dbb3.TupleConstruction;
+using IdNameConstruction = Morphant.Generated.N_0091d958e8508e00fd80bfb186fbb85f.TupleConstruction;
+using IdNameMembers = Morphant.Generated.N_0091d958e8508e00fd80bfb186fbb85f.TupleMembers;
+using CodeLabelConstruction = Morphant.Generated.N_0a141b2531917ee0a5c60366270ef969.TupleConstruction;
 #endif
 
 namespace Stage04Audit.Cases
@@ -51,7 +51,7 @@ namespace Stage04Audit.Cases
                 .Construct(source => new OrderConstruction(source.Id))
                 .Members(source => new OrderMembers { Name = source.Name });
             builder.Map<Source, Other.Order>()
-                .Construct(source => new global::Morphant.Generated.Types.A_Audit_002EStage04.N_Stage04Audit.N_Cases.T_Other.Plans.OrderConstruction(source.Id));
+                .Construct(source => new global::Morphant.Generated.N_03efaaffc00be1734817e6af64dc04df.OrderConstruction(source.Id));
             builder.Map<Source, Envelope<int>.Item>();
             builder.Map<Source, (int Id, string Name)>()
 #if EXPLICIT_TUPLES

@@ -52,15 +52,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackDiagnost
                     source?.Value ?? -1));
         }
 
-        private static global::Morphant.Generated.Types.A_Morphant_002EGenerator_002EIntegrationTests_002ECSharp9.N_Morphant.N_Generator.N_IntegrationTests.N_CSharp9.N_Scenarios.N_CallbackDiagnosticsRecovery__8c0f0029.Plans.ConstructDestinationConstruction
+        private static global::Morphant.Generated.N_11d0247ea936a92b773fe912e9cbb52b.ConstructDestinationConstruction
             BuildConstruction(Source source) => new();
 
-        private static global::Morphant.Generated.Types.A_Morphant_002EGenerator_002EIntegrationTests_002ECSharp9.N_Morphant.N_Generator.N_IntegrationTests.N_CSharp9.N_Scenarios.N_CallbackDiagnosticsRecovery__8c0f0029.Plans.ResolveDestinationConstruction
+        private static global::Morphant.Generated.N_2ce6e66ad4624220dca0f3cfa3b3a1f9.ResolveDestinationConstruction
             BuildResolution(
                 Source source,
                 Option<ResolveDestination> previous) => new();
 
-        private static global::Morphant.Generated.Types.A_Morphant_002EGenerator_002EIntegrationTests_002ECSharp9.N_Morphant.N_Generator.N_IntegrationTests.N_CSharp9.N_Scenarios.N_CallbackDiagnosticsRecovery__8c0f0029.Plans.MembersDestinationMembers
+        private static global::Morphant.Generated.N_cf9be99f17b010b5f854e394bb368faf.MembersDestinationMembers
             BuildMembers(Source source) => new();
     }
 

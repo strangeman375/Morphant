@@ -35,8 +35,8 @@ var calls = new Dictionary<string, string>
     ["MembersPrevious"] = ".Members((s, p) => new() { Id = s.Id })",
     ["MembersResult"] = ".Members((s, p, r) => new() { Id = s.Id })",
     ["MembersContext"] = ".Members((s, p, r, c) => new() { Id = s.Id })",
-    ["ExplicitConstruct"] = ".Construct(s => new Morphant.Generated.Types.A_AuditConsumer.N_Shared.Plans.DestinationConstruction(s.Id))",
-    ["ExplicitMembers"] = ".Members(s => new Morphant.Generated.Types.A_AuditConsumer.N_Shared.Plans.DestinationMembers() { Id = s.Id })"
+    ["ExplicitConstruct"] = ".Construct(s => new Morphant.Generated.N_d47945bd0e2bc2259b61a826e5ca69e9.DestinationConstruction(s.Id))",
+    ["ExplicitMembers"] = ".Members(s => new Morphant.Generated.N_d47945bd0e2bc2259b61a826e5ca69e9.DestinationMembers() { Id = s.Id })"
 };
 var analyzer = new AnalyzerFileReference(Path.GetFullPath("src/Morphant.Generator/bin/Release/netstandard2.0/Morphant.Generator.dll"), new Loader());
 var generators = analyzer.GetGenerators(LanguageNames.CSharp);

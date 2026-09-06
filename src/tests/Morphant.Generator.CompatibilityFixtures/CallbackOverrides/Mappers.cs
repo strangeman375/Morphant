@@ -57,7 +57,7 @@ public partial class CallbackMapper : TypeMapper<CallbackMapper>
                     new MarkerDestination()));
     }
 
-    private static global::Morphant.Generated.Types.A_CallbackOverrides.N_CallbackOverrides.Plans.MethodGroupDestinationConstruction
+    private static global::Morphant.Generated.N_17de798a8402830ff2409a0235093f5d.MethodGroupDestinationConstruction
         BuildConstruction(Source source) => new();
 
     private static void Observe(int value) { }

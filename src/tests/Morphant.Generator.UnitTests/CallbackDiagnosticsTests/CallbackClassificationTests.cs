@@ -44,15 +44,15 @@ namespace TestCase
                 .ConstructUsing(BuildRuntime);
         }
 
-        private static global::Morphant.Generated.Types.A_CallbackDiagnosticsConsumer.N_TestCase.Plans.ConstructDestinationConstruction
+        private static global::Morphant.Generated.N_bafc878d30aede7366596a1fd8fdaa57.ConstructDestinationConstruction
             BuildConstruction(Source source) => new();
 
-        private static global::Morphant.Generated.Types.A_CallbackDiagnosticsConsumer.N_TestCase.Plans.ResolveDestinationConstruction
+        private static global::Morphant.Generated.N_014cd7b66055ed8ad61d5919dd393053.ResolveDestinationConstruction
             BuildResolution(
                 Source source,
                 Option<ResolveDestination> previous) => new();
 
-        private static global::Morphant.Generated.Types.A_CallbackDiagnosticsConsumer.N_TestCase.Plans.MembersDestinationMembers
+        private static global::Morphant.Generated.N_41f744473dbfb7724022532d911e860f.MembersDestinationMembers
             BuildMembers(Source source) => new();
 
         private static RuntimeDestination BuildRuntime(Source source) => new();

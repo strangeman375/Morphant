@@ -25,6 +25,9 @@ unsupported.
 
 ### Changed
 
+- Use short, uniform namespaces for generated construction and member types,
+  while preserving readable type names. Update explicit imports and aliases
+  to the namespaces shown by the IDE.
 - Replace the non-generic `TypeMapper` and two-argument mapping builder with
   the self-typed `TypeMapper<TMapper>` and
   `MappingBuilder<TMapper, TSource, TDestination>` API.

@@ -116,9 +116,9 @@ namespace TestCase
             builder.Map<Source, Target>()
                 .Members((source, previous) =>
                 {
-                    var own = new global::Morphant.Generated.Types.A_NestedMappingDiagnosticsConsumer.N_TestCase.Plans
+                    var own = new global::Morphant.Generated.N_987a7097bd42f241acd49ff0aee1ca8a
                         .TargetMembers();
-                    var foreign = new global::Morphant.Generated.Types.A_NestedMappingDiagnosticsConsumer.N_TestCase.Plans
+                    var foreign = new global::Morphant.Generated.N_9e8ff08f5e38f9c4ab3a5de62abebe21
                         .ForeignMembers();
                     Update(source.Child, own.Writable);
                     Update(source.Child, foreign.ReadOnly);

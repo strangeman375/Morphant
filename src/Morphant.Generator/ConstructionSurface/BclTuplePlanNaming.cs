@@ -5,15 +5,14 @@ namespace Morphant.Generator.ConstructionSurface;
 
 internal static class BclTuplePlanNaming
 {
-    private const string RootNamespace = "Morphant.Generated.Tuples";
-
     public static string BuildNamespace(
         BclTupleShape shape,
         Compilation compilation)
     {
-        return RootNamespace + "." +
-               GeneratedAssemblyNaming.BuildScope(compilation) + "." +
-               BuildNamespaceName(shape);
+        // Reuse the complete tuple contract/presentation fingerprint that
+        // also identifies its hint file, then scope it to this assembly.
+        return GeneratedPlanNaming.BuildNamespace(
+            "tuple:" + BuildHintIdentity(shape), compilation);
     }
 
     public static string BuildStableIdentity(BclTupleShape shape)
@@ -70,35 +69,6 @@ internal static class BclTuplePlanNaming
     public static string BuildHintIdentity(BclTupleShape shape)
     {
         return BuildNamespaceName(shape);
-    }
-
-    public static bool IsSystemTuplePlanNamespace(string value)
-    {
-        var prefix = RootNamespace + ".A_";
-
-        if (!value.StartsWith(prefix, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        var shapeStart = value.IndexOf('.', prefix.Length) + 1;
-
-        if (shapeStart == 0 || shapeStart >= value.Length ||
-            value[shapeStart] != 'S')
-        {
-            return false;
-        }
-
-        var index = shapeStart + 1;
-
-        while (index < value.Length && char.IsDigit(value[index]))
-        {
-            index++;
-        }
-
-        return index > shapeStart + 1 &&
-               index < value.Length &&
-               value[index] == '_';
     }
 
     private static string BuildNamespaceName(BclTupleShape shape)
