@@ -31,28 +31,31 @@
   is at most 220 bytes. For a longer file component, retain the readable
   identity prefix and append a stable hash of the complete name. A real
   case-insensitive collision after sanitization also receives a stable hash.
-- Scope destination plans by the generating assembly below
-  `Morphant.Generated.Types` and `Morphant.Generated.Tuples`. The `A_` segment
-  preserves ASCII letters/digits, doubles underscores, and encodes other UTF-16
-  code units as an underscore plus four uppercase hexadecimal digits. Append
-  `_K` and the lowercase public key token for signed assemblies. Do not include
-  assembly versions, target frameworks, paths or per-mapper identity.
-- Non-tuple destination plans live below that assembly scope. Encode
-  namespace scopes with `N_`, containing-type scopes with `T_` plus generic
-  arity, double user underscores, and terminate the scope with `Plans` before
-  declaring plan types. A destination in the global namespace starts directly
-  below its assembly scope; never synthesize a `Global` namespace
-  segment. This layout must not introduce a `Morphant` namespace below a user
-  namespace or allow generated namespace/type paths to collide.
-- BCL tuple plans use a compact stable namespace of the form
-  `Morphant.Generated.Tuples.A_<assembly>.V<arity>_<identity>` or
-  `Morphant.Generated.Tuples.A_<assembly>.S<arity>_<identity>`. The identity covers the
-  physical tuple contract and its complete recursive presentation, including
-  element names, nullable annotations and `dynamic`. The identity must not
-  depend on dependency versions or target-framework facade assemblies. All
-  tuple plan leaf types use the fixed names `TupleConstructorParameters`,
-  `TupleConstruction` and `TupleMembers`; never encode tuple contracts or
-  element names into those identifiers.
+- All generated destination types use `Morphant.Generated.N_<identity>`:
+  three namespace segments, with a stable 128-bit hash written as 32 lowercase
+  hexadecimal digits. This common rule covers ordinary, nested, generic and
+  BCL tuple destinations. Do not add assembly, source namespace, containing
+  type, `Types`, `Tuples` or `Plans` segments. The namespace is a technical
+  identity; keep the type names readable.
+- Include the generating assembly's simple name and public key token, and the
+  complete destination identity in the hash. Preserve assembly isolation,
+  namespace/containing-type distinctions and generic arity. Share ordinary
+  generic plans by definition and reuse destination plans across mappers in
+  the same assembly. Do not include assembly/dependency versions, MVID, target
+  frameworks, facade assemblies, paths, per-mapper identity, registration order
+  or random values.
+- For BCL tuples, include the physical tuple contract and its complete
+  recursive presentation, including element names, nullable annotations and
+  `dynamic`. Keep the leaf names `TupleConstructorParameters`,
+  `TupleConstruction` and `TupleMembers`. For other destinations retain
+  `<Destination>ConstructorParameters`, `<Destination>Construction` and
+  `<Destination>Members`. Both `new(...)` and explicit generated type names
+  remain supported.
+- DSL extensions stay in `Morphant`; partial mapper declarations stay in the
+  user's namespace. The separate hint-name policy above is unchanged.
+  This naming rule was approved on 2026-09-06; implementation is in progress.
+  See the agreed contract and completion criteria in
+  `docs/internal/RELEASE_REVIEW_STAGE_04.md` (S04-05).
 - Generated-name tests must cover the unchanged readable form, deterministic
   overflow fallback, suffix preservation, Unicode UTF-8 accounting and an
   actual filesystem write. Generated-surface snapshots must use complete
