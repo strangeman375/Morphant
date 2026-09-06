@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/06/2026 - 15:31:35 |
-| Coverage date: | 09/06/2026 - 15:29:38 - 09/06/2026 - 15:31:30 |
+| Generated on: | 09/06/2026 - 15:41:14 |
+| Coverage date: | 09/06/2026 - 15:39:13 - 09/06/2026 - 15:41:08 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 365 |
 | Files: | 189 |
-| **Line coverage:** | 87.2% (36776 of 42172) |
-| Covered lines: | 36776 |
+| **Line coverage:** | 87.2% (36780 of 42176) |
+| Covered lines: | 36780 |
 | Uncovered lines: | 5396 |
-| Coverable lines: | 42172 |
-| Total lines: | 70277 |
-| **Branch coverage:** | 77.4% (12341 of 15932) |
-| Covered branches: | 12341 |
-| Total branches: | 15932 |
+| Coverable lines: | 42176 |
+| Total lines: | 70280 |
+| **Branch coverage:** | 77.4% (12345 of 15936) |
+| Covered branches: | 12345 |
+| Total branches: | 15936 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -81,7 +81,7 @@
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterFieldModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionConstru<br/>ctorParameterModel|100%||
-|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanEmi<br/>tter|94.7%|83.7%|
+|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanEmi<br/>tter|94.7%|84.1%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>el|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elBuilder|82.9%|69%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResult|100%||
@@ -171,7 +171,7 @@
 |Morphant.Generator.MappingPair.UnifiableMappingPairConflictModel|100%||
 |Morphant.Generator.MappingPair.UnsupportedMappingPairModel|100%||
 |Morphant.Generator.MappingPair.UnsupportedMappingRootModel|100%||
-|Morphant.Generator.MemberSurface.MemberPlan.MemberPlanEmitter|100%|93.4%|
+|Morphant.Generator.MemberSurface.MemberPlan.MemberPlanEmitter|100%|93.7%|
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModel|100%||
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelBuilder|94%|80.4%|
 |Morphant.Generator.MemberSurface.MemberPlan.MemberPlanModelResult|100%||
@@ -411,4 +411,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #156](https://github.com/strangeman375/Morphant/actions/runs/34042318946).
+Full HTML report: download the **coverage** artifact from [CI run #157](https://github.com/strangeman375/Morphant/actions/runs/34042818697).
