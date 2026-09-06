@@ -51,9 +51,20 @@ Update/tuple, static-контейнеры, прежние arbitrary types и ч�
 TryGetValue. Отдельный MSBuild consumer с TryGetValue и && прошёл все четыре
 runtime-проверки Create/reuse/Update(null)/replacement.
 
+## Контрольная точка: XML-описания tuple-типов
+
+S04-05: описания Construction, ConstructorParameters и Members показывают
+конкретное tuple-представление, включая имена элементов, вложенность,
+nullable и generic-аргументы. Например, `(int Id, string Name)` теперь
+отличимо от `(int Code, string Label)` непосредственно в summary.
+Обычные destination-типы сохраняют ссылки на пользовательский тип.
+
+TupleSurfaceTests: 12 passed на Roslyn 4.4.0; буквальные снимки охватывают
+18 tuple-представлений, включая длинные и Unicode-имена. Сигнатуры и
+hint-файлы этим изменением не затронуты. Реальная IDE остаётся этапу 10.
+
 ## Оставшаяся работа
 
-- S04-05: сделать XML-описания tuple-типов различимыми по представлению.
 - Выполнить итоговые Release и оба test projects, проверить затронутые
   Roslyn-facing категории на Roslyn 4.9.2 и обновить итог аудита.
 

@@ -105,11 +105,10 @@ internal static class MemberPlanEmitter
         CodeWriter writer,
         MemberPlanModel model)
     {
-        var cref = XmlAttribute(model.DestinationCref);
-        WriteSummary(
-            writer,
-            "Maps members of " +
-            $"<see cref=\"{cref}\"/>.");
+        var destination = model.DestinationDisplayName is { } display
+            ? $"<c>{XmlText(display)}</c>"
+            : $"<see cref=\"{XmlAttribute(model.DestinationCref)}\"/>";
+        WriteSummary(writer, "Maps members of " + destination + ".");
     }
 
     private static void WriteMemberDocumentation(

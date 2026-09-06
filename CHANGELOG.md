@@ -39,6 +39,7 @@ unsupported.
 
 ### Fixed
 
+- Show concrete tuple element types and names in generated type documentation.
 - Map destination members whose names conflict with generated record members;
   explicit `Members` uses underscore aliases while conventions keep the
   original names.

@@ -68,11 +68,6 @@ internal static class BclTuplePlanNaming
 
     public static string BuildHintIdentity(BclTupleShape shape)
     {
-        return BuildNamespaceName(shape);
-    }
-
-    private static string BuildNamespaceName(BclTupleShape shape)
-    {
         return (shape.Kind == BclTupleKind.ValueTuple ? "V" : "S") +
                shape.Elements.Length.ToString(
                    System.Globalization.CultureInfo.InvariantCulture) +
