@@ -56,6 +56,14 @@
   This naming rule was approved on 2026-09-06; implementation is in progress.
   See the agreed contract and completion criteria in
   `docs/internal/RELEASE_REVIEW_STAGE_04.md` (S04-05).
+- Preserve record member-plan types and `with` expressions. A destination
+  member whose name conflicts with the generated record, its type parameters
+  or its required record members uses a readable configuration alias: append
+  underscores until the name is free. Reserve existing destination member
+  names first, so ordinary names never change to make room for an alias.
+  Conventions, validation and runtime access use the original destination
+  member; XML documentation links the alias to that member. This applies to
+  ordinary destinations and tuple elements. Approved on 2026-09-06.
 - Generated-name tests must cover the unchanged readable form, deterministic
   overflow fallback, suffix preservation, Unicode UTF-8 accounting and an
   actual filesystem write. Generated-surface snapshots must use complete
