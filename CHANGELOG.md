@@ -39,6 +39,14 @@ unsupported.
 
 ### Fixed
 
+- Map destination members whose names conflict with generated record members;
+  explicit `Members` uses underscore aliases while conventions keep the
+  original names.
+- Preserve mappings whose source or destination is nested in a static container.
+- Accept `Resolve` branches guarded by `previous.TryGetValue`, preserving
+  out-variable scope, nullable flow and short-circuit evaluation.
+- Use compilable block-bodied `Resolve` examples when returning `previous`
+  or a target-typed construction expression.
 - Keep generated construction and member type names distinct across assemblies
   that expose their internals to one another.
 - Explain that standalone nested `Update` requires a member selected through

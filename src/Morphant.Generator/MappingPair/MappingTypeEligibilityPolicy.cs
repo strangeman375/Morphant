@@ -96,14 +96,15 @@ internal static class MappingTypeEligibilityPolicy
         ITypeSymbol type,
         Compilation compilation,
         bool inspectTypeParameterConstraints,
-        HashSet<ITypeParameterSymbol> visitedTypeParameters)
+        HashSet<ITypeParameterSymbol> visitedTypeParameters,
+        bool isContainingScope = false)
     {
         if (type.TypeKind is
                 TypeKind.Error or
                 TypeKind.Pointer or
                 TypeKind.FunctionPointer ||
             type.SpecialType == SpecialType.System_Void ||
-            type.IsRefLikeType)
+            type.IsRefLikeType && !isContainingScope)
         {
             return MappingTypeNameability.CompilerOwned;
         }
@@ -150,7 +151,7 @@ internal static class MappingTypeEligibilityPolicy
 
         if (type is not INamedTypeSymbol namedType ||
             namedType.IsAnonymousType ||
-            namedType.IsStatic ||
+            namedType.IsStatic && !isContainingScope ||
             namedType.IsUnboundGenericType ||
             !namedType.CanBeReferencedByName)
         {
@@ -176,7 +177,8 @@ internal static class MappingTypeEligibilityPolicy
                 containingType,
                 compilation,
                 inspectTypeParameterConstraints: true,
-                visitedTypeParameters);
+                visitedTypeParameters,
+                isContainingScope: true);
 
             if (containingNameability != MappingTypeNameability.Available)
             {

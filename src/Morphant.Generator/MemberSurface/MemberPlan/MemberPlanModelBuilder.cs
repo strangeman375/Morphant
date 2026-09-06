@@ -53,6 +53,7 @@ internal static class MemberPlanModelBuilder
             BuildObsoleteAttributeSource(destinationType),
             BuildMembers(
                 members,
+                GeneratedMemberNaming.BuildNames(destinationType),
                 typeParameterNames,
                 includeInitOnlyProperties,
                 compilation,
@@ -165,6 +166,7 @@ internal static class MemberPlanModelBuilder
 
     private static ImmutableArray<MemberPlanPropertyModel> BuildMembers(
         ImmutableArray<ISymbol> members,
+        IReadOnlyDictionary<string, string> memberNames,
         IReadOnlyDictionary<ITypeParameterSymbol, string> typeParameterNames,
         bool includeInitOnlyProperties,
         Compilation compilation,
@@ -201,7 +203,7 @@ internal static class MemberPlanModelBuilder
 
                 result.Add(
                     new MemberPlanPropertyModel(
-                        property.Name,
+                        memberNames[property.Name],
                         typeName,
                         BuildCref(property),
                         canWrite,
@@ -223,7 +225,7 @@ internal static class MemberPlanModelBuilder
 
             result.Add(
                 new MemberPlanPropertyModel(
-                    field.Name,
+                    memberNames[field.Name],
                     fieldTypeName,
                     BuildCref(field),
                     !field.IsReadOnly,

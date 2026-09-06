@@ -39,9 +39,11 @@ builder.Map<OrderDto, Order>()
 ```csharp
 builder.Map<SnapshotDto, Snapshot>()
     .Resolve((source, previous) =>
-        previous.HasValue && previous.Value.Id == source.Id
-            ? previous
-            : new(source.Id));
+    {
+        if (previous.HasValue && previous.Value.Id == source.Id)
+            return previous;
+        return new(source.Id);
+    });
 ```
 
 `ConstructUsing` and `ResolveUsing` are ordinary synchronous C# callbacks.

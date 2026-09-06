@@ -75,9 +75,11 @@ internal static class BclTuplePlanModelBuilder
                 parameter.Constraints,
                 parameter.RequiresNullableAnnotationsDisabled))
             .ToImmutableArray();
+        var memberNames = GeneratedMemberNaming.BuildNames(shape.Type);
         var members = shape.Elements
             .Select(element => BuildMember(
                 element,
+                memberNames[element.Name],
                 typeParameterNames))
             .ToImmutableArray();
 
@@ -117,6 +119,7 @@ internal static class BclTuplePlanModelBuilder
 
     private static MemberPlanPropertyModel BuildMember(
         BclTupleElement element,
+        string memberName,
         IReadOnlyDictionary<ITypeParameterSymbol, string>
             typeParameterNames)
     {
@@ -130,13 +133,14 @@ internal static class BclTuplePlanModelBuilder
             out var requiresNullableAnnotationsDisabled);
 
         return new MemberPlanPropertyModel(
-            element.Name,
+            memberName,
             typeName,
             Cref: null,
             CanWrite: true,
             acceptsNull,
             requiresNullableAnnotationsDisabled,
-            ObsoleteAttributeSource: null);
+            ObsoleteAttributeSource: null,
+            OriginalName: element.Name);
     }
 
     private static string BuildPhysicalTypeName(

@@ -10,6 +10,23 @@ members to the configured convention.
 an assignable property or field, or an eligible readable reference member
 that can be updated in place.
 
+## Member names
+
+Configuration properties normally keep the destination member's name.
+If it conflicts with the generated record's name, a type parameter or a
+record member, Morphant appends underscores until the name is free.
+For example, a destination property `Clone` is configured as `Clone_`:
+
+```csharp
+.Members(source => new() { Clone_ = source.Clone });
+```
+
+If the destination also declares `Clone_`, that property keeps its name and
+`Clone` uses `Clone__`. IntelliSense describes the destination member each
+property represents. The same rule applies to tuple elements.
+Conventions and `Auto()` use the original destination name; `Ignore()`,
+`with` overlays and nested updates work through the configuration alias.
+
 ## Overloads
 
 Each overload accepts a `members` callback and returns the same mapping

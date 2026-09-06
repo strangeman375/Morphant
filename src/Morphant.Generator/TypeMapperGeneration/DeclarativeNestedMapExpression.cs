@@ -1137,10 +1137,14 @@ internal static class DeclarativeNestedMapExpression
         var memberType = memberMarkerType.TypeArguments[0]
             .WithNullableAnnotation(
                 memberMarkerType.TypeArgumentNullableAnnotations[0]);
+        var destinationName = TryGetConfigurationDestination(
+                invocation, semanticModel, cancellationToken) is { } destination
+            ? GeneratedMemberNaming.GetDestinationName(destination, property.Name)
+            : property.Name;
         target = new ReadOnlyMemberUpdateTarget(
-            property.Name,
+            destinationName,
             memberType,
-            resultName + "." + Identifier(property.Name),
+            resultName + "." + Identifier(destinationName),
             property);
         return true;
     }
@@ -1151,6 +1155,20 @@ internal static class DeclarativeNestedMapExpression
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
+        return TryGetConfigurationDestination(
+                   invocation, semanticModel, cancellationToken) is { } destination &&
+               BclTupleShapePolicy.TryCreate(destination) is
+                   { Kind: BclTupleKind.SystemTuple } shape &&
+               type.Name == "TupleMembers" &&
+               type.ContainingNamespace.ToDisplayString() ==
+               BclTuplePlanNaming.BuildNamespace(shape, semanticModel.Compilation);
+    }
+
+    private static INamedTypeSymbol? TryGetConfigurationDestination(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
         var lambda = invocation.Ancestors()
             .OfType<LambdaExpressionSyntax>()
             .FirstOrDefault();
@@ -1158,23 +1176,17 @@ internal static class DeclarativeNestedMapExpression
             .OfType<InvocationExpressionSyntax>()
             .FirstOrDefault();
 
-        if (configuration is null ||
-            semanticModel.GetSymbolInfo(configuration, cancellationToken)
-                .Symbol is not IMethodSymbol
-                {
-                    ReturnType: INamedTypeSymbol { TypeArguments.Length: 3 } builder
-                } ||
-            SymbolNameHelper.GetFullMetadataName(builder.OriginalDefinition) !=
-                "Morphant.MappingBuilder`3" ||
-            BclTupleShapePolicy.TryCreate(builder.TypeArguments[2]) is not
-                { Kind: BclTupleKind.SystemTuple } shape)
-        {
-            return false;
-        }
-
-        return type.Name == "TupleMembers" &&
-               type.ContainingNamespace.ToDisplayString() ==
-               BclTuplePlanNaming.BuildNamespace(shape, semanticModel.Compilation);
+        return configuration is not null &&
+               semanticModel.GetSymbolInfo(configuration, cancellationToken)
+                   .Symbol is IMethodSymbol
+                   {
+                       ReturnType: INamedTypeSymbol { TypeArguments.Length: 3 } builder
+                   } &&
+               SymbolNameHelper.GetFullMetadataName(builder.OriginalDefinition) ==
+                   MetadataNames.PairMapperBuilder
+            ? MappingTypeNormalization.NormalizePreviousDestination(
+                builder.TypeArguments[2], semanticModel.Compilation) as INamedTypeSymbol
+            : null;
     }
 
     private static bool IsDeclarativeResultLocal(

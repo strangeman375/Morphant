@@ -571,7 +571,14 @@ internal static class StructuredConstructMappingPlanner
     {
         condition = UnwrapParentheses(condition);
 
-        if (TryEvaluateKnownCondition(
+        var assignsPrevious = previousParameter is not null &&
+            condition.DescendantNodesAndSelf()
+                .OfType<InvocationExpressionSyntax>()
+                .Any(invocation => IsPreviousAvailabilityAccess(
+                    invocation, previousParameter, semanticModel, cancellationToken));
+
+        if (!(previousAvailable == true && assignsPrevious) &&
+            TryEvaluateKnownCondition(
                 condition,
                 previousParameter,
                 previousAvailable,
@@ -579,12 +586,30 @@ internal static class StructuredConstructMappingPlanner
                 cancellationToken,
                 out var knownValue))
         {
-            return knownValue
-                ? whenTrue
-                : whenFalse;
+            var continuation = knownValue ? whenTrue : whenFalse;
+            // TryGetValue also assigns its out argument. Retain that evaluation
+            // and its scope even when the availability result is known.
+            if (assignsPrevious)
+            {
+                var evaluation = rewriteExpression(condition);
+                return evaluation is null ? null : new TypeMapperControlFlowNode(
+                    Locals: ImmutableArray<TypeMapperLocalValueModel>.Empty,
+                    Condition: null,
+                    WhenTrue: null,
+                    WhenFalse: null,
+                    Leaf: null,
+                    ThrowExpression: null,
+                    EvaluationExpression: evaluation.Value.Expression,
+                    EvaluationContinuation: continuation,
+                    EvaluationDependency: evaluation.Value.DependencyExpression);
+            }
+
+            return continuation;
         }
 
-        if (previousParameter is not null &&
+        // Preserve the original guard when it establishes the out variable's
+        // nullable flow state for the compiler and its scope for later uses.
+        if (!assignsPrevious && previousParameter is not null &&
             previousAvailable is not null &&
             ReferencesPreviousAvailability(
                 condition,
@@ -818,7 +843,7 @@ internal static class StructuredConstructMappingPlanner
         CancellationToken cancellationToken)
     {
         return condition.DescendantNodesAndSelf()
-            .OfType<MemberAccessExpressionSyntax>()
+            .OfType<ExpressionSyntax>()
             .Any(access =>
                 IsPreviousAvailabilityAccess(
                     access,
@@ -835,16 +860,28 @@ internal static class StructuredConstructMappingPlanner
     {
         expression = UnwrapParentheses(expression);
 
-        return expression is MemberAccessExpressionSyntax
+        if (expression is MemberAccessExpressionSyntax
+            {
+                Expression: var receiver,
+                Name.Identifier.ValueText: "HasValue"
+            })
+        {
+            return IsParameterReference(
+                receiver, previousParameter, semanticModel, cancellationToken);
+        }
+
+        return expression is InvocationExpressionSyntax
                {
-                   Expression: var receiver,
-                   Name.Identifier.ValueText: "HasValue"
-               } &&
+                   Expression: MemberAccessExpressionSyntax { Expression: var option },
+                   ArgumentList.Arguments.Count: 1
+               } invocation &&
                IsParameterReference(
-                   receiver,
-                   previousParameter,
-                   semanticModel,
-                   cancellationToken);
+                   option, previousParameter, semanticModel, cancellationToken) &&
+               semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is
+                   IMethodSymbol { Name: "TryGetValue", Parameters.Length: 1 } method &&
+               method.Parameters[0].RefKind == RefKind.Out &&
+               SymbolNameHelper.GetFullMetadataName(method.ContainingType.OriginalDefinition) ==
+                   "Morphant.Option`1";
     }
 
     private static StructuredConstructPlanNode? BuildPlanNode(

@@ -30,10 +30,16 @@ builder. The callback must be an inline lambda.
 ```csharp
 builder.Map<OrderDto, Order>()
     .Resolve((source, previous) =>
-        previous.TryGetValue(out var order) && order.Id == source.Id
-            ? previous
-            : new(source.Id));
+    {
+        if (previous.TryGetValue(out var order) && order.Id == source.Id)
+            return previous;
+        return new(source.Id);
+    });
 ```
+
+When a conditional expression returns `previous` in one branch, write the
+construction type explicitly in the other, for example
+`new OrderConstruction(source.Id)`.
 
 Use [`ResolveUsing`](resolve-using.md) to return an ordinary object such as
 `new Order(source.Id)` instead.

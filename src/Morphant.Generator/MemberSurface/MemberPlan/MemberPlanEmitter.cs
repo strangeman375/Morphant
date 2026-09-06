@@ -121,7 +121,7 @@ internal static class MemberPlanEmitter
             WriteSummary(
                 writer,
                 "Maps tuple element " +
-                $"<c>{XmlText(member.Name)}</c>.");
+                $"<c>{XmlText(member.OriginalName ?? member.Name)}</c>.");
             return;
         }
 

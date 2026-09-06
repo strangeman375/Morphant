@@ -475,8 +475,19 @@ internal static class BasicMembersMappingPlanner
             new DeclarativeNestedMapUsageRegistry(
                 MappingExecutionPathSet.UpdateWithPrevious);
 
-        foreach (var assignment in assignments)
+        var configurationNames = (configuredDestination ?? destination) is
+            INamedTypeSymbol namedDestination
+                ? GeneratedMemberNaming.BuildNames(namedDestination)
+                    .ToDictionary(static name => name.Value, static name => name.Key,
+                        StringComparer.Ordinal)
+                : new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var configuredAssignment in assignments)
         {
+            var assignment = configurationNames.TryGetValue(
+                    configuredAssignment.MemberName, out var destinationName)
+                ? configuredAssignment with { MemberName = destinationName }
+                : configuredAssignment;
             cancellationToken.ThrowIfCancellationRequested();
 
             if (!occupiedNames.Add(assignment.MemberName))

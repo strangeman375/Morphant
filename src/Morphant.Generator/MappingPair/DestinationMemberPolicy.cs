@@ -11,15 +11,12 @@ internal static class DestinationMemberPolicy
         bool includeInitOnlyProperties,
         CancellationToken cancellationToken)
     {
-        var planTypeName = GeneratedPlanNaming.BuildMembersTypeName(
-            destinationType.OriginalDefinition);
         var result = ImmutableArray.CreateBuilder<ISymbol>();
 
         if (destinationType.TypeKind == TypeKind.Interface)
         {
             AddInterfaceMembers(
                 destinationType,
-                planTypeName,
                 compilation,
                 includeInitOnlyProperties,
                 result,
@@ -29,7 +26,6 @@ internal static class DestinationMemberPolicy
         {
             AddClassMembers(
                 destinationType,
-                planTypeName,
                 compilation,
                 includeInitOnlyProperties,
                 result,
@@ -41,7 +37,6 @@ internal static class DestinationMemberPolicy
 
     private static void AddClassMembers(
         INamedTypeSymbol destinationType,
-        string planTypeName,
         Compilation compilation,
         bool includeInitOnlyProperties,
         ImmutableArray<ISymbol>.Builder result,
@@ -60,7 +55,6 @@ internal static class DestinationMemberPolicy
             memberGroups.Add(
                 BuildDeclaredMembers(
                     currentType,
-                    planTypeName,
                     compilation,
                     includeInitOnlyProperties,
                     hiddenMemberNames,
@@ -75,7 +69,6 @@ internal static class DestinationMemberPolicy
 
     private static ImmutableArray<ISymbol> BuildDeclaredMembers(
         INamedTypeSymbol declaringType,
-        string planTypeName,
         Compilation compilation,
         bool includeInitOnlyProperties,
         HashSet<string> hiddenMemberNames,
@@ -89,9 +82,6 @@ internal static class DestinationMemberPolicy
             cancellationToken.ThrowIfCancellationRequested();
 
             if (!hiddenMemberNames.Contains(member.Name) &&
-                !IsGeneratedRecordMemberName(
-                    member.Name,
-                    planTypeName) &&
                 IsSupportedMember(
                     member,
                     compilation,
@@ -111,7 +101,6 @@ internal static class DestinationMemberPolicy
 
     private static void AddInterfaceMembers(
         INamedTypeSymbol destinationType,
-        string planTypeName,
         Compilation compilation,
         bool includeInitOnlyProperties,
         ImmutableArray<ISymbol>.Builder result,
@@ -139,9 +128,6 @@ internal static class DestinationMemberPolicy
                         currentInterface,
                         winningInterface) ||
                     emittedMemberNames.Contains(member.Name) ||
-                    IsGeneratedRecordMemberName(
-                        member.Name,
-                        planTypeName) ||
                     !IsSupportedMember(
                         member,
                         compilation,
@@ -361,18 +347,5 @@ internal static class DestinationMemberPolicy
         return !DestinationCapabilityPolicy.IsOpaque(
             normalized,
             compilation);
-    }
-
-    private static bool IsGeneratedRecordMemberName(
-        string memberName,
-        string planTypeName)
-    {
-        return memberName == planTypeName ||
-               memberName == "Clone" ||
-               memberName == "EqualityContract" ||
-               memberName == "Equals" ||
-               memberName == "GetHashCode" ||
-               memberName == "PrintMembers" ||
-               memberName == "ToString";
     }
 }

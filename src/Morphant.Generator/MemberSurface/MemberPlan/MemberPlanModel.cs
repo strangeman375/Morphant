@@ -22,4 +22,5 @@ internal sealed record MemberPlanPropertyModel(
     bool CanWrite,
     bool AcceptsNull,
     bool RequiresNullableAnnotationsDisabled,
-    string? ObsoleteAttributeSource);
+    string? ObsoleteAttributeSource,
+    string? OriginalName = null);

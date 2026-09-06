@@ -31,10 +31,11 @@ reuse the existing destination:
 
 ```csharp
 .Resolve((source, previous) =>
-    previous.TryGetValue(out var destination) &&
-    destination.Id == source.Id
-        ? previous
-        : new(source.Id));
+{
+    if (previous.TryGetValue(out var destination) && destination.Id == source.Id)
+        return previous;
+    return new(source.Id);
+});
 ```
 
 ## Applying member rules

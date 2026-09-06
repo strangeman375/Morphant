@@ -37,9 +37,13 @@ namespace Stage04Audit.Cases
 #if EXPLICIT_MEMBERS
             .Members(source => new()
             {
-                Clone = source.Clone,
-                EqualityContract = source.EqualityContract,
+                Clone_ = source.Clone,
+                EqualityContract_ = source.EqualityContract,
+#if RENAME_DESTINATION
                 DestinationMembers = source.DestinationMembers
+#else
+                DestinationMembers_ = source.DestinationMembers
+#endif
             })
 #endif
             ;
