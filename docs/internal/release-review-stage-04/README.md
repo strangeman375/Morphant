@@ -5,11 +5,16 @@
 ITypeMapper extensions. Исследовательские входы находятся вне solution.
 Они не заменяют постоянные snapshot/integration-тесты.
 
-Материалы восстановлены из истории после отката окружения. Текущее содержимое
-consumer проверено заново: 19 конфигураций, семь положительных, 86 успешных
-assertions. Первоначальные 127 unit/85 integration и compile-only Roslyn 4.4
-сохранены в [results.json](results.json) как исторические сведения; прежние
-сырьевые логи и исходный локальный commit не восстановлены побайтово.
+После исправлений этапа 4 проверены 17 конфигураций: 15 положительных,
+136 успешных runtime assertions и 2 ожидаемых C#-отказа.
+Текущие результаты и измерения имён: [fix-results.json](fix-results.json).
+Явные имена и Members aliases во входах обновлены к действующему контракту.
+
+Материалы исходного аудита ранее восстанавливались из истории после отката
+окружения. Их 19 конфигураций, семь положительных и 86 успешных assertions
+сохранены в [results.json](results.json) отдельно от исправленной реализации.
+Там же находятся исторические 127 unit/85 integration и compile-only Roslyn 4.4;
+прежние сырые логи и исходный локальный commit не восстановлены побайтово.
 
 ## Воспроизведение
 
@@ -34,25 +39,25 @@ Consumer выводит JSON с expected/actual/passed. Exit 1 означает 
 Generated sources находятся в `obj/generated/<ReviewCase>`; при сравнении
 сохраните каждый вывод отдельно. Bin/obj и большие build logs не коммитятся.
 
-| ReviewCase | DefineConstants | Результат повторного прогона |
+| ReviewCase | DefineConstants | Результат после исправлений |
 | --- | --- | --- |
 | Core | — | Чистый build, 46 проверок прошли |
 | Modern | — | Чистый build, 12 проверок прошли |
-| Naming | — | Короткие/полные имена, nested generic и tuples; 7 прошли |
-| Naming | EXPLICIT_TUPLES | Явные aliases двух tuple-представлений; 7 прошли |
-| ReservedNames | — | Чистый build, 6 из 8 значений неверны |
-| ReservedNames | STRICT | Те же 6 ошибок, без completeness diagnostics |
-| ReservedNames | RENAME_DESTINATION | DestinationMembers начинает маппиться; 4 из 8 значений неверны |
-| ReservedNames | EXPLICIT_MEMBERS | CS0117 и CS0122 |
-| StaticContainer | — | Чистый build, оба интерфейса nested-пар отсутствуют; 2 из 4 проверок не проходят |
-| StaticContainer | NON_STATIC | Интерфейсы и значения восстановлены; 6 прошли |
-| ResolveConditional | — | CS1729 на C# 9, 11 и latest |
-| ResolveConditional | HAS_VALUE_TARGET_TYPED | CS1729 на C# 9 |
-| ResolveConditional | EXPLICIT_NAME | MORPH0038 после устранения CS1729 |
-| ResolveConditional | BLOCK_BODY | MORPH0038 с TryGetValue и && |
-| ResolveConditional | NESTED_TRYGET | MORPH0038 с двумя вложенными if |
-| ResolveConditional | HAS_VALUE | HasValue, ternary, явный construction-тип; 4 прошли |
-| ResolveConditional | HAS_VALUE_BLOCK | HasValue, block, new(...); 4 прошли |
+| Naming | — | Чистый build, 7 проверок прошли |
+| Naming | EXPLICIT_TUPLES | Чистый build, 7 проверок прошли |
+| ReservedNames | — | Чистый build, 8 проверок прошли |
+| ReservedNames | STRICT | Чистый build, 8 проверок прошли |
+| ReservedNames | RENAME_DESTINATION | Чистый build, 8 проверок прошли |
+| ReservedNames | EXPLICIT_MEMBERS | Чистый build, 8 проверок прошли |
+| StaticContainer | — | Чистый build, 6 проверок прошли |
+| StaticContainer | NON_STATIC | Чистый build, 6 проверок прошли |
+| ResolveConditional | EXPLICIT_NAME | Чистый build, 4 проверки прошли |
+| ResolveConditional | BLOCK_BODY | Чистый build, 4 проверки прошли |
+| ResolveConditional | NESTED_TRYGET | Чистый build, 4 проверки прошли |
+| ResolveConditional | HAS_VALUE | Чистый build, 4 проверки прошли |
+| ResolveConditional | HAS_VALUE_BLOCK | Чистый build, 4 проверки прошли |
+| ResolveConditional | — | Ожидаемый CS1729: нужен block body или явное имя construction-типа |
+| ResolveConditional | HAS_VALUE_TARGET_TYPED | Ожидаемый CS1729: нужен block body или явное имя construction-типа |
 
 Для версий языка передайте `-p:LangVersion=9.0`, `-p:LangVersion=11.0`
 или `-p:LangVersion=latest`. Успешные Resolve проверяют Create, reuse,

@@ -53,7 +53,7 @@
   remain supported.
 - DSL extensions stay in `Morphant`; partial mapper declarations stay in the
   user's namespace. The separate hint-name policy above is unchanged.
-  This naming rule was approved on 2026-09-06; implementation is in progress.
+  This naming rule was approved and implemented on 2026-09-06.
   See the agreed contract and completion criteria in
   `docs/internal/RELEASE_REVIEW_STAGE_04.md` (S04-05).
 - Preserve record member-plan types and `with` expressions. A destination

@@ -1,0 +1,1278 @@
+{
+  "date": "2026-09-06",
+  "commit": "6dd458295b2d4b193d01141ddedd5eea887b9c94",
+  "tree": "1b8edb76813a9752ffe71e6eeed3d99770000243",
+  "environment": {
+    "os": "Linux",
+    "sdk": "10.0.100",
+    "targetFramework": "net10.0",
+    "generatorRoslynVersion": "4.4.0",
+    "nullable": true,
+    "warningsAsErrors": true
+  },
+  "buildArguments": [
+    "-c",
+    "Release",
+    "--no-restore",
+    "-t:Rebuild",
+    "-p:BuildProjectReferences=false",
+    "-p:UseSharedCompilation=false",
+    "-m:1",
+    "-nodeReuse:false"
+  ],
+  "cases": [
+    {
+      "case": "Core",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 46,
+      "observations": [
+        {
+          "name": "constructor-preserves-corresponding-member",
+          "expected": 30,
+          "actual": 30,
+          "passed": true
+        },
+        {
+          "name": "nullable-warning-convention-is-skipped",
+          "expected": "initial",
+          "actual": "initial",
+          "passed": true
+        },
+        {
+          "name": "convention-update-reuses-reference",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "convention-update-maps-constructor-member",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "convention-update-retains-init",
+          "expected": 91,
+          "actual": 91,
+          "passed": true
+        },
+        {
+          "name": "resolve-replacement-identity",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "resolve-replacement-constructor",
+          "expected": 30,
+          "actual": 30,
+          "passed": true
+        },
+        {
+          "name": "resolve-replacement-init",
+          "expected": 4,
+          "actual": 4,
+          "passed": true
+        },
+        {
+          "name": "resolve-replacement-init-count",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "resolve-reuse-identity",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-reuse-init-count",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "resolve-reuse-post-member",
+          "expected": "empty",
+          "actual": "empty",
+          "passed": true
+        },
+        {
+          "name": "factory-preserves-init",
+          "expected": 71,
+          "actual": 71,
+          "passed": true
+        },
+        {
+          "name": "factory-post-convention",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "factory-post-explicit",
+          "expected": "mapped",
+          "actual": "mapped",
+          "passed": true
+        },
+        {
+          "name": "construct-using-existing-reference",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "construct-using-existing-call-count",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "null-update-constructs",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "null-update-operation",
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        },
+        {
+          "name": "factory-null-is-terminal",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "factory-null-skips-members",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "null-source-retains-destination",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "null-source-skips-members",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "readonly-struct-create",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "readonly-struct-update-retains",
+          "expected": 8,
+          "actual": 8,
+          "passed": true
+        },
+        {
+          "name": "option-some-default-result",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "option-some-default-present",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "option-null-result",
+          "expected": 5,
+          "actual": 5,
+          "passed": true
+        },
+        {
+          "name": "option-null-absent",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "record-create-init",
+          "expected": "mapped",
+          "actual": "mapped",
+          "passed": true
+        },
+        {
+          "name": "record-update-retains-identity",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "generic-constructor",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "nullable-struct-null-update-creates",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "nullable-struct-default-is-existing",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "optional-decimal",
+          "expected": 1.25,
+          "actual": 1.25,
+          "passed": true
+        },
+        {
+          "name": "optional-enum",
+          "expected": 5,
+          "actual": 5,
+          "passed": true
+        },
+        {
+          "name": "optional-params-empty",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "allow-null-constructor",
+          "expected": "accepted-null",
+          "actual": "accepted-null",
+          "passed": true
+        },
+        {
+          "name": "not-null-source",
+          "expected": "known",
+          "actual": "known",
+          "passed": true
+        },
+        {
+          "name": "allow-null-setter",
+          "expected": "accepted-null",
+          "actual": "accepted-null",
+          "passed": true
+        },
+        {
+          "name": "interface-retains-box",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "interface-mutates-box",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "abstract-factory-members",
+          "expected": 3,
+          "actual": 3,
+          "passed": true
+        },
+        {
+          "name": "update-only-null-destination-creates",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "update-only-operation",
+          "expected": 2,
+          "actual": 2,
+          "passed": true
+        },
+        {
+          "name": "update-only-rejects-create",
+          "expected": "Morphant.Exceptions.MappingOperationNotSupportedException",
+          "actual": "Morphant.Exceptions.MappingOperationNotSupportedException",
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "Modern",
+      "define": null,
+      "languageVersion": "11.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 12,
+      "observations": [
+        {
+          "name": "inherited-required-init-create",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "required-field-create",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "inherited-required-init-update-retains",
+          "expected": 23,
+          "actual": 23,
+          "passed": true
+        },
+        {
+          "name": "required-field-update",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "constructor-only-update-retains",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        },
+        {
+          "name": "sets-required-constructor-result",
+          "expected": 111,
+          "actual": 111,
+          "passed": true
+        },
+        {
+          "name": "explicit-struct-constructor",
+          "expected": 73,
+          "actual": 73,
+          "passed": true
+        },
+        {
+          "name": "explicit-struct-constructor-members",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "null-source-zero-initializes-struct",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "struct-update-retains-default-stamp",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "readonly-record-struct-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "readonly-record-struct-update",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "Naming",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 7,
+      "observations": [
+        {
+          "name": "explicit-short-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "explicit-short-members",
+          "expected": "first",
+          "actual": "first",
+          "passed": true
+        },
+        {
+          "name": "explicit-full-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "nested-generic-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "first-tuple-presentation",
+          "expected": {},
+          "actual": {},
+          "passed": true
+        },
+        {
+          "name": "second-tuple-presentation",
+          "expected": {},
+          "actual": {},
+          "passed": true
+        },
+        {
+          "name": "system-tuple-construction",
+          "expected": {
+            "Item1": 11,
+            "Item2": "first"
+          },
+          "actual": {
+            "Item1": 11,
+            "Item2": "first"
+          },
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "Naming",
+      "define": "EXPLICIT_TUPLES",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 7,
+      "observations": [
+        {
+          "name": "explicit-short-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "explicit-short-members",
+          "expected": "first",
+          "actual": "first",
+          "passed": true
+        },
+        {
+          "name": "explicit-full-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "nested-generic-construction",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "first-tuple-presentation",
+          "expected": {},
+          "actual": {},
+          "passed": true
+        },
+        {
+          "name": "second-tuple-presentation",
+          "expected": {},
+          "actual": {},
+          "passed": true
+        },
+        {
+          "name": "system-tuple-construction",
+          "expected": {
+            "Item1": 11,
+            "Item2": "first"
+          },
+          "actual": {
+            "Item1": 11,
+            "Item2": "first"
+          },
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ReservedNames",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 8,
+      "observations": [
+        {
+          "name": "ordinary-property-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        },
+        {
+          "name": "ordinary-property-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ReservedNames",
+      "define": "STRICT",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 8,
+      "observations": [
+        {
+          "name": "ordinary-property-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        },
+        {
+          "name": "ordinary-property-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ReservedNames",
+      "define": "RENAME_DESTINATION",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 8,
+      "observations": [
+        {
+          "name": "ordinary-property-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        },
+        {
+          "name": "ordinary-property-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ReservedNames",
+      "define": "EXPLICIT_MEMBERS",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 8,
+      "observations": [
+        {
+          "name": "ordinary-property-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-create",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "equality-contract-property-create",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "plan-name-property-create",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        },
+        {
+          "name": "ordinary-property-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "clone-property-update",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "equality-contract-property-update",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "name": "plan-name-property-update",
+          "expected": 19,
+          "actual": 19,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "StaticContainer",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 6,
+      "observations": [
+        {
+          "name": "control-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "nested-source-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "nested-destination-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "ordinary-pair-remains-working",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "nested-source-mapping",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "nested-destination-mapping",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "StaticContainer",
+      "define": "NON_STATIC",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 6,
+      "observations": [
+        {
+          "name": "control-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "nested-source-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "nested-destination-contract",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "ordinary-pair-remains-working",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "nested-source-mapping",
+          "expected": 13,
+          "actual": 13,
+          "passed": true
+        },
+        {
+          "name": "nested-destination-mapping",
+          "expected": 17,
+          "actual": 17,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ResolveConditional",
+      "define": "EXPLICIT_NAME",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 4,
+      "observations": [
+        {
+          "name": "resolve-conditional-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-reuse",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-null-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-replacement",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ResolveConditional",
+      "define": "BLOCK_BODY",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 4,
+      "observations": [
+        {
+          "name": "resolve-conditional-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-reuse",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-null-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-replacement",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ResolveConditional",
+      "define": "NESTED_TRYGET",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 4,
+      "observations": [
+        {
+          "name": "resolve-conditional-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-reuse",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-null-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-replacement",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ResolveConditional",
+      "define": "HAS_VALUE",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 4,
+      "observations": [
+        {
+          "name": "resolve-conditional-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-reuse",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-null-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-replacement",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ResolveConditional",
+      "define": "HAS_VALUE_BLOCK",
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "diagnostics": [],
+      "expectedCompilerControl": false,
+      "runExit": 0,
+      "checks": 4,
+      "observations": [
+        {
+          "name": "resolve-conditional-create",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-reuse",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-null-update",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "resolve-conditional-replacement",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "ResolveConditional",
+      "define": null,
+      "languageVersion": "9.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "CS1729"
+      ],
+      "expectedCompilerControl": true,
+      "passed": true
+    },
+    {
+      "case": "ResolveConditional",
+      "define": "HAS_VALUE_TARGET_TYPED",
+      "languageVersion": "9.0",
+      "buildExit": 1,
+      "diagnostics": [
+        "CS1729"
+      ],
+      "expectedCompilerControl": true,
+      "passed": true
+    }
+  ],
+  "naming": {
+    "files": 22,
+    "plans": [
+      {
+        "file": "Morphant.Generated.Construction.Stage04Audit_Cases_Envelope_1_Item.g.cs",
+        "namespace": "Morphant.Generated.N_c8262e9d0c6264d9c38e055a2e12b881",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "ItemConstructorParameters",
+          "ItemConstruction"
+        ],
+        "fullNameLengths": {
+          "ItemConstructorParameters": 79,
+          "ItemConstruction": 70
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Stage04Audit_Cases_Order.g.cs",
+        "namespace": "Morphant.Generated.N_04410b8797eac248bdacd41fcd44b4e7",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "OrderConstructorParameters",
+          "OrderConstruction"
+        ],
+        "fullNameLengths": {
+          "OrderConstructorParameters": 80,
+          "OrderConstruction": 71
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Stage04Audit_Cases_Other_Order.g.cs",
+        "namespace": "Morphant.Generated.N_03efaaffc00be1734817e6af64dc04df",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "OrderConstructorParameters",
+          "OrderConstruction"
+        ],
+        "fullNameLengths": {
+          "OrderConstructorParameters": 80,
+          "OrderConstruction": 71
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Tuple_S2_ccb1d38f95b5177b3d475773e5a40e78.g.cs",
+        "namespace": "Morphant.Generated.N_5cd093825aa06bfc30a4ab26cbfa7b0e",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "TupleConstructorParameters",
+          "TupleConstruction"
+        ],
+        "fullNameLengths": {
+          "TupleConstructorParameters": 80,
+          "TupleConstruction": 71
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Tuple_V2_24c9520aed1558ff9795890a2808dbb3.g.cs",
+        "namespace": "Morphant.Generated.N_0a141b2531917ee0a5c60366270ef969",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "TupleConstructorParameters",
+          "TupleConstruction"
+        ],
+        "fullNameLengths": {
+          "TupleConstructorParameters": 80,
+          "TupleConstruction": 71
+        }
+      },
+      {
+        "file": "Morphant.Generated.Construction.Tuple_V2_a51caaf0c27a1203d7dd02a67a0a5455.g.cs",
+        "namespace": "Morphant.Generated.N_0091d958e8508e00fd80bfb186fbb85f",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "TupleConstructorParameters",
+          "TupleConstruction"
+        ],
+        "fullNameLengths": {
+          "TupleConstructorParameters": 80,
+          "TupleConstruction": 71
+        }
+      },
+      {
+        "file": "Morphant.Generated.Member.Stage04Audit_Cases_Order.g.cs",
+        "namespace": "Morphant.Generated.N_04410b8797eac248bdacd41fcd44b4e7",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "OrderMembers"
+        ],
+        "fullNameLengths": {
+          "OrderMembers": 66
+        }
+      },
+      {
+        "file": "Morphant.Generated.Member.Tuple_S2_ccb1d38f95b5177b3d475773e5a40e78.g.cs",
+        "namespace": "Morphant.Generated.N_5cd093825aa06bfc30a4ab26cbfa7b0e",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "TupleMembers"
+        ],
+        "fullNameLengths": {
+          "TupleMembers": 66
+        }
+      },
+      {
+        "file": "Morphant.Generated.Member.Tuple_V2_24c9520aed1558ff9795890a2808dbb3.g.cs",
+        "namespace": "Morphant.Generated.N_0a141b2531917ee0a5c60366270ef969",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "TupleMembers"
+        ],
+        "fullNameLengths": {
+          "TupleMembers": 66
+        }
+      },
+      {
+        "file": "Morphant.Generated.Member.Tuple_V2_a51caaf0c27a1203d7dd02a67a0a5455.g.cs",
+        "namespace": "Morphant.Generated.N_0091d958e8508e00fd80bfb186fbb85f",
+        "namespaceDepth": 3,
+        "namespaceLength": 53,
+        "types": [
+          "TupleMembers"
+        ],
+        "fullNameLengths": {
+          "TupleMembers": 66
+        }
+      }
+    ]
+  },
+  "summary": {
+    "configurations": 17,
+    "positive": 15,
+    "compilerControls": 2,
+    "runtimeAssertions": 136,
+    "passed": true
+  },
+  "verification": {
+    "release": {
+      "warnings": 0,
+      "errors": 0
+    },
+    "unitRoslyn44": {
+      "total": 847,
+      "passed": 846,
+      "failed": 0,
+      "notExecuted": 1,
+      "skipReason": "Collection expressions require a Roslyn 4.8+ test host."
+    },
+    "integration": {
+      "total": 271,
+      "passed": 271,
+      "failed": 0,
+      "notExecuted": 0
+    },
+    "affectedUnitRoslyn49": {
+      "total": 143,
+      "passed": 143,
+      "failed": 0,
+      "notExecuted": 0
+    },
+    "documentationExamples": {
+      "pages": [
+        {
+          "path": "docs/api/resolve.md",
+          "snippetSha256": "aa539b591e7395229564d1c4fbcf9e4f71837079c6b5e690a8c2dabe0a190cfa"
+        },
+        {
+          "path": "docs/create-and-update.md",
+          "snippetSha256": "6dfcfca297fb9a61fc67473d36b5d1f976cdcc2fa874138742c6ff02c06a32a7"
+        },
+        {
+          "path": "docs/declarative-mapping.md",
+          "snippetSha256": "52b7da39fd699b91f31b31fb88b66969612749fe2f5119e6a12a886da03764df"
+        }
+      ],
+      "languageVersion": "9.0",
+      "buildExit": 0,
+      "runExit": 0,
+      "runtimeAssertions": 12
+    }
+  },
+  "roslyn49Categories": [
+    "ConstructionSurfaceTests",
+    "MemberSurfaceTests",
+    "GeneratedPlanNamingUsageTests",
+    "GeneratedNameLengthTests",
+    "GeneratedMemberAliasUsageTests",
+    "StaticContainerTypeUsageTests",
+    "ConstructionDiagnosticsTests",
+    "TypeMapperStructuredConstructTests",
+    "TypeMapperNestedMapTests",
+    "TypeMapperConventionTests",
+    "TypeMapperMemberTests",
+    "TypeMapperCreationResultTests"
+  ],
+  "limitations": [
+    "Linux only; no new multi-OS CI result.",
+    "No real IDE completion, search or tooltip session.",
+    "Later review stages are not included in this checkpoint."
+  ]
+}

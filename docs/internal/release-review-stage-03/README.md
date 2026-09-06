@@ -10,7 +10,7 @@
 dotnet build docs/internal/release-review-stage-03/msbuild/Consumer/Consumer.csproj -c Release -p:UseSharedCompilation=false -m:1
 ```
 
-После исправлений ожидается чистая сборка с IVT и без него. В producer есть bare mapper обычной пары. Явное имя construction-типа consumer теперь имеет вид `Morphant.Generated.Types.A_AuditConsumer.N_Shared.Plans.DestinationConstruction`.
+После исправлений ожидается чистая сборка с IVT и без него. В producer есть bare mapper обычной пары. После изменения именования в этапе 4 полное имя construction-типа consumer имеет вид `Morphant.Generated.N_d47945bd0e2bc2259b61a826e5ca69e9.DestinationConstruction`. Его использует compiler probe; MSBuild-пример использует `new(...)`.
 
 После сборки producer можно проверить отдельные артефакты:
 
