@@ -1,16 +1,17 @@
 # Полная проверка Morphant: этап 5
 
-Дата начала: 2026-09-07. План: [RELEASE_REVIEW_PLAN.md](RELEASE_REVIEW_PLAN.md).
+Дата проверки: 2026-09-07. План: [RELEASE_REVIEW_PLAN.md](RELEASE_REVIEW_PLAN.md).
 Переход к этапу 5 разрешён пользователем после завершения этапа 4.
-Статус: аудит выполняется; исправления требуют отдельного согласования.
+Статус: аудит завершён; подтверждены два дефекта. Исправления требуют
+отдельного согласования; код продукта не изменён.
 
 ## Версия и область
 
 Исходная версия: [3352e94](https://github.com/strangeman375/Morphant/commit/3352e940d37820adeaaa59255ba2a2e601432248),
 tree `50c860c27c849cad86626ed349d42af252348839`.
-Рабочее дерево чистое; remote main проверен. Код продукта в этом этапе
-пока не изменяется. Окружение: Linux, SDK 10.0.100, net10.0,
-unit-host Roslyn 4.4.0; дополнительно проверяется Roslyn 4.9.2.
+В начале проверки рабочее дерево чистое, remote main проверен.
+Окружение: Linux, SDK 10.0.100, net10.0,
+unit-host Roslyn 4.4.0 и 4.9.2.
 MSBuild consumers используют compiler 5.0.0 из SDK 10.0.100;
 генератор собран с reference Roslyn 4.4.0. Эти host-проверки различаются.
 Основные consumer-входы используют C# 9, nullable и warnings-as-errors.
@@ -40,11 +41,13 @@ callbacks, method groups и доступные delegate-члены. Они со�
 
 ## Проверки и результаты
 
-Существующие unit-категории callbacks, transfer, declarative control flow,
-values и Convert: 26 passed и один штатный skip collection expressions
-на Roslyn 4.4.0. Разбор Configure и builder flow: ещё 35 passed.
-Соответствующие integration-категории, включая lifecycle,
-evaluation, runtime construction и typed recovery: 63 passed.
+| Проверка | Результат |
+| --- | --- |
+| Unit: callbacks, transfer, declarative control flow, values, Convert и разбор Configure; Roslyn 4.4.0 | 61 passed, один штатный skip C# 12 collection expressions, без failures |
+| Те же unit-категории; Roslyn 4.9.2 | 62 passed, без skips и failures |
+| Integration: callbacks, control flow, values, Convert, lifecycle, evaluation и typed recovery | 63 passed, без skips и failures |
+| Сборка unit-проекта после возврата reference Roslyn 4.4.0 | Release, без предупреждений и ошибок |
+
 Это новые прогоны на указанной версии, а не результаты этапа 4.
 
 [Направленные MSBuild-входы](release-review-stage-05/README.md):
@@ -56,7 +59,46 @@ evaluation, runtime construction и typed recovery: 63 passed.
 команды, SHA-256 проверенных входов и отдельный исторический прогон:
 [results.json](release-review-stage-05/results.json).
 
+## Проверенная грамматика и границы поддержки
+
+Таблица описывает подтверждённые формы и ограничения; это не обещание
+поддержки произвольного синтаксиса C# внутри декларативного callback.
+
+| Область | Поддерживаемые формы и ограничения |
+| --- | --- |
+| `Configure` | Безусловная последовательность настроек и fluent-цепочек `Map`. Передача или сохранение root builder, условные регистрации дают MORPH0017; нарушение цепочки пары — MORPH0018. Чужие одноимённые API вне цепочки не участвуют в анализе. |
+| `Construct`, `Resolve`, `Members` | Inline lambdas, в том числе обёрнутые приведением или скобками; выражения, initialized locals, полные `if`/`switch`, `return`, `throw`, `with` overlays. Method group или готовый delegate вместо inline lambda даёт MORPH0029. |
+| Декларативное вычисление | Выбранная ветвь и применимые правила; общая local-зависимость вычисляется один раз. Неиспользуемые выражения и неактивное `init`-правило не выполняются. Порядок независимых правил не задан контрактом. |
+| Markers и вложенный mapping | `Auto`, `Ignore`, `Value`, `Map`, `Create`, `Update` и декларативный `context` допустимы в предусмотренных контрактом позициях. Runtime-использование и неподдерживаемое вложение диагностируются MORPH0033. Чужие одноимённые обычные вызовы внутри выражения сохраняются. |
+| `ConstructUsing`, `ResolveUsing`, `Convert` | Inline expression/block lambda, method group, совместимый delegate, anonymous method. Обычные циклы, мутация, `try`/`finally`, исключения и порядок statements сохраняются. Delegate должен соответствовать конкретной сигнатуре Morphant; source у `Convert` может быть nullable. |
+| Захваты | Runtime-значения и local functions из `Configure` недоступны: MORPH0030. Константы и `nameof` не требуют такого захвата. Deferred source-capture допустим; захваты декларативных `previous`, `result` и `context` ограничены, допустимые snapshots проверены отдельно. |
+| Неподдерживаемые statements | В декларативных callbacks циклы, `try` и другие неподдерживаемые statements дают MORPH0031. Мутация `previous`, `result` или отслеживаемого alias даёт MORPH0032. |
+| Контекст переноса | Проверены aliases, `nameof`, extension invocation, overloads, named/optional arguments, caller-info, checked/unchecked, unsafe и предупреждения исходного контекста. Обычные LINQ queries и deferred local functions проверены integration-сценариями. |
+| Ограничения связывания | Проверенные reduced extension method group и custom query pattern отклоняются с MORPH0030. Явный `base.` в импортированном callback отклоняется с MORPH0028. Перенос доступного невиртуального вызова имеет дефект S05-02. |
+
+Основания: новые [MSBuild-входы](release-review-stage-05/README.md),
+[MapperConfigurationTests](../../src/tests/Morphant.Generator.UnitTests/MapperConfigurationTests),
+[CallbackDiagnosticsTests](../../src/tests/Morphant.Generator.UnitTests/CallbackDiagnosticsTests),
+[ExpressionTransferTests](../../src/tests/Morphant.Generator.UnitTests/TypeMapperExpressionTransferTests.cs)
+и [integration control flow](../../src/tests/Morphant.Generator.IntegrationTests/TypeMapperDeclarativeControlFlowTests).
+Невалидное исходное связывание, полностью объясняемое компилятором C#,
+не обязано дублироваться диагностикой Morphant; suppression проверенных
+диагностик сохраняет типизированное восстановление.
+
+Описания MORPH0028 и MORPH0030 стоит уточнить при проверке документации:
+доступность helper сама по себе не разрешает импортированный `base.`-вызов,
+а custom query pattern и extension method group имеют отдельные ограничения.
+Эти случаи уже отклоняются с диагностикой и не засчитываются как молчаливая
+потеря конфигурации.
+
 ## S05-01 — Create пропускает явное правило одноимённого члена
+
+Минимальная форма правила при `Destination(int value)` и settable `Value`:
+
+```csharp
+builder.Map<Source, Destination>()
+    .Members(source => new() { Value = source.Value + 10 });
+```
 
 В Binding destination имеет `Destination(int value)` и settable `Value`.
 Source.Value = 7; явное правило Members вычисляет 17. Create возвращает 7
@@ -64,13 +106,13 @@ Source.Value = 7; явное правило Members вычисляет 17. Creat
 generated Update содержит полное явное выражение. Чужие имена Auto/Ignore/Map/
 Value в этом выражении сохранены корректно: проблема не в их распознавании.
 
-Простое `source.Value + 10` воспроизводит тот же дефект. Bare mapping
-и `Construct(source => new(ByConvention()))` возвращают 7 при Create
+Простое `source.Value + 10` воспроизводит тот же дефект. Автоматический выбор
+конструктора и `Construct(source => new(ByConvention()))` возвращают 7 при Create
 и Update(null), 17 при Update(existing). Конструктор без параметров
 и явное `Construct(source => new(source.Value))` возвращают 17 во всех
 трёх операциях.
 
-Причина: `ConventionConstructorMappingPlanner.BuildPlan` отбрасывает
+Причина: [ConventionConstructorMappingPlanner.BuildPlan](../../src/Morphant.Generator/TypeMapperGeneration/ConventionConstructorMappingPlanner.cs) отбрасывает
 совпавшее initializer-назначение, если оно не требуется для required-member.
 Этот фильтр не различает convention и `ExplicitValueExpression`.
 Соседний `BuildExplicitPlan` уже сохраняет явное выражение.
@@ -91,17 +133,30 @@ dispatch. Явный `base.ReadVirtual()` в импортируемом callback
 Он не засчитывается как молчаливое изменение вызова.
 
 Причина: при переносе проверяется доступность исходного члена, но не
-эквивалентность нового связывания. `ConstructExpressionRewriter` оставляет
-простой instance-вызов в новом lexical scope; `TypeMapperTransferValidator`
+эквивалентность нового связывания.
+[ConstructExpressionRewriter](../../src/Morphant.Generator/TypeMapperGeneration/ConstructExpressionRewriter.cs)
+оставляет простой instance-вызов в новом lexical scope;
+[TypeMapperTransferValidator](../../src/Morphant.Generator/TypeMapperGeneration/TypeMapperTransferValidator.cs)
 проверяет ошибки компиляции, которых при выборе другого допустимого метода нет.
 Предложение: сохранять исходный symbol невиртуального вызова; когда корректный
 перенос недоступен, сообщать диагностику. Добавить регрессии для скрывающих
 методов, перегрузок и instance-членов, сохранив virtual dispatch.
 Полная матрица наследования и настроек остаётся этапу 6.
 
-## Продолжение
+## Ограничения проверки и продолжение
 
-Выполнить направленные compiler/runtime-проверки и изучить generated output.
-Для находок сохранить минимальные воспроизведения, ожидаемое и фактическое
-поведение, причину и предложение; отделить дефекты от ограничений контракта.
-Переход к этапу 6 ожидает отдельной команды пользователя.
+Проверены выбранные compiler/integration-категории и направленные consumers;
+полный тестовый набор, реальная IDE, другие ОС и потребление нового NuGet
+в этом этапе не запускались. Новые runtime-воспроизведения выполнены
+компилятором 5.0.0 из SDK 10.0.100; результаты unit-host 4.4.0/4.9.2 не выдаются за
+повтор этих MSBuild-входов на старых SDK.
+
+Полная матрица настроек и наследования остаётся этапу 6, кортежей — этапу 7,
+диагностик — этапу 9, актуализации и IDE — этапу 10. Проверенные здесь
+пересечения не заменяют эти этапы.
+
+Рекомендация: согласовать и исправить S05-01 и S05-02 перед этапом 6,
+поскольку оба дефекта молча меняют результат маппинга. В обоих случаях
+нужны постоянные compiler- и runtime-регрессии, затем повтор затронутых
+категорий и этих воспроизведений. Исправления не выполнены;
+этап 6 не начат и ожидает отдельной команды пользователя.

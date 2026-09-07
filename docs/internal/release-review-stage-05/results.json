@@ -251,7 +251,11 @@
     "consumer_csharp": "9.0",
     "msbuild_compiler": "5.0.0-2.25523.111 (b0f34d51)",
     "generator_roslyn_reference": "4.4.0",
-    "os": "Linux"
+    "os": "Linux",
+    "unit_host_roslyn": [
+      "4.4.0",
+      "4.9.2"
+    ]
   },
   "probes": [
     {
@@ -417,7 +421,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Evaluation.cs",
       "input_sha256": "0d7f57fb985d5fb39e3f10161270737ee089513f532ad985843c55aa7bdf76b4",
-      "input_commit": "405a5e967aa3e155323bd251e1853587d728840a"
+      "input_commit": "405a5e967aa3e155323bd251e1853587d728840a",
+      "outcome": "passed"
     },
     {
       "case": "Context",
@@ -511,7 +516,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Context.cs",
       "input_sha256": "ad5fe297931a52229f850662178235df200d76b08d3361c401e3907c3b569f24",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "passed"
     },
     {
       "case": "Runtime",
@@ -671,7 +677,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Runtime.cs",
       "input_sha256": "350551bdaa3b5998ab1dd1699d93d6e74fbc04956bfa75366d38cb0be779712d",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "passed"
     },
     {
       "case": "Binding",
@@ -718,7 +725,9 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
       "input_sha256": "0878cf6ed28f33f177fbd128cf30b3db33e5c3c3ab191c3dea8081210cbd98c2",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "defect_reproduced",
+      "finding": "S05-01"
     },
     {
       "case": "Binding",
@@ -765,7 +774,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
       "input_sha256": "0878cf6ed28f33f177fbd128cf30b3db33e5c3c3ab191c3dea8081210cbd98c2",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "passed"
     },
     {
       "case": "InheritedBinding",
@@ -864,7 +874,10 @@
         }
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/InheritedBinding.cs",
-      "input_sha256": "255b5bae80bed890fdf3a700e1c6c4934eec0151305e3357c6d256eec45a44cc"
+      "input_sha256": "255b5bae80bed890fdf3a700e1c6c4934eec0151305e3357c6d256eec45a44cc",
+      "outcome": "defect_reproduced",
+      "finding": "S05-02",
+      "input_commit": "b2c3e15f91f499a5e5f14f7893150f43808a0721"
     },
     {
       "case": "Binding",
@@ -910,7 +923,9 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
       "input_sha256": "0878cf6ed28f33f177fbd128cf30b3db33e5c3c3ab191c3dea8081210cbd98c2",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "defect_reproduced",
+      "finding": "S05-01"
     },
     {
       "case": "Binding",
@@ -938,7 +953,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
       "input_sha256": "0878cf6ed28f33f177fbd128cf30b3db33e5c3c3ab191c3dea8081210cbd98c2",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "expected_diagnostic"
     },
     {
       "case": "Binding",
@@ -966,7 +982,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
       "input_sha256": "0878cf6ed28f33f177fbd128cf30b3db33e5c3c3ab191c3dea8081210cbd98c2",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "expected_diagnostic"
     },
     {
       "case": "Binding",
@@ -994,7 +1011,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
       "input_sha256": "0878cf6ed28f33f177fbd128cf30b3db33e5c3c3ab191c3dea8081210cbd98c2",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "expected_diagnostic"
     },
     {
       "case": "Binding",
@@ -1022,7 +1040,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
       "input_sha256": "0878cf6ed28f33f177fbd128cf30b3db33e5c3c3ab191c3dea8081210cbd98c2",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "expected_diagnostic"
     },
     {
       "case": "Binding",
@@ -1050,7 +1069,8 @@
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
       "input_sha256": "0878cf6ed28f33f177fbd128cf30b3db33e5c3c3ab191c3dea8081210cbd98c2",
-      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186"
+      "input_commit": "83098d361a47c1afdb0b57225b4d9ea980b13186",
+      "outcome": "expected_diagnostic"
     },
     {
       "case": "InheritedBinding",
@@ -1077,7 +1097,9 @@
         "MORPH0028"
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/InheritedBinding.cs",
-      "input_sha256": "255b5bae80bed890fdf3a700e1c6c4934eec0151305e3357c6d256eec45a44cc"
+      "input_sha256": "255b5bae80bed890fdf3a700e1c6c4934eec0151305e3357c6d256eec45a44cc",
+      "outcome": "expected_diagnostic",
+      "input_commit": "b2c3e15f91f499a5e5f14f7893150f43808a0721"
     },
     {
       "case": "Binding",
@@ -1123,7 +1145,9 @@
         }
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
-      "input_sha256": "750793e24c9cb8cbc16a27b657606560445a49b0760890874f1deafcf38301b9"
+      "input_sha256": "750793e24c9cb8cbc16a27b657606560445a49b0760890874f1deafcf38301b9",
+      "outcome": "passed",
+      "input_commit": "b2c3e15f91f499a5e5f14f7893150f43808a0721"
     },
     {
       "case": "Binding",
@@ -1169,7 +1193,10 @@
         }
       ],
       "input_file": "docs/internal/release-review-stage-05/Cases/Binding.cs",
-      "input_sha256": "750793e24c9cb8cbc16a27b657606560445a49b0760890874f1deafcf38301b9"
+      "input_sha256": "750793e24c9cb8cbc16a27b657606560445a49b0760890874f1deafcf38301b9",
+      "outcome": "defect_reproduced",
+      "finding": "S05-01",
+      "input_commit": "b2c3e15f91f499a5e5f14f7893150f43808a0721"
     }
   ],
   "summary": {
@@ -1179,5 +1206,178 @@
     "runtime_checks": 83,
     "passed": 71,
     "failed": 12
-  }
+  },
+  "test_runs": [
+    {
+      "product_commit": "3352e940d37820adeaaa59255ba2a2e601432248",
+      "project": "src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj",
+      "configuration": "Release",
+      "filter": "FullyQualifiedName~CallbackDiagnosticsTests|FullyQualifiedName~ConfigurationDiagnosticsTests|FullyQualifiedName~TypeMapperDeclarativeControlFlowTests|FullyQualifiedName~TypeMapperExpressionTransferTests|FullyQualifiedName~TypeMapperDeclarativeValueTests|FullyQualifiedName~TypeMapperConvertTests|FullyQualifiedName~TypeMapperRuntimeConstructionTests",
+      "trx_file": "stage05-unit-4.4.trx",
+      "trx_sha256": "5d63b8015273004d3adf8270a6a66f16349b9099089bcbc1f4034f53b4a55ee0",
+      "times": {
+        "creation": "2026-09-07T18:47:08.0591718+05:00",
+        "queuing": "2026-09-07T18:47:08.0591718+05:00",
+        "start": "2026-09-07T18:47:04.7109643+05:00",
+        "finish": "2026-09-07T18:47:25.6762235+05:00"
+      },
+      "counters": {
+        "total": 27,
+        "executed": 26,
+        "passed": 26,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "outcomes": {
+        "Passed": 26,
+        "NotExecuted": 1
+      },
+      "unit_host_roslyn": "4.4.0",
+      "skipped_tests": [
+        {
+          "name": "Preserves_collection_expressions_in_Construct_Resolve_and_Members",
+          "message": "Collection expressions require a Roslyn 4.8+ test host. \n         \n           Collection expressions require a Roslyn 4.8+ test host."
+        }
+      ]
+    },
+    {
+      "product_commit": "3352e940d37820adeaaa59255ba2a2e601432248",
+      "project": "src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj",
+      "configuration": "Release",
+      "filter": "FullyQualifiedName~MapperConfigurationTests",
+      "trx_file": "stage05-configuration-4.4.trx",
+      "trx_sha256": "0d226f3ac2bc670a83db82a43af7a90f042a8c0b7e6c7a6649f254e95df9d8bb",
+      "times": {
+        "creation": "2026-09-07T19:12:40.1599802+05:00",
+        "queuing": "2026-09-07T19:12:40.1599803+05:00",
+        "start": "2026-09-07T19:12:36.8151276+05:00",
+        "finish": "2026-09-07T19:12:43.9530405+05:00"
+      },
+      "counters": {
+        "total": 35,
+        "executed": 35,
+        "passed": 35,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "outcomes": {
+        "Passed": 35
+      },
+      "unit_host_roslyn": "4.4.0"
+    },
+    {
+      "product_commit": "3352e940d37820adeaaa59255ba2a2e601432248",
+      "project": "src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj",
+      "configuration": "Release",
+      "filter": "FullyQualifiedName~CallbackDiagnosticsTests|FullyQualifiedName~MapperConfigurationTests|FullyQualifiedName~TypeMapperDeclarativeControlFlowTests|FullyQualifiedName~TypeMapperExpressionTransferTests|FullyQualifiedName~TypeMapperDeclarativeValueTests|FullyQualifiedName~TypeMapperConvertTests",
+      "trx_file": "stage05-unit-4.9.trx",
+      "trx_sha256": "180a7a1ae523824f9f4f62fad9c7158449abc27c9aa3e9e5b605220f1c426989",
+      "times": {
+        "creation": "2026-09-07T19:14:53.7719765+05:00",
+        "queuing": "2026-09-07T19:14:53.7719766+05:00",
+        "start": "2026-09-07T19:14:50.4118956+05:00",
+        "finish": "2026-09-07T19:15:03.2233715+05:00"
+      },
+      "counters": {
+        "total": 62,
+        "executed": 62,
+        "passed": 62,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "outcomes": {
+        "Passed": 62
+      },
+      "unit_host_roslyn": "4.9.2"
+    },
+    {
+      "product_commit": "3352e940d37820adeaaa59255ba2a2e601432248",
+      "project": "src/tests/Morphant.Generator.IntegrationTests/Morphant.Generator.IntegrationTests.csproj",
+      "configuration": "Release",
+      "filter": "FullyQualifiedName~CallbackDiagnosticsTests|FullyQualifiedName~TypeMapperCallbackTests|FullyQualifiedName~TypeMapperDeclarativeControlFlowTests|FullyQualifiedName~TypeMapperExpressionTransferTests|FullyQualifiedName~TypeMapperDeclarativeValueTests|FullyQualifiedName~TypeMapperConvertTests|FullyQualifiedName~TypeMapperRuntimeConstructionTests|FullyQualifiedName~TypeMapperEvaluationTests",
+      "trx_file": "stage05-integration.trx",
+      "trx_sha256": "6aa19a6610d974f39ff1036f1184ee560f8a6bf30c90eb1c01719623522ed35c",
+      "times": {
+        "creation": "2026-09-07T18:52:23.3242942+05:00",
+        "queuing": "2026-09-07T18:52:23.3242943+05:00",
+        "start": "2026-09-07T18:52:16.2430015+05:00",
+        "finish": "2026-09-07T18:52:23.4441018+05:00"
+      },
+      "counters": {
+        "total": 63,
+        "executed": 63,
+        "passed": 63,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "outcomes": {
+        "Passed": 63
+      },
+      "consumer_compiler": "5.0.0-2.25523.111 (b0f34d51)"
+    }
+  ],
+  "post_verification_build": {
+    "project": "src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj",
+    "configuration": "Release",
+    "generator_roslyn_reference": "4.4.0",
+    "exit_code": 0,
+    "warnings": 0,
+    "errors": 0
+  },
+  "shared_probe_inputs": [
+    {
+      "input_file": "docs/internal/release-review-stage-05/Program.cs",
+      "input_commit": "405a5e967aa3e155323bd251e1853587d728840a",
+      "input_sha256": "445695f421fd69398c98a7c0aa8da63ad39e9d2c22c0ab0dd2f07e006cf396e7"
+    },
+    {
+      "input_file": "docs/internal/release-review-stage-05/Stage05Probe.csproj",
+      "input_commit": "405a5e967aa3e155323bd251e1853587d728840a",
+      "input_sha256": "3058de5c94c8841a3626a898c0f59e1d517ddfb1cf11f6b4427729f89016a859"
+    }
+  ]
 }

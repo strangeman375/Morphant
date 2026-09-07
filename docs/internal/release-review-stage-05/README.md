@@ -20,6 +20,10 @@ dotnet docs/internal/release-review-stage-05/bin/Release/net10.0/Audit.Stage05.d
 `/workspace/morphant-tools/dotnet`. Generated output находится в
 `obj/generated/<ReviewCase>`; сохраните его отдельно перед следующей сборкой.
 Consumer печатает JSON expected/actual/passed и возвращает 1 при расхождении.
+На проверенной версии: 15 конфигураций, девять чистых сборок, шесть ожидаемых
+диагностических отказов. В 83 runtime-проверках получено 71 совпадение
+и 12 расхождений, относящихся к S05-01 и S05-02. Воспроизведения этих
+дефектов намеренно сохраняют исходные ожидания и завершаются с кодом 1.
 
 | ReviewCase | DefineConstants | Что проверяем |
 | --- | --- | --- |
