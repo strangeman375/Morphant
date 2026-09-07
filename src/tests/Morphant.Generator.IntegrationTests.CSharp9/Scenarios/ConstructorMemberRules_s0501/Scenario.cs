@@ -194,9 +194,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorMembe
         private static void VerifyCreated(IObservedDestination result, Source source)
         {
             Equal(17, result.Value, "created explicit value");
-            Equal(7, result.ConstructorValue, "constructor argument");
-            Equal(2, result.Writes, "constructor and member assignments");
-            Equal(2, source.Reads, "distinct constructor and member reads");
+            Equal(17, result.ConstructorValue, "constructor receives the configured member value");
+            Equal(1, result.Writes, "constructor is the only assignment");
+            Equal(1, source.Reads, "the configured value is computed once");
             Equal(1, source.RuleCalls, "member expression evaluated once");
         }
 
@@ -210,7 +210,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.ConstructorMembe
                 Equal(enabled ? 17 : 7, result.Value, "selected branch value");
                 Equal(enabled ? 20 : 0, result.Echo, "shared local value");
                 Equal(enabled ? 1 : 0, source.RuleCalls, "selected dependency once");
-                Equal(enabled ? 2 : 1, source.Reads, "selected reads");
+                Equal(1, source.Reads, "selected reads");
+                Equal(enabled ? 17 : 7, result.ConstructorValue, "selected constructor argument");
+                Equal(1, result.Writes, "no repeated setter");
 
                 source = new Source { Enabled = enabled, ThrowRule = !enabled };
                 var previous = new BranchDestination(99) { Echo = 98 };

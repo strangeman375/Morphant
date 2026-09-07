@@ -1167,10 +1167,21 @@ internal static class ConventionConstructorMappingPlanner
             var matchingArguments =
                 correspondingArguments[memberIndex];
 
-            if (matchingArguments is null ||
-                memberMapping.ExplicitValueExpression is not null)
+            if (matchingArguments is null)
             {
                 memberModels.Add(memberMapping);
+                continue;
+            }
+
+            if (memberMapping.ExplicitValueExpression is not null)
+            {
+                var sharedMember = MoveMemberValueToArguments(
+                    argumentModels, memberMapping, matchingArguments,
+                    usedValueLocalNames);
+                if (memberMapping.IsRequired && !setsRequiredMembers)
+                {
+                    memberModels.Add(sharedMember);
+                }
                 continue;
             }
 
@@ -1216,6 +1227,7 @@ internal static class ConventionConstructorMappingPlanner
                     argument with
                     {
                         ValueLocalName =
+                            argument.ValueLocalName ??
                             MakeUniqueSourceValueLocalName(
                                 argument.SourceMemberName,
                                 usedValueLocalNames)
@@ -1245,6 +1257,59 @@ internal static class ConventionConstructorMappingPlanner
                 argumentModels.ToImmutableArray()),
             memberModels.ToImmutable(),
             postMappings);
+    }
+
+    private static TypeMapperMemberMappingModel MoveMemberValueToArguments(
+        TypeMapperConstructorArgumentMappingModel[] arguments,
+        TypeMapperMemberMappingModel member,
+        IReadOnlyList<int> argumentIndexes,
+        HashSet<string> usedNames)
+    {
+        var firstIndex = argumentIndexes[0];
+        var localName = MakeUniqueSourceValueLocalName(
+            member.DestinationMemberName, usedNames);
+
+        foreach (var index in argumentIndexes)
+        {
+            arguments[index] = arguments[index] with
+            {
+                SourceMemberName = member.SourceMemberName,
+                ValueLocalName = index == firstIndex ? localName : null,
+                ExplicitValueExpression = index == firstIndex
+                    ? member.ExplicitValueExpression : localName,
+                ConventionValueExpression = null,
+                ConventionProbeValueExpression = null,
+                ValueLocalTypeName = member.ExplicitValueTypeName,
+                DependencyExpression = index == firstIndex ? member.DependencyExpression : null,
+                EvaluationLocals = index == firstIndex ? member.EvaluationLocals : default,
+                SourceMemberSymbol = null,
+                SourcePathMembers = default,
+                RuleOrigin = ConstructorParameterRuleOrigin.Value
+            };
+        }
+
+        // Earlier constructor arguments must not move after the new value local.
+        for (var index = 0; index < firstIndex; index++)
+        {
+            if (arguments[index].ValueLocalName is null)
+            {
+                arguments[index] = arguments[index] with
+                {
+                    ValueLocalName = MakeUniqueSourceValueLocalName(
+                        arguments[index].ParameterName, usedNames)
+                };
+            }
+        }
+
+        return member with
+        {
+            SourceValueLocalName = localName,
+            ExplicitValueExpression = null,
+            ValueLocalName = null,
+            ConventionValueExpression = null,
+            DependencyExpression = null,
+            EvaluationLocals = default
+        };
     }
 
     internal static HashSet<string> BuildUsedValueLocalNames(
@@ -1410,12 +1475,29 @@ internal static class ConventionConstructorMappingPlanner
             ImmutableArray.CreateBuilder<TypeMapperMemberMappingModel>();
         var sharedValues =
             new List<(int MemberIndex, int ArgumentIndex)>();
+        var argumentModels = arguments.ToArray();
+        var usedValueLocalNames = BuildUsedValueLocalNames(mapperType);
+        usedValueLocalNames.UnionWith(new[] { nonNullSourceName, "destination", "previous" });
+        usedValueLocalNames.UnionWith(arguments.Where(argument => argument.ValueLocalName is not null)
+            .Select(argument => argument.ValueLocalName!));
 
         for (var index = 0;
              index < memberMappings.InitializerMappings.Length;
              index++)
         {
             var mapping = memberMappings.InitializerMappings[index];
+
+            if (mapping.ExplicitValueExpression is not null &&
+                correspondingArgumentIndexes[index] is { } memberArguments)
+            {
+                var sharedMember = MoveMemberValueToArguments(
+                    argumentModels, mapping, memberArguments, usedValueLocalNames);
+                if (mapping.IsRequired && !setsRequiredMembers)
+                {
+                    create.Add(sharedMember);
+                }
+                continue;
+            }
 
             if (!correspondingMemberIndexes.Contains(index) ||
                 mapping.ExplicitValueExpression is not null ||
@@ -1445,19 +1527,10 @@ internal static class ConventionConstructorMappingPlanner
             }
         }
 
-        var argumentModels = arguments.ToArray();
-
         if (sharedValues.Count > 0)
         {
             var lastSharedArgumentIndex =
                 sharedValues.Max(static value => value.ArgumentIndex);
-            var usedValueLocalNames =
-                BuildUsedValueLocalNames(mapperType);
-
-            usedValueLocalNames.Add(nonNullSourceName);
-            usedValueLocalNames.Add("destination");
-            usedValueLocalNames.Add("previous");
-
             for (var argumentIndex = 0;
                  argumentIndex <= lastSharedArgumentIndex;
                  argumentIndex++)
@@ -1468,14 +1541,15 @@ internal static class ConventionConstructorMappingPlanner
                     argument with
                     {
                         ValueLocalName =
-                            argument.ExplicitValueExpression is not null
+                            argument.ValueLocalName ??
+                            (argument.ExplicitValueExpression is not null
                                 ? MakeUniqueValueLocalName(
                                     "construct",
                                     argument.ParameterName,
                                     usedValueLocalNames)
                                 : MakeUniqueSourceValueLocalName(
                                     argument.SourceMemberName,
-                                    usedValueLocalNames)
+                                    usedValueLocalNames))
                     };
             }
 

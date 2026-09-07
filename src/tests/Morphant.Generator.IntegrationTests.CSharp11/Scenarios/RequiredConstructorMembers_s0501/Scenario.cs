@@ -19,36 +19,45 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
     {
         int Value { get; }
         int ConstructorValue { get; }
+        int Writes { get; }
     }
 
     public sealed class RequiredInit : IObservedDestination
     {
-        public RequiredInit(int value) { ConstructorValue = value; }
+        private int value;
+        public RequiredInit(int value) { ConstructorValue = value; Value = value; }
         public int ConstructorValue { get; }
-        public required int Value { get; init; }
+        public int Writes { get; private set; }
+        public required int Value { get => value; init { this.value = value; Writes++; } }
     }
 
     public sealed class RequiredSet : IObservedDestination
     {
-        public RequiredSet(int value) { ConstructorValue = value; }
+        private int value;
+        public RequiredSet(int value) { ConstructorValue = value; Value = value; }
         public int ConstructorValue { get; }
-        public required int Value { get; set; }
+        public int Writes { get; private set; }
+        public required int Value { get => value; set { this.value = value; Writes++; } }
     }
 
     public sealed class AttributedInit : IObservedDestination
     {
+        private int value;
         [SetsRequiredMembers]
         public AttributedInit(int value) { ConstructorValue = value; Value = value + 100; }
         public int ConstructorValue { get; }
-        public required int Value { get; init; }
+        public int Writes { get; private set; }
+        public required int Value { get => value; init { this.value = value; Writes++; } }
     }
 
     public sealed class AttributedSet : IObservedDestination
     {
+        private int value;
         [SetsRequiredMembers]
         public AttributedSet(int value) { ConstructorValue = value; Value = value + 100; }
         public int ConstructorValue { get; }
-        public required int Value { get; set; }
+        public int Writes { get; private set; }
+        public required int Value { get => value; set { this.value = value; Writes++; } }
     }
 
     [MorphantMapper]
@@ -128,8 +137,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
             where TDestination : class, IObservedDestination
         {
             var source = new Source();
-            // The two explicit DSL callbacks share their source.Value dependency.
-            int expectedReads = route == ConstructionRoute.Explicit ? 1 : 2;
+            int expectedReads = 1;
             VerifyCreated(mapper.Create(source), source, expectedReads);
             source = new Source();
             VerifyCreated(mapper.Update(source, null), source, expectedReads);
@@ -137,14 +145,17 @@ namespace Morphant.Generator.IntegrationTests.CSharp11.Scenarios.RequiredConstru
             var updated = mapper.Update(source, previous);
             Equal(true, ReferenceEquals(previous, updated), "Update identity");
             Equal(99, updated.ConstructorValue, "Update constructor value");
+            Equal(creationOnly ? 2 : 3, updated.Writes, "Update writes only mutable members");
             Equal(creationOnly ? 98 : 17, updated.Value, "Update member value");
             Equal(creationOnly ? 0 : 1, source.Reads, "Update member reads");
         }
 
         private static void VerifyCreated(IObservedDestination created, Source source, int expectedReads)
         {
-            Equal(7, created.ConstructorValue, "constructor value");
-            Equal(17, created.Value, "explicit required member");
+            bool attributed = created is AttributedInit or AttributedSet;
+            Equal(17, created.ConstructorValue, "constructor receives the member value");
+            Equal(attributed ? 117 : 17, created.Value, "constructor normalization and required initializer");
+            Equal(attributed ? 1 : 2, created.Writes, "only the required initializer repeats assignment");
             Equal(expectedReads, source.Reads, "constructor and member dependency reads");
         }
 

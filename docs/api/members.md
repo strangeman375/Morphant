@@ -57,11 +57,26 @@ builder.Map<OrderDto, Order>()
     });
 ```
 
-`Members` runs after destination selection. Unmentioned members follow
+Unmentioned members follow
 [`MemberSelection`](../settings/member-selection.md). It can be combined with
 one destination method, but not with `Convert`.
-An explicit member rule also applies when a convention-selected constructor
-has a parameter with the same name.
+
+## Constructor parameters
+
+A constructor parameter and its corresponding destination member share one
+value rule. Names match exactly first, then by a unique case-insensitive match.
+An explicit `Members` value overrides the corresponding constructor argument,
+including an argument supplied by `Construct` or a construction branch of
+`Resolve`. The overridden argument expression is not evaluated.
+
+During construction, the value is computed once into a local and passed to the
+constructor. Morphant does not assign the member again unless C# requires an
+initializer for `required` and the constructor lacks `[SetsRequiredMembers]`.
+That initializer reuses the same local. Update of an existing object applies
+the rule through the writable member; creation-only members keep their values.
+
+Rules for members without a corresponding constructor parameter are applied
+to the selected destination.
 
 With `Construct` or a construction branch of `Resolve`, Morphant owns object
 creation and can place creation-only rules in the initializer. A result returned

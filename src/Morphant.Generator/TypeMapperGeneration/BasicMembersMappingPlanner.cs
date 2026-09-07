@@ -1198,9 +1198,13 @@ internal static class BasicMembersMappingPlanner
                 new HashSet<ISymbol>(
                     SymbolEqualityComparer.Default),
                 cancellationToken);
+        var semanticMapperType = semanticModel.Compilation.GetTypeByMetadataName(
+            SymbolNameHelper.GetFullMetadataName(mapperType)) ?? mapperType;
         var valueTypeName =
             TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                targetType);
+                MapperTypeSubstitution.Substitute(targetType,
+                    MapperTypeSubstitution.BuildForHierarchy(semanticMapperType),
+                    semanticModel.Compilation));
         TypeMapperMemberMappingModel BuildMapping(
             string valueExpression,
             TypeMapperDependencyExpressionModel? dependencyExpression,

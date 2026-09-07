@@ -9,14 +9,14 @@ internal sealed class ExplicitMemberTests
     [TestCase(ConstructionRoute.ByConvention)]
     [TestCase(ConstructionRoute.Explicit)]
     [TestCase(ConstructionRoute.Resolve)]
-    public void Applies_explicit_setter_after_construction(ConstructionRoute route) =>
+    public void Supplies_the_explicit_member_value_to_the_constructor(ConstructionRoute route) =>
         Scenario.VerifyMutable(route);
 
     [TestCase(ConstructionRoute.Automatic)]
     [TestCase(ConstructionRoute.ByConvention)]
     [TestCase(ConstructionRoute.Explicit)]
     [TestCase(ConstructionRoute.Resolve)]
-    public void Applies_explicit_init_only_during_creation(ConstructionRoute route) =>
+    public void Supplies_explicit_init_values_only_during_creation(ConstructionRoute route) =>
         Scenario.VerifyInit(route);
 
     [TestCase(ConstructionRoute.Automatic)]

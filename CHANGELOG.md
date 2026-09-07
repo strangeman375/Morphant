@@ -41,8 +41,9 @@ unsupported.
 
 - Preserve inherited callback bindings and overload selection, keeping
   virtual dispatch; report `MORPH0028` when equivalent access is unavailable.
-- Apply explicit `Members` rules even when a convention-selected constructor
-  has a matching parameter, including required and `init` members.
+- Use an explicit `Members` value for the matching constructor parameter,
+  evaluating it once and reusing it for a required initializer only when C#
+  requires one.
 - Map destination members whose names conflict with generated record members;
   explicit `Members` uses underscore aliases while conventions keep the
   original names.
