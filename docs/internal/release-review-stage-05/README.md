@@ -26,7 +26,14 @@ Consumer печатает JSON expected/actual/passed и возвращает 1 
 сохранил все исходные ожидания: 83 из 83 runtime-проверок успешны,
 отрицательные варианты дают прежние диагностики. Подробности — в
 [отчёте об исправлениях](../RELEASE_REVIEW_STAGE_05_FIXES.md) и
-[новых результатах](fix-results.json).
+[результатах прежнего исправления](fix-results.json).
+
+После перехода к единому constructor/member-значению исходная матрица снова
+прошла: 15 конфигураций, 83 runtime-проверки. См.
+[текущий отчёт](../RELEASE_REVIEW_STAGE_05_MEMBER_VALUES.md) и
+[результаты](unified-member-results.json). `ResultDependency` отдельно
+фиксирует существующее поведение для обсуждения; он не означает принятия
+нового исключения из единого правила.
 
 | ReviewCase | DefineConstants | Что проверяем |
 | --- | --- | --- |
@@ -38,6 +45,7 @@ Consumer печатает JSON expected/actual/passed и возвращает 1 
 | Binding | PARAMETERLESS | Контроль без constructor parameter с именем члена |
 | Binding | EXPLICIT_CONSTRUCT | Явный конструктор сохраняет member-правило |
 | Binding | BY_CONVENTION | Конструирование через ByConvention и явное member-правило |
+| ResultDependency | — | Наблюдаемое значение аргумента 7, результат 17 и два назначения для result-зависимого правила; решение ожидает обсуждения |
 | InheritedBinding | — | Привязка nonvirtual/static и virtual dispatch после переноса из базового mapper |
 | InheritedBinding | BASE_ACCESS | Явный base-вызов в импортируемом callback: ожидается MORPH0028 |
 | Binding | CAPTURE | Configure-local в Members: ожидается MORPH0030 |
