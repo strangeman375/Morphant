@@ -1,0 +1,38 @@
+# Проверки этапа 5
+
+Обычный MSBuild consumer для [аудита callbacks и переноса C#](../RELEASE_REVIEW_STAGE_05.md).
+Подключает production analyzer и вызывает generated mapper напрямую.
+Исследовательские входы находятся вне solution; отрицательные варианты
+проверяют диагностики и не должны собираться. Это дополнение к постоянным
+compiler/integration-тестам, а не их замена.
+
+## Воспроизведение
+
+Из корня репозитория, SDK 10.0.100, C# 9, nullable и warnings-as-errors:
+
+```shell
+dotnet build docs/internal/release-review-stage-05/Stage05Probe.csproj -c Release -t:Rebuild -p:ReviewCase=Context -p:UseSharedCompilation=false -m:1
+dotnet docs/internal/release-review-stage-05/bin/Release/net10.0/Audit.Stage05.dll
+```
+
+`ReviewCase` выбирает один файл. При смене варианта нужен Rebuild.
+Не запускайте DLL после неуспешной сборки. В workspace SDK доступен через
+`/workspace/morphant-tools/dotnet`. Generated output находится в
+`obj/generated/<ReviewCase>`; сохраните его отдельно перед следующей сборкой.
+Consumer печатает JSON expected/actual/passed и возвращает 1 при расхождении.
+
+| ReviewCase | DefineConstants | Что проверяем |
+| --- | --- | --- |
+| Context | — | Caller-info всех callbacks, nameof/aliases, extensions, overloads, checked/unchecked |
+| Evaluation | — | Branch/local evaluation, неактивные init-правила, deferred capture, conditional extension, throw |
+| Runtime | — | Порядок, циклы, mutation, finally, method group/delegate/anonymous method, фабрика и resolver |
+| Binding | — | Чужие Auto/Ignore/Map/Value сохраняются как обычные методы |
+| Binding | CAPTURE | Configure-local в Members: ожидается MORPH0030 |
+| Binding | RUNTIME_CAPTURE | Configure-local в Convert: ожидается MORPH0030 |
+| Binding | LOOP | Цикл в Members: ожидается MORPH0031 |
+| Binding | MUTATION | Мутация result: ожидается MORPH0032 |
+| Binding | FOREIGN_CALLBACK | Чужой Members на mapping chain: ожидается MORPH0018 |
+
+Для отрицательного варианта добавьте, например, `-p:ReviewCase=Binding
+-p:DefineConstants=CAPTURE`. Ожидания таблицы сверяются с реальным результатом
+в итоговом отчёте; на первой контрольной точке эти входы ещё не проверены.

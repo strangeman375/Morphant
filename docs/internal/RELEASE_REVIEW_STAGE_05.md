@@ -38,9 +38,16 @@ callbacks, method groups и доступные delegate-члены. Они со�
 
 ## Проверки и результаты
 
-На первой контрольной точке выполнено сопоставление документации и состава
-существующих тестов. Новые compiler/runtime-прогоны ещё не завершены;
-прежние результаты этапа 4 здесь не засчитываются.
+Существующие unit-категории callbacks, transfer, declarative control flow,
+values и Convert: 26 passed и один штатный skip collection expressions
+на Roslyn 4.4.0. Соответствующие integration-категории, включая lifecycle,
+evaluation, runtime construction и typed recovery: 63 passed.
+Это новые прогоны на указанной версии, а не результаты этапа 4.
+
+Подготовлены [направленные MSBuild-входы](release-review-stage-05/README.md):
+caller-info, overloads, explicit checked, ветви, locals, deferred values,
+runtime-порядок и пять отрицательных границ. Их проверка следует после
+публикации этой контрольной точки; результаты пока не засчитаны.
 
 ## Продолжение
 
