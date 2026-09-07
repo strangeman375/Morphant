@@ -5,7 +5,11 @@ namespace Stage05Audit.Cases
     public sealed class Source { public int Value { get; set; } }
     public sealed class Destination
     {
+#if PARAMETERLESS
+        public Destination() { }
+#else
         public Destination(int value) { Value = value; }
+#endif
         public int Value { get; set; }
     }
 
@@ -32,7 +36,7 @@ namespace Stage05Audit.Cases
 #elif RUNTIME_CAPTURE
             int offset = 5;
             builder.Map<Source, Destination>()
-                .Convert(source => new(source.Value + offset));
+                .Convert(source => new(source!.Value + offset));
 #elif LOOP
             builder.Map<Source, Destination>().Members(source =>
             {
@@ -47,6 +51,8 @@ namespace Stage05Audit.Cases
             });
 #elif FOREIGN_CALLBACK
             builder.Map<Source, Destination>().Members("foreign");
+#elif ORDINARY_VALUE
+            builder.Map<Source, Destination>().Members(source => new() { Value = source.Value + 10 });
 #else
             builder.Map<Source, Destination>().Members(source => new()
             {
@@ -61,8 +67,17 @@ namespace Stage05Audit.Cases
         public static void Run()
         {
             var mapper = (ITypeMapper<Source, Destination>)new Mapper();
-            Check.Equal("foreign marker names are ordinary methods", 17,
+            Check.Equal("explicit Members during Create", 17,
                 mapper.Create(new Source { Value = 7 }).Value);
+            Check.Equal("explicit Members during Update(null)", 17,
+                mapper.Update(new Source { Value = 7 }, null).Value);
+#if PARAMETERLESS
+            var destination = new Destination { Value = 1 };
+#else
+            var destination = new Destination(1);
+#endif
+            Check.Equal("explicit Members during Update(existing)", 17,
+                mapper.Update(new Source { Value = 7 }, destination).Value);
         }
     }
 }

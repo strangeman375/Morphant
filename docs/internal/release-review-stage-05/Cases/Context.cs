@@ -80,18 +80,18 @@ namespace Stage05Audit.Cases
 #line 240 "Stage05Input.cs"
             builder.Map<Source, Destination<ResolveUsingTag>>().ResolveUsing((input, previous) => new(Caller(input.Value + 1)));
 #line 250 "Stage05Input.cs"
-            builder.Map<Source, Destination<ConvertTag>>().Convert(input => new(Caller(input.Value + 1)));
+            builder.Map<Source, Destination<ConvertTag>>().Convert(input => new(Caller(input!.Value + 1)));
 #line 260 "Stage05Input.cs"
-            builder.Map<Source, CallerDestination>().Convert(input => new(input.Value + 1));
+            builder.Map<Source, CallerDestination>().Convert(input => new(input!.Value + 1));
 #line default
             builder.Map<Source, Destination<NamesTag>>()
                 .Construct(input => new(nameof(input) + ":" + nameof(Integer) + ":" + input.Value.Describe()));
             builder.Map<Source, Destination<OverloadsTag>>()
-                .Convert(input => new(Pick(input.Value) + "|" + Pick((object)input.Value)));
+                .Convert(input => new(Pick(input!.Value) + "|" + Pick((object)input.Value)));
             builder.Map<Source, Destination<CheckedTag>>()
-                .Convert(input => new(checked(input.Value + int.MaxValue).ToString()));
+                .Convert(input => new(checked(input!.Value + int.MaxValue).ToString()));
             builder.Map<Source, Destination<UncheckedTag>>()
-                .Convert(input => new(unchecked(input.Value + int.MaxValue).ToString()));
+                .Convert(input => new(unchecked(input!.Value + int.MaxValue).ToString()));
         }
     }
 
@@ -111,9 +111,9 @@ namespace Stage05Audit.Cases
                 ((ITypeMapper<Source, Destination<ConstructUsingTag>>)mapper).Create(source).Text);
             Check.Equal("ResolveUsing caller info", "3|input.Value + 1|Configure|240|Stage05Input.cs",
                 ((ITypeMapper<Source, Destination<ResolveUsingTag>>)mapper).Create(source).Text);
-            Check.Equal("Convert caller info", "3|input.Value + 1|Configure|250|Stage05Input.cs",
+            Check.Equal("Convert caller info", "3|input!.Value + 1|Configure|250|Stage05Input.cs",
                 ((ITypeMapper<Source, Destination<ConvertTag>>)mapper).Create(source).Text);
-            Check.Equal("Constructor caller info", "3|input.Value + 1|Configure|260|Stage05Input.cs",
+            Check.Equal("Constructor caller info", "3|input!.Value + 1|Configure|260|Stage05Input.cs",
                 ((ITypeMapper<Source, CallerDestination>)mapper).Create(source).Text);
             Check.Equal("nameof, alias, extension", "input:" + nameof(Integer) + ":2:7",
                 ((ITypeMapper<Source, Destination<NamesTag>>)mapper).Create(source).Text);

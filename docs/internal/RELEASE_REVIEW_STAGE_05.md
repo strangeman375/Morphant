@@ -44,10 +44,27 @@ values и Convert: 26 passed и один штатный skip collection expressi
 evaluation, runtime construction и typed recovery: 63 passed.
 Это новые прогоны на указанной версии, а не результаты этапа 4.
 
-Подготовлены [направленные MSBuild-входы](release-review-stage-05/README.md):
-caller-info, overloads, explicit checked, ветви, locals, deferred values,
-runtime-порядок и пять отрицательных границ. Их проверка следует после
-публикации этой контрольной точки; результаты пока не засчитаны.
+Первый прогон [направленных MSBuild-входов](release-review-stage-05/README.md):
+Evaluation — чистый build и 23 успешные проверки. Binding — чистый build,
+одно расхождение ниже. Context и Runtime первоначально имели ошибки самих
+входов: nullable source у Convert и неверный тип delegate. Они исправлены;
+повторный прогон ещё не завершён. Исходные результаты с версией входов:
+[results.json](release-review-stage-05/results.json).
+
+## S05-01 — Create пропускает явное правило одноимённого члена
+
+В Binding destination имеет `Destination(int value)` и settable `Value`.
+Source.Value = 7; явное правило Members вычисляет 17. Create возвращает 7
+без диагностик. Generated Create содержит только конструктор с source.Value;
+generated Update содержит полное явное выражение. Чужие имена Auto/Ignore/Map/
+Value в этом выражении сохранены корректно: проблема не в их распознавании.
+
+Подготовлены контроли с простым `source.Value + 10`, parameterless destination
+и Update(null)/Update(existing). Причина и точная граница уточняются.
+
+Дополнительно подготовлен InheritedBinding: проверка исходной привязки
+nonvirtual/static/base-вызовов при переносе callback из базового маппера.
+Этот вход ещё не проверен. Полная матрица наследования остаётся этапу 6.
 
 ## Продолжение
 

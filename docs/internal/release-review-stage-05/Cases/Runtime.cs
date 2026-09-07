@@ -22,12 +22,12 @@ namespace Stage05Audit.Cases
         public List<string> Events { get; } = new();
         public int DelegateReads { get; private set; }
         public int Offset { get; set; } = 5;
-        public Func<Source, DelegateDestination> Callback
+        public Morphant.Delegates.Convert<Source?, DelegateDestination> Callback
         {
             get
             {
                 DelegateReads++;
-                return input => new DelegateDestination { Value = input.Values.Length + Offset };
+                return input => new DelegateDestination { Value = (input?.Values.Length ?? 0) + Offset };
             }
         }
 
@@ -52,9 +52,9 @@ namespace Stage05Audit.Cases
             });
             builder.Map<Source, MethodDestination>().Convert(Build);
             builder.Map<Source, DelegateDestination>().Convert(Callback);
-            builder.Map<Source, AnonymousDestination>().Convert(delegate(Source input)
+            builder.Map<Source, AnonymousDestination>().Convert(delegate(Source? input)
             {
-                int Count() => input.Values.Length + Offset;
+                int Count() => (input?.Values.Length ?? 0) + Offset;
                 return new AnonymousDestination { Value = Count() };
             });
             builder.Map<Source, FactoryDestination>().ConstructUsing(source =>
@@ -74,8 +74,8 @@ namespace Stage05Audit.Cases
             });
         }
 
-        private MethodDestination Build(Source source) => new() { Value = source.Values.Length + Offset };
-        private MethodDestination Build(object source) => new() { Value = -100 };
+        private MethodDestination Build(Source? source) => new() { Value = (source?.Values.Length ?? 0) + Offset };
+        private MethodDestination Build(object? source) => new() { Value = -100 };
     }
 
     public static class Scenario

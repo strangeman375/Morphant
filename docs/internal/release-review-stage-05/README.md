@@ -26,7 +26,10 @@ Consumer печатает JSON expected/actual/passed и возвращает 1 
 | Context | — | Caller-info всех callbacks, nameof/aliases, extensions, overloads, checked/unchecked |
 | Evaluation | — | Branch/local evaluation, неактивные init-правила, deferred capture, conditional extension, throw |
 | Runtime | — | Порядок, циклы, mutation, finally, method group/delegate/anonymous method, фабрика и resolver |
-| Binding | — | Чужие Auto/Ignore/Map/Value сохраняются как обычные методы |
+| Binding | — | Чужие Auto/Ignore/Map/Value и явное member-правило при constructor convention |
+| Binding | ORDINARY_VALUE | Контроль того же правила с обычным арифметическим выражением |
+| Binding | PARAMETERLESS | Контроль без constructor parameter с именем члена |
+| InheritedBinding | — | Привязка nonvirtual/static/base и virtual dispatch после переноса из базового mapper |
 | Binding | CAPTURE | Configure-local в Members: ожидается MORPH0030 |
 | Binding | RUNTIME_CAPTURE | Configure-local в Convert: ожидается MORPH0030 |
 | Binding | LOOP | Цикл в Members: ожидается MORPH0031 |
@@ -35,4 +38,6 @@ Consumer печатает JSON expected/actual/passed и возвращает 1 
 
 Для отрицательного варианта добавьте, например, `-p:ReviewCase=Binding
 -p:DefineConstants=CAPTURE`. Ожидания таблицы сверяются с реальным результатом
-в итоговом отчёте; на первой контрольной точке эти входы ещё не проверены.
+в [итоговом отчёте](../RELEASE_REVIEW_STAGE_05.md) и
+[результатах](results.json). Исходный прогон отдельно сохраняет ошибки входов;
+он не выдаётся за результат исправленных примеров.

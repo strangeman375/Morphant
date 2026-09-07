@@ -1,0 +1,246 @@
+{
+  "product_commit": "3352e940d37820adeaaa59255ba2a2e601432248",
+  "initial_probe_commit": "405a5e967aa3e155323bd251e1853587d728840a",
+  "initial_probes": [
+    {
+      "case": "Context",
+      "command": [
+        "/workspace/morphant-tools/dotnet",
+        "build",
+        "docs/internal/release-review-stage-05/Stage05Probe.csproj",
+        "-c",
+        "Release",
+        "-t:Rebuild",
+        "-p:ReviewCase=Context",
+        "-p:UseSharedCompilation=false",
+        "-p:RestoreSources=/workspace/.nuget/packages",
+        "-m:1",
+        "-nodeReuse:false",
+        "--nologo",
+        "--verbosity",
+        "minimal"
+      ],
+      "build_exit": 1,
+      "diagnostics": [
+        "CS8602"
+      ]
+    },
+    {
+      "case": "Evaluation",
+      "command": [
+        "/workspace/morphant-tools/dotnet",
+        "build",
+        "docs/internal/release-review-stage-05/Stage05Probe.csproj",
+        "-c",
+        "Release",
+        "-t:Rebuild",
+        "-p:ReviewCase=Evaluation",
+        "-p:UseSharedCompilation=false",
+        "-p:RestoreSources=/workspace/.nuget/packages",
+        "-m:1",
+        "-nodeReuse:false",
+        "--nologo",
+        "--verbosity",
+        "minimal"
+      ],
+      "build_exit": 0,
+      "diagnostics": [],
+      "run_exit": 0,
+      "checks": [
+        {
+          "name": "selected true value",
+          "expected": 11,
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "name": "shared evaluated once",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "condition evaluated once",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "unselected false skipped",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "updated instance",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "selected false value",
+          "expected": 12,
+          "actual": 12,
+          "passed": true
+        },
+        {
+          "name": "update shared once",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "unselected true skipped",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "created init value",
+          "expected": 10,
+          "actual": 10,
+          "passed": true
+        },
+        {
+          "name": "created init evaluated once",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "update preserves init",
+          "expected": 10,
+          "actual": 10,
+          "passed": true
+        },
+        {
+          "name": "update set value",
+          "expected": 21,
+          "actual": 21,
+          "passed": true
+        },
+        {
+          "name": "inapplicable init skipped",
+          "expected": "set",
+          "actual": "set",
+          "passed": true
+        },
+        {
+          "name": "unused throwing local skipped",
+          "expected": 20,
+          "actual": 20,
+          "passed": true
+        },
+        {
+          "name": "delegate not invoked eagerly",
+          "expected": "",
+          "actual": "",
+          "passed": true
+        },
+        {
+          "name": "deferred source capture",
+          "expected": 30,
+          "actual": 30,
+          "passed": true
+        },
+        {
+          "name": "delegate invoked once",
+          "expected": "deferred",
+          "actual": "deferred",
+          "passed": true
+        },
+        {
+          "name": "conditional extension value",
+          "expected": 8,
+          "actual": 8,
+          "passed": true
+        },
+        {
+          "name": "receiver and extension once",
+          "expected": "receiver,extension",
+          "actual": "receiver,extension",
+          "passed": true
+        },
+        {
+          "name": "conditional fallback value",
+          "expected": -1,
+          "actual": -1,
+          "passed": true
+        },
+        {
+          "name": "null skips extension",
+          "expected": "receiver,fallback",
+          "actual": "receiver,fallback",
+          "passed": true
+        },
+        {
+          "name": "selected throw",
+          "expected": "System.InvalidOperationException",
+          "actual": "System.InvalidOperationException",
+          "passed": true
+        },
+        {
+          "name": "unselected throw skipped",
+          "expected": 30,
+          "actual": 30,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "case": "Runtime",
+      "command": [
+        "/workspace/morphant-tools/dotnet",
+        "build",
+        "docs/internal/release-review-stage-05/Stage05Probe.csproj",
+        "-c",
+        "Release",
+        "-t:Rebuild",
+        "-p:ReviewCase=Runtime",
+        "-p:UseSharedCompilation=false",
+        "-p:RestoreSources=/workspace/.nuget/packages",
+        "-m:1",
+        "-nodeReuse:false",
+        "--nologo",
+        "--verbosity",
+        "minimal"
+      ],
+      "build_exit": 1,
+      "diagnostics": [
+        "CS1929",
+        "CS8622"
+      ]
+    },
+    {
+      "case": "Binding",
+      "command": [
+        "/workspace/morphant-tools/dotnet",
+        "build",
+        "docs/internal/release-review-stage-05/Stage05Probe.csproj",
+        "-c",
+        "Release",
+        "-t:Rebuild",
+        "-p:ReviewCase=Binding",
+        "-p:UseSharedCompilation=false",
+        "-p:RestoreSources=/workspace/.nuget/packages",
+        "-m:1",
+        "-nodeReuse:false",
+        "--nologo",
+        "--verbosity",
+        "minimal"
+      ],
+      "build_exit": 0,
+      "diagnostics": [],
+      "run_exit": 1,
+      "checks": [
+        {
+          "name": "foreign marker names are ordinary methods",
+          "expected": 17,
+          "actual": 7,
+          "passed": false
+        }
+      ]
+    }
+  ],
+  "note": "Context and Runtime initially contained source-only nullable/delegate errors; their corrected inputs and the Binding controls are awaiting execution."
+}
