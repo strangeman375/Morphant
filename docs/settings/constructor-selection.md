@@ -51,6 +51,9 @@ builder.Map<OrderDto, Order>()
 The configured `ConstructorSelection` chooses the constructor used by
 `ByConvention()`. Rules in the second argument override convention for the
 named parameters; the remaining parameters are matched automatically.
+A corresponding [`Members` rule](../api/members.md#constructor-parameters)
+available before construction supplies the effective argument value and is
+also considered when checking constructor applicability.
 
 An explicitly named constructor is unaffected by the setting.
 `ConstructUsing`, `ResolveUsing` and `Convert` do not use constructor

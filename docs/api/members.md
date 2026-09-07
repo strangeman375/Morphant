@@ -65,9 +65,14 @@ one destination method, but not with `Convert`.
 
 A constructor parameter and its corresponding destination member share one
 value rule. Names match exactly first, then by a unique case-insensitive match.
-An explicit `Members` value overrides the corresponding constructor argument,
-including an argument supplied by `Construct` or a construction branch of
+A `Members` value available before construction overrides the corresponding
+constructor argument, including an argument supplied by `Construct` or a branch of
 `Resolve`. The overridden argument expression is not evaluated.
+
+This includes `Auto()` and optional parameters, even when the source has no
+matching member for a configured expression. The effective value must satisfy
+the constructor parameter's input type and nullable contract. An explicitly
+selected constructor remains the selected overload.
 
 During construction, the value is computed once into a local and passed to the
 constructor. Morphant does not assign the member again unless C# requires an

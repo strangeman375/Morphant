@@ -41,7 +41,7 @@ unsupported.
 
 - Preserve inherited callback bindings and overload selection, keeping
   virtual dispatch; report `MORPH0028` when equivalent access is unavailable.
-- Use an explicit `Members` value for the matching constructor parameter,
+- Use a `Members` value available before construction for the matching parameter,
   evaluating it once and reusing it for a required initializer only when C#
   requires one.
 - Map destination members whose names conflict with generated record members;
