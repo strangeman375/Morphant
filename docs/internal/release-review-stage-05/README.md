@@ -29,7 +29,10 @@ Consumer печатает JSON expected/actual/passed и возвращает 1 
 | Binding | — | Чужие Auto/Ignore/Map/Value и явное member-правило при constructor convention |
 | Binding | ORDINARY_VALUE | Контроль того же правила с обычным арифметическим выражением |
 | Binding | PARAMETERLESS | Контроль без constructor parameter с именем члена |
-| InheritedBinding | — | Привязка nonvirtual/static/base и virtual dispatch после переноса из базового mapper |
+| Binding | EXPLICIT_CONSTRUCT | Явный конструктор сохраняет member-правило |
+| Binding | BY_CONVENTION | Конструирование через ByConvention и явное member-правило |
+| InheritedBinding | — | Привязка nonvirtual/static и virtual dispatch после переноса из базового mapper |
+| InheritedBinding | BASE_ACCESS | Явный base-вызов в импортируемом callback: ожидается MORPH0028 |
 | Binding | CAPTURE | Configure-local в Members: ожидается MORPH0030 |
 | Binding | RUNTIME_CAPTURE | Configure-local в Convert: ожидается MORPH0030 |
 | Binding | LOOP | Цикл в Members: ожидается MORPH0031 |

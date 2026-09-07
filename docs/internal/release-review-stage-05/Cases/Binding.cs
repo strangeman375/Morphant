@@ -54,7 +54,13 @@ namespace Stage05Audit.Cases
 #elif ORDINARY_VALUE
             builder.Map<Source, Destination>().Members(source => new() { Value = source.Value + 10 });
 #else
-            builder.Map<Source, Destination>().Members(source => new()
+            builder.Map<Source, Destination>()
+#if EXPLICIT_CONSTRUCT
+                .Construct(source => new(source.Value))
+#elif BY_CONVENTION
+                .Construct(source => new(ByConvention()))
+#endif
+                .Members(source => new()
             {
                 Value = Foreign.Value(Foreign.Map(Foreign.Ignore(Foreign.Auto(source.Value))))
             });

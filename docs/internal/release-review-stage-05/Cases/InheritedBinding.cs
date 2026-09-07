@@ -46,7 +46,9 @@ namespace Stage05Audit.Cases
             builder.Map<Source, Destination<ResolveUsingTag>>().ResolveUsing((_, previous) => new(Read()));
             builder.Map<Source, Destination<ConvertTag>>().Convert(_ => new(Read()));
             builder.Map<Source, Destination<StaticTag>>().Convert(_ => new(ReadStatic()));
+#if BASE_ACCESS
             builder.Map<Source, Destination<BaseTag>>().Convert(_ => new(base.ReadVirtual()));
+#endif
             builder.Map<Source, Destination<VirtualTag>>().Convert(_ => new(ReadVirtual()));
         }
     }
@@ -68,7 +70,9 @@ namespace Stage05Audit.Cases
             builder.Map<Source, Destination<ResolveUsingTag>>().IncludeBase<Source, Destination<ResolveUsingTag>>();
             builder.Map<Source, Destination<ConvertTag>>().IncludeBase<Source, Destination<ConvertTag>>();
             builder.Map<Source, Destination<StaticTag>>().IncludeBase<Source, Destination<StaticTag>>();
+#if BASE_ACCESS
             builder.Map<Source, Destination<BaseTag>>().IncludeBase<Source, Destination<BaseTag>>();
+#endif
             builder.Map<Source, Destination<VirtualTag>>().IncludeBase<Source, Destination<VirtualTag>>();
         }
     }
@@ -97,8 +101,10 @@ namespace Stage05Audit.Cases
                 ((ITypeMapper<Source, Destination<ConvertTag>>)mapper).Create(source).Text);
             Check.Equal("inherited static binding", "base-static",
                 ((ITypeMapper<Source, Destination<StaticTag>>)mapper).Create(source).Text);
+#if BASE_ACCESS
             Check.Equal("inherited base binding", "root",
                 ((ITypeMapper<Source, Destination<BaseTag>>)mapper).Create(source).Text);
+#endif
             Check.Equal("inherited virtual dispatch", "derived-virtual",
                 ((ITypeMapper<Source, Destination<VirtualTag>>)mapper).Create(source).Text);
         }
