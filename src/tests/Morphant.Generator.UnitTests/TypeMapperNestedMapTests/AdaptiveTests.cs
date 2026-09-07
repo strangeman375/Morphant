@@ -409,14 +409,13 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            global::TestCase.ChildSource sourceChild = source.Child;
-            global::TestCase.ChildDestination value = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild);
+            global::TestCase.ChildSource sourceChild1 = source.Child;
+            global::TestCase.ChildDestination sourceChild = context.Mapper.Map<global::TestCase.ChildSource, global::TestCase.ChildDestination>(sourceChild1);
 
             return new global::TestCase.Destination(
-                child: new global::TestCase.ChildDestination(0))
+                child: sourceChild)
             {
-                Child = value,
-                Reference = value,
+                Reference = sourceChild,
                 Value = context.Mapper.Map<int, int>(source.Number)
             };
         }

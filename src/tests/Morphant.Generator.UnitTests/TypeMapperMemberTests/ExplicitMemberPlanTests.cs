@@ -449,13 +449,12 @@ namespace TestCase
             global::TestCase.Source source,
             global::Morphant.Context.MappingContext context)
         {
-            int sourceId = source.Id;
+            int sourceId = source.Id + 10;
 
             return new global::TestCase.Destination(
                 id: sourceId)
             {
                 Field = source.Field + 1,
-                Id = sourceId + 10,
                 Name = source.Name,
                 Automatic = source.Automatic,
                 Initial = source.Initial,
