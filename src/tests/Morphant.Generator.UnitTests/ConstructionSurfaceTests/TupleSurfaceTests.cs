@@ -40,7 +40,7 @@ namespace TestCase
 namespace Morphant.Generated.N_fa9574037810e841db2c8ce3326f2fea
 {
     /// <summary>
-    /// Maps constructor arguments for <c>(T Value, int Count)</c>.
+    /// Maps constructor arguments for <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed class TupleConstructorParameters<T>
     {
@@ -56,7 +56,7 @@ namespace Morphant.Generated.N_fa9574037810e841db2c8ce3326f2fea
     }
 
     /// <summary>
-    /// Defines construction of <c>(T Value, int Count)</c>.
+    /// Defines construction of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed class TupleConstruction<T>
     {
@@ -102,7 +102,7 @@ namespace Morphant.Generated.N_fa9574037810e841db2c8ce3326f2fea
 namespace Morphant.Generated.N_fa9574037810e841db2c8ce3326f2fea
 {
     /// <summary>
-    /// Maps members of <c>(T Value, int Count)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers<T>
     {
@@ -207,7 +207,7 @@ namespace TestCase
 namespace Morphant.Generated.N_38cb4a8e8bcb3b16557a42fe65c6d192
 {
     /// <summary>
-    /// Maps constructor arguments for <c>(int Key, string)</c>.
+    /// Maps constructor arguments for <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed class TupleConstructorParameters
     {
@@ -223,7 +223,7 @@ namespace Morphant.Generated.N_38cb4a8e8bcb3b16557a42fe65c6d192
     }
 
     /// <summary>
-    /// Defines construction of <c>(int Key, string)</c>.
+    /// Defines construction of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed class TupleConstruction
     {
@@ -269,7 +269,7 @@ namespace Morphant.Generated.N_38cb4a8e8bcb3b16557a42fe65c6d192
 namespace Morphant.Generated.N_38cb4a8e8bcb3b16557a42fe65c6d192
 {
     /// <summary>
-    /// Maps members of <c>(int Key, string)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -311,7 +311,7 @@ namespace Morphant.Generated.N_38cb4a8e8bcb3b16557a42fe65c6d192
 namespace Morphant.Generated.N_cc10a937bc217f0eb0d09673d9e6d4ed
 {
     /// <summary>
-    /// Maps constructor arguments for <c>global::System.Tuple&lt;int, string&gt;</c>.
+    /// Maps constructor arguments for <see cref="T:System.Tuple`2"/>.
     /// </summary>
     internal sealed class TupleConstructorParameters
     {
@@ -327,7 +327,7 @@ namespace Morphant.Generated.N_cc10a937bc217f0eb0d09673d9e6d4ed
     }
 
     /// <summary>
-    /// Defines construction of <c>global::System.Tuple&lt;int, string&gt;</c>.
+    /// Defines construction of <see cref="T:System.Tuple`2"/>.
     /// </summary>
     internal sealed class TupleConstruction
     {
@@ -373,7 +373,7 @@ namespace Morphant.Generated.N_cc10a937bc217f0eb0d09673d9e6d4ed
 namespace Morphant.Generated.N_cc10a937bc217f0eb0d09673d9e6d4ed
 {
     /// <summary>
-    /// Maps members of <c>global::System.Tuple&lt;int, string&gt;</c>.
+    /// Maps members of <see cref="T:System.Tuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -497,7 +497,7 @@ namespace TestCase
 namespace Morphant.Generated.N_8bd6fa44277f16307e66d8c49979db24
 {
     /// <summary>
-    /// Maps members of <c>(int, string)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -615,7 +615,7 @@ namespace TestCase
 namespace Morphant.Generated.N_d1abc16a68e057300b1853add23c3209
 {
     /// <summary>
-    /// Maps members of <c>((int X, string? Name) Point, global::System.Collections.Generic.List&lt;(long Code, object? Value)&gt; Items)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -657,7 +657,7 @@ namespace Morphant.Generated.N_d1abc16a68e057300b1853add23c3209
 namespace Morphant.Generated.N_67f940bd8bf49f6e9a2de49f6f48a3c4
 {
     /// <summary>
-    /// Maps members of <c>((int Left, string? Label) Point, global::System.Collections.Generic.List&lt;(long Id, object? Data)&gt; Items)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -769,7 +769,7 @@ namespace TestCase
 namespace Morphant.Generated.N_e7868ba5362df2866f54e8de1a75e366
 {
     /// <summary>
-    /// Maps members of <c>global::System.Tuple&lt;(int X, int Y)&gt;</c>.
+    /// Maps members of <see cref="T:System.Tuple`1"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -802,7 +802,7 @@ namespace Morphant.Generated.N_e7868ba5362df2866f54e8de1a75e366
 namespace Morphant.Generated.N_201fe3c51dc324181a127bf9ffb63b6f
 {
     /// <summary>
-    /// Maps members of <c>global::System.Tuple&lt;(int Left, int Top)&gt;</c>.
+    /// Maps members of <see cref="T:System.Tuple`1"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -913,7 +913,7 @@ namespace TestCase
 namespace Morphant.Generated.N_daeadd3fc190bca580c35a89464b4268
 {
     /// <summary>
-    /// Maps members of <c>(global::First.Payload Value, int Count)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -955,7 +955,7 @@ namespace Morphant.Generated.N_daeadd3fc190bca580c35a89464b4268
 namespace Morphant.Generated.N_b859bbcd211038e31a699fc006be47f5
 {
     /// <summary>
-    /// Maps members of <c>(global::Second.Payload Value, int Count)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -1153,7 +1153,7 @@ namespace TestCase
 namespace Morphant.Generated.N_6223d7c8ad053bf97fbdef5d2982bd72
 {
     /// <summary>
-    /// Maps members of <c>(int A, int _B)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -1195,7 +1195,7 @@ namespace Morphant.Generated.N_6223d7c8ad053bf97fbdef5d2982bd72
 namespace Morphant.Generated.N_57c0e06cf6d64780e8e3e75e7da9dcab
 {
     /// <summary>
-    /// Maps members of <c>(global::A_.B Value, int Count)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -1237,7 +1237,7 @@ namespace Morphant.Generated.N_57c0e06cf6d64780e8e3e75e7da9dcab
 namespace Morphant.Generated.N_a8f37530759fcb7fecbbbf62477fc0ea
 {
     /// <summary>
-    /// Maps members of <c>(int A_, int B)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -1279,7 +1279,7 @@ namespace Morphant.Generated.N_a8f37530759fcb7fecbbbf62477fc0ea
 namespace Morphant.Generated.N_b31f058c7f55a464dc526f749e062ca9
 {
     /// <summary>
-    /// Maps members of <c>(global::A._B Value, int Count)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -1422,7 +1422,7 @@ namespace TestCase
 namespace Morphant.Generated.N_9c16d7af93da2c98e5c0b6d75c50bd90
 {
     /// <summary>
-    /// Maps members of <c>(int Count, global::System.DateTime Timestamp, global::System.Collections.Generic.IEnumerable&lt;string&gt; Items)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`3"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -1534,7 +1534,7 @@ namespace TestCase
 namespace Morphant.Generated.N_b99f8200b5266e78bd994ba423275eae
 {
     /// <summary>
-    /// Maps members of <c>(int First, int, string Third, long Fourth, bool Fifth, decimal Sixth, double Seventh, byte Eighth, short Ninth)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`8"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -1696,7 +1696,7 @@ namespace TestCase
 namespace Morphant.Generated.N_9a91751c7f70e7c40be34a132e4bb85f
 {
     /// <summary>
-    /// Maps members of <c>(global::PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP FirstAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA, int SecondBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {
@@ -1737,7 +1737,7 @@ namespace Morphant.Generated.N_9a91751c7f70e7c40be34a132e4bb85f
 namespace Morphant.Generated.N_9a91751c7f70e7c40be34a132e4bb85f
 {
     /// <summary>
-    /// Maps constructor arguments for <c>(global::PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP FirstAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA, int SecondBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)</c>.
+    /// Maps constructor arguments for <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed class TupleConstructorParameters
     {
@@ -1753,7 +1753,7 @@ namespace Morphant.Generated.N_9a91751c7f70e7c40be34a132e4bb85f
     }
 
     /// <summary>
-    /// Defines construction of <c>(global::PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP FirstAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA, int SecondBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB)</c>.
+    /// Defines construction of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed class TupleConstruction
     {
@@ -1865,7 +1865,7 @@ namespace TestCase
 namespace Morphant.Generated.N_cdb406fbcb6b69a897c8868753ec6799
 {
     /// <summary>
-    /// Maps members of <c>(global::ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ Значение, int Количество)</c>.
+    /// Maps members of <see cref="T:System.ValueTuple`2"/>.
     /// </summary>
     internal sealed record TupleMembers
     {

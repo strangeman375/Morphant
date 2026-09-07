@@ -12,8 +12,7 @@ internal sealed record ConstructionPlanModel(
     string? ObsoleteAttributeSource,
     ImmutableArray<ConstructionConstructorModel> Constructors,
     ImmutableArray<ConstructionConstructorParameterFieldModel>
-        ConstructorParameterFields,
-    string? DestinationDisplayName = null);
+        ConstructorParameterFields);
 
 internal sealed record ConstructionTypeParameterModel(
     string Name,

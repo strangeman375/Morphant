@@ -51,9 +51,7 @@ internal static class BclTuplePlanModelBuilder
                 new ConstructionConstructorModel(
                     ObsoleteAttributeSource: null,
                     constructorParameters)),
-            fields,
-            DestinationDisplayName: GeneratedTypeNameBuilder.Build(
-                shape.Type, typeParameterNames, normalizeDynamic: false));
+            fields);
     }
 
     public static MemberPlanModel BuildMembers(
@@ -91,9 +89,7 @@ internal static class BclTuplePlanModelBuilder
             memberTypeParameters,
             BuildDestinationCref(shape),
             ObsoleteAttributeSource: null,
-            members,
-            DestinationDisplayName: GeneratedTypeNameBuilder.Build(
-                shape.Type, typeParameterNames, normalizeDynamic: false));
+            members);
     }
 
     private static ConstructionConstructorParameterModel

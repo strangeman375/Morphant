@@ -32,10 +32,12 @@ internal static class ConstructionPlanEmitter
         var typeReference = BuildTypeReference(
             Identifier(model.ConstructorParametersTypeName),
             model.TypeParameters);
+        var destinationCref = XmlAttribute(model.DestinationCref);
+
         WriteSummary(
             writer,
             "Maps constructor arguments for " +
-            DestinationDocumentation(model) + ".");
+            $"<see cref=\"{destinationCref}\"/>.");
         WriteTypeDeclaration(
             writer,
             $"internal sealed class {typeReference}",
@@ -201,17 +203,11 @@ internal static class ConstructionPlanEmitter
         CodeWriter writer,
         ConstructionPlanModel model)
     {
+        var cref = XmlAttribute(model.DestinationCref);
         WriteSummary(
             writer,
             "Defines construction of " +
-            DestinationDocumentation(model) + ".");
-    }
-
-    private static string DestinationDocumentation(ConstructionPlanModel model)
-    {
-        return model.DestinationDisplayName is { } display
-            ? $"<c>{XmlText(display)}</c>"
-            : $"<see cref=\"{XmlAttribute(model.DestinationCref)}\"/>";
+            $"<see cref=\"{cref}\"/>.");
     }
 
     private static void WriteDestinationConstructorDocumentation(

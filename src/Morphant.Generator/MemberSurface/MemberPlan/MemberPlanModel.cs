@@ -8,8 +8,7 @@ internal sealed record MemberPlanModel(
     ImmutableArray<MemberPlanTypeParameterModel> TypeParameters,
     string DestinationCref,
     string? ObsoleteAttributeSource,
-    ImmutableArray<MemberPlanPropertyModel> Members,
-    string? DestinationDisplayName = null);
+    ImmutableArray<MemberPlanPropertyModel> Members);
 
 internal sealed record MemberPlanTypeParameterModel(
     string Name,

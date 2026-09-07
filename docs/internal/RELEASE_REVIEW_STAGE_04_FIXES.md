@@ -54,14 +54,14 @@ runtime-проверки Create/reuse/Update(null)/replacement.
 
 ## Контрольная точка: XML-описания tuple-типов
 
-S04-05: описания Construction, ConstructorParameters и Members показывают
-конкретное tuple-представление, включая имена элементов, вложенность,
-nullable и generic-аргументы. Например, `(int Id, string Name)` теперь
-отличимо от `(int Code, string Label)` непосредственно в summary.
+По решению пользователя от 2026-09-07 описания Construction,
+ConstructorParameters и Members возвращены к краткой ссылке на определение
+tuple-типа с generic arity. Полное перечисление типов и имён элементов убрано.
 Обычные destination-типы сохраняют ссылки на пользовательский тип.
 
-TupleSurfaceTests: 12 passed на Roslyn 4.4.0; буквальные снимки охватывают
-18 tuple-представлений, включая длинные и Unicode-имена. Сигнатуры и
+Первоначальная проверка: TupleSurfaceTests — 12 passed на Roslyn 4.4.0;
+буквальные снимки охватывают 18 tuple-представлений, включая длинные и
+Unicode-имена. Сигнатуры и
 hint-файлы этим изменением не затронуты. Реальная IDE остаётся этапу 10.
 
 ## Итоговая проверка
