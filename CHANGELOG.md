@@ -39,7 +39,7 @@ unsupported.
 
 ### Fixed
 
-- Preserve inherited callback bindings to hidden mapper members, keeping
+- Preserve inherited callback bindings and overload selection, keeping
   virtual dispatch; report `MORPH0028` when equivalent access is unavailable.
 - Apply explicit `Members` rules even when a convention-selected constructor
   has a matching parameter, including required and `init` members.

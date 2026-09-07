@@ -732,9 +732,10 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             _semanticModel.GetOperation(node) as
                 IInvocationOperation);
 
-        return rewrittenOrdinaryInvocation.WithArgumentList(
-            rewrittenOrdinaryInvocation.ArgumentList.WithArguments(
-                SyntaxFactory.SeparatedList(rewrittenArguments)));
+        return PreserveMapperResultType(node,
+            rewrittenOrdinaryInvocation.WithArgumentList(
+                rewrittenOrdinaryInvocation.ArgumentList.WithArguments(
+                    SyntaxFactory.SeparatedList(rewrittenArguments))));
     }
 
     public override SyntaxNode? VisitConditionalAccessExpression(
@@ -1236,12 +1237,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             MapperMemberBinding.UsesCurrentInstance(node.Name) &&
             TryRewriteMapperMember(node.Name, symbol, out var mapperMember))
         {
-            if (node.Name is GenericNameSyntax genericName)
-            {
-                mapperMember = ((MemberAccessExpressionSyntax)mapperMember).WithName(
-                    genericName.WithTypeArgumentList(genericName.TypeArgumentList.WithArguments(
-                        SyntaxFactory.SeparatedList(genericName.TypeArgumentList.Arguments.Select(RewriteType)))));
-            }
+            mapperMember = ((MemberAccessExpressionSyntax)mapperMember)
+                .WithName((SimpleNameSyntax)Visit(node.Name)!);
             return mapperMember.WithTriviaFrom(node);
         }
 
@@ -1261,7 +1258,39 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 .WithTriviaFrom(node);
         }
 
-        return base.VisitMemberAccessExpression(node);
+        return PreserveMapperResultType(node,
+            (ExpressionSyntax)base.VisitMemberAccessExpression(node)!);
+    }
+
+    public override SyntaxNode? VisitThisExpression(ThisExpressionSyntax node)
+    {
+        ExpressionSyntax receiver = node;
+        while (receiver.Parent is ParenthesizedExpressionSyntax parentheses)
+        {
+            receiver = parentheses;
+        }
+
+        if (receiver.Parent is MemberAccessExpressionSyntax access &&
+            ReferenceEquals(access.Expression, receiver) &&
+            GetReferencedSymbol(access) is { } member)
+        {
+            MapperMemberBinding.GetReceiver(member, _semanticMapperType,
+                _semanticModel.Compilation, out var declaringType);
+            if (declaringType is not null)
+            {
+                // Mapper member receivers have their own accessibility policy.
+                return node;
+            }
+        }
+
+        if (_semanticModel.GetTypeInfo(node).Type is { } originalType &&
+            SubstituteMapperType(originalType) is { } closedType &&
+            !SymbolEqualityComparer.Default.Equals(closedType, _semanticMapperType))
+        {
+            return CastResult(node, closedType);
+        }
+
+        return node;
     }
 
     public override SyntaxNode? VisitDeclarationPattern(
@@ -1383,6 +1412,19 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     {
         var symbol = GetReferencedSymbol(node);
 
+        if (symbol is IMethodSymbol { IsGenericMethod: true } method &&
+            method.MethodKind != MethodKind.LocalFunction &&
+            method.TypeArguments.Any(argument => !SymbolEqualityComparer.Default.Equals(
+                argument, SubstituteMapperType(argument))))
+        {
+            var name = SyntaxFactory.GenericName(node.Identifier,
+                SyntaxFactory.TypeArgumentList(SyntaxFactory.SeparatedList(
+                    method.TypeArguments.Select(argument => SyntaxFactory.ParseTypeName(
+                        TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                            SubstituteMapperType(argument)))))));
+            return RewriteMethodName(node, name, method);
+        }
+
         if (symbol is not null && !IsMemberName(node) &&
             TryRewriteMapperMember(node, symbol, out var mapperMember))
         {
@@ -1502,14 +1544,15 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             IsMapperInstanceMember(symbol) &&
             !IsMemberName(node))
         {
-            return SyntaxFactory.MemberAccessExpression(
+            return PreserveMapperResultType(node, SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     SyntaxFactory.ThisExpression(),
                     node.WithoutTrivia())
-                .WithTriviaFrom(node);
+                .WithTriviaFrom(node));
         }
 
-        return base.VisitIdentifierName(node);
+        return PreserveMapperResultType(node,
+            (ExpressionSyntax)base.VisitIdentifierName(node)!);
     }
 
     public override SyntaxNode? VisitSingleVariableDesignation(
@@ -1656,6 +1699,79 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 
         return IsMapperMember(symbol);
     }
+
+    private ExpressionSyntax RewriteMethodName(
+        SimpleNameSyntax original, SimpleNameSyntax name, IMethodSymbol method)
+    {
+        if (IsMemberName(original))
+        {
+            return name.WithTriviaFrom(original);
+        }
+
+        if (TryRewriteMapperMember(name, method, out var member))
+        {
+            return member.WithTriviaFrom(original);
+        }
+
+        ExpressionSyntax? receiver = method.IsStatic
+            ? SyntaxFactory.ParseTypeName(SubstituteMapperType(method.ContainingType)
+                .ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable))
+            : IsMapperInstanceMember(method) ? SyntaxFactory.ThisExpression() : null;
+        return receiver is null ? name.WithTriviaFrom(original) :
+            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                receiver, name.WithoutTrivia()).WithTriviaFrom(original);
+    }
+
+    private ExpressionSyntax PreserveMapperResultType(
+        ExpressionSyntax original, ExpressionSyntax rewritten)
+    {
+        if (original.Parent is ExpressionStatementSyntax ||
+            original is SimpleNameSyntax simpleName && IsMemberName(simpleName))
+        {
+            return rewritten;
+        }
+
+        var reference = original is InvocationExpressionSyntax invocation
+            ? invocation.Expression : original;
+        var name = reference as SimpleNameSyntax ??
+            (reference as MemberAccessExpressionSyntax)?.Name;
+        if (name is null || !MapperMemberBinding.UsesCurrentInstance(name) ||
+            GetReferencedSymbol(reference) is not { } member ||
+            (original is not InvocationExpressionSyntax && member is not IPropertySymbol) ||
+            MapperMemberBinding.GetReceiver(member, _semanticMapperType,
+                _semanticModel.Compilation, out _) != MapperMemberReceiver.Unchanged ||
+            MapperMemberBinding.GetOverride(member, _semanticMapperType) is not { } overridden)
+        {
+            return rewritten;
+        }
+
+        if (overridden is IMethodSymbol { IsGenericMethod: true } method &&
+            member is IMethodSymbol selected)
+        {
+            overridden = method.Construct(selected.TypeArguments
+                .Select(SubstituteMapperType).ToArray());
+        }
+
+        var originalType = ResultType(member);
+        var overrideType = ResultType(overridden);
+        return originalType is not null && overrideType is not null &&
+               !SymbolEqualityComparer.Default.Equals(
+                   SubstituteMapperType(originalType), overrideType)
+            ? CastResult(rewritten, SubstituteMapperType(originalType)) : rewritten;
+
+        static ITypeSymbol? ResultType(ISymbol symbol) => symbol switch
+        {
+            IMethodSymbol method => method.ReturnType,
+            IPropertySymbol property => property.Type,
+            _ => null
+        };
+    }
+
+    private static ExpressionSyntax CastResult(ExpressionSyntax expression, ITypeSymbol type) =>
+        SyntaxFactory.ParenthesizedExpression(SyntaxFactory.CastExpression(
+            SyntaxFactory.ParseTypeName(TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)),
+            SyntaxFactory.ParenthesizedExpression(expression.WithoutTrivia())))
+            .WithTriviaFrom(expression);
 
     private bool TryRewriteMapperMember(
         SimpleNameSyntax name, ISymbol symbol, out ExpressionSyntax expression)

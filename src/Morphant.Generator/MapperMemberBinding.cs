@@ -120,6 +120,27 @@ internal static class MapperMemberBinding
         !member.IsSealed &&
         (member.IsVirtual || member.IsOverride || member.IsAbstract);
 
+    public static ISymbol? GetOverride(ISymbol member, INamedTypeSymbol mapperType)
+    {
+        if (!RequiresVirtualDispatch(member))
+        {
+            return null;
+        }
+
+        for (var current = mapperType; current is not null; current = current.BaseType)
+        {
+            foreach (var candidate in current.GetMembers(member.Name))
+            {
+                if (SameVirtualSlot(candidate, member))
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private static bool SameVirtualSlot(ISymbol left, ISymbol right)
     {
         if (!RequiresVirtualDispatch(right))

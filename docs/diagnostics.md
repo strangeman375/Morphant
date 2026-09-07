@@ -38,7 +38,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0025](diagnostics/MORPH0025.md) | Inheritance | Error | The same `IncludeBase` relation is configured more than once. |
 | [MORPH0026](diagnostics/MORPH0026.md) | Inheritance | Error | The mapping requested by `IncludeBase` cannot be found. |
 | [MORPH0027](diagnostics/MORPH0027.md) | Inheritance | Error | The current source or destination type is incompatible with the included mapping. |
-| [MORPH0028](diagnostics/MORPH0028.md) | Inheritance | Error | An inherited lambda references a member inaccessible from the generated mapper. |
+| [MORPH0028](diagnostics/MORPH0028.md) | Inheritance | Error | An inherited callback references an inaccessible member or cannot retain its original binding. |
 | [MORPH0029](diagnostics/MORPH0029.md) | Callbacks | Error | `Construct`, `Resolve`, or `Members` was not given an inline lambda. |
 | [MORPH0030](diagnostics/MORPH0030.md) | Callbacks | Error | A mapping callback captures or references code unavailable to the generated mapper. |
 | [MORPH0031](diagnostics/MORPH0031.md) | Callbacks | Error | A `Construct`, `Resolve`, or `Members` lambda uses an unsupported statement. |

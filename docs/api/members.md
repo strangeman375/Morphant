@@ -60,6 +60,8 @@ builder.Map<OrderDto, Order>()
 `Members` runs after destination selection. Unmentioned members follow
 [`MemberSelection`](../settings/member-selection.md). It can be combined with
 one destination method, but not with `Convert`.
+An explicit member rule also applies when a convention-selected constructor
+has a parameter with the same name.
 
 With `Construct` or a construction branch of `Resolve`, Morphant owns object
 creation and can place creation-only rules in the initializer. A result returned

@@ -25,6 +25,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritedCallbac
     public sealed class FactoryGroupTag { }
     public sealed class ResolverGroupTag { }
     public sealed class DelegateTag { }
+    public sealed class CovariantTag { }
+    public sealed class ThisTag { }
+    public sealed class InferredGenericTag { }
+    public class Payload { }
+    public sealed class DerivedPayload : Payload { }
     public sealed class Destination<TTag>
     {
         public Destination(string text) { Text = text; }
@@ -52,6 +57,15 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritedCallbac
         public virtual string HiddenVirtual() => "base-virtual-slot";
         protected string Overload(object value) => "base-object";
         protected string Generic<TValue>(TValue value) => typeof(TValue).Name;
+        protected virtual Payload ReadPayload() => new();
+        protected virtual Payload Payload => new();
+        protected static string Describe(Payload value) => value is DerivedPayload
+            ? "base-parameter" : "base-instance";
+        protected static string Describe(DerivedPayload value) => "derived-parameter";
+        protected static string DescribeMapper(BaseMapper<TMapper> mapper) => "base-type";
+        protected static string DescribeMapper(TMapper mapper) => "self-type";
+        protected string Identify<TValue>(TValue value) => typeof(TValue).Name;
+        protected string Identify(Mapper value) => "nongeneric";
         protected Destination<ConvertGroupTag> ReadConverted(Source? source) => new(Read());
         protected Destination<FactoryGroupTag> ReadConstructed(Source source) => new(Read());
         protected Destination<ResolverGroupTag> ReadResolved(Source source, Option<Destination<ResolverGroupTag>> previous) => new(Read());
@@ -83,6 +97,11 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritedCallbac
             builder.Map<Source, Destination<ResolverGroupTag>>().ResolveUsing(ReadResolved);
             builder.Map<Source, Destination<DelegateTag>>().Convert(Converter);
             builder.Map<Source, DeferredDestination>().ConstructUsing(_ => new(() => Read()));
+            builder.Map<Source, Destination<CovariantTag>>().Convert(_ => new(
+                Describe(ReadPayload()) + ":" + Describe(this.Payload)));
+            builder.Map<Source, Destination<ThisTag>>().Convert(_ => new(DescribeMapper(this)));
+            builder.Map<Source, Destination<InferredGenericTag>>().Convert(_ => new(
+                Identify((TMapper)this) + ":" + this.Identify((TMapper)this)));
         }
     }
 
@@ -106,6 +125,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritedCallbac
         protected new Destination<FactoryGroupTag> ReadConstructed(Source source) => throw new InvalidOperationException("Hidden factory was selected.");
         protected new Destination<ResolverGroupTag> ReadResolved(Source source, Option<Destination<ResolverGroupTag>> previous) => throw new InvalidOperationException("Hidden resolver was selected.");
         protected new Morphant.Delegates.Convert<Source?, Destination<DelegateTag>> Converter => throw new InvalidOperationException("Hidden delegate was selected.");
+        protected override DerivedPayload ReadPayload() => new();
+        protected override DerivedPayload Payload => new();
 
         protected override void Configure(MapperBuilder builder)
         {
@@ -128,6 +149,9 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritedCallbac
             builder.Map<Source, Destination<ResolverGroupTag>>().IncludeBase<Source, Destination<ResolverGroupTag>>();
             builder.Map<Source, Destination<DelegateTag>>().IncludeBase<Source, Destination<DelegateTag>>();
             builder.Map<Source, DeferredDestination>().IncludeBase<Source, DeferredDestination>();
+            builder.Map<Source, Destination<CovariantTag>>().IncludeBase<Source, Destination<CovariantTag>>();
+            builder.Map<Source, Destination<ThisTag>>().IncludeBase<Source, Destination<ThisTag>>();
+            builder.Map<Source, Destination<InferredGenericTag>>().IncludeBase<Source, Destination<InferredGenericTag>>();
         }
     }
 
@@ -214,6 +238,18 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.InheritedCallbac
             Equal("base", result.Read(), "deferred original binding");
             Equal(1, mapper.ReadCalls, "deferred invocation count");
         }
+
+        public static void VerifyCovariantResultTypes() => Equal("base-parameter:base-parameter",
+            ((ITypeMapper<Source, Destination<CovariantTag>>)new Mapper()).Create(new Source()).Text,
+            "covariant result retains the original overload selection");
+
+        public static void VerifyThisType() => Equal("base-type",
+            ((ITypeMapper<Source, Destination<ThisTag>>)new Mapper()).Create(new Source()).Text,
+            "standalone this retains its declared type");
+
+        public static void VerifyInferredGeneric() => Equal("Mapper:Mapper",
+            ((ITypeMapper<Source, Destination<InferredGenericTag>>)new Mapper()).Create(new Source()).Text,
+            "closing the family does not replace a generic overload");
 
         private static void Equal<T>(T expected, T actual, string operation)
         {

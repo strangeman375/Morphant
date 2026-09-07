@@ -18,4 +18,13 @@ internal sealed class MemberBindingTests
 
     [Test]
     public void Preserves_binding_inside_deferred_callbacks() => Scenario.VerifyDeferredCapture();
+
+    [Test]
+    public void Preserves_overload_selection_after_covariant_overrides() => Scenario.VerifyCovariantResultTypes();
+
+    [Test]
+    public void Preserves_the_static_type_of_standalone_this() => Scenario.VerifyThisType();
+
+    [Test]
+    public void Preserves_inferred_generic_method_selection_when_closing_a_family() => Scenario.VerifyInferredGeneric();
 }
