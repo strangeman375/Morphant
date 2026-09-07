@@ -39,6 +39,8 @@ unsupported.
 
 ### Fixed
 
+- Apply explicit `Members` rules even when a convention-selected constructor
+  has a matching parameter, including required and `init` members.
 - Map destination members whose names conflict with generated record members;
   explicit `Members` uses underscore aliases while conventions keep the
   original names.

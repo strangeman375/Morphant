@@ -1167,7 +1167,8 @@ internal static class ConventionConstructorMappingPlanner
             var matchingArguments =
                 correspondingArguments[memberIndex];
 
-            if (matchingArguments is null)
+            if (matchingArguments is null ||
+                memberMapping.ExplicitValueExpression is not null)
             {
                 memberModels.Add(memberMapping);
                 continue;
