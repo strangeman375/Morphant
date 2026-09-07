@@ -106,7 +106,9 @@ Each setting is resolved independently. See the
 ## Boundaries
 
 - Include base configuration only once at each level.
-- Reused rules may only reference members accessible from the derived mapper.
+- Reused rules preserve the original member binding and virtual dispatch.
+  References that cannot retain these semantics from the derived mapper are
+  rejected with [`MORPH0028`](diagnostics/MORPH0028.md).
 - A mapper and all its containing types must be accessible to generated
   namespace-level code. See
   [Generated code](generated-code.md#mapper-accessibility).

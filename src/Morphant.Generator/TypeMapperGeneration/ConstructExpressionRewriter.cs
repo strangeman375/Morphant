@@ -1232,6 +1232,19 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 
         var symbol = GetReferencedSymbol(node);
 
+        if (symbol is not null &&
+            MapperMemberBinding.UsesCurrentInstance(node.Name) &&
+            TryRewriteMapperMember(node.Name, symbol, out var mapperMember))
+        {
+            if (node.Name is GenericNameSyntax genericName)
+            {
+                mapperMember = ((MemberAccessExpressionSyntax)mapperMember).WithName(
+                    genericName.WithTypeArgumentList(genericName.TypeArgumentList.WithArguments(
+                        SyntaxFactory.SeparatedList(genericName.TypeArgumentList.Arguments.Select(RewriteType)))));
+            }
+            return mapperMember.WithTriviaFrom(node);
+        }
+
         if (symbol is IAliasSymbol
             {
                 Target: INamedTypeSymbol aliasType
@@ -1369,6 +1382,12 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IdentifierNameSyntax node)
     {
         var symbol = GetReferencedSymbol(node);
+
+        if (symbol is not null && !IsMemberName(node) &&
+            TryRewriteMapperMember(node, symbol, out var mapperMember))
+        {
+            return mapperMember.WithTriviaFrom(node);
+        }
 
         if (symbol is not null &&
             _localSubstitutions is not null &&
@@ -1576,6 +1595,12 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     node.TypeArgumentList.Arguments.Select(
                         RewriteType))));
 
+        if (symbol is not null && !IsMemberName(node) &&
+            TryRewriteMapperMember(rewrittenName, symbol, out var mapperMember))
+        {
+            return mapperMember.WithTriviaFrom(node);
+        }
+
         if (symbol is IMethodSymbol
             {
                 MethodKind: MethodKind.LocalFunction
@@ -1630,6 +1655,35 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         }
 
         return IsMapperMember(symbol);
+    }
+
+    private bool TryRewriteMapperMember(
+        SimpleNameSyntax name, ISymbol symbol, out ExpressionSyntax expression)
+    {
+        var kind = MapperMemberBinding.GetReceiver(
+            symbol, _semanticMapperType, _semanticModel.Compilation, out var declaringType);
+        ExpressionSyntax receiver;
+        switch (kind)
+        {
+            case MapperMemberReceiver.Base:
+                receiver = SyntaxFactory.BaseExpression();
+                break;
+            case MapperMemberReceiver.DeclaringType:
+                var type = SyntaxFactory.ParseTypeName(declaringType!.ToDisplayString(
+                    SymbolDisplayFormats.FullyQualifiedNullable));
+                receiver = symbol.IsStatic
+                    ? type
+                    : SyntaxFactory.ParenthesizedExpression(SyntaxFactory.CastExpression(
+                        type, SyntaxFactory.ThisExpression()));
+                break;
+            default:
+                expression = null!;
+                return false;
+        }
+
+        expression = SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression, receiver, name.WithoutTrivia());
+        return true;
     }
 
     private TypeSyntax RewriteType(TypeSyntax syntax)

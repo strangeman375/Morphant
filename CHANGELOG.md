@@ -39,6 +39,8 @@ unsupported.
 
 ### Fixed
 
+- Preserve inherited callback bindings to hidden mapper members, keeping
+  virtual dispatch; report `MORPH0028` when equivalent access is unavailable.
 - Apply explicit `Members` rules even when a convention-selected constructor
   has a matching parameter, including required and `init` members.
 - Map destination members whose names conflict with generated record members;

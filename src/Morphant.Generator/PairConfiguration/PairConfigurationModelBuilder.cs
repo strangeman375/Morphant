@@ -2080,7 +2080,15 @@ internal static class PairConfigurationModelBuilder
 
             if (!compilation.IsSymbolAccessibleWithin(
                     symbol,
-                    targetMapperType))
+                    targetMapperType) ||
+                MapperMemberBinding.UsesCurrentInstance(name) &&
+                MapperMemberBinding.GetReceiver(
+                    symbol, targetMapperType, compilation, out _) ==
+                MapperMemberReceiver.Unavailable &&
+                !name.Ancestors().OfType<InvocationExpressionSyntax>().Any(invocation =>
+                    invocation.Expression is IdentifierNameSyntax
+                        { Identifier.ValueText: "nameof" } &&
+                    semanticModel.GetConstantValue(invocation, cancellationToken).HasValue))
             {
                 locations.Add(name.GetLocation());
             }
