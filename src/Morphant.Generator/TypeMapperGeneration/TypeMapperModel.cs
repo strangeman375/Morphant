@@ -168,7 +168,9 @@ internal readonly record struct TypeMapperConstructorArgumentMappingModel
     ConstructorParameterRuleOrigin? RuleOrigin = null,
     int TupleElementOrdinal = 0,
     int DeclarativeOrder = 0,
-    ImmutableArray<ISymbol> SourcePathMembers = default
+    ImmutableArray<ISymbol> SourcePathMembers = default,
+    string? MemberValueTypeName = null,
+    string? ArgumentCastTypeName = null
 );
 
 internal readonly record struct TypeMapperMemberMappingModel

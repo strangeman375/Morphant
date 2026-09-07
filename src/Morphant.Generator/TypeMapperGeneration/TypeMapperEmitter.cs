@@ -2851,11 +2851,11 @@ internal static class TypeMapperEmitter
         TypeMapperConstructorArgumentMappingModel mapping,
         GeneratedLocalNameAllocator localNames)
     {
-        return mapping.ValueLocalName ??
-               ConstructorArgumentUncachedValueExpression(
-                   owner,
-                   mapping,
-                   localNames);
+        var expression = mapping.ValueLocalName ??
+            ConstructorArgumentUncachedValueExpression(owner, mapping, localNames);
+        return mapping.ArgumentCastTypeName is { } typeName
+            ? "(" + typeName + ")" + expression
+            : expression;
     }
 
     private static string ConstructorArgumentUncachedValueExpression(

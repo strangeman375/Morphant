@@ -604,6 +604,12 @@ internal static class TypeMapperRuntimeEquality
                 !StringComparer.Ordinal.Equals(
                     leftArgument.TargetTypeName,
                     rightArgument.TargetTypeName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftArgument.MemberValueTypeName,
+                    rightArgument.MemberValueTypeName) ||
+                !StringComparer.Ordinal.Equals(
+                    leftArgument.ArgumentCastTypeName,
+                    rightArgument.ArgumentCastTypeName) ||
                 !AreEquivalent(
                     leftArgument.DependencyExpression,
                     rightArgument.DependencyExpression) ||

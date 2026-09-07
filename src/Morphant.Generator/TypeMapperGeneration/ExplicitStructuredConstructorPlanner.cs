@@ -15,6 +15,7 @@ internal static class ExplicitStructuredConstructorPlanner
         ITypeSymbol sourceType,
         ConventionSourceMemberContext sourceContext,
         INamedTypeSymbol destination,
+        ConstructorInitializationMappingPlan memberMappings,
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         SemanticModel semanticModel,
@@ -245,6 +246,24 @@ internal static class ExplicitStructuredConstructorPlanner
             var destinationMember =
                 parameterRules[probeParameter.Ordinal]
                     .DestinationMember;
+            if (ConventionConstructorMappingPlanner.BuildMemberArgument(
+                    memberMappings, destinationParameter, compilation, mapperType,
+                    out var memberCompatible) is { } memberArgument)
+            {
+                if (!memberCompatible)
+                {
+                    return Unsupported(ConstructorCandidateRejectionReason.IncompatibleArgument,
+                        destinationConstructor, parameterRules.ToImmutableArray());
+                }
+                arguments.Add(memberArgument);
+                parameterRules[probeParameter.Ordinal] = new ConstructorParameterRuleObservation(
+                    destinationParameter, destinationParameter.Name,
+                    ConstructorParameterRuleOrigin.Value, memberArgument.RuleOriginNode,
+                    memberArgument.SourceMemberSymbol, destinationMember, IsApplicable: true,
+                    ConstructorCandidateRejectionReason.None);
+                continue;
+            }
+
             var planArgument = planArguments[index];
             var targetType = DeclarativeIntrinsic
                     .TryGetWrapperTargetType(
@@ -441,6 +460,27 @@ internal static class ExplicitStructuredConstructorPlanner
                     RuleOriginNode: planArgument.Syntax,
                     RuleOrigin:
                         ConstructorParameterRuleOrigin.Value));
+        }
+
+        foreach (var parameter in destinationConstructor.Parameters)
+        {
+            if (arguments.Any(argument => argument.ParameterName == parameter.Name) ||
+                ConventionConstructorMappingPlanner.BuildMemberArgument(memberMappings,
+                    parameter, compilation, mapperType, out var compatible) is not { } memberArgument)
+            {
+                continue;
+            }
+            if (!compatible)
+            {
+                return Unsupported(ConstructorCandidateRejectionReason.IncompatibleArgument,
+                    destinationConstructor, parameterRules.ToImmutableArray());
+            }
+            arguments.Add(memberArgument);
+            parameterRules[parameter.Ordinal] = new ConstructorParameterRuleObservation(
+                parameter, parameter.Name, ConstructorParameterRuleOrigin.Value,
+                memberArgument.RuleOriginNode, memberArgument.SourceMemberSymbol,
+                parameterRules[parameter.Ordinal].DestinationMember, IsApplicable: true,
+                ConstructorCandidateRejectionReason.None);
         }
 
         var argumentModels = arguments.ToImmutable();
@@ -657,7 +697,9 @@ internal static class ExplicitStructuredConstructorPlanner
 
                         writer.Line(
                             $"{Identifier(argument.ParameterName)}: " +
-                            (argument.ExplicitValueExpression is not null
+                            (argument.MemberValueTypeName is not null
+                                ? "default(" + argument.TargetTypeName + ")!"
+                                : argument.ExplicitValueExpression is not null
                                 ? "default(" +
                                   (argument.TargetTypeName ?? "object") +
                                   ")"
@@ -719,7 +761,8 @@ internal static class ExplicitStructuredConstructorPlanner
              index < arguments.Length;
              index++)
         {
-            if (arguments[index].ExplicitValueExpression is null &&
+            if (arguments[index].MemberValueTypeName is null &&
+                arguments[index].ExplicitValueExpression is null &&
                 MappingExpressionCompatibility.HasNullableWarning(
                     diagnostics,
                     objectCreation.ArgumentList!.Arguments[index].Span))
