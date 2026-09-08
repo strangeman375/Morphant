@@ -16,7 +16,6 @@ internal sealed class GenericRelationshipTests
     [TestCase("Parent<T>", "Child<string>", "class")]
     [TestCase("Outer<T>.Item", "Outer<string>.Item", "class")]
     [TestCase("T[]", "string[]", "class")]
-    [TestCase("T", "IProducer<string>", "class")]
     [TestCase("IProducer<T>", "IProducer<int>", "struct")]
     [TestCase("IProducer<T>", "IProducer<object>", "class")]
     public void Reports_a_relationship_that_can_change_after_substitution(string first, string second, string constraint)
@@ -38,7 +37,7 @@ internal sealed class GenericRelationshipTests
             Assert.That(diagnostic.AdditionalLocations.Select(location => location.SourceSpan),
                 Is.EqualTo(new[] { new TextSpan(firstStart, first.Length) }));
             Assert.That(diagnostic.GetMessage(), Is.EqualTo(
-                $"The relationship between ForDerived source types '{Display(first)}' and '{Display(second)}' " +
+                $"The relationship between polymorphic source types '{Display(first)}' and '{Display(second)}' " +
                 "in mapping 'object -> TestCase.Result<T>' depends on unknown generic arguments. " +
                 "Declare branches whose relative specificity is known at generation time."));
         });
@@ -58,6 +57,46 @@ internal sealed class GenericRelationshipTests
     {
         var source = CreateSource(first, second, constraint);
         var result = GeneratorTestDriver.Run("KnownPolymorphicRelationship", source, LanguageVersion.CSharp9);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Rejects_a_branch_that_can_become_the_base_source()
+    {
+        var source = CreateSource("IProducer<T>", "IProducer<string>", "class")
+            .Replace("Map<object, Result<T>>", "Map<IProducer<object>, Result<T>>", StringComparison.Ordinal)
+            .Replace(".ForDerived<IProducer<string>, Second<T>>()", "", StringComparison.Ordinal);
+        var result = GeneratorTestDriver.Run("UnknownBaseRelationship", source, LanguageVersion.CSharp9);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(result.EffectiveDiagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0061" }));
+        });
+        var diagnostic = result.EffectiveDiagnostics.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(diagnostic.Location.SourceSpan, Is.EqualTo(new TextSpan(
+                source.IndexOf("ForDerived<IProducer<T>", StringComparison.Ordinal) + "ForDerived<".Length, "IProducer<T>".Length)));
+            Assert.That(diagnostic.AdditionalLocations.Select(location => location.SourceSpan), Is.EqualTo(new[] { new TextSpan(
+                source.IndexOf("Map<IProducer<object>", StringComparison.Ordinal) + "Map<".Length, "IProducer<object>".Length) }));
+            Assert.That(diagnostic.GetMessage(), Is.EqualTo(
+                "The relationship between polymorphic source types 'TestCase.IProducer<object>' and 'TestCase.IProducer<T>' " +
+                "in mapping 'TestCase.IProducer<object> -> TestCase.Result<T>' depends on unknown generic arguments. " +
+                "Declare branches whose relative specificity is known at generation time."));
+        });
+    }
+
+    [Test]
+    public void Accepts_parameters_with_incompatible_class_constraints()
+    {
+        var source = CreateSource("IProducer<T>", "IProducer<U>", "Parent<string>")
+            .Replace("TestMapper<T>", "TestMapper<T, U>", StringComparison.Ordinal)
+            .Replace("where T : Parent<string>", "where T : Parent<string> where U : Parent<int>", StringComparison.Ordinal);
+        var result = GeneratorTestDriver.Run("DisjointParameterConstraints", source, LanguageVersion.CSharp9);
         Assert.Multiple(() =>
         {
             Assert.That(result.EffectiveDiagnostics, Is.Empty);

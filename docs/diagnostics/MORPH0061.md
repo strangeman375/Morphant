@@ -17,6 +17,8 @@ relationship depending on the mapper's `T`:
 For `T = object`, the string branch is more specific. Other substitutions can
 make the source types equal or unrelated.
 
+The same restriction applies when a branch can become the base source type.
+
 ## Fix
 
 Declare the links with closed source types, or use generic branches whose

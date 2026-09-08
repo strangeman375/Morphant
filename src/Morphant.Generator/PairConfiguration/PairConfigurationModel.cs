@@ -99,7 +99,8 @@ internal readonly record struct PolymorphicPairConfigurationModel(
 internal readonly record struct PolymorphicConfigurationIssueModel(
     PolymorphicConfigurationIssueKind Kind,
     DerivedMappingConfigurationModel DerivedMapping,
-    InvocationExpressionSyntax? FirstInvocation = null);
+    InvocationExpressionSyntax? FirstInvocation = null,
+    ITypeSymbol? RelatedSourceType = null);
 
 internal enum PolymorphicConfigurationIssueKind
 {

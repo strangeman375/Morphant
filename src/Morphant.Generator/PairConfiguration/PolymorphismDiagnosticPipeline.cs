@@ -120,8 +120,7 @@ internal static class PolymorphismDiagnosticPipeline
                     GetTypeArgumentLocation(link.Invocation, 0),
                     [GetTypeArgumentLocation(issue.FirstInvocation!, 0)],
                     properties: null,
-                    MapperContractDisplay.CreateType(pair.Polymorphism.DerivedMappings
-                        .First(derived => derived.Invocation == issue.FirstInvocation).SourceType),
+                    MapperContractDisplay.CreateType(issue.RelatedSourceType!),
                     MapperContractDisplay.CreateType(link.SourceType),
                     contract),
 

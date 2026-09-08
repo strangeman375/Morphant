@@ -163,6 +163,15 @@ internal static class PolymorphicTypeRelationshipPolicy
             parameter.HasValueTypeConstraint && (type.IsReferenceType ||
                 type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T))
             return false;
+        if (type is ITypeParameterSymbol otherParameter)
+        {
+            foreach (var left in parameter.ConstraintTypes)
+                foreach (var right in otherParameter.ConstraintTypes)
+                    if (left.TypeKind == TypeKind.Class && right.TypeKind == TypeKind.Class &&
+                        !ContainsParameter(left) && !ContainsParameter(right) &&
+                        !IsAssignable(left, right, compilation) && !IsAssignable(right, left, compilation))
+                        return false;
+        }
         if (!ContainsParameter(type))
         {
             if (parameter.HasUnmanagedTypeConstraint && !type.IsUnmanagedType)

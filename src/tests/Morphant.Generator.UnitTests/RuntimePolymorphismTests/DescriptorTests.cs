@@ -57,7 +57,7 @@ internal sealed class DescriptorTests
                     "{0} type '{2}' for mapping '{3}'.",
                     "ForDerived {0} type '{1}' is inaccessible from " +
                     "generated mapper '{2}'.",
-                    "The relationship between ForDerived source types '{0}' and '{1}' " +
+                    "The relationship between polymorphic source types '{0}' and '{1}' " +
                     "in mapping '{2}' depends on unknown generic arguments. " +
                     "Declare branches whose relative specificity is known at generation time."
                 }));

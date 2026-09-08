@@ -1627,6 +1627,18 @@ internal static class PairConfigurationModelBuilder
 
         if (issues.Count == 0)
         {
+            foreach (var derived in derivedMappings)
+            {
+                if (!PolymorphicTypeRelationshipPolicy.IsKnown(
+                        baseSourceType, derived.SourceType, compilation, cancellationToken))
+                    issues.Add(new PolymorphicConfigurationIssueModel(
+                        PolymorphicConfigurationIssueKind.UnknownSourceRelationship,
+                        derived, pair.Registration.Syntax, baseSourceType));
+            }
+        }
+
+        if (issues.Count == 0)
+        {
             for (var index = 0; index < derivedMappings.Length; index++)
             {
                 for (var earlier = 0; earlier < index; earlier++)
@@ -1637,7 +1649,8 @@ internal static class PairConfigurationModelBuilder
                             compilation, cancellationToken))
                         issues.Add(new PolymorphicConfigurationIssueModel(
                             PolymorphicConfigurationIssueKind.UnknownSourceRelationship,
-                            derivedMappings[index], derivedMappings[earlier].Invocation));
+                            derivedMappings[index], derivedMappings[earlier].Invocation,
+                            derivedMappings[earlier].SourceType));
                 }
             }
         }

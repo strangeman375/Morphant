@@ -36,7 +36,7 @@ internal static class PolymorphismDiagnosticDescriptors
     public static readonly DiagnosticDescriptor UnknownSourceRelationship = Create(
         "MORPH0061",
         "Polymorphic branch relationship is not known",
-        "The relationship between ForDerived source types '{0}' and '{1}' " +
+        "The relationship between polymorphic source types '{0}' and '{1}' " +
         "in mapping '{2}' depends on unknown generic arguments. " +
         "Declare branches whose relative specificity is known at generation time.");
 
