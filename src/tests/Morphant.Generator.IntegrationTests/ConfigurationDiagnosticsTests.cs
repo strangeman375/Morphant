@@ -3,6 +3,13 @@ namespace Morphant.Generator.IntegrationTests;
 [TestFixture]
 internal sealed class ConfigurationDiagnosticsTests
 {
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Independent_diagnostic_categories_keep_atomic_failures_and_a_working_pair(bool update)
+    {
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DiagnosticIsolation.Scenario.Verify(update);
+    }
+
     [Test]
     public void Executes_a_source_connected_base_configuration()
     {
