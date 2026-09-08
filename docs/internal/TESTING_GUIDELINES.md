@@ -6,6 +6,9 @@ expectations or verification policy. They are intentionally kept outside
 
 ## Test design
 
+- When a review needs behavior not covered by existing tests, add permanent
+  tests to the normal suite. Temporary probes are exploratory aids, not a
+  substitute for regression coverage committed to main and run by CI.
 - Test only the current documented contract. Historical behavior may inspire a
   scenario, but rewrite it against the current API instead of preserving it as
   a compatibility test.
