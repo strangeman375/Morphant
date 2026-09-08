@@ -35,7 +35,9 @@ internal sealed class ConventionSourceValueExpressionModel
 
     public string Render(GeneratedLocalNameAllocator localNames)
     {
-        return RequiresTypedMissingBranch
+        return RequiresTypedMissingBranch ||
+               Path.Any(segment => segment.ReceiverTypeName is not null) &&
+               Path.Any(segment => segment.RequiresGuard)
             ? RenderGuardedExpression(localNames)
             : RenderConditionalAccessExpression();
     }
@@ -107,6 +109,7 @@ internal sealed class ConventionSourceValueExpressionModel
 
         foreach (var segment in Path)
         {
+            expression = CastReceiver(expression, segment.ReceiverTypeName);
             expression += accessOperator + Identifier(segment.Name);
             accessOperator = segment.RequiresGuard ? "?." : ".";
 
@@ -132,7 +135,7 @@ internal sealed class ConventionSourceValueExpressionModel
 
         foreach (var segment in Path)
         {
-            var access = receiver + "." + Identifier(segment.Name);
+            var access = CastReceiver(receiver, segment.ReceiverTypeName) + "." + Identifier(segment.Name);
 
             if (!segment.RequiresGuard)
             {
@@ -166,10 +169,14 @@ internal sealed class ConventionSourceValueExpressionModel
         SyntaxFacts.GetContextualKeywordKind(value) != SyntaxKind.None
             ? "@" + value
             : value;
+
+    private static string CastReceiver(string expression, string? typeName) =>
+        typeName is null ? expression : "((" + typeName + ")(" + expression + "))";
 }
 
 internal readonly record struct ConventionSourceValuePathSegmentModel(
     string Name,
     bool SuppressesNull,
     bool RequiresGuard,
-    bool UnwrapsNullableValue);
+    bool UnwrapsNullableValue,
+    string? ReceiverTypeName = null);

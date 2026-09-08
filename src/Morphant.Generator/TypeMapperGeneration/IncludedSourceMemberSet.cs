@@ -301,13 +301,34 @@ internal static class IncludedSourceMemberSet
             ImmutableArray.CreateBuilder<ConventionSourcePathSegment>(
                 parsedPath.Length);
         var receiverType = rootType;
+        var semanticMapper = configuration.Expression.SemanticModel.Compilation.GetTypeByMetadataName(
+            SymbolNameHelper.GetFullMetadataName(mapperType)) ?? mapperType;
+        var substitutions = MapperTypeSubstitution.BuildForHierarchy(semanticMapper);
 
         foreach (var segment in parsedPath)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var selectedMember = ReceiverMemberBinding.SubstituteMember(
+                segment.Member, substitutions, configuration.Expression.SemanticModel.Compilation);
+            // Selector symbols belong to the augmented binding compilation.
+            // Resolve the closed declaration in the compilation used by conventions.
+            var referenceId = DocumentationCommentId.CreateReferenceId(selectedMember.ContainingType);
+            if (referenceId is not null &&
+                DocumentationCommentId.GetFirstSymbolForReferenceId(referenceId, compilation) is INamedTypeSymbol owner)
+                selectedMember = owner.GetMembers(selectedMember.Name)
+                    .FirstOrDefault(candidate => candidate.GetDocumentationCommentId() == selectedMember.GetDocumentationCommentId())
+                    ?? selectedMember;
+            var normalizedReceiver = NormalizeSelectedType(receiverType);
+            var requiredReceiver = ReceiverMemberBinding.GetRequiredReceiverType(normalizedReceiver, selectedMember);
+            if (requiredReceiver is not null && normalizedReceiver.IsValueType)
+            {
+                scope = default;
+                reason = $"member '{segment.Name}' cannot retain its original binding without copying the value-type receiver";
+                return false;
+            }
             var readableMember = ConventionMemberMappingPlanner
                 .BuildReadableMembers(
-                    NormalizeSelectedType(receiverType),
+                    requiredReceiver ?? normalizedReceiver,
                     compilation,
                     mapperType,
                     cancellationToken)
@@ -330,7 +351,9 @@ internal static class IncludedSourceMemberSet
                 readableMember.Symbol,
                 readableMember.ReadNullability,
                 segment.SuppressesNull,
-                segment.RequiresNullGuard));
+                segment.RequiresNullGuard,
+                requiredReceiver?.WithNullableAnnotation(NullableAnnotation.NotAnnotated)
+                    .ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable)));
             receiverType = readableMember.Type;
         }
 
@@ -468,6 +491,7 @@ internal static class IncludedSourceMemberSet
 
             segments.Add(new ParsedIncludeMembersPathSegment(
                 memberName.Identifier.ValueText,
+                symbol,
                 SuppressesNull: false,
                 RequiresNullGuard: false));
             return true;
@@ -602,7 +626,8 @@ internal readonly record struct ConventionSourceAccessModel(
                         requiresGuard,
                         RequiresNullableValueUnwrap(
                             segment,
-                            requiresGuard));
+                            requiresGuard),
+                        segment.ReceiverTypeName);
                 })
                 .ToImmutableArray(),
             member.Name,
@@ -769,10 +794,12 @@ internal readonly record struct ConventionSourcePathSegment(
     ISymbol Symbol,
     ConventionReadNullability ReadNullability,
     bool SuppressesNull,
-    bool RequiresNullGuard);
+    bool RequiresNullGuard,
+    string? ReceiverTypeName = null);
 
 internal readonly record struct ParsedIncludeMembersPathSegment(
     string Name,
+    ISymbol Member,
     bool SuppressesNull,
     bool RequiresNullGuard);
 

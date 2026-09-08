@@ -844,6 +844,15 @@ internal static class PairConfigurationModelBuilder
             targetMapperType,
             cancellationToken));
 
+        foreach (var inclusion in model.Declarative.IncludeMembers)
+        {
+            AddFailure(
+                "IncludeMembers",
+                inclusion.Invocation,
+                inclusion.Expression.DeclaringLevelOrder,
+                inclusion.Expression.InaccessibleReferenceLocations);
+        }
+
         foreach (var conversion in model.Manual.Conversions)
         {
             AddFailure(
@@ -2057,6 +2066,39 @@ internal static class PairConfigurationModelBuilder
         foreach (var baseExpression in nodes.OfType<BaseExpressionSyntax>())
         {
             locations.Add(baseExpression.GetLocation());
+        }
+
+        var semanticMapper = semanticModel.Compilation.GetTypeByMetadataName(
+            SymbolNameHelper.GetFullMetadataName(targetMapperType)) ?? targetMapperType;
+        var substitutions = MapperTypeSubstitution.BuildForHierarchy(semanticMapper);
+        foreach (var access in nodes.OfType<ExpressionSyntax>())
+        {
+            var receiver = access switch
+            {
+                MemberAccessExpressionSyntax member => member.Expression,
+                ElementAccessExpressionSyntax element => element.Expression,
+                MemberBindingExpressionSyntax or ElementBindingExpressionSyntax =>
+                    access.Ancestors().OfType<ConditionalAccessExpressionSyntax>().FirstOrDefault()?.Expression,
+                _ => null
+            };
+            if (receiver is null ||
+                semanticModel.GetTypeInfo(receiver, cancellationToken).Type is not { } originalType ||
+                semanticModel.GetSymbolInfo(access, cancellationToken).Symbol is not { } selectedMember ||
+                access.Ancestors().OfType<InvocationExpressionSyntax>().Any(invocation =>
+                    invocation.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" } &&
+                    semanticModel.GetConstantValue(invocation, cancellationToken).HasValue))
+                continue;
+
+            var closedReceiver = MapperTypeSubstitution.Substitute(originalType, substitutions, semanticModel.Compilation);
+            var closedMember = ReceiverMemberBinding.SubstituteMember(selectedMember, substitutions, semanticModel.Compilation);
+            if (closedReceiver.IsValueType &&
+                ReceiverMemberBinding.GetRequiredReceiverType(closedReceiver, closedMember) is not null)
+                locations.Add(access switch
+                {
+                    MemberAccessExpressionSyntax member => member.Name.GetLocation(),
+                    MemberBindingExpressionSyntax member => member.Name.GetLocation(),
+                    _ => access.GetLocation()
+                });
         }
 
         foreach (var name in nodes.OfType<SimpleNameSyntax>())

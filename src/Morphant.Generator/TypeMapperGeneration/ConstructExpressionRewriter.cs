@@ -762,7 +762,14 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 out var resultType) ||
             resultType.SpecialType == SpecialType.System_Void)
         {
-            return base.VisitConditionalAccessExpression(node);
+            var rewritten = (ConditionalAccessExpressionSyntax)base.VisitConditionalAccessExpression(node)!;
+            var binding = node.WhenNotNull.DescendantNodesAndSelf()
+                .OfType<ExpressionSyntax>()
+                .Where(member => member is MemberBindingExpressionSyntax or ElementBindingExpressionSyntax)
+                .FirstOrDefault(member => member.Ancestors().OfType<ConditionalAccessExpressionSyntax>().FirstOrDefault() == node);
+            return binding is not null && GetReferencedSymbol(binding) is { } member
+                ? rewritten.WithExpression(PreserveReceiverBinding(node.Expression, rewritten.Expression, member))
+                : rewritten;
         }
 
         return SyntaxFactory.ConditionalExpression(
@@ -1306,8 +1313,40 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 .WithTriviaFrom(node);
         }
 
-        return PreserveMapperResultType(node,
-            (ExpressionSyntax)base.VisitMemberAccessExpression(node)!);
+        var rewritten = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
+        if (symbol is not null)
+            rewritten = rewritten.WithExpression(PreserveReceiverBinding(node.Expression, rewritten.Expression, symbol));
+        return PreserveMapperResultType(node, rewritten);
+    }
+
+    public override SyntaxNode? VisitElementAccessExpression(ElementAccessExpressionSyntax node)
+    {
+        var rewritten = (ElementAccessExpressionSyntax)base.VisitElementAccessExpression(node)!;
+        return GetReferencedSymbol(node) is { } member
+            ? rewritten.WithExpression(PreserveReceiverBinding(node.Expression, rewritten.Expression, member))
+            : rewritten;
+    }
+
+    private ExpressionSyntax PreserveReceiverBinding(
+        ExpressionSyntax original, ExpressionSyntax rewritten, ISymbol member)
+    {
+        if (_semanticModel.GetTypeInfo(original).Type is not { } originalType)
+            return rewritten;
+
+        var receiverType = SubstituteMapperType(originalType);
+        var selectedMember = ReceiverMemberBinding.SubstituteMember(
+            member, _mapperTypeSubstitutions, _semanticModel.Compilation);
+        if (ReceiverMemberBinding.GetRequiredReceiverType(receiverType, selectedMember) is not { } requiredType)
+            return rewritten;
+
+        // Inherited callback validation rejects access that would copy a
+        // constrained value-type receiver; never introduce boxing here.
+        if (receiverType.IsValueType)
+            return rewritten;
+
+        return CastResult(rewritten, requiredType.WithNullableAnnotation(
+            _semanticModel.GetTypeInfo(original).Nullability.FlowState == NullableFlowState.MaybeNull
+                ? NullableAnnotation.Annotated : NullableAnnotation.NotAnnotated));
     }
 
     public override SyntaxNode? VisitThisExpression(ThisExpressionSyntax node)
