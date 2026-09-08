@@ -6,6 +6,56 @@ namespace Morphant.Generator.UnitTests;
 [TestFixture]
 internal sealed class MappingInterfaceNullabilityTests
 {
+    private static IEnumerable<TestCaseData> ConsumerCases =>
+        from operation in new[]
+        {
+            "direct.Create(null, default)",
+            "direct.Update(null, new Destination(), default)",
+            "direct.Create(null)",
+            "direct.Update(null, new Destination())",
+            "facade.Map<Source, Destination__NULLABLE__>(null)",
+            "facade.Map<Source, Destination__NULLABLE__>(null, new Destination())"
+        }
+        from nullable in new[] { false, true }
+        select new TestCaseData(operation, nullable);
+
+    [TestCaseSource(nameof(ConsumerCases))]
+    public void Consumer_result_flow_follows_the_selected_destination_type(
+        string operation,
+        bool nullable)
+    {
+        // lang=c#
+        const string template =
+"""
+#nullable enable
+using Morphant;
+internal sealed class Source { }
+internal sealed class Destination { public string Name { get; set; } = ""; }
+internal static class Consumer
+{
+    public static int Read(ITypeMapper<Source, Destination__NULLABLE__> direct, IMapper facade)
+    {
+        var result = __OPERATION__;
+        return result.Name.Length;
+    }
+}
+""";
+        var source = template.Replace("__OPERATION__", operation)
+            .Replace("__NULLABLE__", nullable ? "?" : "");
+        var diagnostics = CreateCompilation(source).GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning)
+            .ToArray();
+
+        Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id),
+            Is.EqualTo(nullable ? new[] { "CS8602" } : Array.Empty<string>()));
+        if (nullable)
+        {
+            Assert.That(diagnostics[0].Location.SourceSpan,
+                Is.EqualTo(new Microsoft.CodeAnalysis.Text.TextSpan(
+                    source.IndexOf("result.Name", StringComparison.Ordinal), "result".Length)));
+        }
+    }
+
     [Test]
     public void Consumer_observes_operation_names_nullable_inputs_and_non_nullable_results()
     {
