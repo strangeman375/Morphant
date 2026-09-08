@@ -1140,10 +1140,14 @@
     ]
   },
   "publication": {
-    "status": "blocked by automatic approval review",
-    "last_verified_remote_head": "ac32b44f2679d4e37ac25242dff2da7ec215f2bd",
+    "status": "published",
+    "last_verified_remote_head": "e17f6ddbe9359c68f0a140fae49201ce940fc648",
     "destination": "strangeman375/Morphant:main",
-    "reason": "Internal review-document upload to GitHub was rejected because explicit approval for the payload and destination was not recognized."
+    "published_commit": "e17f6ddbe9359c68f0a140fae49201ce940fc648",
+    "published_tree": "3760c659461f5bb1944f7e327a90fa9bf27aa80d",
+    "local_checkpoint": "54113c138ed15cca0514dd75f3173f9fa7dff9a8",
+    "authorization_date": "2026-09-08",
+    "prior_block": "Automatic approval review rejected internal review-document upload until the user explicitly authorized publishing the prepared changes, including docs/internal, to the destination."
   },
   "next_stage_started": false,
   "documentation_validation": {
