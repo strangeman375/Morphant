@@ -78,7 +78,8 @@ internal readonly record struct TypeMapperMappingModel
     ImmutableArray<string> HelperMethodDeclarations = default,
     ImmutableArray<string> TransferredWarningSuppressions = default,
     bool RequiresUnsafeContext = false,
-    TypeMapperTupleReconstructionModel? CreateTupleReconstruction = null
+    TypeMapperTupleReconstructionModel? CreateTupleReconstruction = null,
+    MappingExecutionPathSet? KnownExecutionPath = null
 )
 {
     public string InterfaceTypeName =>

@@ -1,5 +1,11 @@
-// Characterizes the existing result-dependent behavior for the pending design decision.
+// Verify MORPH0042 by default; SUPPRESS_RESULT_DIAGNOSTIC exercises recovery.
+#if SUPPRESS_RESULT_DIAGNOSTIC
+#pragma warning disable MORPH0042
+#endif
+using System;
 using Morphant;
+using Morphant.Context;
+using Morphant.Exceptions;
 
 namespace Stage05Audit.Cases
 {
@@ -26,10 +32,27 @@ namespace Stage05Audit.Cases
         public static void Run()
         {
             ITypeMapper<Source, Destination> mapper = new Mapper();
-            var result = mapper.Create(new Source());
-            Check.Equal("observed constructor argument", 7, result.ConstructorValue);
-            Check.Equal("observed result-dependent member value", 17, result.Value);
-            Check.Equal("observed assignments", 2, result.Writes);
+            ExpectFailure(() => mapper.Create(new Source()), MappingOperation.Create);
+            ExpectFailure(() => mapper.Update(new Source(), null), MappingOperation.Update);
+            var previous = new Destination(7);
+            var result = mapper.Update(new Source(), previous);
+            Check.Equal("reuses the existing destination", true, ReferenceEquals(previous, result));
+            Check.Equal("existing destination constructor argument", 7, result.ConstructorValue);
+            Check.Equal("existing destination member value", 17, result.Value);
+            Check.Equal("existing destination assignments", 2, result.Writes);
+        }
+
+        private static void ExpectFailure(Func<Destination> action, MappingOperation operation)
+        {
+            try { action(); }
+            catch (MappingConfigurationException exception)
+            {
+                Check.Equal("typed recovery operation", operation, exception.Operation);
+                Check.Equal("typed recovery source", true, exception.SourceType == typeof(Source));
+                Check.Equal("typed recovery destination", true, exception.DestinationType == typeof(Destination));
+                return;
+            }
+            throw new InvalidOperationException("Invalid constructor dependency did not throw.");
         }
     }
 }

@@ -83,6 +83,42 @@ the rule through the writable member; creation-only members keep their values.
 Rules for members without a corresponding constructor parameter are applied
 to the selected destination.
 
+## Reading `result`
+
+A value needed by an ordinary destination constructor must be available before
+that destination exists. Reading `result` in such a value produces
+[`MORPH0042`](../diagnostics/MORPH0042.md) on the affected creation paths.
+This includes dependencies through local variables and conditions that select
+the value. The generator recognizes operation and `previous.HasValue` checks
+in conditional expressions, `if`, and `switch`, including boolean combinations
+and local aliases of those checks.
+
+For a mapping that rejects a null Update destination, this rule is valid:
+
+```csharp
+builder.Map<Source, Destination>() // Destination(int value)
+    .NullDestinationHandling(NullDestinationHandling.Throw)
+    .Members((_, _, result, context) => new()
+    {
+        Value = context.Operation is MappingOperation.Create
+            ? 7
+            : result.Value + 10
+    });
+```
+
+With the default null-destination setting, `Update(source, null)` also needs
+construction, while `context.Operation` remains `Update`. The same expression
+then produces MORPH0042 for that case. When the mapping reuses every supplied
+destination, `previous.HasValue ? result.Value + 10 : 7` handles both creation
+paths.
+
+If `Resolve` selects a replacement, `previous.HasValue` does not establish
+that the new `result` exists. Read `previous.Value` when the constructor should
+use the old object's value. Disabled operations and null destinations rejected
+by settings do not contribute creation paths to this check. Suppressing the
+diagnostic keeps a `MappingConfigurationException` on the invalid path;
+valid creation and reuse paths remain available.
+
 With `Construct` or a construction branch of `Resolve`, Morphant owns object
 creation and can place creation-only rules in the initializer. A result returned
 by `ConstructUsing` or `ResolveUsing` is already initialized and is not

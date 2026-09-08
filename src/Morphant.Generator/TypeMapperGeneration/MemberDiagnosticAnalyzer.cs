@@ -251,6 +251,7 @@ internal static class MemberDiagnosticAnalyzer
         ImmutableArray<MemberDiagnosticCandidate>.Builder result,
         CancellationToken cancellationToken)
     {
+        if (mapping.KnownExecutionPath is { } knownPath) paths &= knownPath;
         if (paths == MappingExecutionPathSet.None ||
             mapping.MemberObservation is not { } observation)
         {
@@ -682,7 +683,9 @@ internal static class MemberDiagnosticAnalyzer
                     MemberLifecycleDependency.Result) ||
                 !(rule.IsRequired ||
                   rule.Lifecycle.HasFlag(
-                      MemberLifecycleDependency.InitOnly)))
+                      MemberLifecycleDependency.InitOnly) ||
+                  ConstructorInitializationMappingPlan.FindCorrespondingParameter(
+                      rule, observation, mapping.ConstructorObservation?.SelectedConstructor) is not null))
             {
                 continue;
             }
@@ -715,7 +718,10 @@ internal static class MemberDiagnosticAnalyzer
                 primary,
                 additional.ToImmutable(),
                 "result-dependency",
-                ResultDependencyReason,
+                ConstructorInitializationMappingPlan.FindCorrespondingParameter(
+                    rule, observation, mapping.ConstructorObservation?.SelectedConstructor) is { } parameter
+                    ? ResultDependencyReason + $"; its value is required by constructor parameter '{parameter.Name}'"
+                    : ResultDependencyReason,
                 paths,
                 rule.OriginNode ?? observation.PlanOrigin));
         }
@@ -1242,8 +1248,8 @@ internal static class MemberDiagnosticAnalyzer
             return false;
         }
 
-        if (failure.Reason !=
-                MappingFailureReason.ConstructorSelectionFailed ||
+        if (failure.Reason is not
+                (MappingFailureReason.ConstructorSelectionFailed or MappingFailureReason.ConstructorParameterRuleInvalid) ||
             mapping.ConstructorObservation is not { } constructor)
         {
             return true;

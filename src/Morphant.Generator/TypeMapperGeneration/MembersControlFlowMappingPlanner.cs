@@ -34,7 +34,11 @@ internal static class MembersControlFlowMappingPlanner
                 members.SemanticModel,
                 members.LocalInitializers,
                 members.Program.RuntimeLocalPlaceholders,
-                cancellationToken);
+                cancellationToken,
+                new DeclarativeExecutionFacts(members.SemanticModel, members.PreviousParameter,
+                    mapping.KnownExecutionPath is { } knownPath
+                        ? knownPath == MappingExecutionPathSet.UpdateWithPrevious : null,
+                    members.ContextParameter, mapping.KnownExecutionPath, members.LocalInitializers, cancellationToken));
 
         var flatMappings =
             new Dictionary<
@@ -532,8 +536,10 @@ internal static class MembersControlFlowMappingPlanner
             (rule.Lifecycle.HasFlag(
                  MemberLifecycleDependency.InitOnly) ||
              rule.IsRequired &&
-             mapping.CreateFailure?.Reason ==
-                 MappingFailureReason.ConstructorSelectionFailed));
+             mapping.CreateFailure?.Reason is
+                 MappingFailureReason.ConstructorSelectionFailed or MappingFailureReason.ConstructorParameterRuleInvalid ||
+             ConstructorInitializationMappingPlan.FindCorrespondingParameter(
+                 rule, plan.Observation, mapping.ConstructorObservation?.SelectedConstructor) is not null));
     }
 
     private static TypeMapperControlFlowNode PrepareConstructionRoot(
@@ -838,7 +844,7 @@ internal static class MembersControlFlowMappingPlanner
             right.Value);
     }
 
-    private static TypeMapperControlFlowNode SelectRoot(
+    internal static TypeMapperControlFlowNode SelectRoot(
         TypeMapperMappingModel mapping,
         bool create)
     {
@@ -898,17 +904,10 @@ internal static class MembersControlFlowMappingPlanner
         SemanticModel semanticModel,
         IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
         IReadOnlyDictionary<ISymbol, string> localPlaceholders,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        DeclarativeExecutionFacts executionFacts)
     {
-        bool References(ExpressionSyntax expression) =>
-            ReferencesParameter(
-                expression,
-                resultParameter,
-                semanticModel,
-                localInitializers,
-                new HashSet<ISymbol>(
-                    SymbolEqualityComparer.Default),
-                cancellationToken);
+        bool References(ExpressionSyntax expression) => executionFacts.References(expression, resultParameter);
 
         switch (node)
         {
@@ -934,7 +933,7 @@ internal static class MembersControlFlowMappingPlanner
                            semanticModel,
                            localInitializers,
                            localPlaceholders,
-                           cancellationToken);
+                           cancellationToken, executionFacts);
 
             case DeclarativeEvaluationSyntaxNode evaluation:
                 return References(evaluation.Expression) ||
@@ -944,7 +943,7 @@ internal static class MembersControlFlowMappingPlanner
                            semanticModel,
                            localInitializers,
                            localPlaceholders,
-                           cancellationToken);
+                           cancellationToken, executionFacts);
 
             case DeclarativeConditionalSyntaxNode conditional:
                 return References(conditional.Condition) ||
@@ -954,14 +953,14 @@ internal static class MembersControlFlowMappingPlanner
                            semanticModel,
                            localInitializers,
                            localPlaceholders,
-                           cancellationToken) ||
+                           cancellationToken, executionFacts) ||
                        ReferencesResultInControlFlow(
                            conditional.WhenFalse,
                            resultParameter,
                            semanticModel,
                            localInitializers,
                            localPlaceholders,
-                           cancellationToken);
+                           cancellationToken, executionFacts);
 
             case DeclarativeSwitchSyntaxNode switchNode:
                 return References(switchNode.GoverningExpression) ||
@@ -977,7 +976,7 @@ internal static class MembersControlFlowMappingPlanner
                                semanticModel,
                                localInitializers,
                                localPlaceholders,
-                               cancellationToken)) ||
+                               cancellationToken, executionFacts)) ||
                        switchNode.Continuation is { } continuation &&
                        ReferencesResultInControlFlow(
                            continuation,
@@ -985,7 +984,7 @@ internal static class MembersControlFlowMappingPlanner
                            semanticModel,
                            localInitializers,
                            localPlaceholders,
-                           cancellationToken);
+                           cancellationToken, executionFacts);
 
             default:
                 return false;
@@ -1039,63 +1038,4 @@ internal static class MembersControlFlowMappingPlanner
         };
     }
 
-    private static bool ReferencesParameter(
-        ExpressionSyntax expression,
-        IParameterSymbol parameter,
-        SemanticModel semanticModel,
-        IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
-        HashSet<ISymbol> visitedLocals,
-        CancellationToken cancellationToken)
-    {
-        foreach (var identifier in expression
-                     .DescendantNodesAndSelf(
-                         node => !IsConstantNameOf(node, semanticModel))
-                     .OfType<IdentifierNameSyntax>())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var symbol = semanticModel.GetSymbolInfo(
-                    identifier,
-                    cancellationToken)
-                .Symbol;
-
-            if (SymbolEqualityComparer.Default.Equals(
-                    symbol,
-                    parameter))
-            {
-                return true;
-            }
-
-            if (symbol is not null &&
-                visitedLocals.Add(symbol) &&
-                localInitializers.TryGetValue(
-                    symbol,
-                    out var initializer) &&
-                ReferencesParameter(
-                    initializer,
-                    parameter,
-                    semanticModel,
-                    localInitializers,
-                    visitedLocals,
-                    cancellationToken))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsConstantNameOf(
-        SyntaxNode node,
-        SemanticModel semanticModel)
-    {
-        return node is InvocationExpressionSyntax
-               {
-                   Expression: IdentifierNameSyntax
-                   {
-                       Identifier.ValueText: "nameof"
-                   }
-               } invocation &&
-               semanticModel.GetConstantValue(invocation).HasValue;
-    }
 }

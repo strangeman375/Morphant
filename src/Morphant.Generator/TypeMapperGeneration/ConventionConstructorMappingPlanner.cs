@@ -227,7 +227,7 @@ internal static class ConventionConstructorMappingPlanner
         var setsRequiredMembers =
             HasSetsRequiredMembersAttribute(constructor);
 
-        if (!memberMappings.ResultDependentCreationOnlyRules.IsEmpty ||
+        if (memberMappings.HasResultDependency(constructor) ||
             !memberMappings.RequiredObligations.IsEmpty &&
             !setsRequiredMembers)
         {
@@ -388,7 +388,7 @@ internal static class ConventionConstructorMappingPlanner
                 ConstructorParameterRuleObservation>();
         var rejection = ConstructorCandidateRejectionReason.None;
 
-        if (!memberMappings.ResultDependentCreationOnlyRules.IsEmpty)
+        if (memberMappings.HasResultDependency(constructor))
         {
             rejection = ConstructorCandidateRejectionReason
                 .ResultDependentInitializer;
@@ -1525,7 +1525,7 @@ internal static class ConventionConstructorMappingPlanner
             mapperType,
             cancellationToken);
 
-        if (!memberMappings.ResultDependentCreationOnlyRules.IsEmpty ||
+        if (memberMappings.HasResultDependency(constructor) ||
             !memberMappings.RequiredObligations.IsEmpty &&
             !setsRequiredMembers)
         {

@@ -44,6 +44,10 @@ unsupported.
 - Use a `Members` value available before construction for the matching parameter,
   evaluating it once and reusing it for a required initializer only when C#
   requires one.
+- Report `MORPH0042` when a constructor value depends on the result being
+  created. Account for operation and previous-destination guards, null Update
+  destinations, and `Resolve` replacements; preserve valid paths and runtime
+  factory results.
 - Map destination members whose names conflict with generated record members;
   explicit `Members` uses underscore aliases while conventions keep the
   original names.

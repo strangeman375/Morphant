@@ -1751,7 +1751,7 @@ internal static class StructuredConstructMappingPlanner
         }
 
         if (rejection == ConstructorCandidateRejectionReason.None &&
-            !memberMappings.ResultDependentCreationOnlyRules.IsEmpty)
+            memberMappings.HasResultDependency(constructor))
         {
             rejection = ConstructorCandidateRejectionReason
                 .ResultDependentInitializer;
@@ -2150,7 +2150,8 @@ internal static class StructuredConstructMappingPlanner
             ConstructorInitializationMappingPlan memberMappings)
     {
         var rejection =
-            !memberMappings.ResultDependentCreationOnlyRules.IsEmpty
+            observation.SelectedConstructor is { } constructor &&
+            memberMappings.HasResultDependency(constructor)
                 ? ConstructorCandidateRejectionReason
                     .ResultDependentInitializer
                 : !memberMappings.RequiredObligations.IsEmpty

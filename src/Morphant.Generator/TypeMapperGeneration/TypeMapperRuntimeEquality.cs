@@ -213,6 +213,7 @@ internal static class TypeMapperRuntimeEquality
                AreEquivalent(
                    leftMapping.PostMemberControlFlow,
                    rightMapping.PostMemberControlFlow) &&
+               leftMapping.KnownExecutionPath == rightMapping.KnownExecutionPath &&
                leftMapping.EffectiveSettings.Equals(
                    rightMapping.EffectiveSettings) &&
                StringComparer.Ordinal.Equals(

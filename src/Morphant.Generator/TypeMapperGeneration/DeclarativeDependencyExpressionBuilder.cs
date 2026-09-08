@@ -95,7 +95,8 @@ internal static class DeclarativeDependencyExpressionBuilder
         DeclarativeNestedMapUsageRegistry? nestedMapUsageRegistry,
         CancellationToken cancellationToken,
         out string rewrittenExpression,
-        out TypeMapperDependencyExpressionModel? dependencyExpression)
+        out TypeMapperDependencyExpressionModel? dependencyExpression,
+        MappingExecutionPathSet? executionPath = null)
     {
         if (!DeclarativeIntrinsic.ValidateValueTargets(
                 expression,
@@ -158,7 +159,7 @@ internal static class DeclarativeDependencyExpressionBuilder
                 ImmutableDictionary<SyntaxNode, SyntaxAnnotation>.Empty,
                 nestedMapMappings,
                 cancellationToken,
-                out var directlyRewritten))
+                out var directlyRewritten, executionPath))
             {
                 rewrittenExpression = string.Empty;
                 return false;
@@ -194,7 +195,7 @@ internal static class DeclarativeDependencyExpressionBuilder
                 annotations,
                 nestedMapMappings,
                 cancellationToken,
-                out var rewritten))
+                out var rewritten, executionPath))
         {
             rewrittenExpression = string.Empty;
             dependencyExpression = null;

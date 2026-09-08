@@ -1540,7 +1540,48 @@ internal readonly record struct ConstructorInitializationMappingPlan(
     ImmutableArray<ISymbol> RequiredObligations,
     ImmutableArray<MemberRuleObservation>
         ResultDependentCreationOnlyRules,
-    MemberPlanningObservation Observation);
+    MemberPlanningObservation Observation)
+{
+    public bool HasResultDependency(IMethodSymbol constructor)
+    {
+        var observation = Observation;
+        return !ResultDependentCreationOnlyRules.IsEmpty ||
+        observation.Rules.Any(rule =>
+            rule.InvalidReason == MemberRuleInvalidReason.None &&
+            rule.Lifecycle.HasFlag(MemberLifecycleDependency.Result) &&
+            FindCorrespondingParameter(rule, observation, constructor) is not null);
+    }
+
+    internal static IParameterSymbol? FindCorrespondingParameter(
+        MemberRuleObservation rule,
+        MemberPlanningObservation observation,
+        IMethodSymbol? constructor)
+    {
+        // Tuple composition has a separate materialization/reconstruction
+        // contract; these constraints apply to ordinary destination objects.
+        if (constructor is null ||
+            BclTupleShapePolicy.TryCreate(rule.DestinationMember.ContainingType) is not null)
+            return null;
+        foreach (var parameter in constructor.Parameters)
+        {
+            var exact = observation.Rules.FirstOrDefault(candidate =>
+                StringComparer.Ordinal.Equals(candidate.DestinationMember.Name, parameter.Name));
+            if (exact is not null)
+            {
+                if (SymbolEqualityComparer.Default.Equals(exact.DestinationMember, rule.DestinationMember))
+                    return parameter;
+                continue;
+            }
+            var matches = observation.Rules.Where(candidate =>
+                StringComparer.OrdinalIgnoreCase.Equals(candidate.DestinationMember.Name, parameter.Name))
+                .Select(candidate => candidate.DestinationMember)
+                .Distinct(SymbolEqualityComparer.Default).ToArray();
+            if (matches.Length == 1 && SymbolEqualityComparer.Default.Equals(matches[0], rule.DestinationMember))
+                return parameter;
+        }
+        return null;
+    }
+}
 
 internal readonly record struct ConventionReadableMember(
     string Name,

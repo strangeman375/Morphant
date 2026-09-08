@@ -30,6 +30,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     private readonly string? _resultName;
     private readonly IParameterSymbol? _contextParameter;
     private readonly string? _contextName;
+    private readonly DeclarativeExecutionFacts _executionFacts;
     private readonly SyntaxNode _transferScope;
     private readonly IReadOnlyDictionary<ISymbol, string>?
         _localSubstitutions;
@@ -61,7 +62,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         IReadOnlyDictionary<
             InvocationExpressionSyntax,
             TypeMapperNestedMapExpressionModel>? nestedMapMappings,
-        bool lowerDeclarativeValues)
+        bool lowerDeclarativeValues,
+        MappingExecutionPathSet? executionPath = null)
     {
         _semanticModel = semanticModel;
         _mapperType = mapperType;
@@ -77,6 +79,15 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _resultName = resultName;
         _contextParameter = contextParameter;
         _contextName = contextName;
+        var localInitializers = transferScope.DescendantNodes().OfType<VariableDeclaratorSyntax>()
+            .Where(local => local.Initializer is not null)
+            .Select(local => (Symbol: semanticModel.GetDeclaredSymbol(local), Value: local.Initializer!.Value))
+            .Where(local => local.Symbol is not null &&
+                localSubstitutions is not null && localSubstitutions.ContainsKey(local.Symbol))
+            .ToDictionary(local => local.Symbol!, local => local.Value, SymbolEqualityComparer.Default);
+        _executionFacts = new DeclarativeExecutionFacts(semanticModel, previousParameter,
+            bool.TryParse(previousSubstitution?.HasValueExpression, out var hasPrevious) ? hasPrevious : null,
+            contextParameter, executionPath, localInitializers);
         _transferScope = transferScope;
         _localSubstitutions = localSubstitutions;
         _dependencyAnnotations = dependencyAnnotations;
@@ -220,7 +231,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         SyntaxNode transferScope,
         IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
         CancellationToken cancellationToken,
-        out string rewrittenExpression)
+        out string rewrittenExpression,
+        MappingExecutionPathSet? executionPath = null)
     {
         if (!TryRewriteSyntaxWithContext(
                 expression,
@@ -237,7 +249,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 transferScope,
                 localSubstitutions,
                 cancellationToken,
-                out var rewritten))
+                out var rewritten, executionPath))
         {
             rewrittenExpression = string.Empty;
             return false;
@@ -377,7 +389,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         SyntaxNode transferScope,
         IReadOnlyDictionary<ISymbol, string>? localSubstitutions,
         CancellationToken cancellationToken,
-        out TNode rewrittenSyntax)
+        out TNode rewrittenSyntax,
+        MappingExecutionPathSet? executionPath = null)
         where TNode : CSharpSyntaxNode
     {
         if (!HasOnlyTransferableCaptures(
@@ -411,7 +424,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     localSubstitutions,
                     dependencyAnnotations: null,
                     nestedMapMappings: null,
-                    lowerDeclarativeValues: false)
+                    lowerDeclarativeValues: false, executionPath)
                 .Visit(syntax)!;
         return true;
     }
@@ -436,7 +449,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             InvocationExpressionSyntax,
             TypeMapperNestedMapExpressionModel> nestedMapMappings,
         CancellationToken cancellationToken,
-        out ExpressionSyntax rewrittenExpression)
+        out ExpressionSyntax rewrittenExpression,
+        MappingExecutionPathSet? executionPath = null)
     {
         if (!HasOnlyTransferableCaptures(
                 expression,
@@ -469,7 +483,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     localSubstitutions,
                     dependencyAnnotations,
                     nestedMapMappings,
-                    lowerDeclarativeValues: true)
+                    lowerDeclarativeValues: true, executionPath)
                 .Visit(expression)!;
         return true;
     }
@@ -1193,6 +1207,40 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 
         return rewritten.WithTriviaFrom(node);
     }
+
+    public override SyntaxNode? VisitBinaryExpression(BinaryExpressionSyntax node)
+    {
+        if (_executionFacts.TryBoolean(node, out var value))
+        {
+            return SyntaxFactory.LiteralExpression(value
+                    ? SyntaxKind.TrueLiteralExpression
+                    : SyntaxKind.FalseLiteralExpression)
+                .WithTriviaFrom(node);
+        }
+
+        // The parser may represent a qualified constant after `is` as a type
+        // name. Binding distinguishes the constant pattern from a type test.
+        if (node.IsKind(SyntaxKind.IsExpression) &&
+            GetReferencedSymbol(node.Right) is IFieldSymbol { HasConstantValue: true } constant)
+        {
+            return SyntaxFactory.IsPatternExpression(
+                    (ExpressionSyntax)Visit(node.Left)!,
+                    SyntaxFactory.ConstantPattern(SyntaxFactory.ParseExpression(
+                        SubstituteMapperType(constant.ContainingType).ToDisplayString(
+                            SymbolDisplayFormats.FullyQualifiedNullable) + "." + constant.Name)))
+                .WithTriviaFrom(node);
+        }
+
+        return base.VisitBinaryExpression(node);
+    }
+
+    public override SyntaxNode? VisitIsPatternExpression(IsPatternExpressionSyntax node) =>
+        _executionFacts.TryBoolean(node, out var value)
+            ? SyntaxFactory.LiteralExpression(value ? SyntaxKind.TrueLiteralExpression : SyntaxKind.FalseLiteralExpression).WithTriviaFrom(node)
+            : base.VisitIsPatternExpression(node);
+
+    public override SyntaxNode? VisitSwitchExpression(SwitchExpressionSyntax node) =>
+        _executionFacts.SelectArm(node) is { } arm ? Visit(arm.Expression)!.WithTriviaFrom(node) : base.VisitSwitchExpression(node);
 
     public override SyntaxNode? VisitConditionalExpression(
         ConditionalExpressionSyntax node)
@@ -1923,6 +1971,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         ExpressionSyntax expression,
         out bool value)
     {
+        if (_executionFacts.TryBoolean(expression, out value)) return true;
         while (expression is ParenthesizedExpressionSyntax parenthesized)
         {
             expression = parenthesized.Expression;

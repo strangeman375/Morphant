@@ -280,8 +280,11 @@ internal static class MemberRecoveryPlanner
                 (rule.Lifecycle.HasFlag(
                      MemberLifecycleDependency.InitOnly) ||
                  rule.IsRequired &&
-                 mapping.CreateFailure?.Reason ==
-                     MappingFailureReason.ConstructorSelectionFailed)) is
+                 mapping.CreateFailure?.Reason is
+                     MappingFailureReason.ConstructorSelectionFailed or MappingFailureReason.ConstructorParameterRuleInvalid ||
+                 !runtimeResult &&
+                 ConstructorInitializationMappingPlan.FindCorrespondingParameter(
+                     rule, plan.Observation, mapping.ConstructorObservation?.SelectedConstructor) is not null)) is
                 { } resultDependentRule)
         {
             failure = BuildFailure(
@@ -332,8 +335,8 @@ internal static class MemberRecoveryPlanner
         return current is null ||
                replacement.Reason ==
                    MappingFailureReason.MemberLifecycleInvalid &&
-               current.Reason ==
-                   MappingFailureReason.ConstructorSelectionFailed;
+               current.Reason is
+                   MappingFailureReason.ConstructorSelectionFailed or MappingFailureReason.ConstructorParameterRuleInvalid;
     }
 
     private static bool AppliesTo(
@@ -416,10 +419,7 @@ internal static class MemberRecoveryPlanner
                    rule.Lifecycle.HasFlag(
                        MemberLifecycleDependency.Creation) &&
                    rule.Lifecycle.HasFlag(
-                       MemberLifecycleDependency.Result) &&
-                   (rule.IsRequired ||
-                    rule.Lifecycle.HasFlag(
-                        MemberLifecycleDependency.InitOnly))) ||
+                       MemberLifecycleDependency.Result)) ||
                plan.Observation.Terminals.Any(static terminal =>
                    terminal.Kind == StructuredTerminalKind.NullMembers);
     }

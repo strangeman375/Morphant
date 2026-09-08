@@ -16,6 +16,42 @@ internal static class BasicMembersMappingPlanner
     private const string AutomaticMemberUnavailableMessage =
         "Auto could not find exactly one compatible source member.";
 
+    internal static bool RequiresExecutionSpecialization(
+        ImmutableArray<MembersConfigurationModel> configurations,
+        CancellationToken cancellationToken,
+        out bool usesOperation)
+    {
+        var required = false;
+        usesOperation = false;
+        foreach (var configuration in configurations)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (configuration.Form is not (MembersConfigurationForm.SourcePreviousAndResult or
+                MembersConfigurationForm.SourcePreviousResultAndContext) ||
+                configuration.Expression.Syntax is not ParenthesizedLambdaExpressionSyntax lambda)
+                continue;
+            var model = configuration.Expression.SemanticModel;
+            if (!TryGetLambdaParameters(lambda, model, configuration.Form, cancellationToken,
+                    out _, out var previous, out var result, out var context))
+                continue;
+            var symbols = lambda.Body.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
+                .Select(identifier => model.GetSymbolInfo(identifier, cancellationToken).Symbol).ToArray();
+            if (symbols.Any(symbol => SymbolEqualityComparer.Default.Equals(symbol, result)) &&
+                symbols.Any(symbol => symbol is not null &&
+                    (SymbolEqualityComparer.Default.Equals(symbol, previous) ||
+                     context is not null && SymbolEqualityComparer.Default.Equals(symbol, context))))
+            {
+                required = true;
+                usesOperation |= context is not null && lambda.Body.DescendantNodesAndSelf()
+                    .OfType<MemberAccessExpressionSyntax>().Any(member =>
+                        member.Name.Identifier.ValueText == "Operation" &&
+                        SymbolEqualityComparer.Default.Equals(
+                            model.GetSymbolInfo(member.Expression, cancellationToken).Symbol, context));
+            }
+        }
+        return required;
+    }
+
     public static BasicMembersMappingResult Build(
         ImmutableArray<MembersConfigurationModel> configurations,
         MemberSelectionValue memberSelection,
@@ -224,6 +260,11 @@ internal static class BasicMembersMappingPlanner
                     .Key,
                 static local => local.Initializer,
                 SymbolEqualityComparer.Default);
+        var facts = new DeclarativeExecutionFacts(configured.Expression.SemanticModel,
+            previousParameter, mapping.KnownExecutionPath is { } knownPath
+                ? knownPath == MappingExecutionPathSet.UpdateWithPrevious : null,
+            contextParameter, mapping.KnownExecutionPath, runtimeLocalInitializers, cancellationToken);
+        controlFlow = controlFlow with { Root = facts.Prune(controlFlow.Root) };
         var configuredDestination = TryGetConfiguredDestinationType(
             configured,
             cancellationToken);
@@ -345,10 +386,7 @@ internal static class BasicMembersMappingPlanner
                                     (MemberRuleOrigin.Convention or
                                      MemberRuleOrigin.Ignore) &&
                                 rule.Lifecycle.HasFlag(
-                                    MemberLifecycleDependency.Creation) &&
-                                (rule.IsRequired ||
-                                 rule.Lifecycle.HasFlag(
-                                     MemberLifecycleDependency.InitOnly))
+                                    MemberLifecycleDependency.Creation)
                                     ? rule with
                                     {
                                         Lifecycle = rule.Lifecycle |
@@ -1114,7 +1152,7 @@ internal static class BasicMembersMappingPlanner
                 createNestedMapUsages,
                 cancellationToken,
                 out var createExpression,
-                out var createDependency);
+                out var createDependency, mapping.KnownExecutionPath);
         var mapReplacementSucceeded = DeclarativeDependencyExpressionBuilder
             .TryRewriteWithContext(
                 expression,
@@ -1145,7 +1183,7 @@ internal static class BasicMembersMappingPlanner
                 mapReplacementNestedMapUsages,
                 cancellationToken,
                 out var mapReplacementExpression,
-                out var mapReplacementDependency);
+                out var mapReplacementDependency, mapping.KnownExecutionPath);
         var updateSucceeded = DeclarativeDependencyExpressionBuilder
             .TryRewriteWithContext(
                 expression,
@@ -1176,7 +1214,7 @@ internal static class BasicMembersMappingPlanner
                 updateNestedMapUsages,
                 cancellationToken,
                 out var updateExpression,
-                out var updateDependency);
+                out var updateDependency, mapping.KnownExecutionPath);
 
         if (!createSucceeded &&
             !HasNestedFailure(createNestedMapUsages) ||
@@ -1189,15 +1227,12 @@ internal static class BasicMembersMappingPlanner
             return false;
         }
 
+        var executionFacts = new DeclarativeExecutionFacts(semanticModel, previousParameter,
+            mapping.KnownExecutionPath is { } knownPath
+                ? knownPath == MappingExecutionPathSet.UpdateWithPrevious : null,
+            contextParameter, mapping.KnownExecutionPath, localInitializers, cancellationToken);
         var isResultDependent = resultParameter is not null &&
-            ReferencesParameterAtRuntime(
-                expression,
-                resultParameter,
-                semanticModel,
-                localInitializers,
-                new HashSet<ISymbol>(
-                    SymbolEqualityComparer.Default),
-                cancellationToken);
+            executionFacts.References(expression, resultParameter);
         var semanticMapperType = semanticModel.Compilation.GetTypeByMetadataName(
             SymbolNameHelper.GetFullMetadataName(mapperType)) ?? mapperType;
         var valueTypeName =
@@ -1273,56 +1308,6 @@ internal static class BasicMembersMappingPlanner
     {
         return registry.Observations.Any(static observation =>
             observation.FailureKind != NestedMappingFailureKind.None);
-    }
-
-    private static bool ReferencesParameterAtRuntime(
-        ExpressionSyntax expression,
-        IParameterSymbol parameter,
-        SemanticModel semanticModel,
-        IReadOnlyDictionary<ISymbol, ExpressionSyntax> localInitializers,
-        HashSet<ISymbol> visitedLocals,
-        CancellationToken cancellationToken)
-    {
-        foreach (var identifier in expression
-                     .DescendantNodesAndSelf(
-                         node => !IsConstantNameOf(node, semanticModel))
-                     .OfType<IdentifierNameSyntax>())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (SymbolEqualityComparer.Default.Equals(
-                    semanticModel.GetSymbolInfo(
-                            identifier,
-                            cancellationToken)
-                        .Symbol,
-                    parameter))
-            {
-                return true;
-            }
-
-            var symbol = semanticModel.GetSymbolInfo(
-                    identifier,
-                    cancellationToken)
-                .Symbol;
-
-            if (symbol is not null &&
-                visitedLocals.Add(symbol) &&
-                localInitializers.TryGetValue(
-                    symbol,
-                    out var initializer) &&
-                ReferencesParameterAtRuntime(
-                    initializer,
-                    parameter,
-                    semanticModel,
-                    localInitializers,
-                    visitedLocals,
-                    cancellationToken))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static IEnumerable<DeclarativeLeafSyntaxNode>

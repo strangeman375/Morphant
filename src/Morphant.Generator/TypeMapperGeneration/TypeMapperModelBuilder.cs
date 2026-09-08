@@ -557,8 +557,43 @@ internal static class TypeMapperModelBuilder
         CSharpCompilation compilation,
         INamedTypeSymbol mapperType,
         HashSet<string> usedGeneratedMethodNames,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        MappingExecutionPathSet? executionPath = null)
     {
+        if (executionPath is null && BasicMembersMappingPlanner.RequiresExecutionSpecialization(
+                configuration.Declarative.Members, cancellationToken, out var usesOperation))
+        {
+            var create = BuildMapping(configuration, effectiveSettings, compilation, mapperType,
+                usedGeneratedMethodNames, cancellationToken,
+                usesOperation ? MappingExecutionPathSet.Create : MappingExecutionPathSet.NoPrevious);
+            var existing = BuildMapping(configuration, effectiveSettings, compilation, mapperType,
+                usedGeneratedMethodNames, cancellationToken, MappingExecutionPathSet.UpdateWithPrevious);
+            var variants = new List<TypeMapperMappingModel> { create, existing };
+            var createRoot = MembersControlFlowMappingPlanner.SelectRoot(create, create: true);
+            if (usesOperation)
+            {
+                var missing = BuildMapping(configuration, effectiveSettings, compilation, mapperType,
+                    usedGeneratedMethodNames, cancellationToken, MappingExecutionPathSet.UpdateWithoutPrevious);
+                variants.Add(missing);
+                createRoot = new TypeMapperControlFlowNode(
+                    ImmutableArray<TypeMapperLocalValueModel>.Empty,
+                    "context.Operation == global::Morphant.Context.MappingOperation.Create",
+                    createRoot,
+                    MembersControlFlowMappingPlanner.SelectRoot(missing, create: true),
+                    Leaf: null, ThrowExpression: null);
+            }
+            return create with
+            {
+                KnownExecutionPath = null,
+                ControlFlow = new TypeMapperControlFlowMappingModel(
+                    createRoot,
+                    MembersControlFlowMappingPlanner.SelectRoot(existing, create: false)),
+                HelperMethodDeclarations = variants
+                    .SelectMany(candidate => candidate.HelperMethodDeclarations.IsDefault
+                        ? ImmutableArray<string>.Empty : candidate.HelperMethodDeclarations)
+                    .Distinct(StringComparer.Ordinal).ToImmutableArray()
+            };
+        }
         var pair = configuration.Pair;
         var declarativeSourceType =
             MappingTypeNormalization.NormalizeDeclarativeSource(
@@ -579,6 +614,7 @@ internal static class TypeMapperModelBuilder
             mapperType) with
         {
             EffectiveSettings = effectiveSettings,
+            KnownExecutionPath = executionPath,
             DerivedMappings = BuildDerivedMappings(
                 configuration,
                 compilation)
