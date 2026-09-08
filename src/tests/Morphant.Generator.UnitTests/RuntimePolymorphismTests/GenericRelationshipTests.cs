@@ -129,6 +129,46 @@ internal sealed class GenericRelationshipTests
         });
     }
 
+    [Test]
+    public void Accepts_a_reusable_family_when_the_concrete_mapper_closes_the_branch_types()
+    {
+        // lang=c#
+        const string source =
+"""
+#nullable enable
+#pragma warning disable CS1591
+using Morphant;
+namespace TestCase
+{
+    public interface ISource { }
+    public interface IProducer<out T> : ISource { }
+    public class Result<T> { }
+    public sealed class First<T> : Result<T> { }
+    public sealed class Second<T> : Result<T> { }
+    public abstract class Family<TMapper, T> : TypeMapper<TMapper>
+        where TMapper : Family<TMapper, T> where T : class
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<ISource, Result<T>>()
+                .ForDerived<IProducer<T>, First<T>>()
+                .ForDerived<IProducer<string>, Second<T>>()
+                .Convert(_ => new Result<T>());
+    }
+    [MorphantMapper]
+    public partial class TestMapper : Family<TestMapper, object>
+    {
+        protected override void Configure(MapperBuilder builder) => base.Configure(builder);
+    }
+}
+""";
+        var result = GeneratorTestDriver.Run("ClosedPolymorphicFamily", source, LanguageVersion.CSharp9);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+        });
+    }
+
     private static string Display(string type) => type is "T" or "T[]" or "string[]" ? type :
         "TestCase." + type.Replace("IProducer<IProducer", "IProducer<TestCase.IProducer", StringComparison.Ordinal);
 
