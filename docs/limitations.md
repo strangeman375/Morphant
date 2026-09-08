@@ -33,6 +33,8 @@ below, but not every feature expected from a general-purpose mapper.
 - distinguishing missing, null and default values for patch/merge mappings;
 - automatic immutable Update reconstruction;
 - keyed mappings or discriminator-based dispatch;
+- polymorphic branch relationships that depend on unknown generic arguments
+  ([MORPH0061](diagnostics/MORPH0061.md));
 - `private`, `protected`, or `private protected` nested mapper declarations;
   a mapper and its containing types must be accessible to generated
   namespace-level code ([`MORPH0059`](diagnostics/MORPH0059.md));

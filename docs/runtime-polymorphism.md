@@ -32,6 +32,12 @@ Registration order is not a priority. If several incomparable interface
 branches are equally specific, Morphant throws
 `AmbiguousPolymorphicMappingException`.
 
+Generic branches are supported when their relative specificity is known at
+generation time. Relationships that depend on unknown generic arguments are
+unsupported and produce [MORPH0061](diagnostics/MORPH0061.md). Declare those
+links with closed source types, or use a hierarchy whose ordering follows
+from its declarations and constraints. Morphant does not use runtime reflection.
+
 The selected pair uses the same lookup rules as an explicit nested mapping. A
 pair declared by the same generated mapper is available without DI; a pair
 declared by another mapper must be registered with the application `IMapper`.

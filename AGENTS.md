@@ -17,6 +17,9 @@
 
 ## Generated code
 
+- Runtime reflection is not supported and must not be introduced. Diagnose
+  polymorphic branch relationships that cannot be determined at generation
+  time instead of deferring type comparison to runtime reflection.
 - A source file's namespace must match its directory under the owning project.
 - The minimum supported user language version is C# 9. Tests may select newer
   language versions when the scenario requires them.
