@@ -2078,7 +2078,7 @@ internal static class PairConfigurationModelBuilder
                 MemberAccessExpressionSyntax member => member.Expression,
                 ElementAccessExpressionSyntax element => element.Expression,
                 MemberBindingExpressionSyntax or ElementBindingExpressionSyntax =>
-                    access.Ancestors().OfType<ConditionalAccessExpressionSyntax>().FirstOrDefault()?.Expression,
+                    ReceiverMemberBinding.GetConditionalAccess(access)?.Expression,
                 _ => null
             };
             if (receiver is null ||

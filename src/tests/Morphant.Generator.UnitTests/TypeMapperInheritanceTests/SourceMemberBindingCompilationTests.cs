@@ -22,6 +22,7 @@ internal sealed class SourceMemberBindingCompilationTests
     }
 
     [TestCase("source.Payload?.Profile.Value ?? 0", "Profile")]
+    [TestCase("source.Payload?.Profile?.Value ?? 0", "Profile")]
     [TestCase("source.Payload.Read(new DerivedProfile()).Value", "Read")]
     [TestCase("source.Payload[0].Value", "this[]")]
     [TestCase("source.Payload?[0].Value ?? 0", "this[]")]

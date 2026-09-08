@@ -107,6 +107,8 @@ Each setting is resolved independently. See the
 
 - Include base configuration only once at each level.
 - Reused rules preserve the original member binding and virtual dispatch.
+  This also applies to source members selected through generic constraints:
+  a hiding member on the concrete source type does not replace that selection.
   References that cannot retain these semantics from the derived mapper are
   rejected with [`MORPH0028`](diagnostics/MORPH0028.md).
 - A mapper and all its containing types must be accessible to generated

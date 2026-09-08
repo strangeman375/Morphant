@@ -766,7 +766,7 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             var binding = node.WhenNotNull.DescendantNodesAndSelf()
                 .OfType<ExpressionSyntax>()
                 .Where(member => member is MemberBindingExpressionSyntax or ElementBindingExpressionSyntax)
-                .FirstOrDefault(member => member.Ancestors().OfType<ConditionalAccessExpressionSyntax>().FirstOrDefault() == node);
+                .FirstOrDefault(member => ReceiverMemberBinding.GetConditionalAccess(member) == node);
             return binding is not null && GetReferencedSymbol(binding) is { } member
                 ? rewritten.WithExpression(PreserveReceiverBinding(node.Expression, rewritten.Expression, member))
                 : rewritten;

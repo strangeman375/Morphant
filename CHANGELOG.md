@@ -41,6 +41,8 @@ unsupported.
 
 - Preserve inherited callback bindings and overload selection, keeping
   virtual dispatch; report `MORPH0028` when equivalent access is unavailable.
+- Preserve source properties and fields selected through generic constraints,
+  including inherited `IncludeMembers` paths and conditional access.
 - Use a `Members` value available before construction for the matching parameter,
   evaluating it once and reusing it for a required initializer only when C#
   requires one.

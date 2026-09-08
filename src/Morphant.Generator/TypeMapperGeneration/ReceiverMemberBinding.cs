@@ -1,9 +1,14 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Morphant.Generator.TypeMapperGeneration;
 
 internal static class ReceiverMemberBinding
 {
+    public static ConditionalAccessExpressionSyntax? GetConditionalAccess(ExpressionSyntax binding) =>
+        binding.Ancestors().OfType<ConditionalAccessExpressionSyntax>()
+            .FirstOrDefault(conditional => conditional.WhenNotNull.Span.Contains(binding.Span));
+
     public static ISymbol SubstituteMember(
         ISymbol member,
         IReadOnlyDictionary<ITypeParameterSymbol, ITypeSymbol> substitutions,
@@ -22,6 +27,12 @@ internal static class ReceiverMemberBinding
     public static INamedTypeSymbol? GetRequiredReceiverType(
         ITypeSymbol receiverType, ISymbol selectedMember)
     {
+        // Conditional access binds interface members on T, not Nullable<T>.
+        if (receiverType is INamedTypeSymbol nullable &&
+            nullable.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
+            selectedMember.ContainingType?.TypeKind == TypeKind.Interface)
+            receiverType = nullable.TypeArguments[0];
+
         if (receiverType is not INamedTypeSymbol receiver ||
             selectedMember.IsStatic ||
             selectedMember.ContainingType is not { } declaringType ||
