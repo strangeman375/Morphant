@@ -220,6 +220,16 @@ public partial class ConsumerMapper : TypeMapper<ConsumerMapper>
             LanguageVersion.CSharp9,
             additionalReferences: [reference]);
         AssertClean(consumer);
+
+        var syntaxTree = consumer.OutputCompilation.SyntaxTrees.First();
+        var semanticModel = consumer.OutputCompilation.GetSemanticModel(syntaxTree);
+        var callbackAssemblies = syntaxTree.GetRoot().DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Select(invocation => semanticModel.GetSymbolInfo(invocation).Symbol)
+            .OfType<IMethodSymbol>()
+            .Where(method => method.ReducedFrom is not null)
+            .Select(method => method.ContainingAssembly.Name);
+        Assert.That(callbackAssemblies, Is.EqualTo(new[] { "DslConsumer" }));
     }
 
     [TestCaseSource(nameof(Callbacks))]

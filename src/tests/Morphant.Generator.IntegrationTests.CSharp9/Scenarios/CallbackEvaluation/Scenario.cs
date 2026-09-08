@@ -25,7 +25,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.CallbackEvaluati
         public int DelegateReads { get; private set; }
         public int FinallyCalls { get; private set; }
         public int DeferredReads { get; private set; }
-        private Func<Source?, Destination<DelegateTag>> Callback
+        private Morphant.Delegates.Convert<Source?, Destination<DelegateTag>> Callback
         {
             get
             {
