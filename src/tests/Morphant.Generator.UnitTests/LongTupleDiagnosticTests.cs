@@ -94,7 +94,8 @@ namespace TestCase
         {
             Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
             Assert.That(result.EffectiveDiagnostics.Select(static diagnostic => diagnostic.Id),
-                Is.EqualTo(new[] { "MORPH0047" }));
+                Is.EqualTo(new[] { "MORPH0047" }),
+                string.Join(Environment.NewLine, result.EffectiveDiagnostics));
         });
         var diagnostic = result.EffectiveDiagnostics.Single();
         Assert.Multiple(() =>

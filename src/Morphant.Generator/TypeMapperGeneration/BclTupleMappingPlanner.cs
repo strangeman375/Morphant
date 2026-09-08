@@ -837,12 +837,9 @@ internal static class BclTupleMappingPlanner
         MemberPlanningObservation observation) =>
         observation.Rules.LastOrDefault(rule =>
             rule.InvalidReason == MemberRuleInvalidReason.None &&
-            (SymbolEqualityComparer.Default.Equals(
-                 rule.DestinationMember,
-                 element.Symbol) ||
-             StringComparer.Ordinal.Equals(
-                 rule.DestinationMember.Name,
-                 element.Name)))?.Origin;
+            BclTupleShapePolicy.AreSameLogicalElement(
+                rule.DestinationMember,
+                element.Symbol))?.Origin;
 
     private static bool IsSuppliedByMemberInitializer(
         BclTupleElement element,

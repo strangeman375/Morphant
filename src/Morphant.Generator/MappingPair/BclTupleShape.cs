@@ -122,9 +122,15 @@ internal static class BclTupleShapePolicy
         ITypeSymbol tupleType,
         ISymbol member)
     {
-        return TryCreate(tupleType)?.Elements.FirstOrDefault(candidate =>
-            AreSameLogicalElement(candidate.Symbol, member) ||
-            StringComparer.Ordinal.Equals(candidate.Name, member.Name));
+        if (TryCreate(tupleType) is not { } tuple)
+        {
+            return null;
+        }
+
+        return tuple.Elements.FirstOrDefault(candidate =>
+                   AreSameLogicalElement(candidate.Symbol, member)) ??
+               tuple.Elements.FirstOrDefault(candidate =>
+                   StringComparer.Ordinal.Equals(candidate.Name, member.Name));
     }
 
     private static bool TryCreateValueTuple(
