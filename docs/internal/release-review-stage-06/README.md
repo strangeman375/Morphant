@@ -1,24 +1,11 @@
-# Этап 6: результат проверки
+# Этап 6
 
-Код: `277ded2`; Linux, SDK 10.0.100, unit-host Roslyn 4.4.0.
-Настройки, наследование, IncludeMembers и flattening: 120 unit и 65 integration passed.
-Дополнительно прошли 13 MSBuild-проверок приоритетов Flattening/UnknownDerivedTypeHandling,
-Default, порядка mapper-настроек и локальных Members/Auto/Ignore. Аудит завершён.
+S06-01 исправлен: наследуемые callbacks и IncludeMembers сохраняют выбранные
+через generic constraint source-члены, включая скрытие, virtual dispatch и nullable-пути.
+Недостающие проверки включены в постоянные тестовые проекты: 37 новых integration
+и 19 unit-тестов. Временная MSBuild-проба заменена этими тестами и удалена.
 
-**S06-01:** после закрытия generic-базы `Members` и `IncludeMembers` меняют привязку
-`source.Payload.Profile`: скрывающий член производного типа возвращает 99,
-хотя исходный C# через generic constraint возвращает 11. Диагностики нет.
-Подтверждено для Create, Update(null) и Update(existing) в обоих случаях;
-сборка чистая, шесть расхождений, четыре контрольные проверки проходят.
-[Binding.cs](Binding.cs) содержит воспроизведение и контроль обычного cross-pair IncludeBase.
+Проверено на коде `863d36c`: Release без warnings/errors; 940 unit passed + 1 штатный
+skip (Roslyn 4.4.0), 381 integration passed; в CI на Roslyn 4.9.2 — 941 unit passed.
 
-Повтор: `dotnet run --project docs/internal/release-review-stage-06/Stage06Probe.csproj -c Release`.
-Пока дефект открыт, пример печатает расхождения и завершается с кодом 1.
-
-Причина: Members переносит source-доступ без сохранения исходного receiver binding;
-IncludeMembers заново разрешает имена пути после generic-подстановки.
-Рекомендуемое исправление: сохранять выбранные source-члены и семантику их получателей.
-Пользователь разрешил исправление S06-01 и потребовал включать дополнительные
-проверки в постоянный тестовый набор. Добавлены 8 integration-тестов настроек
-и 7 тестов source binding; до исправления шесть случаев S06-01 должны падать.
-Этап 7 ожидает решения пользователя после проверки исправления.
+Этап 7 ожидает решения пользователя после ревью исправления и тестов.
