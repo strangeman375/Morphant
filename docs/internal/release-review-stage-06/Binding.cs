@@ -63,9 +63,19 @@ namespace Stage06
                 Console.WriteLine($"{name}: expected={expected}, actual={actual}");
                 if (expected != actual) failures++;
             }
-            Check("inherited generic Members", 11, ((ITypeMapper<Box<Source>, Destination>)new ExplicitMapper()).Create(new Box<Source> { Payload = source }).Value);
+            void CheckMapping(string name, ITypeMapper<Box<Source>, Destination> mapper)
+            {
+                var input = new Box<Source> { Payload = source };
+                Check(name + " Create", 11, mapper.Create(input).Value);
+                Check(name + " Update(null)", 11, mapper.Update(input, null).Value);
+                var previous = new Destination { Value = 7 };
+                var result = mapper.Update(input, previous);
+                Check(name + " Update(existing)", 11, result.Value);
+                Check(name + " preserves instance", 1, ReferenceEquals(previous, result) ? 1 : 0);
+            }
+            CheckMapping("inherited generic Members", new ExplicitMapper());
             Check("nested ordinary generic C#", 11, new NestedMapper().Original(new Box<Source> { Payload = source }));
-            Check("nested generic IncludeMembers", 11, ((ITypeMapper<Box<Source>, Destination>)new NestedMapper()).Create(new Box<Source> { Payload = source }).Value);
+            CheckMapping("nested generic IncludeMembers", new NestedMapper());
             Check("cross-pair IncludeMembers", 11, ((ITypeMapper<Source, Destination>)new CrossPairMapper()).Create(source).Value);
             return failures == 0 ? 0 : 1;
         }
