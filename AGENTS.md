@@ -138,6 +138,9 @@
   indefinitely, and report a blocker when recovery is unclear.
 - Keep the user informed at meaningful milestones. Ask before resolving
   ambiguities that materially affect public behavior.
+- Keep release-review records minimal: only the state, inputs and findings
+  needed to conduct or resume the check. Review artifacts are temporary;
+  do not create detailed reports or duplicate evidence across documents.
 - Before publishing, verify the exact committed file set and update shared
   branches only by ordinary fast-forward; never force-push.
 - Do not repeat completed tests or diff reviews merely because publication is
