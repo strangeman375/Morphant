@@ -162,8 +162,10 @@ public partial class ConsumerMapper : TypeMapper<ConsumerMapper>
                     "Map<Shared.Source?, Shared.Destination?>");
                 break;
             case "tuple":
-                producerSource = producerSource.Replace("Map<Shared.Source, Shared.Destination>",
-                    "Map<Shared.Source, (int Id, int Other)>");
+                producerSource = producerSource
+                    .Replace("public sealed class Source { public int Id { get; set; } }",
+                        "public sealed class Source { public int Id { get; set; } public int Other { get; set; } }")
+                    .Replace("Map<Shared.Source, Shared.Destination>", "Map<Shared.Source, (int Id, int Other)>");
                 consumerSource = consumerSource.Replace("Map<Shared.Source, Shared.Destination>",
                     "Map<Shared.Source, (int Id, int Other)>");
                 callback = callback.Replace("new(s.Id)", "new(s.Id, s.Id + 1)")
