@@ -3,6 +3,57 @@ namespace Morphant.Generator.IntegrationTests;
 [TestFixture]
 internal sealed class TypeMapperCSharpSemanticsTests
 {
+    [TestCase("ConstructUsing", false)]
+    [TestCase("ConstructUsing", true)]
+    [TestCase("ResolveUsing", false)]
+    [TestCase("ResolveUsing", true)]
+    [TestCase("Convert", false)]
+    [TestCase("Convert", true)]
+    [TestCase("Constructor", false)]
+    [TestCase("Constructor", true)]
+    public void Preserves_caller_information_in_runtime_callbacks_and_target_typed_constructors(string callback, bool update)
+    {
+        CSharp9.Scenarios.RuntimeCallerInfo.Scenario.Verify(callback, update);
+    }
+
+    [Test]
+    public void Reads_a_delegate_property_once_per_mapping_call()
+    {
+        CSharp9.Scenarios.CallbackEvaluation.Scenario.VerifyDelegateProperty();
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Executes_finally_when_a_runtime_callback_returns_early_for_null(bool update)
+    {
+        CSharp9.Scenarios.CallbackEvaluation.Scenario.VerifyFinallyOnNullReturn(update);
+    }
+
+    [Test]
+    public void Defers_source_reads_and_skips_unused_structured_locals()
+    {
+        CSharp9.Scenarios.CallbackEvaluation.Scenario.VerifyDeferredSourceCapture();
+    }
+
+    [Test]
+    public void Preserves_nameof_aliases_and_optional_extension_arguments()
+    {
+        CSharp9.Scenarios.ExpressionContext.Scenario.VerifyNames();
+    }
+
+    [Test]
+    public void Preserves_overloads_selected_by_source_argument_types()
+    {
+        CSharp9.Scenarios.ExpressionContext.Scenario.VerifyOverloads();
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Preserves_checked_and_unchecked_expression_context(bool checkedExpression)
+    {
+        CSharp9.Scenarios.ExpressionContext.Scenario.VerifyOverflow(checkedExpression);
+    }
+
     [Test]
     public async Task Preserves_async_runtime_callbacks()
     {
