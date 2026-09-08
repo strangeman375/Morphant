@@ -108,7 +108,8 @@ internal enum PolymorphicConfigurationIssueKind
     IncompatibleSource,
     IncompatibleDestination,
     InaccessibleSource,
-    InaccessibleDestination
+    InaccessibleDestination,
+    UnknownSourceRelationship
 }
 
 internal sealed record BoundConfigurationExpression(

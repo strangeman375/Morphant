@@ -114,6 +114,17 @@ internal static class PolymorphismDiagnosticPipeline
                     MapperContractDisplay.CreateType(link.SourceType),
                     contract),
 
+            PolymorphicConfigurationIssueKind.UnknownSourceRelationship =>
+                Diagnostic.Create(
+                    PolymorphismDiagnosticDescriptors.UnknownSourceRelationship,
+                    GetTypeArgumentLocation(link.Invocation, 0),
+                    [GetTypeArgumentLocation(issue.FirstInvocation!, 0)],
+                    properties: null,
+                    MapperContractDisplay.CreateType(pair.Polymorphism.DerivedMappings
+                        .First(derived => derived.Invocation == issue.FirstInvocation).SourceType),
+                    MapperContractDisplay.CreateType(link.SourceType),
+                    contract),
+
             PolymorphicConfigurationIssueKind.IncompatibleSource =>
                 CreateIncompatible(
                     link,

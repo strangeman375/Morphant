@@ -39,6 +39,8 @@ unsupported.
 
 ### Fixed
 
+- Diagnose unsupported polymorphic branch relationships that depend on unknown
+  generic arguments, preserving exception stubs when the diagnostic is suppressed.
 - Keep rules for long `System.Tuple` elements distinct across `Rest` boundaries;
   report their logical element numbers in member and completeness diagnostics.
 - Recognize reads of long tuple elements through `Rest` when checking source usage.

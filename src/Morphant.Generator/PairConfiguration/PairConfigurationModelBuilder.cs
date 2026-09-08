@@ -1494,7 +1494,8 @@ internal static class PairConfigurationModelBuilder
                 pair.DestinationType,
                 cancellationToken),
             sourceCompilation,
-            sourceTargetMapperType);
+            sourceTargetMapperType,
+            cancellationToken);
 
         if (polymorphism.Issues.Any(static issue =>
                 issue.Kind ==
@@ -1541,7 +1542,8 @@ internal static class PairConfigurationModelBuilder
         ITypeSymbol baseSourceType,
         ITypeSymbol baseDestinationType,
         CSharpCompilation compilation,
-        INamedTypeSymbol targetMapperType)
+        INamedTypeSymbol targetMapperType,
+        CancellationToken cancellationToken)
     {
         if (derivedMappings.IsEmpty)
         {
@@ -1555,6 +1557,7 @@ internal static class PairConfigurationModelBuilder
 
         foreach (var derivedMapping in derivedMappings)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var sourceIdentity = MappingTypeIdentityPolicy.Create(
                 derivedMapping.SourceType);
 
@@ -1619,6 +1622,23 @@ internal static class PairConfigurationModelBuilder
                     PolymorphicConfigurationIssueKind
                         .InaccessibleDestination,
                     derivedMapping));
+            }
+        }
+
+        if (issues.Count == 0)
+        {
+            for (var index = 0; index < derivedMappings.Length; index++)
+            {
+                for (var earlier = 0; earlier < index; earlier++)
+                {
+                    if (!PolymorphicTypeRelationshipPolicy.IsKnown(
+                            derivedMappings[earlier].SourceType,
+                            derivedMappings[index].SourceType,
+                            compilation, cancellationToken))
+                        issues.Add(new PolymorphicConfigurationIssueModel(
+                            PolymorphicConfigurationIssueKind.UnknownSourceRelationship,
+                            derivedMappings[index], derivedMappings[earlier].Invocation));
+                }
             }
         }
 

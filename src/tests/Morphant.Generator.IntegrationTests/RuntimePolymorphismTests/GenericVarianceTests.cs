@@ -13,6 +13,6 @@ internal sealed class GenericVarianceTests
     [TestCase(true, false, true)]
     [TestCase(true, true, false)]
     [TestCase(true, true, true)]
-    public void Selects_the_most_specific_branch_after_closing_generic_arguments(
+    public void Rejects_suppressed_unknown_branch_relationships_and_keeps_independent_pairs(
         bool specificFirst, bool application, bool update) => Scenario.Verify(specificFirst, application, update);
 }

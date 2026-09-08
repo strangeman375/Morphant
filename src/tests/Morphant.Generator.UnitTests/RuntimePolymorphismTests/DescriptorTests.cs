@@ -17,7 +17,8 @@ internal sealed class DescriptorTests
             PolymorphismDiagnosticDescriptors.SelfLink,
             PolymorphismDiagnosticDescriptors.DuplicateSource,
             PolymorphismDiagnosticDescriptors.IncompatibleType,
-            PolymorphismDiagnosticDescriptors.InaccessibleType
+            PolymorphismDiagnosticDescriptors.InaccessibleType,
+            PolymorphismDiagnosticDescriptors.UnknownSourceRelationship
         };
 
         Assert.Multiple(() =>
@@ -29,7 +30,8 @@ internal sealed class DescriptorTests
                     "MORPH0052",
                     "MORPH0053",
                     "MORPH0054",
-                    "MORPH0055"
+                    "MORPH0055",
+                    "MORPH0061"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
@@ -39,7 +41,8 @@ internal sealed class DescriptorTests
                     "Polymorphic mapping cannot link to itself",
                     "Polymorphic source branch is duplicated",
                     "Polymorphic branch type is incompatible",
-                    "Polymorphic branch type is inaccessible"
+                    "Polymorphic branch type is inaccessible",
+                    "Polymorphic branch relationship is not known"
                 }));
             Assert.That(
                 descriptors.Select(static descriptor =>
@@ -53,7 +56,10 @@ internal sealed class DescriptorTests
                     "ForDerived {0} type '{1}' is not assignable to base " +
                     "{0} type '{2}' for mapping '{3}'.",
                     "ForDerived {0} type '{1}' is inaccessible from " +
-                    "generated mapper '{2}'."
+                    "generated mapper '{2}'.",
+                    "The relationship between ForDerived source types '{0}' and '{1}' " +
+                    "in mapping '{2}' depends on unknown generic arguments. " +
+                    "Declare branches whose relative specificity is known at generation time."
                 }));
             Assert.That(
                 descriptors.Select(static descriptor => descriptor.Category),

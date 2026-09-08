@@ -112,6 +112,10 @@ internal static class MappingTypeIdentityPolicy
         return result.ToString();
     }
 
+    public static bool CanTypesUnify(ITypeSymbol left, ITypeSymbol right) =>
+        TryUnify(left, right,
+            new Dictionary<ITypeParameterSymbol, ITypeSymbol>(TypeParameterComparer.Instance));
+
     public static bool CanPairsUnify(
         ITypeSymbol leftSource,
         ITypeSymbol leftDestination,

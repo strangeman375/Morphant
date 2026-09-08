@@ -71,6 +71,7 @@ break existing suppressions and `dotnet_diagnostic.<ID>.severity` settings.
 | [MORPH0058](diagnostics/MORPH0058.md) | Declaration | Error | A mapper or reusable configuration base has an invalid self type. |
 | [MORPH0059](diagnostics/MORPH0059.md) | Declaration | Error | A mapper or containing type is inaccessible to generated namespace-level code. |
 | [MORPH0060](diagnostics/MORPH0060.md) | Registration | Error | A reusable mapper-family parameter is absent from a declared mapping pair. |
+| [MORPH0061](diagnostics/MORPH0061.md) | Polymorphism | Error | Relative specificity of ForDerived source types depends on unknown generic arguments. |
 
 ## Configure severity
 

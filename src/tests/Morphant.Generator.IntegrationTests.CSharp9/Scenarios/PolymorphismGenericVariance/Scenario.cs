@@ -1,8 +1,10 @@
 #nullable enable
+#pragma warning disable MORPH0061
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Morphant;
 using Morphant.Context;
+using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PolymorphismGenericVariance
 {
@@ -49,7 +51,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PolymorphismGene
     {
         public static void Verify(bool specificFirst, bool application, bool update)
         {
-            // For T = object, IProducer<string> is the strictly more specific branch.
+            // Suppression preserves a typed failure for the unsupported generic configuration.
             object generated = specificFirst ? new SpecificFirstMapper<object>() : new BroadFirstMapper<object>();
             using var provider = new ServiceCollection()
                 .AddSingleton((ITypeMapper<ISource, Result<object>>)generated)
@@ -61,13 +63,24 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.PolymorphismGene
             var facade = provider.GetRequiredService<IMapper>();
             var source = new TextSource();
             var previous = new TextResult<object>();
-            var result = application
-                ? update ? facade.Map<ISource, Result<object>>(source, previous) : facade.Map<ISource, Result<object>>(source)
-                : update ? direct.Update(source, previous) : direct.Create(source);
+            try
+            {
+                _ = application
+                    ? update ? facade.Map<ISource, Result<object>>(source, previous) : facade.Map<ISource, Result<object>>(source)
+                    : update ? direct.Update(source, previous) : direct.Create(source);
+                throw new InvalidOperationException("The unsupported base mapping must retain a typed exception stub.");
+            }
+            catch (MappingConfigurationException exception)
+                when (exception.Operation == (update ? MappingOperation.Update : MappingOperation.Create) &&
+                      exception.SourceType == typeof(ISource) && exception.DestinationType == typeof(Result<object>) &&
+                      exception.Reason == "The mapping configuration is invalid: a ForDerived link is invalid.") { }
 
-            if (result is not TextResult<object> ||
-                result.Operation != (update ? MappingOperation.Update : MappingOperation.Create))
-                throw new InvalidOperationException("Closed generic covariance must select the text branch and preserve the operation.");
+            var branch = (ITypeMapper<IProducer<string>, TextResult<object>>)generated;
+            var result = application
+                ? facade.Map<IProducer<string>, TextResult<object>>(source)
+                : branch.Create(source);
+            if (result.Operation != MappingOperation.Create)
+                throw new InvalidOperationException("An independent valid derived pair must remain executable.");
         }
     }
 }
