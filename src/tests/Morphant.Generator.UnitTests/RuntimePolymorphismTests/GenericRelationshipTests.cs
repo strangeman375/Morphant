@@ -104,6 +104,31 @@ internal sealed class GenericRelationshipTests
         });
     }
 
+    [Test]
+    public void Actualizes_the_diagnostic_when_constraints_change_and_restores_it()
+    {
+        var unknown = CreateSource("IProducer<T>", "IProducer<object>", "class");
+        var known = CreateSource("IProducer<T>", "IProducer<object>", "class, System.IDisposable");
+        var original = GeneratorTestDriver.Run("ConstraintActualization", unknown, LanguageVersion.CSharp9);
+        var changed = GeneratorTestDriver.Run("ConstraintActualization", known, LanguageVersion.CSharp9, driver: original.Driver);
+        var clean = GeneratorTestDriver.Run("ConstraintActualization", known, LanguageVersion.CSharp9);
+        var restored = GeneratorTestDriver.Run("ConstraintActualization", unknown, LanguageVersion.CSharp9, driver: changed.Driver);
+        Assert.Multiple(() =>
+        {
+            Assert.That(original.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(changed.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(clean.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(restored.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(original.EffectiveDiagnostics.Select(diagnostic => diagnostic.Id), Is.EqualTo(new[] { "MORPH0061" }));
+            Assert.That(changed.EffectiveDiagnostics, Is.Empty);
+            Assert.That(clean.EffectiveDiagnostics, Is.Empty);
+            Assert.That(restored.EffectiveDiagnostics.Select(diagnostic => diagnostic.ToString()),
+                Is.EqualTo(original.EffectiveDiagnostics.Select(diagnostic => diagnostic.ToString())));
+            Assert.That(changed.TypeMapperSource, Is.EqualTo(clean.TypeMapperSource));
+            Assert.That(restored.TypeMapperSource, Is.EqualTo(original.TypeMapperSource));
+        });
+    }
+
     private static string Display(string type) => type is "T" or "T[]" or "string[]" ? type :
         "TestCase." + type.Replace("IProducer<IProducer", "IProducer<TestCase.IProducer", StringComparison.Ordinal);
 

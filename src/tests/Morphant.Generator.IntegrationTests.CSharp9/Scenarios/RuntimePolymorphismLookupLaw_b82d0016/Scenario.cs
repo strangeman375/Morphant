@@ -3,8 +3,9 @@
 #pragma warning disable CS1591
 
 using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
+using Morphant.Context;
 using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorphismLookupLaw_b82d0016
@@ -30,95 +31,31 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
                 .Convert(_ => "dog");
     }
 
-    public sealed class Provider : IServiceProvider
-    {
-        private readonly int _derivedCount;
-        private readonly BaseMapper _baseMapper = new();
-        private readonly DerivedMapper _derivedMapper = new();
-
-        public Provider(int derivedCount) =>
-            _derivedCount = derivedCount;
-
-        public object? GetService(Type serviceType)
-        {
-            if (serviceType == typeof(IEnumerable<
-                    ITypeMapper<IAnimal, object>>))
-            {
-                return new ITypeMapper<IAnimal, object>[]
-                {
-                    _baseMapper
-                };
-            }
-
-            if (serviceType == typeof(IEnumerable<
-                    ITypeMapper<IDog, string>>))
-            {
-                return _derivedCount switch
-                {
-                    0 => Array.Empty<ITypeMapper<IDog, string>>(),
-                    1 => new ITypeMapper<IDog, string>[]
-                    {
-                        _derivedMapper
-                    },
-                    _ => new ITypeMapper<IDog, string>[]
-                    {
-                        _derivedMapper,
-                        _derivedMapper
-                    }
-                };
-            }
-
-            return null;
-        }
-    }
-
     public static class Scenario
     {
-        public static void Verify()
+        public static void Verify(bool update)
         {
-            var source = (IAnimal)new Dog();
-
-            try
+            foreach (var count in new[] { 0, 1, 2 })
             {
-                new Mapper(new Provider(0))
-                    .Map<IAnimal, object>(source);
-                throw new InvalidOperationException(
-                    "A missing derived pair was accepted.");
-            }
-            catch (MappingNotFoundException exception)
-            {
-                if (exception.SourceType != typeof(IDog) ||
-                    exception.DestinationType != typeof(string))
+                var services = new ServiceCollection()
+                    .AddSingleton<ITypeMapper<IAnimal, object>, BaseMapper>()
+                    .AddSingleton<IMapper, Mapper>();
+                for (var index = 0; index < count; index++)
+                    services.AddSingleton<ITypeMapper<IDog, string>, DerivedMapper>();
+                using var provider = services.BuildServiceProvider();
+                var mapper = provider.GetRequiredService<IMapper>();
+                var source = new Dog();
+                try
                 {
-                    throw new InvalidOperationException(
-                        "Missing lookup reported the base pair.");
+                    var result = update ? mapper.Map<IAnimal, object>(source, "previous") : mapper.Map<IAnimal, object>(source);
+                    if (count != 1 || !Equals(result, "dog"))
+                        throw new InvalidOperationException("A matched derived pair must resolve exactly one registered mapper.");
                 }
-            }
-
-            if (!Equals(
-                    new Mapper(new Provider(1))
-                        .Map<IAnimal, object>(source),
-                    "dog"))
-            {
-                throw new InvalidOperationException(
-                    "The single derived pair was not invoked.");
-            }
-
-            try
-            {
-                new Mapper(new Provider(2))
-                    .Map<IAnimal, object>(source);
-                throw new InvalidOperationException(
-                    "Ambiguous derived registrations were accepted.");
-            }
-            catch (AmbiguousMappingException exception)
-            {
-                if (exception.SourceType != typeof(IDog) ||
-                    exception.DestinationType != typeof(string))
-                {
-                    throw new InvalidOperationException(
-                        "Ambiguous lookup reported the base pair.");
-                }
+                catch (MappingException exception)
+                    when (((count == 0 && exception is MappingNotFoundException) ||
+                           (count == 2 && exception is AmbiguousMappingException)) &&
+                          exception.Operation == (update ? MappingOperation.Update : MappingOperation.Create) &&
+                          exception.SourceType == typeof(IDog) && exception.DestinationType == typeof(string)) { }
             }
         }
     }

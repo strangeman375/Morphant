@@ -9,4 +9,9 @@ internal sealed class RegistrationTests
         global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
             .ApplicationRegistration_9d7a0102.Scenario.Verify();
     }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Preserves_DI_activation_exceptions_and_retries_on_the_next_root_call(bool update) =>
+        CSharp9.Scenarios.ApplicationActivationFailure.Scenario.Verify(update);
 }

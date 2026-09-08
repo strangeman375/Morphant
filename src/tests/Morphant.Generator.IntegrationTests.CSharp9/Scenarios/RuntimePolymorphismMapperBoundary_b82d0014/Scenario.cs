@@ -3,8 +3,9 @@
 #pragma warning disable CS1591
 
 using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
+using Morphant.Context;
 using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorphismMapperBoundary_b82d0014
@@ -30,68 +31,29 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
                 .Convert(_ => "dog");
     }
 
-    public sealed class Provider : IServiceProvider
-    {
-        private readonly BaseMapper _baseMapper = new();
-        private readonly DerivedMapper _derivedMapper = new();
-
-        public object? GetService(Type serviceType)
-        {
-            if (serviceType == typeof(IEnumerable<
-                    ITypeMapper<IAnimal, object>>))
-            {
-                return new ITypeMapper<IAnimal, object>[]
-                {
-                    _baseMapper
-                };
-            }
-
-            if (serviceType == typeof(IEnumerable<
-                    ITypeMapper<IDog, string>>))
-            {
-                return new ITypeMapper<IDog, string>[]
-                {
-                    _derivedMapper
-                };
-            }
-
-            return null;
-        }
-    }
-
     public static class Scenario
     {
-        public static void Verify()
+        public static void Verify(bool update)
         {
+            using var provider = new ServiceCollection()
+                .AddSingleton<ITypeMapper<IAnimal, object>, BaseMapper>()
+                .AddSingleton<ITypeMapper<IDog, string>, DerivedMapper>()
+                .AddSingleton<IMapper, Mapper>().BuildServiceProvider();
+            var application = provider.GetRequiredService<IMapper>();
             var dog = new Dog();
-            var application = new Mapper(new Provider());
+            var result = update ? application.Map<IAnimal, object>(dog, "previous") : application.Map<IAnimal, object>(dog);
+            if (!Equals(result, "dog"))
+                throw new InvalidOperationException("Application lookup did not reach the derived mapper.");
 
-            if (!Equals(
-                    application.Map<IAnimal, object>(dog),
-                    "dog"))
-            {
-                throw new InvalidOperationException(
-                    "Application lookup did not reach the derived mapper.");
-            }
-
-            var standalone =
-                (ITypeMapper<IAnimal, object>)new BaseMapper();
-
+            var standalone = (ITypeMapper<IAnimal, object>)new BaseMapper();
             try
             {
-                standalone.Create(dog);
-                throw new InvalidOperationException(
-                    "Standalone lookup invented a derived registration.");
+                _ = update ? standalone.Update(dog, "previous") : standalone.Create(dog);
+                throw new InvalidOperationException("Standalone lookup invented a derived registration.");
             }
             catch (MappingNotFoundException exception)
-            {
-                if (exception.SourceType != typeof(IDog) ||
-                    exception.DestinationType != typeof(string))
-                {
-                    throw new InvalidOperationException(
-                        "Standalone lookup reported the wrong exact pair.");
-                }
-            }
+                when (exception.Operation == (update ? MappingOperation.Update : MappingOperation.Create) &&
+                      exception.SourceType == typeof(IDog) && exception.DestinationType == typeof(string)) { }
         }
     }
 }

@@ -3,8 +3,9 @@
 #pragma warning disable CS1591
 
 using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Morphant;
+using Morphant.Context;
 using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorphismBaseLookupLaw_b82d0017
@@ -22,83 +23,31 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
                 .Convert(_ => "base");
     }
 
-    public sealed class Provider : IServiceProvider
-    {
-        private readonly int _baseCount;
-        private readonly BaseMapper _baseMapper = new();
-
-        public Provider(int baseCount) =>
-            _baseCount = baseCount;
-
-        public object? GetService(Type serviceType)
-        {
-            if (serviceType == typeof(IEnumerable<
-                    ITypeMapper<IAnimal, object>>))
-            {
-                return _baseCount switch
-                {
-                    0 => Array.Empty<ITypeMapper<IAnimal, object>>(),
-                    1 => new ITypeMapper<IAnimal, object>[]
-                    {
-                        _baseMapper
-                    },
-                    _ => new ITypeMapper<IAnimal, object>[]
-                    {
-                        _baseMapper,
-                        _baseMapper
-                    }
-                };
-            }
-
-            if (serviceType == typeof(IEnumerable<
-                    ITypeMapper<IDog, string>>))
-            {
-                throw new InvalidOperationException(
-                    "The derived pair was queried before base selection.");
-            }
-
-            return null;
-        }
-    }
-
     public static class Scenario
     {
-        public static void Verify()
+        public static void Verify(bool update)
         {
-            var source = (IAnimal)new Dog();
-
-            try
+            foreach (var count in new[] { 0, 2 })
             {
-                new Mapper(new Provider(0))
-                    .Map<IAnimal, object>(source);
-                throw new InvalidOperationException(
-                    "A missing base pair was accepted.");
-            }
-            catch (MappingNotFoundException exception)
-            {
-                AssertBasePair(exception);
-            }
-
-            try
-            {
-                new Mapper(new Provider(2))
-                    .Map<IAnimal, object>(source);
-                throw new InvalidOperationException(
-                    "Ambiguous base pairs were accepted.");
-            }
-            catch (AmbiguousMappingException exception)
-            {
-                AssertBasePair(exception);
-            }
-        }
-
-        private static void AssertBasePair(MappingException exception)
-        {
-            if (exception.SourceType != typeof(IAnimal) ||
-                exception.DestinationType != typeof(object))
-            {
-                throw new InvalidOperationException(
-                    "Lookup reported a derived pair before base selection.");
+                var services = new ServiceCollection()
+                    .AddSingleton<IMapper, Mapper>()
+                    .AddTransient<ITypeMapper<IDog, string>>(_ => throw new InvalidOperationException(
+                        "The derived pair was queried before base selection."));
+                for (var index = 0; index < count; index++)
+                    services.AddSingleton<ITypeMapper<IAnimal, object>, BaseMapper>();
+                using var provider = services.BuildServiceProvider();
+                var mapper = provider.GetRequiredService<IMapper>();
+                var source = new Dog();
+                try
+                {
+                    _ = update ? mapper.Map<IAnimal, object>(source, "previous") : mapper.Map<IAnimal, object>(source);
+                    throw new InvalidOperationException("Missing or duplicate base registrations must prevent dispatch.");
+                }
+                catch (MappingException exception)
+                    when (((count == 0 && exception is MappingNotFoundException) ||
+                           (count == 2 && exception is AmbiguousMappingException)) &&
+                          exception.Operation == (update ? MappingOperation.Update : MappingOperation.Create) &&
+                          exception.SourceType == typeof(IAnimal) && exception.DestinationType == typeof(object)) { }
             }
         }
     }
