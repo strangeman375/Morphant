@@ -41,6 +41,7 @@ unsupported.
 
 - Keep rules for long `System.Tuple` elements distinct across `Rest` boundaries;
   report their logical element numbers in member and completeness diagnostics.
+- Recognize reads of long tuple elements through `Rest` when checking source usage.
 - Preserve inherited callback bindings and overload selection, keeping
   virtual dispatch; report `MORPH0028` when equivalent access is unavailable.
 - Preserve source properties and fields selected through generic constraints,

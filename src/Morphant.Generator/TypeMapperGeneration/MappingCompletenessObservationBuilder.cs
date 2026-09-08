@@ -781,6 +781,7 @@ internal static class MappingCompletenessObservationBuilder
         }
 
         var discardedStatements = new HashSet<SyntaxNode>();
+        var tupleSource = BclTupleShapePolicy.TryCreate(sourceParameter.Type);
 
         if (allowsCompileTimeDiscard && lambda.Block is not null)
         {
@@ -877,6 +878,16 @@ internal static class MappingCompletenessObservationBuilder
                 } memberAccess &&
                 ReferenceEquals(receiver, identifier))
             {
+                if (tupleSource is not null && ObserveTupleSourceAccess(
+                        memberAccess,
+                        tupleSource,
+                        callback.SemanticModel,
+                        sourceUses,
+                        cancellationToken))
+                {
+                    continue;
+                }
+
                 var sourceMember = callback.SemanticModel.GetSymbolInfo(
                         memberAccess,
                         cancellationToken)
@@ -928,6 +939,59 @@ internal static class MappingCompletenessObservationBuilder
                     SourceUseKind.Potential,
                     identifier);
             }
+        }
+    }
+
+    private static bool ObserveTupleSourceAccess(
+        MemberAccessExpressionSyntax access,
+        BclTupleShape tuple,
+        SemanticModel semanticModel,
+        ImmutableArray<SourceUseObservation>.Builder sourceUses,
+        CancellationToken cancellationToken)
+    {
+        var path = string.Empty;
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var member = semanticModel.GetSymbolInfo(access, cancellationToken).Symbol;
+            if (member is not (IPropertySymbol or IFieldSymbol))
+            {
+                return false;
+            }
+
+            path += member.Name;
+            var element = tuple.Elements.FirstOrDefault(candidate =>
+                StringComparer.Ordinal.Equals(candidate.AccessPath, path) ||
+                BclTupleShapePolicy.AreSameLogicalElement(candidate.Symbol, member));
+            if (element is not null)
+            {
+                AddSourceUse(sourceUses, element.Symbol, SourceUseKind.Semantic, access);
+                return true;
+            }
+
+            path += ".";
+            var tail = tuple.Elements.Where(candidate =>
+                candidate.AccessPath.StartsWith(path, StringComparison.Ordinal)).ToImmutableArray();
+            if (tail.IsEmpty)
+            {
+                return false;
+            }
+
+            if (access.Parent is MemberAccessExpressionSyntax next &&
+                ReferenceEquals(next.Expression, access) &&
+                semanticModel.GetSymbolInfo(next, cancellationToken).Symbol is IPropertySymbol or IFieldSymbol)
+            {
+                access = next;
+                continue;
+            }
+
+            // Passing Rest as a whole may consume every logical element in that tail.
+            foreach (var candidate in tail)
+            {
+                AddSourceUse(sourceUses, candidate.Symbol, SourceUseKind.Potential, access);
+            }
+
+            return true;
         }
     }
 

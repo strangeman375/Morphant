@@ -106,4 +106,40 @@ namespace TestCase
                 $"Source member 'element #{ordinal} (Item{ordinal})' is not used by mapping '{type} -> TestCase.Destination'."));
         });
     }
+
+    [TestCaseSource(nameof(Shapes))]
+    public void Passing_Rest_to_a_helper_accounts_for_the_whole_tail(string type, int ordinal)
+    {
+        // lang=c#
+        const string template =
+"""
+#nullable enable
+#pragma warning disable CS1591
+using Morphant;
+using SourceTuple = __TYPE__;
+namespace TestCase
+{
+    public sealed class Destination { public int Value { get; set; } }
+    [MorphantMapper]
+    public partial class TestMapper : TypeMapper<TestMapper>
+    {
+        private static int Read(object value) => value.GetHashCode();
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<SourceTuple, Destination>()
+                .Members(source => new()
+                {
+                    Value = source.Item1 + source.Item2 + source.Item3 + source.Item4 + source.Item5 + source.Item6 + source.Item7 + Read(source.Rest)
+                })
+                .UnmappedMemberValidation(UnmappedMemberValidation.Source);
+    }
+}
+""";
+        var result = GeneratorTestDriver.Run("LongTupleTailConsumer",
+            template.Replace("__TYPE__", type), LanguageVersion.CSharp9);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.CompilerWarningsAndErrors, Is.Empty);
+            Assert.That(result.EffectiveDiagnostics, Is.Empty);
+        });
+    }
 }
