@@ -533,6 +533,7 @@ internal sealed class PackageConsumptionTests
         var expected = SnapshotContents(generatedDirectory);
         var unsafeCases = new[]
         {
+            ("-p:MorphantGitSnapshot=invalid", "MORPHANTMSB022"),
             (
                 $"-p:MorphantGitSnapshotPath={consumerDirectory}",
                 "MORPHANTMSB005"),
@@ -574,6 +575,11 @@ internal sealed class PackageConsumptionTests
                     property
                 ]);
             AssertFailed(result);
+            if (expectedCode == "MORPHANTMSB022")
+            {
+                Assert.That(result.Output, Does.Contain(
+                    "error MORPHANTMSB022: MorphantGitSnapshot must be true or false."));
+            }
             Assert.That(
                 result.Output,
                 Does.Contain(expectedCode),
@@ -604,6 +610,7 @@ internal sealed class PackageConsumptionTests
             repositoryRoot,
             RebuildArguments(consumerArguments, consumerProject));
         AssertFailed(failedPublication);
+        Assert.That(failedPublication.Output, Does.Contain("MORPHANTMSB015"));
         Assert.That(
             SnapshotTree(generatedDirectory),
             Is.EqualTo(expectedFailureState),

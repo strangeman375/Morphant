@@ -39,6 +39,8 @@ unsupported.
 
 ### Fixed
 
+- Give an invalid `MorphantGitSnapshot` value the stable build error code
+  `MORPHANTMSB022`.
 - Diagnose unsupported polymorphic branch relationships that depend on unknown
   generic arguments, preserving exception stubs when the diagnostic is suppressed.
 - Keep rules for long `System.Tuple` elements distinct across `Rest` boundaries;

@@ -106,3 +106,27 @@ Morphant removes obsolete generated files after a successful compilation and
 preserves unrelated files in the snapshot directory.
 
 See [Testing mappings](testing.md) for generated-diff checks.
+
+## Build errors
+
+Git snapshot errors use `MORPHANTMSB` codes. They are MSBuild errors and are
+not controlled by C# pragmas or `dotnet_diagnostic` severity settings.
+
+| Code | Cause and action |
+|---|---|
+| `MORPHANTMSB001` | Unknown snapshot task operation. Use the package's imported targets. |
+| `MORPHANTMSB002` | Generated-file output is disabled. Remove the override of `EmitCompilerGeneratedFiles`. |
+| `MORPHANTMSB003` | Intermediate and snapshot paths overlap or escape their required parent. Use separate directories. |
+| `MORPHANTMSB004` | Compiler output was redirected. Remove the override of `CompilerGeneratedFilesOutputPath`. |
+| `MORPHANTMSB005` | The snapshot path is outside the project or equals its root. Choose a dedicated project subdirectory. |
+| `MORPHANTMSB006` | A path is empty, nonportable or contains wildcards or unresolved MSBuild expressions. Supply a literal path. |
+| `MORPHANTMSB007` | A framework name cannot form a portable directory name. Correct the indicated framework property. |
+| `MORPHANTMSB008` | Generated filenames are nonportable or collide ignoring case. Check the reported name and generator inputs. |
+| `MORPHANTMSB015` | A file occupies a required directory, or a directory occupies a generated filename. Move the conflicting item. |
+| `MORPHANTMSB016` | A managed path contains a symbolic link or reparse point. Choose a directory without links. |
+| `MORPHANTMSB017` | Post-compilation publication was removed. Remove the override of `TargetsTriggeredByCompilation`. |
+| `MORPHANTMSB019` | Another build held the snapshot lock for two minutes. Finish or stop that build, then retry. |
+| `MORPHANTMSB020` | `MorphantGitSnapshotDetail` must be `Mappers` or `Full`. |
+| `MORPHANTMSB021` | The selected framework list is empty or includes an undeclared framework. Select from the project's frameworks. |
+| `MORPHANTMSB022` | `MorphantGitSnapshot` must be `true` or `false`. |
+| `MORPHANTMSB999` | Unexpected snapshot failure. Use the included exception details to investigate and report a reproducible failure. |

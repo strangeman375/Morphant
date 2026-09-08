@@ -50,6 +50,7 @@
           BeforeTargets="CoreCompile">
     <Error Condition="'$(MorphantGitSnapshot)' != 'true' and
                       '$(MorphantGitSnapshot)' != 'false'"
+           Code="MORPHANTMSB022"
            Text="MorphantGitSnapshot must be true or false." />
     <Error Condition="'$(MorphantGitSnapshot)' == 'true' and
                       '$(MorphantGitSnapshotDetail)' != 'Mappers' and

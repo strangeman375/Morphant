@@ -190,6 +190,34 @@ internal sealed class DiagnosticCatalogAuditTests
         });
     }
 
+    [Test]
+    public void Every_MSBuild_error_has_a_stable_code_and_troubleshooting_entry()
+    {
+        var expected = new[]
+        {
+            "MORPHANTMSB001", "MORPHANTMSB002", "MORPHANTMSB003", "MORPHANTMSB004",
+            "MORPHANTMSB005", "MORPHANTMSB006", "MORPHANTMSB007", "MORPHANTMSB008",
+            "MORPHANTMSB015", "MORPHANTMSB016", "MORPHANTMSB017", "MORPHANTMSB019",
+            "MORPHANTMSB020", "MORPHANTMSB021", "MORPHANTMSB022", "MORPHANTMSB999"
+        };
+        var root = FindRepositoryRoot();
+        var targets = System.Xml.Linq.XDocument.Load(Path.Combine(root, "src", "Morphant", "build", "Morphant.targets"));
+        var targetCodes = targets.Descendants("Error").Select(static error => (string?)error.Attribute("Code")).ToArray();
+        var taskCodes = Directory.GetFiles(Path.Combine(root, "src", "Morphant.Build.Tasks"), "*.cs")
+            .SelectMany(path => Regex.Matches(File.ReadAllText(path), "MORPHANTMSB[0-9]{3}")
+                .Select(static match => match.Value));
+        var guide = File.ReadAllText(Path.Combine(root, "docs", "generated-code.md"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(targetCodes, Is.All.Not.Null.And.Not.Empty,
+                "Every error raised by Morphant targets needs a stable code.");
+            Assert.That(taskCodes.Concat(targetCodes).Distinct().Order(StringComparer.Ordinal), Is.EqualTo(expected));
+            Assert.That(Regex.Matches(guide, "MORPHANTMSB[0-9]{3}")
+                .Select(static match => match.Value).Order(StringComparer.Ordinal), Is.EqualTo(expected));
+        });
+    }
+
     private static string FindRepositoryRoot()
     {
         for (var directory = new DirectoryInfo(

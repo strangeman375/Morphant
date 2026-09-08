@@ -93,3 +93,6 @@ Service registration cannot be checked at compile time. Missing, duplicate or
 invalid DI registrations are described under [Exceptions](exceptions.md).
 See [Unmapped member validation](settings/unmapped-member-validation.md) for
 the two completeness warnings.
+
+Git snapshot failures have separate [MSBuild error codes](generated-code.md#build-errors).
+Their severity is not controlled by `.editorconfig` or C# diagnostic suppression.
