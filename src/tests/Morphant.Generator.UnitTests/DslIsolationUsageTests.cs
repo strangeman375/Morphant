@@ -31,17 +31,21 @@ internal sealed class DslIsolationUsageTests
     private static IEnumerable<TestCaseData> FamilyCases =>
         from callback in Callbacks
         from constraint in new[] { "class", "class, new()" }
-        select new TestCaseData(callback, constraint);
+        from nested in new[] { false, true }
+        select new TestCaseData(callback, constraint, nested);
 
     private static IEnumerable<TestCaseData> AssemblyCases =>
         from callback in Callbacks
         from referenceKind in new[] { "source", "dll", "ref" }
-        select new TestCaseData(callback, referenceKind);
+        from shape in new[] { "ordinary", "nullable", "tuple", "family", "distinct-source" }
+        from friend in new[] { false, true }
+        select new TestCaseData(callback, referenceKind, shape, friend);
 
     [TestCaseSource(nameof(FamilyCases))]
     public void Related_non_partial_families_select_their_own_callbacks_without_base_call(
         string callback,
-        string constraint)
+        string constraint,
+        bool nested)
     {
         // lang=c#
         const string source =
@@ -68,7 +72,7 @@ public abstract class Derived<TMapper, T> : Root<TMapper, T>
     where T : __CONSTRAINT__
 {
     protected override void Configure(MapperBuilder builder) =>
-        builder.Map<Source<T>, Destination<T>>()__CALLBACK__;
+        builder.Map<Source<__DERIVED_ARGUMENT__>, Destination<__DERIVED_ARGUMENT__>>()__DERIVED_CALLBACK__;
 }
 [MorphantMapper]
 public partial class RootMapper : Root<RootMapper, Payload>
@@ -84,6 +88,8 @@ public partial class DerivedMapper : Derived<DerivedMapper, Payload>
         var result = GeneratorTestDriver.Run(
             "RelatedFamilies",
             source.Replace("__CALLBACK__", callback.Replace("__DESTINATION__", "Destination<T>"))
+                .Replace("__DERIVED_CALLBACK__", callback.Replace("__DESTINATION__", "Destination<__DERIVED_ARGUMENT__>"))
+                .Replace("__DERIVED_ARGUMENT__", nested ? "System.Collections.Generic.List<T>" : "T")
                 .Replace("__CONSTRAINT__", constraint),
             LanguageVersion.CSharp9);
         AssertClean(result);
@@ -101,17 +107,19 @@ public partial class DerivedMapper : Derived<DerivedMapper, Payload>
     }
 
     [TestCaseSource(nameof(AssemblyCases))]
-    public void Friend_assembly_extensions_do_not_compete_with_local_callbacks(
+    public void Referenced_assembly_extensions_do_not_compete_with_local_callbacks(
         string callback,
-        string referenceKind)
+        string referenceKind,
+        string shape,
+        bool friend)
     {
         // lang=c#
-        const string producerSource =
+        const string producerTemplate =
 """
 #nullable enable
 #pragma warning disable CS1591
 using Morphant;
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DslConsumer")]
+__FRIEND_ATTRIBUTE__
 namespace Shared
 {
     public sealed class Source { public int Id { get; set; } }
@@ -129,7 +137,7 @@ public partial class ProducerMapper : TypeMapper<ProducerMapper>
 }
 """;
         // lang=c#
-        const string consumerSource =
+        const string consumerTemplate =
 """
 #nullable enable
 #pragma warning disable CS1591
@@ -141,6 +149,48 @@ public partial class ConsumerMapper : TypeMapper<ConsumerMapper>
         builder.Map<Shared.Source, Shared.Destination>()__CALLBACK__;
 }
 """;
+        var producerSource = producerTemplate.Replace("__FRIEND_ATTRIBUTE__", friend
+            ? "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"DslConsumer\")]" : "");
+        var consumerSource = consumerTemplate;
+        var destination = "Shared.Destination";
+        switch (shape)
+        {
+            case "nullable":
+                producerSource = producerSource.Replace("Map<Shared.Source, Shared.Destination>",
+                    "Map<Shared.Source?, Shared.Destination?>");
+                consumerSource = consumerSource.Replace("Map<Shared.Source, Shared.Destination>",
+                    "Map<Shared.Source?, Shared.Destination?>");
+                break;
+            case "tuple":
+                producerSource = producerSource.Replace("Map<Shared.Source, Shared.Destination>",
+                    "Map<Shared.Source, (int Id, int Other)>");
+                consumerSource = consumerSource.Replace("Map<Shared.Source, Shared.Destination>",
+                    "Map<Shared.Source, (int Id, int Other)>");
+                callback = callback.Replace("new(s.Id)", "new(s.Id, s.Id + 1)")
+                    .Replace("new __DESTINATION__(s.Id)", "(s.Id, s.Id + 1)")
+                    .Replace("new __DESTINATION__(s!.Id)", "(s!.Id, s.Id + 1)");
+                break;
+            case "family":
+                producerSource = producerSource
+                    .Replace("class Source", "class Source<T>")
+                    .Replace("class Destination", "class Destination<T>")
+                    .Replace("Map<Shared.Source, Shared.Destination>", "Map<Shared.Source<T>, Shared.Destination<T>>")
+                    .Replace("ProducerMapper : TypeMapper<ProducerMapper>",
+                        "ProducerMapper<TMapper, T> : TypeMapper<TMapper>\n" +
+                        "    where TMapper : ProducerMapper<TMapper, T> where T : class");
+                consumerSource = consumerSource
+                    .Replace("Map<Shared.Source, Shared.Destination>", "Map<Shared.Source<T>, Shared.Destination<T>>")
+                    .Replace("ConsumerMapper : TypeMapper<ConsumerMapper>",
+                        "ConsumerMapper<TMapper, T> : TypeMapper<TMapper>\n" +
+                        "    where TMapper : ConsumerMapper<TMapper, T> where T : class, new()");
+                destination = "Shared.Destination<T>";
+                break;
+            case "distinct-source":
+                consumerSource = consumerSource
+                    .Replace("[MorphantMapper]", "public sealed class LocalSource { public int Id { get; set; } }\n[MorphantMapper]")
+                    .Replace("Map<Shared.Source,", "Map<LocalSource,");
+                break;
+        }
         var producer = GeneratorTestDriver.Run(
             "DslProducer", producerSource, LanguageVersion.CSharp9);
         AssertClean(producer);
@@ -164,7 +214,7 @@ public partial class ConsumerMapper : TypeMapper<ConsumerMapper>
         var consumer = GeneratorTestDriver.Run(
             "DslConsumer",
             consumerSource.Replace("__CALLBACK__",
-                callback.Replace("__DESTINATION__", "Shared.Destination")),
+                callback.Replace("__DESTINATION__", destination)),
             LanguageVersion.CSharp9,
             additionalReferences: [reference]);
         AssertClean(consumer);

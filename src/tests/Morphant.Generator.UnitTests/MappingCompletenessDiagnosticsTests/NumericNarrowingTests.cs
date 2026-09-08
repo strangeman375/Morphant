@@ -52,8 +52,8 @@ public partial class TestMapper : TypeMapper<TestMapper>
             {
                 Assert.That(diagnostic.Severity, Is.EqualTo(DiagnosticSeverity.Warning));
                 Assert.That(diagnostic.Location.SourceSpan,
-                    Is.EqualTo(new TextSpan(source.IndexOf("builder.Map", StringComparison.Ordinal),
-                        "builder.Map<Source, Destination>()".Length)));
+                    Is.EqualTo(new TextSpan(source.IndexOf("Destination>()", StringComparison.Ordinal),
+                        "Destination".Length)));
             });
         }
     }
