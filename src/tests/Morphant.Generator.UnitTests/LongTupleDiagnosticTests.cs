@@ -13,6 +13,12 @@ internal sealed class LongTupleDiagnosticTests
         new("System.Tuple<int, int, int, int, int, int, int, System.Tuple<int, int, int, int, int, int, int, System.Tuple<int>>>", 15)
     ];
 
+    private static IEnumerable<TestCaseData> SourceShapes => Shapes.Concat(
+    [
+        new("System.ValueTuple<int, int, int, int, int, int, int, System.ValueTuple<int>>", 8),
+        new("System.ValueTuple<int, int, int, int, int, int, int, System.ValueTuple<int, int, int, int, int, int, int, System.ValueTuple<int>>>", 15)
+    ]);
+
     [TestCaseSource(nameof(Shapes))]
     public void Readonly_rule_diagnostic_names_the_logical_tail_element(string type, int ordinal)
     {
@@ -60,7 +66,7 @@ namespace TestCase
         });
     }
 
-    [TestCaseSource(nameof(Shapes))]
+    [TestCaseSource(nameof(SourceShapes))]
     public void Completeness_diagnostic_names_only_the_unused_tail_element(string type, int ordinal)
     {
         // lang=c#
@@ -107,7 +113,7 @@ namespace TestCase
         });
     }
 
-    [TestCaseSource(nameof(Shapes))]
+    [TestCaseSource(nameof(SourceShapes))]
     public void Passing_Rest_to_a_helper_accounts_for_the_whole_tail(string type, int ordinal)
     {
         // lang=c#
