@@ -118,6 +118,41 @@ internal sealed class CiBuildTests
     }
 
     [Test]
+    public async Task A_separate_process_waits_for_storage_when_runtime_file_locking_is_disabled()
+    {
+        using var consumer = CreateConsumer();
+        AssertSucceeded(await consumer.Run("build"));
+        var before = consumer.Snapshot();
+        File.WriteAllText(Path.Combine(consumer.ProjectDirectory, "Mapping.cs"),
+            MappingSource.Replace("source.Value + 2", "source.Value + 3"));
+        var waiting = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        consumer.OutputReceived = line =>
+        {
+            if (line.Contains("Waiting for Morphant snapshot storage:", StringComparison.Ordinal))
+                waiting.TrySetResult(true);
+        };
+        Task<ProcessResult>? build = null;
+        try
+        {
+            using var held = new FileStream(Path.Combine(consumer.SnapshotRoot, ".morphant"),
+                FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            build = consumer.RunWithEnvironment("build",
+                new Dictionary<string, string> { ["DOTNET_SYSTEM_IO_DISABLEFILELOCKING"] = "1" },
+                "--no-restore", "-v:normal");
+            await waiting.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            Assert.That(build.IsCompleted, Is.False);
+            Assert.That(consumer.Snapshot(), Is.EqualTo(before));
+        }
+        finally
+        {
+            if (build is not null)
+                AssertSucceeded(await build.WaitAsync(TimeSpan.FromSeconds(60)));
+        }
+        AssertMapperSnapshot(consumer);
+        Assert.That(consumer.Snapshot(), Is.Not.EqualTo(before));
+    }
+
+    [Test]
     public async Task Building_one_TFM_only_publishes_it_when_selected()
     {
         using var consumer = CreateConsumer(targetFramework: "netstandard2.0;net10.0");
@@ -550,6 +585,7 @@ internal sealed class CiBuildTests
         public string Root { get; } = Path.Combine(Path.GetTempPath(), nameof(CiBuildTests), Guid.NewGuid().ToString("N"));
         public string ProjectDirectory { get; }
         public string ProjectPath { get; set; }
+        public Action<string>? OutputReceived { get; set; }
         public string SnapshotRoot => Path.Combine(ProjectDirectory, "Generated", "Morphant");
 
         public Consumer(string packageFeed, string version, string directoryName, string targetFramework)
@@ -577,7 +613,7 @@ internal sealed class CiBuildTests
                 command, ProjectPath, "-p:Configuration=Release", "-m:1", "-nodeReuse:false",
                 "-p:UseSharedCompilation=false", "-p:ContinuousIntegrationBuild=true",
                 $"-p:RestoreSources={packageFeed}", "-p:NuGetAudit=false", .. arguments
-            ], environment);
+            ], environment, OutputReceived);
 
         public void AddReference(Consumer dependency)
         {
