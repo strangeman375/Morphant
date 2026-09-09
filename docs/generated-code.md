@@ -53,7 +53,7 @@ Enable the snapshot in the consumer project:
 ```
 
 Morphant enables `EmitCompilerGeneratedFiles` automatically, overriding an
-ordinary project value of `false`. For a TFM selected for publication, a global
+ordinary project value of `false`. When snapshots are enabled, a global
 `-p:EmitCompilerGeneratedFiles=false` prevents this and produces a build error.
 
 After a successful compilation, files appear under
@@ -65,7 +65,6 @@ The optional settings are:
 | Setting | Default | Purpose |
 |---|---|---|
 | `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include all Morphant-generated files. Values are case-insensitive. |
-| `MorphantGitSnapshotTargetFrameworks` | Last declared TFM | Semicolon-separated preferred TFMs; use `$(TargetFrameworks)` to select all. |
 | `MorphantGitSnapshotPath` | `Generated/Morphant` | Dedicated snapshot directory, inside or outside the project. |
 
 Compiler output is staged separately from the Git snapshot. Morphant defaults
@@ -87,12 +86,14 @@ configurations, TFMs and RIDs. Sequential compilations can reuse a compiler
 directory; Morphant does not bind it to a project or compilation.
 
 Each snapshot directory belongs to one project. A repository-wide layout can
-use `snapshots/App` and `snapshots/Library`. Morphant records ownership in a
-small `.morphant` file; keep that file with the snapshot. Its project path is
+use `snapshots/App` and `snapshots/Library`. Morphant records ownership in
+`.morphant/owner`; keep this small directory with the snapshot. Its project path is
 relative when both locations are on the same filesystem root. Moving the whole
 checkout together with its snapshots preserves ownership. To transfer a directory
-to another project, remove its old snapshot and ownership file deliberately.
-An existing snapshot ownership file only needs read access; it can remain
+to another project, remove its old snapshot and ownership directory deliberately.
+After renaming or moving the project relative to its snapshot, remove `.morphant`
+and rebuild to record the new project path.
+An existing snapshot ownership record only needs read access; it can remain
 read-only while writable generated files are updated. Compiler directories
 do not require ownership files.
 
@@ -101,27 +102,30 @@ Morphant preserves unrelated links during cleanup and rejects links in generated
 files or directories it must modify. Paths must be valid on the current OS;
 MSBuild special characters in property values still require normal MSBuild escaping.
 
-In multi-target projects, list `TargetFrameworks` from oldest to newest. For
-example, `net8.0;net10.0` selects only `net10.0` by default. An explicit selection
-uses the TFMs declared by both the setting and the project. If none match,
-Morphant uses the project's last declared TFM and logs the fallback. Thus a
-global `net10.0` selection still updates a `netstandard2.0` dependency's snapshot.
-Only TFMs actually compiled by the build can update their snapshots.
+Each successful compilation updates the snapshot for its current TFM. For
+`net8.0;net10.0`, `dotnet build` updates both snapshots, while `dotnet build -f net8.0`
+updates only `net8.0`. The order in `TargetFrameworks` does not matter. Referenced
+projects, including `netstandard2.0` libraries, update their own snapshots when
+the feature is enabled for their compilations.
 
 Existing `TargetsTriggeredByCompilation` hooks are retained, including global
 command-line values; Morphant appends its publication target locally.
 
-Example with all generated files for every TFM:
+Use ordinary MSBuild conditions to control publication. This example saves all
+Morphant-generated files for every TFM except `net8.0`:
 
 ```xml
 <PropertyGroup>
   <MorphantGitSnapshot>true</MorphantGitSnapshot>
+  <MorphantGitSnapshot Condition="'$(TargetFramework)' == 'net8.0'">false</MorphantGitSnapshot>
   <MorphantGitSnapshotDetail>Full</MorphantGitSnapshotDetail>
-  <MorphantGitSnapshotTargetFrameworks>
-    $(TargetFrameworks)
-  </MorphantGitSnapshotTargetFrameworks>
 </PropertyGroup>
 ```
+
+The condition works for both full and single-TFM builds and can also use
+`Configuration` or other MSBuild properties. Disabled compilations preserve
+existing snapshots. A global `-p:MorphantGitSnapshot=true` overrides project values
+and enables publication for every compiled TFM.
 
 ## Keep the snapshot current
 
@@ -134,6 +138,14 @@ dotnet build -c Release -t:Rebuild
 
 An up-to-date build may skip compilation and therefore may not repair the
 snapshot. Change mappings or models instead of editing generated files.
+Morphant reports the destination and counts of updated, removed and unchanged
+files after publication. If compilation is skipped, it reports that the snapshot
+was not updated and suggests a rebuild. Design-time and `--no-build` operations
+do not publish snapshots.
+
+If an earlier snapshot has a `.morphant` file, remove that file once and rebuild
+to create `.morphant/owner`. The former framework-selection setting is no longer
+used; replace it with a condition on `MorphantGitSnapshot` when needed.
 
 Debug and Release update the same snapshot; when built sequentially, the last
 successful build wins. Morphant does not lock directories or coordinate builds.
@@ -152,10 +164,26 @@ For stable line endings across platforms, add:
 
 Morphant removes obsolete generated files only from the current TFM slice after
 a successful compilation and preserves unrelated files. Other TFM slices remain
-intact, even if a framework is no longer selected or declared. Remove unwanted
+intact, even if snapshots are disabled for a framework or it is no longer declared. Remove unwanted
 framework directories explicitly.
 
-See [Testing mappings](testing.md) for generated-diff checks.
+Publication updates files individually. An I/O failure or cancellation during
+publication may leave a partially updated snapshot; correct the cause and run a
+rebuild to refresh it.
+
+To check a committed snapshot in CI, enable snapshots in the project and run this
+Bash example from its directory. Ensure that snapshot files and `.morphant/owner` are tracked
+and not ignored. The Git check includes new, untracked files:
+
+```bash
+set -e
+dotnet build -c Release -t:Rebuild
+snapshot_changes=$(git status --porcelain --untracked-files=all -- Generated/Morphant)
+test -z "$snapshot_changes"
+```
+
+Use the intended TFM, configuration and snapshot path for your project.
+See [Testing mappings](testing.md) for behavioral checks.
 
 ## Build errors
 
@@ -168,13 +196,12 @@ not controlled by C# pragmas or `dotnet_diagnostic` severity settings.
 | `MORPHANTMSB002` | Generated-file output is disabled. Remove the override of `EmitCompilerGeneratedFiles`. |
 | `MORPHANTMSB003` | Compiler output and snapshot paths overlap, possibly through a link. Use separate directories. |
 | `MORPHANTMSB004` | Compiler storage is a project root or ancestor. Use a dedicated compilation directory. |
-| `MORPHANTMSB005` | Snapshot storage is a project root/ancestor or belongs to another project. Choose a dedicated directory for this project. |
+| `MORPHANTMSB005` | Snapshot storage is a project root/ancestor, belongs to another project, or has an invalid ownership record. Follow the reported project paths and recovery instructions. |
 | `MORPHANTMSB006` | A path is empty or invalid on the current operating system. Supply one valid path. |
-| `MORPHANTMSB007` | A framework name cannot form a portable directory name. Correct the indicated framework property. |
+| `MORPHANTMSB007` | `TargetFramework` cannot form a portable directory name. Correct the reported value. |
 | `MORPHANTMSB008` | Generated filenames are nonportable or collide ignoring case. Check the reported name and generator inputs. |
 | `MORPHANTMSB015` | A file occupies a required directory, or a directory occupies a generated filename. Move the conflicting item. |
 | `MORPHANTMSB016` | A link is broken/cyclic or occupies a managed file or directory that Morphant must modify. Correct the indicated path. |
 | `MORPHANTMSB020` | `MorphantGitSnapshotDetail` must be `Mappers` or `Full`. |
-| `MORPHANTMSB021` | The explicit framework list contains no names. Supply at least one TFM or leave the setting unset. |
 | `MORPHANTMSB022` | `MorphantGitSnapshot` must be `true` or `false`. |
-| `MORPHANTMSB999` | Unexpected snapshot failure. Use the included exception details to investigate and report a reproducible failure. |
+| `MORPHANTMSB999` | Snapshot I/O or unexpected failure. Check the reported operation, paths and access permissions, then rebuild. For I/O failures, use `-v:diagnostic` to include the full exception details. |

@@ -8,11 +8,6 @@ internal static class GitSnapshotLifecycle
 
     public static void Prepare(GitSnapshotContext context, CancellationToken cancellationToken = default)
     {
-        if (!context.IsSelectedTargetFramework)
-        {
-            return;
-        }
-
         context.CheckSnapshotOwner(cancellationToken);
         context.EnsureSafeCompilerOutput();
         var files = Directory.Exists(context.CompilerGeneratedDirectory)
@@ -27,13 +22,10 @@ internal static class GitSnapshotLifecycle
         }
     }
 
-    public static void Publish(GitSnapshotContext context, CancellationToken cancellationToken = default)
+    public static (int Updated, int Removed, int Unchanged) Publish(
+        GitSnapshotContext context, CancellationToken cancellationToken = default)
     {
-        if (!context.IsSelectedTargetFramework)
-        {
-            return;
-        }
-
+        cancellationToken.ThrowIfCancellationRequested();
         context.EnsureSafeCompilerOutput();
         context.EnsureSafeSnapshotPath(context.SliceDirectory, "Morphant snapshot slice");
         var currentFiles = FileSet(
@@ -59,13 +51,13 @@ internal static class GitSnapshotLifecycle
                     SearchOption.TopDirectoryOnly)
                 : []);
 
-        PreflightDestinations(context.SliceDirectory, currentFiles.Keys);
-
         if (currentFiles.Count > 0)
         {
             Directory.CreateDirectory(context.SliceDirectory);
         }
 
+        var updated = 0;
+        var removed = 0;
         foreach (var currentFile in currentFiles)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -73,19 +65,23 @@ internal static class GitSnapshotLifecycle
                 context.SliceDirectory,
                 currentFile.Key);
 
+            var changed = false;
             if (existingFiles.TryGetValue(currentFile.Key, out var existingPath) &&
                 !string.Equals(Path.GetFileName(existingPath), currentFile.Key, StringComparison.Ordinal))
             {
                 // Preserve the compiler's exact casing on both case-sensitive
                 // and case-insensitive filesystems without retaining an alias.
                 File.Move(existingPath, destination);
+                changed = true;
             }
 
             if (!File.Exists(destination) ||
                 !FilesEqual(currentFile.Value, destination))
             {
                 File.Copy(currentFile.Value, destination, overwrite: true);
+                changed = true;
             }
+            if (changed) updated++;
         }
 
         foreach (var existingFile in existingFiles)
@@ -94,10 +90,12 @@ internal static class GitSnapshotLifecycle
             if (!currentFiles.ContainsKey(existingFile.Key))
             {
                 File.Delete(existingFile.Value);
+                removed++;
             }
         }
 
         DeleteIfEmpty(context.SliceDirectory);
+        return (updated, removed, currentFiles.Count - updated);
     }
 
     private static IReadOnlyCollection<string> CompilerGeneratedFiles(

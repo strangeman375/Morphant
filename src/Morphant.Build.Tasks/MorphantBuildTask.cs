@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.Build.Framework;
 
 namespace Morphant.Build.Tasks;
@@ -29,6 +30,15 @@ public abstract class MorphantBuildTask : ICancelableTask
             LogError(exception.Code, exception.Message);
             return false;
         }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or Win32Exception)
+        {
+            LogError("MORPHANTMSB999",
+                $"Cannot complete {FailureContext}: {exception.Message} " +
+                "Check that the output directories are accessible and writable. After correcting the cause, " +
+                "run a rebuild to refresh the snapshot.");
+            LogMessage(exception.ToString(), MessageImportance.Low);
+            return false;
+        }
         catch (Exception exception)
         {
             LogError(
@@ -40,13 +50,15 @@ public abstract class MorphantBuildTask : ICancelableTask
 
     protected abstract void ExecuteCore();
 
-    protected void LogMessage(string message)
+    protected virtual string FailureContext => "Morphant Git snapshot";
+
+    protected void LogMessage(string message, MessageImportance importance = MessageImportance.Normal)
     {
         BuildEngine.LogMessageEvent(new BuildMessageEventArgs(
             message,
             string.Empty,
             GetType().Name,
-            MessageImportance.Normal));
+            importance));
     }
 
     private void LogError(string code, string message)

@@ -198,7 +198,6 @@ jobs:
             -nodeReuse:false \
             -p:MorphantTestPackageVersion=0.0.0-minimum-sdk.${{ github.run_id }} \
             -p:MorphantGitSnapshot=true \
-            -p:MorphantGitSnapshotTargetFrameworks=net10.0 \
             '-p:TargetsTriggeredByCompilation="MinimumSdkAfterCompile;PublishMorphantGitSnapshot"' \
             -p:RestoreSources=${{ github.workspace }}/artifacts/minimum-sdk-packages \
             -p:NuGetAudit=false

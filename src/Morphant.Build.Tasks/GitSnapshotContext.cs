@@ -5,32 +5,30 @@ internal sealed class GitSnapshotContext
     private readonly string snapshotOwner;
 
     private GitSnapshotContext(string snapshotRoot, GitSnapshotDetail detail,
-        GitSnapshotFrameworkSelection selection, string compilerDirectory,
-        string projectFile, string configuration, string runtimeIdentifier)
+        string targetFramework, string compilerDirectory, string projectFile)
     {
         SnapshotRoot = snapshotRoot;
         SnapshotDetail = detail;
-        SelectedTargetFrameworks = selection.Selected;
-        IsSelectedTargetFramework = selection.IncludesCurrent;
         CompilerGeneratedDirectory = compilerDirectory;
-        SliceDirectory = Path.Combine(snapshotRoot, selection.Current);
+        SliceDirectory = Path.Combine(snapshotRoot, targetFramework);
         snapshotOwner = "Morphant Git snapshot 1\r\n" + PhysicalDirectory.Relative(snapshotRoot, projectFile) + "\r\n";
     }
 
     public string SnapshotRoot { get; }
     public GitSnapshotDetail SnapshotDetail { get; }
-    public IReadOnlyCollection<string> SelectedTargetFrameworks { get; }
-    public bool IsSelectedTargetFramework { get; }
     public string CompilerGeneratedDirectory { get; }
     public string SliceDirectory { get; }
 
     public static GitSnapshotContext Create(string projectDirectory, string snapshotRoot, string snapshotDetail,
-        string targetFramework, string targetFrameworks, string snapshotTargetFrameworks,
-        string baseIntermediateOutputPath, string intermediateOutputPath,
+        string targetFramework,
         string compilerGeneratedFilesOutputPath, string emitCompilerGeneratedFiles,
-        string projectFile = "", string configuration = "", string runtimeIdentifier = "")
+        string projectFile = "")
     {
         var detail = ParseSnapshotDetail(snapshotDetail);
+        targetFramework = string.IsNullOrWhiteSpace(targetFramework) ? "_default" : targetFramework;
+        if (!PortablePath.IsSafeComponent(targetFramework))
+            throw new SnapshotException("MORPHANTMSB007",
+                $"TargetFramework value '{targetFramework}' cannot be used as a safe snapshot directory name.");
         if (!bool.TryParse(emitCompilerGeneratedFiles, out var emit) || !emit)
             throw new SnapshotException("MORPHANTMSB002",
                 "MorphantGitSnapshot requires EmitCompilerGeneratedFiles=true. Remove the command-line " +
@@ -40,20 +38,18 @@ internal sealed class GitSnapshotContext
         var snapshot = PhysicalDirectory.Resolve(snapshotRoot, project, "MorphantGitSnapshotPath");
         if (PhysicalDirectory.Equal(snapshot, project) || PhysicalDirectory.Inside(project, snapshot))
             throw new SnapshotException("MORPHANTMSB005",
-                "MorphantGitSnapshotPath must be a dedicated directory, not the project root or an ancestor.");
+                $"MorphantGitSnapshotPath '{snapshot}' must be a dedicated directory, not the project root '{project}' or an ancestor.");
 
         var compiler = PhysicalDirectory.Resolve(compilerGeneratedFilesOutputPath, project, "CompilerGeneratedFilesOutputPath");
         if (PhysicalDirectory.Equal(compiler, project) || PhysicalDirectory.Inside(project, compiler))
             throw new SnapshotException("MORPHANTMSB004",
-                "CompilerGeneratedFilesOutputPath must be a dedicated compilation directory, not the project root or an ancestor.");
+                $"CompilerGeneratedFilesOutputPath '{compiler}' must be a dedicated compilation directory, not the project root '{project}' or an ancestor.");
         if (PhysicalDirectory.Overlap(snapshot, compiler))
             throw new SnapshotException("MORPHANTMSB003",
-                "CompilerGeneratedFilesOutputPath and MorphantGitSnapshotPath must not overlap.");
+                $"CompilerGeneratedFilesOutputPath '{compiler}' and MorphantGitSnapshotPath '{snapshot}' must not overlap. Use separate directories.");
 
-        var selection = GitSnapshotFrameworkSelection.Create(targetFramework, targetFrameworks, snapshotTargetFrameworks);
-        return new GitSnapshotContext(snapshot, detail, selection, compiler,
-            Path.Combine(project, string.IsNullOrEmpty(projectFile) ? "Morphant.csproj" : Path.GetFileName(projectFile)),
-            configuration, runtimeIdentifier);
+        return new GitSnapshotContext(snapshot, detail, targetFramework, compiler,
+            Path.Combine(project, string.IsNullOrEmpty(projectFile) ? "Morphant.csproj" : Path.GetFileName(projectFile)));
     }
 
     private static GitSnapshotDetail ParseSnapshotDetail(string value)

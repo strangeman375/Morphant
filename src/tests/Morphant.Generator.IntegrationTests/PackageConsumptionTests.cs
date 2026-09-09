@@ -445,7 +445,7 @@ internal sealed class PackageConsumptionTests
                 consumerDirectory,
                 consumerGenerated);
 
-            await AssertMultiTargetSnapshotSelection(
+            await AssertMultiTargetSnapshotPublication(
                 repositoryRoot,
                 testDirectory,
                 packageFeed,
@@ -719,10 +719,7 @@ internal sealed class PackageConsumptionTests
             ("-p:EmitCompilerGeneratedFiles=false", "MORPHANTMSB002"),
             (
                 "-p:MorphantGitSnapshotDetail=Everything",
-                "MORPHANTMSB020"),
-            (
-                "-p:MorphantGitSnapshotTargetFrameworks=%3B%20%3B",
-                "MORPHANTMSB021")
+                "MORPHANTMSB020")
         };
 
         foreach (var (property, expectedCode) in unsafeCases)
@@ -737,7 +734,12 @@ internal sealed class PackageConsumptionTests
             if (expectedCode == "MORPHANTMSB022")
             {
                 Assert.That(result.Output, Does.Contain(
-                    "error MORPHANTMSB022: MorphantGitSnapshot must be true or false."));
+                    "error MORPHANTMSB022: MorphantGitSnapshot must be true or false. The effective value is 'invalid'."));
+            }
+            if (expectedCode == "MORPHANTMSB020")
+            {
+                Assert.That(result.Output, Does.Contain(
+                    "error MORPHANTMSB020: MorphantGitSnapshotDetail must be Mappers or Full. The effective value is 'Everything'."));
             }
             Assert.That(
                 result.Output,
@@ -877,7 +879,7 @@ internal sealed class PackageConsumptionTests
         return result;
     }
 
-    private static async Task AssertMultiTargetSnapshotSelection(
+    private static async Task AssertMultiTargetSnapshotPublication(
         string repositoryRoot,
         string testDirectory,
         string packageFeed,
@@ -920,7 +922,6 @@ internal sealed class PackageConsumptionTests
             $"-p:RestoreSources={packageFeed}",
             $"-p:BaseOutputPath={outputDirectory}",
             $"-p:BaseIntermediateOutputPath={intermediateDirectory}",
-            "-p:MorphantGitSnapshot=true",
             $"-p:MorphantGitSnapshotPath={Path.Combine(projectDirectory, "generated")}",
             "-p:NuGetAudit=false"
         ];
@@ -932,31 +933,6 @@ internal sealed class PackageConsumptionTests
             "Morphant.Generated.TypeMapper.MultiTarget_TestMapper.g.cs"
         ];
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(
-                Directory.Exists(Path.Combine(
-                    projectDirectory,
-                    "generated",
-                    "netstandard2.0")),
-                Is.False,
-                "Only the last declared target framework is selected by " +
-                "default.");
-            AssertGeneratedFileSet(
-                Path.Combine(projectDirectory, "generated", "net10.0"),
-                expected);
-        });
-
-        await File.WriteAllTextAsync(
-            projectPath,
-            MultiTargetConsumerProjectText(
-                packageVersion,
-                snapshotTargetFrameworks: "netstandard2.0;net10.0"));
-        var allTargetFrameworksBuild = await DotNetCli.Run(
-            repositoryRoot,
-            [.. buildArguments, "-t:Rebuild"]);
-        AssertSucceeded(allTargetFrameworksBuild);
-
         foreach (var targetFramework in new[] { "netstandard2.0", "net10.0" })
         {
             AssertGeneratedFileSet(
@@ -967,17 +943,19 @@ internal sealed class PackageConsumptionTests
                 expected);
         }
 
+        await File.WriteAllTextAsync(Path.Combine(projectDirectory, "generated", "net10.0",
+            "Morphant.Generated.TypeMapper.Stale.g.cs"), "// Preserve this file while snapshots are disabled.");
         var net10Snapshot = SnapshotContents(Path.Combine(projectDirectory, "generated", "net10.0"));
         var netstandardSnapshot = SnapshotContents(Path.Combine(projectDirectory, "generated", "netstandard2.0"));
         await File.WriteAllTextAsync(
             projectPath,
             MultiTargetConsumerProjectText(
                 packageVersion,
-                snapshotTargetFrameworks: "netstandard2.0"));
-        var selectedTargetFrameworkBuild = await DotNetCli.Run(
+                disabledFramework: "net10.0"));
+        var conditionallyEnabledBuild = await DotNetCli.Run(
             repositoryRoot,
             [.. buildArguments, "-t:Rebuild"]);
-        AssertSucceeded(selectedTargetFrameworkBuild);
+        AssertSucceeded(conditionallyEnabledBuild);
         Assert.Multiple(() =>
         {
             AssertGeneratedFileSet(
@@ -989,7 +967,7 @@ internal sealed class PackageConsumptionTests
             Assert.That(
                 SnapshotContents(Path.Combine(projectDirectory, "generated", "net10.0")),
                 Is.EqualTo(net10Snapshot),
-                "An unselected framework's snapshot must remain intact.");
+                "A disabled framework's snapshot must remain intact.");
         });
 
         await File.WriteAllTextAsync(
@@ -1019,18 +997,16 @@ internal sealed class PackageConsumptionTests
     private static string MultiTargetConsumerProjectText(
         string packageVersion,
         string targetFrameworks = "netstandard2.0;net10.0",
-        string? snapshotTargetFrameworks = null)
+        string? disabledFramework = null)
     {
-        var snapshotProperty = snapshotTargetFrameworks is null
+        var snapshotProperty = disabledFramework is null
             ? string.Empty
-            : "<MorphantGitSnapshotTargetFrameworks>" +
-              snapshotTargetFrameworks +
-              "</MorphantGitSnapshotTargetFrameworks>";
+            : $"<MorphantGitSnapshot Condition=\"'$(TargetFramework)' == '{disabledFramework}'\">false</MorphantGitSnapshot>";
 
         return MultiTargetConsumerProjectTemplate
             .Replace("__PACKAGE_VERSION__", packageVersion)
             .Replace("__TARGET_FRAMEWORKS__", targetFrameworks)
-            .Replace("__SNAPSHOT_TARGET_FRAMEWORKS__", snapshotProperty);
+            .Replace("__SNAPSHOT_CONDITION__", snapshotProperty);
     }
 
     // lang=xml
@@ -1040,7 +1016,8 @@ internal sealed class PackageConsumptionTests
 
   <PropertyGroup>
     <TargetFrameworks>__TARGET_FRAMEWORKS__</TargetFrameworks>
-    __SNAPSHOT_TARGET_FRAMEWORKS__
+    <MorphantGitSnapshot>true</MorphantGitSnapshot>
+    __SNAPSHOT_CONDITION__
     <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>

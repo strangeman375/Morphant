@@ -10,11 +10,8 @@ internal sealed class TaskDiagnosticTests
     [TestCase("Operation", "Unknown", "MORPHANTMSB001", "Unknown Morphant Git snapshot operation 'Unknown'.")]
     [TestCase("Emit", "false", "MORPHANTMSB002", "MorphantGitSnapshot requires EmitCompilerGeneratedFiles=true. Remove the command-line or global override that prevents Morphant from enabling it.")]
     [TestCase("Snapshot", "", "MORPHANTMSB006", "MorphantGitSnapshotPath must name one valid directory path.")]
-    [TestCase("Framework", "../outside", "MORPHANTMSB007", "TargetFramework contains a value that cannot be used as a safe snapshot path component.")]
-    [TestCase("Frameworks", "net10.0;CON", "MORPHANTMSB007", "TargetFrameworks contains a value that cannot be used as a safe snapshot path component.")]
-    [TestCase("SelectedFrameworks", "CON", "MORPHANTMSB007", "MorphantGitSnapshotTargetFrameworks contains a value that cannot be used as a safe snapshot path component.")]
+    [TestCase("Framework", "../outside", "MORPHANTMSB007", "TargetFramework value '../outside' cannot be used as a safe snapshot directory name.")]
     [TestCase("Detail", "Everything", "MORPHANTMSB020", "MorphantGitSnapshotDetail must be Mappers or Full. The effective value is 'Everything'.")]
-    [TestCase("SelectedFrameworks", "; ;", "MORPHANTMSB021", "MorphantGitSnapshotTargetFrameworks must contain at least one target framework when specified.")]
     public void Invalid_configuration_reports_one_actionable_error_before_mutation(
         string property, string value, string code, string message)
     {
@@ -26,8 +23,6 @@ internal sealed class TaskDiagnosticTests
             case "Emit": task.EmitCompilerGeneratedFiles = value; break;
             case "Snapshot": task.SnapshotRoot = value; break;
             case "Framework": task.TargetFramework = value; break;
-            case "Frameworks": task.TargetFrameworks = value; break;
-            case "SelectedFrameworks": task.SnapshotTargetFrameworks = value; break;
             case "Detail": task.SnapshotDetail = value; break;
             default: throw new ArgumentOutOfRangeException(nameof(property));
         }
@@ -50,11 +45,11 @@ internal sealed class TaskDiagnosticTests
         {
             case "Overlap":
                 task.CompilerGeneratedFilesOutputPath = task.SnapshotRoot;
-                message = "CompilerGeneratedFilesOutputPath and MorphantGitSnapshotPath must not overlap.";
+                message = $"CompilerGeneratedFilesOutputPath '{task.CompilerGeneratedFilesOutputPath}' and MorphantGitSnapshotPath '{task.SnapshotRoot}' must not overlap. Use separate directories.";
                 break;
             case "Root":
                 task.SnapshotRoot = task.ProjectDirectory;
-                message = "MorphantGitSnapshotPath must be a dedicated directory, not the project root or an ancestor.";
+                message = $"MorphantGitSnapshotPath '{task.SnapshotRoot}' must be a dedicated directory, not the project root '{task.ProjectDirectory}' or an ancestor.";
                 break;
             case "File":
                 task.SnapshotRoot = Path.Combine(task.ProjectDirectory, "occupied");
@@ -85,10 +80,10 @@ internal sealed class TaskDiagnosticTests
     {
         using var workspace = new Workspace();
         var task = workspace.Task;
-        var configured = Path.Combine(task.IntermediateOutputPath, subdirectory);
+        var configured = Path.Combine(workspace.Intermediate, subdirectory);
         var output = Path.TrimEndingDirectorySeparator(Path.GetFullPath(configured));
         task.CompilerGeneratedFilesOutputPath = relative
-            ? Path.GetRelativePath(task.ProjectDirectory, task.IntermediateOutputPath) + "/" + subdirectory
+            ? Path.GetRelativePath(task.ProjectDirectory, workspace.Intermediate) + "/" + subdirectory
             : configured;
         Directory.CreateDirectory(output);
         var stale = Path.Combine(output, "Morphant.Generated.TypeMapper.Stale.g.cs");
@@ -131,11 +126,11 @@ internal sealed class TaskDiagnosticTests
         task.Operation = operation;
         task.CompilerGeneratedFilesOutputPath = kind switch
         {
-            "Intermediate" => task.IntermediateOutputPath,
-            "NormalizedIntermediate" => Path.Combine(task.IntermediateOutputPath, "Nested", ".."),
-            "Parent" => task.BaseIntermediateOutputPath,
-            "PrefixSibling" => task.IntermediateOutputPath + "-other",
-            "OtherFramework" => Path.Combine(task.BaseIntermediateOutputPath, "Release", "net9.0", "Custom"),
+            "Intermediate" => workspace.Intermediate,
+            "NormalizedIntermediate" => Path.Combine(workspace.Intermediate, "Nested", ".."),
+            "Parent" => workspace.BaseIntermediate,
+            "PrefixSibling" => workspace.Intermediate + "-other",
+            "OtherFramework" => Path.Combine(workspace.BaseIntermediate, "Release", "net9.0", "Custom"),
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
         Assert.That(task.Execute(), Is.True);
@@ -156,7 +151,7 @@ internal sealed class TaskDiagnosticTests
         using var workspace = new Workspace();
         var task = workspace.Task;
         task.Operation = operation;
-        var linked = Path.Combine(task.IntermediateOutputPath, "CustomLink");
+        var linked = Path.Combine(workspace.Intermediate, "CustomLink");
         var target = Path.Combine(task.ProjectDirectory, "linked-output");
         var targetOutput = nested ? Path.Combine(target, "Nested") : target;
         Directory.CreateDirectory(targetOutput);
@@ -179,7 +174,7 @@ internal sealed class TaskDiagnosticTests
         using var workspace = new Workspace();
         var task = workspace.Task;
         task.Operation = operation;
-        task.CompilerGeneratedFilesOutputPath = Path.Combine(task.IntermediateOutputPath, "occupied");
+        task.CompilerGeneratedFilesOutputPath = Path.Combine(workspace.Intermediate, "occupied");
         File.WriteAllText(task.CompilerGeneratedFilesOutputPath, "user file");
         var before = workspace.Files();
 
@@ -210,7 +205,7 @@ internal sealed class TaskDiagnosticTests
 
         Assert.That(task.Execute(), Is.False);
         AssertError(engine, "MORPHANTMSB999",
-            "Unexpected Morphant Git snapshot failure: TestFailure: deliberate I/O failure\n   at TestTask.ExecuteCore()",
+            "Unexpected Morphant Git snapshot failure: TestFailure: deliberate failure\n   at TestTask.ExecuteCore()",
             "FailingTask");
     }
 
@@ -218,6 +213,44 @@ internal sealed class TaskDiagnosticTests
     {
         Assert.That(workspace.Task.Execute(), Is.False);
         AssertError(workspace.Engine, code, message, "ManageMorphantGitSnapshot");
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void File_system_failures_report_recovery_and_keep_full_details_in_verbose_output(bool accessDenied)
+    {
+        var engine = new RecordingBuildEngine();
+        Exception failure = accessDenied
+            ? new UnauthorizedAccessException("Cannot write '/snapshot/mapper.g.cs'.")
+            : new IOException("Cannot write '/snapshot/mapper.g.cs'.");
+        var task = new FileSystemFailureTask(failure) { BuildEngine = engine };
+        Assert.That(task.Execute(), Is.False);
+        AssertError(engine, "MORPHANTMSB999",
+            "Cannot complete Morphant Git snapshot: Cannot write '/snapshot/mapper.g.cs'. " +
+            "Check that the output directories are accessible and writable. After correcting the cause, " +
+            "run a rebuild to refresh the snapshot.", "FileSystemFailureTask");
+        Assert.That(engine.Messages.Single().Importance, Is.EqualTo(MessageImportance.Low));
+        Assert.That(engine.Messages.Single().Message, Is.EqualTo(failure.ToString()));
+    }
+
+    [Test]
+    public void Publication_reports_the_exact_path_and_changed_file_counts()
+    {
+        using var workspace = new Workspace();
+        var task = workspace.Task;
+        Assert.That(task.Execute(), Is.True);
+        Assert.That(task.Execute(), Is.True);
+        File.Delete(Path.Combine(task.CompilerGeneratedFilesOutputPath, "Morphant.Generated.TypeMapper.Current.g.cs"));
+        Assert.That(task.Execute(), Is.True);
+        var directory = Path.Combine(task.SnapshotRoot, "net10.0");
+        Assert.That(task.SnapshotDirectory, Is.EqualTo(directory));
+        Assert.That(workspace.Engine.Messages.Select(message => message.Message), Is.EqualTo(new[]
+        {
+            $"Morphant Git snapshot '{directory}': 1 updated, 1 removed, 0 unchanged.",
+            $"Morphant Git snapshot '{directory}': 0 updated, 0 removed, 1 unchanged.",
+            $"Morphant Git snapshot '{directory}': 0 updated, 1 removed, 0 unchanged."
+        }));
+        Assert.That(workspace.Engine.Messages.All(message => message.Importance == MessageImportance.High), Is.True);
     }
 
     private static void AssertError(RecordingBuildEngine engine, string code, string message, string sender)
@@ -242,6 +275,8 @@ internal sealed class TaskDiagnosticTests
         private readonly string root = Path.Combine(TemporaryDirectory(), nameof(TaskDiagnosticTests), Guid.NewGuid().ToString("N"));
         public RecordingBuildEngine Engine { get; } = new();
         public ManageMorphantGitSnapshot Task { get; }
+        public string BaseIntermediate => Path.Combine(root, "obj");
+        public string Intermediate => Path.Combine(BaseIntermediate, "Release", "net10.0");
 
         public Workspace()
         {
@@ -254,8 +289,6 @@ internal sealed class TaskDiagnosticTests
                 SnapshotRoot = Path.Combine(root, "Generated"),
                 SnapshotDetail = "Mappers",
                 TargetFramework = "net10.0",
-                BaseIntermediateOutputPath = Path.Combine(root, "obj"),
-                IntermediateOutputPath = intermediate,
                 CompilerGeneratedFilesOutputPath = Path.Combine(intermediate, "Morphant.CompilerGenerated"),
                 EmitCompilerGeneratedFiles = "true"
             };
@@ -267,7 +300,7 @@ internal sealed class TaskDiagnosticTests
         }
 
         public Dictionary<string, byte[]> Files() => Directory.GetFiles(root, "*", SearchOption.AllDirectories)
-            .Where(path => Path.GetFileName(path) != ".morphant")
+            .Where(path => path != Path.Combine(Task.SnapshotRoot, ".morphant", "owner"))
             .ToDictionary(path => Path.GetRelativePath(root, path), File.ReadAllBytes, StringComparer.Ordinal);
 
         public void Dispose() => Directory.Delete(root, recursive: true);
@@ -295,22 +328,28 @@ internal sealed class TaskDiagnosticTests
         protected override void ExecuteCore() => throw new TestFailure();
     }
 
-    private sealed class TestFailure : IOException
+    private sealed class FileSystemFailureTask(Exception failure) : MorphantBuildTask
     {
-        public override string ToString() => "TestFailure: deliberate I/O failure\n   at TestTask.ExecuteCore()";
+        protected override void ExecuteCore() => throw failure;
+    }
+
+    private sealed class TestFailure : InvalidOperationException
+    {
+        public override string ToString() => "TestFailure: deliberate failure\n   at TestTask.ExecuteCore()";
     }
 
     private sealed class RecordingBuildEngine : IBuildEngine
     {
         public List<BuildErrorEventArgs> Errors { get; } = [];
         public List<BuildWarningEventArgs> Warnings { get; } = [];
+        public List<BuildMessageEventArgs> Messages { get; } = [];
         public bool ContinueOnError => false;
         public int LineNumberOfTaskNode => 12;
         public int ColumnNumberOfTaskNode => 3;
         public string ProjectFileOfTaskNode => "Consumer.csproj";
         public void LogErrorEvent(BuildErrorEventArgs e) => Errors.Add(e);
         public void LogWarningEvent(BuildWarningEventArgs e) => Warnings.Add(e);
-        public void LogMessageEvent(BuildMessageEventArgs e) { }
+        public void LogMessageEvent(BuildMessageEventArgs e) => Messages.Add(e);
         public void LogCustomEvent(CustomBuildEventArgs e) { }
         public bool BuildProjectFile(string projectFileName, string[] targetNames,
             IDictionary globalProperties, IDictionary targetOutputs) => throw new NotSupportedException();

@@ -162,85 +162,50 @@ internal sealed class GitSnapshotLifecycleTests
         });
     }
 
-    [Test]
-    public void Multi_target_project_publishes_only_last_framework_by_default()
+    [TestCase("net8.0", "net10.0")]
+    [TestCase("net10.0", "net8.0")]
+    public void Each_framework_publishes_its_own_snapshot(string first, string second)
     {
         using var workspace = new SnapshotWorkspace();
-        const string fileName =
-            "Morphant.Generated.TypeMapper.TargetFramework.g.cs";
-        var net8 = workspace.CreateContext(
-            "Release",
-            "net8.0",
-            "net8.0;net10.0");
-        var net10 = workspace.CreateContext(
-            "Release",
-            "net10.0",
-            "net8.0;net10.0");
-
-        var net8Output = workspace.WriteCompilerOutput(
-            net8,
-            fileName,
-            "// net8\r\n");
-        GitSnapshotLifecycle.Prepare(net8);
-        GitSnapshotLifecycle.Publish(net8);
-        workspace.WriteCompilerOutput(net10, fileName, "// net10\r\n");
-        GitSnapshotLifecycle.Publish(net10);
-
-        Assert.Multiple(() =>
+        const string name = "Morphant.Generated.TypeMapper.Current.g.cs";
+        foreach (var framework in new[] { first, second })
         {
-            Assert.That(File.Exists(net8Output), Is.True);
-            Assert.That(Directory.Exists(net8.SliceDirectory), Is.False);
-            Assert.That(
-                File.ReadAllText(Path.Combine(net10.SliceDirectory, fileName)),
-                Is.EqualTo("// net10\r\n"));
-        });
+            var context = workspace.CreateContext("Release", framework);
+            var stale = workspace.WriteCompilerOutput(context, name, "// stale\r\n");
+            GitSnapshotLifecycle.Prepare(context);
+            Assert.That(File.Exists(stale), Is.False);
+            workspace.WriteCompilerOutput(context, name, "// " + framework + "\r\n");
+            GitSnapshotLifecycle.Publish(context);
+        }
+        foreach (var framework in new[] { first, second })
+        {
+            var context = workspace.CreateContext("Release", framework);
+            Assert.That(SnapshotFileNames(context), Is.EqualTo(new[] { name }));
+            Assert.That(File.ReadAllText(Path.Combine(context.SliceDirectory, name)),
+                Is.EqualTo("// " + framework + "\r\n"));
+        }
     }
 
     [Test]
-    public void Publishing_one_framework_preserves_other_frameworks_even_when_unselected()
+    public void Publishing_or_clearing_one_framework_preserves_other_frameworks()
     {
         using var workspace = new SnapshotWorkspace();
-        const string fileName =
-            "Morphant.Generated.TypeMapper.TargetFramework.g.cs";
-        var net8 = workspace.CreateContext(
-            "Release",
-            "net8.0",
-            "net8.0;net10.0",
-            snapshotTargetFrameworks: " net8.0 ; NET8.0 ; net10.0 ");
-        var net10 = workspace.CreateContext(
-            "Release",
-            "net10.0",
-            "net8.0;net10.0",
-            snapshotTargetFrameworks: " net8.0 ; NET8.0 ; net10.0 ");
-
-        workspace.WriteCompilerOutput(net8, fileName, "// net8\r\n");
+        const string name = "Morphant.Generated.TypeMapper.Current.g.cs";
+        var net8 = workspace.CreateContext("Release", "net8.0");
+        var net10 = workspace.CreateContext("Release", "net10.0");
+        workspace.WriteCompilerOutput(net8, name, "// net8\r\n");
         GitSnapshotLifecycle.Publish(net8);
         workspace.WriteSnapshot(net8, "Notes.txt", "keep");
-        workspace.WriteCompilerOutput(net10, fileName, "// net10\r\n");
+        var previousWriteTime = File.GetLastWriteTimeUtc(Path.Combine(net8.SliceDirectory, name));
+        workspace.WriteCompilerOutput(net10, name, "// net10\r\n");
         GitSnapshotLifecycle.Publish(net10);
-
-        var net10Only = workspace.CreateContext(
-            "Release",
-            "net10.0",
-            "net8.0;net10.0",
-            snapshotTargetFrameworks: "net10.0");
-        GitSnapshotLifecycle.Publish(net10Only);
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(
-                net8.SelectedTargetFrameworks,
-                Is.EqualTo(new[] { "net8.0", "net10.0" }));
-            Assert.That(
-                File.ReadAllText(Path.Combine(net8.SliceDirectory, fileName)),
-                Is.EqualTo("// net8\r\n"));
-            Assert.That(
-                File.ReadAllText(Path.Combine(net8.SliceDirectory, "Notes.txt")),
-                Is.EqualTo("keep"));
-            Assert.That(
-                File.Exists(Path.Combine(net10.SliceDirectory, fileName)),
-                Is.True);
-        });
+        GitSnapshotLifecycle.Prepare(net10);
+        GitSnapshotLifecycle.Publish(net10);
+        Assert.That(Directory.Exists(net10.SliceDirectory), Is.False);
+        Assert.That(SnapshotFileNames(net8), Is.EqualTo(new[] { name }));
+        Assert.That(File.ReadAllText(Path.Combine(net8.SliceDirectory, name)), Is.EqualTo("// net8\r\n"));
+        Assert.That(File.GetLastWriteTimeUtc(Path.Combine(net8.SliceDirectory, name)), Is.EqualTo(previousWriteTime));
+        Assert.That(File.ReadAllText(Path.Combine(net8.SliceDirectory, "Notes.txt")), Is.EqualTo("keep"));
     }
 
     [Test]
@@ -373,42 +338,19 @@ internal sealed class GitSnapshotLifecycleTests
         });
     }
 
-    [TestCase("netstandard2.0", "", "net10.0", true)]
-    [TestCase("net10.0", "netstandard2.0;net10.0", "net9.0", true)]
-    [TestCase("netstandard2.0", "netstandard2.0;net10.0", "net9.0", false)]
-    [TestCase("netstandard2.0", "netstandard2.0;net10.0", "net9.0;NETSTANDARD2.0", true)]
-    [TestCase("net10.0", "netstandard2.0;net10.0", "net9.0;NETSTANDARD2.0", false)]
-    [TestCase("net10.0", "netstandard2.0;net10.0", "NET10.0;net9.0;net10.0", true)]
-    public void Framework_selection_publishes_matches_or_the_project_default(
-        string current, string declared, string requested, bool shouldPublish)
+    [TestCase("netstandard2.0", "netstandard2.0")]
+    [TestCase("net10.0", "net10.0")]
+    [TestCase("", "_default")]
+    public void Current_framework_determines_the_snapshot_directory(string framework, string directory)
     {
         using var workspace = new SnapshotWorkspace();
-        var context = workspace.CreateContext("Release", current, declared, requested);
+        var context = workspace.CreateContext("Release", framework);
         const string name = "Morphant.Generated.TypeMapper.Current.g.cs";
-        var source = workspace.WriteCompilerOutput(context, name, "// current\r\n");
+        workspace.WriteCompilerOutput(context, name, "// current\r\n");
         GitSnapshotLifecycle.Publish(context);
-        Assert.That(File.Exists(Path.Combine(context.SliceDirectory, name)), Is.EqualTo(shouldPublish));
-        Assert.That(File.ReadAllText(source), Is.EqualTo("// current\r\n"));
-        if (shouldPublish)
-            Assert.That(File.ReadAllText(Path.Combine(context.SliceDirectory, name)), Is.EqualTo("// current\r\n"));
-    }
-
-    [TestCase("Prepare")]
-    [TestCase("Publish")]
-    public void Unselected_framework_does_not_validate_or_mutate_snapshot_storage(string operation)
-    {
-        using var workspace = new SnapshotWorkspace();
-        var context = workspace.CreateContext("Release", "net10.0");
-        var previous = workspace.WriteSnapshot(context, "Morphant.Generated.TypeMapper.Previous.g.cs", "// previous\r\n");
-        var engine = new RecordingBuildEngine();
-        var task = workspace.CreateTask(operation, engine);
-        task.TargetFrameworks = "net10.0;net11.0";
-        task.SnapshotTargetFrameworks = "net9.0";
-        task.EmitCompilerGeneratedFiles = "false";
-        task.SnapshotRoot = task.ProjectDirectory;
-        Assert.That(task.Execute(), Is.True);
-        Assert.That(engine.Errors, Is.Empty);
-        Assert.That(File.ReadAllText(previous), Is.EqualTo("// previous\r\n"));
+        Assert.That(Path.GetFileName(context.SliceDirectory), Is.EqualTo(directory));
+        Assert.That(SnapshotFileNames(context), Is.EqualTo(new[] { name }));
+        Assert.That(File.ReadAllText(Path.Combine(context.SliceDirectory, name)), Is.EqualTo("// current\r\n"));
     }
 
     [Test]
@@ -463,8 +405,6 @@ internal sealed class GitSnapshotLifecycleTests
         public GitSnapshotContext CreateContext(
             string configuration,
             string targetFramework,
-            string targetFrameworks = "",
-            string snapshotTargetFrameworks = "",
             string snapshotDetail = "Mappers")
         {
             var intermediate = Path.Combine(
@@ -476,10 +416,6 @@ internal sealed class GitSnapshotLifecycleTests
                 SnapshotRoot,
                 snapshotDetail,
                 targetFramework,
-                targetFrameworks,
-                snapshotTargetFrameworks,
-                BaseIntermediate,
-                intermediate,
                 Path.Combine(intermediate, "Morphant.CompilerGenerated"),
                 "true");
         }
@@ -546,10 +482,6 @@ internal sealed class GitSnapshotLifecycleTests
                 SnapshotRoot,
                 "Mappers",
                 "net10.0",
-                string.Empty,
-                string.Empty,
-                baseIntermediate,
-                intermediate,
                 Path.Combine(intermediate, "Morphant.CompilerGenerated"),
                 "true");
         }
@@ -570,10 +502,6 @@ internal sealed class GitSnapshotLifecycleTests
                 SnapshotRoot = SnapshotRoot,
                 SnapshotDetail = "Mappers",
                 TargetFramework = "net10.0",
-                TargetFrameworks = string.Empty,
-                SnapshotTargetFrameworks = string.Empty,
-                BaseIntermediateOutputPath = BaseIntermediate,
-                IntermediateOutputPath = intermediate,
                 CompilerGeneratedFilesOutputPath = Path.Combine(
                     intermediate,
                     "Morphant.CompilerGenerated"),

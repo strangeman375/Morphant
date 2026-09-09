@@ -198,7 +198,7 @@ internal sealed class DiagnosticCatalogAuditTests
             "MORPHANTMSB001", "MORPHANTMSB002", "MORPHANTMSB003", "MORPHANTMSB004",
             "MORPHANTMSB005", "MORPHANTMSB006", "MORPHANTMSB007", "MORPHANTMSB008",
             "MORPHANTMSB015", "MORPHANTMSB016",
-            "MORPHANTMSB020", "MORPHANTMSB021", "MORPHANTMSB022", "MORPHANTMSB999"
+            "MORPHANTMSB020", "MORPHANTMSB022", "MORPHANTMSB999"
         };
         var root = FindRepositoryRoot();
         var targets = System.Xml.Linq.XDocument.Load(Path.Combine(root, "src", "Morphant", "build", "Morphant.targets"));

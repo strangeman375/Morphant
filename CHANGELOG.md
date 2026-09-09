@@ -25,6 +25,11 @@ unsupported.
 
 ### Changed
 
+- Publish a Git snapshot for every successful compilation's target framework.
+  Remove `MorphantGitSnapshotTargetFrameworks`; use MSBuild conditions on
+  `MorphantGitSnapshot` to opt individual compilations in or out.
+- Store snapshot project ownership in `.morphant/owner`. Remove the previous
+  `.morphant` file once and rebuild to create the new record.
 - Remove Git snapshot directory locks and allow sequential reuse of compiler
   storage. Concurrent publishers need independent output directories. Keep the
   existing snapshot layout and clean only the current target framework slice.
@@ -44,16 +49,17 @@ unsupported.
 
 - Replace the old Git snapshot filename after a case-only mapper or model
   rename, preserving exact casing and allowing subsequent builds to succeed.
-- Avoid configuring compiler output for an unselected snapshot framework when
-  generated-file emission is globally disabled.
+- Atomically initialize snapshot ownership without directory locks, so
+  concurrent projects cannot both claim a new snapshot directory.
+- Report snapshot publication and skipped compilation, include effective
+  configuration values and paths in errors, and explain I/O recovery.
 - Allow initialized Git snapshot ownership files to be read-only
   without preventing updates to writable generated files.
 
 - Allow independent and external Git snapshot/compiler directories and linked
   checkout paths, with snapshot project ownership checks.
 
-- Preserve global post-compilation hooks and update each project's default Git
-  snapshot when a shared target-framework selection has no matching TFM.
+- Preserve global post-compilation hooks while publishing Git snapshots.
 
 - Accept literal square brackets in Git snapshot paths and compare
   `MorphantGitSnapshotDetail` values case-insensitively, matching MSBuild.

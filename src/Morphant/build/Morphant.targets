@@ -61,12 +61,12 @@
     <Error Condition="'$(MorphantGitSnapshot)' != 'true' and
                       '$(MorphantGitSnapshot)' != 'false'"
            Code="MORPHANTMSB022"
-           Text="MorphantGitSnapshot must be true or false." />
+           Text="MorphantGitSnapshot must be true or false. The effective value is '$(MorphantGitSnapshot)'." />
     <Error Condition="'$(MorphantGitSnapshot)' == 'true' and
                       '$(MorphantGitSnapshotDetail)' != 'Mappers' and
                       '$(MorphantGitSnapshotDetail)' != 'Full'"
            Code="MORPHANTMSB020"
-           Text="MorphantGitSnapshotDetail must be Mappers or Full." />
+           Text="MorphantGitSnapshotDetail must be Mappers or Full. The effective value is '$(MorphantGitSnapshotDetail)'." />
   </Target>
 
   <!--
@@ -81,21 +81,20 @@
                      '$(DesignTimeBuild)' != 'true' and
                      '$(SkipCompilerExecution)' != 'true' and
                      '$(BuildingProject)' != 'false'">
+    <PropertyGroup>
+      <_MorphantGitSnapshotPublished>false</_MorphantGitSnapshotPublished>
+    </PropertyGroup>
     <ManageMorphantGitSnapshot
         Operation="Prepare"
         ProjectDirectory="$(MSBuildProjectDirectory)"
         ProjectFile="$(MSBuildProjectFullPath)"
-        Configuration="$(Configuration)"
-        RuntimeIdentifier="$(RuntimeIdentifier)"
         SnapshotRoot="$(MorphantGitSnapshotPath)"
         SnapshotDetail="$(MorphantGitSnapshotDetail)"
         TargetFramework="$(TargetFramework)"
-        TargetFrameworks="$(TargetFrameworks)"
-        SnapshotTargetFrameworks="$(MorphantGitSnapshotTargetFrameworks)"
-        BaseIntermediateOutputPath="$(BaseIntermediateOutputPath)"
-        IntermediateOutputPath="$(IntermediateOutputPath)"
         CompilerGeneratedFilesOutputPath="$(CompilerGeneratedFilesOutputPath)"
-        EmitCompilerGeneratedFiles="$(EmitCompilerGeneratedFiles)" />
+        EmitCompilerGeneratedFiles="$(EmitCompilerGeneratedFiles)">
+      <Output TaskParameter="SnapshotDirectory" PropertyName="_MorphantGitSnapshotDirectory" />
+    </ManageMorphantGitSnapshot>
   </Target>
 
   <!--
@@ -112,17 +111,26 @@
         Operation="Publish"
         ProjectDirectory="$(MSBuildProjectDirectory)"
         ProjectFile="$(MSBuildProjectFullPath)"
-        Configuration="$(Configuration)"
-        RuntimeIdentifier="$(RuntimeIdentifier)"
         SnapshotRoot="$(MorphantGitSnapshotPath)"
         SnapshotDetail="$(MorphantGitSnapshotDetail)"
         TargetFramework="$(TargetFramework)"
-        TargetFrameworks="$(TargetFrameworks)"
-        SnapshotTargetFrameworks="$(MorphantGitSnapshotTargetFrameworks)"
-        BaseIntermediateOutputPath="$(BaseIntermediateOutputPath)"
-        IntermediateOutputPath="$(IntermediateOutputPath)"
         CompilerGeneratedFilesOutputPath="$(CompilerGeneratedFilesOutputPath)"
         EmitCompilerGeneratedFiles="$(EmitCompilerGeneratedFiles)" />
+    <PropertyGroup>
+      <!-- CallTarget exposes this change after CoreCompile completes. -->
+      <_MorphantGitSnapshotPublished>true</_MorphantGitSnapshotPublished>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="ReportMorphantGitSnapshot"
+          AfterTargets="CoreCompile"
+          Condition="'$(MorphantGitSnapshot)' == 'true' and
+                     '$(DesignTimeBuild)' != 'true' and
+                     '$(SkipCompilerExecution)' != 'true' and
+                     '$(BuildingProject)' != 'false'">
+    <Message Condition="'$(_MorphantGitSnapshotPublished)' != 'true'"
+             Importance="High"
+             Text="Morphant Git snapshot '$(_MorphantGitSnapshotDirectory)' was not updated because compilation was skipped. Run a rebuild (-t:Rebuild) to refresh it." />
   </Target>
 
 </Project>
