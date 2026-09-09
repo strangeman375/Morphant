@@ -182,18 +182,20 @@ internal sealed class CiBuildTests
     }
 
     [Test]
-    public async Task An_unselected_framework_does_not_require_snapshot_storage_or_compiler_emission()
+    public async Task An_unselected_framework_does_not_validate_or_claim_snapshot_storage()
     {
         using var consumer = CreateConsumer(targetFramework: "netstandard2.0;net10.0");
         AssertSucceeded(await consumer.Run("build", "--framework", "net10.0"));
         var before = consumer.Snapshot();
+        var compiler = Path.Combine(consumer.Root, "unselected-compiler");
 
         AssertSucceeded(await consumer.Run("build", "--framework", "netstandard2.0", "--no-restore",
             "-p:EmitCompilerGeneratedFiles=false",
             "-p:MorphantGitSnapshotPath=" + consumer.ProjectDirectory,
-            "-p:CompilerGeneratedFilesOutputPath=" + consumer.SnapshotRoot));
+            "-p:CompilerGeneratedFilesOutputPath=" + compiler));
         Assert.That(consumer.Snapshot(), Is.EqualTo(before));
         Assert.That(File.Exists(Path.Combine(consumer.ProjectDirectory, ".morphant")), Is.False);
+        Assert.That(File.Exists(Path.Combine(compiler, ".morphant")), Is.False);
     }
 
     [TestCase("DesignTimeBuild", "true")]
