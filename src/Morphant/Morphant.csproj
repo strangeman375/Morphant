@@ -25,6 +25,7 @@
         <PackageOutputPath>..\..\artifacts\packages</PackageOutputPath>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CollectMorphantPackageTools</TargetsForTfmSpecificContentInPackage>
     </PropertyGroup>
 
     <ItemGroup>
@@ -55,11 +56,6 @@
               PackagePath="\"
               Visible="false" />
 
-        <None Include="..\Morphant.Generator\bin\$(Configuration)\netstandard2.0\Morphant.Generator.dll"
-              Pack="true"
-              PackagePath="analyzers/dotnet/cs/"
-              Visible="false" />
-
         <None Include="build\Morphant.props"
               Pack="true"
               PackagePath="buildTransitive\Morphant.props"
@@ -69,11 +65,23 @@
               Pack="true"
               PackagePath="buildTransitive\Morphant.targets"
               Visible="false" />
-
-        <None Include="..\Morphant.Build.Tasks\bin\$(Configuration)\netstandard2.0\Morphant.Build.Tasks.dll"
-              Pack="true"
-              PackagePath="buildTransitive\Morphant.Build.Tasks.dll"
-              Visible="false" />
     </ItemGroup>
+
+    <Target Name="CollectMorphantPackageTools">
+        <!-- Resolve the selected output paths without rebuilding during packaging-only steps. -->
+        <MSBuild Projects="@(ProjectReference)"
+                 Targets="GetTargetPath"
+                 Properties="Configuration=$(Configuration)">
+            <Output TaskParameter="TargetOutputs" ItemName="_MorphantPackageTool" />
+        </MSBuild>
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="@(_MorphantPackageTool)"
+                                    Condition="'%(_MorphantPackageTool.Filename)' == 'Morphant.Generator'"
+                                    PackagePath="analyzers/dotnet/cs/" />
+            <TfmSpecificPackageFile Include="@(_MorphantPackageTool)"
+                                    Condition="'%(_MorphantPackageTool.Filename)' == 'Morphant.Build.Tasks'"
+                                    PackagePath="buildTransitive/" />
+        </ItemGroup>
+    </Target>
 
 </Project>

@@ -9,6 +9,9 @@ dotnet add package Morphant
 dotnet add package Microsoft.Extensions.DependencyInjection
 ```
 
+Reference Morphant directly in each project that declares mappers. A project
+that only calls a library's compiled mappers can use its transitive runtime dependency.
+
 ## Declare a mapping
 
 ```csharp

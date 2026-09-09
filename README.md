@@ -27,6 +27,9 @@ The runtime package includes the source generator:
 dotnet add package Morphant
 ```
 
+Add the package directly to each project that declares mappers. Projects
+that only use another library's compiled mappers receive the runtime transitively.
+
 The DI examples use `Microsoft.Extensions.DependencyInjection`, which is
 included in ASP.NET Core shared frameworks or available as a separate package.
 

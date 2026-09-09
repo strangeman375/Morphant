@@ -47,6 +47,8 @@ unsupported.
 
 ### Fixed
 
+- Package the current generator and build task assemblies when using custom
+  build output paths, including `--artifacts-path` and `pack --no-build`.
 - Refresh generated mappings when `InternalsVisibleTo` is added or removed
   in a referenced source project, including internal setters and constructors.
 - Replace the old Git snapshot filename after a case-only mapper or model
