@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/09/2026 - 15:20:35 |
-| Coverage date: | 09/09/2026 - 15:08:44 - 09/09/2026 - 15:20:30 |
+| Generated on: | 09/09/2026 - 16:31:13 |
+| Coverage date: | 09/09/2026 - 16:17:11 - 09/09/2026 - 16:31:08 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 371 |
 | Files: | 195 |
-| **Line coverage:** | 88.1% (37884 of 42961) |
+| **Line coverage:** | 88.1% (37884 of 42962) |
 | Covered lines: | 37884 |
-| Uncovered lines: | 5077 |
-| Coverable lines: | 42961 |
-| Total lines: | 71546 |
-| **Branch coverage:** | 78.6% (13325 of 16937) |
-| Covered branches: | 13325 |
-| Total branches: | 16937 |
+| Uncovered lines: | 5078 |
+| Coverable lines: | 42962 |
+| Total lines: | 71542 |
+| **Branch coverage:** | 78.6% (13329 of 16941) |
+| Covered branches: | 13329 |
+| Total branches: | 16941 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -52,14 +52,14 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 93%</summary>
+<details><summary>Morphant.Build.Tasks - 92.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**93%**|**85.4%**|
+|**Morphant.Build.Tasks**|**92.8%**|**85.4%**|
 |Morphant.Build.Tasks.GitSnapshotContext|95.5%|91.6%|
 |Morphant.Build.Tasks.GitSnapshotLifecycle|93%|94.1%|
-|Morphant.Build.Tasks.GitSnapshotStorage|100%|100%|
+|Morphant.Build.Tasks.GitSnapshotStorage|98.3%|100%|
 |Morphant.Build.Tasks.ManageMorphantGitSnapshot|100%|90%|
 |Morphant.Build.Tasks.MorphantBuildTask|97.7%|50%|
 |Morphant.Build.Tasks.PhysicalDirectory|78.3%|64.5%|
@@ -92,7 +92,7 @@
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionTypePar<br/>ameterModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionSurfacePipeline|97.4%|95.4%|
 |Morphant.Generator.ConstructionSurface.GeneratedTypeNameBuilder|96.8%|97.2%|
-|Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationE<br/>mitter|100%|95.4%|
+|Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationE<br/>mitter|100%|96.1%|
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odel|100%||
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odelBuilder|100%|100%|
 |Morphant.Generator.ConstructionSurface.PairConfiguration.PairConfigurationM<br/>odelEquality|97.7%|96.6%|
@@ -417,4 +417,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #249](https://github.com/strangeman375/Morphant/actions/runs/34367816458).
+Full HTML report: download the **coverage** artifact from [CI run #254](https://github.com/strangeman375/Morphant/actions/runs/34375235782).
