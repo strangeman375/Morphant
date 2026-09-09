@@ -3,19 +3,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/09/2026 - 00:20:14 |
-| Coverage date: | 09/09/2026 - 00:18:21 - 09/09/2026 - 00:20:09 |
+| Generated on: | 09/09/2026 - 05:09:48 |
+| Coverage date: | 09/09/2026 - 05:07:30 - 09/09/2026 - 05:09:43 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 369 |
 | Files: | 193 |
-| **Line coverage:** | 88.1% (37963 of 43050) |
-| Covered lines: | 37963 |
+| **Line coverage:** | 88.1% (37959 of 43046) |
+| Covered lines: | 37959 |
 | Uncovered lines: | 5087 |
-| Coverable lines: | 43050 |
-| Total lines: | 71711 |
-| **Branch coverage:** | 78.6% (13305 of 16911) |
-| Covered branches: | 13305 |
+| Coverable lines: | 43046 |
+| Total lines: | 71707 |
+| **Branch coverage:** | 78.6% (13306 of 16911) |
+| Covered branches: | 13306 |
 | Total branches: | 16911 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -52,12 +52,12 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 92.4%</summary>
+<details><summary>Morphant.Build.Tasks - 92.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**92.4%**|**87.1%**|
-|Morphant.Build.Tasks.GitSnapshotContext|93.2%|84.4%|
+|**Morphant.Build.Tasks**|**92.3%**|**87.6%**|
+|Morphant.Build.Tasks.GitSnapshotContext|93.1%|85.5%|
 |Morphant.Build.Tasks.GitSnapshotLifecycle|89.6%|89.1%|
 |Morphant.Build.Tasks.ManageMorphantGitSnapshot|100%|100%|
 |Morphant.Build.Tasks.MorphantBuildTask|77.4%|50%|
@@ -415,4 +415,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #213](https://github.com/strangeman375/Morphant/actions/runs/34293996822).
+Full HTML report: download the **coverage** artifact from [CI run #214](https://github.com/strangeman375/Morphant/actions/runs/34313243536).
