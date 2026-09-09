@@ -162,7 +162,7 @@ internal sealed class GitSnapshotLifecycleTests
     }
 
     [Test]
-    public void Removes_owned_files_for_a_no_longer_selected_framework_only()
+    public void Publishing_one_framework_preserves_other_frameworks_even_when_unselected()
     {
         using var workspace = new SnapshotWorkspace();
         const string fileName =
@@ -197,8 +197,8 @@ internal sealed class GitSnapshotLifecycleTests
                 net8.SelectedTargetFrameworks,
                 Is.EqualTo(new[] { "net8.0", "net10.0" }));
             Assert.That(
-                File.Exists(Path.Combine(net8.SliceDirectory, fileName)),
-                Is.False);
+                File.ReadAllText(Path.Combine(net8.SliceDirectory, fileName)),
+                Is.EqualTo("// net8\r\n"));
             Assert.That(
                 File.ReadAllText(Path.Combine(net8.SliceDirectory, "Notes.txt")),
                 Is.EqualTo("keep"));

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 
 namespace Morphant.Generator.IntegrationTests.TestUtils;
 
@@ -8,8 +7,7 @@ internal static class DotNetCli
     public static async Task<ProcessResult> Run(
         string workingDirectory,
         IReadOnlyCollection<string> arguments,
-        IReadOnlyDictionary<string, string>? environment = null,
-        Action<string>? outputReceived = null)
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         using var process = new Process
         {
@@ -40,9 +38,7 @@ internal static class DotNetCli
                 "The dotnet process could not be started.");
         }
 
-        var standardOutput = outputReceived is null
-            ? process.StandardOutput.ReadToEndAsync()
-            : ReadOutput(process.StandardOutput, outputReceived);
+        var standardOutput = process.StandardOutput.ReadToEndAsync();
         var standardError = process.StandardError.ReadToEndAsync();
 
         await process.WaitForExitAsync();
@@ -51,17 +47,6 @@ internal static class DotNetCli
             process.ExitCode,
             await standardOutput + await standardError,
             arguments.ToArray());
-    }
-
-    private static async Task<string> ReadOutput(StreamReader reader, Action<string> outputReceived)
-    {
-        var output = new StringBuilder();
-        while (await reader.ReadLineAsync() is { } line)
-        {
-            output.AppendLine(line);
-            outputReceived(line);
-        }
-        return output.ToString();
     }
 
     private static string GetHostPath()

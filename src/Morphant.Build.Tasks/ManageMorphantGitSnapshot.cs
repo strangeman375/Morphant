@@ -59,10 +59,10 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
         switch (Operation)
         {
             case "Prepare":
-                GitSnapshotLifecycle.Prepare(context, CancellationToken, path => LogMessage("Waiting for Morphant snapshot storage: " + path));
+                GitSnapshotLifecycle.Prepare(context, CancellationToken);
                 break;
             case "Publish":
-                GitSnapshotLifecycle.Publish(context, CancellationToken, path => LogMessage("Waiting for Morphant snapshot storage: " + path));
+                GitSnapshotLifecycle.Publish(context, CancellationToken);
                 break;
             default:
                 throw new SnapshotException(

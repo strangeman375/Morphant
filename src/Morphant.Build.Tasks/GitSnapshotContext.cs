@@ -3,7 +3,6 @@ namespace Morphant.Build.Tasks;
 internal sealed class GitSnapshotContext
 {
     private readonly string snapshotOwner;
-    private readonly string compilerOwner;
 
     private GitSnapshotContext(string snapshotRoot, GitSnapshotDetail detail,
         GitSnapshotFrameworkSelection selection, string compilerDirectory,
@@ -16,8 +15,6 @@ internal sealed class GitSnapshotContext
         CompilerGeneratedDirectory = compilerDirectory;
         SliceDirectory = Path.Combine(snapshotRoot, selection.Current);
         snapshotOwner = "Morphant Git snapshot 1\r\n" + PhysicalDirectory.Relative(snapshotRoot, projectFile) + "\r\n";
-        compilerOwner = "Morphant compiler output 1\r\n" + PhysicalDirectory.Relative(compilerDirectory, projectFile) +
-            $"\r\n{configuration}\r\n{selection.Current}\r\n{runtimeIdentifier}\r\n";
     }
 
     public string SnapshotRoot { get; }
@@ -69,22 +66,8 @@ internal sealed class GitSnapshotContext
             "MorphantGitSnapshotDetail must be Mappers or Full. " + $"The effective value is '{value}'.");
     }
 
-    public IDisposable AcquireRootLock(CancellationToken cancellationToken = default, Action<string>? waiting = null) =>
-        GitSnapshotStorage.Acquire(SnapshotRoot, snapshotOwner, "MORPHANTMSB005", cancellationToken, waiting);
-
-    public IDisposable AcquireCompilerLock(CancellationToken cancellationToken = default, Action<string>? waiting = null) =>
-        GitSnapshotStorage.Acquire(CompilerGeneratedDirectory, compilerOwner, "MORPHANTMSB004", cancellationToken, waiting);
-
-    public void CheckSnapshotOwner(CancellationToken cancellationToken, Action<string>? waiting)
-    {
-        var path = Path.Combine(SnapshotRoot, GitSnapshotStorage.OwnerFileName);
-        if (File.Exists(path) || Directory.Exists(path) || PhysicalDirectory.IsLink(path))
-        {
-            using var snapshotLock = AcquireRootLock(cancellationToken, waiting);
-        }
-    }
-
-    public bool IsSelectedTargetFrameworkSlice(string value) => SelectedTargetFrameworks.Contains(value, StringComparer.OrdinalIgnoreCase);
+    public void CheckSnapshotOwner(CancellationToken cancellationToken, bool create = false) =>
+        GitSnapshotStorage.CheckOwner(SnapshotRoot, snapshotOwner, create, cancellationToken);
     public void EnsureSafeCompilerOutput() => PhysicalDirectory.EnsureNoLinks(
         CompilerGeneratedDirectory, CompilerGeneratedDirectory, "CompilerGeneratedFilesOutputPath");
     public void EnsureSafeSnapshotPath(string path, string description) =>

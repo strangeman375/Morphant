@@ -967,6 +967,8 @@ internal sealed class PackageConsumptionTests
                 expected);
         }
 
+        var net10Snapshot = SnapshotContents(Path.Combine(projectDirectory, "generated", "net10.0"));
+        var netstandardSnapshot = SnapshotContents(Path.Combine(projectDirectory, "generated", "netstandard2.0"));
         await File.WriteAllTextAsync(
             projectPath,
             MultiTargetConsumerProjectText(
@@ -985,13 +987,9 @@ internal sealed class PackageConsumptionTests
                     "netstandard2.0"),
                 expected);
             Assert.That(
-                Directory.Exists(Path.Combine(
-                    projectDirectory,
-                    "generated",
-                    "net10.0")),
-                Is.False,
-                "A no-longer-selected target framework must be removed from " +
-                "the owned snapshot root.");
+                SnapshotContents(Path.Combine(projectDirectory, "generated", "net10.0")),
+                Is.EqualTo(net10Snapshot),
+                "An unselected framework's snapshot must remain intact.");
         });
 
         await File.WriteAllTextAsync(
@@ -1006,13 +1004,9 @@ internal sealed class PackageConsumptionTests
         Assert.Multiple(() =>
         {
             Assert.That(
-                Directory.Exists(Path.Combine(
-                    projectDirectory,
-                    "generated",
-                    "netstandard2.0")),
-                Is.False,
-                "A removed target framework must be removed from the owned " +
-                "snapshot root.");
+                SnapshotContents(Path.Combine(projectDirectory, "generated", "netstandard2.0")),
+                Is.EqualTo(netstandardSnapshot),
+                "Removing a framework must not delete another snapshot slice during publication.");
             AssertGeneratedFileSet(
                 Path.Combine(
                     projectDirectory,

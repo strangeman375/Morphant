@@ -67,7 +67,7 @@ internal sealed class StorageTests
     [TestCase("Configuration")]
     [TestCase("Framework")]
     [TestCase("Runtime")]
-    public void Compiler_output_cannot_be_shared_by_different_compilations(string difference)
+    public void Compiler_output_can_be_reused_by_sequential_compilations(string difference)
     {
         using var workspace = new Workspace();
         var first = workspace.CreateTask();
@@ -80,10 +80,18 @@ internal sealed class StorageTests
         if (difference == "Configuration") second.Configuration = "Debug";
         if (difference == "Framework") second.TargetFramework = "netstandard2.0";
         if (difference == "Runtime") second.RuntimeIdentifier = "linux-x64";
-        var before = Sources(first.CompilerGeneratedFilesOutputPath);
-        AssertRejected(second, "MORPHANTMSB004");
-        Assert.That(Sources(first.CompilerGeneratedFilesOutputPath), Is.EqualTo(before));
-        Assert.That(Directory.Exists(second.SnapshotRoot), Is.False);
+        var before = Sources(first.SnapshotRoot);
+        AssertSucceeded(second);
+        Assert.That(Sources(first.CompilerGeneratedFilesOutputPath), Is.Empty);
+        WriteOutput(second, "// second\r\n");
+        second.Operation = "Publish";
+        AssertSucceeded(second);
+        Assert.That(Sources(first.SnapshotRoot), Is.EqualTo(before));
+        Assert.That(Sources(second.SnapshotRoot), Is.EqualTo(new Dictionary<string, string>
+        {
+            [Path.Combine(second.TargetFramework, Generated)] = "// second\r\n"
+        }));
+        Assert.That(File.Exists(Path.Combine(second.CompilerGeneratedFilesOutputPath, ".morphant")), Is.False);
     }
 
     [Test]
@@ -140,17 +148,15 @@ internal sealed class StorageTests
         Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// current\r\n"));
     }
 
-    [TestCase("Snapshot", "Prepare")]
-    [TestCase("Snapshot", "Publish")]
-    [TestCase("Compiler", "Prepare")]
-    [TestCase("Compiler", "Publish")]
-    public void Existing_ownership_records_do_not_require_write_access(string location, string operation)
+    [TestCase("Prepare")]
+    [TestCase("Publish")]
+    public void Existing_snapshot_ownership_does_not_require_write_access(string operation)
     {
         using var workspace = new Workspace();
         var task = workspace.CreateTask();
         WriteOutput(task, "// previous\r\n");
         AssertSucceeded(task);
-        var owner = Path.Combine(location == "Snapshot" ? task.SnapshotRoot : task.CompilerGeneratedFilesOutputPath, ".morphant");
+        var owner = Path.Combine(task.SnapshotRoot, ".morphant");
         var attributes = File.GetAttributes(owner);
         var content = File.ReadAllBytes(owner);
         var writeTime = File.GetLastWriteTimeUtc(owner);
@@ -171,9 +177,8 @@ internal sealed class StorageTests
         finally { File.SetAttributes(owner, attributes); }
     }
 
-    [TestCase("Snapshot")]
-    [TestCase("Compiler")]
-    public async Task Ownership_access_errors_do_not_wait_or_modify_storage(string location)
+    [Test]
+    public async Task Ownership_access_errors_do_not_modify_storage()
     {
         if (OperatingSystem.IsWindows() || Environment.UserName == "root")
         {
@@ -186,7 +191,7 @@ internal sealed class StorageTests
         AssertSucceeded(task);
         var snapshot = Sources(task.SnapshotRoot);
         var compiler = Sources(task.CompilerGeneratedFilesOutputPath);
-        var owner = Path.Combine(location == "Snapshot" ? task.SnapshotRoot : task.CompilerGeneratedFilesOutputPath, ".morphant");
+        var owner = Path.Combine(task.SnapshotRoot, ".morphant");
         var mode = File.GetUnixFileMode(owner);
         try
         {
@@ -195,7 +200,6 @@ internal sealed class StorageTests
             Assert.That(await Task.Run(task.Execute).WaitAsync(TimeSpan.FromSeconds(10)), Is.False);
             var engine = (Engine)task.BuildEngine;
             Assert.That(engine.Errors.Select(error => error.Code), Is.EqualTo(new[] { "MORPHANTMSB999" }));
-            Assert.That(engine.Waiting.Task.IsCompleted, Is.False);
             Assert.That(Sources(task.SnapshotRoot), Is.EqualTo(snapshot));
             Assert.That(Sources(task.CompilerGeneratedFilesOutputPath), Is.EqualTo(compiler));
         }
@@ -288,56 +292,46 @@ internal sealed class StorageTests
     }
 
     [Test]
-    public async Task Waiting_for_a_snapshot_lock_can_be_cancelled_and_a_fresh_task_can_publish()
+    public async Task Independent_frameworks_can_initialize_one_project_snapshot_together()
     {
         using var workspace = new Workspace();
-        var task = workspace.CreateTask();
-        WriteOutput(task, "// previous\r\n");
-        AssertSucceeded(task);
-        var before = Sources(task.SnapshotRoot);
-        WriteOutput(task, "// current\r\n");
-        var context = Context(task);
-        var engine = (Engine)task.BuildEngine;
-        using (context.AcquireRootLock())
+        var tasks = new[] { "net8.0", "net10.0" }.Select(framework =>
         {
-            var running = Task.Run(task.Execute);
-            await engine.Waiting.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            task.Cancel();
-            Assert.That(await running.WaitAsync(TimeSpan.FromSeconds(10)), Is.False);
-            Assert.That(engine.Errors, Is.Empty);
-            Assert.That(Sources(task.SnapshotRoot), Is.EqualTo(before));
-        }
-        var retry = workspace.CreateTask();
-        AssertSucceeded(retry);
-        Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// current\r\n"));
+            var task = workspace.CreateTask();
+            task.TargetFramework = framework;
+            task.CompilerGeneratedFilesOutputPath = Path.Combine(workspace.Root, "compiler", framework);
+            WriteOutput(task, "// " + framework + "\r\n");
+            return task;
+        }).ToArray();
+        await Task.WhenAll(tasks.Select(task => Task.Run(() => AssertSucceeded(task))));
+        Assert.That(Sources(tasks[0].SnapshotRoot), Is.EqualTo(new Dictionary<string, string>
+        {
+            [Path.Combine("net8.0", Generated)] = "// net8.0\r\n",
+            [Path.Combine("net10.0", Generated)] = "// net10.0\r\n"
+        }));
+        Assert.That(Directory.GetFiles(tasks[0].SnapshotRoot).Select(Path.GetFileName), Is.EqualTo(new[] { ".morphant" }));
+        Assert.That(File.ReadAllText(Path.Combine(tasks[0].SnapshotRoot, ".morphant")),
+            Is.EqualTo("Morphant Git snapshot 1\r\n../../src/First/First.csproj\r\n"));
     }
 
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task Lock_wait_finishes_when_the_previous_publisher_releases_storage(bool readOnly)
+    [Test]
+    public async Task Concurrent_projects_cannot_claim_the_same_snapshot()
     {
         using var workspace = new Workspace();
-        var task = workspace.CreateTask();
-        WriteOutput(task, "// current\r\n");
-        using (Context(task).AcquireRootLock()) { }
-        var owner = Path.Combine(task.SnapshotRoot, ".morphant");
-        var attributes = File.GetAttributes(owner);
-        try
+        var tasks = new[] { workspace.CreateTask("First"), workspace.CreateTask("Second") };
+        tasks[1].SnapshotRoot = tasks[0].SnapshotRoot;
+        WriteOutput(tasks[0], "// first\r\n");
+        WriteOutput(tasks[1], "// second\r\n");
+        var results = await Task.WhenAll(tasks.Select(task => Task.Run(task.Execute)));
+        Assert.That(results.Count(result => result), Is.EqualTo(1));
+        var winner = results[0] ? 0 : 1;
+        Assert.That(((Engine)tasks[1 - winner].BuildEngine).Errors.Select(error => error.Code),
+            Is.EqualTo(new[] { "MORPHANTMSB005" }));
+        Assert.That(Sources(tasks[0].SnapshotRoot), Is.EqualTo(new Dictionary<string, string>
         {
-            if (readOnly)
-                File.SetAttributes(owner, attributes | FileAttributes.ReadOnly);
-            Task<bool> running;
-            // The lock is on the destination itself, independent of the process's TEMP directory.
-            using (new FileStream(owner, FileMode.Open, readOnly ? FileAccess.Read : FileAccess.ReadWrite, FileShare.None))
-            {
-                running = Task.Run(task.Execute);
-                await ((Engine)task.BuildEngine).Waiting.Task.WaitAsync(TimeSpan.FromSeconds(10));
-                Assert.That(running.IsCompleted, Is.False);
-            }
-            Assert.That(await running.WaitAsync(TimeSpan.FromSeconds(10)), Is.True);
-            Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// current\r\n"));
-        }
-        finally { File.SetAttributes(owner, attributes); }
+            [Path.Combine("net10.0", Generated)] = winner == 0 ? "// first\r\n" : "// second\r\n"
+        }));
+        Assert.That(Directory.GetFiles(tasks[0].SnapshotRoot).Select(Path.GetFileName), Is.EqualTo(new[] { ".morphant" }));
     }
 
     [Test]
@@ -352,24 +346,17 @@ internal sealed class StorageTests
         Assert.That(((Engine)task.BuildEngine).Errors, Is.Empty);
     }
 
-    [TestCase("Snapshot")]
-    [TestCase("Compiler")]
-    public async Task An_ownership_file_conflict_fails_without_waiting(string location)
+    [Test]
+    public async Task An_ownership_file_conflict_fails_without_mutation()
     {
         using var workspace = new Workspace();
         var task = workspace.CreateTask();
         WriteOutput(task, "// current\r\n");
-        Directory.CreateDirectory(Path.Combine(location == "Snapshot" ? task.SnapshotRoot : task.CompilerGeneratedFilesOutputPath, ".morphant"));
+        Directory.CreateDirectory(Path.Combine(task.SnapshotRoot, ".morphant"));
         Assert.That(await Task.Run(task.Execute).WaitAsync(TimeSpan.FromSeconds(10)), Is.False);
         Assert.That(((Engine)task.BuildEngine).Errors.Single().Code, Is.EqualTo("MORPHANTMSB015"));
-        Assert.That(((Engine)task.BuildEngine).Waiting.Task.IsCompleted, Is.False);
+        Assert.That(Sources(task.CompilerGeneratedFilesOutputPath).Values, Is.EqualTo(new[] { "// current\r\n" }));
     }
-
-    private static GitSnapshotContext Context(ManageMorphantGitSnapshot task) => GitSnapshotContext.Create(
-        task.ProjectDirectory, task.SnapshotRoot, task.SnapshotDetail, task.TargetFramework,
-        task.TargetFrameworks, task.SnapshotTargetFrameworks, task.BaseIntermediateOutputPath,
-        task.IntermediateOutputPath, task.CompilerGeneratedFilesOutputPath, task.EmitCompilerGeneratedFiles,
-        task.ProjectFile, task.Configuration, task.RuntimeIdentifier);
 
     private static void WriteOutput(ManageMorphantGitSnapshot task, string text)
     {
@@ -423,18 +410,13 @@ internal sealed class StorageTests
     private sealed class Engine : IBuildEngine
     {
         public List<BuildErrorEventArgs> Errors { get; } = [];
-        public TaskCompletionSource<bool> Waiting { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool ContinueOnError => false;
         public int LineNumberOfTaskNode => 0;
         public int ColumnNumberOfTaskNode => 0;
         public string ProjectFileOfTaskNode => "Consumer.csproj";
         public void LogErrorEvent(BuildErrorEventArgs e) => Errors.Add(e);
         public void LogWarningEvent(BuildWarningEventArgs e) => Assert.Fail(e.Message ?? "Unexpected MSBuild warning.");
-        public void LogMessageEvent(BuildMessageEventArgs e)
-        {
-            if (e.Message?.StartsWith("Waiting for Morphant snapshot storage:", StringComparison.Ordinal) == true)
-                Waiting.TrySetResult(true);
-        }
+        public void LogMessageEvent(BuildMessageEventArgs e) { }
         public void LogCustomEvent(CustomBuildEventArgs e) { }
         public bool BuildProjectFile(string projectFileName, string[] targetNames, IDictionary globalProperties,
             IDictionary targetOutputs) => throw new NotSupportedException();

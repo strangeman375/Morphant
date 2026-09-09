@@ -6,24 +6,28 @@ internal static class GitSnapshotLifecycle
     private const string MapperPattern =
         "Morphant.Generated.TypeMapper.*.g.cs";
 
-    public static void Prepare(GitSnapshotContext context, CancellationToken cancellationToken = default, Action<string>? waiting = null)
+    public static void Prepare(GitSnapshotContext context, CancellationToken cancellationToken = default)
     {
         if (!context.IsSelectedTargetFramework)
         {
             return;
         }
 
-        context.CheckSnapshotOwner(cancellationToken, waiting);
+        context.CheckSnapshotOwner(cancellationToken);
         context.EnsureSafeCompilerOutput();
         var files = Directory.Exists(context.CompilerGeneratedDirectory)
             ? FileSet(CompilerGeneratedFiles(context.CompilerGeneratedDirectory, GeneratedPattern))
             : new Dictionary<string, string>();
-        using var compilerLock = context.AcquireCompilerLock(cancellationToken, waiting);
+        cancellationToken.ThrowIfCancellationRequested();
+        Directory.CreateDirectory(context.CompilerGeneratedDirectory);
         foreach (var file in files.Values)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             File.Delete(file);
+        }
     }
 
-    public static void Publish(GitSnapshotContext context, CancellationToken cancellationToken = default, Action<string>? waiting = null)
+    public static void Publish(GitSnapshotContext context, CancellationToken cancellationToken = default)
     {
         if (!context.IsSelectedTargetFramework)
         {
@@ -31,7 +35,6 @@ internal static class GitSnapshotLifecycle
         }
 
         context.EnsureSafeCompilerOutput();
-        using (context.AcquireCompilerLock(cancellationToken, waiting)) { }
         context.EnsureSafeSnapshotPath(context.SliceDirectory, "Morphant snapshot slice");
         var currentFiles = FileSet(
             Directory.Exists(context.CompilerGeneratedDirectory)
@@ -43,11 +46,10 @@ internal static class GitSnapshotLifecycle
                 : []);
 
         PreflightDestinations(context.SliceDirectory, currentFiles.Keys);
-        using var snapshotLock = context.AcquireRootLock(cancellationToken, waiting);
+        context.CheckSnapshotOwner(cancellationToken, create: true);
         context.EnsureSafeSnapshotPath(
             context.SliceDirectory,
             "Morphant snapshot slice");
-        var obsoleteSlices = ObsoleteSlices(context);
 
         var existingFiles = FileSet(
             Directory.Exists(context.SliceDirectory)
@@ -66,6 +68,7 @@ internal static class GitSnapshotLifecycle
 
         foreach (var currentFile in currentFiles)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var destination = Path.Combine(
                 context.SliceDirectory,
                 currentFile.Key);
@@ -79,15 +82,14 @@ internal static class GitSnapshotLifecycle
 
         foreach (var existingFile in existingFiles)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!currentFiles.ContainsKey(existingFile.Key))
             {
                 File.Delete(existingFile.Value);
             }
         }
 
-        CleanObsoleteSlices(obsoleteSlices);
         DeleteIfEmpty(context.SliceDirectory);
-        DeleteIfEmpty(context.SnapshotRoot);
     }
 
     private static IReadOnlyCollection<string> CompilerGeneratedFiles(
@@ -204,57 +206,6 @@ internal static class GitSnapshotLifecycle
                 "MORPHANTMSB015",
                 $"Reserved Morphant snapshot path '{reservedDirectory}' " +
                 "names a directory, not a generated file.");
-        }
-    }
-
-    private static IReadOnlyCollection<string> ObsoleteSlices(
-        GitSnapshotContext context)
-    {
-        if (!Directory.Exists(context.SnapshotRoot))
-        {
-            return [];
-        }
-
-        var result = new List<string>();
-
-        foreach (var directory in Directory.GetDirectories(
-                     context.SnapshotRoot,
-                     "*",
-                     SearchOption.TopDirectoryOnly))
-        {
-            if (context.IsSelectedTargetFrameworkSlice(
-                    Path.GetFileName(directory)))
-            {
-                continue;
-            }
-
-            if (PhysicalDirectory.IsLink(directory))
-                continue;
-            context.EnsureSafeSnapshotPath(
-                directory,
-                "obsolete Morphant snapshot slice");
-
-            FileSet(Directory.GetFiles(directory, GeneratedPattern, SearchOption.TopDirectoryOnly));
-            result.Add(directory);
-        }
-
-        return result;
-    }
-
-    private static void CleanObsoleteSlices(
-        IEnumerable<string> obsoleteSlices)
-    {
-        foreach (var directory in obsoleteSlices)
-        {
-            foreach (var file in Directory.GetFiles(
-                         directory,
-                         GeneratedPattern,
-                         SearchOption.TopDirectoryOnly))
-            {
-                File.Delete(file);
-            }
-
-            DeleteIfEmpty(directory);
         }
     }
 

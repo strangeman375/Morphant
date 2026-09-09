@@ -25,6 +25,9 @@ unsupported.
 
 ### Changed
 
+- Remove Git snapshot directory locks and allow sequential reuse of compiler
+  storage. Concurrent publishers need independent output directories. Keep the
+  existing snapshot layout and clean only the current target framework slice.
 - Use short, uniform namespaces for generated construction and member types,
   while preserving readable type names. Update explicit imports and aliases
   to the namespaces shown by the IDE.
@@ -41,11 +44,11 @@ unsupported.
 
 - Avoid configuring compiler output for an unselected snapshot framework when
   generated-file emission is globally disabled.
-- Allow initialized Git snapshot and compiler ownership files to be read-only
+- Allow initialized Git snapshot ownership files to be read-only
   without preventing updates to writable generated files.
 
 - Allow independent and external Git snapshot/compiler directories and linked
-  checkout paths, with ownership checks and cancellable publication locks.
+  checkout paths, with snapshot project ownership checks.
 
 - Preserve global post-compilation hooks and update each project's default Git
   snapshot when a shared target-framework selection has no matching TFM.

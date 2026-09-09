@@ -82,8 +82,9 @@ Use the actual configuration and TFM of your project in the path. When setting
 the path in the project file, also set `EmitCompilerGeneratedFiles` to `true`
 so the SDK retains it. Command-line properties take precedence. Neither path
 needs to be inside `BaseIntermediateOutputPath` or `IntermediateOutputPath`.
-Use distinct compiler directories for projects, configurations, TFMs and RIDs;
-several compilations cannot share the same compiler directory.
+Concurrent compilations need distinct compiler directories for projects,
+configurations, TFMs and RIDs. Sequential compilations can reuse a compiler
+directory; Morphant does not bind it to a project or compilation.
 
 Each snapshot directory belongs to one project. A repository-wide layout can
 use `snapshots/App` and `snapshots/Library`. Morphant records ownership in a
@@ -91,11 +92,9 @@ small `.morphant` file; keep that file with the snapshot. Its project path is
 relative when both locations are on the same filesystem root. Moving the whole
 checkout together with its snapshots preserves ownership. To transfer a directory
 to another project, remove its old snapshot and ownership file deliberately.
-Compiler directories also contain an ownership file and can be reset by removing
-the dedicated compiler directory.
-An existing, initialized ownership file only needs read access; it can remain
-read-only while writable generated files are updated if the filesystem supports
-exclusively locking a read-only file. NFS can require write access for that lock.
+An existing snapshot ownership file only needs read access; it can remain
+read-only while writable generated files are updated. Compiler directories
+do not require ownership files.
 
 Links in the configured paths are resolved before checking overlaps and ownership.
 Morphant preserves unrelated links during cleanup and rejects links in generated
@@ -136,9 +135,13 @@ dotnet build -c Release -t:Rebuild
 An up-to-date build may skip compilation and therefore may not repair the
 snapshot. Change mappings or models instead of editing generated files.
 
-Debug and Release update the same snapshot; if their output differs, the last
-successful build wins. Publications wait for the same directory's lock and stop
-waiting when the build is cancelled. Build the intended configuration before committing.
+Debug and Release update the same snapshot; when built sequentially, the last
+successful build wins. Morphant does not lock directories or coordinate builds.
+Each TFM snapshot directory must have one publisher at a time. Parallel CI jobs
+that publish the same TFM need separate checkouts or `MorphantGitSnapshotPath`
+values; alternatively, enable publication in only one job. Different TFM slices
+of the same project's snapshot can be published independently.
+Build the intended configuration before committing.
 Changing `MorphantGitSnapshotPath` does not delete the old directory.
 
 For stable line endings across platforms, add:
@@ -147,8 +150,10 @@ For stable line endings across platforms, add:
 **/Morphant.Generated.*.g.cs text eol=crlf
 ```
 
-Morphant removes obsolete generated files after a successful compilation and
-preserves unrelated files in the snapshot directory.
+Morphant removes obsolete generated files only from the current TFM slice after
+a successful compilation and preserves unrelated files. Other TFM slices remain
+intact, even if a framework is no longer selected or declared. Remove unwanted
+framework directories explicitly.
 
 See [Testing mappings](testing.md) for generated-diff checks.
 
@@ -162,7 +167,7 @@ not controlled by C# pragmas or `dotnet_diagnostic` severity settings.
 | `MORPHANTMSB001` | Unknown snapshot task operation. Use the package's imported targets. |
 | `MORPHANTMSB002` | Generated-file output is disabled. Remove the override of `EmitCompilerGeneratedFiles`. |
 | `MORPHANTMSB003` | Compiler output and snapshot paths overlap, possibly through a link. Use separate directories. |
-| `MORPHANTMSB004` | Compiler storage is a project root/ancestor or belongs to another project, configuration, TFM or RID. Use a dedicated compilation directory. |
+| `MORPHANTMSB004` | Compiler storage is a project root or ancestor. Use a dedicated compilation directory. |
 | `MORPHANTMSB005` | Snapshot storage is a project root/ancestor or belongs to another project. Choose a dedicated directory for this project. |
 | `MORPHANTMSB006` | A path is empty or invalid on the current operating system. Supply one valid path. |
 | `MORPHANTMSB007` | A framework name cannot form a portable directory name. Correct the indicated framework property. |
