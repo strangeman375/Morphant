@@ -187,15 +187,13 @@ internal sealed class CiBuildTests
         using var consumer = CreateConsumer(targetFramework: "netstandard2.0;net10.0");
         AssertSucceeded(await consumer.Run("build", "--framework", "net10.0"));
         var before = consumer.Snapshot();
-        var compiler = Path.Combine(consumer.Root, "unselected-compiler");
+        var owners = Directory.GetFiles(consumer.Root, ".morphant", SearchOption.AllDirectories);
 
         AssertSucceeded(await consumer.Run("build", "--framework", "netstandard2.0", "--no-restore",
             "-p:EmitCompilerGeneratedFiles=false",
-            "-p:MorphantGitSnapshotPath=" + consumer.ProjectDirectory,
-            "-p:CompilerGeneratedFilesOutputPath=" + compiler));
+            "-p:MorphantGitSnapshotPath=" + consumer.ProjectDirectory));
         Assert.That(consumer.Snapshot(), Is.EqualTo(before));
-        Assert.That(File.Exists(Path.Combine(consumer.ProjectDirectory, ".morphant")), Is.False);
-        Assert.That(File.Exists(Path.Combine(compiler, ".morphant")), Is.False);
+        Assert.That(Directory.GetFiles(consumer.Root, ".morphant", SearchOption.AllDirectories), Is.EquivalentTo(owners));
     }
 
     [TestCase("DesignTimeBuild", "true")]

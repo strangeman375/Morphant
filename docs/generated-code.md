@@ -53,7 +53,7 @@ Enable the snapshot in the consumer project:
 ```
 
 Morphant enables `EmitCompilerGeneratedFiles` automatically, overriding an
-ordinary project value of `false`. A global
+ordinary project value of `false`. For a TFM selected for publication, a global
 `-p:EmitCompilerGeneratedFiles=false` prevents this and produces a build error.
 
 After a successful compilation, files appear under

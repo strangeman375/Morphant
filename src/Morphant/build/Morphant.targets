@@ -41,7 +41,8 @@
     -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath
-        Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)/Morphant.CompilerGenerated</CompilerGeneratedFilesOutputPath>
+        Condition="'$(EmitCompilerGeneratedFiles)' == 'true' and
+                   '$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)/Morphant.CompilerGenerated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <!-- A task output appends the hook for execution without changing evaluation

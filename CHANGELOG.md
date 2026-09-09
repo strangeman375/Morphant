@@ -39,6 +39,8 @@ unsupported.
 
 ### Fixed
 
+- Avoid configuring compiler output for an unselected snapshot framework when
+  generated-file emission is globally disabled.
 - Allow initialized Git snapshot and compiler ownership files to be read-only
   without preventing updates to writable generated files.
 
