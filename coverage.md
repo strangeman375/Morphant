@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/09/2026 - 09:04:52 |
-| Coverage date: | 09/09/2026 - 08:56:19 - 09/09/2026 - 09:04:47 |
+| Generated on: | 09/09/2026 - 10:32:55 |
+| Coverage date: | 09/09/2026 - 10:22:12 - 09/09/2026 - 10:32:49 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 372 |
 | Files: | 196 |
-| **Line coverage:** | 88.1% (37918 of 43000) |
-| Covered lines: | 37918 |
-| Uncovered lines: | 5082 |
-| Coverable lines: | 43000 |
-| Total lines: | 71633 |
-| **Branch coverage:** | 78.6% (13339 of 16961) |
-| Covered branches: | 13339 |
-| Total branches: | 16961 |
+| **Line coverage:** | 88.1% (37926 of 43013) |
+| Covered lines: | 37926 |
+| Uncovered lines: | 5087 |
+| Coverable lines: | 43013 |
+| Total lines: | 71664 |
+| **Branch coverage:** | 78.6% (13345 of 16969) |
+| Covered branches: | 13345 |
+| Total branches: | 16969 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -52,15 +52,15 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 92.6%</summary>
+<details><summary>Morphant.Build.Tasks - 91.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**92.6%**|**83.1%**|
+|**Morphant.Build.Tasks**|**91.8%**|**82.9%**|
 |Morphant.Build.Tasks.GitSnapshotContext|96.4%|92.3%|
 |Morphant.Build.Tasks.GitSnapshotFrameworkSelection|100%|93.7%|
 |Morphant.Build.Tasks.GitSnapshotLifecycle|93.1%|92.3%|
-|Morphant.Build.Tasks.GitSnapshotStorage|94.2%|75%|
+|Morphant.Build.Tasks.GitSnapshotStorage|85.4%|75%|
 |Morphant.Build.Tasks.ManageMorphantGitSnapshot|95%|88.8%|
 |Morphant.Build.Tasks.MorphantBuildTask|97.2%|50%|
 |Morphant.Build.Tasks.PhysicalDirectory|78.3%|64.5%|
@@ -418,4 +418,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #230](https://github.com/strangeman375/Morphant/actions/runs/34331537130).
+Full HTML report: download the **coverage** artifact from [CI run #236](https://github.com/strangeman375/Morphant/actions/runs/34339478906).
