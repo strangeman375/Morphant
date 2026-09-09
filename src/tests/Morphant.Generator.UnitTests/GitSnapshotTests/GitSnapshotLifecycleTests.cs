@@ -59,6 +59,41 @@ internal sealed class GitSnapshotLifecycleTests
         });
     }
 
+    [TestCase("Mappers", "TypeMapper", false)]
+    [TestCase("Mappers", "TypeMapper", true)]
+    [TestCase("Full", "Construction", false)]
+    [TestCase("Full", "Construction", true)]
+    public void Case_only_renames_replace_the_previous_filename(
+        string detail, string artifact, bool contentChanged)
+    {
+        using var workspace = new SnapshotWorkspace();
+        var context = workspace.CreateContext("Release", "net10.0", snapshotDetail: detail);
+        var previousName = $"Morphant.Generated.{artifact}.Customer.g.cs";
+        var currentName = $"Morphant.Generated.{artifact}.CUSTOMER.g.cs";
+        const string previousContent = "// previous\r\n";
+        var currentContent = contentChanged ? "// current\r\n" : previousContent;
+        var previousPath = workspace.WriteSnapshot(context, previousName, previousContent);
+        var originalWriteTime = new DateTime(2020, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        File.SetLastWriteTimeUtc(previousPath, originalWriteTime);
+        workspace.WriteSnapshot(context, "Notes.txt", "keep");
+        workspace.WriteCompilerOutput(context, currentName, currentContent);
+
+        GitSnapshotLifecycle.Publish(context);
+
+        var currentPath = Path.Combine(context.SliceDirectory, currentName);
+        Assert.That(SnapshotFileNames(context), Is.EqualTo(new[] { currentName }));
+        Assert.That(File.ReadAllText(currentPath), Is.EqualTo(currentContent));
+        Assert.That(File.ReadAllText(Path.Combine(context.SliceDirectory, "Notes.txt")), Is.EqualTo("keep"));
+        if (!contentChanged)
+            Assert.That(File.GetLastWriteTimeUtc(currentPath), Is.EqualTo(originalWriteTime));
+
+        var publishedWriteTime = File.GetLastWriteTimeUtc(currentPath);
+        GitSnapshotLifecycle.Publish(context);
+        Assert.That(SnapshotFileNames(context), Is.EqualTo(new[] { currentName }));
+        Assert.That(File.ReadAllText(currentPath), Is.EqualTo(currentContent));
+        Assert.That(File.GetLastWriteTimeUtc(currentPath), Is.EqualTo(publishedWriteTime));
+    }
+
     [TestCase("Full")]
     [TestCase("full")]
     [TestCase("FULL")]

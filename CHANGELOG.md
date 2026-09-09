@@ -42,6 +42,8 @@ unsupported.
 
 ### Fixed
 
+- Replace the old Git snapshot filename after a case-only mapper or model
+  rename, preserving exact casing and allowing subsequent builds to succeed.
 - Avoid configuring compiler output for an unselected snapshot framework when
   generated-file emission is globally disabled.
 - Allow initialized Git snapshot ownership files to be read-only

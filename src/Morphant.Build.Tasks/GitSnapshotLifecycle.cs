@@ -73,6 +73,14 @@ internal static class GitSnapshotLifecycle
                 context.SliceDirectory,
                 currentFile.Key);
 
+            if (existingFiles.TryGetValue(currentFile.Key, out var existingPath) &&
+                !string.Equals(Path.GetFileName(existingPath), currentFile.Key, StringComparison.Ordinal))
+            {
+                // Preserve the compiler's exact casing on both case-sensitive
+                // and case-insensitive filesystems without retaining an alias.
+                File.Move(existingPath, destination);
+            }
+
             if (!File.Exists(destination) ||
                 !FilesEqual(currentFile.Value, destination))
             {

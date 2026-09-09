@@ -51,6 +51,41 @@ internal sealed class CiBuildTests
             "Publishing with compilation must repair the snapshot after clean, preserving identical files.");
     }
 
+    [TestCase("Mappers")]
+    [TestCase("Full")]
+    public async Task A_case_only_mapper_rename_updates_the_snapshot_and_allows_rebuilding(string detail)
+    {
+        using var consumer = CreateConsumer();
+        consumer.SetProperty("MorphantGitSnapshotDetail", detail);
+        AssertSucceeded(await consumer.Run("build"));
+        File.WriteAllText(Path.Combine(consumer.ProjectDirectory, "Mapping.cs"),
+            MappingSource.Replace("TestMapper", "TESTMapper"));
+
+        AssertSucceeded(await consumer.Run("build", "--no-restore"));
+        const string renamedMapper = "Morphant.Generated.TypeMapper.CiConsumer_TESTMapper.g.cs";
+        string[] expected = detail == "Mappers" ? [renamedMapper] :
+        [
+            "Morphant.Generated.Construction.CiConsumer_Destination.g.cs",
+            "Morphant.Generated.MappingExtension.CiConsumer_Source__CiConsumer_Destination__CiConsumer_TESTMapper.g.cs",
+            "Morphant.Generated.Member.CiConsumer_Destination.g.cs",
+            "Morphant.Generated.MemberExtension.CiConsumer_Source__CiConsumer_Destination__CiConsumer_TESTMapper.g.cs",
+            renamedMapper
+        ];
+        Assert.That(consumer.Snapshot().Keys,
+            Is.EquivalentTo(expected.Select(name => Path.Combine("net10.0", name))));
+        foreach (var name in expected)
+        {
+            var compilerFile = Directory.GetFiles(Path.Combine(consumer.ProjectDirectory, "obj"),
+                name, SearchOption.AllDirectories).Single();
+            Assert.That(File.ReadAllBytes(Path.Combine(consumer.SnapshotRoot, "net10.0", name)),
+                Is.EqualTo(File.ReadAllBytes(compilerFile)));
+        }
+
+        var snapshot = consumer.Snapshot();
+        AssertSucceeded(await consumer.Run("build", "--no-restore", "-t:Rebuild"));
+        Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
+    }
+
     [Test]
     public async Task Centralized_artifacts_support_build_and_runtime_specific_publish()
     {
