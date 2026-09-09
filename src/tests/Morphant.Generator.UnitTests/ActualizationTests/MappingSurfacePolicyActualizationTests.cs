@@ -283,12 +283,12 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Uses a callback to construct a destination when none exists.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> ConstructUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<int, int>, int> builder,
             global::Morphant.Delegates.ConstructUsing<global::System.Tuple<int, int>, int> construct)
@@ -296,12 +296,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to construct a destination.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> ConstructUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<int, int>, int> builder,
             global::Morphant.Delegates.ConstructUsing<global::System.Tuple<int, int>, global::Morphant.Context.MappingContext, int> construct)
@@ -309,12 +309,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> ResolveUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<int, int>, int> builder,
             global::Morphant.Delegates.ResolveUsing<global::System.Tuple<int, int>, int, int> resolve)
@@ -322,12 +322,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> ResolveUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<int, int>, int> builder,
             global::Morphant.Delegates.ResolveUsing<global::System.Tuple<int, int>, int, global::Morphant.Context.MappingContext, int> resolve)
@@ -335,12 +335,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<int, int>, int> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<int, int>?, int> mapping)
@@ -348,12 +348,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<int, int>, int> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<int, int>?, int, int> mapping)
@@ -361,12 +361,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<int, int>, int> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<int, int>, int> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<int, int>?, int, global::Morphant.Context.MappingContext, int> mapping)
@@ -387,12 +387,12 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Uses a callback to construct a destination when none exists.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<(int X, int Y)>, int> ConstructUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<(int X, int Y)>, int> builder,
             global::Morphant.Delegates.ConstructUsing<global::System.Tuple<(int X, int Y)>, int> construct)
@@ -400,12 +400,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to construct a destination.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<(int X, int Y)>, int> ConstructUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<(int X, int Y)>, int> builder,
             global::Morphant.Delegates.ConstructUsing<global::System.Tuple<(int X, int Y)>, global::Morphant.Context.MappingContext, int> construct)
@@ -413,12 +413,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<(int X, int Y)>, int> ResolveUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<(int X, int Y)>, int> builder,
             global::Morphant.Delegates.ResolveUsing<global::System.Tuple<(int X, int Y)>, int, int> resolve)
@@ -426,12 +426,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<(int X, int Y)>, int> ResolveUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<(int X, int Y)>, int> builder,
             global::Morphant.Delegates.ResolveUsing<global::System.Tuple<(int X, int Y)>, int, global::Morphant.Context.MappingContext, int> resolve)
@@ -439,12 +439,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<(int X, int Y)>, int> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<(int X, int Y)>, int> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<(int X, int Y)>?, int> mapping)
@@ -452,12 +452,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<(int X, int Y)>, int> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<(int X, int Y)>, int> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<(int X, int Y)>?, int, int> mapping)
@@ -465,12 +465,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::System.Tuple<(int X, int Y)>, int> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.CommonMapper<TMapper>, global::System.Tuple<(int X, int Y)>, int> builder,
             global::Morphant.Delegates.Convert<global::System.Tuple<(int X, int Y)>?, int, global::Morphant.Context.MappingContext, int> mapping)
@@ -491,77 +491,77 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Uses a callback to construct a destination when none exists.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> ConstructUsing(
             this global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> builder,
             global::Morphant.Delegates.ConstructUsing<(int X, int Y), int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to construct a destination.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> ConstructUsing(
             this global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> builder,
             global::Morphant.Delegates.ConstructUsing<(int X, int Y), global::Morphant.Context.MappingContext, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> ResolveUsing(
             this global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> builder,
             global::Morphant.Delegates.ResolveUsing<(int X, int Y), int, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> ResolveUsing(
             this global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> builder,
             global::Morphant.Delegates.ResolveUsing<(int X, int Y), int, global::Morphant.Context.MappingContext, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> Convert(
             this global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> builder,
             global::Morphant.Delegates.Convert<(int X, int Y), int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> Convert(
             this global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> builder,
             global::Morphant.Delegates.Convert<(int X, int Y), int, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> Convert(
             this global::Morphant.MappingBuilder<global::TestCase.FirstMapper, (int X, int Y), int> builder,
             global::Morphant.Delegates.Convert<(int X, int Y), int, global::Morphant.Context.MappingContext, int> mapping)
@@ -581,77 +581,77 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Uses a callback to construct a destination when none exists.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> ConstructUsing(
             this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> builder,
             global::Morphant.Delegates.ConstructUsing<(int A, int B), int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to construct a destination.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> ConstructUsing(
             this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> builder,
             global::Morphant.Delegates.ConstructUsing<(int A, int B), global::Morphant.Context.MappingContext, int> construct)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> ResolveUsing(
             this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> builder,
             global::Morphant.Delegates.ResolveUsing<(int A, int B), int, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> ResolveUsing(
             this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> builder,
             global::Morphant.Delegates.ResolveUsing<(int A, int B), int, global::Morphant.Context.MappingContext, int> resolve)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> Convert(
             this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> builder,
             global::Morphant.Delegates.Convert<(int A, int B), int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> Convert(
             this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> builder,
             global::Morphant.Delegates.Convert<(int A, int B), int, int> mapping)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> Convert(
             this global::Morphant.MappingBuilder<global::TestCase.SecondMapper, (int A, int B), int> builder,
             global::Morphant.Delegates.Convert<(int A, int B), int, global::Morphant.Context.MappingContext, int> mapping)

@@ -6,10 +6,10 @@ namespace Morphant.Context;
 /// Exposes declarative context for the current mapping.
 /// </summary>
 /// <remarks>
-/// This type exists only for target typing generated declarative callbacks.
-/// Morphant does not create a runtime instance of it. Only
-/// <see cref="Operation"/> may be read by supported declarative code.
+/// Available only inside Construct, Resolve, and Members lambdas.
+/// Only <see cref="Operation"/> may be read; there is no runtime instance.
 /// </remarks>
+/// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/declarative-expressions.md"/>
 [ExcludeFromCodeCoverage]
 public abstract class MappingContextMarker
 {

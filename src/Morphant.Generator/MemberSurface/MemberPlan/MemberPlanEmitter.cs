@@ -130,7 +130,7 @@ internal static class MemberPlanEmitter
             writer,
             member.CanWrite
                 ? $"Maps <see cref=\"{cref}\"/>."
-                : $"Selects <see cref=\"{cref}\"/>.");
+                : $"Selects <see cref=\"{cref}\"/> for a nested Update.");
     }
 
     private static void WriteTypeDeclaration(

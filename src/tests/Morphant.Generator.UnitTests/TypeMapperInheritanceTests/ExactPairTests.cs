@@ -133,12 +133,12 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Defines destination construction when none exists.
+        /// Supplies constructor arguments when no destination exists.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">An inline construction lambda.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Inline lambda returning a construction expression.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Construct<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationConstruction> construct)
@@ -146,12 +146,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination construction with access to the current mapping context.
+        /// Supplies constructor arguments when no destination exists.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">An inline construction lambda.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Inline lambda returning a construction expression.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Construct<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Construct<global::TestCase.Source, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationConstruction> construct)
@@ -159,12 +159,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines how to select or construct the destination.
+        /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">An inline resolution lambda.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Resolve<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationConstruction> resolve)
@@ -172,12 +172,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines destination resolution with access to the current mapping context.
+        /// Chooses reuse or construction on Create and Update.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">An inline resolution lambda.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Inline lambda returning previous or a construction expression.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Resolve<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Resolve<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationConstruction> resolve)
@@ -185,12 +185,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback to construct a destination when none exists.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> ConstructUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::TestCase.Destination> construct)
@@ -198,12 +198,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to construct a destination.
+        /// Creates a destination through a callback only when none exists.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="construct">The construction callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="construct">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/construct-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> ConstructUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ConstructUsing<global::TestCase.Source, global::Morphant.Context.MappingContext, global::TestCase.Destination> construct)
@@ -211,12 +211,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> ResolveUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination> resolve)
@@ -224,12 +224,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with context to select or construct the destination.
+        /// Chooses the destination through a callback on Create and Update.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="resolve">The result callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="resolve">Callback returning the destination; null ends the mapping.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> ResolveUsing<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.ResolveUsing<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination> resolve)
@@ -237,12 +237,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination> mapping)
@@ -250,12 +250,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::TestCase.Destination> mapping)
@@ -263,12 +263,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Uses a callback with the optional existing destination and context as the complete mapping algorithm.
+        /// Maps with ordinary C#, bypassing null policies and member rules.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="mapping">The mapping callback.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="mapping">Lambda, method group, or delegate returning the final result.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/convert.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Convert<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Convert<global::TestCase.Source?, global::TestCase.Destination, global::Morphant.Context.MappingContext, global::TestCase.Destination> mapping)
@@ -331,12 +331,12 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Defines destination member mappings.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Members<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers> members)
@@ -344,12 +344,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the optional existing destination.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Members<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers> members)
@@ -357,12 +357,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Members<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers> members)
@@ -370,12 +370,12 @@ namespace Morphant
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings with access to the selected result and current mapping context.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <typeparam name="TMapper">A type parameter from the mapping declaration.</typeparam>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<TMapper, global::TestCase.Source, global::TestCase.Destination> Members<TMapper>(
             this global::Morphant.IMappingBuilder<global::TestCase.BaseMapper<TMapper>, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers> members)

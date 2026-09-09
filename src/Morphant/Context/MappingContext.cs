@@ -6,9 +6,9 @@ using Morphant.Exceptions;
 /// Describes the current mapping call.
 /// </summary>
 /// <remarks>
-/// Morphant creates a context for each mapping call. A default-initialized
-/// context is not a valid mapping frame.
+/// Supplied by Morphant. A default-initialized context is invalid.
 /// </remarks>
+/// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/runtime-dispatch.md"/>
 public readonly struct MappingContext
 {
     private readonly MappingOperation _operation;
@@ -28,8 +28,7 @@ public readonly struct MappingContext
     /// Gets the operation performed by the current call.
     /// </summary>
     /// <exception cref="InvalidMappingContextException">
-    /// This value is a default-initialized context rather than a mapping
-    /// frame created by Morphant.
+    /// The context is default-initialized.
     /// </exception>
     public MappingOperation Operation => _isInitialized
         ? _operation
@@ -43,8 +42,7 @@ public readonly struct MappingContext
     /// use it concurrently.
     /// </remarks>
     /// <exception cref="InvalidMappingContextException">
-    /// This value is a default-initialized context rather than a mapping
-    /// frame created by Morphant.
+    /// The context is default-initialized.
     /// </exception>
     public IMapper Mapper => _isInitialized
         ? _mapper!

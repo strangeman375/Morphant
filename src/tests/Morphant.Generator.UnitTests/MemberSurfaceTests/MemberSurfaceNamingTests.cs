@@ -164,44 +164,44 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Defines destination member mappings.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestMapper, global::Source, global::Destination> Members(
             this global::Morphant.MappingBuilder<global::TestMapper, global::Source, global::Destination> builder,
             global::Morphant.Delegates.Members<global::Source, global::Morphant.Generated.N_9016466ae8472111cdf5bfa8e45d5a1d.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the optional existing destination.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestMapper, global::Source, global::Destination> Members(
             this global::Morphant.MappingBuilder<global::TestMapper, global::Source, global::Destination> builder,
             global::Morphant.Delegates.Members<global::Source, global::Destination, global::Morphant.Generated.N_9016466ae8472111cdf5bfa8e45d5a1d.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestMapper, global::Source, global::Destination> Members(
             this global::Morphant.MappingBuilder<global::TestMapper, global::Source, global::Destination> builder,
             global::Morphant.Delegates.Members<global::Source, global::Destination, global::Destination, global::Morphant.Generated.N_9016466ae8472111cdf5bfa8e45d5a1d.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings with access to the selected result and current mapping context.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestMapper, global::Source, global::Destination> Members(
             this global::Morphant.MappingBuilder<global::TestMapper, global::Source, global::Destination> builder,
             global::Morphant.Delegates.Members<global::Source, global::Destination, global::Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_9016466ae8472111cdf5bfa8e45d5a1d.DestinationMembers> members)
@@ -315,44 +315,44 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Defines destination member mappings.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the optional existing destination.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings with access to the selected result and current mapping context.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Destination> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Destination, global::TestCase.Destination, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_5e01468111660761710199b9666fe80e.DestinationMembers> members)
@@ -481,44 +481,44 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Defines destination member mappings.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.URL> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.URL> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_22991bac47a8192a7ecf117ee2eaaefb.URLMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the optional existing destination.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.URL> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.URL> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.URL, global::Morphant.Generated.N_22991bac47a8192a7ecf117ee2eaaefb.URLMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.URL> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.URL> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.URL, global::TestCase.URL, global::Morphant.Generated.N_22991bac47a8192a7ecf117ee2eaaefb.URLMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings with access to the selected result and current mapping context.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.URL> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.URL> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.URL, global::TestCase.URL, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_22991bac47a8192a7ecf117ee2eaaefb.URLMembers> members)
@@ -538,44 +538,44 @@ namespace Morphant
     internal static partial class MorphantGeneratedMappingExtensions
     {
         /// <summary>
-        /// Defines destination member mappings.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Url> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Url> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::Morphant.Generated.N_264e3af5698663c4ced047a79636ab8a.UrlMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the optional existing destination.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda. Unspecified members follow MemberSelection.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Url> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Url> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Url, global::Morphant.Generated.N_264e3af5698663c4ced047a79636ab8a.UrlMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings using the selected result.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Url> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Url> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Url, global::TestCase.Url, global::Morphant.Generated.N_264e3af5698663c4ced047a79636ab8a.UrlMembers> members)
             => throw new global::Morphant.Exceptions.RuntimeInvocationNotSupportedException();
 
         /// <summary>
-        /// Defines member mappings with access to the selected result and current mapping context.
+        /// Configures destination members and matching constructor arguments.
         /// </summary>
         /// <param name="builder">The mapping to configure.</param>
-        /// <param name="members">The member plan.</param>
-        /// <returns>The same mapping builder.</returns>
+        /// <param name="members">Inline lambda; constructor inputs cannot read result before construction.</param>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md"/>
         public static global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Url> Members(
             this global::Morphant.MappingBuilder<global::TestCase.TestMapper, global::TestCase.Source, global::TestCase.Url> builder,
             global::Morphant.Delegates.Members<global::TestCase.Source, global::TestCase.Url, global::TestCase.Url, global::Morphant.Context.MappingContextMarker, global::Morphant.Generated.N_264e3af5698663c4ced047a79636ab8a.UrlMembers> members)

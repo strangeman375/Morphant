@@ -4,12 +4,13 @@ using Morphant.Exceptions;
 namespace Morphant;
 
 /// <summary>
-/// Maps objects through application-wide registrations.
+/// Maps exact source/destination pairs registered with dependency injection.
 /// </summary>
+/// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/create-and-update.md"/>
 public interface IMapper
 {
     /// <summary>
-    /// Maps the specified source without a supplied destination.
+    /// Runs Create without a supplied destination.
     /// </summary>
     /// <typeparam name="TSource">The source type.</typeparam>
     /// <typeparam name="TDestination">
@@ -18,8 +19,7 @@ public interface IMapper
     /// </typeparam>
     /// <param name="source">The source to map.</param>
     /// <returns>
-    /// The mapping result, which may be <see langword="default"/> when allowed
-    /// by the mapping.
+    /// The result; may be <see langword="default"/> if the mapping allows it.
     /// </returns>
     /// <exception cref="MappingException">
     /// Mapping lookup or execution fails.
@@ -27,7 +27,7 @@ public interface IMapper
     TDestination Map<TSource, TDestination>(TSource? source);
 
     /// <summary>
-    /// Maps the specified source with a supplied destination.
+    /// Runs Update, including when the supplied destination is null.
     /// </summary>
     /// <typeparam name="TSource">The source type.</typeparam>
     /// <typeparam name="TDestination">
@@ -37,8 +37,7 @@ public interface IMapper
     /// <param name="source">The source to map.</param>
     /// <param name="destination">The supplied destination.</param>
     /// <returns>
-    /// The mapping result. It may replace <paramref name="destination"/> or be
-    /// <see langword="default"/> when allowed by the mapping.
+    /// The result; may replace <paramref name="destination"/> or be default.
     /// </returns>
     /// <exception cref="MappingException">
     /// Mapping lookup or execution fails.

@@ -21,8 +21,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Defines destination member mappings.",
-            "The member plan.",
+            "Configures destination members and matching constructor arguments.",
+            "Inline lambda. Unspecified members follow MemberSelection.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.MembersPlanTypeName + ">");
@@ -30,8 +30,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Defines member mappings using the optional existing destination.",
-            "The member plan.",
+            "Configures destination members and matching constructor arguments.",
+            "Inline lambda. Unspecified members follow MemberSelection.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -40,8 +40,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Defines member mappings using the selected result.",
-            "The member plan.",
+            "Configures destination members and matching constructor arguments.",
+            "Inline lambda; constructor inputs cannot read result before construction.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -51,9 +51,8 @@ internal static class MemberConfigurationEmitter
         WriteMethod(
             writer,
             model,
-            "Defines member mappings with access to the selected result and " +
-            "current mapping context.",
-            "The member plan.",
+            "Configures destination members and matching constructor arguments.",
+            "Inline lambda; constructor inputs cannot read result before construction.",
             "global::Morphant.Delegates.Members<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -85,7 +84,7 @@ internal static class MemberConfigurationEmitter
             "members",
             callbackDescription);
         writer.Line(
-            "/// <returns>The same mapping builder.</returns>");
+            "/// <seealso href=\"https://github.com/strangeman375/Morphant/blob/main/docs/api/members.md\"/>");
 
         writer.Line(
             "public static " +

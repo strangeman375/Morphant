@@ -15,23 +15,22 @@ namespace Morphant;
 /// return null.
 /// </typeparam>
 /// <remarks>
-/// Morphant generates one implementation per configured mapping. Prefer
-/// <see cref="IMapper"/> or the context-free extension methods for direct use.
+/// Use <see cref="IMapper"/> or the context-free extensions for direct calls.
 /// </remarks>
+/// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/create-and-update.md"/>
 public interface ITypeMapper<in TSource, TDestination>
 {
     /// <summary>
-    /// Maps the specified source without a supplied destination.
+    /// Runs Create without a supplied destination.
     /// </summary>
     /// <param name="source">
-    /// The source to map, which may be <see langword="null"/>.
+    /// The source, which may be null.
     /// </param>
     /// <param name="context">
     /// The current mapping context.
     /// </param>
     /// <returns>
-    /// The mapping result, which may be <see langword="default"/> when allowed
-    /// by the mapping.
+    /// The result; may be <see langword="default"/> if the mapping allows it.
     /// </returns>
     /// <exception cref="MappingConfigurationException">
     /// The mapping configuration is invalid.
@@ -45,10 +44,10 @@ public interface ITypeMapper<in TSource, TDestination>
     TDestination Create(TSource? source, MappingContext context);
 
     /// <summary>
-    /// Maps the specified source with a supplied destination.
+    /// Runs Update, including when the supplied destination is null.
     /// </summary>
     /// <param name="source">
-    /// The source to map, which may be <see langword="null"/>.
+    /// The source, which may be null.
     /// </param>
     /// <param name="destination">
     /// The existing destination, which may be <see langword="null"/>.
@@ -57,8 +56,7 @@ public interface ITypeMapper<in TSource, TDestination>
     /// The current mapping context.
     /// </param>
     /// <returns>
-    /// The mapping result. It may replace <paramref name="destination"/> or be
-    /// <see langword="default"/> when allowed by the mapping.
+    /// The result; may replace <paramref name="destination"/> or be default.
     /// </returns>
     /// <exception cref="MappingConfigurationException">
     /// The mapping configuration is invalid.
@@ -103,6 +101,7 @@ public interface IMapperDeclaration
 /// <typeparam name="TMapper">
 /// The concrete mapper at the end of the configuration hierarchy.
 /// </typeparam>
+/// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/map.md"/>
 [ExcludeFromCodeCoverage]
 public abstract class TypeMapper<TMapper> : IMapperDeclaration
     where TMapper : TypeMapper<TMapper>
@@ -128,24 +127,22 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         Supports(sourceType, destinationType);
 
     /// <summary>
-    /// Declares mappings for this mapper.
+    /// Declares mappings at compile time; never invoked at runtime.
     /// </summary>
     /// <param name="builder">The mapper builder.</param>
-    /// <remarks>
-    /// Morphant analyzes this method at compile time and does not invoke it at
-    /// runtime.
-    /// </remarks>
     protected abstract void Configure(MapperBuilder builder);
 
     /// <summary>
-    /// Selects convention-based construction.
+    /// Selects a constructor by convention, with optional argument overrides.
     /// </summary>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/declarative-expressions.md"/>
     protected static ByConventionMarker ByConvention() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
     /// Selects convention-based mapping for the current target.
     /// </summary>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/declarative-expressions.md"/>
     protected static AutoMarker Auto() =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -153,12 +150,14 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// Selects convention-based mapping to <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The target type.</typeparam>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/declarative-expressions.md"/>
     protected static AutoMarker<T> Auto<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
     /// Skips the current member or constructor argument.
     /// </summary>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/declarative-expressions.md"/>
     protected static IgnoreMarker Ignore() =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -166,6 +165,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// Skips a target of type <typeparamref name="T"/>.
     /// </summary>
     /// <typeparam name="T">The target type.</typeparam>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/declarative-expressions.md"/>
     protected static IgnoreMarker<T> Ignore<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -174,10 +174,10 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// </summary>
     /// <typeparam name="T">The target value type.</typeparam>
     /// <param name="value">The value expression.</param>
-    /// <returns>The value marker.</returns>
     /// <remarks>
     /// Use only inside <c>Construct</c>, <c>Resolve</c>, or <c>Members</c>.
     /// </remarks>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/declarative-expressions.md"/>
     protected static ValueMarker<T> Value<T>(T value) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -185,6 +185,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// Maps a value inferred by name, selecting nested Create or Update from
     /// the outer operation and current nested value.
     /// </summary>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker Map() =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -193,6 +194,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// operation and current nested value.
     /// </summary>
     /// <param name="source">The source passed to the nested mapping.</param>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker Map(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -202,6 +204,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// value.
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker<T> Map<T>() =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -211,6 +214,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     /// <param name="source">The source passed to the nested mapping.</param>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker<T> Map<T>(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -218,6 +222,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// Creates a nested destination whose type is inferred from the target.
     /// </summary>
     /// <param name="source">The source passed to the nested mapping.</param>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker Create(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -226,6 +231,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// </summary>
     /// <typeparam name="T">The nested destination type.</typeparam>
     /// <param name="source">The source passed to the nested mapping.</param>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker<T> Create<T>(object? source) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -236,6 +242,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// <param name="destination">
     /// The existing destination, which may be <see langword="null"/>.
     /// </param>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker Update(
         object? source,
         object? destination) =>
@@ -249,6 +256,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
     /// <param name="destination">
     /// The existing destination, which may be <see langword="null"/>.
     /// </param>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/nested-mapping.md"/>
     protected static MapMarker<T> Update<T>(
         object? source,
         object? destination) =>
@@ -273,7 +281,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         /// the fallback is
         /// <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
         /// </param>
-        /// <returns>This builder.</returns>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/mapping-mode.md"/>
         public MapperBuilder MappingMode(MappingMode mappingMode) =>
             throw new RuntimeInvocationNotSupportedException();
 
@@ -289,7 +297,7 @@ public abstract class TypeMapper<TMapper> : IMapperDeclaration
         /// normal setting precedence; the fallback is
         /// <see cref="Morphant.MappingMode.CreateAndUpdate"/>.
         /// </param>
-        /// <returns>The builder for the registered mapping.</returns>
+        /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/map.md"/>
         public global::Morphant.MappingBuilder<
             TMapper,
             TSource,

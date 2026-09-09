@@ -27,24 +27,22 @@ public abstract class MapperBuilderBase<TBuilder>
     /// <param name="nullSourceHandling">
     /// The compile-time constant policy.
     /// <see cref="Morphant.NullSourceHandling.Default"/> inherits the setting;
-    /// the fallback is
-    /// <see cref="Morphant.NullSourceHandling.ReturnNull"/>.
+    /// the fallback is <see cref="Morphant.NullSourceHandling.ReturnNull"/>.
     /// </param>
-    /// <returns>This builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/null-source-handling.md"/>
     public TBuilder NullSourceHandling(
         NullSourceHandling nullSourceHandling) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Configures how mappings handle a <see langword="null"/> destination.
+    /// Configures how Update handles a <see langword="null"/> destination.
     /// </summary>
     /// <param name="nullDestinationHandling">
     /// The compile-time constant policy.
     /// <see cref="Morphant.NullDestinationHandling.Default"/> inherits the
-    /// setting; the fallback is
-    /// <see cref="Morphant.NullDestinationHandling.Create"/>.
+    /// setting; the fallback is <see cref="Morphant.NullDestinationHandling.Create"/>.
     /// </param>
-    /// <returns>This builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/null-destination-handling.md"/>
     public TBuilder NullDestinationHandling(
         NullDestinationHandling nullDestinationHandling) =>
         throw new RuntimeInvocationNotSupportedException();
@@ -56,10 +54,9 @@ public abstract class MapperBuilderBase<TBuilder>
     /// <param name="unknownDerivedTypeHandling">
     /// The compile-time constant policy.
     /// <see cref="Morphant.UnknownDerivedTypeHandling.Default"/> inherits the
-    /// setting; the fallback is
-    /// <see cref="Morphant.UnknownDerivedTypeHandling.UseBaseMapping"/>.
+    /// setting; the fallback is <see cref="Morphant.UnknownDerivedTypeHandling.UseBaseMapping"/>.
     /// </param>
-    /// <returns>This builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/unknown-derived-type-handling.md"/>
     public TBuilder UnknownDerivedTypeHandling(
         UnknownDerivedTypeHandling unknownDerivedTypeHandling) =>
         throw new RuntimeInvocationNotSupportedException();
@@ -70,10 +67,9 @@ public abstract class MapperBuilderBase<TBuilder>
     /// <param name="constructorSelection">
     /// The compile-time constant policy.
     /// <see cref="Morphant.ConstructorSelection.Default"/> inherits the
-    /// setting; the fallback is
-    /// <see cref="Morphant.ConstructorSelection.Unambiguous"/>.
+    /// setting; the fallback is <see cref="Morphant.ConstructorSelection.Unambiguous"/>.
     /// </param>
-    /// <returns>This builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/constructor-selection.md"/>
     public TBuilder ConstructorSelection(
         ConstructorSelection constructorSelection) =>
         throw new RuntimeInvocationNotSupportedException();
@@ -86,7 +82,7 @@ public abstract class MapperBuilderBase<TBuilder>
     /// <see cref="Morphant.MemberSelection.Default"/> inherits the setting;
     /// the fallback is <see cref="Morphant.MemberSelection.Auto"/>.
     /// </param>
-    /// <returns>This builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/member-selection.md"/>
     public TBuilder MemberSelection(MemberSelection memberSelection) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -98,7 +94,7 @@ public abstract class MapperBuilderBase<TBuilder>
     /// <see cref="Morphant.Flattening.Default"/> inherits the setting; the
     /// fallback is <see cref="Morphant.Flattening.Auto"/>.
     /// </param>
-    /// <returns>This builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/flattening.md"/>
     public TBuilder Flattening(Flattening flattening) =>
         throw new RuntimeInvocationNotSupportedException();
 
@@ -108,10 +104,9 @@ public abstract class MapperBuilderBase<TBuilder>
     /// <param name="unmappedMemberValidation">
     /// The compile-time constant policy.
     /// <see cref="Morphant.UnmappedMemberValidation.Default"/> inherits the
-    /// setting; the fallback is
-    /// <see cref="Morphant.UnmappedMemberValidation.None"/>.
+    /// setting; the fallback is <see cref="Morphant.UnmappedMemberValidation.None"/>.
     /// </param>
-    /// <returns>This builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/unmapped-member-validation.md"/>
     public TBuilder UnmappedMemberValidation(
         UnmappedMemberValidation unmappedMemberValidation) =>
         throw new RuntimeInvocationNotSupportedException();

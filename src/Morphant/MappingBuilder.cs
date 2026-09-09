@@ -22,26 +22,19 @@ public sealed class MappingBuilder<TMapper, TSource, TDestination> :
     }
 
     /// <summary>
-    /// Adds the readable instance members of a nested source object to the
-    /// convention lookup scope for this mapping.
+    /// Adds nested source members to name matching; root members take priority.
     /// </summary>
     /// <param name="selector">
     /// One inline property or field path rooted in the mapping source, or an
     /// anonymous object containing several such paths.
     /// </param>
-    /// <remarks>
-    /// The root source keeps precedence. Included members participate in
-    /// automatic destination-member and constructor-parameter mapping; they
-    /// do not start a nested mapping.
-    /// </remarks>
-    /// <returns>This mapping builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-members.md"/>
     public MappingBuilder<TMapper, TSource, TDestination> IncludeMembers(
         Func<TSource, object?> selector) =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Includes configuration from the nearest available mapping for the
-    /// specified source and destination types.
+    /// Reuses the nearest available base mapping; local rules take priority.
     /// </summary>
     /// <typeparam name="TBaseSource">
     /// The base source type. <typeparamref name="TSource"/> must be assignable
@@ -52,21 +45,17 @@ public sealed class MappingBuilder<TMapper, TSource, TDestination> :
     /// assignable to this type.
     /// </typeparam>
     /// <remarks>
-    /// Local settings and rules take precedence. A mapping declared in a base
-    /// mapper is available only through <c>base.Configure(builder)</c>. A
-    /// different pair contributes settings, included source members and
-    /// explicit member rules, but not its destination-selection or
-    /// <c>Convert</c> behavior. The exact same pair contributes all of its
-    /// configuration.
+    /// The same pair contributes all configuration. A different pair excludes
+    /// destination selection and Convert. Connect base mapper configuration
+    /// with <c>base.Configure(builder)</c>.
     /// </remarks>
-    /// <returns>This mapping builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-base.md"/>
     public MappingBuilder<TMapper, TSource, TDestination>
         IncludeBase<TBaseSource, TBaseDestination>() =>
         throw new RuntimeInvocationNotSupportedException();
 
     /// <summary>
-    /// Routes a matching non-exact runtime source to a separately registered
-    /// mapping pair.
+    /// Routes a derived runtime source to a separately registered mapping pair.
     /// </summary>
     /// <typeparam name="TDerivedSource">
     /// The runtime source branch. It must be assignable to
@@ -77,14 +66,10 @@ public sealed class MappingBuilder<TMapper, TSource, TDestination> :
     /// <typeparamref name="TDestination"/>.
     /// </typeparam>
     /// <remarks>
-    /// This call adds only a dispatch link. Register
-    /// <typeparamref name="TDerivedSource"/> to
-    /// <typeparamref name="TDerivedDestination"/> separately with
-    /// <c>Map&lt;TDerivedSource, TDerivedDestination&gt;()</c>. It does not
-    /// inherit mapping rules; use <see cref="IncludeBase"/> for rule reuse
-    /// when needed.
+    /// Register the derived pair with <c>Map</c>. To reuse base mapping rules,
+    /// also configure <see cref="IncludeBase"/> on that pair.
     /// </remarks>
-    /// <returns>This mapping builder.</returns>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/for-derived.md"/>
     public MappingBuilder<TMapper, TSource, TDestination>
         ForDerived<TDerivedSource, TDerivedDestination>()
         where TDerivedSource : TSource

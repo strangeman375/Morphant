@@ -1,38 +1,31 @@
 namespace Morphant.Delegates;
 
 /// <summary>
-/// Describes runtime destination resolution from a non-null source and an
-/// optional existing destination.
+/// Chooses the destination through ordinary C# on Create and Update.
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TPrevious">The existing destination value type.</typeparam>
 /// <typeparam name="TResult">The destination result type.</typeparam>
 /// <param name="source">The non-null source.</param>
-/// <param name="previous">The optional existing destination.</param>
-/// <returns>The destination result.</returns>
-/// <remarks>
-/// A <see langword="null"/> result is final: Morphant skips <c>Members</c>
-/// and does not apply null handling again.
-/// </remarks>
+/// <param name="previous">The supplied destination; None on Create or null Update.</param>
+/// <returns>The destination; null skips Members and further null handling.</returns>
+/// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
 public delegate TResult ResolveUsing<in TSource, TPrevious, out TResult>(
     TSource source,
     Option<TPrevious> previous);
 
 /// <summary>
-/// Describes runtime destination resolution with access to mapping context.
+/// Chooses the destination through ordinary C# on Create and Update.
 /// </summary>
 /// <typeparam name="TSource">The non-null source type.</typeparam>
 /// <typeparam name="TPrevious">The existing destination value type.</typeparam>
 /// <typeparam name="TContext">The mapping context type.</typeparam>
 /// <typeparam name="TResult">The destination result type.</typeparam>
 /// <param name="source">The non-null source.</param>
-/// <param name="previous">The optional existing destination.</param>
+/// <param name="previous">The supplied destination; None on Create or null Update.</param>
 /// <param name="context">The current mapping context.</param>
-/// <returns>The destination result.</returns>
-/// <remarks>
-/// A <see langword="null"/> result is final: Morphant skips <c>Members</c>
-/// and does not apply null handling again.
-/// </remarks>
+/// <returns>The destination; null skips Members and further null handling.</returns>
+/// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/resolve-using.md"/>
 public delegate TResult ResolveUsing<
     in TSource,
     TPrevious,

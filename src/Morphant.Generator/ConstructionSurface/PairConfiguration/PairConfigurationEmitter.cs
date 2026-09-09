@@ -37,8 +37,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Construct",
                 "construct",
-                "Defines destination construction when none exists.",
-                "An inline construction lambda.",
+                "Supplies constructor arguments when no destination exists.",
+                "Inline lambda returning a construction expression.",
                 "global::Morphant.Delegates.Construct<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.ConstructionResultTypeName + ">");
@@ -48,9 +48,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Construct",
                 "construct",
-                "Defines destination construction with access to the " +
-                "current mapping context.",
-                "An inline construction lambda.",
+                "Supplies constructor arguments when no destination exists.",
+                "Inline lambda returning a construction expression.",
                 "global::Morphant.Delegates.Construct<" +
                 model.DeclarativeSourceTypeName + ", " +
                 "global::Morphant.Context.MappingContextMarker, " +
@@ -61,8 +60,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Resolve",
                 "resolve",
-                "Defines how to select or construct the destination.",
-                "An inline resolution lambda.",
+                "Chooses reuse or construction on Create and Update.",
+                "Inline lambda returning previous or a construction expression.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.PreviousDestinationTypeName + ", " +
@@ -73,9 +72,8 @@ internal static class PairConfigurationEmitter
                 model,
                 "Resolve",
                 "resolve",
-                "Defines destination resolution with access to the current " +
-                "mapping context.",
-                "An inline resolution lambda.",
+                "Chooses reuse or construction on Create and Update.",
+                "Inline lambda returning previous or a construction expression.",
                 "global::Morphant.Delegates.Resolve<" +
                 model.DeclarativeSourceTypeName + ", " +
                 model.PreviousDestinationTypeName + ", " +
@@ -89,8 +87,8 @@ internal static class PairConfigurationEmitter
             model,
             "ConstructUsing",
             "construct",
-            "Uses a callback to construct a destination when none exists.",
-            "The construction callback.",
+            "Creates a destination through a callback only when none exists.",
+            "Callback returning the destination; null ends the mapping.",
             "global::Morphant.Delegates.ConstructUsing<" +
             model.DeclarativeSourceTypeName + ", " +
             model.DestinationTypeName + ">");
@@ -100,8 +98,8 @@ internal static class PairConfigurationEmitter
             model,
             "ConstructUsing",
             "construct",
-            "Uses a callback with context to construct a destination.",
-            "The construction callback.",
+            "Creates a destination through a callback only when none exists.",
+            "Callback returning the destination; null ends the mapping.",
             "global::Morphant.Delegates.ConstructUsing<" +
             model.DeclarativeSourceTypeName + ", " +
             "global::Morphant.Context.MappingContext, " +
@@ -112,8 +110,8 @@ internal static class PairConfigurationEmitter
             model,
             "ResolveUsing",
             "resolve",
-            "Uses a callback to select or construct the destination.",
-            "The result callback.",
+            "Chooses the destination through a callback on Create and Update.",
+            "Callback returning the destination; null ends the mapping.",
             "global::Morphant.Delegates.ResolveUsing<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -124,9 +122,8 @@ internal static class PairConfigurationEmitter
             model,
             "ResolveUsing",
             "resolve",
-            "Uses a callback with context to select or construct the " +
-            "destination.",
-            "The result callback.",
+            "Chooses the destination through a callback on Create and Update.",
+            "Callback returning the destination; null ends the mapping.",
             "global::Morphant.Delegates.ResolveUsing<" +
             model.DeclarativeSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -138,8 +135,8 @@ internal static class PairConfigurationEmitter
             model,
             "Convert",
             "mapping",
-            "Uses a callback as the complete mapping algorithm.",
-            "The mapping callback.",
+            "Maps with ordinary C#, bypassing null policies and member rules.",
+            "Lambda, method group, or delegate returning the final result.",
             "global::Morphant.Delegates.Convert<" +
             model.ManualSourceTypeName + ", " +
             model.DestinationTypeName + ">");
@@ -149,9 +146,8 @@ internal static class PairConfigurationEmitter
             model,
             "Convert",
             "mapping",
-            "Uses a callback with the optional existing destination as the " +
-            "complete mapping algorithm.",
-            "The mapping callback.",
+            "Maps with ordinary C#, bypassing null policies and member rules.",
+            "Lambda, method group, or delegate returning the final result.",
             "global::Morphant.Delegates.Convert<" +
             model.ManualSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -162,9 +158,8 @@ internal static class PairConfigurationEmitter
             model,
             "Convert",
             "mapping",
-            "Uses a callback with the optional existing destination and " +
-            "context as the complete mapping algorithm.",
-            "The mapping callback.",
+            "Maps with ordinary C#, bypassing null policies and member rules.",
+            "Lambda, method group, or delegate returning the final result.",
             "global::Morphant.Delegates.Convert<" +
             model.ManualSourceTypeName + ", " +
             model.PreviousDestinationTypeName + ", " +
@@ -196,8 +191,15 @@ internal static class PairConfigurationEmitter
             writer,
             callbackName,
             callbackDescription);
+        var documentationPage = methodName switch
+        {
+            "ConstructUsing" => "construct-using",
+            "ResolveUsing" => "resolve-using",
+            _ => methodName.ToLowerInvariant()
+        };
         writer.Line(
-            "/// <returns>The same mapping builder.</returns>");
+            "/// <seealso href=\"https://github.com/strangeman375/Morphant/blob/main/docs/api/" +
+            documentationPage + ".md\"/>");
 
         writer.Line(
             "public static " +

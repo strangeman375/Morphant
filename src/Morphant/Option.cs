@@ -22,7 +22,7 @@ public readonly struct Option<T>
     }
 
     /// <summary>
-    /// Gets an option that contains no value.
+    /// Contains no value.
     /// </summary>
     public static Option<T> None => default;
 
@@ -34,7 +34,7 @@ public readonly struct Option<T>
     public static Option<T> Some(T value) => new(value);
 
     /// <summary>
-    /// Gets a value indicating whether this option contains a value.
+    /// Whether a value is present, including null.
     /// </summary>
     public bool HasValue { get; }
 
@@ -53,12 +53,10 @@ public readonly struct Option<T>
     /// Attempts to get the contained value.
     /// </summary>
     /// <param name="value">
-    /// When this method returns <see langword="true"/>, contains the stored
-    /// value; otherwise, contains <see langword="default"/>.
+    /// The stored value if present; otherwise, default.
     /// </param>
     /// <returns>
-    /// <see langword="true"/> when this option contains a value; otherwise,
-    /// <see langword="false"/>.
+    /// Whether a value was present.
     /// </returns>
     public bool TryGetValue([MaybeNullWhen(false)] out T value)
     {
