@@ -52,6 +52,10 @@ Enable the snapshot in the consumer project:
 </PropertyGroup>
 ```
 
+Morphant enables `EmitCompilerGeneratedFiles` automatically, overriding an
+ordinary project value of `false`. A global
+`-p:EmitCompilerGeneratedFiles=false` prevents this and produces a build error.
+
 After a successful compilation, files appear under
 `Generated/Morphant/<tfm>`. Failed builds leave the previous snapshot intact,
 and snapshot files are excluded from compilation.

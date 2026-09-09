@@ -408,6 +408,12 @@ internal sealed class PackageConsumptionTests
                 consumerProject,
                 morphantGeneratedDirectory);
 
+            await AssertProjectSnapshotEnablesCompilerEmission(
+                repositoryRoot,
+                baseConsumerArguments,
+                consumerProject,
+                morphantGeneratedDirectory);
+
             var currentIntermediate = Path.Combine(
                 consumerIntermediate, configuration, "net10.0");
             await AssertCustomCompilerOutputPreservesSnapshotLifecycle(
@@ -532,6 +538,45 @@ internal sealed class PackageConsumptionTests
             SnapshotContents(generatedDirectory),
             Is.EqualTo(expected),
             "A rebuild must restore manually edited generated files.");
+    }
+
+    private static async Task AssertProjectSnapshotEnablesCompilerEmission(
+        string repositoryRoot,
+        IReadOnlyList<string> baseConsumerArguments,
+        string consumerProject,
+        string generatedDirectory)
+    {
+        var originalProject = await File.ReadAllTextAsync(consumerProject);
+        var expectedSnapshot = SnapshotContents(generatedDirectory);
+        var expectedWriteTimes = SnapshotWriteTimes(generatedDirectory);
+        var project = XDocument.Parse(originalProject);
+        project.Root!.AddFirst(new XElement("PropertyGroup",
+            new XElement("MorphantGitSnapshot", "true"),
+            new XElement("EmitCompilerGeneratedFiles", "false")));
+
+        try
+        {
+            await File.WriteAllTextAsync(consumerProject, project.ToString());
+            await File.WriteAllTextAsync(Path.Combine(generatedDirectory,
+                "Morphant.Generated.TypeMapper.StaleEmission.g.cs"), "// stale\r\n");
+
+            // Both properties come from the project, without a global snapshot override.
+            var rebuilt = await DotNetCli.Run(repositoryRoot,
+                RebuildArguments(baseConsumerArguments, consumerProject));
+            AssertSucceeded(rebuilt);
+            Assert.Multiple(() =>
+            {
+                Assert.That(SnapshotContents(generatedDirectory), Is.EqualTo(expectedSnapshot),
+                    "Enabling snapshots in the project must override ordinary EmitCompilerGeneratedFiles=false " +
+                    "and publish the current snapshot, removing its stale file.");
+                Assert.That(SnapshotWriteTimes(generatedDirectory), Is.EqualTo(expectedWriteTimes),
+                    "Identical snapshot files and foreign files must remain untouched.");
+            });
+        }
+        finally
+        {
+            await File.WriteAllTextAsync(consumerProject, originalProject);
+        }
     }
 
     private static async Task AssertCustomCompilerOutputPreservesSnapshotLifecycle(
