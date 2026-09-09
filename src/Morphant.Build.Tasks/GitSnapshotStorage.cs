@@ -49,7 +49,7 @@ internal static class GitSnapshotStorage
                     if (stream.Length > 65536)
                         throw Conflict();
                     using var reader = new StreamReader(stream, Encoding.UTF8, true, 1024, leaveOpen: true);
-                    if (!string.Equals(reader.ReadToEnd(), owner, PhysicalDirectory.Comparison))
+                    if (!string.Equals(Normalize(reader.ReadToEnd()), Normalize(owner), PhysicalDirectory.Comparison))
                         throw Conflict();
                 }
                 return stream;
@@ -64,4 +64,6 @@ internal static class GitSnapshotStorage
 
     private static bool IsSharingViolation(IOException exception) =>
         (exception.HResult & 0xffff) is 11 or 32 or 33 or 35;
+
+    private static string Normalize(string value) => value.Replace("\r\n", "\n").Normalize(NormalizationForm.FormC);
 }

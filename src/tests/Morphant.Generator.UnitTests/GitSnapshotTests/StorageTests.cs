@@ -109,6 +109,21 @@ internal sealed class StorageTests
         finally { Directory.Move(moved, workspace.Root); }
     }
 
+    [Test]
+    public void Git_line_ending_conversion_does_not_change_ownership()
+    {
+        using var workspace = new Workspace();
+        var task = workspace.CreateTask();
+        WriteOutput(task, "// current\r\n");
+        AssertSucceeded(task);
+        var owner = Path.Combine(task.SnapshotRoot, ".morphant");
+        var normalized = File.ReadAllText(owner).Replace("\r\n", "\n");
+        File.WriteAllText(owner, normalized);
+        AssertSucceeded(task);
+        Assert.That(File.ReadAllText(owner), Is.EqualTo(normalized));
+        Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// current\r\n"));
+    }
+
     [TestCase("Checkout")]
     [TestCase("Compiler")]
     [TestCase("Snapshot")]
@@ -323,7 +338,7 @@ internal sealed class StorageTests
         public int ColumnNumberOfTaskNode => 0;
         public string ProjectFileOfTaskNode => "Consumer.csproj";
         public void LogErrorEvent(BuildErrorEventArgs e) => Errors.Add(e);
-        public void LogWarningEvent(BuildWarningEventArgs e) => Assert.Fail(e.Message);
+        public void LogWarningEvent(BuildWarningEventArgs e) => Assert.Fail(e.Message ?? "Unexpected MSBuild warning.");
         public void LogMessageEvent(BuildMessageEventArgs e)
         {
             if (e.Message?.StartsWith("Waiting for Morphant snapshot storage:", StringComparison.Ordinal) == true)

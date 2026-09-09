@@ -19,6 +19,10 @@ internal static class PhysicalDirectory
             if (string.IsNullOrWhiteSpace(value) || value.Any(char.IsControl))
                 throw new ArgumentException();
             full = Path.GetFullPath(Path.IsPathRooted(value) ? value : Path.Combine(baseDirectory, value));
+            var components = full.Substring(Path.GetPathRoot(full)!.Length)
+                .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (components.Any(component => component.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
+                throw new ArgumentException();
         }
         catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
         {
