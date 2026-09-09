@@ -65,11 +65,6 @@
               PackagePath="buildTransitive\Morphant.props"
               Visible="false" />
 
-        <None Include="build\Morphant.GitSnapshot.targets"
-              Pack="true"
-              PackagePath="buildTransitive\Morphant.GitSnapshot.targets"
-              Visible="false" />
-
         <None Include="build\Morphant.targets"
               Pack="true"
               PackagePath="buildTransitive\Morphant.targets"

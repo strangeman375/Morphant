@@ -261,6 +261,8 @@ internal sealed class CiBuildTests
     [TestCase("Project")]
     [TestCase("Global")]
     [TestCase("GlobalLateImport")]
+    [TestCase("GlobalWithProjectLocalOverride")]
+    [TestCase("GlobalWithExistingPublication")]
     [TestCase("LateImport")]
     public async Task Post_compile_hooks_are_preserved_without_publishing_skipped_compilations(string origin)
     {
@@ -275,11 +277,29 @@ internal sealed class CiBuildTests
                 "<Project><PropertyGroup><TargetsTriggeredByCompilation>" +
                 (origin == "GlobalLateImport" ? "MustNotRun" : "CiAfterCompile") +
                 "</TargetsTriggeredByCompilation></PropertyGroup></Project>");
-        string[] settings = origin.StartsWith("Global", StringComparison.Ordinal) ? ["-p:TargetsTriggeredByCompilation=CiAfterCompile"] : [];
+        if (origin == "GlobalWithProjectLocalOverride")
+        {
+            foreach (var project in new[] { consumer, dependency })
+            {
+                var document = XDocument.Load(project.ProjectPath);
+                document.Root!.SetAttributeValue("TreatAsLocalProperty", "TargetsTriggeredByCompilation");
+                document.Save(project.ProjectPath);
+                project.SetProperty("TargetsTriggeredByCompilation", "CiAfterCompile");
+            }
+        }
+        string[] settings = origin switch
+        {
+            "GlobalWithProjectLocalOverride" => ["-p:TargetsTriggeredByCompilation=MustNotRun"],
+            "GlobalWithExistingPublication" => ["-p:TargetsTriggeredByCompilation=CiAfterCompile%3BPublishMorphantGitSnapshot"],
+            _ when origin.StartsWith("Global", StringComparison.Ordinal) => ["-p:TargetsTriggeredByCompilation=CiAfterCompile"],
+            _ => []
+        };
         AssertSucceeded(await consumer.Run("build", settings));
         AssertMapperSnapshot(consumer);
         var hook = Path.Combine(consumer.ProjectDirectory, "obj", "Release", "net10.0", "ci-after-compile.txt");
         Assert.That(File.ReadAllText(hook).Trim(), Is.EqualTo("executed"));
+        Assert.That(File.ReadAllLines(Path.Combine(consumer.ProjectDirectory, "obj", "Release", "net10.0", "ci-registered-hooks.txt")),
+            Is.EqualTo(new[] { "CiAfterCompile", "PublishMorphantGitSnapshot" }));
         if (origin.StartsWith("Global", StringComparison.Ordinal))
             Assert.That(File.ReadAllText(Path.Combine(dependency.ProjectDirectory, "obj", "Release", "netstandard2.0", "ci-after-compile.txt")).Trim(), Is.EqualTo("executed"));
         var before = consumer.Snapshot();
@@ -369,6 +389,15 @@ internal sealed class CiBuildTests
             Assert.That(Directory.GetDirectories(consumer.ProjectDirectory), Is.Empty);
         }
         finally { File.SetUnixFileMode(consumer.ProjectDirectory, mode); }
+    }
+
+    [Test]
+    public async Task An_empty_global_hook_list_still_publishes_the_snapshot()
+    {
+        using var consumer = CreateConsumer();
+        consumer.SetProperty("TargetsTriggeredByCompilation", "MustNotRun");
+        AssertSucceeded(await consumer.Run("build", "-p:TargetsTriggeredByCompilation="));
+        AssertMapperSnapshot(consumer);
     }
 
     private Consumer CreateConsumer(string directoryName = "consumer", string targetFramework = "net10.0") =>
@@ -465,6 +494,7 @@ internal sealed class CiBuildTests
           </ItemGroup>
           <Target Name="CiAfterCompile">
             <WriteLinesToFile File="$(IntermediateOutputPath)ci-after-compile.txt" Lines="executed" Overwrite="true" />
+            <WriteLinesToFile File="$(IntermediateOutputPath)ci-registered-hooks.txt" Lines="$(TargetsTriggeredByCompilation)" Overwrite="true" />
           </Target>
         </Project>
         """;

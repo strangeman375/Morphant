@@ -44,8 +44,16 @@
         Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)/Morphant.CompilerGenerated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
-  <Import Project="$(MSBuildThisFileDirectory)Morphant.GitSnapshot.targets"
-          Condition="'$(MorphantGitSnapshot)' == 'true'" />
+  <!-- A task output appends the hook for execution without changing evaluation
+       precedence or the global values inherited by referenced projects. -->
+  <Target Name="RegisterMorphantGitSnapshotPublication">
+    <ItemGroup>
+      <_MorphantCompilationHooks Include="$(TargetsTriggeredByCompilation);PublishMorphantGitSnapshot" />
+    </ItemGroup>
+    <CreateProperty Value="@(_MorphantCompilationHooks->Distinct())">
+      <Output TaskParameter="ValueSetByTask" PropertyName="TargetsTriggeredByCompilation" />
+    </CreateProperty>
+  </Target>
 
   <Target Name="ValidateMorphantGitSnapshotConfiguration"
           BeforeTargets="CoreCompile">

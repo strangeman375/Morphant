@@ -1269,7 +1269,6 @@ namespace Morphant.Generator.PackageTests.Consumer
                 "README.md",
                 "analyzers/dotnet/cs/Morphant.Generator.dll",
                 "buildTransitive/Morphant.Build.Tasks.dll",
-                "buildTransitive/Morphant.GitSnapshot.targets",
                 "buildTransitive/Morphant.props",
                 "buildTransitive/Morphant.targets",
                 "lib/netstandard2.0/Morphant.dll",
