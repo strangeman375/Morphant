@@ -215,6 +215,8 @@ internal static class TypeContractDependencies
                         BuildSourceVersion(
                             syntaxReference,
                             sourceCompilation,
+                            type.ContainingAssembly.GivesAccessTo(
+                                compilation.Assembly),
                             cancellationToken)));
             }
 
@@ -266,6 +268,7 @@ internal static class TypeContractDependencies
     private static TypeContractSourceVersion BuildSourceVersion(
         SyntaxReference syntaxReference,
         CSharpCompilation compilation,
+        bool hasInternalAccess,
         CancellationToken cancellationToken)
     {
         var declaration = syntaxReference.GetSyntax(cancellationToken);
@@ -278,7 +281,8 @@ internal static class TypeContractDependencies
                 declaration,
                 compilation,
                 cancellationToken),
-            BuildParseOptionsVersion(parseOptions));
+            BuildParseOptionsVersion(parseOptions),
+            hasInternalAccess);
     }
 
     private static string BuildSemanticContext(
@@ -447,4 +451,5 @@ internal readonly record struct TypeContractDependency(
 internal readonly record struct TypeContractSourceVersion(
     string Declaration,
     string SemanticContext,
-    string ParseOptions);
+    string ParseOptions,
+    bool HasInternalAccess);

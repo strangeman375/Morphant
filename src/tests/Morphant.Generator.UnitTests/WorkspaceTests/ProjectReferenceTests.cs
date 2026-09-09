@@ -10,6 +10,42 @@ internal sealed class ProjectReferenceTests
 {
     [TestCase(false)]
     [TestCase(true)]
+    public async Task Actualizes_accessibility_when_friend_access_changes(bool constructor)
+    {
+        using var workspace = new GeneratorWorkspaceTest();
+        var models = workspace.AddProject("ExternalModels");
+        var consumer = workspace.AddProject("Consumer");
+        var assembly = DocumentId.CreateNewId(models);
+        var destination = constructor
+            ? "public sealed class Destination { public int Value { get; } public Destination() { } internal Destination(int value) { Value = value; } }"
+            : "public sealed class Destination { public int Value { get; internal set; } }";
+        workspace.Apply(workspace.Solution
+            .AddDocument(DocumentId.CreateNewId(models), "Models.cs", SourceText.From(
+                ModelsSource.Replace("public sealed class Destination { public int Value { get; set; } }", destination,
+                    StringComparison.Ordinal)), filePath: "Models.cs")
+            .AddDocument(assembly, "AssemblyInfo.cs", SourceText.From(""), filePath: "AssemblyInfo.cs")
+            .AddDocument(DocumentId.CreateNewId(consumer), "Mapper.cs", SourceText.From(ConsumerSource), filePath: "Mapper.cs")
+            .AddProjectReference(consumer, new ProjectReference(models)));
+        string[] inaccessibleHints =
+        [
+            "Morphant.Generated.Construction.ExternalModels_Destination.g.cs",
+            "Morphant.Generated.MappingExtension.ExternalModels_Source__ExternalModels_Destination__TestCase_TestMapper.g.cs",
+            "Morphant.Generated.TypeMapper.TestCase_TestMapper.g.cs"
+        ];
+        var initial = await workspace.AssertProjectAsync(consumer, inaccessibleHints);
+
+        workspace.Apply(workspace.Solution.WithDocumentText(assembly, SourceText.From(
+            "[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Consumer\")]")));
+        var accessible = await workspace.AssertProjectAsync(consumer, constructor ? inaccessibleHints : ConsumerHints);
+        Assert.That(accessible.ToArray(), Is.Not.EqualTo(initial.ToArray()));
+
+        workspace.Apply(workspace.Solution.WithDocumentText(assembly, SourceText.From("")));
+        var restored = await workspace.AssertProjectAsync(consumer, inaccessibleHints);
+        Assert.That(restored.ToArray(), Is.EqualTo(initial.ToArray()));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
     public async Task Actualizes_two_generator_projects_without_DSL_conflicts(bool friendAssembly)
     {
         using var workspace = new GeneratorWorkspaceTest();

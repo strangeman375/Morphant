@@ -47,6 +47,8 @@ unsupported.
 
 ### Fixed
 
+- Refresh generated mappings when `InternalsVisibleTo` is added or removed
+  in a referenced source project, including internal setters and constructors.
 - Replace the old Git snapshot filename after a case-only mapper or model
   rename, preserving exact casing and allowing subsequent builds to succeed.
 - Atomically initialize snapshot ownership without directory locks, so
