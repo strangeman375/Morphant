@@ -327,6 +327,7 @@ internal sealed class CiBuildTests
         <Project Sdk="Microsoft.NET.Sdk">
           <PropertyGroup>
             <TargetFramework>net10.0</TargetFramework>
+            <PackageVersion>1.0.0-ci</PackageVersion>
             <LangVersion>9.0</LangVersion>
             <Nullable>enable</Nullable>
             <ImplicitUsings>disable</ImplicitUsings>
