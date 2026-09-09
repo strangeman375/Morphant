@@ -6,7 +6,8 @@ internal static class DotNetCli
 {
     public static async Task<ProcessResult> Run(
         string workingDirectory,
-        IReadOnlyCollection<string> arguments)
+        IReadOnlyCollection<string> arguments,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         using var process = new Process
         {
@@ -27,6 +28,9 @@ internal static class DotNetCli
 
         process.StartInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
         process.StartInfo.Environment["DOTNET_NOLOGO"] = "1";
+        if (environment is not null)
+            foreach (var entry in environment)
+                process.StartInfo.Environment[entry.Key] = entry.Value;
 
         if (!process.Start())
         {

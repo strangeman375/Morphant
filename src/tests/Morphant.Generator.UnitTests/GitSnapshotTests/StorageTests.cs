@@ -140,6 +140,68 @@ internal sealed class StorageTests
         Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// current\r\n"));
     }
 
+    [TestCase("Snapshot", "Prepare")]
+    [TestCase("Snapshot", "Publish")]
+    [TestCase("Compiler", "Prepare")]
+    [TestCase("Compiler", "Publish")]
+    public void Existing_ownership_records_do_not_require_write_access(string location, string operation)
+    {
+        using var workspace = new Workspace();
+        var task = workspace.CreateTask();
+        WriteOutput(task, "// previous\r\n");
+        AssertSucceeded(task);
+        var owner = Path.Combine(location == "Snapshot" ? task.SnapshotRoot : task.CompilerGeneratedFilesOutputPath, ".morphant");
+        var attributes = File.GetAttributes(owner);
+        var content = File.ReadAllBytes(owner);
+        var writeTime = File.GetLastWriteTimeUtc(owner);
+        try
+        {
+            File.SetAttributes(owner, attributes | FileAttributes.ReadOnly);
+            WriteOutput(task, "// current\r\n");
+            task.Operation = operation;
+            AssertSucceeded(task);
+            Assert.That(File.ReadAllBytes(owner), Is.EqualTo(content));
+            Assert.That(File.GetLastWriteTimeUtc(owner), Is.EqualTo(writeTime));
+            Assert.That(File.GetAttributes(owner) & FileAttributes.ReadOnly, Is.EqualTo(FileAttributes.ReadOnly));
+            Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)),
+                Is.EqualTo(operation == "Publish" ? "// current\r\n" : "// previous\r\n"));
+            if (operation == "Prepare")
+                Assert.That(Sources(task.CompilerGeneratedFilesOutputPath), Is.Empty);
+        }
+        finally { File.SetAttributes(owner, attributes); }
+    }
+
+    [TestCase("Snapshot")]
+    [TestCase("Compiler")]
+    public async Task Ownership_access_errors_do_not_wait_or_modify_storage(string location)
+    {
+        if (OperatingSystem.IsWindows() || Environment.UserName == "root")
+        {
+            Assert.Ignore("This test uses Unix permissions that do not restrict root.");
+            return;
+        }
+        using var workspace = new Workspace();
+        var task = workspace.CreateTask();
+        WriteOutput(task, "// previous\r\n");
+        AssertSucceeded(task);
+        var snapshot = Sources(task.SnapshotRoot);
+        var compiler = Sources(task.CompilerGeneratedFilesOutputPath);
+        var owner = Path.Combine(location == "Snapshot" ? task.SnapshotRoot : task.CompilerGeneratedFilesOutputPath, ".morphant");
+        var mode = File.GetUnixFileMode(owner);
+        try
+        {
+            File.SetUnixFileMode(owner, UnixFileMode.None);
+            task.Operation = "Prepare";
+            Assert.That(await Task.Run(task.Execute).WaitAsync(TimeSpan.FromSeconds(10)), Is.False);
+            var engine = (Engine)task.BuildEngine;
+            Assert.That(engine.Errors.Select(error => error.Code), Is.EqualTo(new[] { "MORPHANTMSB999" }));
+            Assert.That(engine.Waiting.Task.IsCompleted, Is.False);
+            Assert.That(Sources(task.SnapshotRoot), Is.EqualTo(snapshot));
+            Assert.That(Sources(task.CompilerGeneratedFilesOutputPath), Is.EqualTo(compiler));
+        }
+        finally { File.SetUnixFileMode(owner, mode); }
+    }
+
     [TestCase("Checkout")]
     [TestCase("Compiler")]
     [TestCase("Snapshot")]

@@ -23,7 +23,7 @@ internal static class GitSnapshotStorage
                 throw new SnapshotException("MORPHANTMSB015", $"Morphant ownership file '{path}' names a directory.");
 
             FileStream stream;
-            try { stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
+            try { stream = OpenLock(path); }
             catch (IOException exception) when (IsSharingViolation(exception))
             {
                 if (!reportedWait)
@@ -64,6 +64,21 @@ internal static class GitSnapshotStorage
 
     private static bool IsSharingViolation(IOException exception) =>
         (exception.HResult & 0xffff) is 11 or 32 or 33 or 35;
+
+    private static FileStream OpenLock(string path)
+    {
+        var stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Read, FileShare.None);
+        try
+        {
+            if (stream.Length > 0)
+                return stream;
+        }
+        catch { stream.Dispose(); throw; }
+        stream.Dispose();
+        // Only a new or empty ownership record needs write access. Reopening can
+        // race with another claimant; Acquire checks the record under this lock.
+        return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+    }
 
     private static string Normalize(string value) => value.Replace("\r\n", "\n");
 }

@@ -39,6 +39,9 @@ unsupported.
 
 ### Fixed
 
+- Allow initialized Git snapshot and compiler ownership files to be read-only
+  without preventing updates to writable generated files.
+
 - Allow independent and external Git snapshot/compiler directories and linked
   checkout paths, with ownership checks and cancellable publication locks.
 

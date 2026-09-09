@@ -74,13 +74,13 @@ internal sealed class CiBuildTests
     }
 
     [Test]
-    public async Task Parallel_configurations_publish_one_complete_snapshot()
+    public async Task Parallel_configurations_with_separate_TEMP_directories_publish_one_complete_snapshot()
     {
         using var consumer = CreateConsumer();
         AssertSucceeded(await consumer.Run("restore"));
         var builds = await Task.WhenAll(
-            consumer.Run("build", "--no-restore", "-p:Configuration=Debug"),
-            consumer.Run("build", "--no-restore", "-p:Configuration=Release"));
+            consumer.RunWithEnvironment("build", TemporaryEnvironment("debug-temp"), "--no-restore", "-p:Configuration=Debug"),
+            consumer.RunWithEnvironment("build", TemporaryEnvironment("release-temp"), "--no-restore", "-p:Configuration=Release"));
         foreach (var build in builds) AssertSucceeded(build);
         AssertMapperSnapshot(consumer);
         var debug = File.ReadAllBytes(Directory.GetFiles(
@@ -95,6 +95,13 @@ internal sealed class CiBuildTests
             Assert.That(published, Is.EqualTo(debug).Or.EqualTo(release),
                 "The shared snapshot must contain one whole successful configuration.");
         });
+
+        Dictionary<string, string> TemporaryEnvironment(string name)
+        {
+            var directory = Path.Combine(consumer.Root, name);
+            Directory.CreateDirectory(directory);
+            return new() { ["TMPDIR"] = directory, ["TEMP"] = directory, ["TMP"] = directory };
+        }
     }
 
     [Test]
@@ -137,6 +144,39 @@ internal sealed class CiBuildTests
         ];
         Assert.That(consumer.Snapshot().Keys.Order(StringComparer.Ordinal),
             Is.EqualTo(expected.Select(name => Path.Combine("net10.0", name)).Order(StringComparer.Ordinal)));
+    }
+
+    [Test]
+    public async Task An_unselected_framework_does_not_require_snapshot_storage_or_compiler_emission()
+    {
+        using var consumer = CreateConsumer(targetFramework: "netstandard2.0;net10.0");
+        AssertSucceeded(await consumer.Run("build", "--framework", "net10.0"));
+        var before = consumer.Snapshot();
+
+        AssertSucceeded(await consumer.Run("build", "--framework", "netstandard2.0", "--no-restore",
+            "-p:EmitCompilerGeneratedFiles=false",
+            "-p:MorphantGitSnapshotPath=" + consumer.ProjectDirectory,
+            "-p:CompilerGeneratedFilesOutputPath=" + consumer.SnapshotRoot));
+        Assert.That(consumer.Snapshot(), Is.EqualTo(before));
+        Assert.That(File.Exists(Path.Combine(consumer.ProjectDirectory, ".morphant")), Is.False);
+    }
+
+    [TestCase("DesignTimeBuild", "true")]
+    [TestCase("SkipCompilerExecution", "true")]
+    [TestCase("BuildingProject", "false")]
+    public async Task Nonpublishing_compile_modes_preserve_the_snapshot(string property, string value)
+    {
+        using var consumer = CreateConsumer();
+        AssertSucceeded(await consumer.Run("build"));
+        var before = consumer.Snapshot();
+        var owner = File.ReadAllBytes(Path.Combine(consumer.SnapshotRoot, ".morphant"));
+
+        AssertSucceeded(await consumer.Run("msbuild", "-t:Compile", $"-p:{property}={value}",
+            "-p:EmitCompilerGeneratedFiles=false",
+            "-p:MorphantGitSnapshotPath=" + consumer.ProjectDirectory));
+        Assert.That(consumer.Snapshot(), Is.EqualTo(before));
+        Assert.That(File.ReadAllBytes(Path.Combine(consumer.SnapshotRoot, ".morphant")), Is.EqualTo(owner));
+        Assert.That(File.Exists(Path.Combine(consumer.ProjectDirectory, ".morphant")), Is.False);
     }
 
     [TestCase("Checkout")]
@@ -231,32 +271,48 @@ internal sealed class CiBuildTests
         AssertMapperSnapshot(consumer, expected);
     }
 
-    [Test]
-    public async Task A_linked_checkout_updates_the_same_snapshot()
+    [TestCase("Checkout")]
+    [TestCase("Compiler")]
+    [TestCase("Snapshot")]
+    public async Task Linked_storage_paths_update_the_same_snapshot(string location)
     {
         using var consumer = CreateConsumer();
+        var compiler = Path.Combine(consumer.Root, "compiler");
+        consumer.SetProperty("EmitCompilerGeneratedFiles", "true");
+        consumer.SetProperty("CompilerGeneratedFilesOutputPath", compiler);
         AssertSucceeded(await consumer.Run("build"));
         var snapshot = consumer.Snapshot();
-        var linkedDirectory = Path.Combine(consumer.Root, "linked-checkout");
+        var owner = File.ReadAllBytes(Path.Combine(consumer.SnapshotRoot, ".morphant"));
+        var linkedDirectory = Path.Combine(consumer.Root, "linked-storage");
+        var target = location switch
+        {
+            "Checkout" => consumer.ProjectDirectory,
+            "Compiler" => compiler,
+            _ => consumer.SnapshotRoot
+        };
         if (OperatingSystem.IsWindows())
         {
             var start = new System.Diagnostics.ProcessStartInfo("cmd.exe")
             {
                 UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true
             };
-            foreach (var argument in new[] { "/c", "mklink", "/J", linkedDirectory, consumer.ProjectDirectory })
+            foreach (var argument in new[] { "/c", "mklink", "/J", linkedDirectory, target })
                 start.ArgumentList.Add(argument);
             using var process = System.Diagnostics.Process.Start(start)!;
             await process.WaitForExitAsync();
             Assert.That(process.ExitCode, Is.Zero, await process.StandardError.ReadToEndAsync());
         }
         else
-            Directory.CreateSymbolicLink(linkedDirectory, consumer.ProjectDirectory);
+            Directory.CreateSymbolicLink(linkedDirectory, target);
         try
         {
-            consumer.ProjectPath = Path.Combine(linkedDirectory, "CiConsumer.csproj");
+            if (location == "Checkout")
+                consumer.ProjectPath = Path.Combine(linkedDirectory, "CiConsumer.csproj");
+            else
+                consumer.SetProperty(location == "Compiler" ? "CompilerGeneratedFilesOutputPath" : "MorphantGitSnapshotPath", linkedDirectory);
             AssertSucceeded(await consumer.Run("build", "-t:Rebuild"));
             Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
+            Assert.That(File.ReadAllBytes(Path.Combine(consumer.SnapshotRoot, ".morphant")), Is.EqualTo(owner));
         }
         finally
         {
@@ -323,13 +379,21 @@ internal sealed class CiBuildTests
     [TestCase("Compiler", "Generated #1 %20 [CI]")]
     [TestCase("Snapshot", "Generated;CI")]
     [TestCase("Compiler", "Generated;CI")]
+    [TestCase("Snapshot", "Generated$(literal)@(items)%(metadata)'CI")]
+    [TestCase("Compiler", "Generated$(literal)@(items)%(metadata)'CI")]
+    [TestCase("Snapshot", "Generated*?CI")]
+    [TestCase("Compiler", "Generated*?CI")]
     [TestCase("Snapshot", "Backslash")]
     [TestCase("Compiler", "Backslash")]
     public async Task Escaped_literal_storage_paths_are_preserved(string location, string name)
     {
+        if (OperatingSystem.IsWindows() && name.Contains('*'))
+            Assert.Ignore("Windows does not support literal wildcard characters in directory names.");
         using var consumer = CreateConsumer();
         var output = Path.Combine(consumer.Root, name);
-        var escaped = output.Replace("%", "%25").Replace(";", "%3B");
+        var escaped = output.Replace("%", "%25").Replace(";", "%3B")
+            .Replace("$", "%24").Replace("@", "%40").Replace("(", "%28")
+            .Replace(")", "%29").Replace("'", "%27").Replace("*", "%2A").Replace("?", "%3F");
         if (name == "Backslash")
             escaped = escaped.Replace('/', '\\');
         consumer.SetProperty("EmitCompilerGeneratedFiles", "true");
@@ -407,6 +471,64 @@ internal sealed class CiBuildTests
         AssertMapperSnapshot(consumer);
     }
 
+    [Test]
+    public async Task Existing_read_only_ownership_records_allow_snapshot_updates()
+    {
+        using var consumer = CreateConsumer();
+        var compiler = Path.Combine(consumer.Root, "compiler");
+        consumer.SetProperty("EmitCompilerGeneratedFiles", "true");
+        consumer.SetProperty("CompilerGeneratedFilesOutputPath", compiler);
+        AssertSucceeded(await consumer.Run("build"));
+        var before = consumer.Snapshot();
+        var owners = new[] { Path.Combine(compiler, ".morphant"), Path.Combine(consumer.SnapshotRoot, ".morphant") };
+        var attributes = owners.Select(File.GetAttributes).ToArray();
+        var contents = owners.Select(File.ReadAllBytes).ToArray();
+        try
+        {
+            for (var i = 0; i < owners.Length; i++)
+                File.SetAttributes(owners[i], attributes[i] | FileAttributes.ReadOnly);
+            File.WriteAllText(Path.Combine(consumer.ProjectDirectory, "Mapping.cs"),
+                MappingSource.Replace("source.Value + 2", "source.Value + 3"));
+            AssertSucceeded(await consumer.Run("build", "--no-restore"));
+            AssertMapperSnapshot(consumer);
+            Assert.That(consumer.Snapshot(), Is.Not.EqualTo(before));
+            Assert.That(File.ReadAllBytes(Path.Combine(consumer.SnapshotRoot, "net10.0", MapperFile)),
+                Is.EqualTo(File.ReadAllBytes(Directory.GetFiles(compiler, MapperFile, SearchOption.AllDirectories).Single())));
+            for (var i = 0; i < owners.Length; i++)
+            {
+                Assert.That(File.ReadAllBytes(owners[i]), Is.EqualTo(contents[i]));
+                Assert.That(File.GetAttributes(owners[i]) & FileAttributes.ReadOnly, Is.EqualTo(FileAttributes.ReadOnly));
+            }
+        }
+        finally
+        {
+            for (var i = 0; i < owners.Length; i++)
+                File.SetAttributes(owners[i], attributes[i]);
+        }
+    }
+
+    [Test]
+    public async Task Changing_configuration_requires_separate_compiler_storage()
+    {
+        using var consumer = CreateConsumer();
+        var compiler = Path.Combine(consumer.Root, "compiler");
+        consumer.SetProperty("EmitCompilerGeneratedFiles", "true");
+        consumer.SetProperty("CompilerGeneratedFilesOutputPath", compiler);
+        AssertSucceeded(await consumer.Run("build"));
+        var before = consumer.Snapshot();
+        var output = Directory.GetFiles(compiler, MapperFile, SearchOption.AllDirectories).Single();
+        var previousOutput = File.ReadAllBytes(output);
+
+        AssertRejected(await consumer.Run("build", "-p:Configuration=Debug"), "MORPHANTMSB004");
+        Assert.That(consumer.Snapshot(), Is.EqualTo(before));
+        Assert.That(File.ReadAllBytes(output), Is.EqualTo(previousOutput));
+
+        AssertSucceeded(await consumer.Run("build", "-p:Configuration=Debug",
+            "-p:CompilerGeneratedFilesOutputPath=" + Path.Combine(consumer.Root, "compiler-debug")));
+        AssertMapperSnapshot(consumer);
+        Assert.That(consumer.Snapshot(), Is.Not.EqualTo(before));
+    }
+
     private Consumer CreateConsumer(string directoryName = "consumer", string targetFramework = "net10.0") =>
         new(packages.PackageFeed, packageVersion, directoryName, targetFramework);
 
@@ -445,13 +567,17 @@ internal sealed class CiBuildTests
             File.WriteAllText(Path.Combine(ProjectDirectory, "Mapping.cs"), MappingSource);
         }
 
-        public Task<ProcessResult> Run(string command, params string[] arguments) => DotNetCli.Run(
+        public Task<ProcessResult> Run(string command, params string[] arguments) =>
+            RunWithEnvironment(command, null, arguments);
+
+        public Task<ProcessResult> RunWithEnvironment(string command,
+            IReadOnlyDictionary<string, string>? environment, params string[] arguments) => DotNetCli.Run(
             IntegrationTestEnvironment.RepositoryRoot,
             [
                 command, ProjectPath, "-p:Configuration=Release", "-m:1", "-nodeReuse:false",
                 "-p:UseSharedCompilation=false", "-p:ContinuousIntegrationBuild=true",
                 $"-p:RestoreSources={packageFeed}", "-p:NuGetAudit=false", .. arguments
-            ]);
+            ], environment);
 
         public void AddReference(Consumer dependency)
         {

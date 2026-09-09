@@ -16,4 +16,11 @@
                       Version="$(MorphantTestPackageVersion)" />
   </ItemGroup>
 
+  <Target Name="MinimumSdkAfterCompile">
+    <Error Condition="'$(TargetsTriggeredByCompilation)' != 'MinimumSdkAfterCompile;PublishMorphantGitSnapshot'"
+           Text="The global compilation hook list was not preserved on the minimum SDK." />
+    <WriteLinesToFile File="$(IntermediateOutputPath)minimum-sdk-hook.txt"
+                      Lines="executed" Overwrite="true" />
+  </Target>
+
 </Project>

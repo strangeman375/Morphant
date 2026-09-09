@@ -93,6 +93,8 @@ checkout together with its snapshots preserves ownership. To transfer a director
 to another project, remove its old snapshot and ownership file deliberately.
 Compiler directories also contain an ownership file and can be reset by removing
 the dedicated compiler directory.
+An existing, initialized ownership file only needs read access; it can remain
+read-only while writable generated files are updated.
 
 Links in the configured paths are resolved before checking overlaps and ownership.
 Morphant preserves unrelated links during cleanup and rejects links in generated
