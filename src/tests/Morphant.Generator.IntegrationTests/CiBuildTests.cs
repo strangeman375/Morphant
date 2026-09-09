@@ -260,6 +260,7 @@ internal sealed class CiBuildTests
 
     [TestCase("Project")]
     [TestCase("Global")]
+    [TestCase("GlobalLateImport")]
     [TestCase("LateImport")]
     public async Task Post_compile_hooks_are_preserved_without_publishing_skipped_compilations(string origin)
     {
@@ -269,15 +270,17 @@ internal sealed class CiBuildTests
         consumer.AddReference(dependency);
         if (origin == "Project")
             consumer.SetProperty("TargetsTriggeredByCompilation", "CiAfterCompile");
-        if (origin == "LateImport")
+        if (origin is "LateImport" or "GlobalLateImport")
             File.WriteAllText(Path.Combine(consumer.ProjectDirectory, "Directory.Build.targets"),
-                "<Project><PropertyGroup><TargetsTriggeredByCompilation>CiAfterCompile</TargetsTriggeredByCompilation></PropertyGroup></Project>");
-        string[] settings = origin == "Global" ? ["-p:TargetsTriggeredByCompilation=CiAfterCompile"] : [];
+                "<Project><PropertyGroup><TargetsTriggeredByCompilation>" +
+                (origin == "GlobalLateImport" ? "MustNotRun" : "CiAfterCompile") +
+                "</TargetsTriggeredByCompilation></PropertyGroup></Project>");
+        string[] settings = origin.StartsWith("Global", StringComparison.Ordinal) ? ["-p:TargetsTriggeredByCompilation=CiAfterCompile"] : [];
         AssertSucceeded(await consumer.Run("build", settings));
         AssertMapperSnapshot(consumer);
         var hook = Path.Combine(consumer.ProjectDirectory, "obj", "Release", "net10.0", "ci-after-compile.txt");
         Assert.That(File.ReadAllText(hook).Trim(), Is.EqualTo("executed"));
-        if (origin == "Global")
+        if (origin.StartsWith("Global", StringComparison.Ordinal))
             Assert.That(File.ReadAllText(Path.Combine(dependency.ProjectDirectory, "obj", "Release", "netstandard2.0", "ci-after-compile.txt")).Trim(), Is.EqualTo("executed"));
         var before = consumer.Snapshot();
         File.Delete(hook);
@@ -344,7 +347,10 @@ internal sealed class CiBuildTests
     public async Task Read_only_sources_can_build_with_external_artifact_directories()
     {
         if (OperatingSystem.IsWindows())
+        {
             Assert.Ignore("Unix directory permissions are used to make this checkout read-only.");
+            return;
+        }
         using var consumer = CreateConsumer();
         var mode = File.GetUnixFileMode(consumer.ProjectDirectory);
         try
