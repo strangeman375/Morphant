@@ -230,6 +230,9 @@ internal sealed class StorageTests
     {
         using var workspace = new Workspace();
         var task = workspace.CreateTask();
+        WriteOutput(task, "// previous\r\n");
+        AssertSucceeded(task);
+        var before = Sources(task.SnapshotRoot);
         WriteOutput(task, "// current\r\n");
         var context = Context(task);
         var engine = (Engine)task.BuildEngine;
@@ -240,7 +243,7 @@ internal sealed class StorageTests
             task.Cancel();
             Assert.That(await running.WaitAsync(TimeSpan.FromSeconds(10)), Is.False);
             Assert.That(engine.Errors, Is.Empty);
-            Assert.That(Sources(task.SnapshotRoot), Is.Empty);
+            Assert.That(Sources(task.SnapshotRoot), Is.EqualTo(before));
         }
         var retry = workspace.CreateTask();
         AssertSucceeded(retry);
@@ -314,7 +317,8 @@ internal sealed class StorageTests
     private static void AssertRejected(ManageMorphantGitSnapshot task, string code)
     {
         Assert.That(task.Execute(), Is.False);
-        Assert.That(((Engine)task.BuildEngine).Errors.Select(error => error.Code), Is.EqualTo(new[] { code }));
+        Assert.That(((Engine)task.BuildEngine).Errors.Select(error => error.Code), Is.EqualTo(new[] { code }),
+            string.Join("\n", ((Engine)task.BuildEngine).Errors.Select(error => error.Message)));
     }
 
     private static void RequireLinks()

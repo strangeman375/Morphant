@@ -22,10 +22,14 @@
     destination changes.
   -->
   <ItemGroup>
-    <Compile Remove="@(Compile)"
-             Condition="$([System.String]::Copy('%(Compile.Filename)').StartsWith('Morphant.Generated.')) and
-                        $([System.String]::Copy('%(Compile.Filename)').EndsWith('.g')) and '%(Compile.Extension)' == '.cs'" />
+    <Compile Remove="@(Compile->'%(RootDir)%(Directory)Morphant.Generated.*.g.cs')" />
   </ItemGroup>
+
+  <Target Name="ExcludeMorphantGitSnapshots" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Compile Remove="@(Compile->'%(RootDir)%(Directory)Morphant.Generated.*.g.cs')" />
+    </ItemGroup>
+  </Target>
 
   <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true'">
     <!--

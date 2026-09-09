@@ -73,6 +73,12 @@ internal static class PhysicalDirectory
         try { return (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0; }
         catch (FileNotFoundException) { return false; }
         catch (DirectoryNotFoundException) { return false; }
+        catch (IOException exception) when ((exception.HResult & 0xffff) ==
+            (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 1921 :
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? 62 : 40))
+        {
+            throw new SnapshotException("MORPHANTMSB016", $"Managed path '{path}' contains a cyclic link.");
+        }
     }
 
     public static void EnsureNoLinks(string root, string candidate, string description)

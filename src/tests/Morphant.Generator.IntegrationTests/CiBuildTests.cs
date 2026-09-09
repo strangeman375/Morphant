@@ -336,6 +336,31 @@ internal sealed class CiBuildTests
         Assert.That(first.Snapshot(shared), Is.EqualTo(before));
     }
 
+    [Test]
+    public async Task Read_only_sources_can_build_with_external_artifact_directories()
+    {
+        if (OperatingSystem.IsWindows())
+            Assert.Ignore("Unix directory permissions are used to make this checkout read-only.");
+        using var consumer = CreateConsumer();
+        var mode = File.GetUnixFileMode(consumer.ProjectDirectory);
+        try
+        {
+            File.SetUnixFileMode(consumer.ProjectDirectory,
+                UnixFileMode.UserRead | UnixFileMode.UserExecute | UnixFileMode.GroupRead |
+                UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+            var snapshot = Path.Combine(consumer.Root, "snapshot");
+            AssertSucceeded(await consumer.Run("build",
+                "-p:BaseIntermediateOutputPath=" + Path.Combine(consumer.Root, "restore") + Path.DirectorySeparatorChar,
+                "-p:IntermediateOutputPath=" + Path.Combine(consumer.Root, "compile") + Path.DirectorySeparatorChar,
+                "-p:OutputPath=" + Path.Combine(consumer.Root, "bin") + Path.DirectorySeparatorChar,
+                "-p:CompilerGeneratedFilesOutputPath=" + Path.Combine(consumer.Root, "generated"),
+                "-p:MorphantGitSnapshotPath=" + snapshot));
+            Assert.That(consumer.Snapshot(snapshot).Keys, Is.EqualTo(new[] { Path.Combine("net10.0", MapperFile) }));
+            Assert.That(Directory.GetDirectories(consumer.ProjectDirectory), Is.Empty);
+        }
+        finally { File.SetUnixFileMode(consumer.ProjectDirectory, mode); }
+    }
+
     private Consumer CreateConsumer(string directoryName = "consumer", string targetFramework = "net10.0") =>
         new(packages.PackageFeed, packageVersion, directoryName, targetFramework);
 
