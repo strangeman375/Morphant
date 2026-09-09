@@ -127,22 +127,18 @@ internal sealed class GitSnapshotContext
             intermediate,
             "IntermediateOutputPath");
 
-        var expectedCompilerOutput = Path.Combine(
-            intermediate,
-            "Morphant.CompilerGenerated");
         var compilerOutput = FullPath(
             compilerGeneratedFilesOutputPath,
             project,
             "CompilerGeneratedFilesOutputPath");
 
-        if (!PathsEqual(expectedCompilerOutput, compilerOutput))
+        if (!IsInside(compilerOutput, intermediate))
         {
             throw new SnapshotException(
                 "MORPHANTMSB004",
-                "MorphantGitSnapshot requires the private compiler staging " +
-                $"directory '{expectedCompilerOutput}', but the effective " +
-                $"CompilerGeneratedFilesOutputPath is '{compilerOutput}'. " +
-                "Remove the command-line or global override.");
+                $"CompilerGeneratedFilesOutputPath '{compilerOutput}' must " +
+                "be a dedicated subdirectory inside " +
+                $"IntermediateOutputPath '{intermediate}'.");
         }
 
         EnsureNoLinks(

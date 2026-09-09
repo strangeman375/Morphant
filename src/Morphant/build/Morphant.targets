@@ -9,7 +9,6 @@
         Condition="'$(MorphantGitSnapshotDetail)' == ''">Mappers</MorphantGitSnapshotDetail>
 
     <_MorphantGitSnapshotTaskAssembly>$(MSBuildThisFileDirectory)Morphant.Build.Tasks.dll</_MorphantGitSnapshotTaskAssembly>
-    <_MorphantExpectedCompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)/Morphant.CompilerGenerated</_MorphantExpectedCompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <UsingTask TaskName="Morphant.Build.Tasks.ManageMorphantGitSnapshot"
@@ -29,12 +28,14 @@
   <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true'">
     <!--
       Roslyn emits every source generator into one output root. Keep that root
-      under obj. Keep both properties in the design-time command line as well:
-      IDE project models use that command line to track source-generator
-      documents. Design-time builds still never prepare or publish a snapshot.
+      under IntermediateOutputPath. Keep both properties in the design-time
+      command line as well: IDE project models use that command line to track
+      source-generator documents. Design-time builds still never prepare or
+      publish a snapshot.
     -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>$(_MorphantExpectedCompilerGeneratedFilesOutputPath)</CompilerGeneratedFilesOutputPath>
+    <CompilerGeneratedFilesOutputPath
+        Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)/Morphant.CompilerGenerated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true' and

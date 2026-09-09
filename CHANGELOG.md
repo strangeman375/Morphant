@@ -39,6 +39,9 @@ unsupported.
 
 ### Fixed
 
+- Allow a custom `CompilerGeneratedFilesOutputPath` inside the current
+  `IntermediateOutputPath` when Git snapshots are enabled, preserving cleanup
+  and publication checks.
 - Give an invalid `MorphantGitSnapshot` value the stable build error code
   `MORPHANTMSB022`.
 - Diagnose unsupported polymorphic branch relationships that depend on unknown

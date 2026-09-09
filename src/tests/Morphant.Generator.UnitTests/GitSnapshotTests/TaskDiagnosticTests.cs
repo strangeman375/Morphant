@@ -41,7 +41,6 @@ internal sealed class TaskDiagnosticTests
     }
 
     [TestCase("Overlap", "MORPHANTMSB003")]
-    [TestCase("Staging", "MORPHANTMSB004")]
     [TestCase("Root", "MORPHANTMSB005")]
     [TestCase("File", "MORPHANTMSB015")]
     [TestCase("Directory", "MORPHANTMSB015")]
@@ -55,11 +54,6 @@ internal sealed class TaskDiagnosticTests
             case "Overlap":
                 task.BaseIntermediateOutputPath = task.SnapshotRoot;
                 message = "IntermediateOutputPath must remain inside a dedicated BaseIntermediateOutputPath, and neither path may equal the project root or overlap MorphantGitSnapshotPath.";
-                break;
-            case "Staging":
-                var expected = task.CompilerGeneratedFilesOutputPath;
-                task.CompilerGeneratedFilesOutputPath = task.SnapshotRoot;
-                message = $"MorphantGitSnapshot requires the private compiler staging directory '{expected}', but the effective CompilerGeneratedFilesOutputPath is '{task.SnapshotRoot}'. Remove the command-line or global override.";
                 break;
             case "Root":
                 task.SnapshotRoot = task.ProjectDirectory;
@@ -81,6 +75,120 @@ internal sealed class TaskDiagnosticTests
 
         var before = workspace.Files();
         AssertFailure(workspace, code, message);
+        Assert.That(workspace.Files(), Is.EqualTo(before));
+    }
+
+    [TestCase("My Generated", false)]
+    [TestCase("Nested/Generators", true)]
+    [TestCase("Old/../MyGenerated/.", true)]
+    [TestCase("Nested/Generators/", false)]
+    public void Custom_compiler_output_is_cleaned_and_published_without_touching_other_output(
+        string subdirectory, bool relative)
+    {
+        using var workspace = new Workspace();
+        var task = workspace.Task;
+        var configured = Path.Combine(task.IntermediateOutputPath, subdirectory);
+        var output = Path.TrimEndingDirectorySeparator(Path.GetFullPath(configured));
+        task.CompilerGeneratedFilesOutputPath = relative
+            ? Path.GetRelativePath(task.ProjectDirectory, task.IntermediateOutputPath) + "/" + subdirectory
+            : configured;
+        Directory.CreateDirectory(output);
+        var stale = Path.Combine(output, "Morphant.Generated.TypeMapper.Stale.g.cs");
+        var foreign = Path.Combine(output, "Other.Generator.Output.g.cs");
+        File.WriteAllText(stale, "// stale\r\n");
+        File.WriteAllText(foreign, "// foreign\r\n");
+        var afterPreparation = workspace.Files();
+        afterPreparation.Remove(Path.GetRelativePath(task.ProjectDirectory, stale));
+
+        task.Operation = "Prepare";
+        Assert.That(task.Execute(), Is.True);
+        Assert.That(workspace.Files(), Is.EqualTo(afterPreparation),
+            "Preparation must preserve the snapshot, foreign files and the old default staging directory.");
+
+        const string currentName = "Morphant.Generated.TypeMapper.Updated.g.cs";
+        var current = Path.Combine(output, currentName);
+        File.WriteAllText(current, "// updated\r\n");
+        var afterPublication = workspace.Files();
+        afterPublication.Remove(Path.Combine("Generated", "net10.0", "Morphant.Generated.TypeMapper.Previous.g.cs"));
+        afterPublication.Add(Path.Combine("Generated", "net10.0", currentName), File.ReadAllBytes(current));
+
+        task.Operation = "Publish";
+        Assert.That(task.Execute(), Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(workspace.Files(), Is.EqualTo(afterPublication),
+                "Publication must use only the effective staging directory and preserve every unrelated file.");
+            Assert.That(workspace.Engine.Errors, Is.Empty);
+            Assert.That(workspace.Engine.Warnings, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Compiler_output_must_be_strictly_inside_the_current_intermediate_directory(
+        [Values("Prepare", "Publish")] string operation,
+        [Values("Intermediate", "NormalizedIntermediate", "Parent", "PrefixSibling", "OtherFramework", "Snapshot")] string kind)
+    {
+        using var workspace = new Workspace();
+        var task = workspace.Task;
+        task.Operation = operation;
+        task.CompilerGeneratedFilesOutputPath = kind switch
+        {
+            "Intermediate" => task.IntermediateOutputPath,
+            "NormalizedIntermediate" => Path.Combine(task.IntermediateOutputPath, "Nested", ".."),
+            "Parent" => task.BaseIntermediateOutputPath,
+            "PrefixSibling" => task.IntermediateOutputPath + "-other",
+            "OtherFramework" => Path.Combine(task.BaseIntermediateOutputPath, "Release", "net9.0", "Custom"),
+            "Snapshot" => task.SnapshotRoot,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        };
+        var before = workspace.Files();
+        var output = Path.TrimEndingDirectorySeparator(Path.GetFullPath(task.CompilerGeneratedFilesOutputPath));
+
+        AssertFailure(workspace, "MORPHANTMSB004",
+            $"CompilerGeneratedFilesOutputPath '{output}' must be a dedicated subdirectory inside IntermediateOutputPath '{task.IntermediateOutputPath}'.");
+        Assert.That(workspace.Files(), Is.EqualTo(before));
+    }
+
+    [Test]
+    public void Custom_compiler_output_rejects_linked_directories_before_mutation(
+        [Values("Prepare", "Publish")] string operation,
+        [Values(false, true)] bool nested)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Ignore("Creating directory symbolic links is not generally available to Windows test runners.");
+        }
+
+        using var workspace = new Workspace();
+        var task = workspace.Task;
+        task.Operation = operation;
+        var linked = Path.Combine(task.IntermediateOutputPath, "CustomLink");
+        var target = Path.Combine(task.ProjectDirectory, "linked-output");
+        var targetOutput = nested ? Path.Combine(target, "Nested") : target;
+        Directory.CreateDirectory(targetOutput);
+        File.WriteAllText(Path.Combine(targetOutput, "Morphant.Generated.TypeMapper.Linked.g.cs"), "// linked\r\n");
+        Directory.CreateSymbolicLink(linked, target);
+        task.CompilerGeneratedFilesOutputPath = nested ? Path.Combine(linked, "Nested") : linked;
+        var before = workspace.Files();
+
+        AssertFailure(workspace, "MORPHANTMSB016",
+            $"CompilerGeneratedFilesOutputPath traverses symbolic link or reparse point '{linked}'.");
+        Assert.That(workspace.Files(), Is.EqualTo(before));
+    }
+
+    [Test]
+    public void Custom_compiler_output_rejects_a_file_before_mutation(
+        [Values("Prepare", "Publish")] string operation)
+    {
+        using var workspace = new Workspace();
+        var task = workspace.Task;
+        task.Operation = operation;
+        task.CompilerGeneratedFilesOutputPath = Path.Combine(task.IntermediateOutputPath, "occupied");
+        File.WriteAllText(task.CompilerGeneratedFilesOutputPath, "user file");
+        var before = workspace.Files();
+
+        AssertFailure(workspace, "MORPHANTMSB015",
+            $"CompilerGeneratedFilesOutputPath '{task.CompilerGeneratedFilesOutputPath}' names a file, not a directory.");
         Assert.That(workspace.Files(), Is.EqualTo(before));
     }
 

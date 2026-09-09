@@ -64,6 +64,21 @@ The optional settings are:
 | `MorphantGitSnapshotTargetFrameworks` | Last declared TFM | Semicolon-separated subset of the project's TFMs; use `$(TargetFrameworks)` to select all. |
 | `MorphantGitSnapshotPath` | `Generated/Morphant` | Dedicated snapshot directory inside the project. |
 
+Compiler output is staged separately from the Git snapshot. Morphant defaults
+`CompilerGeneratedFilesOutputPath` to
+`$(IntermediateOutputPath)/Morphant.CompilerGenerated` when no effective path
+is set. An existing SDK or custom path is preserved if it names a subdirectory
+inside the current `IntermediateOutputPath`, without symbolic links. For example:
+
+```bash
+dotnet build -c Release -t:Rebuild -p:CompilerGeneratedFilesOutputPath=obj/Release/net10.0/MyGenerated
+```
+
+Use the actual configuration and TFM of your project in the path. When setting
+the path in the project file, also set `EmitCompilerGeneratedFiles` to `true`
+so the SDK retains it. Command-line properties take precedence. The intermediate
+directory itself and directories outside it cannot be used as staging.
+
 In multi-target projects, list `TargetFrameworks` from oldest to newest. For
 example, `net8.0;net10.0` selects only `net10.0` by default. Every explicitly
 selected TFM must also be declared by the project.
@@ -117,7 +132,7 @@ not controlled by C# pragmas or `dotnet_diagnostic` severity settings.
 | `MORPHANTMSB001` | Unknown snapshot task operation. Use the package's imported targets. |
 | `MORPHANTMSB002` | Generated-file output is disabled. Remove the override of `EmitCompilerGeneratedFiles`. |
 | `MORPHANTMSB003` | Intermediate and snapshot paths overlap or escape their required parent. Use separate directories. |
-| `MORPHANTMSB004` | Compiler output was redirected. Remove the override of `CompilerGeneratedFilesOutputPath`. |
+| `MORPHANTMSB004` | Compiler output is outside `IntermediateOutputPath` or equals it. Set `CompilerGeneratedFilesOutputPath` to a dedicated subdirectory inside it. |
 | `MORPHANTMSB005` | The snapshot path is outside the project or equals its root. Choose a dedicated project subdirectory. |
 | `MORPHANTMSB006` | A path is empty, nonportable or contains wildcards or unresolved MSBuild expressions. Supply a literal path. |
 | `MORPHANTMSB007` | A framework name cannot form a portable directory name. Correct the indicated framework property. |
