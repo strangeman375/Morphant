@@ -363,25 +363,42 @@ internal sealed class GitSnapshotLifecycleTests
         });
     }
 
-    [Test]
-    public void Msbuild_task_reports_missing_publication_target()
+    [TestCase("netstandard2.0", "", "net10.0", true)]
+    [TestCase("net10.0", "netstandard2.0;net10.0", "net9.0", true)]
+    [TestCase("netstandard2.0", "netstandard2.0;net10.0", "net9.0", false)]
+    [TestCase("netstandard2.0", "netstandard2.0;net10.0", "net9.0;NETSTANDARD2.0", true)]
+    [TestCase("net10.0", "netstandard2.0;net10.0", "net9.0;NETSTANDARD2.0", false)]
+    [TestCase("net10.0", "netstandard2.0;net10.0", "NET10.0;net9.0;net10.0", true)]
+    public void Framework_selection_publishes_matches_or_the_project_default(
+        string current, string declared, string requested, bool shouldPublish)
     {
         using var workspace = new SnapshotWorkspace();
-        var buildEngine = new RecordingBuildEngine();
-        var task = workspace.CreateTask(
-            "Prepare",
-            buildEngine,
-            targetsTriggeredByCompilation: "ForeignTarget");
+        var context = workspace.CreateContext("Release", current, declared, requested);
+        const string name = "Morphant.Generated.TypeMapper.Current.g.cs";
+        var source = workspace.WriteCompilerOutput(context, name, "// current\r\n");
+        GitSnapshotLifecycle.Publish(context);
+        Assert.That(File.Exists(Path.Combine(context.SliceDirectory, name)), Is.EqualTo(shouldPublish));
+        Assert.That(File.ReadAllText(source), Is.EqualTo("// current\r\n"));
+        if (shouldPublish)
+            Assert.That(File.ReadAllText(Path.Combine(context.SliceDirectory, name)), Is.EqualTo("// current\r\n"));
+    }
 
-        var succeeded = task.Execute();
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(succeeded, Is.False);
-            Assert.That(
-                buildEngine.Errors.Select(static error => error.Code),
-                Is.EqualTo(new[] { "MORPHANTMSB017" }));
-        });
+    [TestCase("Prepare")]
+    [TestCase("Publish")]
+    public void Unselected_framework_does_not_validate_or_mutate_snapshot_storage(string operation)
+    {
+        using var workspace = new SnapshotWorkspace();
+        var context = workspace.CreateContext("Release", "net10.0");
+        var previous = workspace.WriteSnapshot(context, "Morphant.Generated.TypeMapper.Previous.g.cs", "// previous\r\n");
+        var engine = new RecordingBuildEngine();
+        var task = workspace.CreateTask(operation, engine);
+        task.TargetFrameworks = "net10.0;net11.0";
+        task.SnapshotTargetFrameworks = "net9.0";
+        task.EmitCompilerGeneratedFiles = "false";
+        task.SnapshotRoot = task.ProjectDirectory;
+        Assert.That(task.Execute(), Is.True);
+        Assert.That(engine.Errors, Is.Empty);
+        Assert.That(File.ReadAllText(previous), Is.EqualTo("// previous\r\n"));
     }
 
     [Test]
@@ -529,9 +546,7 @@ internal sealed class GitSnapshotLifecycleTests
 
         public ManageMorphantGitSnapshot CreateTask(
             string operation,
-            IBuildEngine buildEngine,
-            string targetsTriggeredByCompilation =
-                "PublishMorphantGitSnapshot")
+            IBuildEngine buildEngine)
         {
             var intermediate = Path.Combine(
                 BaseIntermediate,
@@ -552,9 +567,7 @@ internal sealed class GitSnapshotLifecycleTests
                 CompilerGeneratedFilesOutputPath = Path.Combine(
                     intermediate,
                     "Morphant.CompilerGenerated"),
-                EmitCompilerGeneratedFiles = "true",
-                TargetsTriggeredByCompilation =
-                    targetsTriggeredByCompilation
+                EmitCompilerGeneratedFiles = "true"
             };
         }
 

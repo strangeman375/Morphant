@@ -146,78 +146,17 @@ internal sealed class GitSnapshotContext
             compilerOutput,
             "CompilerGeneratedFilesOutputPath");
 
-        targetFramework = string.IsNullOrWhiteSpace(targetFramework)
-            ? "_default"
-            : targetFramework;
-        EnsureSafeComponent(targetFramework, "TargetFramework");
-
-        var declaredFrameworks = SplitFrameworks(targetFrameworks);
-
-        if (declaredFrameworks.Length == 0)
-        {
-            declaredFrameworks = [targetFramework];
-        }
-
-        foreach (var framework in declaredFrameworks)
-        {
-            EnsureSafeComponent(framework, "TargetFrameworks");
-        }
-
-        string[] selectedFrameworks;
-
-        if (string.IsNullOrWhiteSpace(snapshotTargetFrameworks))
-        {
-            selectedFrameworks =
-                [declaredFrameworks[declaredFrameworks.Length - 1]];
-        }
-        else
-        {
-            selectedFrameworks = SplitFrameworks(snapshotTargetFrameworks)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-
-            if (selectedFrameworks.Length == 0)
-            {
-                throw new SnapshotException(
-                    "MORPHANTMSB021",
-                    "MorphantGitSnapshotTargetFrameworks must contain at " +
-                    "least one target framework when specified.");
-            }
-        }
-
-        foreach (var framework in selectedFrameworks)
-        {
-            EnsureSafeComponent(
-                framework,
-                "MorphantGitSnapshotTargetFrameworks");
-
-            if (!declaredFrameworks.Contains(
-                    framework,
-                    StringComparer.OrdinalIgnoreCase))
-            {
-                throw new SnapshotException(
-                    "MORPHANTMSB021",
-                    "MorphantGitSnapshotTargetFrameworks contains " +
-                    $"'{framework}', which is not declared by " +
-                    "TargetFramework or TargetFrameworks. Declared target " +
-                    $"frameworks: '{string.Join(";", declaredFrameworks)}'.");
-            }
-        }
+        var selection = GitSnapshotFrameworkSelection.Create(
+            targetFramework, targetFrameworks, snapshotTargetFrameworks);
 
         return new GitSnapshotContext(
             snapshot,
             detail,
-            targetFramework,
-            selectedFrameworks,
+            selection.Current,
+            selection.Selected,
             intermediate,
             compilerOutput);
     }
-
-    private static string[] SplitFrameworks(string value) =>
-        value.Split([';'], StringSplitOptions.RemoveEmptyEntries)
-            .Select(static framework => framework.Trim())
-            .Where(static framework => framework.Length > 0)
-            .ToArray();
 
     private static GitSnapshotDetail ParseSnapshotDetail(string value)
     {
@@ -320,17 +259,6 @@ internal sealed class GitSnapshotContext
             : fullPath.TrimEnd(
                 Path.DirectorySeparatorChar,
                 Path.AltDirectorySeparatorChar);
-    }
-
-    private static void EnsureSafeComponent(string value, string propertyName)
-    {
-        if (!PortablePath.IsSafeComponent(value))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB007",
-                $"{propertyName} contains a value that cannot be used as a " +
-                "safe snapshot path component.");
-        }
     }
 
     private static void EnsureNoLinks(

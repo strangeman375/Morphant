@@ -13,9 +13,7 @@ internal sealed class TaskDiagnosticTests
     [TestCase("Framework", "../outside", "MORPHANTMSB007", "TargetFramework contains a value that cannot be used as a safe snapshot path component.")]
     [TestCase("Frameworks", "net10.0;CON", "MORPHANTMSB007", "TargetFrameworks contains a value that cannot be used as a safe snapshot path component.")]
     [TestCase("SelectedFrameworks", "CON", "MORPHANTMSB007", "MorphantGitSnapshotTargetFrameworks contains a value that cannot be used as a safe snapshot path component.")]
-    [TestCase("Publication", "ForeignTarget", "MORPHANTMSB017", "MorphantGitSnapshot requires PublishMorphantGitSnapshot in TargetsTriggeredByCompilation. Remove the command-line or global override that prevents post-compile publication.")]
     [TestCase("Detail", "Everything", "MORPHANTMSB020", "MorphantGitSnapshotDetail must be Mappers or Full. The effective value is 'Everything'.")]
-    [TestCase("SelectedFrameworks", "net9.0", "MORPHANTMSB021", "MorphantGitSnapshotTargetFrameworks contains 'net9.0', which is not declared by TargetFramework or TargetFrameworks. Declared target frameworks: 'net10.0'.")]
     [TestCase("SelectedFrameworks", "; ;", "MORPHANTMSB021", "MorphantGitSnapshotTargetFrameworks must contain at least one target framework when specified.")]
     public void Invalid_configuration_reports_one_actionable_error_before_mutation(
         string property, string value, string code, string message)
@@ -30,7 +28,6 @@ internal sealed class TaskDiagnosticTests
             case "Framework": task.TargetFramework = value; break;
             case "Frameworks": task.TargetFrameworks = value; break;
             case "SelectedFrameworks": task.SnapshotTargetFrameworks = value; break;
-            case "Publication": task.TargetsTriggeredByCompilation = value; break;
             case "Detail": task.SnapshotDetail = value; break;
             default: throw new ArgumentOutOfRangeException(nameof(property));
         }
@@ -294,8 +291,7 @@ internal sealed class TaskDiagnosticTests
                 BaseIntermediateOutputPath = Path.Combine(root, "obj"),
                 IntermediateOutputPath = intermediate,
                 CompilerGeneratedFilesOutputPath = Path.Combine(intermediate, "Morphant.CompilerGenerated"),
-                EmitCompilerGeneratedFiles = "true",
-                TargetsTriggeredByCompilation = "PublishMorphantGitSnapshot"
+                EmitCompilerGeneratedFiles = "true"
             };
             Directory.CreateDirectory(Task.CompilerGeneratedFilesOutputPath);
             Directory.CreateDirectory(Path.Combine(Task.SnapshotRoot, "net10.0"));

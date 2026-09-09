@@ -726,13 +726,10 @@ internal sealed class PackageConsumptionTests
             ("-p:CompilerGeneratedFilesOutputPath=", "MORPHANTMSB006"),
             ("-p:EmitCompilerGeneratedFiles=false", "MORPHANTMSB002"),
             (
-                "-p:TargetsTriggeredByCompilation=ForeignTarget",
-                "MORPHANTMSB017"),
-            (
                 "-p:MorphantGitSnapshotDetail=Everything",
                 "MORPHANTMSB020"),
             (
-                "-p:MorphantGitSnapshotTargetFrameworks=net9.0",
+                "-p:MorphantGitSnapshotTargetFrameworks=%3B%20%3B",
                 "MORPHANTMSB021")
         };
 
@@ -1280,6 +1277,7 @@ namespace Morphant.Generator.PackageTests.Consumer
                 "README.md",
                 "analyzers/dotnet/cs/Morphant.Generator.dll",
                 "buildTransitive/Morphant.Build.Tasks.dll",
+                "buildTransitive/Morphant.GitSnapshot.targets",
                 "buildTransitive/Morphant.props",
                 "buildTransitive/Morphant.targets",
                 "lib/netstandard2.0/Morphant.dll",

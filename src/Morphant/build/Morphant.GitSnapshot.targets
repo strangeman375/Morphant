@@ -1,0 +1,8 @@
+<Project TreatAsLocalProperty="TargetsTriggeredByCompilation">
+  <!-- Retain global hooks and register after subsequent imports have evaluated. -->
+  <Target Name="RegisterMorphantGitSnapshotPublication">
+    <PropertyGroup>
+      <TargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation);PublishMorphantGitSnapshot</TargetsTriggeredByCompilation>
+    </PropertyGroup>
+  </Target>
+</Project>

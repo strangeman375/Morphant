@@ -37,7 +37,7 @@ public abstract class MorphantBuildTask : ITask
             message,
             string.Empty,
             GetType().Name,
-            MessageImportance.Low));
+            MessageImportance.Normal));
     }
 
     private void LogError(string code, string message)

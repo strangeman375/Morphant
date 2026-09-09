@@ -65,7 +65,7 @@ The optional settings are:
 | Setting | Default | Purpose |
 |---|---|---|
 | `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include all Morphant-generated files. Values are case-insensitive. |
-| `MorphantGitSnapshotTargetFrameworks` | Last declared TFM | Semicolon-separated subset of the project's TFMs; use `$(TargetFrameworks)` to select all. |
+| `MorphantGitSnapshotTargetFrameworks` | Last declared TFM | Semicolon-separated preferred TFMs; use `$(TargetFrameworks)` to select all. |
 | `MorphantGitSnapshotPath` | `Generated/Morphant` | Dedicated snapshot directory inside the project. |
 
 Compiler output is staged separately from the Git snapshot. Morphant defaults
@@ -84,8 +84,14 @@ so the SDK retains it. Command-line properties take precedence. The intermediate
 directory itself and directories outside it cannot be used as staging.
 
 In multi-target projects, list `TargetFrameworks` from oldest to newest. For
-example, `net8.0;net10.0` selects only `net10.0` by default. Every explicitly
-selected TFM must also be declared by the project.
+example, `net8.0;net10.0` selects only `net10.0` by default. An explicit selection
+uses the TFMs declared by both the setting and the project. If none match,
+Morphant uses the project's last declared TFM and logs the fallback. Thus a
+global `net10.0` selection still updates a `netstandard2.0` dependency's snapshot.
+Only TFMs actually compiled by the build can update their snapshots.
+
+Existing `TargetsTriggeredByCompilation` hooks are retained, including global
+command-line values; Morphant appends its publication target locally.
 
 Example with all generated files for every TFM:
 
@@ -143,9 +149,8 @@ not controlled by C# pragmas or `dotnet_diagnostic` severity settings.
 | `MORPHANTMSB008` | Generated filenames are nonportable or collide ignoring case. Check the reported name and generator inputs. |
 | `MORPHANTMSB015` | A file occupies a required directory, or a directory occupies a generated filename. Move the conflicting item. |
 | `MORPHANTMSB016` | A managed path contains a symbolic link or reparse point. Choose a directory without links. |
-| `MORPHANTMSB017` | Post-compilation publication was removed. Remove the override of `TargetsTriggeredByCompilation`. |
 | `MORPHANTMSB019` | Another build held the snapshot lock for two minutes. Finish or stop that build, then retry. |
 | `MORPHANTMSB020` | `MorphantGitSnapshotDetail` must be `Mappers` or `Full`. |
-| `MORPHANTMSB021` | The selected framework list is empty or includes an undeclared framework. Select from the project's frameworks. |
+| `MORPHANTMSB021` | The explicit framework list contains no names. Supply at least one TFM or leave the setting unset. |
 | `MORPHANTMSB022` | `MorphantGitSnapshot` must be `true` or `false`. |
 | `MORPHANTMSB999` | Unexpected snapshot failure. Use the included exception details to investigate and report a reproducible failure. |

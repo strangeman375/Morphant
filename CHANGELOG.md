@@ -39,6 +39,9 @@ unsupported.
 
 ### Fixed
 
+- Preserve global post-compilation hooks and update each project's default Git
+  snapshot when a shared target-framework selection has no matching TFM.
+
 - Accept literal square brackets in Git snapshot paths and compare
   `MorphantGitSnapshotDetail` values case-insensitively, matching MSBuild.
 - Allow a custom `CompilerGeneratedFilesOutputPath` inside the current

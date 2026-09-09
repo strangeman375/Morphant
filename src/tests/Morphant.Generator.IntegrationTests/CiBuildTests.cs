@@ -170,7 +170,6 @@ internal sealed class CiBuildTests
     [TestCase("IndependentIntermediate", "MORPHANTMSB003")]
     [TestCase("ExternalSnapshot", "MORPHANTMSB005")]
     [TestCase("CompilerOutput", "MORPHANTMSB004")]
-    [TestCase("GlobalPublicationHook", "MORPHANTMSB017")]
     public async Task Snapshot_path_and_hook_restrictions_can_be_disabled_for_an_otherwise_valid_build(
         string scenario, string code)
     {
@@ -187,7 +186,6 @@ internal sealed class CiBuildTests
                 "-p:EmitCompilerGeneratedFiles=true",
                 $"-p:CompilerGeneratedFilesOutputPath={Path.Combine(consumer.Root, "compiler-output")}"
             ],
-            "GlobalPublicationHook" => ["-p:TargetsTriggeredByCompilation=CiAfterCompile"],
             _ => throw new ArgumentOutOfRangeException(nameof(scenario))
         };
 
@@ -199,7 +197,7 @@ internal sealed class CiBuildTests
     }
 
     [Test]
-    public async Task A_global_framework_selection_is_validated_in_referenced_projects_too()
+    public async Task A_global_framework_selection_updates_the_referenced_project_default()
     {
         using var consumer = CreateConsumer();
         using var dependency = CreateConsumer(targetFramework: "netstandard2.0");
@@ -208,14 +206,25 @@ internal sealed class CiBuildTests
         AssertSucceeded(await consumer.Run("build"));
         var consumerSnapshot = consumer.Snapshot();
         var dependencySnapshot = dependency.Snapshot();
+        File.WriteAllText(Path.Combine(dependency.SnapshotRoot, "netstandard2.0", "Morphant.Generated.TypeMapper.Stale.g.cs"), "// stale");
         const string selection = "-p:MorphantGitSnapshotTargetFrameworks=net10.0";
 
-        AssertRejected(await consumer.Run("build", selection), "MORPHANTMSB021");
+        var result = await consumer.Run("msbuild", "-restore", "-graphBuild", "-m:2", "-t:Rebuild", selection);
+        AssertSucceeded(result);
         Assert.That(consumer.Snapshot(), Is.EqualTo(consumerSnapshot));
         Assert.That(dependency.Snapshot(), Is.EqualTo(dependencySnapshot));
-        AssertSucceeded(await consumer.Run("build", selection, "-p:MorphantGitSnapshot=false", "-t:Rebuild"));
-        Assert.That(consumer.Snapshot(), Is.EqualTo(consumerSnapshot));
-        Assert.That(dependency.Snapshot(), Is.EqualTo(dependencySnapshot));
+    }
+
+    [TestCase("net9.0", "net10.0")]
+    [TestCase("NETSTANDARD2.0;net9.0", "netstandard2.0")]
+    [TestCase("net9.0;NET10.0", "net10.0")]
+    public async Task Multi_target_selection_uses_matching_frameworks_or_the_last_declared(
+        string requested, string expected)
+    {
+        using var consumer = CreateConsumer(targetFramework: "netstandard2.0;net10.0");
+        consumer.SetProperty("MorphantGitSnapshotTargetFrameworks", requested);
+        AssertSucceeded(await consumer.Run("build"));
+        AssertMapperSnapshot(consumer, expected);
     }
 
     [Test]
@@ -236,15 +245,35 @@ internal sealed class CiBuildTests
         Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
     }
 
-    [Test]
-    public async Task A_project_defined_post_compile_hook_is_preserved()
+    [TestCase("Project")]
+    [TestCase("Global")]
+    [TestCase("LateImport")]
+    public async Task Post_compile_hooks_are_preserved_without_publishing_skipped_compilations(string origin)
     {
         using var consumer = CreateConsumer();
-        consumer.SetProperty("TargetsTriggeredByCompilation", "CiAfterCompile");
-        AssertSucceeded(await consumer.Run("build"));
+        using var dependency = CreateConsumer(targetFramework: "netstandard2.0");
+        dependency.SetProperty("AssemblyName", "CiDependency");
+        consumer.AddReference(dependency);
+        if (origin == "Project")
+            consumer.SetProperty("TargetsTriggeredByCompilation", "CiAfterCompile");
+        if (origin == "LateImport")
+            File.WriteAllText(Path.Combine(consumer.ProjectDirectory, "Directory.Build.targets"),
+                "<Project><PropertyGroup><TargetsTriggeredByCompilation>CiAfterCompile</TargetsTriggeredByCompilation></PropertyGroup></Project>");
+        string[] settings = origin == "Global" ? ["-p:TargetsTriggeredByCompilation=CiAfterCompile"] : [];
+        AssertSucceeded(await consumer.Run("build", settings));
         AssertMapperSnapshot(consumer);
-        Assert.That(File.ReadAllText(Path.Combine(consumer.ProjectDirectory, "obj", "Release", "net10.0", "ci-after-compile.txt")).Trim(),
-            Is.EqualTo("executed"));
+        var hook = Path.Combine(consumer.ProjectDirectory, "obj", "Release", "net10.0", "ci-after-compile.txt");
+        Assert.That(File.ReadAllText(hook).Trim(), Is.EqualTo("executed"));
+        if (origin == "Global")
+            Assert.That(File.ReadAllText(Path.Combine(dependency.ProjectDirectory, "obj", "Release", "netstandard2.0", "ci-after-compile.txt")).Trim(), Is.EqualTo("executed"));
+        var before = consumer.Snapshot();
+        File.Delete(hook);
+        AssertSucceeded(await consumer.Run("build", [.. settings, "--no-restore"]));
+        Assert.That(File.Exists(hook), Is.False);
+        Assert.That(consumer.Snapshot(), Is.EqualTo(before));
+        File.WriteAllText(Path.Combine(consumer.ProjectDirectory, "Broken.cs"), "This does not compile.");
+        Assert.That((await consumer.Run("build", settings)).ExitCode, Is.Not.Zero);
+        Assert.That(consumer.Snapshot(), Is.EqualTo(before));
     }
 
     private Consumer CreateConsumer(string directoryName = "consumer", string targetFramework = "net10.0") =>

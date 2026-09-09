@@ -32,11 +32,15 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
 
     public string EmitCompilerGeneratedFiles { get; set; } = string.Empty;
 
-    public string TargetsTriggeredByCompilation { get; set; } = string.Empty;
-
     protected override void ExecuteCore()
     {
-        EnsurePublicationTargetIsRegistered();
+        var selection = GitSnapshotFrameworkSelection.Create(
+            TargetFramework, TargetFrameworks, SnapshotTargetFrameworks);
+        if (selection.UsedFallback && Operation == "Prepare" && selection.IncludesCurrent)
+            LogMessage($"Morphant Git snapshot selection '{SnapshotTargetFrameworks}' does not match " +
+                $"this project; using its default target framework '{selection.Selected[0]}'.");
+        if (!selection.IncludesCurrent && Operation is "Prepare" or "Publish")
+            return;
 
         var context = GitSnapshotContext.Create(
             ProjectDirectory,
@@ -62,23 +66,6 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
                 throw new SnapshotException(
                     "MORPHANTMSB001",
                     $"Unknown Morphant Git snapshot operation '{Operation}'.");
-        }
-    }
-
-    private void EnsurePublicationTargetIsRegistered()
-    {
-        if (!TargetsTriggeredByCompilation
-                .Split([';'], StringSplitOptions.RemoveEmptyEntries)
-                .Select(static target => target.Trim())
-                .Contains(
-                    "PublishMorphantGitSnapshot",
-                    StringComparer.OrdinalIgnoreCase))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB017",
-                "MorphantGitSnapshot requires PublishMorphantGitSnapshot in " +
-                "TargetsTriggeredByCompilation. Remove the command-line or " +
-                "global override that prevents post-compile publication.");
         }
     }
 }
