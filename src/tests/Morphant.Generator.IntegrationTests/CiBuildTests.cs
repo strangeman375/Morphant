@@ -252,10 +252,17 @@ internal sealed class CiBuildTests
         }
         else
             Directory.CreateSymbolicLink(linkedDirectory, consumer.ProjectDirectory);
-        consumer.ProjectPath = Path.Combine(linkedDirectory, "CiConsumer.csproj");
-
-        AssertSucceeded(await consumer.Run("build", "-t:Rebuild"));
-        Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
+        try
+        {
+            consumer.ProjectPath = Path.Combine(linkedDirectory, "CiConsumer.csproj");
+            AssertSucceeded(await consumer.Run("build", "-t:Rebuild"));
+            Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
+        }
+        finally
+        {
+            // Remove the alias before recursive cleanup removes its target.
+            Directory.Delete(linkedDirectory);
+        }
     }
 
     [TestCase("Project")]
@@ -290,7 +297,7 @@ internal sealed class CiBuildTests
         string[] settings = origin switch
         {
             "GlobalWithProjectLocalOverride" => ["-p:TargetsTriggeredByCompilation=MustNotRun"],
-            "GlobalWithExistingPublication" => ["-p:TargetsTriggeredByCompilation=CiAfterCompile%3BPublishMorphantGitSnapshot"],
+            "GlobalWithExistingPublication" => ["-p:TargetsTriggeredByCompilation=\"CiAfterCompile;PublishMorphantGitSnapshot\""],
             _ when origin.StartsWith("Global", StringComparison.Ordinal) => ["-p:TargetsTriggeredByCompilation=CiAfterCompile"],
             _ => []
         };
