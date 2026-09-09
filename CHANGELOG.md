@@ -39,6 +39,9 @@ unsupported.
 
 ### Fixed
 
+- Allow independent and external Git snapshot/compiler directories and linked
+  checkout paths, with ownership checks and cancellable publication locks.
+
 - Preserve global post-compilation hooks and update each project's default Git
   snapshot when a shared target-framework selection has no matching TFM.
 

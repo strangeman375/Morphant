@@ -2,8 +2,12 @@ using Microsoft.Build.Framework;
 
 namespace Morphant.Build.Tasks;
 
-public abstract class MorphantBuildTask : ITask
+public abstract class MorphantBuildTask : ICancelableTask
 {
+    private readonly CancellationTokenSource cancellation = new();
+    protected CancellationToken CancellationToken => cancellation.Token;
+    public void Cancel() => cancellation.Cancel();
+
     public IBuildEngine BuildEngine { get; set; } = null!;
 
     public ITaskHost? HostObject { get; set; }
@@ -12,8 +16,13 @@ public abstract class MorphantBuildTask : ITask
     {
         try
         {
+            CancellationToken.ThrowIfCancellationRequested();
             ExecuteCore();
             return true;
+        }
+        catch (OperationCanceledException) when (CancellationToken.IsCancellationRequested)
+        {
+            return false;
         }
         catch (SnapshotException exception)
         {

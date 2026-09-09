@@ -57,7 +57,7 @@ ordinary project value of `false`. A global
 `-p:EmitCompilerGeneratedFiles=false` prevents this and produces a build error.
 
 After a successful compilation, files appear under
-`Generated/Morphant/<tfm>`. Failed builds leave the previous snapshot intact,
+`Generated/Morphant/<tfm>`. Failed compilations leave the previous snapshot intact,
 and snapshot files are excluded from compilation.
 
 The optional settings are:
@@ -66,13 +66,13 @@ The optional settings are:
 |---|---|---|
 | `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include all Morphant-generated files. Values are case-insensitive. |
 | `MorphantGitSnapshotTargetFrameworks` | Last declared TFM | Semicolon-separated preferred TFMs; use `$(TargetFrameworks)` to select all. |
-| `MorphantGitSnapshotPath` | `Generated/Morphant` | Dedicated snapshot directory inside the project. |
+| `MorphantGitSnapshotPath` | `Generated/Morphant` | Dedicated snapshot directory, inside or outside the project. |
 
 Compiler output is staged separately from the Git snapshot. Morphant defaults
 `CompilerGeneratedFilesOutputPath` to
 `$(IntermediateOutputPath)/Morphant.CompilerGenerated` when no effective path
-is set. An existing SDK or custom path is preserved if it names a subdirectory
-inside the current `IntermediateOutputPath`, without symbolic links. For example:
+is set. Existing SDK and custom paths are preserved, including external paths.
+The compiler output and snapshot directories must not overlap. For example:
 
 ```bash
 dotnet build -c Release -t:Rebuild -p:CompilerGeneratedFilesOutputPath=obj/Release/net10.0/MyGenerated
@@ -80,8 +80,24 @@ dotnet build -c Release -t:Rebuild -p:CompilerGeneratedFilesOutputPath=obj/Relea
 
 Use the actual configuration and TFM of your project in the path. When setting
 the path in the project file, also set `EmitCompilerGeneratedFiles` to `true`
-so the SDK retains it. Command-line properties take precedence. The intermediate
-directory itself and directories outside it cannot be used as staging.
+so the SDK retains it. Command-line properties take precedence. Neither path
+needs to be inside `BaseIntermediateOutputPath` or `IntermediateOutputPath`.
+Use distinct compiler directories for projects, configurations, TFMs and RIDs;
+several compilations cannot share the same compiler directory.
+
+Each snapshot directory belongs to one project. A repository-wide layout can
+use `snapshots/App` and `snapshots/Library`. Morphant records ownership in a
+small `.morphant` file; keep that file with the snapshot. Its project path is
+relative when both locations are on the same filesystem root. Moving the whole
+checkout together with its snapshots preserves ownership. To transfer a directory
+to another project, remove its old snapshot and ownership file deliberately.
+Compiler directories also contain an ownership file and can be reset by removing
+the dedicated compiler directory.
+
+Links in the configured paths are resolved before checking overlaps and ownership.
+Morphant preserves unrelated links during cleanup and rejects links in generated
+files or directories it must modify. Paths must be valid on the current OS;
+MSBuild special characters in property values still require normal MSBuild escaping.
 
 In multi-target projects, list `TargetFrameworks` from oldest to newest. For
 example, `net8.0;net10.0` selects only `net10.0` by default. An explicit selection
@@ -118,7 +134,8 @@ An up-to-date build may skip compilation and therefore may not repair the
 snapshot. Change mappings or models instead of editing generated files.
 
 Debug and Release update the same snapshot; if their output differs, the last
-successful build wins. Build the intended configuration before committing.
+successful build wins. Publications wait for the same directory's lock and stop
+waiting when the build is cancelled. Build the intended configuration before committing.
 Changing `MorphantGitSnapshotPath` does not delete the old directory.
 
 For stable line endings across platforms, add:
@@ -141,15 +158,14 @@ not controlled by C# pragmas or `dotnet_diagnostic` severity settings.
 |---|---|
 | `MORPHANTMSB001` | Unknown snapshot task operation. Use the package's imported targets. |
 | `MORPHANTMSB002` | Generated-file output is disabled. Remove the override of `EmitCompilerGeneratedFiles`. |
-| `MORPHANTMSB003` | Intermediate and snapshot paths overlap or escape their required parent. Use separate directories. |
-| `MORPHANTMSB004` | Compiler output is outside `IntermediateOutputPath` or equals it. Set `CompilerGeneratedFilesOutputPath` to a dedicated subdirectory inside it. |
-| `MORPHANTMSB005` | The snapshot path is outside the project or equals its root. Choose a dedicated project subdirectory. |
-| `MORPHANTMSB006` | A path is empty, nonportable or contains wildcards or unresolved MSBuild expressions. Supply a literal path. |
+| `MORPHANTMSB003` | Compiler output and snapshot paths overlap, possibly through a link. Use separate directories. |
+| `MORPHANTMSB004` | Compiler storage is a project root/ancestor or belongs to another project, configuration, TFM or RID. Use a dedicated compilation directory. |
+| `MORPHANTMSB005` | Snapshot storage is a project root/ancestor or belongs to another project. Choose a dedicated directory for this project. |
+| `MORPHANTMSB006` | A path is empty or invalid on the current operating system. Supply one valid path. |
 | `MORPHANTMSB007` | A framework name cannot form a portable directory name. Correct the indicated framework property. |
 | `MORPHANTMSB008` | Generated filenames are nonportable or collide ignoring case. Check the reported name and generator inputs. |
 | `MORPHANTMSB015` | A file occupies a required directory, or a directory occupies a generated filename. Move the conflicting item. |
-| `MORPHANTMSB016` | A managed path contains a symbolic link or reparse point. Choose a directory without links. |
-| `MORPHANTMSB019` | Another build held the snapshot lock for two minutes. Finish or stop that build, then retry. |
+| `MORPHANTMSB016` | A link is broken/cyclic or occupies a managed file or directory that Morphant must modify. Correct the indicated path. |
 | `MORPHANTMSB020` | `MorphantGitSnapshotDetail` must be `Mappers` or `Full`. |
 | `MORPHANTMSB021` | The explicit framework list contains no names. Supply at least one TFM or leave the setting unset. |
 | `MORPHANTMSB022` | `MorphantGitSnapshot` must be `true` or `false`. |

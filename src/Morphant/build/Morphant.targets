@@ -22,13 +22,15 @@
     destination changes.
   -->
   <ItemGroup>
-    <Compile Remove="$(MSBuildProjectDirectory)/**/Morphant.Generated.*.g.cs" />
+    <Compile Remove="@(Compile)"
+             Condition="$([System.String]::Copy('%(Compile.Filename)').StartsWith('Morphant.Generated.')) and
+                        $([System.String]::Copy('%(Compile.Filename)').EndsWith('.g')) and '%(Compile.Extension)' == '.cs'" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(MorphantGitSnapshot)' == 'true'">
     <!--
-      Roslyn emits every source generator into one output root. Keep that root
-      under IntermediateOutputPath. Keep both properties in the design-time
+      Roslyn emits every source generator into one output root. Keep both
+      properties in the design-time
       command line as well: IDE project models use that command line to track
       source-generator documents. Design-time builds still never prepare or
       publish a snapshot.
@@ -69,6 +71,9 @@
     <ManageMorphantGitSnapshot
         Operation="Prepare"
         ProjectDirectory="$(MSBuildProjectDirectory)"
+        ProjectFile="$(MSBuildProjectFullPath)"
+        Configuration="$(Configuration)"
+        RuntimeIdentifier="$(RuntimeIdentifier)"
         SnapshotRoot="$(MorphantGitSnapshotPath)"
         SnapshotDetail="$(MorphantGitSnapshotDetail)"
         TargetFramework="$(TargetFramework)"
@@ -93,6 +98,9 @@
     <ManageMorphantGitSnapshot
         Operation="Publish"
         ProjectDirectory="$(MSBuildProjectDirectory)"
+        ProjectFile="$(MSBuildProjectFullPath)"
+        Configuration="$(Configuration)"
+        RuntimeIdentifier="$(RuntimeIdentifier)"
         SnapshotRoot="$(MorphantGitSnapshotPath)"
         SnapshotDetail="$(MorphantGitSnapshotDetail)"
         TargetFramework="$(TargetFramework)"

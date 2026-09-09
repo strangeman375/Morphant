@@ -22,15 +22,17 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
 
     public string SnapshotTargetFrameworks { get; set; } = string.Empty;
 
-    [Required]
     public string BaseIntermediateOutputPath { get; set; } = string.Empty;
 
-    [Required]
     public string IntermediateOutputPath { get; set; } = string.Empty;
 
     public string CompilerGeneratedFilesOutputPath { get; set; } = string.Empty;
 
     public string EmitCompilerGeneratedFiles { get; set; } = string.Empty;
+
+    public string ProjectFile { get; set; } = string.Empty;
+    public string Configuration { get; set; } = string.Empty;
+    public string RuntimeIdentifier { get; set; } = string.Empty;
 
     protected override void ExecuteCore()
     {
@@ -52,15 +54,15 @@ public sealed class ManageMorphantGitSnapshot : MorphantBuildTask
             BaseIntermediateOutputPath,
             IntermediateOutputPath,
             CompilerGeneratedFilesOutputPath,
-            EmitCompilerGeneratedFiles);
+            EmitCompilerGeneratedFiles, ProjectFile, Configuration, RuntimeIdentifier);
 
         switch (Operation)
         {
             case "Prepare":
-                GitSnapshotLifecycle.Prepare(context);
+                GitSnapshotLifecycle.Prepare(context, CancellationToken, path => LogMessage("Waiting for Morphant snapshot storage: " + path));
                 break;
             case "Publish":
-                GitSnapshotLifecycle.Publish(context);
+                GitSnapshotLifecycle.Publish(context, CancellationToken, path => LogMessage("Waiting for Morphant snapshot storage: " + path));
                 break;
             default:
                 throw new SnapshotException(

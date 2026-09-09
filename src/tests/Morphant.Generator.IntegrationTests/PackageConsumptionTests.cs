@@ -705,23 +705,15 @@ internal sealed class PackageConsumptionTests
                 $"-p:MorphantGitSnapshotPath={consumerDirectory}",
                 "MORPHANTMSB005"),
             (
-                $"-p:MorphantGitSnapshotPath={Path.Combine(consumerDirectory, "Generated", "*")}",
-                "MORPHANTMSB006"),
-            (
-                "-p:MorphantGitSnapshotPath=" + Path.Combine(
-                    Path.GetDirectoryName(consumerDirectory)!,
-                    "external-snapshot"),
-                "MORPHANTMSB005"),
-            (
                 "-p:MorphantGitSnapshotPath=" +
                 Path.Combine(consumerDirectory, "Generated", "One") + ";" +
                 Path.Combine(consumerDirectory, "Generated", "Two"),
                 "MSB1006"),
             (
                 $"-p:CompilerGeneratedFilesOutputPath={generatedDirectory}",
-                "MORPHANTMSB004"),
+                "MORPHANTMSB003"),
             (
-                $"-p:CompilerGeneratedFilesOutputPath={intermediateDirectory}",
+                $"-p:CompilerGeneratedFilesOutputPath={consumerDirectory}",
                 "MORPHANTMSB004"),
             ("-p:CompilerGeneratedFilesOutputPath=", "MORPHANTMSB006"),
             ("-p:EmitCompilerGeneratedFiles=false", "MORPHANTMSB002"),

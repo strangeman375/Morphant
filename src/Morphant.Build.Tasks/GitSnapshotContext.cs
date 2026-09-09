@@ -1,359 +1,92 @@
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Morphant.Build.Tasks;
 
 internal sealed class GitSnapshotContext
 {
-    private static readonly char[] AmbiguousPathCharacters =
-        ['*', '?', ';'];
+    private readonly string snapshotOwner;
+    private readonly string compilerOwner;
 
-    private GitSnapshotContext(
-        string snapshotRoot,
-        GitSnapshotDetail snapshotDetail,
-        string targetFramework,
-        IReadOnlyCollection<string> selectedTargetFrameworks,
-        string intermediateDirectory,
-        string compilerGeneratedDirectory)
+    private GitSnapshotContext(string snapshotRoot, GitSnapshotDetail detail,
+        GitSnapshotFrameworkSelection selection, string compilerDirectory,
+        string projectFile, string configuration, string runtimeIdentifier)
     {
         SnapshotRoot = snapshotRoot;
-        SnapshotDetail = snapshotDetail;
-        SelectedTargetFrameworks = selectedTargetFrameworks;
-        IsSelectedTargetFramework = selectedTargetFrameworks.Contains(
-            targetFramework,
-            StringComparer.OrdinalIgnoreCase);
-        IntermediateDirectory = intermediateDirectory;
-        CompilerGeneratedDirectory = compilerGeneratedDirectory;
-        SliceDirectory = Path.Combine(snapshotRoot, targetFramework);
+        SnapshotDetail = detail;
+        SelectedTargetFrameworks = selection.Selected;
+        IsSelectedTargetFramework = selection.IncludesCurrent;
+        CompilerGeneratedDirectory = compilerDirectory;
+        SliceDirectory = Path.Combine(snapshotRoot, selection.Current);
+        snapshotOwner = "Morphant Git snapshot 1\r\n" + PhysicalDirectory.Relative(snapshotRoot, projectFile) + "\r\n";
+        compilerOwner = "Morphant compiler output 1\r\n" + PhysicalDirectory.Relative(compilerDirectory, projectFile) +
+            $"\r\n{configuration}\r\n{selection.Current}\r\n{runtimeIdentifier}\r\n";
     }
 
     public string SnapshotRoot { get; }
-
     public GitSnapshotDetail SnapshotDetail { get; }
-
     public IReadOnlyCollection<string> SelectedTargetFrameworks { get; }
-
     public bool IsSelectedTargetFramework { get; }
-
-    public string IntermediateDirectory { get; }
-
     public string CompilerGeneratedDirectory { get; }
-
     public string SliceDirectory { get; }
 
-    public static GitSnapshotContext Create(
-        string projectDirectory,
-        string snapshotRoot,
-        string snapshotDetail,
-        string targetFramework,
-        string targetFrameworks,
-        string snapshotTargetFrameworks,
-        string baseIntermediateOutputPath,
-        string intermediateOutputPath,
-        string compilerGeneratedFilesOutputPath,
-        string emitCompilerGeneratedFiles)
+    public static GitSnapshotContext Create(string projectDirectory, string snapshotRoot, string snapshotDetail,
+        string targetFramework, string targetFrameworks, string snapshotTargetFrameworks,
+        string baseIntermediateOutputPath, string intermediateOutputPath,
+        string compilerGeneratedFilesOutputPath, string emitCompilerGeneratedFiles,
+        string projectFile = "", string configuration = "", string runtimeIdentifier = "")
     {
         var detail = ParseSnapshotDetail(snapshotDetail);
-
         if (!bool.TryParse(emitCompilerGeneratedFiles, out var emit) || !emit)
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB002",
-                "MorphantGitSnapshot requires " +
-                "EmitCompilerGeneratedFiles=true. Remove the command-line " +
+            throw new SnapshotException("MORPHANTMSB002",
+                "MorphantGitSnapshot requires EmitCompilerGeneratedFiles=true. Remove the command-line " +
                 "or global override that prevents Morphant from enabling it.");
-        }
 
-        var project = FullPath(
-            projectDirectory,
-            projectDirectory,
-            "MSBuildProjectDirectory");
-        var snapshot = FullPath(
-            snapshotRoot,
-            project,
-            "MorphantGitSnapshotPath");
+        var project = PhysicalDirectory.Resolve(projectDirectory, projectDirectory, "MSBuildProjectDirectory");
+        var snapshot = PhysicalDirectory.Resolve(snapshotRoot, project, "MorphantGitSnapshotPath");
+        if (PhysicalDirectory.Equal(snapshot, project) || PhysicalDirectory.Inside(project, snapshot))
+            throw new SnapshotException("MORPHANTMSB005",
+                "MorphantGitSnapshotPath must be a dedicated directory, not the project root or an ancestor.");
 
-        if (!IsInside(snapshot, project))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB005",
-                "MorphantGitSnapshotPath must be a dedicated subdirectory " +
-                "inside MSBuildProjectDirectory. The project root, an " +
-                "ancestor, or an external/shared directory is not allowed.");
-        }
+        var compiler = PhysicalDirectory.Resolve(compilerGeneratedFilesOutputPath, project, "CompilerGeneratedFilesOutputPath");
+        if (PhysicalDirectory.Equal(compiler, project) || PhysicalDirectory.Inside(project, compiler))
+            throw new SnapshotException("MORPHANTMSB004",
+                "CompilerGeneratedFilesOutputPath must be a dedicated compilation directory, not the project root or an ancestor.");
+        if (PhysicalDirectory.Overlap(snapshot, compiler))
+            throw new SnapshotException("MORPHANTMSB003",
+                "CompilerGeneratedFilesOutputPath and MorphantGitSnapshotPath must not overlap.");
 
-        var snapshotComponents = RelativePath(project, snapshot).Split(
-            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-            StringSplitOptions.RemoveEmptyEntries);
-
-        if (snapshotComponents.Any(static component =>
-                !PortablePath.IsSafeComponent(component)))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB006",
-                "MorphantGitSnapshotPath must use portable literal directory " +
-                "names without wildcards, item separators, reserved device " +
-                "names, or unevaluated MSBuild syntax.");
-        }
-
-        EnsureNoLinks(project, snapshot, "MorphantGitSnapshotPath");
-
-        var baseIntermediate = FullPath(
-            baseIntermediateOutputPath,
-            project,
-            "BaseIntermediateOutputPath");
-        var intermediate = FullPath(
-            intermediateOutputPath,
-            project,
-            "IntermediateOutputPath");
-
-        if ((!IsInside(intermediate, baseIntermediate) &&
-             !PathsEqual(intermediate, baseIntermediate)) ||
-            PathsEqual(baseIntermediate, project) ||
-            PathsEqual(intermediate, project) ||
-            PathsOverlap(snapshot, baseIntermediate) ||
-            PathsOverlap(snapshot, intermediate))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB003",
-                "IntermediateOutputPath must remain inside a dedicated " +
-                "BaseIntermediateOutputPath, and neither path may equal the " +
-                "project root or overlap MorphantGitSnapshotPath.");
-        }
-
-        EnsureNoLinks(
-            baseIntermediate,
-            intermediate,
-            "IntermediateOutputPath");
-
-        var compilerOutput = FullPath(
-            compilerGeneratedFilesOutputPath,
-            project,
-            "CompilerGeneratedFilesOutputPath");
-
-        if (!IsInside(compilerOutput, intermediate))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB004",
-                $"CompilerGeneratedFilesOutputPath '{compilerOutput}' must " +
-                "be a dedicated subdirectory inside " +
-                $"IntermediateOutputPath '{intermediate}'.");
-        }
-
-        EnsureNoLinks(
-            intermediate,
-            compilerOutput,
-            "CompilerGeneratedFilesOutputPath");
-
-        var selection = GitSnapshotFrameworkSelection.Create(
-            targetFramework, targetFrameworks, snapshotTargetFrameworks);
-
-        return new GitSnapshotContext(
-            snapshot,
-            detail,
-            selection.Current,
-            selection.Selected,
-            intermediate,
-            compilerOutput);
+        var selection = GitSnapshotFrameworkSelection.Create(targetFramework, targetFrameworks, snapshotTargetFrameworks);
+        return new GitSnapshotContext(snapshot, detail, selection, compiler,
+            Path.Combine(project, string.IsNullOrEmpty(projectFile) ? "Morphant.csproj" : Path.GetFileName(projectFile)),
+            configuration, runtimeIdentifier);
     }
 
     private static GitSnapshotDetail ParseSnapshotDetail(string value)
     {
         if (string.Equals(value, "Mappers", StringComparison.OrdinalIgnoreCase))
-        {
             return GitSnapshotDetail.Mappers;
-        }
-
         if (string.Equals(value, "Full", StringComparison.OrdinalIgnoreCase))
-        {
             return GitSnapshotDetail.Full;
-        }
-
-        throw new SnapshotException(
-            "MORPHANTMSB020",
-            "MorphantGitSnapshotDetail must be Mappers or Full. " +
-            $"The effective value is '{value}'.");
+        throw new SnapshotException("MORPHANTMSB020",
+            "MorphantGitSnapshotDetail must be Mappers or Full. " + $"The effective value is '{value}'.");
     }
 
-    public IDisposable AcquireRootLock()
+    public IDisposable AcquireRootLock(CancellationToken cancellationToken = default, Action<string>? waiting = null) =>
+        GitSnapshotStorage.Acquire(SnapshotRoot, snapshotOwner, "MORPHANTMSB005", cancellationToken, waiting);
+
+    public IDisposable AcquireCompilerLock(CancellationToken cancellationToken = default, Action<string>? waiting = null) =>
+        GitSnapshotStorage.Acquire(CompilerGeneratedDirectory, compilerOwner, "MORPHANTMSB004", cancellationToken, waiting);
+
+    public void CheckSnapshotOwner(CancellationToken cancellationToken, Action<string>? waiting)
     {
-        var lockRoot = Path.Combine(
-            Path.GetTempPath(),
-            "Morphant.GitSnapshot.Locks");
-        Directory.CreateDirectory(lockRoot);
-
-        using var sha = SHA256.Create();
-        var identity = UsesCaseInsensitivePaths
-            ? SnapshotRoot.ToUpperInvariant()
-            : SnapshotRoot;
-        var key = string.Concat(
-            sha.ComputeHash(Encoding.UTF8.GetBytes(identity))
-                .Select(static value => value.ToString("x2")));
-        var lockPath = Path.Combine(lockRoot, key + ".lock");
-        var deadline = DateTime.UtcNow.AddMinutes(2);
-
-        while (true)
+        var path = Path.Combine(SnapshotRoot, GitSnapshotStorage.OwnerFileName);
+        if (File.Exists(path) || Directory.Exists(path) || PhysicalDirectory.IsLink(path))
         {
-            try
-            {
-                return new FileStream(
-                    lockPath,
-                    FileMode.OpenOrCreate,
-                    FileAccess.ReadWrite,
-                    FileShare.None);
-            }
-            catch (IOException) when (DateTime.UtcNow < deadline)
-            {
-                Thread.Sleep(25);
-            }
-            catch (IOException exception)
-            {
-                throw new SnapshotException(
-                    "MORPHANTMSB019",
-                    "Timed out waiting for another build to release the " +
-                    $"Morphant snapshot root '{SnapshotRoot}': " +
-                    exception.Message);
-            }
+            using var snapshotLock = AcquireRootLock(cancellationToken, waiting);
         }
     }
 
-    public bool IsSelectedTargetFrameworkSlice(string value) =>
-        SelectedTargetFrameworks.Contains(
-            value,
-            StringComparer.OrdinalIgnoreCase);
-
-    public void EnsureSafeCompilerOutput() => EnsureNoLinks(
-        IntermediateDirectory,
-        CompilerGeneratedDirectory,
-        "CompilerGeneratedFilesOutputPath");
-
+    public bool IsSelectedTargetFrameworkSlice(string value) => SelectedTargetFrameworks.Contains(value, StringComparer.OrdinalIgnoreCase);
+    public void EnsureSafeCompilerOutput() => PhysicalDirectory.EnsureNoLinks(
+        CompilerGeneratedDirectory, CompilerGeneratedDirectory, "CompilerGeneratedFilesOutputPath");
     public void EnsureSafeSnapshotPath(string path, string description) =>
-        EnsureNoLinks(SnapshotRoot, path, description);
-
-    private static string FullPath(
-        string value,
-        string baseDirectory,
-        string propertyName)
-    {
-        if (string.IsNullOrWhiteSpace(value) ||
-            value.Any(char.IsControl) ||
-            value.IndexOfAny(AmbiguousPathCharacters) >= 0 ||
-            value.IndexOf("$(", StringComparison.Ordinal) >= 0 ||
-            value.IndexOf("@(", StringComparison.Ordinal) >= 0 ||
-            value.IndexOf("%(", StringComparison.Ordinal) >= 0)
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB006",
-                $"{propertyName} must be one non-empty literal path without " +
-                "wildcards, item separators, or unevaluated MSBuild syntax.");
-        }
-
-        var path = Path.IsPathRooted(value)
-            ? value
-            : Path.Combine(baseDirectory, value);
-        var fullPath = Path.GetFullPath(path);
-        var root = Path.GetPathRoot(fullPath);
-        return fullPath.Length == root?.Length
-            ? fullPath
-            : fullPath.TrimEnd(
-                Path.DirectorySeparatorChar,
-                Path.AltDirectorySeparatorChar);
-    }
-
-    private static void EnsureNoLinks(
-        string parent,
-        string candidate,
-        string description)
-    {
-        if (File.Exists(parent))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB015",
-                $"{description} parent '{parent}' names a file, not a directory.");
-        }
-
-        if (Directory.Exists(parent) &&
-            (File.GetAttributes(parent) & FileAttributes.ReparsePoint) != 0)
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB016",
-                $"{description} parent '{parent}' is a symbolic link or " +
-                "reparse point.");
-        }
-
-        if (File.Exists(candidate))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB015",
-                $"{description} '{candidate}' names a file, not a directory.");
-        }
-
-        if (!PathsEqual(parent, candidate) && !IsInside(candidate, parent))
-        {
-            throw new SnapshotException(
-                "MORPHANTMSB003",
-                $"{description} '{candidate}' must remain inside '{parent}'.");
-        }
-
-        var current = parent;
-
-        foreach (var component in RelativePath(parent, candidate).Split(
-                     [
-                         Path.DirectorySeparatorChar,
-                         Path.AltDirectorySeparatorChar
-                     ],
-                     StringSplitOptions.RemoveEmptyEntries))
-        {
-            current = Path.Combine(current, component);
-
-            if (File.Exists(current))
-            {
-                throw new SnapshotException(
-                    "MORPHANTMSB015",
-                    $"{description} traverses file '{current}'.");
-            }
-
-            if (Directory.Exists(current) &&
-                (File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
-            {
-                throw new SnapshotException(
-                    "MORPHANTMSB016",
-                    $"{description} traverses symbolic link or reparse point " +
-                    $"'{current}'.");
-            }
-        }
-    }
-
-    private static bool PathsOverlap(string left, string right) =>
-        PathsEqual(left, right) || IsInside(left, right) || IsInside(right, left);
-
-    private static bool PathsEqual(string left, string right) =>
-        string.Equals(left, right, PathComparison);
-
-    private static bool IsInside(string candidate, string parent) =>
-        candidate.StartsWith(
-            parent.TrimEnd(
-                Path.DirectorySeparatorChar,
-                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar,
-            PathComparison);
-
-    private static string RelativePath(string fromDirectory, string toPath)
-    {
-        var from = new Uri(
-            fromDirectory.TrimEnd(
-                Path.DirectorySeparatorChar,
-                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar);
-        return Uri.UnescapeDataString(from.MakeRelativeUri(new Uri(toPath)).ToString())
-            .Replace('/', Path.DirectorySeparatorChar);
-    }
-
-    private static bool UsesCaseInsensitivePaths =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ||
-        RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-
-    private static StringComparison PathComparison =>
-        UsesCaseInsensitivePaths
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
+        PhysicalDirectory.EnsureNoLinks(SnapshotRoot, path, description);
 }

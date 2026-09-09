@@ -240,7 +240,7 @@ internal sealed class GitSnapshotLifecycleTests
     }
 
     [Test]
-    public void Prepare_rejects_nested_directory_links_before_deleting_files()
+    public void Prepare_preserves_unrelated_directory_links()
     {
         if (OperatingSystem.IsWindows())
         {
@@ -262,19 +262,16 @@ internal sealed class GitSnapshotLifecycleTests
             "Morphant.Generated.TypeMapper.Outside.g.cs",
             "// outside\r\n");
 
-        var exception = Assert.Throws<SnapshotException>(() =>
-            GitSnapshotLifecycle.Prepare(context));
-
+        GitSnapshotLifecycle.Prepare(context);
         Assert.Multiple(() =>
         {
-            Assert.That(exception!.Code, Is.EqualTo("MORPHANTMSB016"));
-            Assert.That(File.Exists(generatedPath), Is.True);
-            Assert.That(File.Exists(outsidePath), Is.True);
+            Assert.That(File.Exists(generatedPath), Is.False);
+            Assert.That(File.ReadAllText(outsidePath), Is.EqualTo("// outside\r\n"));
         });
     }
 
     [Test]
-    public void Publish_preflights_obsolete_slice_links_before_mutation()
+    public void Publish_preserves_unrelated_slice_links()
     {
         if (OperatingSystem.IsWindows())
         {
@@ -294,16 +291,9 @@ internal sealed class GitSnapshotLifecycleTests
             "// previous\r\n");
         workspace.CreateObsoleteSliceDirectoryLink("net8.0");
 
-        var exception = Assert.Throws<SnapshotException>(() =>
-            GitSnapshotLifecycle.Publish(context));
-
-        Assert.Multiple(() =>
-        {
-            Assert.That(exception!.Code, Is.EqualTo("MORPHANTMSB016"));
-            Assert.That(
-                File.ReadAllText(snapshotPath),
-                Is.EqualTo("// previous\r\n"));
-        });
+        GitSnapshotLifecycle.Publish(context);
+        Assert.That(File.ReadAllText(snapshotPath), Is.EqualTo("// new\r\n"));
+        Assert.That(new DirectoryInfo(Path.Combine(context.SnapshotRoot, "net8.0")).LinkTarget, Is.Not.Null);
     }
 
     [Test]

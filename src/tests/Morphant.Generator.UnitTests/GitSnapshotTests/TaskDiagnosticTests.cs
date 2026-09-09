@@ -9,7 +9,7 @@ internal sealed class TaskDiagnosticTests
 {
     [TestCase("Operation", "Unknown", "MORPHANTMSB001", "Unknown Morphant Git snapshot operation 'Unknown'.")]
     [TestCase("Emit", "false", "MORPHANTMSB002", "MorphantGitSnapshot requires EmitCompilerGeneratedFiles=true. Remove the command-line or global override that prevents Morphant from enabling it.")]
-    [TestCase("Snapshot", "", "MORPHANTMSB006", "MorphantGitSnapshotPath must be one non-empty literal path without wildcards, item separators, or unevaluated MSBuild syntax.")]
+    [TestCase("Snapshot", "", "MORPHANTMSB006", "MorphantGitSnapshotPath must name one valid directory path.")]
     [TestCase("Framework", "../outside", "MORPHANTMSB007", "TargetFramework contains a value that cannot be used as a safe snapshot path component.")]
     [TestCase("Frameworks", "net10.0;CON", "MORPHANTMSB007", "TargetFrameworks contains a value that cannot be used as a safe snapshot path component.")]
     [TestCase("SelectedFrameworks", "CON", "MORPHANTMSB007", "MorphantGitSnapshotTargetFrameworks contains a value that cannot be used as a safe snapshot path component.")]
@@ -49,12 +49,12 @@ internal sealed class TaskDiagnosticTests
         switch (kind)
         {
             case "Overlap":
-                task.BaseIntermediateOutputPath = task.SnapshotRoot;
-                message = "IntermediateOutputPath must remain inside a dedicated BaseIntermediateOutputPath, and neither path may equal the project root or overlap MorphantGitSnapshotPath.";
+                task.CompilerGeneratedFilesOutputPath = task.SnapshotRoot;
+                message = "CompilerGeneratedFilesOutputPath and MorphantGitSnapshotPath must not overlap.";
                 break;
             case "Root":
                 task.SnapshotRoot = task.ProjectDirectory;
-                message = "MorphantGitSnapshotPath must be a dedicated subdirectory inside MSBuildProjectDirectory. The project root, an ancestor, or an external/shared directory is not allowed.";
+                message = "MorphantGitSnapshotPath must be a dedicated directory, not the project root or an ancestor.";
                 break;
             case "File":
                 task.SnapshotRoot = Path.Combine(task.ProjectDirectory, "occupied");
@@ -122,9 +122,9 @@ internal sealed class TaskDiagnosticTests
     }
 
     [Test]
-    public void Compiler_output_must_be_strictly_inside_the_current_intermediate_directory(
+    public void Compiler_output_accepts_independent_directories(
         [Values("Prepare", "Publish")] string operation,
-        [Values("Intermediate", "NormalizedIntermediate", "Parent", "PrefixSibling", "OtherFramework", "Snapshot")] string kind)
+        [Values("Intermediate", "NormalizedIntermediate", "Parent", "PrefixSibling", "OtherFramework")] string kind)
     {
         using var workspace = new Workspace();
         var task = workspace.Task;
@@ -136,19 +136,15 @@ internal sealed class TaskDiagnosticTests
             "Parent" => task.BaseIntermediateOutputPath,
             "PrefixSibling" => task.IntermediateOutputPath + "-other",
             "OtherFramework" => Path.Combine(task.BaseIntermediateOutputPath, "Release", "net9.0", "Custom"),
-            "Snapshot" => task.SnapshotRoot,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
-        var before = workspace.Files();
-        var output = Path.TrimEndingDirectorySeparator(Path.GetFullPath(task.CompilerGeneratedFilesOutputPath));
-
-        AssertFailure(workspace, "MORPHANTMSB004",
-            $"CompilerGeneratedFilesOutputPath '{output}' must be a dedicated subdirectory inside IntermediateOutputPath '{task.IntermediateOutputPath}'.");
-        Assert.That(workspace.Files(), Is.EqualTo(before));
+        Assert.That(task.Execute(), Is.True);
+        Assert.That(workspace.Engine.Errors, Is.Empty);
+        Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "user.txt")), Is.EqualTo("user file"));
     }
 
     [Test]
-    public void Custom_compiler_output_rejects_linked_directories_before_mutation(
+    public void Custom_compiler_output_accepts_linked_roots(
         [Values("Prepare", "Publish")] string operation,
         [Values(false, true)] bool nested)
     {
@@ -167,11 +163,13 @@ internal sealed class TaskDiagnosticTests
         File.WriteAllText(Path.Combine(targetOutput, "Morphant.Generated.TypeMapper.Linked.g.cs"), "// linked\r\n");
         Directory.CreateSymbolicLink(linked, target);
         task.CompilerGeneratedFilesOutputPath = nested ? Path.Combine(linked, "Nested") : linked;
-        var before = workspace.Files();
-
-        AssertFailure(workspace, "MORPHANTMSB016",
-            $"CompilerGeneratedFilesOutputPath traverses symbolic link or reparse point '{linked}'.");
-        Assert.That(workspace.Files(), Is.EqualTo(before));
+        Assert.That(task.Execute(), Is.True);
+        Assert.That(workspace.Engine.Errors, Is.Empty);
+        var name = "Morphant.Generated.TypeMapper.Linked.g.cs";
+        if (operation == "Publish")
+            Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", name)), Is.EqualTo("// linked\r\n"));
+        else
+            Assert.That(File.Exists(Path.Combine(targetOutput, name)), Is.False);
     }
 
     [Test]
@@ -202,38 +200,6 @@ internal sealed class TaskDiagnosticTests
         AssertFailure(workspace, "MORPHANTMSB008",
             "Morphant generated file names must be portable and unique ignoring case. Invalid name: 'Morphant.Generated.TypeMapper.Current.g.cs'.");
         Assert.That(workspace.Files(), Is.EqualTo(before));
-    }
-
-    [Test]
-    public async Task A_lock_timeout_reports_the_root_and_a_later_publication_recovers()
-    {
-        using var workspace = new Workspace();
-        var task = workspace.Task;
-        var context = GitSnapshotContext.Create(task.ProjectDirectory, task.SnapshotRoot, task.SnapshotDetail,
-            task.TargetFramework, task.TargetFrameworks, task.SnapshotTargetFrameworks,
-            task.BaseIntermediateOutputPath, task.IntermediateOutputPath,
-            task.CompilerGeneratedFilesOutputPath, task.EmitCompilerGeneratedFiles);
-        var before = workspace.Files();
-
-        // Exercise the real two-minute contention timeout, without replacing the clock or filesystem.
-        using (context.AcquireRootLock())
-        {
-            Assert.That(await System.Threading.Tasks.Task.Run(task.Execute), Is.False);
-        }
-
-        var error = workspace.Engine.Errors.Single();
-        Assert.Multiple(() =>
-        {
-            Assert.That(error.Code, Is.EqualTo("MORPHANTMSB019"));
-            Assert.That(error.Message, Does.StartWith(
-                $"Timed out waiting for another build to release the Morphant snapshot root '{task.SnapshotRoot}': "));
-            Assert.That(workspace.Files(), Is.EqualTo(before));
-        });
-        workspace.Engine.Errors.Clear();
-        Assert.That(task.Execute(), Is.True);
-        Assert.That(workspace.Engine.Errors, Is.Empty);
-        Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", "Morphant.Generated.TypeMapper.Current.g.cs")),
-            Is.EqualTo("// current\r\n"));
     }
 
     [Test]
@@ -301,6 +267,7 @@ internal sealed class TaskDiagnosticTests
         }
 
         public Dictionary<string, byte[]> Files() => Directory.GetFiles(root, "*", SearchOption.AllDirectories)
+            .Where(path => Path.GetFileName(path) != ".morphant")
             .ToDictionary(path => Path.GetRelativePath(root, path), File.ReadAllBytes, StringComparer.Ordinal);
 
         public void Dispose() => Directory.Delete(root, recursive: true);

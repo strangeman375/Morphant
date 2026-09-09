@@ -167,11 +167,10 @@ internal sealed class CiBuildTests
             Is.EqualTo(new[] { Path.Combine("net10.0", MapperFile) }));
     }
 
-    [TestCase("IndependentIntermediate", "MORPHANTMSB003")]
-    [TestCase("ExternalSnapshot", "MORPHANTMSB005")]
-    [TestCase("CompilerOutput", "MORPHANTMSB004")]
-    public async Task Snapshot_path_and_hook_restrictions_can_be_disabled_for_an_otherwise_valid_build(
-        string scenario, string code)
+    [TestCase("IndependentIntermediate")]
+    [TestCase("ExternalSnapshot")]
+    [TestCase("CompilerOutput")]
+    public async Task Independent_build_and_snapshot_directories_are_supported(string scenario)
     {
         using var consumer = CreateConsumer();
         AssertSucceeded(await consumer.Run("build"));
@@ -189,11 +188,16 @@ internal sealed class CiBuildTests
             _ => throw new ArgumentOutOfRangeException(nameof(scenario))
         };
 
-        var rejected = await consumer.Run("build", settings);
-        AssertRejected(rejected, code);
-        Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
-        AssertSucceeded(await consumer.Run("build", [.. settings, "-p:MorphantGitSnapshot=false", "-t:Rebuild"]));
-        Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
+        AssertSucceeded(await consumer.Run("build", [.. settings, "-t:Rebuild"]));
+        if (scenario == "ExternalSnapshot")
+        {
+            var external = consumer.Snapshot(Path.Combine(consumer.Root, "snapshot"));
+            Assert.That(external.Keys, Is.EqualTo(snapshot.Keys));
+            Assert.That(external.Values.Select(value => value[(value.IndexOf(':') + 1)..]),
+                Is.EqualTo(snapshot.Values.Select(value => value[(value.IndexOf(':') + 1)..])));
+        }
+        else
+            Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
     }
 
     [Test]
@@ -228,7 +232,7 @@ internal sealed class CiBuildTests
     }
 
     [Test]
-    public async Task A_linked_checkout_requires_snapshots_to_be_disabled()
+    public async Task A_linked_checkout_updates_the_same_snapshot()
     {
         if (OperatingSystem.IsWindows())
             Assert.Ignore("Creating directory symbolic links is not generally available to Windows test runners.");
@@ -239,9 +243,7 @@ internal sealed class CiBuildTests
         Directory.CreateSymbolicLink(linkedDirectory, consumer.ProjectDirectory);
         consumer.ProjectPath = Path.Combine(linkedDirectory, "CiConsumer.csproj");
 
-        AssertRejected(await consumer.Run("build"), "MORPHANTMSB016");
-        Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
-        AssertSucceeded(await consumer.Run("build", "-p:MorphantGitSnapshot=false", "-t:Rebuild"));
+        AssertSucceeded(await consumer.Run("build", "-t:Rebuild"));
         Assert.That(consumer.Snapshot(), Is.EqualTo(snapshot));
     }
 
@@ -274,6 +276,53 @@ internal sealed class CiBuildTests
         File.WriteAllText(Path.Combine(consumer.ProjectDirectory, "Broken.cs"), "This does not compile.");
         Assert.That((await consumer.Run("build", settings)).ExitCode, Is.Not.Zero);
         Assert.That(consumer.Snapshot(), Is.EqualTo(before));
+    }
+
+    [TestCase("Snapshot", "Generated #1 %20 [CI]")]
+    [TestCase("Compiler", "Generated #1 %20 [CI]")]
+    [TestCase("Snapshot", "Generated;CI")]
+    [TestCase("Compiler", "Generated;CI")]
+    public async Task Escaped_literal_storage_paths_are_preserved(string location, string name)
+    {
+        using var consumer = CreateConsumer();
+        var output = Path.Combine(consumer.Root, name);
+        var escaped = output.Replace("%", "%25").Replace(";", "%3B");
+        consumer.SetProperty("EmitCompilerGeneratedFiles", "true");
+        consumer.SetProperty(location == "Snapshot" ? "MorphantGitSnapshotPath" : "CompilerGeneratedFilesOutputPath", escaped);
+        AssertSucceeded(await consumer.Run("build"));
+        Assert.That(Directory.Exists(output), Is.True);
+        var snapshot = consumer.Snapshot(location == "Snapshot" ? output : consumer.SnapshotRoot);
+        Assert.That(snapshot.Keys, Is.EqualTo(new[] { Path.Combine("net10.0", MapperFile) }));
+    }
+
+    [Test]
+    public async Task External_snapshots_are_excluded_even_when_explicitly_added_to_compile_items()
+    {
+        using var consumer = CreateConsumer();
+        var snapshot = Path.Combine(consumer.Root, "snapshot");
+        consumer.SetProperty("MorphantGitSnapshotPath", snapshot);
+        AssertSucceeded(await consumer.Run("build"));
+        var before = consumer.Snapshot(snapshot);
+        var project = XDocument.Load(consumer.ProjectPath);
+        project.Root!.Add(new XElement("ItemGroup", new XElement("Compile",
+            new XAttribute("Include", Path.Combine(snapshot, "**", "*.g.cs")))));
+        project.Save(consumer.ProjectPath);
+        AssertSucceeded(await consumer.Run("build", "-t:Rebuild"));
+        Assert.That(consumer.Snapshot(snapshot), Is.EqualTo(before));
+    }
+
+    [Test]
+    public async Task Projects_cannot_overwrite_each_others_external_snapshot()
+    {
+        using var first = CreateConsumer();
+        using var second = CreateConsumer();
+        var shared = Path.Combine(first.Root, "shared-snapshot");
+        first.SetProperty("MorphantGitSnapshotPath", shared);
+        second.SetProperty("MorphantGitSnapshotPath", shared);
+        AssertSucceeded(await first.Run("build"));
+        var before = first.Snapshot(shared);
+        AssertRejected(await second.Run("build"), "MORPHANTMSB005");
+        Assert.That(first.Snapshot(shared), Is.EqualTo(before));
     }
 
     private Consumer CreateConsumer(string directoryName = "consumer", string targetFramework = "net10.0") =>
@@ -341,7 +390,8 @@ internal sealed class CiBuildTests
         {
             root ??= SnapshotRoot;
             return Directory.Exists(root)
-                ? Directory.GetFiles(root, "*", SearchOption.AllDirectories).ToDictionary(
+                ? Directory.GetFiles(root, "*", SearchOption.AllDirectories)
+                    .Where(path => Path.GetFileName(path) != ".morphant").ToDictionary(
                     path => Path.GetRelativePath(root, path),
                     path => File.GetLastWriteTimeUtc(path).Ticks + ":" + Convert.ToBase64String(File.ReadAllBytes(path)),
                     StringComparer.Ordinal)
