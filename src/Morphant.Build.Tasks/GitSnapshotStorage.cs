@@ -65,5 +65,5 @@ internal static class GitSnapshotStorage
     private static bool IsSharingViolation(IOException exception) =>
         (exception.HResult & 0xffff) is 11 or 32 or 33 or 35;
 
-    private static string Normalize(string value) => value.Replace("\r\n", "\n").Normalize(NormalizationForm.FormC);
+    private static string Normalize(string value) => value.Replace("\r\n", "\n");
 }

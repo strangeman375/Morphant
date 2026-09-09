@@ -87,6 +87,22 @@ internal sealed class StorageTests
     }
 
     [Test]
+    public void Distinct_unicode_project_paths_do_not_share_snapshot_ownership()
+    {
+        if (OperatingSystem.IsMacOS())
+            Assert.Ignore("The default macOS filesystem treats canonical Unicode spellings as the same filename.");
+        using var workspace = new Workspace();
+        var first = workspace.CreateTask("Caf\u00e9");
+        var second = workspace.CreateTask("Cafe\u0301");
+        WriteOutput(first, "// first\r\n");
+        AssertSucceeded(first);
+        second.SnapshotRoot = first.SnapshotRoot;
+        WriteOutput(second, "// second\r\n");
+        AssertRejected(second, "MORPHANTMSB005");
+        Assert.That(File.ReadAllText(Path.Combine(first.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// first\r\n"));
+    }
+
+    [Test]
     public void Moving_the_checkout_and_its_artifacts_preserves_ownership()
     {
         using var workspace = new Workspace();

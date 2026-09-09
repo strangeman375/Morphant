@@ -234,13 +234,24 @@ internal sealed class CiBuildTests
     [Test]
     public async Task A_linked_checkout_updates_the_same_snapshot()
     {
-        if (OperatingSystem.IsWindows())
-            Assert.Ignore("Creating directory symbolic links is not generally available to Windows test runners.");
         using var consumer = CreateConsumer();
         AssertSucceeded(await consumer.Run("build"));
         var snapshot = consumer.Snapshot();
         var linkedDirectory = Path.Combine(consumer.Root, "linked-checkout");
-        Directory.CreateSymbolicLink(linkedDirectory, consumer.ProjectDirectory);
+        if (OperatingSystem.IsWindows())
+        {
+            var start = new System.Diagnostics.ProcessStartInfo("cmd.exe")
+            {
+                UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true
+            };
+            foreach (var argument in new[] { "/c", "mklink", "/J", linkedDirectory, consumer.ProjectDirectory })
+                start.ArgumentList.Add(argument);
+            using var process = System.Diagnostics.Process.Start(start)!;
+            await process.WaitForExitAsync();
+            Assert.That(process.ExitCode, Is.Zero, await process.StandardError.ReadToEndAsync());
+        }
+        else
+            Directory.CreateSymbolicLink(linkedDirectory, consumer.ProjectDirectory);
         consumer.ProjectPath = Path.Combine(linkedDirectory, "CiConsumer.csproj");
 
         AssertSucceeded(await consumer.Run("build", "-t:Rebuild"));
