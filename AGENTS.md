@@ -86,6 +86,11 @@
 
 ## User documentation
 
+- Keep XML IntelliSense short and information-dense: purpose, decision-critical
+  conditions, and a link to the relevant Markdown guide. Put detailed rules
+  and examples in Markdown, with clear navigation and one canonical explanation.
+  Optimize both formats for the reader's limited attention, not completeness
+  through repetition.
 - Public documentation, including Markdown guides, XML IntelliSense comments,
   diagnostic help and release or package text, is task- and contract-oriented.
   Include only information users need to choose, configure, understand, test,
