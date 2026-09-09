@@ -312,23 +312,32 @@ internal sealed class StorageTests
         Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// current\r\n"));
     }
 
-    [Test]
-    public async Task Lock_wait_finishes_when_the_previous_publisher_releases_storage()
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Lock_wait_finishes_when_the_previous_publisher_releases_storage(bool readOnly)
     {
         using var workspace = new Workspace();
         var task = workspace.CreateTask();
         WriteOutput(task, "// current\r\n");
-        Task<bool> running;
         using (Context(task).AcquireRootLock()) { }
-        // The lock is on the destination itself, independent of a process's TEMP directory.
-        using (new FileStream(Path.Combine(task.SnapshotRoot, ".morphant"), FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        var owner = Path.Combine(task.SnapshotRoot, ".morphant");
+        var attributes = File.GetAttributes(owner);
+        try
         {
-            running = Task.Run(task.Execute);
-            await ((Engine)task.BuildEngine).Waiting.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            Assert.That(running.IsCompleted, Is.False);
+            if (readOnly)
+                File.SetAttributes(owner, attributes | FileAttributes.ReadOnly);
+            Task<bool> running;
+            // The lock is on the destination itself, independent of the process's TEMP directory.
+            using (new FileStream(owner, FileMode.Open, readOnly ? FileAccess.Read : FileAccess.ReadWrite, FileShare.None))
+            {
+                running = Task.Run(task.Execute);
+                await ((Engine)task.BuildEngine).Waiting.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                Assert.That(running.IsCompleted, Is.False);
+            }
+            Assert.That(await running.WaitAsync(TimeSpan.FromSeconds(10)), Is.True);
+            Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// current\r\n"));
         }
-        Assert.That(await running.WaitAsync(TimeSpan.FromSeconds(10)), Is.True);
-        Assert.That(File.ReadAllText(Path.Combine(task.SnapshotRoot, "net10.0", Generated)), Is.EqualTo("// current\r\n"));
+        finally { File.SetAttributes(owner, attributes); }
     }
 
     [Test]

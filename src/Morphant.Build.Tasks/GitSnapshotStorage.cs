@@ -1,4 +1,7 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
 
 namespace Morphant.Build.Tasks;
 
@@ -67,18 +70,31 @@ internal static class GitSnapshotStorage
 
     private static FileStream OpenLock(string path)
     {
-        var stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Read, FileShare.None);
+        FileStream stream;
+        try { stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
+        catch (UnauthorizedAccessException) when (File.Exists(path))
+        {
+            stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None);
+        }
         try
         {
-            if (stream.Length > 0)
-                return stream;
+            // FileStream's Unix lock is best-effort. Verify it explicitly before
+            // using storage; prefer a writable handle because NFS requires one.
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && LockFile(stream.SafeFileHandle, 2 | 4) != 0)
+            {
+                var error = Marshal.GetLastWin32Error();
+                throw new IOException($"Cannot exclusively lock Morphant ownership file '{path}': " +
+                    new Win32Exception(error).Message, error);
+            }
+            if (!stream.CanWrite && stream.Length == 0)
+                throw new UnauthorizedAccessException($"Empty Morphant ownership file '{path}' requires write access.");
+            return stream;
         }
         catch { stream.Dispose(); throw; }
-        stream.Dispose();
-        // Only a new or empty ownership record needs write access. Reopening can
-        // race with another claimant; Acquire checks the record under this lock.
-        return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
     }
+
+    [DllImport("libc", EntryPoint = "flock", SetLastError = true)]
+    private static extern int LockFile(SafeFileHandle file, int operation);
 
     private static string Normalize(string value) => value.Replace("\r\n", "\n");
 }
