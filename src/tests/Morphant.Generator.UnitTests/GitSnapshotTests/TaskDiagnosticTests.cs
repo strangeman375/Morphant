@@ -239,7 +239,7 @@ internal sealed class TaskDiagnosticTests
 
     private sealed class Workspace : IDisposable
     {
-        private readonly string root = Path.Combine(Path.GetTempPath(), nameof(TaskDiagnosticTests), Guid.NewGuid().ToString("N"));
+        private readonly string root = Path.Combine(TemporaryDirectory(), nameof(TaskDiagnosticTests), Guid.NewGuid().ToString("N"));
         public RecordingBuildEngine Engine { get; } = new();
         public ManageMorphantGitSnapshot Task { get; }
 
@@ -271,6 +271,23 @@ internal sealed class TaskDiagnosticTests
             .ToDictionary(path => Path.GetRelativePath(root, path), File.ReadAllBytes, StringComparer.Ordinal);
 
         public void Dispose() => Directory.Delete(root, recursive: true);
+
+        private static string TemporaryDirectory()
+        {
+            // macOS may expose TEMP through /var -> /private/var. Use the BCL to
+            // create the fixture at its physical path before asserting exact diagnostics.
+            var directory = new DirectoryInfo(Path.GetTempPath());
+            var parts = new Stack<string>();
+            for (var current = directory; current.Parent is not null; current = current.Parent)
+                parts.Push(current.Name);
+            var path = directory.Root.FullName;
+            foreach (var part in parts)
+            {
+                var child = new DirectoryInfo(Path.Combine(path, part));
+                path = child.ResolveLinkTarget(true)?.FullName ?? child.FullName;
+            }
+            return path;
+        }
     }
 
     private sealed class FailingTask : MorphantBuildTask
