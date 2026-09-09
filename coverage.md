@@ -3,19 +3,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/09/2026 - 13:47:51 |
-| Coverage date: | 09/09/2026 - 13:34:17 - 09/09/2026 - 13:47:45 |
+| Generated on: | 09/09/2026 - 14:36:47 |
+| Coverage date: | 09/09/2026 - 14:24:23 - 09/09/2026 - 14:36:42 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 371 |
 | Files: | 195 |
-| **Line coverage:** | 88.1% (37880 of 42957) |
-| Covered lines: | 37880 |
-| Uncovered lines: | 5077 |
-| Coverable lines: | 42957 |
-| Total lines: | 71541 |
-| **Branch coverage:** | 78.6% (13324 of 16937) |
-| Covered branches: | 13324 |
+| **Line coverage:** | 88.1% (37883 of 42961) |
+| Covered lines: | 37883 |
+| Uncovered lines: | 5078 |
+| Coverable lines: | 42961 |
+| Total lines: | 71546 |
+| **Branch coverage:** | 78.6% (13325 of 16937) |
+| Covered branches: | 13325 |
 | Total branches: | 16937 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -52,14 +52,14 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 93%</summary>
+<details><summary>Morphant.Build.Tasks - 92.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**93%**|**85.4%**|
+|**Morphant.Build.Tasks**|**92.8%**|**85.4%**|
 |Morphant.Build.Tasks.GitSnapshotContext|95.5%|91.6%|
 |Morphant.Build.Tasks.GitSnapshotLifecycle|93%|94.1%|
-|Morphant.Build.Tasks.GitSnapshotStorage|100%|100%|
+|Morphant.Build.Tasks.GitSnapshotStorage|98.3%|100%|
 |Morphant.Build.Tasks.ManageMorphantGitSnapshot|100%|90%|
 |Morphant.Build.Tasks.MorphantBuildTask|97.7%|50%|
 |Morphant.Build.Tasks.PhysicalDirectory|78.3%|64.5%|
@@ -87,7 +87,7 @@
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>el|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elBuilder|82.9%|69%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResult|100%||
-|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResultComparer|94.6%|91.6%|
+|Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanMod<br/>elResultComparer|96.4%|94.4%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionPlanPip<br/>eline|87.7%|97.3%|
 |Morphant.Generator.ConstructionSurface.ConstructionPlan.ConstructionTypePar<br/>ameterModel|100%||
 |Morphant.Generator.ConstructionSurface.ConstructionSurfacePipeline|97.4%|95.4%|
@@ -417,4 +417,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #241](https://github.com/strangeman375/Morphant/actions/runs/34357499239).
+Full HTML report: download the **coverage** artifact from [CI run #246](https://github.com/strangeman375/Morphant/actions/runs/34362875465).
