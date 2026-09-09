@@ -177,7 +177,7 @@ jobs:
           retention-days: 30
 
   roslyn-compatibility:
-    name: Validate Roslyn 4.9.2
+    name: Validate shipped generator on Roslyn 4.9.2
     needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -191,18 +191,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore
-        run: >-
-          dotnet restore src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          -p:MorphantRoslynVersion=4.9.2
-
-      - name: Test
-        run: >-
-          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          --configuration Release
-          --no-restore
-          -p:ContinuousIntegrationBuild=true
-          -p:MorphantRoslynVersion=4.9.2
+      - name: Test the shipped generator on the newer Roslyn host
+        run: bash eng/test-shipped-generator.sh
 
   cross-platform:
     name: Validate release (${{ matrix.os }})

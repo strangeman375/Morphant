@@ -112,7 +112,7 @@ jobs:
           retention-days: 30
 
   roslyn-compatibility:
-    name: Roslyn 4.9.2 compatibility
+    name: Shipped generator on Roslyn 4.9.2
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -125,28 +125,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore
-        run: >-
-          dotnet restore src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          -p:MorphantRoslynVersion=4.9.2
-
-      - name: Build
-        run: >-
-          dotnet build src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          --configuration Release
-          --no-restore
-          -p:ContinuousIntegrationBuild=true
-          -p:MorphantRoslynVersion=4.9.2
-
-      - name: Test
-        run: >-
-          dotnet test src/tests/Morphant.Generator.UnitTests/Morphant.Generator.UnitTests.csproj
-          --configuration Release
-          --no-build
-          --no-restore
-          -p:MorphantRoslynVersion=4.9.2
-          --results-directory artifacts/test-results/roslyn-4.9.2
-          --logger "trx;LogFileName=roslyn-4.9.2.trx"
+      - name: Test the shipped generator on the newer Roslyn host
+        run: bash eng/test-shipped-generator.sh
 
       - name: Upload test results
         if: ${{ always() }}
