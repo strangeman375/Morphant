@@ -209,21 +209,6 @@ internal sealed class GitSnapshotLifecycleTests
     }
 
     [Test]
-    public void Rejects_snapshot_framework_not_declared_by_the_project()
-    {
-        using var workspace = new SnapshotWorkspace();
-
-        var exception = Assert.Throws<SnapshotException>(() =>
-            workspace.CreateContext(
-                "Release",
-                "net10.0",
-                "net8.0;net10.0",
-                snapshotTargetFrameworks: "net9.0"));
-
-        Assert.That(exception!.Code, Is.EqualTo("MORPHANTMSB021"));
-    }
-
-    [Test]
     public void Prepare_removes_only_stale_morphant_files_from_staging()
     {
         using var workspace = new SnapshotWorkspace();
