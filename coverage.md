@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/09/2026 - 10:32:55 |
-| Coverage date: | 09/09/2026 - 10:22:12 - 09/09/2026 - 10:32:49 |
+| Generated on: | 09/09/2026 - 11:03:18 |
+| Coverage date: | 09/09/2026 - 10:54:35 - 09/09/2026 - 11:03:14 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 372 |
 | Files: | 196 |
-| **Line coverage:** | 88.1% (37926 of 43013) |
-| Covered lines: | 37926 |
-| Uncovered lines: | 5087 |
-| Coverable lines: | 43013 |
-| Total lines: | 71664 |
-| **Branch coverage:** | 78.6% (13345 of 16969) |
-| Covered branches: | 13345 |
-| Total branches: | 16969 |
+| **Line coverage:** | 88.1% (37880 of 42966) |
+| Covered lines: | 37880 |
+| Uncovered lines: | 5086 |
+| Coverable lines: | 42966 |
+| Total lines: | 71558 |
+| **Branch coverage:** | 78.6% (13319 of 16935) |
+| Covered branches: | 13319 |
+| Total branches: | 16935 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -52,17 +52,17 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 91.8%</summary>
+<details><summary>Morphant.Build.Tasks - 91.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**91.8%**|**82.9%**|
-|Morphant.Build.Tasks.GitSnapshotContext|96.4%|92.3%|
+|**Morphant.Build.Tasks**|**91.2%**|**83.9%**|
+|Morphant.Build.Tasks.GitSnapshotContext|95.8%|90%|
 |Morphant.Build.Tasks.GitSnapshotFrameworkSelection|100%|93.7%|
-|Morphant.Build.Tasks.GitSnapshotLifecycle|93.1%|92.3%|
-|Morphant.Build.Tasks.GitSnapshotStorage|85.4%|75%|
+|Morphant.Build.Tasks.GitSnapshotLifecycle|92.7%|93.9%|
+|Morphant.Build.Tasks.GitSnapshotStorage|96.9%|91.6%|
 |Morphant.Build.Tasks.ManageMorphantGitSnapshot|95%|88.8%|
-|Morphant.Build.Tasks.MorphantBuildTask|97.2%|50%|
+|Morphant.Build.Tasks.MorphantBuildTask|81%|50%|
 |Morphant.Build.Tasks.PhysicalDirectory|78.3%|64.5%|
 |Morphant.Build.Tasks.PortablePath|100%|90.9%|
 |Morphant.Build.Tasks.SnapshotException|100%||
@@ -418,4 +418,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #236](https://github.com/strangeman375/Morphant/actions/runs/34339478906).
+Full HTML report: download the **coverage** artifact from [CI run #238](https://github.com/strangeman375/Morphant/actions/runs/34342448433).
