@@ -3,19 +3,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/08/2026 - 23:47:37 |
-| Coverage date: | 09/08/2026 - 23:45:43 - 09/08/2026 - 23:47:32 |
+| Generated on: | 09/09/2026 - 00:07:48 |
+| Coverage date: | 09/09/2026 - 00:06:16 - 09/09/2026 - 00:07:43 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 369 |
 | Files: | 193 |
-| **Line coverage:** | 88% (37900 of 43050) |
-| Covered lines: | 37900 |
-| Uncovered lines: | 5150 |
+| **Line coverage:** | 88.1% (37963 of 43050) |
+| Covered lines: | 37963 |
+| Uncovered lines: | 5087 |
 | Coverable lines: | 43050 |
 | Total lines: | 71711 |
-| **Branch coverage:** | 78.4% (13272 of 16911) |
-| Covered branches: | 13272 |
+| **Branch coverage:** | 78.6% (13305 of 16911) |
+| Covered branches: | 13305 |
 | Total branches: | 16911 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -52,16 +52,16 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 81.1%</summary>
+<details><summary>Morphant.Build.Tasks - 92.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**81.1%**|**70.6%**|
-|Morphant.Build.Tasks.GitSnapshotContext|76.4%|63.3%|
-|Morphant.Build.Tasks.GitSnapshotLifecycle|84.5%|85.1%|
-|Morphant.Build.Tasks.ManageMorphantGitSnapshot|95.4%|83.3%|
-|Morphant.Build.Tasks.MorphantBuildTask|61.2%|0%|
-|Morphant.Build.Tasks.PortablePath|97.5%|54.5%|
+|**Morphant.Build.Tasks**|**92.4%**|**87.1%**|
+|Morphant.Build.Tasks.GitSnapshotContext|93.2%|84.4%|
+|Morphant.Build.Tasks.GitSnapshotLifecycle|89.6%|89.1%|
+|Morphant.Build.Tasks.ManageMorphantGitSnapshot|100%|100%|
+|Morphant.Build.Tasks.MorphantBuildTask|77.4%|50%|
+|Morphant.Build.Tasks.PortablePath|100%|90.9%|
 |Morphant.Build.Tasks.SnapshotException|100%||
 
 </details>
@@ -103,7 +103,7 @@
 |Morphant.Generator.GeneratedMemberNaming|97.3%|95.8%|
 |Morphant.Generator.GeneratedPlanNaming|100%||
 |Morphant.Generator.GeneratedSourceHintName|100%|94.4%|
-|Morphant.Generator.GeneratorStageGuard|99.1%|84%|
+|Morphant.Generator.GeneratorStageGuard|100%|86%|
 |Morphant.Generator.HintNameHelper|97.4%|95%|
 |Morphant.Generator.HintNamePartAllocator|61.9%|75%|
 |Morphant.Generator.Incrementality.DestinationPlanCandidate|100%||
@@ -415,4 +415,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #208](https://github.com/strangeman375/Morphant/actions/runs/34291805002).
+Full HTML report: download the **coverage** artifact from [CI run #212](https://github.com/strangeman375/Morphant/actions/runs/34293144930).
