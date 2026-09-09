@@ -8,11 +8,13 @@ namespace Morphant.Generator.UnitTests.GitSnapshotTests;
 [TestFixture]
 internal sealed class GitSnapshotLifecycleTests
 {
-    [Test]
-    public void Publishes_the_current_set_without_rewriting_identical_files()
+    [TestCase("Mappers")]
+    [TestCase("mappers")]
+    [TestCase("MAPPERS")]
+    public void Publishes_the_current_set_without_rewriting_identical_files(string detail)
     {
         using var workspace = new SnapshotWorkspace();
-        var context = workspace.CreateContext("Release", "net10.0");
+        var context = workspace.CreateContext("Release", "net10.0", snapshotDetail: detail);
         var unchanged = "Morphant.Generated.TypeMapper.Unchanged.g.cs";
         var added = "Morphant.Generated.TypeMapper.Added.g.cs";
         var stale = "Morphant.Generated.TypeMapper.Stale.g.cs";
@@ -57,14 +59,16 @@ internal sealed class GitSnapshotLifecycleTests
         });
     }
 
-    [Test]
-    public void Full_detail_publishes_every_morphant_artifact()
+    [TestCase("Full")]
+    [TestCase("full")]
+    [TestCase("FULL")]
+    public void Full_detail_publishes_every_morphant_artifact(string detail)
     {
         using var workspace = new SnapshotWorkspace();
         var context = workspace.CreateContext(
             "Release",
             "net10.0",
-            snapshotDetail: "Full");
+            snapshotDetail: detail);
         string[] files =
         [
             "Morphant.Generated.Construction.Destination.g.cs",

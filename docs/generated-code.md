@@ -64,7 +64,7 @@ The optional settings are:
 
 | Setting | Default | Purpose |
 |---|---|---|
-| `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include all Morphant-generated files. |
+| `MorphantGitSnapshotDetail` | `Mappers` | Use `Full` to include all Morphant-generated files. Values are case-insensitive. |
 | `MorphantGitSnapshotTargetFrameworks` | Last declared TFM | Semicolon-separated subset of the project's TFMs; use `$(TargetFrameworks)` to select all. |
 | `MorphantGitSnapshotPath` | `Generated/Morphant` | Dedicated snapshot directory inside the project. |
 

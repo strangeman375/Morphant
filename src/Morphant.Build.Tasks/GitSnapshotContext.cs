@@ -7,7 +7,7 @@ namespace Morphant.Build.Tasks;
 internal sealed class GitSnapshotContext
 {
     private static readonly char[] AmbiguousPathCharacters =
-        ['*', '?', ';', '[', ']'];
+        ['*', '?', ';'];
 
     private GitSnapshotContext(
         string snapshotRoot,
@@ -221,12 +221,12 @@ internal sealed class GitSnapshotContext
 
     private static GitSnapshotDetail ParseSnapshotDetail(string value)
     {
-        if (string.Equals(value, "Mappers", StringComparison.Ordinal))
+        if (string.Equals(value, "Mappers", StringComparison.OrdinalIgnoreCase))
         {
             return GitSnapshotDetail.Mappers;
         }
 
-        if (string.Equals(value, "Full", StringComparison.Ordinal))
+        if (string.Equals(value, "Full", StringComparison.OrdinalIgnoreCase))
         {
             return GitSnapshotDetail.Full;
         }

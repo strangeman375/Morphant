@@ -3,7 +3,7 @@ namespace Morphant.Build.Tasks;
 internal static class PortablePath
 {
     private static readonly char[] UnsafeComponentCharacters =
-        ['<', '>', ':', '"', '/', '\\', '|', '?', '*', ';', '[', ']'];
+        ['<', '>', ':', '"', '/', '\\', '|', '?', '*', ';'];
 
     private static readonly HashSet<string> ReservedWindowsNames = new(
         [

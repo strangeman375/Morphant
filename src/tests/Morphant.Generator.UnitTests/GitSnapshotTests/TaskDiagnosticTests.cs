@@ -79,6 +79,7 @@ internal sealed class TaskDiagnosticTests
     }
 
     [TestCase("My Generated", false)]
+    [TestCase("Build [CI]", false)]
     [TestCase("Nested/Generators", true)]
     [TestCase("Old/../MyGenerated/.", true)]
     [TestCase("Nested/Generators/", false)]

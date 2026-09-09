@@ -39,6 +39,8 @@ unsupported.
 
 ### Fixed
 
+- Accept literal square brackets in Git snapshot paths and compare
+  `MorphantGitSnapshotDetail` values case-insensitively, matching MSBuild.
 - Allow a custom `CompilerGeneratedFilesOutputPath` inside the current
   `IntermediateOutputPath` when Git snapshots are enabled, preserving cleanup
   and publication checks.
