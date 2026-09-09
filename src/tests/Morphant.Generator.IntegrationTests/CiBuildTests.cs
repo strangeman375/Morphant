@@ -293,11 +293,15 @@ internal sealed class CiBuildTests
     [TestCase("Compiler", "Generated #1 %20 [CI]")]
     [TestCase("Snapshot", "Generated;CI")]
     [TestCase("Compiler", "Generated;CI")]
+    [TestCase("Snapshot", "Backslash")]
+    [TestCase("Compiler", "Backslash")]
     public async Task Escaped_literal_storage_paths_are_preserved(string location, string name)
     {
         using var consumer = CreateConsumer();
         var output = Path.Combine(consumer.Root, name);
         var escaped = output.Replace("%", "%25").Replace(";", "%3B");
+        if (name == "Backslash")
+            escaped = escaped.Replace('/', '\\');
         consumer.SetProperty("EmitCompilerGeneratedFiles", "true");
         consumer.SetProperty(location == "Snapshot" ? "MorphantGitSnapshotPath" : "CompilerGeneratedFilesOutputPath", escaped);
         AssertSucceeded(await consumer.Run("build"));

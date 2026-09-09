@@ -18,6 +18,7 @@ internal static class PhysicalDirectory
         {
             if (string.IsNullOrWhiteSpace(value) || value.Any(char.IsControl))
                 throw new ArgumentException();
+            value = value.Replace('\\', Path.DirectorySeparatorChar);
             full = Path.GetFullPath(Path.IsPathRooted(value) ? value : Path.Combine(baseDirectory, value));
             var components = full.Substring(Path.GetPathRoot(full)!.Length)
                 .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
