@@ -2,6 +2,7 @@
 #pragma warning disable MORPH0019, MORPH0030, MORPH0052
 using System;
 using Morphant;
+using Morphant.Context;
 using Morphant.Exceptions;
 
 namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.DiagnosticIsolation
