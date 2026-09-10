@@ -20,9 +20,19 @@ Enable snapshots in the project that declares your mappers:
 ```
 
 After a successful compilation, generated mapper implementations appear in
-`Generated/Morphant/<tfm>`, with a directory for each compiled target framework.
+`Generated/Morphant/<tfm>` for each target framework where snapshots are enabled.
 These files are for review and are excluded from compilation. Commit the entire
 snapshot directory together with your mapping changes.
+
+For a multi-targeted project, make `MorphantGitSnapshot` conditional on
+`TargetFramework` to avoid saving extra copies. For example, save only `net10.0`:
+
+```xml
+<PropertyGroup>
+  <MorphantGitSnapshot>false</MorphantGitSnapshot>
+  <MorphantGitSnapshot Condition="'$(TargetFramework)' == 'net10.0'">true</MorphantGitSnapshot>
+</PropertyGroup>
+```
 
 Two optional settings control what is saved and where:
 
