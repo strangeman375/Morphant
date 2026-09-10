@@ -575,7 +575,8 @@ internal static class ExplicitStructuredConstructorPlanner
                     destinationTypeName +
                     "> previous, " +
                     destinationTypeName +
-                    " destination)");
+                    " destination, " +
+                    "global::Morphant.Context.MappingContext context)");
                 writer.Line("{");
                 writer.Indent();
 

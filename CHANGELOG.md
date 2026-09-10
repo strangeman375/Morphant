@@ -54,6 +54,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 - Preserve null propagation and operator precedence in callback expressions
   that combine conditional access with extension methods, including deferred
   lambdas and local functions. Accept explicit static extension-method calls.
+- Preserve arithmetic and overload selection when simplifying constant
+  conditions. Accept `context.Operation` inside constructor argument expressions.
 - Use a matching `Members` value for the constructor argument, evaluating it
   once. Report `MORPH0042` when that value reads `result` before construction.
 - Avoid generated-name conflicts across mappers, assemblies and nested types.

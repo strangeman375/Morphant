@@ -1326,21 +1326,50 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             : base.VisitIsPatternExpression(node);
 
     public override SyntaxNode? VisitSwitchExpression(SwitchExpressionSyntax node) =>
-        _executionFacts.SelectArm(node) is { } arm ? Visit(arm.Expression)!.WithTriviaFrom(node) : base.VisitSwitchExpression(node);
+        _executionFacts.SelectArm(node) is { } arm
+            ? RewriteSelectedBranch(node, arm.Expression)
+            : base.VisitSwitchExpression(node);
 
     public override SyntaxNode? VisitConditionalExpression(
         ConditionalExpressionSyntax node)
     {
         if (TryEvaluateKnownBoolean(node.Condition, out var condition))
         {
-            return Visit(
+            return RewriteSelectedBranch(node,
                     condition
                         ? node.WhenTrue
-                        : node.WhenFalse)!
-                .WithTriviaFrom(node);
+                        : node.WhenFalse);
         }
 
         return base.VisitConditionalExpression(node);
+    }
+
+    private ExpressionSyntax RewriteSelectedBranch(ExpressionSyntax original, ExpressionSyntax selected)
+    {
+        var rewritten = (ExpressionSyntax)Visit(selected)!;
+        var resultType = _semanticModel.GetTypeInfo(original).Type;
+        var branchType = _semanticModel.GetTypeInfo(selected).Type;
+        if (resultType is { TypeKind: not TypeKind.Error } &&
+            !SymbolEqualityComparer.Default.Equals(resultType, branchType))
+        {
+            var type = SubstituteMapperType(resultType);
+            // An explicit cast can choose a different user-defined conversion.
+            // Retain implicit conversion through a typed conditional in that case.
+            rewritten = _semanticModel.GetConversion(selected).IsUserDefined
+                ? SyntaxFactory.ParenthesizedExpression(SyntaxFactory.ConditionalExpression(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression),
+                    rewritten,
+                    SyntaxFactory.DefaultExpression(SyntaxFactory.ParseTypeName(
+                        TypeMapperMappingTypePolicy.GetGeneratedTypeName(type)))))
+                : CastResult(rewritten, type);
+        }
+        else if (rewritten is BinaryExpressionSyntax or ConditionalExpressionSyntax or
+                 AssignmentExpressionSyntax or SwitchExpressionSyntax)
+        {
+            rewritten = SyntaxFactory.ParenthesizedExpression(rewritten.WithoutTrivia());
+        }
+
+        return rewritten.WithTriviaFrom(original);
     }
 
     public override SyntaxNode? VisitMemberAccessExpression(
