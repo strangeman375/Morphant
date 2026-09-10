@@ -52,7 +52,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 - Preserve inherited callback behavior, including tuple field reads after
   generic substitution, conditional method calls, element names and nullability.
 - Preserve null propagation and operator precedence in callback expressions
-  that combine conditional access with extension methods.
+  that combine conditional access with extension methods, including deferred
+  lambdas and local functions. Accept explicit static extension-method calls.
 - Use a matching `Members` value for the constructor argument, evaluating it
   once. Report `MORPH0042` when that value reads `result` before construction.
 - Avoid generated-name conflicts across mappers, assemblies and nested types.

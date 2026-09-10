@@ -820,6 +820,25 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.ExpressionStatement((ExpressionSyntax)Visit(expression)!);
     }
 
+    public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) =>
+        RequiresConditionalStatementBody(node, node.Body)
+            ? node.WithParameter((ParameterSyntax)Visit(node.Parameter)!)
+                .WithBody(SyntaxFactory.Block(RewriteConditionalStatement((ExpressionSyntax)node.Body)))
+            : base.VisitSimpleLambdaExpression(node);
+
+    public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) =>
+        RequiresConditionalStatementBody(node, node.Body)
+            ? node.WithParameterList((ParameterListSyntax)Visit(node.ParameterList)!)
+                .WithBody(SyntaxFactory.Block(RewriteConditionalStatement((ExpressionSyntax)node.Body)))
+            : base.VisitParenthesizedLambdaExpression(node);
+
+    private bool RequiresConditionalStatementBody(SyntaxNode function, CSharpSyntaxNode body) =>
+        body is ConditionalAccessExpressionSyntax conditional &&
+        HasExtensionInConditionalChain(conditional.WhenNotNull) &&
+        (_semanticModel.GetTypeInfo(conditional).Type?.SpecialType == SpecialType.System_Void ||
+         _semanticModel.GetOperation(function) is IAnonymousFunctionOperation { Symbol.ReturnsVoid: true } ||
+         _semanticModel.GetDeclaredSymbol(function) is IMethodSymbol { ReturnsVoid: true });
+
     private bool TryRewriteConditionalAccess(
         ConditionalAccessExpressionSyntax node,
         bool asStatement,
@@ -1536,6 +1555,11 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 SyntaxFactory.SeparatedList(
                     clause.Constraints.Select(RewriteConstraint))));
 
+        var statementBody = node.ExpressionBody is { } arrow &&
+            RequiresConditionalStatementBody(node, arrow.Expression)
+                ? SyntaxFactory.Block(RewriteConditionalStatement(arrow.Expression))
+                : null;
+
         return node
             .WithReturnType(returnType)
             .WithParameterList(
@@ -1543,15 +1567,16 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                     SyntaxFactory.SeparatedList(parameters)))
             .WithConstraintClauses(SyntaxFactory.List(constraints))
             .WithBody(
-                node.Body is null
+                statementBody ?? (node.Body is null
                     ? null
-                    : (BlockSyntax)Visit(node.Body)!)
+                    : (BlockSyntax)Visit(node.Body)!))
             .WithExpressionBody(
-                node.ExpressionBody is null
+                statementBody is not null || node.ExpressionBody is null
                     ? null
                     : node.ExpressionBody.WithExpression(
                         (ExpressionSyntax)Visit(
-                            node.ExpressionBody.Expression)!));
+                            node.ExpressionBody.Expression)!))
+            .WithSemicolonToken(statementBody is null ? node.SemicolonToken : default);
     }
 
     public override SyntaxNode? VisitIdentifierName(
@@ -2006,8 +2031,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             return null;
         }
 
-        return method.ReducedFrom ??
-               (method.IsExtensionMethod ? method : null);
+        // A static call already includes its receiver in the argument list.
+        return method.ReducedFrom;
     }
 
     private ISymbol? GetReferencedSymbol(SyntaxNode node)

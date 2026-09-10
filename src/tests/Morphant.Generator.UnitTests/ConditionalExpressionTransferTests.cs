@@ -32,6 +32,13 @@ internal sealed class ConditionalExpressionTransferTests
             ("((object?)source.Text as string)?.Echo() ?? \"fallback\"", "string"),
             ("source.Text?.Echo().Echo() ?? \"fallback\"", "string"),
             ("source.Text?.Echo()?.Length.Add() ?? -1", "int"),
+            ("TransferExtensions.TextExtensions.Echo(source.Text ?? \"\")", "string"),
+            ("source.Text?.Identity<string>().Length ?? -1", "int"),
+            ("new Func<string>(() => source.Text?.MaybeText() ?? \"fallback\")", "Func<string>"),
+            ("new Func<string>(() => { var conditionalReceiver = \"fallback\"; return source.Text?.MaybeText() ?? conditionalReceiver; })", "Func<string>"),
+            ("new Action(() => source.Text?.Touch())", "Action"),
+            ("new Action(() => { source.Text?.Echo()?.Touch(); })", "Action"),
+            ("new Action(() => { void Touch() => source.Text?.Touch(); Touch(); })", "Action"),
         };
         foreach (var (expression, type) in expressions)
         foreach (var callback in new[] { "Construct", "Members", "Convert" })
@@ -63,6 +70,8 @@ namespace TransferExtensions
             value.Length == 0 ? null : value.Length;
         public static string Echo(this string value) => value;
         public static int Add(this int value) => value + 1;
+        public static T Identity<T>(this T value) => value;
+        public static void Touch(this string value) { }
     }
 }
 
