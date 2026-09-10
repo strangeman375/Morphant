@@ -39,8 +39,7 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Fixed
 
-- Clarify documentation, shorten IntelliSense, and verify mapping examples,
-  including the complete Quick start with DI registration.
+- Clarify documentation, shorten IntelliSense, and verify mapping examples.
 - Package the correct generator and build task assemblies with custom build
   output paths.
 - Keep generated mappings current after IDE edits and project-reference

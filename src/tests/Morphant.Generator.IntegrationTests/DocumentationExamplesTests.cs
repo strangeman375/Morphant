@@ -37,16 +37,7 @@ internal sealed class DocumentationExamplesTests
             }
 
             // All examples share one ordinary MSBuild compilation; no Roslyn execution in the test host.
-            File.WriteAllText(Path.Combine(root, "ApplicationMapper.cs"),
-                ReadExample("docs/quick-start.md", "## Declare a mapping", 0));
-            File.WriteAllText(Path.Combine(root, "Program.cs"),
-                ReadExample("docs/quick-start.md", "## Register it with DI", 0) +
-                """
-
-if (created.Name != "Ada" || existing.Name != "Grace" || ReferenceEquals(created, existing))
-    throw new InvalidOperationException("The Quick start must run Create and Update through its DI scope.");
-
-""" + string.Join(Environment.NewLine, calls));
+            File.WriteAllText(Path.Combine(root, "Program.cs"), string.Join(Environment.NewLine, calls));
             var result = await DotNetCli.Run(root,
             [
                 "run", "--project", Path.Combine(root, "Examples.csproj"),
@@ -77,7 +68,14 @@ if (created.Name != "Ada" || existing.Name != "Grace" || ReferenceEquals(created
 
     private static IEnumerable<Example> Examples()
     {
-        yield return new("README.md", "## Define a mapper", 0,
+        // These two public entry pages intentionally own independent mapper declarations.
+        foreach (var (page, heading) in new[]
+        {
+            ("README.md", "## Define a mapper"),
+            ("docs/quick-start.md", "## Declare a mapping")
+        })
+        {
+            yield return new(page, heading, 0,
 """
 __EXAMPLE__
 public static class Scenario
@@ -94,6 +92,7 @@ public static class Scenario
     }
 }
 """);
+        }
 
         foreach (var (id, block, mapper) in new[]
         {
@@ -419,9 +418,6 @@ public static class Scenario
     <ImplicitUsings>disable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-  </ItemGroup>
 </Project>
 """;
 }

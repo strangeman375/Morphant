@@ -2,8 +2,7 @@
 
 ## Install Morphant
 
-Start with a C# console project. Install Morphant, which includes the runtime
-and source generator, and the DI package used below:
+The package contains both the runtime and the source generator:
 
 ```shell
 dotnet add package Morphant
@@ -14,8 +13,6 @@ Reference Morphant directly in each project that declares mappers. A project
 that only calls a library's compiled mappers can use its transitive runtime dependency.
 
 ## Declare a mapping
-
-Add `ApplicationMapper.cs`:
 
 ```csharp
 using Morphant;
@@ -51,39 +48,32 @@ The mapper is its own `TypeMapper<TMapper>` argument.
 
 ## Register it with DI
 
-Replace `Program.cs` with this complete example:
+Register the concrete mapper, every source/destination mapping it implements,
+and the application `IMapper`. With
+`Microsoft.Extensions.DependencyInjection`:
 
 ```csharp
-using System;
 using Microsoft.Extensions.DependencyInjection;
-using Morphant;
 
-var services = new ServiceCollection();
 services.AddScoped<ApplicationMapper>();
 services.AddScoped<ITypeMapper<Customer, CustomerDto>>(
     provider => provider.GetRequiredService<ApplicationMapper>());
 services.AddScoped<IMapper, Mapper>();
-
-using var serviceProvider = services.BuildServiceProvider();
-using var scope = serviceProvider.CreateScope();
-var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
-
-var customer = new Customer { Name = "Ada" };
-var created = mapper.Map<Customer, CustomerDto>(customer);
-
-customer.Name = "Grace";
-var existing = new CustomerDto { Name = "Old" };
-existing = mapper.Map(customer, existing);
-
-Console.WriteLine($"{created.Name} -> {existing.Name}"); // Ada -> Grace
 ```
-
-Run the project with `dotnet run`.
 
 If one mapper implements several mappings, register every
 `ITypeMapper<TSource, TDestination>` against the same scoped mapper instance.
 
 ## Create and update
+
+Resolve `IMapper` from the current application scope:
+
+```csharp
+var created = mapper.Map<Customer, CustomerDto>(customer);
+
+var existing = new CustomerDto();
+existing = mapper.Map(customer, existing);
+```
 
 The source-only overload performs Create. Supplying a destination performs
 Update, even when that destination is `null`.
@@ -93,14 +83,27 @@ return a replacement.
 
 ## Add explicit rules
 
-For example, trim customer names by adding [`Members`](api/members.md) to the
-existing `Map<Customer, CustomerDto>()` chain:
+Use [`Construct`](api/construct.md) and [`Members`](api/members.md) when
+conventions are not enough:
 
 ```csharp
-.Members(source => new()
-{
-    Name = source.Name.Trim()
-});
+builder.Map<OrderDto, Order>()
+    .Construct(source => new(source.Id))
+    .Members((source, _) => new()
+    {
+        DisplayName = source.Name,
+        Revision = Auto(),
+        LegacyCode = Ignore()
+    });
+```
+
+Use [`Convert`](api/convert.md) when the whole mapping is clearer as ordinary
+synchronous C#:
+
+```csharp
+builder.Map<string, Uri>()
+    .Convert(source =>
+        new Uri(source!, UriKind.RelativeOrAbsolute));
 ```
 
 Continue with [Choose a configuration method](api/README.md),
