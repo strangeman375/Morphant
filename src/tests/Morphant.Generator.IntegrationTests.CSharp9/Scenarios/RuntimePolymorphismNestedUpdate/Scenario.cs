@@ -46,7 +46,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.RuntimePolymorph
             builder.Map<Holder, HolderDto>()
                 .Members(source => new() { Animal = Map<AnimalDto?>(source.Animal) });
             builder.Map<ReplacementHolder, HolderDto>()
-                .ResolveUsing(source => new HolderDto
+                .ResolveUsing((source, _) => new HolderDto
                 {
                     Animal = source!.Empty ? null : new DogDto { Name = "replacement" }
                 })
