@@ -53,7 +53,5 @@ see [Testing mappings](testing.md) for behavior checks.
 
 ## Build errors
 
-Snapshot errors use `MORPHANTMSB` codes. The build message identifies the
-invalid setting, conflicting path or file-access problem. Correct the reported
-cause and rebuild. These are MSBuild errors; C# diagnostic suppression does
-not apply.
+Snapshot errors use `MORPHANTMSB` codes. See [Build diagnostics](build-diagnostics.md)
+for each code's cause and how to fix it.

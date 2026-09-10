@@ -94,5 +94,5 @@ invalid DI registrations are described under [Exceptions](exceptions.md).
 See [Unmapped member validation](settings/unmapped-member-validation.md) for
 the two completeness warnings.
 
-Git snapshot failures are reported as [MSBuild errors](generated-code.md#build-errors).
-Their severity is not controlled by `.editorconfig` or C# diagnostic suppression.
+For Git snapshot failures, see [Build diagnostics](build-diagnostics.md)
+(`MORPHANTMSB...`).

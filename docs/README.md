@@ -40,6 +40,7 @@ mapper declaration, DI registration, Create, Update and a first explicit rule.
 ## Reference
 
 - [Compile-time diagnostics](diagnostics.md)
+- [Build diagnostics](build-diagnostics.md)
 - [Exceptions](exceptions.md)
 - [Generated code and Git snapshots](generated-code.md) — view output and
   save it for review.
