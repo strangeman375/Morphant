@@ -8,6 +8,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
     public sealed class VirtualTag { }
     public sealed class MembersTag { }
     public sealed class IncludedTag { }
+    public sealed class ConditionalIncludedTag { }
     public sealed class AssertedMembersTag { }
     public sealed class AssertedIncludedTag { }
     public sealed class ValueDestination<T> { public int? Value { get; set; } }
@@ -32,7 +33,12 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
         public int Reads;
         public T? Payload { get { Reads++; return PayloadValue; } }
     }
-    public sealed class BoundaryBox<T> where T : BoundaryBase { public T Payload { get; set; } = default!; }
+    public sealed class BoundaryBox<T> where T : BoundaryBase
+    {
+        private T _payload = default!;
+        public int Reads;
+        public T Payload { get { Reads++; return _payload; } set { _payload = value; } }
+    }
 
     public abstract class BoundaryFamily<TMapper, TSource> : TypeMapper<TMapper>
         where TMapper : BoundaryFamily<TMapper, TSource> where TSource : BoundaryBase
@@ -47,6 +53,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
                 .Members(source => new() { Value = source.Payload.Virtual.Value });
             builder.Map<BoundaryBox<TSource>, ValueDestination<(VirtualTag, IncludedTag)>>()
                 .IncludeMembers(source => source.Payload.Virtual);
+            builder.Map<BoundaryBox<TSource>, ValueDestination<ConditionalIncludedTag>>()
+                .IncludeMembers(source => source.Payload.Optional);
             builder.Map<NullableBox<TSource>, ValueDestination<MembersTag>>()
                 .Members(source => new() { Value = source.Payload?.Optional?.Value });
             builder.Map<NullableBox<TSource>, ValueDestination<IncludedTag>>()
@@ -71,6 +79,8 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
                 .IncludeBase<BoundaryBox<BoundarySource>, ValueDestination<(VirtualTag, MembersTag)>>();
             builder.Map<BoundaryBox<BoundarySource>, ValueDestination<(VirtualTag, IncludedTag)>>()
                 .IncludeBase<BoundaryBox<BoundarySource>, ValueDestination<(VirtualTag, IncludedTag)>>();
+            builder.Map<BoundaryBox<BoundarySource>, ValueDestination<ConditionalIncludedTag>>()
+                .IncludeBase<BoundaryBox<BoundarySource>, ValueDestination<ConditionalIncludedTag>>();
             builder.Map<NullableBox<BoundarySource>, ValueDestination<MembersTag>>()
                 .IncludeBase<NullableBox<BoundarySource>, ValueDestination<MembersTag>>();
             builder.Map<NullableBox<BoundarySource>, ValueDestination<IncludedTag>>()
@@ -133,6 +143,20 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.GenericSourceMem
 
     public static class BoundaryScenario
     {
+        public static void VerifyConditionalMember(bool hasProfile, Operation operation)
+        {
+            var payload = new BoundarySource
+            {
+                OptionalValue = hasProfile ? new Profile { Value = 61 } : null
+            };
+            var source = new BoundaryBox<BoundarySource> { Payload = payload };
+            VerifyValue<BoundaryBox<BoundarySource>, ConditionalIncludedTag>(
+                new BoundaryMapper(), source, operation, hasProfile ? 61 : null);
+
+            if (source.Reads != 1 || payload.Reads != 1)
+                throw new InvalidOperationException("Conditional member access must evaluate each getter once.");
+        }
+
         public static void VerifyFieldsAndVirtualDispatch(Callback callback, Operation operation)
         {
             var source = new BoundaryBox<BoundarySource> { Payload = new() };

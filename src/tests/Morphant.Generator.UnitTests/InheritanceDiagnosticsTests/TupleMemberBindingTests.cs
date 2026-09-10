@@ -10,7 +10,8 @@ internal sealed class TupleMemberBindingTests
     public void Callbacks_can_read_public_tuple_fields(
         [Values("Construct", "Members", "Convert")] string callback,
         [Values("Local", "Inherited", "GenericInherited")] string scope,
-        [Values(false, true)] bool useItemNames)
+        [Values(false, true)] bool useItemNames,
+        [Values(false, true)] bool useConditionalAccess)
     {
         const string source =
 """
@@ -55,6 +56,9 @@ namespace TestCase
             "Convert" => "Convert(source => (source!.Data.Value, source.Data.Count))",
             _ => throw new ArgumentOutOfRangeException(nameof(callback))
         };
+        if (useConditionalAccess)
+            expression = expression.Replace("source.Data.Count",
+                "source.Data.Value?.GetHashCode() ?? source.Data.Count");
         if (useItemNames)
             expression = expression.Replace("Data.Value", "Data.Item1")
                 .Replace("Data.Count", "Data.Item2");

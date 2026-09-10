@@ -45,7 +45,7 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleGenericInhe
                 .IncludeBase<Source<string>, (string? Value, int Count)>()
                 .Members(source => new()
                 {
-                    Value = source.Data.Value == null ? null : source.Data.Value.ToUpperInvariant()
+                    Value = source.Data.Value?.ToUpperInvariant()
                 });
         }
     }

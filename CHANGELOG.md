@@ -23,6 +23,8 @@ See [current limitations](docs/limitations.md) for features not yet included.
 
 ### Changed
 
+- Simplify null checks in generated mappings where conditional access preserves
+  the original behavior.
 - Publish a Git snapshot for every successful compilation's target framework.
   Remove `MorphantGitSnapshotTargetFrameworks`; use MSBuild conditions on
   `MorphantGitSnapshot` to opt individual compilations in or out.

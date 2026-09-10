@@ -35,11 +35,25 @@ internal sealed class ConventionSourceValueExpressionModel
 
     public string Render(GeneratedLocalNameAllocator localNames)
     {
-        return RequiresTypedMissingBranch ||
-               Path.Any(segment => segment.ReceiverTypeName is not null) &&
-               Path.Any(segment => segment.RequiresGuard)
-            ? RenderGuardedExpression(localNames)
-            : RenderConditionalAccessExpression();
+        if (RequiresTypedMissingBranch)
+        {
+            return RenderGuardedExpression(localNames);
+        }
+
+        var hasConditionalAccess = false;
+        foreach (var segment in Path)
+        {
+            // A cast inside an existing conditional chain can break its
+            // short-circuiting. Casts before the chain do not need guards.
+            if (hasConditionalAccess && segment.ReceiverTypeName is not null)
+            {
+                return RenderGuardedExpression(localNames);
+            }
+
+            hasConditionalAccess |= segment.RequiresGuard;
+        }
+
+        return RenderConditionalAccessExpression();
     }
 
     public bool Equals(ConventionSourceValueExpressionModel? other)

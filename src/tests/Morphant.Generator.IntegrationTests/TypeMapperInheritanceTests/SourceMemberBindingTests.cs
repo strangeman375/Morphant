@@ -5,6 +5,12 @@ namespace Morphant.Generator.IntegrationTests.TypeMapperInheritanceTests;
 [TestFixture]
 internal sealed class SourceMemberBindingTests
 {
+    [Test]
+    public void Conditional_access_preserves_hidden_members_and_evaluates_each_getter_once(
+        [Values(false, true)] bool hasProfile,
+        [Values(Operation.Create, Operation.UpdateWithoutDestination, Operation.UpdateExisting)] Operation operation) =>
+        BoundaryScenario.VerifyConditionalMember(hasProfile, operation);
+
     [TestCase(Callback.Members, Operation.Create)]
     [TestCase(Callback.Members, Operation.UpdateWithoutDestination)]
     [TestCase(Callback.Members, Operation.UpdateExisting)]
