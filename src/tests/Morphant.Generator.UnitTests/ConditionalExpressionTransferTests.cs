@@ -33,6 +33,8 @@ internal sealed class ConditionalExpressionTransferTests
             ("source.Text?.Echo().Echo() ?? \"fallback\"", "string"),
             ("source.Text?.Echo()?.Length.Add() ?? -1", "int"),
             ("source.Text?.Offset(source.Next())", "int?"),
+            ("source.ReadText()?.Offset(source.Next())", "int?"),
+            ("source.ReadText()?.Offset(1)", "int?"),
             ("source.Text?.Echo()", "string?"),
             ("(source.Text ?? \"\").Offset(source.Next())", "int"),
             ("TransferExtensions.TextExtensions.Offset(source.Text ?? \"\", source.Next())", "int"),
@@ -90,6 +92,7 @@ namespace TestCase
         public Func<int, int>? Callback { get; init; }
         public bool Enabled { get; init; }
         public int Next() => 0;
+        public string? ReadText() => Text;
     }
 
     public sealed class Destination

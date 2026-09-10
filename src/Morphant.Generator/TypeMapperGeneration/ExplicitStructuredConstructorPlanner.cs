@@ -223,13 +223,15 @@ internal static class ExplicitStructuredConstructorPlanner
             cancellationToken.ThrowIfCancellationRequested();
 
             var probeArgument = probeArgumentList.Arguments[index];
+            // Roslyn may not expose an argument operation directly for a
+            // parenthesized conditional with a target-typed conversion.
+            var boundArgument = probeSemanticModel.GetOperation(
+                    probeArgument, cancellationToken) as IArgumentOperation ??
+                (probeSemanticModel.GetOperation(probeObjectCreation, cancellationToken) as
+                    IObjectCreationOperation)?.Arguments.FirstOrDefault(argument =>
+                        probeArgument.Span.Contains(argument.Syntax.Span));
 
-            if (probeSemanticModel.GetOperation(
-                    probeArgument,
-                    cancellationToken) is not IArgumentOperation
-                {
-                    Parameter: { } probeParameter
-                } ||
+            if (boundArgument?.Parameter is not { } probeParameter ||
                 probeParameter.Ordinal < 0 ||
                 probeParameter.Ordinal >=
                     destinationConstructor.Parameters.Length)
