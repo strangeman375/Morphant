@@ -15,7 +15,7 @@ If Morphant saves you time, you can
 [support its development on Boosty](https://boosty.to/strangeman375).
 
 > Automatic collection mapping, projection and several other general-purpose
-> mapper features are not supported. See
+> mapper features are not included yet. See
 > [Current limitations](https://github.com/strangeman375/Morphant/blob/main/docs/limitations.md).
 
 ## Install
