@@ -9,7 +9,7 @@ every `Map`, `Create`, and `Update` form.
 
 | Form | Operation |
 |---|---|
-| `Map(...)` | Select Create or Update from the outer operation and current nested value |
+| `Map(...)` | Select Create or Update from whether a non-null outer destination was supplied |
 | `Create(source)` | Always nested Create |
 | `Update(source, destination)` | Always nested Update |
 
@@ -35,15 +35,21 @@ convertible to the destination member or constructor parameter.
 
 ## How `Map` chooses an operation
 
-`Map` uses the current mapping operation and destination value:
+`Map` follows the supplied outer destination:
 
-| Current state | Nested operation |
+| Outer call | Nested operation |
 |---|---|
-| Creating a destination, or updating without a current nested value | Create |
-| Updating with a current nested value | Update |
+| Create, or Update with a null outer destination | Create |
+| Update with a non-null outer destination | Update |
 
-For a writable member, the result of nested Update is assigned back to that
-member. This preserves a replacement returned by the nested mapping.
+A writable nested member's current value is passed to nested Update even when
+it is `null`. That mapping applies its own
+[`NullDestinationHandling`](settings/null-handling.md#null-update-destination),
+and its operation remains Update.
+
+When `Resolve` or `ResolveUsing` selects a replacement, nested member rules use
+the replacement's member values. The returned nested result is assigned back
+to the writable member.
 
 Use explicit `Create` or `Update` when the operation must not be selected this
 way.

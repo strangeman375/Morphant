@@ -1,7 +1,7 @@
 # Documentation
 
-Start with the [Quick start](quick-start.md). It covers package installation,
-mapper declaration, DI registration, Create, Update and a first explicit rule.
+Start with the [Quick start](quick-start.md): a runnable console example with
+DI registration, Create, Update and a first explicit rule.
 
 ## Configure a mapping
 
