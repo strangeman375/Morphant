@@ -206,7 +206,7 @@ internal sealed class DiagnosticCatalogAuditTests
         var taskCodes = Directory.GetFiles(Path.Combine(root, "src", "Morphant.Build.Tasks"), "*.cs")
             .SelectMany(path => Regex.Matches(File.ReadAllText(path), "MORPHANTMSB[0-9]{3}")
                 .Select(static match => match.Value));
-        var guide = File.ReadAllText(Path.Combine(root, "docs", "generated-code.md"));
+        var guide = File.ReadAllText(Path.Combine(root, "docs", "build-diagnostics.md"));
 
         Assert.Multiple(() =>
         {
