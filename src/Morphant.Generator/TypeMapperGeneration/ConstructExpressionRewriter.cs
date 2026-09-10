@@ -2060,8 +2060,22 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
             return null;
         }
 
-        // A static call already includes its receiver in the argument list.
-        return method.ReducedFrom;
+        if (method.ReducedFrom is { } reduced)
+            return reduced;
+        if (!method.IsExtensionMethod)
+            return null;
+
+        // While binding generated callback signatures, Roslyn can expose the
+        // unreduced extension candidate. A type receiver still identifies an
+        // explicit static call, which already has every argument.
+        return invocation.Expression switch
+        {
+            MemberBindingExpressionSyntax => method,
+            MemberAccessExpressionSyntax access when
+                GetReferencedSymbol(access.Expression) is not
+                    (INamedTypeSymbol or INamespaceSymbol or IAliasSymbol { Target: INamedTypeSymbol }) => method,
+            _ => null
+        };
     }
 
     private ISymbol? GetReferencedSymbol(SyntaxNode node)

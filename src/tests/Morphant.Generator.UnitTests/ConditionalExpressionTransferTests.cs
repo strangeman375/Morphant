@@ -32,6 +32,10 @@ internal sealed class ConditionalExpressionTransferTests
             ("((object?)source.Text as string)?.Echo() ?? \"fallback\"", "string"),
             ("source.Text?.Echo().Echo() ?? \"fallback\"", "string"),
             ("source.Text?.Echo()?.Length.Add() ?? -1", "int"),
+            ("source.Text?.Offset(source.Next())", "int?"),
+            ("source.Text?.Echo()", "string?"),
+            ("(source.Text ?? \"\").Offset(source.Next())", "int"),
+            ("TransferExtensions.TextExtensions.Offset(source.Text ?? \"\", source.Next())", "int"),
             ("TransferExtensions.TextExtensions.Echo(source.Text ?? \"\")", "string"),
             ("source.Text?.Identity<string>().Length ?? -1", "int"),
             ("new Func<string>(() => source.Text?.MaybeText() ?? \"fallback\")", "Func<string>"),
@@ -70,6 +74,7 @@ namespace TransferExtensions
             value.Length == 0 ? null : value.Length;
         public static string Echo(this string value) => value;
         public static int Add(this int value) => value + 1;
+        public static int Offset(this string value, int offset) => value.Length + offset;
         public static T Identity<T>(this T value) => value;
         public static void Touch(this string value) { }
     }
