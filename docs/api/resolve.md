@@ -6,9 +6,7 @@ a replacement.
 
 ## Availability
 
-`Resolve` has the same constructor requirement as [`Construct`](construct.md):
-the destination must expose at least one accessible constructor with
-supported by-value parameters, or be a BCL tuple with intrinsic construction.
+`Resolve` has the same constructor requirement as [`Construct`](construct.md).
 
 ## Overloads
 

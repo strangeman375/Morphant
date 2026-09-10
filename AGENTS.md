@@ -106,6 +106,9 @@
 - Keep detailed behavior on one canonical page. Overview, API, settings, and
   diagnostic pages should state only what is needed in their own context and
   link to that page instead of duplicating feature-specific explanations.
+- Keep user guides focused on ordinary tasks. Omit implementation walkthroughs,
+  exhaustive edge-case lists, and CI/build scripts. Explain uncommon failures
+  through concise diagnostic help rather than expanding the main guide.
 - Keep evergreen documentation version-neutral. Use version numbers only for
   historical changelog/release material or an actual version-specific
   compatibility requirement.

@@ -10,8 +10,8 @@ inside `TypeMapper<TMapper>.Configure`. For application-side `IMapper.Map`, see
 | Method | Available when | Use it for |
 |---|---|---|
 | [`Map`](map.md) | The source and destination form a valid mapping pair | Register the pair and use conventions |
-| [`Construct`](construct.md) | A supported constructor or intrinsic BCL tuple construction is available | Supply constructor arguments when no destination exists |
-| [`Resolve`](resolve.md) | A supported constructor or intrinsic BCL tuple construction is available | Choose reuse or construction for both Create and Update |
+| [`Construct`](construct.md) | The destination has a supported constructor or is a tuple | Supply constructor arguments when no destination exists |
+| [`Resolve`](resolve.md) | The destination has a supported constructor or is a tuple | Choose reuse or construction for both Create and Update |
 | [`ConstructUsing`](construct-using.md) | Any valid mapping pair | Create through a factory or ordinary C# callback |
 | [`ResolveUsing`](resolve-using.md) | Any valid mapping pair | Choose reuse or replacement in ordinary C# |
 | [`Members`](members.md) | The destination has at least one supported member | Configure selected destination members |

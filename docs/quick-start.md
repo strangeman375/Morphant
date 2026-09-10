@@ -44,8 +44,7 @@ The example enables [destination validation](settings/unmapped-member-validation
 to report destination members that cannot be mapped. This check is disabled
 by default.
 
-The mapper is its own `TypeMapper<TMapper>` argument. This self type keeps
-generated fluent methods attached to the correct mapper configuration.
+The mapper is its own `TypeMapper<TMapper>` argument.
 
 ## Register it with DI
 

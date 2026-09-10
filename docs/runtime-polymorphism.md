@@ -32,11 +32,8 @@ Registration order is not a priority. If several incomparable interface
 branches are equally specific, Morphant throws
 `AmbiguousPolymorphicMappingException`.
 
-Generic branches are supported when their relative specificity is known at
-generation time. Relationships that depend on unknown generic arguments are
-unsupported and produce [MORPH0061](diagnostics/MORPH0061.md). Declare those
-links with closed source types, or use a hierarchy whose ordering follows
-from its declarations and constraints. Morphant does not use runtime reflection.
+Generic branches must have a consistent ordering for all type arguments.
+Unsupported combinations produce [MORPH0061](diagnostics/MORPH0061.md).
 
 The selected pair uses the same lookup rules as an explicit nested mapping. A
 pair declared by the same generated mapper is available without DI; a pair
@@ -74,8 +71,7 @@ not silently replace it or fall back to the base mapping. The selected
 derived Update may still return a replacement according to its normal rules.
 
 Class, interface and compatible value-type branches are supported.
-Runtime dispatch also applies to explicit nested mapping calls. It is not a
-projection feature and does not scan assemblies for derived registrations.
+Runtime polymorphism also applies to explicit nested mapping calls.
 
 Related: [`ForDerived`](api/for-derived.md),
 [`UnknownDerivedTypeHandling`](settings/unknown-derived-type-handling.md),

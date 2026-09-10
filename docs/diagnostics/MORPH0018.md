@@ -6,12 +6,8 @@ Morphant found a `Map` registration but cannot determine one fixed chain of
 settings and mapping rules for it. This can happen when the mapping builder is
 stored, passed elsewhere, or configured conditionally.
 
-Morphant also reports this diagnostic when a callback call such as `Convert`
-binds to a user-defined or otherwise competing extension method instead of the
-generated Morphant method for the declared mapping. This includes an unintended
-fallback to a base mapper family's overload when the lambda does not match the
-local mapping. Such a call cannot be transferred safely into the mapper
-implementation.
+It also occurs when a callback such as `Convert` matches a competing extension
+method or a base mapper's overload instead of the declared mapping.
 
 ## Fix
 

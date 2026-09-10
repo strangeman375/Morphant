@@ -30,7 +30,7 @@ builder.Map<OrderDto, IOrder>()
 A `null` result is final and skips `Members`. A non-null result receives only
 rules valid after construction, including when the callback returns a
 replacement. See [factory result rules](construct-using.md#factory-result)
-for `init` members and tuples.
+for initialization restrictions.
 
 `ResolveUsing` cannot be combined with another destination method or `Convert`.
 

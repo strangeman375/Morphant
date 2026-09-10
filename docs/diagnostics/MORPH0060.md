@@ -16,9 +16,7 @@ public abstract class CommonMapper<TMapper, TState> : TypeMapper<TMapper>
 ```
 
 Every non-self family parameter must occur in every pair declared by that
-family. A reference from a generic constraint does not count. C# does not use
-method constraints for generic type inference, so Morphant cannot expose a
-safe family-scoped fluent API for such a pair.
+family. A reference from a generic constraint does not count.
 
 ## Fix
 

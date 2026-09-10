@@ -13,15 +13,12 @@ For supported features and examples, see the [mapping guides](README.md#mapping-
 - keyed mappings or discriminator-based dispatch;
 - polymorphic branch relationships that depend on unknown generic arguments
   ([MORPH0061](diagnostics/MORPH0061.md));
-- `private`, `protected`, or `private protected` nested mapper declarations;
-  a mapper and its containing types must be accessible to generated
-  namespace-level code ([`MORPH0059`](diagnostics/MORPH0059.md));
+- `private`, `protected`, or `private protected` nested mapper declarations
+  ([`MORPH0059`](diagnostics/MORPH0059.md));
 - preserving shared object references or mapping cycles;
 - cross-assembly configuration inheritance;
-- mapping-contract types or required generic constraints that are available
-  only through a non-global `extern alias` or have an ambiguous `global::`
-  name, including a namespace/type path collision; the referenced assembly
-  must also be available unambiguously through `global` for generated code;
+- mapping types available only through `extern alias`, or with ambiguous
+  fully qualified names ([`MORPH0011`](diagnostics/MORPH0011.md));
 - generated DI registration;
 - configurable enum mapping, reverse mapping, before/after hooks or async
   mapping.

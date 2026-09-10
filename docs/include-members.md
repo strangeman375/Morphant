@@ -45,17 +45,13 @@ If the selected object is missing, the result is `null`; Morphant does not use
 `0` for a missing `int`. A nullable value is not mapped automatically to a
 non-nullable target.
 
-For an unconstrained generic `T`, automatic mapping is limited to targets that
-can represent `null` for every `T`, such as `object?`.
-
 Use `!` only when the object must exist:
 
 ```csharp
 .IncludeMembers(source => source.Customer!)
 ```
 
-The assertion is preserved in generated code and can throw when false. It does
-not unwrap `Nullable<T>`.
+Mapping can throw if the object is null despite the assertion.
 
 ## Composition and validation
 

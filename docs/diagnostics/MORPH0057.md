@@ -12,9 +12,6 @@ named `Morphant.Generated.GeneratorFailure.*.g.cs` file under **Source
 Generators**. That file contains the complete exception and stack trace, so IDE
 logs are not required.
 
-Generation continues for independent mappings when possible. Output that
-depends on the failed stage may be absent.
-
 ## Fix
 
 1. Open the generated failure file named in the diagnostic and retain its
@@ -27,10 +24,5 @@ depends on the failed stage may be absent.
 
 Suppressing `MORPH0057` only hides the error; it cannot restore output from the
 failed stage.
-
-Failures that prevent the generator from loading at all, requested
-cancellation, and fatal runtime failures cannot be converted to `MORPH0057`.
-The compiler or IDE reports those directly, typically as a source-generator
-host diagnostic.
 
 [All diagnostics](../diagnostics.md)

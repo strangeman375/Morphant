@@ -38,18 +38,10 @@ implemented by `ApplicationMapper`.
 If `base.Configure(builder)` is not called, base configuration is not
 included.
 
-The recursive constraint on `TMapper` is required. It identifies one mapper
-family so inherited generated fluent methods keep the final mapper scope.
-Every reusable generic layer that carries the self type must constrain it back
-to that layer, rather than only to `TypeMapper<TMapper>` or an earlier base. A
-concrete mapper must close that family with itself; an invalid layer or
-unrelated self type produces [`MORPH0058`](diagnostics/MORPH0058.md).
-
-Each other generic parameter of a reusable mapper family must occur in the
-source or destination type of every mapping declared by that family. Put a
-mapping that does not vary with the family parameters in a separate
-non-generic reusable base. Morphant reports
-[`MORPH0060`](diagnostics/MORPH0060.md) when this boundary is crossed.
+Keep the recursive `TMapper` constraint shown above on each reusable base.
+For other generic parameters, each declared mapping must use them in its
+source or destination type. See [`MORPH0058`](diagnostics/MORPH0058.md) and
+[`MORPH0060`](diagnostics/MORPH0060.md) for declaration errors.
 
 ## Include mapping rules
 
@@ -106,13 +98,7 @@ Each setting is resolved independently. See the
 ## Boundaries
 
 - Include base configuration only once at each level.
-- Reused rules preserve the original member binding and virtual dispatch.
-  This also applies to source members selected through generic constraints:
-  a hiding member on the concrete source type does not replace that selection.
-  References that cannot retain these semantics from the derived mapper are
-  rejected with [`MORPH0028`](diagnostics/MORPH0028.md).
-- A mapper and all its containing types must be accessible to generated
-  namespace-level code. See
-  [mapper declarations](api/map.md#mapper-declarations).
+- Helpers used by inherited rules must be accessible from the derived mapper
+  ([`MORPH0028`](diagnostics/MORPH0028.md)).
 - Cross-assembly configuration inheritance is not supported. Mappings from
   another assembly can still be registered independently with DI.

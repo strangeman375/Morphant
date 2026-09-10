@@ -35,13 +35,9 @@ an `init`-only member must already be initialized in the returned result.
 Configuring it in `Members` produces
 [`MORPH0042`](../diagnostics/MORPH0042.md).
 
-For tuple destinations, writable `ValueTuple` elements and eligible nested
-`Update` statements remain applicable. A scalar rule for a read-only
-`System.Tuple` element produces `MORPH0042`. See
-[Tuple mapping](../tuple-mapping.md).
-
 `ConstructUsing` cannot be combined with another destination method or
 `Convert`.
 
 Related: [`ResolveUsing`](resolve-using.md),
+[tuple mapping](../tuple-mapping.md),
 [dependency injection and `IMapper`](../runtime-dispatch.md).

@@ -18,11 +18,6 @@ public partial class OrderMapper : TypeMapper<CustomerMapper>
 }
 ```
 
-Using an unrelated self type, or constraining a reusable base only to
-`TypeMapper<TMapper>`, would make generated fluent methods belong to the wrong
-mapper scope. Morphant therefore validates every configuration class in the
-inheritance chain and does not generate the affected mapper.
-
 ## Fix
 
 Close `TypeMapper<TMapper>` with the concrete mapper type:

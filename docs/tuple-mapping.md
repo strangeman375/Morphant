@@ -11,15 +11,11 @@ builder.Map<(int X, int Y), (int Y, int X)>();
 ```
 
 The last mapping swaps the values because `X` maps to `X` and `Y` maps to `Y`.
-The source and destination have the same underlying `ValueTuple<int, int>`
-type, but element names still control mapping behavior.
 
 ## Combining sources, destinations, and user state
 
-Tuples are Morphant's typed composition mechanism when all inputs and outputs
-are known at compile time. A tuple source can combine several input objects
-into a multi-source mapping or carry call-specific user state that is not
-stored on those objects:
+A tuple source can combine several input objects or pass extra data needed
+by one mapping call:
 
 ```csharp
 builder.Map<
@@ -51,15 +47,9 @@ var (orderDto, auditDto) = mapper.Map<
     (OrderDto Order, AuditDto Audit)>(order);
 ```
 
-In both cases, Morphant treats the complete tuple as one statically registered
-source/destination pair. It does not automatically merge existing mappings or
-fan out to every tuple element. Configure that composition explicitly; nested
-`Map` rules can reuse independently registered element mappings. User state
-must likewise be included in the source tuple of each nested mapping that
-needs it rather than being propagated as ambient context.
-
-Root null-handling settings apply to the complete tuple. Null tuple elements
-follow the ordinary member-nullability and explicit-rule behavior.
+Configure each output explicitly. Nested `Map` calls can reuse registered
+mappings; pass any extra data in the source tuple of the nested mapping that
+needs it.
 
 ## Named and unnamed elements
 
@@ -86,9 +76,7 @@ turn `ItemN` into a semantic name.
 ## Construction
 
 For a tuple destination, `new(...)` inside `Construct` or `Resolve` accepts one
-argument per element. Long tuples use the same flat argument list; their
-eighth and later elements remain directly addressable by name or as `ItemN`.
-`Rest` is never configured.
+argument per element:
 
 ```csharp
 builder.Map<Source, (int Id, string Name)>()
@@ -108,15 +96,8 @@ builder.Map<Source, (int Id, string Name)>()
     });
 ```
 
-When `Construct` or a construction branch of `Resolve` overlaps `Members`, the
-`Members` rule wins for that element and the overridden expression is not
-evaluated. Surviving expressions keep declarative evaluation order and run
-once. If a rule reads `result`, Morphant creates that initial tuple first
-because the value is observable.
-
-Tuple construction is intrinsic, not a choice among declared constructors.
-An explicit pair-level `ConstructorSelection` therefore produces
-[`MORPH0023`](diagnostics/MORPH0023.md); inherited defaults have no effect.
+A `Members` value available before construction overrides the corresponding
+constructor argument. The overridden expression is not evaluated.
 
 ## Update
 
@@ -139,55 +120,28 @@ Scalar rules can apply while Morphant creates or replaces the tuple.
 
 ## Runtime factories
 
-`ConstructUsing` and `ResolveUsing` return an authoritative result. Morphant
-does not compare it with `previous` or create another tuple to apply read-only
-element rules. A non-null result receives only member operations that can run
-on that result:
+`ConstructUsing` and `ResolveUsing` return an already constructed tuple.
+`Members` can change writable `ValueTuple` fields or update referenced objects
+in place. It cannot replace read-only `System.Tuple` elements; such a rule
+produces [`MORPH0042`](diagnostics/MORPH0042.md).
 
-- writable `ValueTuple` fields may be assigned;
-- an eligible nested `Update` may run on a referenced element;
-- a scalar rule for a read-only `System.Tuple` element produces
-  [`MORPH0042`](diagnostics/MORPH0042.md).
-
-A null factory result is final and skips `Members`, as for every other
-destination type.
+See [factory result rules](api/construct-using.md#factory-result) for null
+results and other restrictions shared with ordinary objects.
 
 ## `System.Tuple` and `ITuple`
-
-First-class support includes empty and singleton `ValueTuple` forms and
-standard long `ValueTuple` and `System.Tuple` chains. A non-standard generic
-form whose `TRest` is not another matching BCL tuple is not flattened; Morphant
-maps its declared members like any other type.
 
 `System.Tuple<T...>` has no semantic element names. Its `ItemN` elements can be
 used in explicit `Construct`, `Resolve`, or `Members` rules, and Morphant can
 create the result whenever every required element has a final value. A factory
 is not required.
 
-A concrete custom implementation of `System.Runtime.CompilerServices.ITuple`
-maps through its declared static constructors, properties, and fields like any
-other type. Morphant does not discover arbitrary elements by calling `Length`
-and the indexer at runtime. When the mapping root is the `ITuple` interface,
-use an explicit expression or `Convert` for indexer access.
+Custom `ITuple` implementations follow ordinary object-mapping conventions.
 
 ## Presentation conflicts
 
-C# tuple element names, nullable annotations and `dynamic` do not create
-different runtime types, but they affect the API available in Morphant
-configuration. Within one effective mapper, including connected base
-configuration, all registrations with the same underlying source and
-destination types must use the same recursive presentation. A conflict
-produces [`MORPH0056`](diagnostics/MORPH0056.md).
-
-Unrelated mappers may use different presentations of the same underlying pair;
-Morphant scopes their generated configuration methods automatically. This does
-not create keyed mappings: `ITypeMapper<,>` and DI still see the same runtime
-pair, so registering both implementations in one runtime scope retains the
-usual service ambiguity.
-
-Use one consistent presentation inside a mapper family, or introduce wrapper
-types when one effective mapper needs different meanings or nullable
-contracts. See [mapper declarations](api/map.md#mapper-declarations).
+Use consistent tuple names, nullable annotations and `dynamic`/`object` choices
+for each mapping pair within a mapper and its connected base configuration.
+For conflicting declarations, see [`MORPH0056`](diagnostics/MORPH0056.md).
 
 Related: [Conventions](conventions.md),
 [Create and Update](create-and-update.md), and

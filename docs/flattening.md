@@ -19,7 +19,7 @@ nested mapping.
 
 Morphant checks explicit rules, direct root members, direct
 [`IncludeMembers`](include-members.md) members, root flattened paths, and
-included flattened paths, in that order. A direct member keeps ownership even
+included flattened paths, in that order. A direct member takes precedence even
 when its type is incompatible. For a flattened tier, incompatible or
 nullable-unsafe paths are ignored before choosing a candidate.
 

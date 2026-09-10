@@ -51,5 +51,4 @@ When generated files are committed, review their diff together with mapping
 configuration changes. Behavior tests remain the primary check; generated
 files make unexpected mapping changes visible before merge.
 
-See [Generated code](generated-code.md) for project configuration and a CI check
-that detects both changed and new snapshot files.
+See [Generated code](generated-code.md) to enable and update snapshots.
