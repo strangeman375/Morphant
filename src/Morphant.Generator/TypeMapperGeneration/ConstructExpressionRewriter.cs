@@ -43,6 +43,8 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         _mapperTypeSubstitutions;
     private readonly bool _lowerDeclarativeValues;
     private readonly HashSet<string> _usedGeneratedNames;
+    private readonly Dictionary<ConditionalAccessExpressionSyntax, ExpressionSyntax>
+        _conditionalReceivers = new();
 
     private ConstructExpressionRewriter(
         SemanticModel semanticModel,
@@ -734,6 +736,14 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
                 rewrittenReceiver);
         }
 
+        if (node.Expression is MemberBindingExpressionSyntax binding &&
+            GetConditionalReceiver(binding) is { } conditionalReceiver &&
+            TryGetExtensionMethod(node, binding.Name) is { } conditionalExtension)
+        {
+            return RewriteExtensionInvocation(
+                node, binding.Name, conditionalExtension, conditionalReceiver);
+        }
+
         var rewrittenOrdinaryInvocation =
             (InvocationExpressionSyntax)base
                 .VisitInvocationExpression(node)!;
@@ -755,80 +765,76 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
     public override SyntaxNode? VisitConditionalAccessExpression(
         ConditionalAccessExpressionSyntax node)
     {
-        if (!TryRewriteConditionalExtensionInvocation(
+        if (TryRewriteConditionalAccess(
                 node,
+                asStatement: false,
                 out var condition,
-                out var invocation,
-                out var resultType) ||
-            resultType.SpecialType == SpecialType.System_Void)
+                out var continuation,
+                out var resultType))
         {
-            var rewritten = (ConditionalAccessExpressionSyntax)base.VisitConditionalAccessExpression(node)!;
-            var binding = node.WhenNotNull.DescendantNodesAndSelf()
-                .OfType<ExpressionSyntax>()
-                .Where(member => member is MemberBindingExpressionSyntax or ElementBindingExpressionSyntax)
-                .FirstOrDefault(member => ReceiverMemberBinding.GetConditionalAccess(member) == node);
-            return binding is not null && GetReferencedSymbol(binding) is { } member
-                ? rewritten.WithExpression(PreserveReceiverBinding(node.Expression, rewritten.Expression, member))
-                : rewritten;
-        }
-
-        return SyntaxFactory.ConditionalExpression(
-                condition,
-                invocation,
-                SyntaxFactory.DefaultExpression(
-                    SyntaxFactory.ParseTypeName(
-                        TypeMapperMappingTypePolicy.GetGeneratedTypeName(
-                            SubstituteMapperType(resultType)))))
-            .WithTriviaFrom(node);
-    }
-
-    public override SyntaxNode? VisitExpressionStatement(
-        ExpressionStatementSyntax node)
-    {
-        if (node.Expression is ConditionalAccessExpressionSyntax
-                conditionalAccess &&
-            (_semanticModel.GetTypeInfo(conditionalAccess).Type ??
-             _semanticModel.GetTypeInfo(conditionalAccess).ConvertedType) is
-                {
-                    SpecialType: SpecialType.System_Void
-                } &&
-            TryRewriteConditionalExtensionInvocation(
-                conditionalAccess,
-                out var condition,
-                out var invocation,
-                out _))
-        {
-            return SyntaxFactory.IfStatement(
-                    condition,
-                    SyntaxFactory.ExpressionStatement(invocation))
+            // Conditional access binds more tightly than every binary operator.
+            // Keep that grouping when replacing it with a conditional expression.
+            return SyntaxFactory.ParenthesizedExpression(
+                    SyntaxFactory.ConditionalExpression(
+                        condition,
+                        (ExpressionSyntax)continuation,
+                        SyntaxFactory.DefaultExpression(
+                            SyntaxFactory.ParseTypeName(
+                                TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                                    SubstituteMapperType(resultType))))))
                 .WithTriviaFrom(node);
         }
 
-        return base.VisitExpressionStatement(node);
+        var rewritten = (ConditionalAccessExpressionSyntax)base.VisitConditionalAccessExpression(node)!;
+        var binding = node.WhenNotNull.DescendantNodesAndSelf()
+            .OfType<ExpressionSyntax>()
+            .Where(member => member is MemberBindingExpressionSyntax or ElementBindingExpressionSyntax)
+            .FirstOrDefault(member => ReceiverMemberBinding.GetConditionalAccess(member) == node);
+        return binding is not null && GetReferencedSymbol(binding) is { } member
+            ? rewritten.WithExpression(PreserveReceiverBinding(node.Expression, rewritten.Expression, member))
+            : rewritten;
     }
 
-    private bool TryRewriteConditionalExtensionInvocation(
+    public override SyntaxNode? VisitExpressionStatement(
+        ExpressionStatementSyntax node) =>
+        node.Expression is ConditionalAccessExpressionSyntax conditional &&
+        HasExtensionInConditionalChain(conditional.WhenNotNull)
+            ? RewriteConditionalStatement(conditional).WithTriviaFrom(node)
+            : base.VisitExpressionStatement(node);
+
+    private StatementSyntax RewriteConditionalStatement(ExpressionSyntax expression)
+    {
+        if (expression is ConditionalAccessExpressionSyntax conditional &&
+            TryRewriteConditionalAccess(
+                conditional,
+                asStatement: true,
+                out var condition,
+                out var continuation,
+                out _))
+        {
+            return SyntaxFactory.IfStatement(
+                condition,
+                SyntaxFactory.Block((StatementSyntax)continuation));
+        }
+
+        return SyntaxFactory.ExpressionStatement((ExpressionSyntax)Visit(expression)!);
+    }
+
+    private bool TryRewriteConditionalAccess(
         ConditionalAccessExpressionSyntax node,
+        bool asStatement,
         out ExpressionSyntax condition,
-        out InvocationExpressionSyntax invocation,
+        out SyntaxNode continuation,
         out ITypeSymbol resultType)
     {
-        if (node.WhenNotNull is not InvocationExpressionSyntax
-            {
-                Expression: MemberBindingExpressionSyntax
-                {
-                    Name: var methodName
-                }
-            } conditionalInvocation ||
-            TryGetExtensionMethod(
-                conditionalInvocation,
-                methodName) is not { } extensionMethod ||
+        if (!HasExtensionInConditionalChain(node.WhenNotNull) ||
             (_semanticModel.GetTypeInfo(node).Type ??
              _semanticModel.GetTypeInfo(node).ConvertedType) is not
-                { } conditionalResultType)
+                { } conditionalResultType ||
+            (!asStatement && conditionalResultType.SpecialType == SpecialType.System_Void))
         {
             condition = null!;
-            invocation = null!;
+            continuation = null!;
             resultType = null!;
             return false;
         }
@@ -836,27 +842,81 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
         var receiverName = UserResultMappingPlanner.AllocateName(
             "conditionalReceiver",
             _usedGeneratedNames);
-        var rewrittenReceiver =
-            (ExpressionSyntax)Visit(node.Expression)!;
+        var rewrittenReceiver = (ExpressionSyntax)Visit(node.Expression)!;
+        var patternReceiver = rewrittenReceiver.WithoutTrivia();
+        if (patternReceiver is not (IdentifierNameSyntax or MemberAccessExpressionSyntax or
+            InvocationExpressionSyntax or ElementAccessExpressionSyntax or
+            ParenthesizedExpressionSyntax or PostfixUnaryExpressionSyntax))
+        {
+            patternReceiver = SyntaxFactory.ParenthesizedExpression(patternReceiver);
+        }
+
         condition = SyntaxFactory.IsPatternExpression(
-            SyntaxFactory.ParenthesizedExpression(
-                rewrittenReceiver.WithoutTrivia()),
+            patternReceiver,
             SyntaxFactory.RecursivePattern()
-                .WithPropertyPatternClause(
-                    SyntaxFactory.PropertyPatternClause())
+                .WithPropertyPatternClause(SyntaxFactory.PropertyPatternClause())
                 .WithDesignation(
                     SyntaxFactory.SingleVariableDesignation(
-                        SyntaxFactory.Identifier(
-                            Identifier(receiverName)))));
-        invocation = RewriteExtensionInvocation(
-            conditionalInvocation,
-            methodName,
-            extensionMethod,
-            SyntaxFactory.IdentifierName(
-                Identifier(receiverName)));
+                        SyntaxFactory.Identifier(Identifier(receiverName)))));
+
+        // Bind the entire continuation to the captured receiver, including
+        // ordinary members, indexers and further conditional accesses.
+        _conditionalReceivers.Add(node, SyntaxFactory.IdentifierName(Identifier(receiverName)));
+        try
+        {
+            continuation = asStatement
+                ? RewriteConditionalStatement(node.WhenNotNull)
+                : Visit(node.WhenNotNull)!;
+        }
+        finally
+        {
+            _conditionalReceivers.Remove(node);
+        }
+
         resultType = conditionalResultType;
         return true;
     }
+
+    private bool HasExtensionInConditionalChain(ExpressionSyntax expression) => expression switch
+    {
+        InvocationExpressionSyntax invocation =>
+            (invocation.Expression switch
+            {
+                MemberAccessExpressionSyntax access => TryGetExtensionMethod(invocation, access.Name),
+                MemberBindingExpressionSyntax binding => TryGetExtensionMethod(invocation, binding.Name),
+                _ => null
+            }) is not null || HasExtensionInConditionalChain(invocation.Expression),
+        MemberAccessExpressionSyntax access => HasExtensionInConditionalChain(access.Expression),
+        ElementAccessExpressionSyntax access => HasExtensionInConditionalChain(access.Expression),
+        ConditionalAccessExpressionSyntax conditional =>
+            HasExtensionInConditionalChain(conditional.Expression) ||
+            HasExtensionInConditionalChain(conditional.WhenNotNull),
+        PostfixUnaryExpressionSyntax postfix => HasExtensionInConditionalChain(postfix.Operand),
+        _ => false
+    };
+
+    private ExpressionSyntax? GetConditionalReceiver(ExpressionSyntax binding) =>
+        ReceiverMemberBinding.GetConditionalAccess(binding) is { } conditional &&
+        _conditionalReceivers.TryGetValue(conditional, out var receiver)
+            ? GetReferencedSymbol(binding) is { } member
+                ? PreserveReceiverBinding(conditional.Expression, receiver, member)
+                : receiver
+            : null;
+
+    public override SyntaxNode? VisitMemberBindingExpression(MemberBindingExpressionSyntax node) =>
+        GetConditionalReceiver(node) is { } receiver
+            ? SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                receiver,
+                (SimpleNameSyntax)Visit(node.Name)!).WithTriviaFrom(node)
+            : base.VisitMemberBindingExpression(node);
+
+    public override SyntaxNode? VisitElementBindingExpression(ElementBindingExpressionSyntax node) =>
+        GetConditionalReceiver(node) is { } receiver
+            ? SyntaxFactory.ElementAccessExpression(
+                receiver,
+                (BracketedArgumentListSyntax)Visit(node.ArgumentList)!).WithTriviaFrom(node)
+            : base.VisitElementBindingExpression(node);
 
     private InvocationExpressionSyntax RewriteExtensionInvocation(
         InvocationExpressionSyntax node,
