@@ -38,10 +38,12 @@ internal static class ReceiverMemberBinding
     public static INamedTypeSymbol? GetRequiredReceiverType(
         ITypeSymbol receiverType, ISymbol selectedMember)
     {
-        // Conditional access binds interface members on T, not Nullable<T>.
+        // Conditional access binds members on T, not Nullable<T>.
         if (receiverType is INamedTypeSymbol nullable &&
             nullable.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
-            selectedMember.ContainingType?.TypeKind == TypeKind.Interface)
+            (selectedMember.ContainingType?.TypeKind == TypeKind.Interface ||
+             SymbolEqualityComparer.Default.Equals(
+                 selectedMember.ContainingType, nullable.TypeArguments[0])))
             receiverType = nullable.TypeArguments[0];
 
         if (receiverType is not INamedTypeSymbol receiver ||
