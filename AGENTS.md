@@ -56,9 +56,6 @@
   remain supported.
 - DSL extensions stay in `Morphant`; partial mapper declarations stay in the
   user's namespace. The separate hint-name policy above is unchanged.
-  This naming rule was approved and implemented on 2026-09-06.
-  See the agreed contract and completion criteria in
-  `docs/internal/RELEASE_REVIEW_STAGE_04.md` (S04-05).
 - Preserve record member-plan types and `with` expressions. A destination
   member whose name conflicts with the generated record, its type parameters
   or its required record members uses a readable configuration alias: append
@@ -152,6 +149,8 @@
 - Keep release-review records minimal: only the state, inputs and findings
   needed to conduct or resume the check. Review artifacts are temporary;
   do not create detailed reports or duplicate evidence across documents.
+  After the review, remove its reports and probes once lasting decisions are
+  captured in current documentation or repository instructions.
 - Before publishing, verify the exact committed file set and update shared
   branches only by ordinary fast-forward; never force-push.
 - Do not repeat completed tests or diff reviews merely because publication is
@@ -162,3 +161,5 @@
   readable literals instead of fixing boilerplate one snapshot at a time.
 - Before a release, run the full Release build and both test projects, then
   inspect the final NuGet artifacts.
+- Update package metadata and release notes together after selecting the
+  release version.
