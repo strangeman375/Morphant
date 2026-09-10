@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/10/2026 - 13:20:41 |
-| Coverage date: | 09/10/2026 - 13:09:00 - 09/10/2026 - 13:20:37 |
+| Generated on: | 09/10/2026 - 14:50:00 |
+| Coverage date: | 09/10/2026 - 14:35:33 - 09/10/2026 - 14:49:55 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 371 |
 | Files: | 195 |
-| **Line coverage:** | 88.1% (37905 of 42980) |
-| Covered lines: | 37905 |
-| Uncovered lines: | 5075 |
-| Coverable lines: | 42980 |
-| Total lines: | 71576 |
-| **Branch coverage:** | 78.7% (13355 of 16961) |
-| Covered branches: | 13355 |
-| Total branches: | 16961 |
+| **Line coverage:** | 88.3% (38025 of 43061) |
+| Covered lines: | 38025 |
+| Uncovered lines: | 5036 |
+| Coverable lines: | 43061 |
+| Total lines: | 71707 |
+| **Branch coverage:** | 78.9% (13482 of 17073) |
+| Covered branches: | 13482 |
+| Total branches: | 17073 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -67,11 +67,11 @@
 |Morphant.Build.Tasks.SnapshotException|100%||
 
 </details>
-<details><summary>Morphant.Generator - 88%</summary>
+<details><summary>Morphant.Generator - 88.1%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Generator**|**88%**|**78.6%**|
+|**Morphant.Generator**|**88.1%**|**78.8%**|
 |Morphant.Generator.CodeWriter|100%|100%|
 |Morphant.Generator.Compatibility.CompatibilityDiagnosticDescriptors|100%||
 |Morphant.Generator.Compatibility.CompilationCompatibility|93.3%|90.9%|
@@ -241,13 +241,13 @@
 |Morphant.Generator.TypeMapperGeneration.BasicMembersMappingPlanner|86.5%|69.6%|
 |Morphant.Generator.TypeMapperGeneration.BasicMembersMappingResult|100%||
 |Morphant.Generator.TypeMapperGeneration.BclTupleMappingPlanner|66.8%|58.1%|
-|Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticAnalyzer|84.2%|79.9%|
+|Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticAnalyzer|84.3%|80%|
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticCandidate|81.8%||
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticDescriptors|100%||
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticPipeline|75%|50%|
 |Morphant.Generator.TypeMapperGeneration.CallbackTransferFailureObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.CompletenessPlanningObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|73%|72%|
+|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|75.6%|76%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticAnalyzer|89.7%|80.9%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticDescriptors|100%||
@@ -276,14 +276,14 @@
 |Morphant.Generator.TypeMapperGeneration.DeclarativeConstructorMarker|77%|81.8%|
 |Morphant.Generator.TypeMapperGeneration.DeclarativeContextUsagePolicy|88.8%|81.8%|
 |Morphant.Generator.TypeMapperGeneration.DeclarativeControlFlowLowerer|84.8%|69.8%|
-|Morphant.Generator.TypeMapperGeneration.DeclarativeControlFlowPlanner|81.7%|71.9%|
+|Morphant.Generator.TypeMapperGeneration.DeclarativeControlFlowPlanner|81.7%|72%|
 |Morphant.Generator.TypeMapperGeneration.DeclarativeControlFlowProgram|100%||
 |Morphant.Generator.TypeMapperGeneration.DeclarativeDeferredCapturePolicy|97.3%|96.8%|
-|Morphant.Generator.TypeMapperGeneration.DeclarativeDependencyExpressionBuil<br/>der|89.3%|89.2%|
+|Morphant.Generator.TypeMapperGeneration.DeclarativeDependencyExpressionBuil<br/>der|89.7%|90.1%|
 |Morphant.Generator.TypeMapperGeneration.DeclarativeDependencyGraphOptimizer|90%|86.2%|
 |Morphant.Generator.TypeMapperGeneration.DeclarativeEvaluationSyntaxNode|100%||
-|Morphant.Generator.TypeMapperGeneration.DeclarativeExecutionFacts|87.3%|83.4%|
-|Morphant.Generator.TypeMapperGeneration.DeclarativeIntrinsic|79.6%|71.3%|
+|Morphant.Generator.TypeMapperGeneration.DeclarativeExecutionFacts|88.7%|84.3%|
+|Morphant.Generator.TypeMapperGeneration.DeclarativeIntrinsic|80.2%|71.5%|
 |Morphant.Generator.TypeMapperGeneration.DeclarativeLeafSyntaxNode|100%||
 |Morphant.Generator.TypeMapperGeneration.DeclarativeLocalDeclarationsSyntaxN<br/>ode|100%||
 |Morphant.Generator.TypeMapperGeneration.DeclarativeMemberAssignmentSyntax|100%||
@@ -307,15 +307,15 @@
 |Morphant.Generator.TypeMapperGeneration.DestinationOccupancyObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.ExplicitMemberMappingPlan|100%||
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlan|100%||
-|Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanne<br/>r|88.5%|70.1%|
+|Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanne<br/>r|89.9%|72.1%|
 |Morphant.Generator.TypeMapperGeneration.ExplicitStructuredConstructorPlanni<br/>ngResult|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticAnalyzer|100%|90%|
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticDescriptors|100%||
 |Morphant.Generator.TypeMapperGeneration.FlatteningDiagnosticPipeline|100%|75%|
 |Morphant.Generator.TypeMapperGeneration.FlatteningIssueObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.GeneratedCodeReadabilityLowerer|93.4%|81.3%|
-|Morphant.Generator.TypeMapperGeneration.GeneratedLocalNameAllocator|84%|67.3%|
+|Morphant.Generator.TypeMapperGeneration.GeneratedCodeReadabilityLowerer|93.8%|81.9%|
+|Morphant.Generator.TypeMapperGeneration.GeneratedLocalNameAllocator|86.6%|71.7%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSet|88.7%|75%|
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceMemberSetResult|100%||
 |Morphant.Generator.TypeMapperGeneration.IncludedSourceScope|100%||
@@ -417,4 +417,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #265](https://github.com/strangeman375/Morphant/actions/runs/34480521435).
+Full HTML report: download the **coverage** artifact from [CI run #270](https://github.com/strangeman375/Morphant/actions/runs/34489548677).
