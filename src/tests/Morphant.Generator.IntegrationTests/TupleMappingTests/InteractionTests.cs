@@ -3,6 +3,12 @@ namespace Morphant.Generator.IntegrationTests.TupleMappingTests;
 [TestFixture]
 internal sealed class InteractionTests
 {
+    [Test]
+    public void Generic_inheritance_preserves_conditional_method_calls(
+        [Values(false, true)] bool hasValue, [Values(false, true)] bool update) =>
+        global::Morphant.Generator.IntegrationTests.CSharp9.Scenarios
+            .TupleGenericInheritance.Scenario.VerifyConditionalMethod(hasValue, update);
+
     [TestCase(false)]
     [TestCase(true)]
     public void Generic_inheritance_preserves_a_nested_nullable_element_of_a_long_tuple(bool hasTail)

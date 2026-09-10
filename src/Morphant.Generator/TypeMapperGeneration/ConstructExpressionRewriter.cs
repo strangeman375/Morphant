@@ -2347,10 +2347,13 @@ internal sealed class ConstructExpressionRewriter : CSharpSyntaxRewriter
 
     private static bool IsMemberName(SimpleNameSyntax node)
     {
-        return node.Parent is MemberAccessExpressionSyntax
+        var name = node.Parent switch
         {
-            Name: var memberName
-        } && ReferenceEquals(memberName, node);
+            MemberAccessExpressionSyntax access => access.Name,
+            MemberBindingExpressionSyntax binding => binding.Name,
+            _ => null
+        };
+        return ReferenceEquals(name, node);
     }
 }
 

@@ -50,7 +50,7 @@ See [current limitations](docs/limitations.md) for features not yet included.
   improve build messages and preserve existing compilation hooks.
 - Correct mapping and source-usage validation for long tuple elements.
 - Preserve inherited callback behavior, including tuple field reads after
-  generic substitution, element names and nullability.
+  generic substitution, conditional method calls, element names and nullability.
 - Use a matching `Members` value for the constructor argument, evaluating it
   once. Report `MORPH0042` when that value reads `result` before construction.
 - Avoid generated-name conflicts across mappers, assemblies and nested types.

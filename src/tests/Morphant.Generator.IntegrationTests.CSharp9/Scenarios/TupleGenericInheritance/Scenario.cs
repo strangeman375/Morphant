@@ -98,8 +98,53 @@ namespace Morphant.Generator.IntegrationTests.CSharp9.Scenarios.TupleGenericInhe
         }
     }
 
+    public sealed class HashValue
+    {
+        public int Calls;
+        public override int GetHashCode() { Calls++; return 73; }
+    }
+
+    public abstract class HashFamily<TMapper, T> : TypeMapper<TMapper>
+        where TMapper : HashFamily<TMapper, T>
+        where T : class
+    {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source<T>, (T? Value, int Count)>()
+                .Members(source => new()
+                {
+                    Value = source.Data.Value,
+                    Count = source.Data.Value?.GetHashCode() ?? source.Data.Count
+                });
+    }
+
+    [MorphantMapper]
+    public partial class HashMapper : HashFamily<HashMapper, HashValue>
+    {
+        protected override void Configure(MapperBuilder builder)
+        {
+            base.Configure(builder);
+            builder.Map<Source<HashValue>, (HashValue? Value, int Count)>()
+                .IncludeBase<Source<HashValue>, (HashValue? Value, int Count)>();
+        }
+    }
+
     public static class Scenario
     {
+        public static void VerifyConditionalMethod(bool hasValue, bool update)
+        {
+            var value = hasValue ? new HashValue() : null;
+            var source = new Source<HashValue> { Data = (value, 7) };
+            var mapper = (ITypeMapper<Source<HashValue>, (HashValue? Value, int Count)>)new HashMapper();
+            var previousValue = new HashValue();
+            var previous = (Value: (HashValue?)previousValue, Count: -1);
+            var result = update ? mapper.Update(source, previous) : mapper.Create(source);
+
+            if (!ReferenceEquals(result.Value, value) || result.Count != (hasValue ? 73 : 7) ||
+                (value is not null && value.Calls != 1) || previousValue.Calls != 0 ||
+                !ReferenceEquals(previous.Value, previousValue) || previous.Count != -1)
+                throw new InvalidOperationException("Conditional access must call the source override once and preserve null propagation.");
+        }
+
         public static void Verify()
         {
             var mapper = (ITypeMapper<Source<string>, (string? Value, int Count)>)new TestMapper();
