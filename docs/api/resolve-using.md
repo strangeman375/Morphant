@@ -1,8 +1,8 @@
 # `ResolveUsing`
 
-Runs an ordinary synchronous callback to choose the destination for every
-Create and Update. Use it when reuse or replacement needs a factory, cache, or
-other runtime logic.
+Runs an ordinary synchronous callback to choose the destination after null
+handling on Create and Update. Use it when reuse or replacement needs a factory,
+cache, or other runtime logic.
 
 ## Availability
 
@@ -10,21 +10,14 @@ other runtime logic.
 
 ## Overloads
 
-Each overload accepts a `resolve` callback and returns the same mapping
-builder. Inline lambdas and method groups are supported, as are compatible
-delegates stored in accessible mapper or static members.
+Use an inline lambda, method group, or accessible delegate.
 
 | Callback | Use when |
 |---|---|
 | `(source, previous) => destination` | Selection needs the source and existing destination |
 | `(source, previous, context) => destination` | Selection also needs `MappingContext` |
 
-| Callback value | Description |
-|---|---|
-| `source` | Non-null source after null-source handling |
-| `previous` | `Option<TDestination>` containing the existing destination, when available |
-| `context` | Current `MappingContext`, including `Operation` and `Mapper` |
-| Return value | Destination selected for the operation |
+Return the destination object to reuse or replace. See [callback inputs](README.md#callback-inputs).
 
 ```csharp
 builder.Map<OrderDto, IOrder>()
@@ -34,19 +27,12 @@ builder.Map<OrderDto, IOrder>()
             : orderFactory.Create(source.Id));
 ```
 
-A `null` callback result is final: Morphant skips `Members` and does not apply
-null handling again. A non-null result can continue through
-[`Members`](members.md), but it remains the selected result regardless of
-whether it is the previous instance or a replacement. Morphant can assign
-settable members or run an eligible nested `Update`; an `init`-only member must
-already be initialized in the returned result. Configuring it in `Members`
-produces [`MORPH0042`](../diagnostics/MORPH0042.md). `ResolveUsing` cannot be
-combined with another destination method or `Convert`.
+A `null` result is final and skips `Members`. A non-null result receives only
+rules valid after construction, including when the callback returns a
+replacement. See [factory result rules](construct-using.md#factory-result)
+for `init` members and tuples.
 
-For `System.Tuple`, the returned instance remains selected whether it reuses
-`previous` or replaces it. Scalar element rules produce `MORPH0042`; writable
-`ValueTuple` elements and eligible nested `Update` statements can still run.
-See [Tuple mapping](../tuple-mapping.md).
+`ResolveUsing` cannot be combined with another destination method or `Convert`.
 
 Related: [`Resolve`](resolve.md),
 [dependency injection and `IMapper`](../runtime-dispatch.md).

@@ -14,9 +14,8 @@ configuration into strongly typed mapping code without runtime reflection.
 If Morphant saves you time, you can
 [support its development on Boosty](https://boosty.to/strangeman375).
 
-> Morphant is currently in the 0.x series. It focuses on core object mapping;
-> automatic collection mapping, projection and several other general-purpose
-> mapper features are not included yet. See
+> Automatic collection mapping, projection and several other general-purpose
+> mapper features are not supported. See
 > [Current limitations](https://github.com/strangeman375/Morphant/blob/main/docs/limitations.md).
 
 ## Install

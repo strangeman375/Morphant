@@ -41,5 +41,6 @@ mapper declaration, DI registration, Create, Update and a first explicit rule.
 
 - [Compile-time diagnostics](diagnostics.md)
 - [Exceptions](exceptions.md)
-- [Generated code](generated-code.md)
+- [Generated code and Git snapshots](generated-code.md) — view output, select
+  publishing builds, and check snapshots in CI.
 - [Current limitations](limitations.md)

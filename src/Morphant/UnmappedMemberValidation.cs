@@ -16,12 +16,12 @@ public enum UnmappedMemberValidation
     None,
 
     /// <summary>
-    /// Requires every supported source member to be mapped.
+    /// Reports unused supported source members.
     /// </summary>
     Source,
 
     /// <summary>
-    /// Requires every supported destination member to be mapped.
+    /// Reports unmapped supported destination members.
     /// </summary>
     Destination,
 

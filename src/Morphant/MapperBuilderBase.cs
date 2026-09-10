@@ -29,7 +29,7 @@ public abstract class MapperBuilderBase<TBuilder>
     /// <see cref="Morphant.NullSourceHandling.Default"/> inherits the setting;
     /// the fallback is <see cref="Morphant.NullSourceHandling.ReturnNull"/>.
     /// </param>
-    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/null-source-handling.md"/>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/null-handling.md#null-source"/>
     public TBuilder NullSourceHandling(
         NullSourceHandling nullSourceHandling) =>
         throw new RuntimeInvocationNotSupportedException();
@@ -42,7 +42,7 @@ public abstract class MapperBuilderBase<TBuilder>
     /// <see cref="Morphant.NullDestinationHandling.Default"/> inherits the
     /// setting; the fallback is <see cref="Morphant.NullDestinationHandling.Create"/>.
     /// </param>
-    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/null-destination-handling.md"/>
+    /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/settings/null-handling.md#null-update-destination"/>
     public TBuilder NullDestinationHandling(
         NullDestinationHandling nullDestinationHandling) =>
         throw new RuntimeInvocationNotSupportedException();

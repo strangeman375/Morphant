@@ -45,8 +45,8 @@ public sealed class MappingBuilder<TMapper, TSource, TDestination> :
     /// assignable to this type.
     /// </typeparam>
     /// <remarks>
-    /// The same pair contributes all configuration. A different pair excludes
-    /// destination selection and Convert. Connect base mapper configuration
+    /// Only the same pair also reuses destination selection or Convert.
+    /// ForDerived links are not inherited. Connect base mapper configuration
     /// with <c>base.Configure(builder)</c>.
     /// </remarks>
     /// <seealso href="https://github.com/strangeman375/Morphant/blob/main/docs/api/include-base.md"/>

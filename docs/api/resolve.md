@@ -1,8 +1,8 @@
 # `Resolve`
 
-Chooses the destination for every Create and Update. Use it when the mapping
-must decide whether to reuse an existing destination or construct a
-replacement.
+Chooses the destination after null handling on Create and Update. Use it when
+the mapping must decide whether to reuse an existing destination or construct
+a replacement.
 
 ## Availability
 
@@ -12,20 +12,14 @@ supported by-value parameters, or be a BCL tuple with intrinsic construction.
 
 ## Overloads
 
-Each overload accepts a `resolve` callback and returns the same mapping
-builder. The callback must be an inline lambda.
+Use an inline lambda.
 
 | Callback | Use when |
 |---|---|
 | `(source, previous) => result` | Selection depends on the source and existing destination |
 | `(source, previous, context) => result` | Selection also depends on Create versus Update |
 
-| Callback value | Description |
-|---|---|
-| `source` | Non-null source after null-source handling |
-| `previous` | `Option<TDestination>` containing the existing destination, when available |
-| `context` | Declarative context; `Operation` is Create or Update |
-| Return value | `previous` or a constructor expression as in [`Construct`](construct.md); an explicit generated type name is also supported |
+Return `previous` or a construction expression as in [`Construct`](construct.md). See [callback inputs](README.md#callback-inputs).
 
 ```csharp
 builder.Map<OrderDto, Order>()

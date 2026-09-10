@@ -1,29 +1,7 @@
 # Current limitations
 
-Morphant is in the 0.x series. It supports the object-mapping features listed
-below, but not every feature expected from a general-purpose mapper.
-
-## Included
-
-- generated Create and Update mappings;
-- convention and explicit constructor/member mapping;
-- automatic name-based flattening of nested source properties and fields;
-- opt-in convention lookup through selected nested source objects with
-  `IncludeMembers`;
-- manual mappings with `Convert`;
-- explicit nested mapping;
-- runtime lookup through DI and `IMapper`;
-- explicit pair-local runtime polymorphism for class, interface and compatible
-  value-type branches;
-- null, member, constructor and mapping-mode settings;
-- mapper and mapping-configuration inheritance;
-- compile-time diagnostics and typed runtime exceptions;
-- nullable, value, record, interface, abstract and closed generic destination
-  types when Morphant can create them by convention or an explicit rule;
-- first-class named and explicitly configured unnamed `ValueTuple` and
-  `System.Tuple` mappings, including long and nullable forms and tuples that
-  combine multiple inputs, outputs or call-specific state;
-- C# 9 and newer consumers running Roslyn 4.4.0 or later.
+Morphant generates synchronous object mappings without runtime reflection.
+For supported features and examples, see the [mapping guides](README.md#mapping-guides).
 
 ## Not included
 

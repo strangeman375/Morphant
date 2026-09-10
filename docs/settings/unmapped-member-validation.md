@@ -31,7 +31,7 @@ A `Construct`, `Resolve` or `Members` lambda can acknowledge an intentionally
 unused source member without reading it when the mapping runs:
 
 ```csharp
-.Members((source, _) =>
+.Members(source =>
 {
     _ = source.LegacyValue;
 

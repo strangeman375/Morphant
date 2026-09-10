@@ -10,27 +10,9 @@ members to the configured convention.
 an assignable property or field, or an eligible readable reference member
 that can be updated in place.
 
-## Member names
-
-Configuration properties normally keep the destination member's name.
-If it conflicts with the generated record's name, a type parameter or a
-record member, Morphant appends underscores until the name is free.
-For example, a destination property `Clone` is configured as `Clone_`:
-
-```csharp
-.Members(source => new() { Clone_ = source.Clone });
-```
-
-If the destination also declares `Clone_`, that property keeps its name and
-`Clone` uses `Clone__`. IntelliSense describes the destination member each
-property represents. The same rule applies to tuple elements.
-Conventions and `Auto()` use the original destination name; `Ignore()`,
-`with` overlays and nested updates work through the configuration alias.
-
 ## Overloads
 
-Each overload accepts a `members` callback and returns the same mapping
-builder. The callback must be an inline lambda.
+Use an inline lambda.
 
 | Callback | Available information |
 |---|---|
@@ -39,13 +21,7 @@ builder. The callback must be an inline lambda.
 | `(source, previous, result) => rules` | Source, existing destination, and selected result |
 | `(source, previous, result, context) => rules` | All of the above plus current operation |
 
-| Callback value | Description |
-|---|---|
-| `source` | Non-null source after null-source handling |
-| `previous` | `Option<TDestination>` containing the supplied destination, when available |
-| `result` | Non-null destination selected for this operation |
-| `context` | Declarative context; `Operation` is Create or Update |
-| Return value | Object initializer describing destination-member rules |
+Return an object initializer describing the member rules. See [callback inputs](README.md#callback-inputs).
 
 ```csharp
 builder.Map<OrderDto, Order>()
@@ -74,10 +50,9 @@ matching member for a configured expression. The effective value must satisfy
 the constructor parameter's input type and nullable contract. An explicitly
 selected constructor remains the selected overload.
 
-During construction, the value is computed once into a local and passed to the
-constructor. Morphant does not assign the member again unless C# requires an
-initializer for `required` and the constructor lacks `[SetsRequiredMembers]`.
-That initializer reuses the same local. Update of an existing object applies
+During construction, the value is evaluated once and passed to the constructor.
+The member is assigned again only when C# requires a `required` initializer;
+that assignment reuses the value. Update of an existing object applies
 the rule through the writable member; creation-only members keep their values.
 
 Rules for members without a corresponding constructor parameter are applied
@@ -129,6 +104,23 @@ available, but an `init`-only rule produces
 For tuple destinations, `Members` configures tuple elements. See
 [Tuple mapping](../tuple-mapping.md) for construction, Update, and factory
 behavior for `ValueTuple` and `System.Tuple`.
+
+## Member names
+
+Configuration properties normally keep the destination member's name.
+If it conflicts with the generated record's name, a type parameter or a
+record member, Morphant appends underscores until the name is free.
+For example, a destination property `Clone` is configured as `Clone_`:
+
+```csharp
+.Members(source => new() { Clone_ = source.Clone });
+```
+
+If the destination also declares `Clone_`, that property keeps its name and
+`Clone` uses `Clone__`. IntelliSense describes the destination member each
+property represents. The same rule applies to tuple elements.
+Conventions and `Auto()` use the original destination name; `Ignore()`,
+`with` overlays and nested updates work through the configuration alias.
 
 Related: [declarative expressions](declarative-expressions.md),
 [nested mapping](../nested-mapping.md).

@@ -113,6 +113,6 @@ Each setting is resolved independently. See the
   rejected with [`MORPH0028`](diagnostics/MORPH0028.md).
 - A mapper and all its containing types must be accessible to generated
   namespace-level code. See
-  [Generated code](generated-code.md#mapper-accessibility).
+  [mapper declarations](api/map.md#mapper-declarations).
 - Cross-assembly configuration inheritance is not supported. Mappings from
   another assembly can still be registered independently with DI.

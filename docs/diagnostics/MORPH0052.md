@@ -2,8 +2,8 @@
 
 ## Cause
 
-`ForDerived` uses the exact source type of its base mapping. Dispatching to the
-same pair would recurse instead of selecting a derived branch.
+`ForDerived` uses the exact source type of its base mapping. A branch must
+select a different runtime source type, even when its destination differs.
 
 ## Fix
 

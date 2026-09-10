@@ -14,13 +14,14 @@ public enum UnknownDerivedTypeHandling
     Default = 0,
 
     /// <summary>
-    /// Uses the requested base mapping when no derived branch matches.
+    /// Uses the requested base mapping when no derived branch matches a
+    /// non-exact runtime source type.
     /// </summary>
     UseBaseMapping,
 
     /// <summary>
     /// Throws <see cref="UnmatchedPolymorphicMappingException"/> when no
-    /// derived branch matches.
+    /// derived branch matches a non-exact runtime source type.
     /// </summary>
     Throw
 }

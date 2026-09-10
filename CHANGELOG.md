@@ -47,6 +47,9 @@ unsupported.
 
 ### Fixed
 
+- Shorten IntelliSense, link API details, clarify optional destinations and null
+  behavior, and fix documentation examples for source-validation discards and
+  mapper declarations.
 - Package the current generator and build task assemblies when using custom
   build output paths, including `--artifacts-path` and `pack --no-build`.
 - Refresh generated mappings when `InternalsVisibleTo` is added or removed

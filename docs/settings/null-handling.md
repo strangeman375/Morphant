@@ -47,8 +47,8 @@ The assembly properties are `MorphantNullSourceHandling` and
 `MorphantNullDestinationHandling`.
 
 Manual `Convert` mappings bypass both settings. They receive the original
-source and an `Option<TDestination>` that indicates whether an existing
-destination is available. See [Manual mapping](../manual-mapping.md).
+source and an `Option` containing the non-null destination value, if supplied.
+See [Manual mapping](../manual-mapping.md).
 
 ## Result nullability
 

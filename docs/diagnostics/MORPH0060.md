@@ -2,7 +2,7 @@
 
 ## Cause
 
-A generic parameter of a reusable mapper family, other than its CRTP
+A generic parameter of a reusable mapper family, other than its
 self-parameter, does not occur in the source or destination type of a declared
 mapping pair:
 

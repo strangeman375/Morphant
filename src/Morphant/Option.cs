@@ -7,10 +7,6 @@ namespace Morphant;
 /// Represents the presence or absence of a value.
 /// </summary>
 /// <typeparam name="T">The type of the optional value.</typeparam>
-/// <remarks>
-/// An option created by <see cref="Some(T)"/> has a value even when that value
-/// is <see langword="null"/>.
-/// </remarks>
 public readonly struct Option<T>
 {
     private readonly T _value;
@@ -34,7 +30,7 @@ public readonly struct Option<T>
     public static Option<T> Some(T value) => new(value);
 
     /// <summary>
-    /// Whether a value is present, including null.
+    /// Whether a value is present.
     /// </summary>
     public bool HasValue { get; }
 

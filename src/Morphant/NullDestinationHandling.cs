@@ -15,7 +15,7 @@ public enum NullDestinationHandling
     Default = 0,
 
     /// <summary>
-    /// Creates a destination when the supplied destination is
+    /// Uses the creation rules when the supplied destination is
     /// <see langword="null"/>.
     /// </summary>
     /// <remarks>

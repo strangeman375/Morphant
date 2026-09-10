@@ -36,6 +36,8 @@ Choose at most one destination method: `Construct`, `Resolve`,
 
 ## Callback forms
 
+All configuration methods return their builder for fluent chaining.
+
 `Construct`, `Resolve`, and `Members` require inline lambdas.
 `ConstructUsing`, `ResolveUsing`, and `Convert` also accept method groups and
 compatible delegates. Callbacks may reference constants and accessible mapper
@@ -44,6 +46,18 @@ inside `Configure`.
 
 Inside declarative callbacks, use [`Auto`, `Ignore`, `Value`, `ByConvention`,
 `Map`, `Create`, and `Update`](declarative-expressions.md).
+
+## Callback inputs
+
+| Input | Meaning |
+|---|---|
+| `source` | Non-null source after null handling. In `Convert`, the original source, including `null`. |
+| `previous` | An `Option` containing the supplied non-null destination value. `None` for Create or `Update(source, null)`; even a supplied value of `0` is present. |
+| `result` | The non-null destination selected for this operation. Available in `Members`; [constructor values need special care](members.md#reading-result). |
+| `context` | In `Construct`, `Resolve`, and `Members`, only `Operation` is available. In runtime callbacks, `MappingContext` also exposes `Mapper` for nested calls. |
+
+`Operation` is determined by the call, not by destination availability:
+`Update(source, null)` remains Update. See [Create and Update](../create-and-update.md).
 
 ## Settings
 

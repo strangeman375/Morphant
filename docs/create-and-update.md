@@ -20,13 +20,13 @@ destination = mapper.Map(source, destination);
 - [`Construct`](api/construct.md) and
   [`ConstructUsing`](api/construct-using.md) run when no destination is
   available.
-- [`Resolve`](api/resolve.md) and
+- After null handling, [`Resolve`](api/resolve.md) and
   [`ResolveUsing`](api/resolve-using.md) choose the result for every Create
   and Update.
 - Without an explicit rule, Morphant uses constructor conventions when
   possible.
 
-`Resolve` can inspect `Option<TDestination> previous` to decide whether to
+`Resolve` can inspect `previous` to decide whether to
 reuse the existing destination:
 
 ```csharp

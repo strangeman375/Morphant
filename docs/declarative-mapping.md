@@ -17,7 +17,7 @@ fluent chain returned by `Map`; do not store or pass either builder.
 
 ## Choose the destination
 
-Each mapping can use at most one of these methods:
+Null handling runs before these destination rules. Choose at most one:
 
 | Method | When it applies | Use it for |
 |---|---|---|
@@ -107,10 +107,8 @@ On C# 12 and newer, `Value<T>` also supplies the collection target type:
 
 ## Existing destinations
 
-In `Resolve` and the overloads of `Members` that receive `previous`,
-`Option<TDestination>` indicates whether Morphant has an existing destination
-value to reuse. It is `Some(destination)` when one is available and `None`
-otherwise:
+In `Resolve` and the overloads of `Members` that receive `previous`, the
+`Option` indicates whether a non-null destination value was supplied:
 
 ```csharp
 if (previous.TryGetValue(out var destination))

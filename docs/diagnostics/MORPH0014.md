@@ -5,8 +5,8 @@
 Two registrations in a generic mapper can produce the same
 `ITypeMapper<TSource, TDestination>` for some type arguments.
 
-For example, `Map<T, T>()` and `Map<string, string>()` overlap when `T` is
-`string`.
+For example, `Map<Envelope<T>, Result>()` and
+`Map<Envelope<string>, Result>()` overlap when `T` is `string`.
 
 ## Fix
 

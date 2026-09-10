@@ -12,7 +12,7 @@ Use the member in a constructor, member, or nested-mapping rule. If it is
 intentionally unused, acknowledge it without reading it at runtime:
 
 ```csharp
-.Members((source, _) =>
+.Members(source =>
 {
     _ = source.LegacyValue;
     return new() { Name = source.Name };

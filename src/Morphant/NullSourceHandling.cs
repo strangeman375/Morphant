@@ -16,15 +16,13 @@ public enum NullSourceHandling
     /// Returns <see langword="default"/> for the destination type.
     /// </summary>
     /// <remarks>
-    /// The result is <see langword="null"/> when the destination type permits
-    /// it.
+    /// Reference types return null regardless of nullable annotations.
     /// </remarks>
     ReturnNull,
 
     /// <summary>
-    /// Returns the supplied destination when mapping to an existing
-    /// destination; when mapping to a new destination, returns
-    /// <see langword="default"/>.
+    /// Returns the supplied destination on Update, or
+    /// <see langword="default"/> on Create.
     /// </summary>
     ReturnDestination,
 

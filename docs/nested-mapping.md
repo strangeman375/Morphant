@@ -9,7 +9,7 @@ every `Map`, `Create`, and `Update` form.
 
 | Form | Operation |
 |---|---|
-| `Map(...)` | Create when no current value is available; otherwise Update |
+| `Map(...)` | Select Create or Update from the outer operation and current nested value |
 | `Create(source)` | Always nested Create |
 | `Update(source, destination)` | Always nested Update |
 

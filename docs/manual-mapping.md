@@ -23,8 +23,7 @@ builder.Map<OrderDto, Order>()
 The [`Convert` reference](api/convert.md) lists all callback overloads and
 parameters.
 
-`previous` is `Option<TDestination>`. It is `None` for Create and for an Update
-without an actual destination, and `Some(destination)` otherwise.
+`previous` follows the common [callback input contract](api/README.md#callback-inputs).
 
 The callback owns the whole mapping. Morphant does not apply null handling,
 constructor selection, member conventions or `Members` afterward. The

@@ -10,9 +10,7 @@ are clearer in normal C# than as declarative rules.
 
 ## Overloads
 
-Each overload accepts a `mapping` callback and returns the same mapping
-builder. Inline lambdas and method groups are supported, as are compatible
-delegates stored in accessible mapper or static members.
+Use an inline lambda, method group, or accessible delegate.
 
 | Callback | Available information |
 |---|---|
@@ -20,12 +18,7 @@ delegates stored in accessible mapper or static members.
 | `(source, previous) => result` | Source and existing destination |
 | `(source, previous, context) => result` | Source, destination, and `MappingContext` |
 
-| Callback value | Description |
-|---|---|
-| `source` | Original source, which may be `null` |
-| `previous` | `Option<TDestination>` containing the supplied destination, when available |
-| `context` | Current `MappingContext`, including `Operation` and `Mapper` |
-| Return value | Final mapping result: `null`, reused destination, or replacement |
+Return the final result: `null`, the supplied destination, or a replacement. See [callback inputs](README.md#callback-inputs).
 
 ```csharp
 builder.Map<OrderDto, Order>()

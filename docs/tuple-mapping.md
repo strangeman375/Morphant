@@ -179,16 +179,15 @@ configuration, all registrations with the same underlying source and
 destination types must use the same recursive presentation. A conflict
 produces [`MORPH0056`](diagnostics/MORPH0056.md).
 
-Unrelated mappers may use different presentations of the same physical pair;
+Unrelated mappers may use different presentations of the same underlying pair;
 Morphant scopes their generated configuration methods automatically. This does
-not create keyed mappings: `ITypeMapper<,>` and DI still see the physical CLR
+not create keyed mappings: `ITypeMapper<,>` and DI still see the same runtime
 pair, so registering both implementations in one runtime scope retains the
 usual service ambiguity.
 
 Use one consistent presentation inside a mapper family, or introduce wrapper
 types when one effective mapper needs different meanings or nullable
-contracts. See [Generated code](generated-code.md#configuration-surfaces) for
-the complete surface-selection rule.
+contracts. See [mapper declarations](api/map.md#mapper-declarations).
 
 Related: [Conventions](conventions.md),
 [Create and Update](create-and-update.md), and

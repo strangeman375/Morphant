@@ -10,26 +10,22 @@ that is not a destination constructor expression.
 
 ## Overloads
 
-Each overload accepts a `construct` callback and returns the same mapping
-builder. Inline lambdas and method groups are supported, as are compatible
-delegates stored in accessible mapper or static members.
+Use an inline lambda, method group, or accessible delegate.
 
 | Callback | Use when |
 |---|---|
 | `source => destination` | Creation needs only the source |
 | `(source, context) => destination` | Creation also needs `MappingContext` |
 
-| Callback value | Description |
-|---|---|
-| `source` | Non-null source after null-source handling |
-| `context` | Current `MappingContext`, including `Operation` and `Mapper` |
-| Return value | Destination selected for the operation |
+Return the destination object. See [callback inputs](README.md#callback-inputs).
 
 ```csharp
 builder.Map<OrderDto, IOrder>()
     .ConstructUsing(source =>
         orderFactory.Create(source.Id));
 ```
+
+## Factory result
 
 A `null` callback result is final: Morphant skips `Members` and does not apply
 null handling again. A non-null result can continue through

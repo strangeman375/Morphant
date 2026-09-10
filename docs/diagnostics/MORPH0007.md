@@ -17,6 +17,8 @@ public partial class Container
     public sealed partial class ApplicationMapper :
         TypeMapper<ApplicationMapper>
     {
+        protected override void Configure(MapperBuilder builder) =>
+            builder.Map<Source, Destination>();
     }
 }
 ```
