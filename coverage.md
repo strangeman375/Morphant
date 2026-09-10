@@ -3,20 +3,20 @@
 
 |||
 |:---|:---|
-| Generated on: | 09/10/2026 - 11:24:42 |
-| Coverage date: | 09/10/2026 - 11:10:50 - 09/10/2026 - 11:24:37 |
+| Generated on: | 09/10/2026 - 13:20:41 |
+| Coverage date: | 09/10/2026 - 13:09:00 - 09/10/2026 - 13:20:37 |
 | Parser: | MultiReport (2x Cobertura) |
 | Assemblies: | 3 |
 | Classes: | 371 |
 | Files: | 195 |
-| **Line coverage:** | 88.1% (37896 of 42974) |
-| Covered lines: | 37896 |
-| Uncovered lines: | 5078 |
-| Coverable lines: | 42974 |
-| Total lines: | 71559 |
-| **Branch coverage:** | 78.7% (13347 of 16957) |
-| Covered branches: | 13347 |
-| Total branches: | 16957 |
+| **Line coverage:** | 88.1% (37905 of 42980) |
+| Covered lines: | 37905 |
+| Uncovered lines: | 5075 |
+| Coverable lines: | 42980 |
+| Total lines: | 71576 |
+| **Branch coverage:** | 78.7% (13355 of 16961) |
+| Covered branches: | 13355 |
+| Total branches: | 16961 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -52,14 +52,14 @@
 |Morphant.TypeMapperExtensions|100%|100%|
 
 </details>
-<details><summary>Morphant.Build.Tasks - 92.8%</summary>
+<details><summary>Morphant.Build.Tasks - 93%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**Morphant.Build.Tasks**|**92.8%**|**85.4%**|
+|**Morphant.Build.Tasks**|**93%**|**85.4%**|
 |Morphant.Build.Tasks.GitSnapshotContext|95.5%|91.6%|
 |Morphant.Build.Tasks.GitSnapshotLifecycle|93%|94.1%|
-|Morphant.Build.Tasks.GitSnapshotStorage|98.3%|100%|
+|Morphant.Build.Tasks.GitSnapshotStorage|100%|100%|
 |Morphant.Build.Tasks.ManageMorphantGitSnapshot|100%|90%|
 |Morphant.Build.Tasks.MorphantBuildTask|97.7%|50%|
 |Morphant.Build.Tasks.PhysicalDirectory|78.3%|64.5%|
@@ -247,7 +247,7 @@
 |Morphant.Generator.TypeMapperGeneration.CallbackDiagnosticPipeline|75%|50%|
 |Morphant.Generator.TypeMapperGeneration.CallbackTransferFailureObservation|100%||
 |Morphant.Generator.TypeMapperGeneration.CompletenessPlanningObservation|100%||
-|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|72.9%|71.6%|
+|Morphant.Generator.TypeMapperGeneration.ConstructExpressionRewriter|73%|72%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticAnalyzer|89.7%|80.9%|
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticCandidate|100%||
 |Morphant.Generator.TypeMapperGeneration.ConstructionDiagnosticDescriptors|100%||
@@ -268,7 +268,7 @@
 |Morphant.Generator.TypeMapperGeneration.ConventionSourceMemberResolver|100%|100%|
 |Morphant.Generator.TypeMapperGeneration.ConventionSourcePathSegment|100%||
 |Morphant.Generator.TypeMapperGeneration.ConventionSourceValueCompatibility|94.8%|72.7%|
-|Morphant.Generator.TypeMapperGeneration.ConventionSourceValueExpressionMode<br/>l|61.7%|54.1%|
+|Morphant.Generator.TypeMapperGeneration.ConventionSourceValueExpressionMode<br/>l|63%|56%|
 |Morphant.Generator.TypeMapperGeneration.ConventionSourceValuePathSegmentMod<br/>el|100%||
 |Morphant.Generator.TypeMapperGeneration.ConventionWritableMember|100%||
 |Morphant.Generator.TypeMapperGeneration.DeclarativeBoundLocalSyntax|100%||
@@ -357,7 +357,7 @@
 |Morphant.Generator.TypeMapperGeneration.PolymorphicBasePlanReachability|100%|92.8%|
 |Morphant.Generator.TypeMapperGeneration.PreviousExpressionSubstitution|100%||
 |Morphant.Generator.TypeMapperGeneration.ReadOnlyMemberUpdateTarget|100%||
-|Morphant.Generator.TypeMapperGeneration.ReceiverMemberBinding|87.9%|82.4%|
+|Morphant.Generator.TypeMapperGeneration.ReceiverMemberBinding|91.3%|85.1%|
 |Morphant.Generator.TypeMapperGeneration.RuntimeCallbackMethodPlan|100%||
 |Morphant.Generator.TypeMapperGeneration.RuntimeCallbackMethodPlanner|97%|86.6%|
 |Morphant.Generator.TypeMapperGeneration.RuntimeCallbackParameterNames|100%||
@@ -417,4 +417,4 @@
 
 ---
 
-Full HTML report: download the **coverage** artifact from [CI run #263](https://github.com/strangeman375/Morphant/actions/runs/34469584557).
+Full HTML report: download the **coverage** artifact from [CI run #265](https://github.com/strangeman375/Morphant/actions/runs/34480521435).
