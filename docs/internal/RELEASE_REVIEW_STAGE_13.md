@@ -1,18 +1,17 @@
 # Этап 13: итоговая проверка
 
-Дата: 2026-09-10. **Решение: релиз блокирует S13-01.**
+Дата: 2026-09-10. **S13-01: исправление разрешено пользователем, выполняется.**
 
-Итоговая CI-проверка — `f3fdef4` ([run](https://github.com/strangeman375/Morphant/actions/runs/34465647685)).
-Локальные Release и полный integration-прогон выполнены на `5371a94`; после него менялись только unit-воспроизведение и внутренний отчёт. Код продукта и runtime-сценарии одинаковы. Production-код на этапе 13 не менялся.
+Результаты ниже относятся к аудиту до исправления: CI — `f3fdef4` ([run](https://github.com/strangeman375/Morphant/actions/runs/34465647685)), локальные Release и полный integration-прогон — `5371a94`. Код продукта и runtime-сценарии на этих двух версиях одинаковы. После внесённого исправления результаты будут заменены проверкой новой версии.
 
 ## Находки и следующий шаг
 
 - Исправлен тест каталога MSBuild-диагностик: после переноса справки он продолжал читать `generated-code.md`. Теперь проверяется `build-diagnostics.md`; проверка проходит.
 - **S13-01:** наследуемые `Construct`, `Members` и `Convert`, читающие публичные поля кортежа (`source.Data.Value`, `source.Data.Count`), получают ложный `MORPH0028` после generic-подстановки `T → string`. Пример использует `base.Configure` и точный `IncludeBase`, без закрытых членов и interface dispatch. Три воспроизведения падают на Roslyn 4.4 под Ubuntu, Windows и macOS, а также на Roslyn 4.9.2 под Ubuntu. Шесть контрольных случаев — локальные callbacks и наследование закрытой пары — проходят.
 
-Постоянное воспроизведение: [TupleMemberBindingTests.cs](../../src/tests/Morphant.Generator.UnitTests/InheritanceDiagnosticsTests/TupleMemberBindingTests.cs). Ошибка изолирована в unit-проверке компиляции и не мешает сборке остальных тестов; ожидание отсутствия диагностик сохранено.
+Постоянное воспроизведение: [TupleMemberBindingTests.cs](../../src/tests/Morphant.Generator.UnitTests/InheritanceDiagnosticsTests/TupleMemberBindingTests.cs). Проверки расширены именованными и позиционными полями, вложенным nullable-элементом длинного кортежа.
 
-Предлагаемое исправление: корректно сопоставлять поля кортежа после подстановки типов в `ReceiverMemberBinding`, сохранив проверки действительно недоступных членов и изменения семантики value-type receiver. Исправление генератора требует отдельного согласования по утверждённому плану. После него нужны runtime-проверка generic `Construct`/`Members`/`IncludeBase` и финальные Release, unit/integration и package-consumer прогоны на одной точной версии.
+Внесено согласованное исправление сопоставления полей кортежа, подстановки типа повторно используемого выражения и восстановления длинного кортежа. Проверки недоступности и семантики value-type receiver сохранены. Добавлены runtime-проверки `Construct`/`Members`/`Convert`/`IncludeBase`; предстоят финальные Release, unit/integration и package-consumer прогоны на одной точной версии.
 
 ## Полнота и качество
 

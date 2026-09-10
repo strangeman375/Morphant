@@ -19,6 +19,17 @@ internal static class ReceiverMemberBinding
 
         var closedType = (INamedTypeSymbol)MapperTypeSubstitution.Substitute(
             declaringType, substitutions, compilation);
+
+        if (declaringType.IsTupleType &&
+            member is IFieldSymbol { CorrespondingTupleField: { } tupleField })
+        {
+            // Tuple aliases are synthesized for each constructed type. Match the
+            // corresponding ItemN element instead of their original definitions.
+            return closedType.GetMembers(member.Name).OfType<IFieldSymbol>()
+                .FirstOrDefault(candidate =>
+                    candidate.CorrespondingTupleField?.Name == tupleField.Name) ?? member;
+        }
+
         return closedType.GetMembers(member.Name).FirstOrDefault(candidate =>
             SymbolEqualityComparer.Default.Equals(
                 candidate.OriginalDefinition, member.OriginalDefinition)) ?? member;

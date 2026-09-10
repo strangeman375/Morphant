@@ -115,7 +115,9 @@ internal static class MapperTypeSubstitution
             ? definition
             : definition.Construct(arguments);
 
-        if (named.IsTupleType)
+        // A one-element ValueTuple can store Rest, but cannot be recreated as
+        // a C# tuple. Its containing tuple restores the element's presentation.
+        if (named.IsTupleType && named.TupleElements.Length > 1)
         {
             constructed = RestoreTuplePresentation(
                 named,

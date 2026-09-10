@@ -131,6 +131,7 @@ internal static class DeclarativeDependencyExpressionBuilder
         var candidates = BuildCandidates(
             dependencyRoot,
             semanticModel,
+            mapperType,
             sourceParameter,
             previousParameter,
             resultParameter,
@@ -249,6 +250,7 @@ internal static class DeclarativeDependencyExpressionBuilder
     private static ImmutableArray<DependencyCandidate> BuildCandidates(
         ExpressionSyntax root,
         SemanticModel semanticModel,
+        INamedTypeSymbol mapperType,
         IParameterSymbol sourceParameter,
         IParameterSymbol? previousParameter,
         IParameterSymbol? resultParameter,
@@ -261,6 +263,9 @@ internal static class DeclarativeDependencyExpressionBuilder
         var result =
             ImmutableArray.CreateBuilder<DependencyCandidate>();
         var index = 0;
+        var semanticMapperType = semanticModel.Compilation.GetTypeByMetadataName(
+            SymbolNameHelper.GetFullMetadataName(mapperType)) ?? mapperType;
+        var substitutions = MapperTypeSubstitution.BuildForHierarchy(semanticMapperType);
 
         foreach (var expression in root
                      .DescendantNodesAndSelf(
@@ -323,7 +328,8 @@ internal static class DeclarativeDependencyExpressionBuilder
                 new DependencyCandidate(
                     expression,
                     key,
-                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(type),
+                    TypeMapperMappingTypePolicy.GetGeneratedTypeName(
+                        MapperTypeSubstitution.Substitute(type, substitutions, semanticModel.Compilation)),
                     CanMaterialize(operation),
                     new SyntaxAnnotation(
                         AnnotationKind,
