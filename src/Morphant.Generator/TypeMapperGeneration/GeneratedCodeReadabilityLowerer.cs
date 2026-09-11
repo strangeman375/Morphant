@@ -439,7 +439,7 @@ internal static class GeneratedCodeReadabilityLowerer
     private static TypeMapperMemberMappingModel FormatMemberExpression(
         TypeMapperMemberMappingModel mapping)
     {
-        return mapping.ExplicitValueExpression is { } expression && IsComplexExpression(expression)
+        return mapping.ExplicitValueExpression is { } expression && NeedsMultilineFormatting(expression)
             ? mapping with
             {
                 ExplicitValueExpression = FormatComplexExpression(
@@ -538,23 +538,19 @@ internal static class GeneratedCodeReadabilityLowerer
             };
         }
 
-        if (argument.ValueLocalName is null && IsComplexExpression(expression))
+        if (NeedsMultilineFormatting(expression))
         {
-            var syntax = SyntaxFactory.ParseExpression(expression);
-            var valueType = argument.ValueLocalTypeName ?? argument.TargetTypeName;
             return argument with
             {
-                ExplicitValueExpression = FormatComplexExpression(syntax),
-                ValueLocalName = AllocateValueLocalName(names, argument.ParameterName),
-                ValueLocalTypeName = UnwrapParentheses(syntax) is CastExpressionSyntax cast &&
-                    Normalize(cast.Type) == valueType ? "var" : valueType
+                ExplicitValueExpression = FormatComplexExpression(
+                    SyntaxFactory.ParseExpression(expression))
             };
         }
 
         return argument;
     }
 
-    private static bool IsComplexExpression(string expression)
+    private static bool NeedsMultilineFormatting(string expression)
     {
         if (expression.Length <= 100) return false;
 
