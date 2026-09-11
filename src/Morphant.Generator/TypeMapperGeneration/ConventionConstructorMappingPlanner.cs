@@ -1877,7 +1877,8 @@ internal static class ConventionConstructorMappingPlanner
         INamedTypeSymbol mapperType,
         CancellationToken cancellationToken)
     {
-        var parameterTypeName = BuildTargetValueLocalTypeName(parameter);
+        var parameterTypeName = GetParameterInputType(parameter)
+            .ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable);
         var memberTypeName = member.ExplicitValueTypeName ??
             memberType.ToDisplayString(SymbolDisplayFormats.FullyQualifiedNullable);
         if (StringComparer.Ordinal.Equals(parameterTypeName, memberTypeName))
