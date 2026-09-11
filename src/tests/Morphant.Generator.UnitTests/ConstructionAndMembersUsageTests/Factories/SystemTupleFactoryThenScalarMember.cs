@@ -73,7 +73,7 @@ namespace TestCase
                 return default!;
             }
 
-            return __Create(source, context);
+            return __Create(source, global::Morphant.Context.MappingOperation.Create, context);
         }
 
         /// <inheritdoc/>
@@ -89,7 +89,7 @@ namespace TestCase
 
             if (destination is null)
             {
-                return __Create(source, context);
+                return __Create(source, global::Morphant.Context.MappingOperation.Update, context);
             }
 
             return __Update(source, destination, context);
@@ -97,6 +97,7 @@ namespace TestCase
 
         private global::System.Tuple<int, string> __Create(
             global::TestCase.Source source,
+            global::Morphant.Context.MappingOperation operation,
             global::Morphant.Context.MappingContext context)
         {
             global::System.Tuple<int, string> result = __ConstructUsing(source);
@@ -107,7 +108,7 @@ namespace TestCase
             }
 
             throw new global::Morphant.Exceptions.MappingConfigurationException(
-                global::Morphant.Context.MappingOperation.Create,
+                operation,
                 typeof(global::TestCase.Source),
                 typeof(global::System.Tuple<int, string>),
                 "This member cannot be assigned in this Create or Update case.");
